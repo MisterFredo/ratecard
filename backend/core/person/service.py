@@ -58,3 +58,24 @@ def get_person(id_person: str):
     """
     rows = query_bq(sql, {"id": id_person})
     return rows[0] if rows else None
+
+def update_person(id_person: str, data: PersonCreate):
+    now = datetime.utcnow()
+
+    row = [{
+        "ID_PERSON": id_person,
+        "ID_COMPANY": data.id_company,
+        "NAME": data.name,
+        "TITLE": data.title,
+        "PROFILE_PICTURE_URL": data.profile_picture_url,
+        "LINKEDIN_URL": data.linkedin_url,
+        "UPDATED_AT": now,
+    }]
+
+    client = get_bigquery_client()
+    errors = client.insert_rows_json(TABLE_PERSON, row)
+    if errors:
+        raise RuntimeError(errors)
+
+    return True
+
