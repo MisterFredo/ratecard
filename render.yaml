@@ -1,23 +1,31 @@
 services:
   - name: ratecard-backend
     type: web
-    env: python
+    env: docker
     rootDir: backend
     plan: starter
 
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    # Docker build command handled automatically by Render
 
     envVars:
       - key: GOOGLE_CREDENTIALS_FILE
         value: /etc/secrets/GOOGLE_CREDENTIALS_FILE
+
       - key: BQ_PROJECT
         value: adex-5555
+
       - key: BQ_DATASET
         value: RATECARD
+
       - key: ENV
         value: production
 
     secretFiles:
       - name: GOOGLE_CREDENTIALS_FILE
         mountPath: /etc/secrets/GOOGLE_CREDENTIALS_FILE
+
+    # Optionnel : rewrite comme ADEX (utile si FRONT Ratecard sera SSR)
+    # routes:
+    #   - type: rewrite
+    #     source: /(.*)
+    #     destination: /$1
