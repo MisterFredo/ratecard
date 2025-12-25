@@ -1,7 +1,7 @@
 // frontend/app/admin/layout.tsx
 
 import Link from "next/link";
-import "../globals.css";
+import "./globals.css";
 
 export const metadata = {
   title: "Ratecard Admin",
