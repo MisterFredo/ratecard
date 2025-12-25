@@ -3,25 +3,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
+
 import CompanySelector from "@/components/admin/CompanySelector";
 import PersonSelector from "@/components/admin/PersonSelector";
 import AxesEditor from "@/components/admin/AxesEditor";
-import Link from "next/link";
 
 export default function EditArticlePage({ params }) {
   const { id } = params;
 
   const [loading, setLoading] = useState(true);
 
-  // Article state
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
 
-  const [company, setCompany] = useState("");
-  const [persons, setPersons] = useState<string[]>([]);
-  const [axes, setAxes] = useState<string[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState("");
+  const [selectedPersons, setSelectedPersons] = useState<any[]>([]);
+  const [axes, setAxes] = useState<any[]>([]);
 
   const [visuelUrl, setVisuelUrl] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
@@ -32,37 +32,43 @@ export default function EditArticlePage({ params }) {
 
 
   // ============================================================
-  // 📌 LOAD ARTICLE
+  //  LOAD ARTICLE
   // ============================================================
   useEffect(() => {
     async function load() {
       setLoading(true);
+
       const res = await api.get(`/articles/${id}`);
-      const article = res.article;
+      const a = res.article;
 
-      if (article) {
-        setTitle(article.TITRE || "");
-        setExcerpt(article.EXCERPT || "");
-        setContentHtml(article.CONTENU_HTML || "");
+      if (a) {
+        setTitle(a.TITRE || "");
+        setExcerpt(a.EXCERPT || "");
+        setContentHtml(a.CONTENU_HTML || "");
 
-        setVisuelUrl(article.VISUEL_URL || "");
+        setVisuelUrl(a.VISUEL_URL || "");
+        setIsFeatured(a.IS_FEATURED || false);
+        setFeaturedOrder(a.FEATURED_ORDER || undefined);
 
-        setIsFeatured(article.IS_FEATURED || false);
-        setFeaturedOrder(article.FEATURED_ORDER || undefined);
-
-        // company
-        if (article.companies && article.companies.length > 0) {
-          setCompany(article.companies[0]);
+        // COMPANY
+        if (a.companies && a.companies.length > 0) {
+          setSelectedCompany(a.companies[0]);
         }
 
-        // persons
-        if (article.persons) {
-          setPersons(article.persons.map((p) => p.ID_PERSON));
+        // PERSONS
+        if (a.persons) {
+          setSelectedPersons(a.persons.map((p) => p.ID_PERSON));
         }
 
-        // axes
-        if (article.axes) {
-          setAxes(article.axes.map((a) => a.AXE_VALUE));
+        // AXES (mapping objects)
+        if (a.axes) {
+          setAxes(
+            a.axes.map((ax) => ({
+              TYPE: ax.AXE_TYPE,
+              LABEL: ax.AXE_VALUE,
+              ID_AXE: null
+            }))
+          );
         }
       }
 
@@ -74,7 +80,7 @@ export default function EditArticlePage({ params }) {
 
 
   // ============================================================
-  // 📌 SAVE ARTICLE
+  //   SAVE ARTICLE
   // ============================================================
   async function saveArticle() {
     setSaving(true);
@@ -84,12 +90,22 @@ export default function EditArticlePage({ params }) {
       excerpt: excerpt,
       contenu_html: contentHtml,
       visuel_url: visuelUrl || null,
-      auteur: null, // l’auteur n’est pas modifiable pour l’instant
+      auteur: null,
+
       is_featured: isFeatured,
       featured_order: featuredOrder || null,
-      axes: axes.map((tag) => ({ type: "TOPIC", value: tag })),
-      companies: company ? [company] : [],
-      persons: persons.map((id) => ({ id_person: id, role: null })),
+
+      axes: axes.map((a) => ({
+        type: a.TYPE,
+        value: a.LABEL
+      })),
+
+      companies: selectedCompany ? [selectedCompany] : [],
+
+      persons: selectedPersons.map((id) => ({
+        id_person: id,
+        role: null
+      })),
     };
 
     const res = await api.put(`/articles/update/${id}`, payload);
@@ -98,19 +114,19 @@ export default function EditArticlePage({ params }) {
   }
 
 
-  if (loading) {
-    return <div>Chargement…</div>;
-  }
+  if (loading) return <div>Chargement…</div>;
 
 
   return (
     <div className="space-y-8">
+
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">Modifier l’article</h1>
         <Link href="/admin/articles" className="underline text-gray-600">
           ← Retour
         </Link>
       </div>
+
 
       {/* TITRE */}
       <input
@@ -133,14 +149,16 @@ export default function EditArticlePage({ params }) {
         className="border p-2 w-full h-96 font-mono"
       />
 
-      {/* COMPANY */}
-      <CompanySelector value={company} onChange={setCompany} />
 
-      {/* PERSONS */}
-      <PersonSelector values={persons} onChange={setPersons} />
+      {/* COMPANY */}
+      <CompanySelector value={selectedCompany} onChange={setSelectedCompany} />
+
+      {/* PERSON */}
+      <PersonSelector values={selectedPersons} onChange={setSelectedPersons} />
 
       {/* AXES */}
       <AxesEditor values={axes} onChange={setAxes} />
+
 
       {/* VISUEL */}
       <input
@@ -149,6 +167,7 @@ export default function EditArticlePage({ params }) {
         placeholder="Visuel (URL)"
         className="border p-2 w-full"
       />
+
 
       {/* FEATURED */}
       <label className="flex items-center space-x-2">
@@ -171,6 +190,7 @@ export default function EditArticlePage({ params }) {
         />
       )}
 
+
       <button
         onClick={saveArticle}
         disabled={saving}
@@ -179,11 +199,13 @@ export default function EditArticlePage({ params }) {
         Enregistrer
       </button>
 
+
       {saveResult && (
         <pre className="bg-gray-100 p-4 mt-4 rounded">
           {JSON.stringify(saveResult, null, 2)}
         </pre>
       )}
+
     </div>
   );
 }
