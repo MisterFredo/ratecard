@@ -14,7 +14,10 @@
     "lucide-react": "^0.263.0",
     "@headlessui/react": "^1.7.17",
     "react-select": "^5.7.3",
-    "framer-motion": "^10.16.1"
+    "framer-motion": "^10.16.1",
+    "@tiptap/react": "^2.3.2",
+    "@tiptap/starter-kit": "^2.3.2",
+    "@tiptap/pm": "^2.3.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
