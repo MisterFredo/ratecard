@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # ============================================================
-# PYTHON PATH FIX (ADEX V3 STYLE)
+# PYTHONPATH FIX (ADEX-LIKE)
 # ============================================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))   # /app
 sys.path.insert(0, BASE_DIR)
@@ -35,12 +35,11 @@ app.add_middleware(
 
 
 # ============================================================
-# ADEX-LIKE ROUTER LOADER
+# ROUTER LOADER (ADEX STYLE)
 # ============================================================
 def include_router(module_path: str, prefix: str, tag: str):
     """
-    Load a router from an API module.
-    Example: include_router("api.articles", "/api/articles", "ARTICLES")
+    Dynamically load an API module (ADEX V3 pattern).
     """
     mod = importlib.import_module(module_path)
     router = getattr(mod, "router")
@@ -48,15 +47,34 @@ def include_router(module_path: str, prefix: str, tag: str):
 
 
 # ============================================================
-# MODULE REGISTRATION
+# MODULES
 # ============================================================
 include_router("api.health", "/api/health", "HEALTH")
 include_router("api.articles", "/api/articles", "ARTICLES")
 include_router("api.company", "/api/company", "COMPANY")
 include_router("api.person", "/api/person", "PERSON")
 
+
 # ============================================================
-# Debug route to list all available routes (ADEX style)
+# ROOT ENDPOINT (LIKE ADEX)
+# ============================================================
+@app.get("/")
+def root():
+    return {
+        "service": "ratecard-backend",
+        "status": "ok",
+        "endpoints": {
+            "health": "/api/health/",
+            "routes": "/__routes",
+            "articles": "/api/articles/",
+            "company": "/api/company/",
+            "person": "/api/person/"
+        }
+    }
+
+
+# ============================================================
+# DEBUG ROUTES LISTING (ADEX STYLE)
 # ============================================================
 @app.get("/__routes")
 def list_routes():
