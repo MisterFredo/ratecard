@@ -101,3 +101,70 @@ def list_articles(limit: int = 50):
         """,
         {"limit": limit}
     )
+
+def update_article(id_article: str, data: ArticleCreate):
+    now = datetime.utcnow()
+
+    row = [{
+        "ID_ARTICLE": id_article,
+        "TITRE": data.titre,
+        "EXCERPT": data.excerpt,
+        "CONTENU_HTML": data.contenu_html,
+        "VISUEL_URL": data.visuel_url,
+        "AUTEUR": data.auteur,
+        "UPDATED_AT": now,
+        "IS_FEATURED": data.is_featured,
+        "FEATURED_ORDER": data.featured_order,
+    }]
+
+    # Update article (MERGE)
+    client = get_bigquery_client()
+    table = TABLE_ARTICLE
+
+    errors = client.insert_rows_json(table, row)
+    if errors:
+        raise RuntimeError(f"BigQuery update failed: {errors}")
+
+    # Delete & reinsert axes, companies, persons
+    client.query(
+        f"DELETE FROM `{TABLE_AXE}` WHERE ID_ARTICLE = @id",
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_article)]
+        )
+    ).result()
+
+    client.query(
+        f"DELETE FROM `{TABLE_COMPANY}` WHERE ID_ARTICLE = @id",
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_article)]
+        )
+    ).result()
+
+    client.query(
+        f"DELETE FROM `{TABLE_PERSON}` WHERE ID_ARTICLE = @id",
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_article)]
+        )
+    ).result()
+
+    # Insert new metadata
+    if data.axes:
+        insert_bq(TABLE_AXE, [
+            {"ID_ARTICLE": id_article, "AXE_TYPE": a.type, "AXE_VALUE": a.value}
+            for a in data.axes
+        ])
+
+    if data.companies:
+        insert_bq(TABLE_COMPANY, [
+            {"ID_ARTICLE": id_article, "ID_COMPANY": cid}
+            for cid in data.companies
+        ])
+
+    if data.persons:
+        insert_bq(TABLE_PERSON, [
+            {"ID_ARTICLE": id_article, "ID_PERSON": p.id_person, "ROLE": p.role}
+            for p in data.persons
+        ])
+
+    return True
+
