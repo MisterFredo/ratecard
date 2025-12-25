@@ -1,12 +1,10 @@
-# backend/api/articles/models.py
-
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
 
 class AxeItem(BaseModel):
-    type: str = Field(..., regex="^(TOPIC|COMPANY|PRODUCT)$")
+    type: str = Field(..., pattern="^(TOPIC|COMPANY|PRODUCT)$")
     value: str
 
 
