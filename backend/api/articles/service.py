@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import List
 from backend.config import BQ_PROJECT, BQ_DATASET
 from backend.utils.bigquery_utils import query_bq, insert_bq
-from backend.api.articles.models import ArticleCreate, AxeItem, ArticlePersonItem
+from backend.api.articles.models import ArticleCreate
 
 TABLE_ARTICLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE"
 TABLE_AXE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE_AXE"
@@ -13,21 +13,13 @@ TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE_COMPANY"
 TABLE_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE_PERSON"
 
 
-# -----------------------------------------------------
-# CREATE ARTICLE
-# -----------------------------------------------------
-
 def create_article(data: ArticleCreate) -> str:
     article_id = str(uuid.uuid4())
     now = datetime.utcnow()
 
-    # -------------------------------------------------
-    # 1) fallback visuel si companies associées
-    # -------------------------------------------------
+    # Fallback visuel si nécessaire
     visuel_final = data.visuel_url
-
     if not visuel_final and data.companies:
-        # récupérer LOGO_URL du premier partenaire
         sql = f"""
             SELECT LOGO_URL
             FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY`
@@ -38,9 +30,7 @@ def create_article(data: ArticleCreate) -> str:
         if rows and rows[0].get("LOGO_URL"):
             visuel_final = rows[0]["LOGO_URL"]
 
-    # -------------------------------------------------
-    # 2) Insert Article
-    # -------------------------------------------------
+    # Insert article
     row = [{
         "ID_ARTICLE": article_id,
         "TITRE": data.titre,
@@ -54,63 +44,35 @@ def create_article(data: ArticleCreate) -> str:
         "IS_FEATURED": data.is_featured,
         "FEATURED_ORDER": data.featured_order,
     }]
-
     insert_bq(TABLE_ARTICLE, row)
 
-    # -------------------------------------------------
-    # 3) Insert AXES
-    # -------------------------------------------------
+    # Insert axes
     rows_axes = [
-        {
-            "ID_ARTICLE": article_id,
-            "AXE_TYPE": axe.type,
-            "AXE_VALUE": axe.value
-        }
+        {"ID_ARTICLE": article_id, "AXE_TYPE": axe.type, "AXE_VALUE": axe.value}
         for axe in data.axes
     ]
-
     if rows_axes:
         insert_bq(TABLE_AXE, rows_axes)
 
-    # -------------------------------------------------
-    # 4) Insert COMPANIES associations
-    # -------------------------------------------------
-    rows_companies = [
-        {"ID_ARTICLE": article_id, "ID_COMPANY": comp_id}
-        for comp_id in data.companies
-    ]
+    # Insert companies
+    rows_comp = [{"ID_ARTICLE": article_id, "ID_COMPANY": cid} for cid in data.companies]
+    if rows_comp:
+        insert_bq(TABLE_COMPANY, rows_comp)
 
-    if rows_companies:
-        insert_bq(TABLE_COMPANY, rows_companies)
-
-    # -------------------------------------------------
-    # 5) Insert PERSON associations
-    # -------------------------------------------------
-    rows_persons = [
-        {
-            "ID_ARTICLE": article_id,
-            "ID_PERSON": p.id_person,
-            "ROLE": p.role
-        }
+    # Insert persons
+    rows_person = [
+        {"ID_ARTICLE": article_id, "ID_PERSON": p.id_person, "ROLE": p.role}
         for p in data.persons
     ]
-
-    if rows_persons:
-        insert_bq(TABLE_PERSON, rows_persons)
+    if rows_person:
+        insert_bq(TABLE_PERSON, rows_person)
 
     return article_id
 
 
-# -----------------------------------------------------
-# GET ARTICLE
-# -----------------------------------------------------
-
 def get_article(article_id: str) -> dict:
     sql = f"""
-        SELECT *
-        FROM `{TABLE_ARTICLE}`
-        WHERE ID_ARTICLE = @id
-        LIMIT 1
+        SELECT * FROM `{TABLE_ARTICLE}` WHERE ID_ARTICLE = @id LIMIT 1
     """
     rows = query_bq(sql, {"id": article_id})
     if not rows:
@@ -118,35 +80,26 @@ def get_article(article_id: str) -> dict:
     article = rows[0]
 
     # axes
-    sql = f"""
-        SELECT AXE_TYPE, AXE_VALUE
-        FROM `{TABLE_AXE}`
-        WHERE ID_ARTICLE = @id
-    """
-    article["axes"] = query_bq(sql, {"id": article_id})
+    article["axes"] = query_bq(
+        f"SELECT AXE_TYPE, AXE_VALUE FROM `{TABLE_AXE}` WHERE ID_ARTICLE = @id",
+        {"id": article_id},
+    )
 
     # companies
-    sql = f"""
-        SELECT ID_COMPANY
-        FROM `{TABLE_COMPANY}`
-        WHERE ID_ARTICLE = @id
-    """
-    article["companies"] = [r["ID_COMPANY"] for r in query_bq(sql, {"id": article_id})]
+    comps = query_bq(
+        f"SELECT ID_COMPANY FROM `{TABLE_COMPANY}` WHERE ID_ARTICLE = @id",
+        {"id": article_id},
+    )
+    article["companies"] = [c["ID_COMPANY"] for c in comps]
 
     # persons
-    sql = f"""
-        SELECT ID_PERSON, ROLE
-        FROM `{TABLE_PERSON}`
-        WHERE ID_ARTICLE = @id
-    """
-    article["persons"] = query_bq(sql, {"id": article_id})
+    article["persons"] = query_bq(
+        f"SELECT ID_PERSON, ROLE FROM `{TABLE_PERSON}` WHERE ID_ARTICLE = @id",
+        {"id": article_id},
+    )
 
     return article
 
-
-# -----------------------------------------------------
-# LIST ARTICLES
-# -----------------------------------------------------
 
 def list_articles(limit=50) -> List[dict]:
     sql = f"""
