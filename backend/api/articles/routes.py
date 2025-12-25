@@ -6,7 +6,6 @@ from backend.api.articles.service import create_article, list_articles, get_arti
 
 router = APIRouter()
 
-
 @router.post("/create")
 def create(data: ArticleCreate):
     try:
