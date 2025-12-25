@@ -1,8 +1,9 @@
 # backend/api/articles/routes.py
 
 from fastapi import APIRouter, HTTPException
-from backend.api.articles.models import ArticleCreate
-from backend.api.articles.service import create_article, list_articles, get_article
+
+from api.articles.models import ArticleCreate
+from api.articles.service import create_article, list_articles, get_article
 
 router = APIRouter()
 
@@ -14,7 +15,6 @@ def create(data: ArticleCreate):
     except Exception as e:
         raise HTTPException(400, f"Erreur lors de la création : {e}")
 
-
 @router.get("/list")
 def list_all(limit: int = 50):
     try:
@@ -22,7 +22,6 @@ def list_all(limit: int = 50):
         return {"status": "ok", "articles": rows}
     except Exception as e:
         raise HTTPException(400, f"Erreur liste : {e}")
-
 
 @router.get("/{id_article}")
 def get_one(id_article: str):
