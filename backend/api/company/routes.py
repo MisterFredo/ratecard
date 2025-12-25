@@ -24,7 +24,8 @@ def create(data: CompanyCreate):
 @router.get("/list")
 def list_all():
     try:
-        return {"status": "ok", "companies": list_companies()}
+        companies = list_companies()
+        return {"status": "ok", "companies": companies}
     except Exception as e:
         raise HTTPException(400, f"Erreur liste clients : {e}")
 
