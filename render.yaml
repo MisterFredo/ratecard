@@ -1,0 +1,42 @@
+# ==============================================================
+# 🌍 Render Deployment — Ratecard (Backend + future Frontend)
+# ==============================================================
+
+services:
+  # ------------------------------------------------------------
+  # 🚀 Backend Ratecard — FastAPI (Python)
+  # ------------------------------------------------------------
+  - name: ratecard-backend
+    type: web
+    env: python
+    rootDir: backend
+    plan: starter        # ou basic selon besoins
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port 10000
+
+    envVars:
+      - key: GOOGLE_CREDENTIALS_FILE
+        value: /etc/secrets/bq.json
+      - key: BQ_PROJECT
+        value: adex-5555
+      - key: BQ_DATASET
+        value: RATECARD
+      - key: ENV
+        value: production
+
+    secretFiles:
+      - name: bq.json
+        mountPath: /etc/secrets/bq.json
+
+  # ------------------------------------------------------------
+  # 🌐 Frontend Ratecard — Next.js (à activer plus tard)
+  # ------------------------------------------------------------
+  # - name: ratecard-frontend
+  #   type: web
+  #   env: node
+  #   rootDir: frontend
+  #   buildCommand: npm install && npm run build
+  #   startCommand: npm start
+  #   envVars:
+  #     - key: NEXT_PUBLIC_API_URL
+  #       value: https://ratecard-backend.onrender.com/api
