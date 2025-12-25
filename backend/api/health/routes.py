@@ -1,5 +1,3 @@
-# backend/api/health/routes.py
-
 from fastapi import APIRouter
 
 router = APIRouter()
