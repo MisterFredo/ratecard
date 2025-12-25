@@ -30,3 +30,15 @@ def get_one(id_article: str):
     if not a:
         raise HTTPException(404, "Article introuvable")
     return {"status": "ok", "article": a}
+
+@router.put("/update/{id_article}")
+def update_article_route(id_article: str, payload: ArticleCreate):
+    """
+    Met à jour un article existant.
+    """
+    try:
+        updated = update_article(id_article, payload)
+        return {"status": "ok", "updated": updated}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur mise à jour article : {e}")
+
