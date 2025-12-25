@@ -54,3 +54,17 @@ include_router("api.health", "/api/health", "HEALTH")
 include_router("api.articles", "/api/articles", "ARTICLES")
 include_router("api.company", "/api/company", "COMPANY")
 include_router("api.person", "/api/person", "PERSON")
+
+# ============================================================
+# Debug route to list all available routes (ADEX style)
+# ============================================================
+@app.get("/__routes")
+def list_routes():
+    routes = []
+    for r in app.router.routes:
+        routes.append({
+            "path": r.path,
+            "name": r.name,
+            "methods": list(r.methods or [])
+        })
+    return {"routes": routes}
