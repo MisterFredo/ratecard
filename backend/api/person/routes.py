@@ -25,7 +25,8 @@ def create(data: PersonCreate):
 @router.get("/list")
 def list_all():
     try:
-        return {"status": "ok", "persons": list_persons()}
+        persons = list_persons()
+        return {"status": "ok", "persons": persons}
     except Exception as e:
         raise HTTPException(400, f"Erreur liste personnes : {e}")
 
@@ -33,9 +34,10 @@ def list_all():
 @router.get("/company/{id_company}")
 def by_company(id_company: str):
     try:
-        return {"status": "ok", "persons": list_persons_by_company(id_company)}
+        persons = list_persons_by_company(id_company)
+        return {"status": "ok", "persons": persons}
     except Exception as e:
-        raise HTTPException(400, f"Erreur liste pour la société : {e}")
+        raise HTTPException(400, f"Erreur récupération personnes société : {e}")
 
 
 @router.get("/{id_person}")
