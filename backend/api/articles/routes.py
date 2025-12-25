@@ -3,9 +3,14 @@
 from fastapi import APIRouter, HTTPException
 
 from api.articles.models import ArticleCreate
-from api.articles.service import create_article, list_articles, get_article
+from core.articles.service import (
+    create_article,
+    list_articles,
+    get_article
+)
 
 router = APIRouter()
+
 
 @router.post("/create")
 def create(data: ArticleCreate):
@@ -13,7 +18,8 @@ def create(data: ArticleCreate):
         article_id = create_article(data)
         return {"status": "ok", "id_article": article_id}
     except Exception as e:
-        raise HTTPException(400, f"Erreur lors de la création : {e}")
+        raise HTTPException(400, f"Erreur création article : {e}")
+
 
 @router.get("/list")
 def list_all(limit: int = 50):
@@ -21,7 +27,8 @@ def list_all(limit: int = 50):
         rows = list_articles(limit)
         return {"status": "ok", "articles": rows}
     except Exception as e:
-        raise HTTPException(400, f"Erreur liste : {e}")
+        raise HTTPException(400, f"Erreur liste articles : {e}")
+
 
 @router.get("/{id_article}")
 def get_one(id_article: str):
