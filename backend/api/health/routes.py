@@ -8,5 +8,6 @@ router = APIRouter()
 def health():
     return {
         "status": "ok",
+        "service": "ratecard-backend",
         "message": "Ratecard backend running"
     }
