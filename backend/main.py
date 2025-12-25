@@ -57,6 +57,7 @@ include_router("api.health", "/api/health", "HEALTH")
 include_router("api.articles", "/api/articles", "ARTICLES")
 include_router("api.company", "/api/company", "COMPANY")
 include_router("api.person", "/api/person", "PERSON")
+include_router("api.axes", "/api/axes", "AXES")             # ← AJOUT ICI
 include_router("api.lab_light", "/api/lab-light", "LAB-LIGHT")
 
 
@@ -74,6 +75,7 @@ def root():
             "articles": "/api/articles/",
             "company": "/api/company/",
             "person": "/api/person/",
+            "axes": "/api/axes/",
             "lab_light": "/api/lab-light/transform"
         }
     }
@@ -92,4 +94,5 @@ def list_routes():
             "methods": list(r.methods or [])
         })
     return {"routes": routes}
+
 
