@@ -1,7 +1,7 @@
 // frontend/app/admin/layout.tsx
 
 import Link from "next/link";
-import "../globals.css";
+import "./globals.css";
 
 export const metadata = {
   title: "Ratecard Admin",
@@ -10,8 +10,8 @@ export const metadata = {
 export default function AdminLayout({ children }) {
   return (
     <div className="min-h-screen flex">
-      
-      {/* Sidebar Left */}
+
+      {/* SIDEBAR */}
       <aside className="w-64 bg-gray-900 text-white p-6 space-y-4">
         <h2 className="text-xl font-semibold">Ratecard Admin</h2>
 
@@ -25,11 +25,16 @@ export default function AdminLayout({ children }) {
           <Link href="/admin/person" className="block hover:text-gray-200">
             Intervenants
           </Link>
+          <Link href="/admin/axes" className="block hover:text-gray-200">
+            Axes éditoriaux
+          </Link>
         </nav>
       </aside>
 
-      {/* Content */}
-      <main className="flex-1 p-8">{children}</main>
+      {/* CONTENT WRAPPER */}
+      <main className="flex-1 p-10">
+        {children}
+      </main>
     </div>
   );
 }
