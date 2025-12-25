@@ -36,3 +36,13 @@ def get_one(id_company: str):
     if not company:
         raise HTTPException(404, "Client introuvable")
     return {"status": "ok", "company": company}
+
+@router.put("/update/{id_company}")
+def update_company(id_company: str, data: CompanyCreate):
+    from core.company.service import update_company
+    try:
+        result = update_company(id_company, data)
+        return {"status": "ok", "updated": result}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur mise à jour société : {e}")
+
