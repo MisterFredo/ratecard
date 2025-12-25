@@ -48,3 +48,24 @@ def get_company(company_id: str):
     """
     rows = query_bq(sql, {"id": company_id})
     return rows[0] if rows else None
+
+def update_company(id_company: str, data: CompanyCreate):
+    now = datetime.utcnow()
+
+    row = [{
+        "ID_COMPANY": id_company,
+        "NAME": data.name,
+        "LOGO_URL": data.logo_url,
+        "LOGO_SQUARE_URL": data.logo_square_url,
+        "LINKEDIN_URL": data.linkedin_url,
+        "DESCRIPTION": data.description,
+        "UPDATED_AT": now,
+    }]
+
+    client = get_bigquery_client()
+    errors = client.insert_rows_json(TABLE_COMPANY, row)
+    if errors:
+        raise RuntimeError(errors)
+
+    return True
+
