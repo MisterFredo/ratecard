@@ -1,8 +1,13 @@
 # backend/api/company/routes.py
 
 from fastapi import APIRouter, HTTPException
-from backend.api.company.models import CompanyCreate
-from backend.api.company.service import create_company, list_companies, get_company
+
+from api.company.models import CompanyCreate
+from core.company.service import (
+    create_company,
+    list_companies,
+    get_company
+)
 
 router = APIRouter()
 
@@ -19,8 +24,7 @@ def create(data: CompanyCreate):
 @router.get("/list")
 def list_all():
     try:
-        companies = list_companies()
-        return {"status": "ok", "companies": companies}
+        return {"status": "ok", "companies": list_companies()}
     except Exception as e:
         raise HTTPException(400, f"Erreur liste clients : {e}")
 
