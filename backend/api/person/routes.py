@@ -1,8 +1,9 @@
 # backend/api/person/routes.py
 
 from fastapi import APIRouter, HTTPException
-from backend.api.person.models import PersonCreate
-from backend.api.person.service import (
+
+from api.person.models import PersonCreate
+from core.person.service import (
     create_person,
     list_persons,
     list_persons_by_company,
@@ -24,19 +25,17 @@ def create(data: PersonCreate):
 @router.get("/list")
 def list_all():
     try:
-        persons = list_persons()
-        return {"status": "ok", "persons": persons}
+        return {"status": "ok", "persons": list_persons()}
     except Exception as e:
         raise HTTPException(400, f"Erreur liste personnes : {e}")
 
 
 @router.get("/company/{id_company}")
-def list_for_company(id_company: str):
+def by_company(id_company: str):
     try:
-        persons = list_persons_by_company(id_company)
-        return {"status": "ok", "persons": persons}
+        return {"status": "ok", "persons": list_persons_by_company(id_company)}
     except Exception as e:
-        raise HTTPException(400, f"Erreur liste par société : {e}")
+        raise HTTPException(400, f"Erreur liste pour la société : {e}")
 
 
 @router.get("/{id_person}")
