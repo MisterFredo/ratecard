@@ -1,50 +1,73 @@
-// frontend/components/admin/AxesEditor.tsx
-
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 
 export default function AxesEditor({ values, onChange }) {
   const [input, setInput] = useState("");
+  const [axes, setAxes] = useState([]);
+  const [filtered, setFiltered] = useState([]);
 
-  function addTag() {
-    if (!input.trim()) return;
-    onChange([...values, input.trim()]);
+  useEffect(() => {
+    api.get("/axes/list").then((res) => {
+      setAxes(res.axes || []);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!input.trim()) {
+      setFiltered([]);
+      return;
+    }
+    const l = input.toLowerCase();
+    setFiltered(axes.filter((a) => a.LABEL.toLowerCase().includes(l)));
+  }, [input, axes]);
+
+  function addLabel(label: string) {
+    if (!label.trim() || values.includes(label)) return;
+    onChange([...values, label]);
     setInput("");
-  }
-
-  function removeTag(tag: string) {
-    onChange(values.filter(t => t !== tag));
+    setFiltered([]);
   }
 
   return (
     <div className="space-y-2">
-      <label className="font-medium">Axes (topics / company tags / product)</label>
+      <label className="font-medium">Axes</label>
 
-      <div className="flex space-x-2">
-        <input
-          className="border p-2 flex-1"
-          placeholder="Ajouter un axe..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <button
-          onClick={addTag}
-          className="bg-black text-white px-4 py-2 rounded"
-        >
-          Ajouter
-        </button>
-      </div>
+      {/* Input */}
+      <input
+        className="border p-2 w-full"
+        placeholder="Ajouter un axe…"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+      />
 
-      <div className="flex flex-wrap gap-2 mt-2">
-        {values.map((tag) => (
+      {/* Suggestions */}
+      {filtered.length > 0 && (
+        <div className="border p-2 bg-white rounded shadow">
+          {filtered.map((f) => (
+            <div
+              key={f.ID_AXE}
+              className="p-2 hover:bg-gray-100 cursor-pointer"
+              onClick={() => addLabel(f.LABEL)}
+            >
+              {f.LABEL}
+              <span className="text-gray-500 text-xs ml-2">({f.TYPE})</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Selected tags */}
+      <div className="flex flex-wrap gap-2">
+        {values.map((label) => (
           <span
-            key={tag}
-            className="bg-gray-200 px-2 py-1 rounded text-sm flex items-center space-x-1"
+            key={label}
+            className="bg-gray-200 px-2 py-1 rounded text-sm flex items-center gap-1"
           >
-            <span>{tag}</span>
+            {label}
             <button
-              onClick={() => removeTag(tag)}
+              onClick={() => onChange(values.filter((v) => v !== label))}
               className="text-red-600 font-bold"
             >
               ×
