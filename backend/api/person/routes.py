@@ -46,3 +46,13 @@ def get_one(id_person: str):
     if not person:
         raise HTTPException(404, "Personne introuvable")
     return {"status": "ok", "person": person}
+
+@router.put("/update/{id_person}")
+def update_person_route(id_person: str, payload: PersonCreate):
+    from core.person.service import update_person
+    try:
+        result = update_person(id_person, payload)
+        return {"status": "ok", "updated": result}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur mise à jour personne : {e}")
+
