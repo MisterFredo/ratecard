@@ -1,7 +1,5 @@
-# backend/api/articles/__init__.py
-
 from fastapi import APIRouter
-from backend.api.articles.routes import router as article_routes
+from .routes import router as articles_routes
 
-router = APIRouter(tags=["Articles"])
-router.include_router(article_routes)
+router = APIRouter()
+router.include_router(articles_routes)
