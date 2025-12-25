@@ -1,17 +1,40 @@
-// frontend/app/layout.tsx
-import "./globals.css";
+// frontend/app/admin/layout.tsx
+
+import Link from "next/link";
+import "../globals.css";
 
 export const metadata = {
-  title: "Ratecard",
-  description: "Ratecard — articles, insights et nouveautés du marché adtech",
+  title: "Ratecard Admin",
 };
 
-export default function RootLayout({ children }) {
+export default function AdminLayout({ children }) {
   return (
-    <html lang="fr">
-      <body className="bg-gray-50 text-gray-900">
+    <div className="min-h-screen flex">
+
+      {/* SIDEBAR */}
+      <aside className="w-64 bg-gray-900 text-white p-6 space-y-4">
+        <h2 className="text-xl font-semibold">Ratecard Admin</h2>
+
+        <nav className="space-y-2">
+          <Link href="/admin/articles" className="block hover:text-gray-200">
+            Articles
+          </Link>
+          <Link href="/admin/company" className="block hover:text-gray-200">
+            Sociétés
+          </Link>
+          <Link href="/admin/person" className="block hover:text-gray-200">
+            Intervenants
+          </Link>
+          <Link href="/admin/axes" className="block hover:text-gray-200">
+            Axes éditoriaux
+          </Link>
+        </nav>
+      </aside>
+
+      {/* CONTENT WRAPPER */}
+      <main className="flex-1 p-10">
         {children}
-      </body>
-    </html>
+      </main>
+    </div>
   );
 }
