@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import CompanySelector from "@/components/admin/CompanySelector";
 import PersonSelector from "@/components/admin/PersonSelector";
 import AxesEditor from "@/components/admin/AxesEditor";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 
 export default function CreateArticlePage() {
   const [activeTab, setActiveTab] = useState<"scratch" | "source">("scratch");
@@ -22,7 +23,7 @@ export default function CreateArticlePage() {
 
   const [selectedCompany, setSelectedCompany] = useState("");
   const [selectedPersons, setSelectedPersons] = useState<any[]>([]);
-  const [axes, setAxes] = useState<any[]>([]); // now objects: {TYPE, LABEL}
+  const [axes, setAxes] = useState<any[]>([]); // format: { TYPE, LABEL, ID_AXE? }
 
   const [visuelUrl, setVisuelUrl] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
@@ -43,6 +44,7 @@ export default function CreateArticlePage() {
   // ----------------------------------
   const [publishing, setPublishing] = useState(false);
   const [publishResult, setPublishResult] = useState<any>(null);
+
 
 
   // ============================================================
@@ -68,6 +70,7 @@ export default function CreateArticlePage() {
   }
 
 
+
   // ============================================================
   //   PUBLICATION ARTICLE COMPLET
   // ============================================================
@@ -84,16 +87,13 @@ export default function CreateArticlePage() {
       is_featured: isFeatured,
       featured_order: featuredOrder || null,
 
-      // AXES : conversion vers backend
       axes: axes.map((a) => ({
         type: a.TYPE,
         value: a.LABEL
       })),
 
-      // 1 société max V1
       companies: selectedCompany ? [selectedCompany] : [],
 
-      // personnes multi
       persons: selectedPersons.map((id) => ({
         id_person: id,
         role: null
@@ -143,12 +143,11 @@ export default function CreateArticlePage() {
 
 
       {/* ================================================================= */}
-      {/*                        ONGLET : FROM SCRATCH                     */}
+      {/*                       ONGLET : FROM SCRATCH                      */}
       {/* ================================================================= */}
       {activeTab === "scratch" && (
         <div className="space-y-6">
 
-          {/* TITRE */}
           <input
             placeholder="Titre"
             value={title}
@@ -156,7 +155,6 @@ export default function CreateArticlePage() {
             className="border p-2 w-full"
           />
 
-          {/* EXCERPT */}
           <textarea
             placeholder="Résumé"
             value={excerpt}
@@ -164,33 +162,22 @@ export default function CreateArticlePage() {
             className="border p-2 w-full h-24"
           />
 
-          {/* HTML */}
-          <textarea
-            placeholder="Contenu HTML"
-            value={contentHtml}
-            onChange={(e) => setContentHtml(e.target.value)}
-            className="border p-2 w-full h-96 font-mono"
-          />
+          {/* HTML EDITOR */}
+          <div>
+            <label className="font-medium">Contenu HTML</label>
+            <HtmlEditor value={contentHtml} onChange={setContentHtml} />
+          </div>
 
 
           {/* COMPANY */}
-          <CompanySelector
-            value={selectedCompany}
-            onChange={setSelectedCompany}
-          />
+          <CompanySelector value={selectedCompany} onChange={setSelectedCompany} />
 
           {/* PERSONS */}
-          <PersonSelector
-            values={selectedPersons}
-            onChange={setSelectedPersons}
-          />
+          <PersonSelector values={selectedPersons} onChange={setSelectedPersons} />
 
+          {/* AXES */}
+          <AxesEditor values={axes} onChange={setAxes} />
 
-          {/* AXES MANAGER */}
-          <AxesEditor
-            values={axes}
-            onChange={setAxes}
-          />
 
           {/* VISUEL */}
           <input
@@ -222,8 +209,6 @@ export default function CreateArticlePage() {
             />
           )}
 
-
-          {/* PUBLISH BUTTON */}
           <button
             onClick={publishArticle}
             disabled={publishing}
@@ -245,12 +230,11 @@ export default function CreateArticlePage() {
 
 
       {/* ================================================================= */}
-      {/*                  ONGLET : TRANSFORMER UNE SOURCE                  */}
+      {/*                ONGLET : TRANSFORMER UNE SOURCE                   */}
       {/* ================================================================= */}
       {activeTab === "source" && (
         <div className="space-y-6">
 
-          {/* TYPE DE SOURCE */}
           <select
             value={sourceType}
             onChange={(e) => setSourceType(e.target.value)}
@@ -263,7 +247,6 @@ export default function CreateArticlePage() {
             <option value="OTHER">Autre</option>
           </select>
 
-          {/* AUTEUR */}
           <input
             placeholder="Auteur (optionnel)"
             value={author}
@@ -271,7 +254,6 @@ export default function CreateArticlePage() {
             className="border p-2 w-full"
           />
 
-          {/* SOURCE BRUTE */}
           <textarea
             placeholder="Collez ici la source brute…"
             value={sourceText}
@@ -279,8 +261,6 @@ export default function CreateArticlePage() {
             className="border p-2 w-full h-60"
           />
 
-
-          {/* CALL LAB LIGHT */}
           <button
             onClick={generateDraft}
             disabled={loadingDraft}
@@ -293,41 +273,31 @@ export default function CreateArticlePage() {
           {/* PREVIEW DRAFT */}
           {draft && (
             <div className="mt-6 bg-gray-50 border p-4 rounded space-y-4">
+
               <h2 className="text-xl font-semibold">Preview Draft</h2>
 
-              {/* TITRE */}
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="border p-2 w-full font-semibold"
               />
 
-              {/* EXCERPT */}
               <textarea
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.target.value)}
                 className="border p-2 w-full h-24"
               />
 
-              {/* HTML */}
-              <textarea
-                value={contentHtml}
-                onChange={(e) => setContentHtml(e.target.value)}
-                className="border p-2 w-full h-96 font-mono"
-              />
+              {/* HTML via TipTap */}
+              <HtmlEditor value={contentHtml} onChange={setContentHtml} />
 
 
-              {/* COMPANY */}
               <CompanySelector value={selectedCompany} onChange={setSelectedCompany} />
 
-              {/* PERSONS */}
               <PersonSelector values={selectedPersons} onChange={setSelectedPersons} />
 
-              {/* AXES */}
               <AxesEditor values={axes} onChange={setAxes} />
 
-
-              {/* VISUEL */}
               <input
                 placeholder="Visuel (URL)"
                 value={visuelUrl}
@@ -335,8 +305,6 @@ export default function CreateArticlePage() {
                 className="border p-2 w-full"
               />
 
-
-              {/* FEATURED */}
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
@@ -357,8 +325,6 @@ export default function CreateArticlePage() {
                 />
               )}
 
-
-              {/* PUBLISH */}
               <button
                 onClick={publishArticle}
                 disabled={publishing}
@@ -366,6 +332,7 @@ export default function CreateArticlePage() {
               >
                 Publier l’article
               </button>
+
             </div>
           )}
 
@@ -374,3 +341,4 @@ export default function CreateArticlePage() {
     </div>
   );
 }
+
