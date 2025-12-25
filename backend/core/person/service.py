@@ -3,8 +3,8 @@
 import uuid
 from datetime import datetime
 
-from backend.config import BQ_PROJECT, BQ_DATASET
-from backend.utils.bigquery_utils import query_bq, insert_bq
+from config import BQ_PROJECT, BQ_DATASET
+from utils.bigquery_utils import query_bq, insert_bq
 from api.person.models import PersonCreate
 
 
