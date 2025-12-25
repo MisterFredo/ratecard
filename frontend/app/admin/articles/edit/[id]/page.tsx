@@ -1,5 +1,3 @@
-// frontend/app/admin/articles/edit/[id]/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,6 +7,7 @@ import { api } from "@/lib/api";
 import CompanySelector from "@/components/admin/CompanySelector";
 import PersonSelector from "@/components/admin/PersonSelector";
 import AxesEditor from "@/components/admin/AxesEditor";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 
 export default function EditArticlePage({ params }) {
   const { id } = params;
@@ -21,7 +20,7 @@ export default function EditArticlePage({ params }) {
 
   const [selectedCompany, setSelectedCompany] = useState("");
   const [selectedPersons, setSelectedPersons] = useState<any[]>([]);
-  const [axes, setAxes] = useState<any[]>([]);
+  const [axes, setAxes] = useState<any[]>([]); // {TYPE, LABEL}
 
   const [visuelUrl, setVisuelUrl] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
@@ -32,7 +31,7 @@ export default function EditArticlePage({ params }) {
 
 
   // ============================================================
-  //  LOAD ARTICLE
+  //   LOAD ARTICLE
   // ============================================================
   useEffect(() => {
     async function load() {
@@ -50,17 +49,17 @@ export default function EditArticlePage({ params }) {
         setIsFeatured(a.IS_FEATURED || false);
         setFeaturedOrder(a.FEATURED_ORDER || undefined);
 
-        // COMPANY
+        // Company (1 seule en V1)
         if (a.companies && a.companies.length > 0) {
           setSelectedCompany(a.companies[0]);
         }
 
-        // PERSONS
+        // Persons (multi)
         if (a.persons) {
           setSelectedPersons(a.persons.map((p) => p.ID_PERSON));
         }
 
-        // AXES (mapping objects)
+        // AXES (conversion backend → front)
         if (a.axes) {
           setAxes(
             a.axes.map((ax) => ({
@@ -135,6 +134,7 @@ export default function EditArticlePage({ params }) {
         className="border p-2 w-full"
       />
 
+
       {/* EXCERPT */}
       <textarea
         value={excerpt}
@@ -142,19 +142,20 @@ export default function EditArticlePage({ params }) {
         className="border p-2 w-full h-24"
       />
 
-      {/* HTML */}
-      <textarea
-        value={contentHtml}
-        onChange={(e) => setContentHtml(e.target.value)}
-        className="border p-2 w-full h-96 font-mono"
-      />
+
+      {/* HTML EDITOR (TipTap) */}
+      <div>
+        <label className="font-medium">Contenu HTML</label>
+        <HtmlEditor value={contentHtml} onChange={setContentHtml} />
+      </div>
 
 
       {/* COMPANY */}
       <CompanySelector value={selectedCompany} onChange={setSelectedCompany} />
 
-      {/* PERSON */}
+      {/* PERSONS */}
       <PersonSelector values={selectedPersons} onChange={setSelectedPersons} />
+
 
       {/* AXES */}
       <AxesEditor values={axes} onChange={setAxes} />
@@ -191,6 +192,7 @@ export default function EditArticlePage({ params }) {
       )}
 
 
+      {/* SAVE BUTTON */}
       <button
         onClick={saveArticle}
         disabled={saving}
@@ -201,7 +203,7 @@ export default function EditArticlePage({ params }) {
 
 
       {saveResult && (
-        <pre className="bg-gray-100 p-4 mt-4 rounded">
+        <pre className="bg-gray-100 p-4 rounded">
           {JSON.stringify(saveResult, null, 2)}
         </pre>
       )}
