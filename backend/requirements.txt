@@ -1,0 +1,18 @@
+# --- Core API ---
+fastapi==0.115.5
+uvicorn==0.32.1
+
+# --- BigQuery ---
+google-cloud-bigquery==3.25.0
+google-auth==2.35.0
+google-auth-oauthlib==1.2.1
+
+# --- HTTP requests ---
+requests==2.32.3
+
+# --- Data / validation ---
+pydantic==2.9.2
+python-multipart==0.0.9
+
+# --- HTML templates (newsletter / pdf futur) ---
+jinja2==3.1.4
