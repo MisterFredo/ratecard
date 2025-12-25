@@ -7,39 +7,53 @@ import importlib
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Add backend directory to Python path so "api.xxx" works
+
+# ============================================================
+# 🔧 PREPARE PYTHONPATH (ADEX-STYLE)
+# ============================================================
+# Add backend/ directory to sys.path so "api.xxx" and "core.xxx" import cleanly
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
+
+# ============================================================
+# 🚀 FASTAPI APP
+# ============================================================
 app = FastAPI(
     title="Ratecard Backend",
+    description="Ratecard backend API — Articles, Companies, Persons",
     version="1.0.0",
-    description="Ratecard backend API"
 )
 
-# -------------------------------------------------------
-# CORS
-# -------------------------------------------------------
+
+# ============================================================
+# 🌐 CORS
+# ============================================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],   # replace later with your FE domain
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# -------------------------------------------------------
-# Dynamic router loader (ADEX-like pattern)
-# -------------------------------------------------------
 
-def include_router(module_path: str, prefix: str):
+# ============================================================
+# 🔗 ROUTER LOADER (ADEX-STYLE)
+# ============================================================
+def include_router(module_path: str, prefix: str, tag: str):
+    """
+    Dynamically load module api.<module> and include its router.
+    Exactly like ADEX backend V3, but simplified.
+    """
     module = importlib.import_module(module_path)
     router = getattr(module, "router")
-    app.include_router(router, prefix=prefix)
+    app.include_router(router, prefix=prefix, tags=[tag])
 
-# -------------------------------------------------------
-# Load modules
-# -------------------------------------------------------
-include_router("api.health", "/api/health")
-include_router("api.articles", "/api/articles")
-include_router("api.company", "/api/company")
-include_router("api.person", "/api/person")
+
+# ============================================================
+# 📦 REGISTER MODULE ROUTERS
+# ============================================================
+include_router("api.health",   "/api/health",   "HEALTH")
+include_router("api.articles", "/api/articles", "ARTICLES")
+include_router("api.company",  "/api/company",  "COMPANY")
+include_router("api.person",   "/api/person",   "PERSON")
