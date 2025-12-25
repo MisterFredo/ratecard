@@ -3,57 +3,54 @@
 import os
 import sys
 import importlib
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-
 # ============================================================
-# 🔧 PREPARE PYTHONPATH (ADEX-STYLE)
+# PYTHON PATH FIX (ADEX V3 STYLE)
 # ============================================================
-# Add backend/ directory to sys.path so "api.xxx" and "core.xxx" import cleanly
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))   # /app
 sys.path.insert(0, BASE_DIR)
 
 
 # ============================================================
-# 🚀 FASTAPI APP
+# FASTAPI APP
 # ============================================================
 app = FastAPI(
     title="Ratecard Backend",
-    description="Ratecard backend API — Articles, Companies, Persons",
     version="1.0.0",
+    description="Ratecard backend API"
 )
 
 
 # ============================================================
-# 🌐 CORS
+# CORS
 # ============================================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # replace later with your FE domain
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
 # ============================================================
-# 🔗 ROUTER LOADER (ADEX-STYLE)
+# ADEX-LIKE ROUTER LOADER
 # ============================================================
 def include_router(module_path: str, prefix: str, tag: str):
     """
-    Dynamically load module api.<module> and include its router.
-    Exactly like ADEX backend V3, but simplified.
+    Load a router from an API module.
+    Example: include_router("api.articles", "/api/articles", "ARTICLES")
     """
-    module = importlib.import_module(module_path)
-    router = getattr(module, "router")
+    mod = importlib.import_module(module_path)
+    router = getattr(mod, "router")
     app.include_router(router, prefix=prefix, tags=[tag])
 
 
 # ============================================================
-# 📦 REGISTER MODULE ROUTERS
+# MODULE REGISTRATION
 # ============================================================
-include_router("api.health",   "/api/health",   "HEALTH")
+include_router("api.health", "/api/health", "HEALTH")
 include_router("api.articles", "/api/articles", "ARTICLES")
-include_router("api.company",  "/api/company",  "COMPANY")
-include_router("api.person",   "/api/person",   "PERSON")
+include_router("api.company", "/api/company", "COMPANY")
+include_router("api.person", "/api/person", "PERSON")
