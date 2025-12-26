@@ -12,24 +12,28 @@ export default function MediaGrid({
   items: MediaItem[];
   refresh: () => void;
 }) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [preview, setPreview] = useState<MediaItem | null>(null);
 
-  // Copy URL helper
-  function copy(url: string) {
-    navigator.clipboard.writeText(url);
+  async function copy(url: string) {
+    await navigator.clipboard.writeText(url);
   }
 
-  // Delete helper
   async function deleteItem(item: MediaItem) {
-    if (!confirm("Supprimer ce visuel ?")) return;
+    if (!confirm("Supprimer ce média ?")) return;
 
-    await fetch("/api/media/delete", {
+    const res = await fetch("/api/media/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: item.url }),
     });
 
-    refresh();
+    const json = await res.json();
+
+    if (json.status === "ok") {
+      refresh();
+    } else {
+      alert("Erreur : " + json.message);
+    }
   }
 
   return (
@@ -38,14 +42,14 @@ export default function MediaGrid({
       {items.map((item) => (
         <div
           key={item.id}
-          className="border rounded-lg bg-white shadow-sm p-2 flex flex-col items-center hover:shadow-md transition cursor-pointer"
+          className="border rounded-lg bg-white shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
         >
           {/* IMAGE */}
           <img
             src={item.url}
             alt={item.id}
-            className="w-full h-28 object-contain border bg-gray-50 rounded"
-            onClick={() => setPreviewUrl(item.url)}
+            className="w-full h-28 object-contain border bg-gray-50 rounded cursor-pointer"
+            onClick={() => setPreview(item)}
           />
 
           {/* FILENAME */}
@@ -68,7 +72,7 @@ export default function MediaGrid({
 
             {/* Preview */}
             <button
-              onClick={() => setPreviewUrl(item.url)}
+              onClick={() => setPreview(item)}
               className="text-gray-600 hover:text-ratecard-blue"
               title="Aperçu"
             >
@@ -96,19 +100,21 @@ export default function MediaGrid({
         </div>
       ))}
 
-      {/* DRAWER PREVIEW */}
+      {/* PREVIEW DRAWER */}
       <Drawer
-        open={!!previewUrl}
-        onClose={() => setPreviewUrl(null)}
+        open={!!preview}
+        onClose={() => setPreview(null)}
+        title="Aperçu du média"
+        size="xl"
       >
-        {previewUrl && (
+        {preview && (
           <div className="space-y-4">
             <img
-              src={previewUrl}
-              alt="preview"
-              className="w-full border rounded bg-white"
+              src={preview.url}
+              alt={preview.id}
+              className="w-full max-h-[80vh] object-contain border rounded bg-white"
             />
-            <p className="text-sm text-gray-600 break-all">{previewUrl}</p>
+            <p className="text-sm text-gray-600 break-all">{preview.url}</p>
           </div>
         )}
       </Drawer>
