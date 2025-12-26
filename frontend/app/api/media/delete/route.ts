@@ -3,6 +3,17 @@ import { unlink, stat } from "fs/promises";
 import path from "path";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic"; // Important pour accès FS
+
+// Exemple d’URL reçue : /media/articles/xxxx_rect.jpg
+// On doit convertir en chemin physique : uploads/media/articles/xxxx_rect.jpg
+function resolvePhysicalPath(url: string) {
+  // URL publique -> /media/<folder>/<file>
+  const relative = url.replace("/media/", ""); // "articles/xxx.jpg"
+
+  // Emplacement réel en production :
+  return path.join(process.cwd(), "uploads", "media", relative);
+}
 
 export async function POST(req: Request) {
   try {
@@ -15,44 +26,41 @@ export async function POST(req: Request) {
       );
     }
 
-    // On ne supprime que ce qui est dans /public/media/**
     if (!url.startsWith("/media/")) {
       return NextResponse.json(
-        { status: "error", message: "Chemin fichier invalide" },
+        { status: "error", message: "Chemin invalide" },
         { status: 400 }
       );
     }
 
-    // Résolution du chemin absolu
-    const filePath = path.join(process.cwd(), "public", url.replace("/media/", "media/"));
+    const filePath = resolvePhysicalPath(url);
+    console.log("🗑 SUPPRESSION :", filePath);
 
-    const fileInfo = await stat(filePath).catch(() => null);
+    const info = await stat(filePath).catch(() => null);
 
-    if (!fileInfo) {
+    if (!info) {
       return NextResponse.json(
         { status: "error", message: "Fichier introuvable" },
         { status: 404 }
       );
     }
 
-    // Sécurité : empêcher la suppression d’un dossier
-    if (fileInfo.isDirectory()) {
+    if (info.isDirectory()) {
       return NextResponse.json(
         { status: "error", message: "Impossible de supprimer un dossier" },
         { status: 400 }
       );
     }
 
-    // Suppression du fichier
     await unlink(filePath);
 
     return NextResponse.json({
       status: "ok",
-      deleted: url
+      deleted: url,
     });
 
   } catch (err: any) {
-    console.error("Erreur suppression fichier :", err);
+    console.error("❌ Erreur suppression fichier :", err);
     return NextResponse.json(
       { status: "error", message: err.message },
       { status: 500 }
