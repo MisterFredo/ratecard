@@ -9,9 +9,9 @@ import MediaUploader from "@/components/admin/MediaUploader";
 export default function CreateAxe() {
   const [type, setType] = useState("TOPIC");
   const [label, setLabel] = useState("");
-  
-  const [visuelUrl, setVisuelUrl] = useState("");
-  const [visuelSquareUrl, setVisuelSquareUrl] = useState("");
+
+  const [visuelUrl, setVisuelUrl] = useState("");          // rectangle
+  const [visuelSquareUrl, setVisuelSquareUrl] = useState(""); // carré
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploaderOpen, setUploaderOpen] = useState(false);
@@ -19,10 +19,12 @@ export default function CreateAxe() {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState(null);
 
+  // SAVE AXE
   async function save() {
     if (!label) return alert("Merci de renseigner le label");
 
     setSaving(true);
+
     const res = await api.post("/axes/create", {
       type,
       label,
@@ -113,7 +115,7 @@ export default function CreateAxe() {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="generics"
+        category="generics"  // correct
         onSelect={(url) => {
           if (url.includes("square")) {
             setVisuelSquareUrl(url);
@@ -127,7 +129,7 @@ export default function CreateAxe() {
       {uploaderOpen && (
         <div className="border rounded p-4 bg-white">
           <MediaUploader
-            category="generic"
+            category="generics"  // correction → dossier réel
             onUploadComplete={({ square, rectangle }) => {
               setVisuelSquareUrl(square.url);
               setVisuelUrl(rectangle.url);
@@ -154,4 +156,5 @@ export default function CreateAxe() {
     </div>
   );
 }
+
 
