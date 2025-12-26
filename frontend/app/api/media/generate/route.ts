@@ -1,126 +1,108 @@
+// 👇 Important : force l'utilisation du runtime Node et non Edge
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import path from "path";
-import { createCanvas, loadImage } from "canvas";
-import OpenAI from "openai";
+import sharp from "sharp";  // remplace canvas
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const { title, excerpt, axes, company } = body;
 
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    // ============================================================
+    // 1) Dynamic import -> évite les erreurs "openai not found" au build
+    // ============================================================
+    const OpenAI = (await import("openai")).default;
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    // ------------------------------------------------------------
-    // 1) PROMPT STYLE Ratecard / AdEx
-    // ------------------------------------------------------------
-    const finalPrompt = `
+    // ============================================================
+    // 2) Prompt IA style Ratecard / AdEx
+    // ============================================================
+    const prompt = `
 Tu es un illustrateur professionnel qui dessine dans le style Ratecard / AdEx :
 
-- ligne claire noire, très lisible
-- couleur principale bleu foncé #10323d
+- ligne claire noire très lisible
+- bleu foncé #10323d
 - accents gris et bleu clair
-- dessin simple, épuré, minimaliste
-- un personnage cartoon type gladiateur moderne (mascotte Ratecard / AdEx)
-- posture expressive mais sobre
+- un personnage cartoon gladiateur moderne (mascotte Ratecard / AdEx)
+- style éditorial tech / adtech
 - zéro réalisme, zéro texture
 - fond gris très clair
-- style éditorial "tech / adtech"
-- composition claire avec un seul sujet principal
+- composition simple et épurée
 
-Thème de l’article :
+Détails de l’article :
 Titre : ${title}
 Résumé : ${excerpt}
-Axes éditoriaux : ${axes?.join(", ") || "—"}
-Société concernée : ${company || "—"}
+Axes : ${axes?.join(", ") || "—"}
+Société : ${company || "—"}
 
-Génère une image éditoriale cohérente, SANS TEXTE, adaptée à un article Ratecard.
-
-FORMAT DEMANDÉ : carré 1024x1024.
+Produit une image carrée 1024x1024 SANS TEXTE.
     `;
 
-    // ------------------------------------------------------------
-    // 2) GENERATION VIA OPENAI IMAGES
-    // ------------------------------------------------------------
-    const response = await openai.images.generate({
+    // ============================================================
+    // 3) Génération IA via OpenAI
+    // ============================================================
+    const img = await client.images.generate({
       model: "gpt-image-1",
-      prompt: finalPrompt,
+      prompt,
       size: "1024x1024",
       response_format: "b64_json",
     });
 
-    const b64 = response.data[0].b64_json!;
-    const imgBuffer = Buffer.from(b64, "base64");
+    const base64 = img.data[0].b64_json!;
+    const buffer = Buffer.from(base64, "base64");
 
-    // ------------------------------------------------------------
-    // 3) SAVE ORIGINAL (square)
-    // ------------------------------------------------------------
+    // ============================================================
+    // 4) SAVE square image
+    // ============================================================
     const now = Date.now();
-    const squareFilename = `ia_${now}_square.jpg`;
-    const rectFilename = `ia_${now}_rect.jpg`;
+    const squareName = `ia_${now}_square.jpg`;
+    const rectName = `ia_${now}_rect.jpg`;
 
     const squarePath = path.join(
       process.cwd(),
       "public",
       "media",
       "articles/generated",
-      squareFilename
+      squareName
     );
+
     const rectPath = path.join(
       process.cwd(),
       "public",
       "media",
       "articles/generated",
-      rectFilename
+      rectName
     );
 
-    await writeFile(squarePath, imgBuffer);
+    // Enregistre l'image carrée
+    await writeFile(squarePath, buffer);
 
-    // ------------------------------------------------------------
-    // 4) GENERATE RECTANGLE VERSION (1200×628)
-    // ------------------------------------------------------------
-    const img = await loadImage(imgBuffer);
-    const WIDTH = 1200;
-    const HEIGHT = 628;
+    // ============================================================
+    // 5) Génération du rectangle avec sharp (1200x628)
+    // ============================================================
+    const rectangle = await sharp(buffer)
+      .resize(1200, 628, {
+        fit: "cover",
+        position: "center",
+      })
+      .jpeg({ quality: 90 })
+      .toBuffer();
 
-    const canvas = createCanvas(WIDTH, HEIGHT);
-    const ctx = canvas.getContext("2d");
+    await writeFile(rectPath, rectangle);
 
-    const ratio = WIDTH / HEIGHT;
-    const imgRatio = img.width / img.height;
-
-    let sx = 0, sy = 0, sw = img.width, sh = img.height;
-
-    if (imgRatio > ratio) {
-      const newWidth = img.height * ratio;
-      sx = (img.width - newWidth) / 2;
-      sw = newWidth;
-    } else {
-      const newHeight = img.width / ratio;
-      sy = (img.height - newHeight) / 2;
-      sh = newHeight;
-    }
-
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, WIDTH, HEIGHT);
-
-    const rectBuffer = canvas.toBuffer("image/jpeg", { quality: 0.9 });
-
-    await writeFile(rectPath, rectBuffer);
-
-    // ------------------------------------------------------------
-    // 5) RETURN URLs
-    // ------------------------------------------------------------
+    // ============================================================
+    // 6) RETURN URLs
+    // ============================================================
     return NextResponse.json({
       status: "ok",
       urls: {
-        square: `/media/articles/generated/${squareFilename}`,
-        rectangle: `/media/articles/generated/${rectFilename}`,
+        square: `/media/articles/generated/${squareName}`,
+        rectangle: `/media/articles/generated/${rectName}`,
       },
     });
-
   } catch (err: any) {
     console.error("Erreur génération IA :", err);
     return NextResponse.json(
