@@ -4,58 +4,92 @@ import path from "path";
 
 export const runtime = "nodejs";
 
-const VALID_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"];
+// Extensions valides
+const VALID_EXT = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"];
 
-// ------------------------------------------------------
-// Helper sécurisé : liste uniquement les FICHIERS images
-// ------------------------------------------------------
-async function safeList(folder: string) {
+// Mapping dossier → catégorie logique
+const CATEGORY_MAP: Record<string, string> = {
+  "logos": "logos",
+  "logos-cropped": "logosCropped",
+  "articles": "articles",
+  "articles/generated": "ia",
+  "generics": "generics",
+};
+
+// Mapping filename → type logique
+function detectType(filename: string) {
+  if (filename.includes("_square")) return "square";
+  if (filename.includes("_rect")) return "rect";
+  return "original"; // upload manuel ou fichier non suffixé
+}
+
+// Récupère les médias d'un dossier (sans parcourir récursivement)
+async function listFolder(relative: string) {
+  const folderPath = path.join(process.cwd(), "public", "media", relative);
+
   try {
-    const dir = path.join(process.cwd(), "public", "media", folder);
-    const entries = await readdir(dir);
+    const entries = await readdir(folderPath);
 
-    const filesOnly: string[] = [];
+    const files: any[] = [];
 
     for (const entry of entries) {
-      const fullPath = path.join(dir, entry);
-      const info = await stat(fullPath);
+      const full = path.join(folderPath, entry);
+      const info = await stat(full);
 
-      // ignore les dossiers
+      // Ignore les dossiers
       if (info.isDirectory()) continue;
 
-      // garde seulement les images
-      if (
-        VALID_EXTENSIONS.some((ext) =>
-          entry.toLowerCase().endsWith(ext)
-        )
-      ) {
-        filesOnly.push(`/media/${folder}/${entry}`);
-      }
+      // Ignore les fichiers non images
+      if (!VALID_EXT.some((ext) => entry.toLowerCase().endsWith(ext))) continue;
+
+      files.push({
+        id: entry,
+        url: `/media/${relative}/${entry}`,
+        folder: relative,
+        category: CATEGORY_MAP[relative] ?? "other",
+        type: detectType(entry),
+        size: info.size,
+        createdAt: info.mtimeMs,
+      });
     }
 
-    return filesOnly;
-  } catch {
+    return files;
+  } catch (e) {
+    // Le dossier peut ne pas exister → on renvoie simplement vide
     return [];
   }
 }
 
 export async function GET() {
-  const logos = await safeList("logos");
-  const logosCropped = await safeList("logos-cropped");
-  const articles = await safeList("articles");
-  const generics = await safeList("generics");
+  try {
+    const folders = [
+      "logos",
+      "logos-cropped",
+      "articles",
+      "articles/generated",
+      "generics",
+    ];
 
-  // Sous-dossier pour visuels IA générés
-  const generated = await safeList("articles/generated");
+    let all: any[] = [];
 
-  return NextResponse.json({
-    status: "ok",
-    media: {
-      logos,
-      logosCropped,
-      articles,
-      generics,
-      generated,
-    },
-  });
+    for (const f of folders) {
+      const list = await listFolder(f);
+      all = all.concat(list);
+    }
+
+    // Tri décroissant par date de création (le plus récent en premier)
+    all.sort((a, b) => b.createdAt - a.createdAt);
+
+    return NextResponse.json({
+      status: "ok",
+      media: all,
+    });
+
+  } catch (err: any) {
+    console.error("Erreur API media/list :", err);
+    return NextResponse.json(
+      { status: "error", message: err.message },
+      { status: 500 }
+    );
+  }
 }
