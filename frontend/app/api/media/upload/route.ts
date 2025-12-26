@@ -16,7 +16,7 @@ const CATEGORY_FOLDER: Record<string, string> = {
   "ia": "articles/generated",
 };
 
-// Détection du type (square / rect / original)
+// Détection du type
 function detectType(filename: string) {
   const lower = filename.toLowerCase();
   if (lower.includes("_square")) return "square";
@@ -24,9 +24,9 @@ function detectType(filename: string) {
   return "original";
 }
 
-// Construction d'un MediaItem complet
+// Construction d’un MediaItem
 async function buildMediaItem(folder: string, filename: string) {
-  const filePath = path.join(process.cwd(), "public", "media", folder, filename);
+  const filePath = path.join(process.cwd(), "frontend", "public", "media", folder, filename);
   const info = await stat(filePath);
 
   return {
@@ -55,30 +55,26 @@ export async function POST(req: Request) {
       );
     }
 
-    // Dossier où ranger
     const folder = CATEGORY_FOLDER[category] || "articles";
 
     const now = Date.now();
     const squareName = `${now}_${square.name}`;
     const rectName = `${now}_${rectangle.name}`;
 
-    const baseDir = path.join(process.cwd(), "public", "media", folder);
+    // CORRECTION : chemin correct pour Render + Next.js
+    const baseDir = path.join(process.cwd(), "frontend", "public", "media", folder);
 
-    // Crée le dossier si manquant
     await mkdir(baseDir, { recursive: true });
 
-    // Convertir File → Buffer
     const squareBuf = Buffer.from(await square.arrayBuffer());
     const rectBuf = Buffer.from(await rectangle.arrayBuffer());
 
     const squarePath = path.join(baseDir, squareName);
     const rectPath = path.join(baseDir, rectName);
 
-    // Écriture des fichiers
     await writeFile(squarePath, squareBuf);
     await writeFile(rectPath, rectBuf);
 
-    // Construire objets MediaItem
     const squareItem = await buildMediaItem(folder, squareName);
     const rectItem = await buildMediaItem(folder, rectName);
 
@@ -89,7 +85,6 @@ export async function POST(req: Request) {
         rectangle: rectItem,
       },
     });
-
   } catch (err: any) {
     console.error("Erreur upload média :", err);
     return NextResponse.json(
