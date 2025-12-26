@@ -4,12 +4,13 @@ import { NextResponse } from "next/server";
 import { writeFile, mkdir, stat } from "fs/promises";
 import path from "path";
 
+// Catégories ➡ dossiers
 const CATEGORY_FOLDER: Record<string, string> = {
-  "logo": "logos",
+  logo: "logos",
   "logo-cropped": "logos-cropped",
-  "article": "articles",
-  "generic": "generics",
-  "ia": "articles/generated",
+  article: "articles",
+  generic: "generics",
+  ia: "articles/generated",
 };
 
 function detectType(filename: string) {
@@ -20,17 +21,8 @@ function detectType(filename: string) {
 }
 
 async function buildMediaItem(folder: string, filename: string) {
-  const filePath = path.join(
-    process.cwd(),
-    "frontend",
-    "public",
-    "media",
-    folder,
-    filename
-  );
-
+  const filePath = path.join(process.cwd(), "public", "media", folder, filename);
   const info = await stat(filePath);
-
   return {
     id: filename,
     url: `/media/${folder}/${filename}`,
@@ -63,15 +55,8 @@ export async function POST(req: Request) {
     const squareName = `${now}_${square.name}`;
     const rectName = `${now}_${rectangle.name}`;
 
-    const baseDir = path.join(
-      process.cwd(),
-      "frontend",
-      "public",
-      "media",
-      folder
-    );
+    const baseDir = path.join(process.cwd(), "public", "media", folder);
 
-    console.log("📁 Écriture dans :", baseDir);
     await mkdir(baseDir, { recursive: true });
 
     const squareBuf = Buffer.from(await square.arrayBuffer());
@@ -79,9 +64,6 @@ export async function POST(req: Request) {
 
     const squarePath = path.join(baseDir, squareName);
     const rectPath = path.join(baseDir, rectName);
-
-    console.log("➡️ Writing:", squarePath);
-    console.log("➡️ Writing:", rectPath);
 
     await writeFile(squarePath, squareBuf);
     await writeFile(rectPath, rectBuf);
@@ -96,9 +78,8 @@ export async function POST(req: Request) {
         rectangle: rectItem,
       },
     });
-
   } catch (err: any) {
-    console.error("❌ Erreur upload média :", err);
+    console.error("Erreur upload média :", err);
     return NextResponse.json(
       { status: "error", message: err.message },
       { status: 500 }
