@@ -1,86 +1,64 @@
 # backend/core/lab_light/service.py
 
 import json
+import re
 from utils.llm import run_llm
+
+
+def safe_extract_json(text: str) -> dict:
+    """
+    Tente d’extraire un JSON même si le modèle a ajouté du texte autour.
+    - Détecte la première accolade ouvrante et la dernière fermante
+    - Corrige des erreurs simples (guillemets, virgules finales)
+    - Retourne {} si impossible
+    """
+    if not isinstance(text, str):
+        return {}
+
+    # Cherche un bloc JSON dans le texte
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        return {}
+
+    json_text = match.group(0).strip()
+
+    # Tentative stricte
+    try:
+        return json.loads(json_text)
+    except Exception:
+        pass
+
+    # Correction de quotes potential
+    json_text = json_text.replace("“", '"').replace("”", '"')
+    json_text = json_text.replace("‘", "'").replace("’", "'")
+
+    # Virer virgules finales
+    json_text = re.sub(r",\s*}", "}", json_text)
+    json_text = re.sub(r",\s*\]", "]", json_text)
+
+    try:
+        return json.loads(json_text)
+    except Exception:
+        return {}
 
 
 def transform_source(source_type: str, source_text: str, author: str) -> dict:
     """
     Transforme une source brute en ARTICLE_DRAFT Ratecard.
-    Le modèle renvoie un JSON strict contenant :
-    - title_proposal
-    - excerpt
-    - content_html
-    - angle
-    - suggested_topics
-    - suggested_companies
-    - suggested_products
-    - notes
+    Retourne TOUJOURS un objet propre (jamais une exception).
     """
 
     prompt = f"""
 Tu es un assistant éditorial professionnel chargé de transformer une SOURCE BRUTE 
 en un ARTICLE DRAFT clair, structuré et publiable sur Ratecard.fr.
 
-===============================================================
-🎯 LIGNES DIRECTRICES ÉDITORIALES RATECARD
-===============================================================
-- Ton professionnel, clair, concis.
-- Style journalistique B2B orienté marketing/adtech.
-- Pas de phrases typées LinkedIn (“Je suis ravi…”, “voici…”, emoji, storytelling perso).
-- Pas d’humour, pas de ton personnel.
-- Pas de superlatifs inutiles, pas de promotion.
-- Le texte doit être lisible par un décideur marketing.
+================== RÈGLES ÉDITORIALES (RÉSUMÉ) ==================
+- Style journalistique B2B, ton professionnel, clair.
+- Aucune invention, aucune extrapolation externe.
+- Pas de style LinkedIn, pas d'emoji.
+- Structure HTML strictement conforme.
 
-===============================================================
-🔒 CONTRAINTES STRICTES
-===============================================================
-- Ne JAMAIS inventer de faits, chiffres ou citations.
-- Ne JAMAIS déformer les citations.
-- Ne JAMAIS ajouter d’informations non présentes dans la source.
-- Pas d’opinion personnelle du modèle.
-- Aucune extrapolation externe.
-
-===============================================================
-🧩 POLITIQUE PAR TYPE DE SOURCE (source_type="{source_type}")
-===============================================================
-1) PRESS_RELEASE / BLOG / PRODUCT
-- Respect absolu de toutes les citations clients.
-- Reformulation autorisée pour simplifier les parties non citées.
-- Ton informatif, jamais promotionnel.
-- Aucune contextualisation externe.
-
-2) INTERVIEW
-- Format Q/A si possible, sinon récit clair.
-- Clarification des réponses longues SANS changer le sens.
-- Ne pas inventer de questions ni de réponses.
-- Indiquer clairement les intervenants.
-
-3) LINKEDIN_POST
-- Transformation éditoriale forte autorisée.
-- Retirer emojis, répétitions, expressions LinkedIn.
-- Ajouter uniquement le contexte présent dans la source.
-- Objectif : transformer un post en article Ratecard professionnel.
-
-4) MEETING_NOTE / EVENT_RECAP / COMPTE_RENDU
-- Organisation en sections <h2>.
-- Synthèse claire, structurée, hiérarchisée.
-- Clarification, tri, mais aucune invention.
-- Viser une lecture analytique mais accessible.
-
-===============================================================
-🧱 STRUCTURE HTML ATTENDUE
-===============================================================
-- Une introduction en <p>.
-- 2 à 4 sections : <h2>Titre section</h2> + <p>contenu…</p>.
-- Listes autorisées : <ul><li>…</li></ul>.
-- PAS de <h1>, PAS de styles inline, PAS de blocs inutiles.
-
-===============================================================
-📦 FORMAT DE SORTIE JSON STRICT
-===============================================================
-Retourne UNIQUEMENT ce JSON :
-
+================== FORMAT JSON À RETOURNER ==================
 {{
   "title_proposal": "",
   "excerpt": "",
@@ -92,26 +70,57 @@ Retourne UNIQUEMENT ce JSON :
   "notes": ""
 }}
 
-===============================================================
-📄 SOURCE BRUTE
-===============================================================
+================== SOURCE ==================
+TYPE : {source_type}
 AUTEUR : {author}
 
 TEXTE :
 {source_text}
 """
 
-    raw = run_llm(prompt)
-
-    # Tentative de parsing JSON strict
+    # ----------------------------------------------------
+    # APPEL LLM — AVEC CATCH D'ERREUR
+    # ----------------------------------------------------
     try:
-        result = json.loads(raw)
-        return result
-
-    except Exception:
-        # Sécurité : renvoyer le texte brut du modèle en cas d’échec
+        raw = run_llm(prompt)
+    except Exception as e:
         return {
-            "error": "invalid_json",
-            "raw": raw,
-            "message": "Le modèle n'a pas renvoyé un JSON valide."
+            "error": "llm_error",
+            "message": f"Erreur appel OpenAI: {e}",
+            "draft": None,
         }
+
+    if not raw or not isinstance(raw, str):
+        return {
+            "error": "empty_llm_response",
+            "raw": raw,
+            "message": "Le modèle n'a renvoyé aucun texte.",
+        }
+
+    # ----------------------------------------------------
+    # PARSING JSON ROBUSTE
+    # ----------------------------------------------------
+    parsed = safe_extract_json(raw)
+
+    if parsed:
+        return parsed
+
+    # ----------------------------------------------------
+    # ÉCHEC TOTAL → retour safe
+    # ----------------------------------------------------
+    return {
+        "error": "invalid_json",
+        "raw": raw,
+        "message": "Impossible de parser un JSON valide.",
+        "fallback": {
+            "title_proposal": "",
+            "excerpt": "",
+            "content_html": "",
+            "angle": "",
+            "suggested_topics": [],
+            "suggested_companies": [],
+            "suggested_products": [],
+            "notes": ""
+        }
+    }
+
