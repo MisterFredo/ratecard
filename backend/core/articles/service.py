@@ -2,10 +2,15 @@ import uuid
 from datetime import datetime
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq, insert_bq
+from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client
 from api.articles.models import ArticleCreate
 
+from google.cloud import bigquery
 
+
+# ------------------------------------------------
+# TABLE NAMES
+# ------------------------------------------------
 TABLE_ARTICLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE"
 TABLE_AXE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE_AXE"
 TABLE_ARTICLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE_COMPANY"
@@ -20,7 +25,9 @@ def create_article(data: ArticleCreate) -> str:
     article_id = str(uuid.uuid4())
     now = datetime.utcnow()
 
+    # VISUEL LOGIC (fallback to company logo)
     visuel_final = data.visuel_url
+    visuel_square_final = data.visuel_square_url
 
     if not visuel_final and data.companies:
         rows = query_bq(
@@ -36,6 +43,7 @@ def create_article(data: ArticleCreate) -> str:
         "EXCERPT": data.excerpt,
         "CONTENU_HTML": data.contenu_html,
         "VISUEL_URL": visuel_final,
+        "VISUEL_SQUARE_URL": visuel_square_final,
         "AUTEUR": data.auteur,
         "DATE_PUBLICATION": now,
         "CREATED_AT": now,
@@ -45,21 +53,21 @@ def create_article(data: ArticleCreate) -> str:
         "IS_ARCHIVED": False,
     }])
 
-    # AXES
+    # Save axes
     if data.axes:
         insert_bq(TABLE_AXE, [
             {"ID_ARTICLE": article_id, "AXE_TYPE": a.type, "AXE_VALUE": a.value}
             for a in data.axes
         ])
 
-    # COMPANIES
+    # Save companies
     if data.companies:
         insert_bq(TABLE_ARTICLE_COMPANY, [
             {"ID_ARTICLE": article_id, "ID_COMPANY": cid}
             for cid in data.companies
         ])
 
-    # PERSONS
+    # Save persons
     if data.persons:
         insert_bq(TABLE_ARTICLE_PERSON, [
             {"ID_ARTICLE": article_id, "ID_PERSON": p.id_person, "ROLE": p.role}
@@ -105,7 +113,7 @@ def get_article(id_article: str):
 
 
 # ============================================================
-# LIST ARTICLES (ENRICHIE POUR L’ADMIN)
+# LIST ARTICLES
 # ============================================================
 def list_articles():
     sql = f"""
@@ -130,6 +138,7 @@ def list_articles():
         A.TITRE,
         A.DATE_PUBLICATION,
         A.VISUEL_URL,
+        A.VISUEL_SQUARE_URL,
         A.IS_FEATURED,
         A.FEATURED_ORDER,
         A.IS_ARCHIVED,
@@ -146,11 +155,10 @@ def list_articles():
 # ============================================================
 # UPDATE ARTICLE
 # ============================================================
-from google.cloud import bigquery
-from utils.bigquery_utils import get_bigquery_client
-
 def update_article(id_article: str, data: ArticleCreate):
     now = datetime.utcnow()
+
+    client = get_bigquery_client()
 
     row = [{
         "ID_ARTICLE": id_article,
@@ -158,18 +166,18 @@ def update_article(id_article: str, data: ArticleCreate):
         "EXCERPT": data.excerpt,
         "CONTENU_HTML": data.contenu_html,
         "VISUEL_URL": data.visuel_url,
+        "VISUEL_SQUARE_URL": data.visuel_square_url,
         "AUTEUR": data.auteur,
         "UPDATED_AT": now,
         "IS_FEATURED": data.is_featured,
         "FEATURED_ORDER": data.featured_order,
     }]
 
-    client = get_bigquery_client()
     errors = client.insert_rows_json(TABLE_ARTICLE, row)
     if errors:
         raise RuntimeError(errors)
 
-    # CLEAN
+    # CLEAN relationships
     client.query(
         f"DELETE FROM `{TABLE_AXE}` WHERE ID_ARTICLE = @id",
         job_config=bigquery.QueryJobConfig(
@@ -191,21 +199,19 @@ def update_article(id_article: str, data: ArticleCreate):
         )
     ).result()
 
-    # AXES
+    # RE-INSERT relationships
     if data.axes:
         insert_bq(TABLE_AXE, [
             {"ID_ARTICLE": id_article, "AXE_TYPE": a.type, "AXE_VALUE": a.value}
             for a in data.axes
         ])
 
-    # COMPANIES
     if data.companies:
         insert_bq(TABLE_ARTICLE_COMPANY, [
             {"ID_ARTICLE": id_article, "ID_COMPANY": cid}
             for cid in data.companies
         ])
 
-    # PERSONS
     if data.persons:
         insert_bq(TABLE_ARTICLE_PERSON, [
             {"ID_ARTICLE": id_article, "ID_PERSON": p.id_person, "ROLE": p.role}
@@ -237,6 +243,3 @@ def archive_article(id_article: str):
     if errors:
         raise RuntimeError(errors)
     return True
-
-
-
