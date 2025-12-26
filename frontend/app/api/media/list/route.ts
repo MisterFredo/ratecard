@@ -4,16 +4,28 @@ import path from "path";
 
 export const runtime = "nodejs";
 
-// Mapping folder → category expected by frontend
+// Mapping folder to category names
 const CATEGORY_MAP: Record<string, string> = {
   "logos": "logos",
-  "logos-cropped": "logosCropped",   // front expects logosCropped
+  "logos-cropped": "logosCropped",
   "articles": "articles",
-  "articles/generated": "ia",        // front expects "ia"
+  "articles/generated": "ia",
   "generics": "generics",
 };
 
 const FOLDERS = Object.keys(CATEGORY_MAP);
+
+// Detect frontend root regardless of cwd
+function getFrontendRoot() {
+  return path.join(process.cwd(), "frontend");
+}
+
+// Persistent upload directory
+function getUploadRoot() {
+  const root = path.join(getFrontendRoot(), "uploads", "media");
+  console.log("📁 LIST root =", root);
+  return root;
+}
 
 function detectType(filename: string) {
   if (filename.includes("_square")) return "square";
@@ -21,15 +33,13 @@ function detectType(filename: string) {
   return "original";
 }
 
-function getUploadRoot() {
-  return path.join(process.cwd(), "uploads", "media");
-}
-
 async function listFolder(folder: string) {
   const folderPath = path.join(getUploadRoot(), folder);
+  console.log("🔍 SCANNING:", folderPath);
 
   try {
     const entries = await readdir(folderPath);
+
     const items = [];
 
     for (const entry of entries) {
@@ -44,41 +54,36 @@ async function listFolder(folder: string) {
         id: entry,
         url: `/media/${folder}/${entry}`,
         folder,
-        category: CATEGORY_MAP[folder],   // ★ correct mapping
+        category: CATEGORY_MAP[folder],
         type: detectType(entry),
         size: info.size,
         createdAt: info.mtimeMs,
       });
     }
 
+    console.log(`📦 FOUND ${items.length} in ${folder}`);
     return items;
 
   } catch (e) {
+    console.log("⚠️ Folder missing:", folderPath);
     return [];
   }
 }
 
 export async function GET() {
-  try {
-    let all: any[] = [];
+  const media: any[] = [];
 
-    for (const folder of FOLDERS) {
-      const items = await listFolder(folder);
-      all = all.concat(items);
-    }
-
-    all.sort((a, b) => b.createdAt - a.createdAt);
-
-    return NextResponse.json({
-      status: "ok",
-      media: all,
-    });
-
-  } catch (err: any) {
-    console.error("Erreur API media/list :", err);
-    return NextResponse.json(
-      { status: "error", message: err.message },
-      { status: 500 }
-    );
+  for (const folder of FOLDERS) {
+    const items = await listFolder(folder);
+    media.push(...items);
   }
+
+  media.sort((a, b) => b.createdAt - a.createdAt);
+
+  console.log("📊 TOTAL MEDIA:", media.length);
+
+  return NextResponse.json({
+    status: "ok",
+    media,
+  });
 }
