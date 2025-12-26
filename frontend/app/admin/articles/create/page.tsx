@@ -213,7 +213,6 @@ export default function CreateArticlePage() {
               <MediaUploader
                 onUploadComplete={urls => {
                   setVisuelUrl(urls.rectangle.url);
-                  setVisuelSquare(urls.square);
                   setVisuelSquare(urls.square.url);
                 }}
               />
