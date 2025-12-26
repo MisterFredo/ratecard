@@ -1,5 +1,3 @@
-// frontend/app/admin/person/create/page.tsx
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,13 +11,15 @@ export default function CreatePerson() {
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
   const [companyId, setCompanyId] = useState("");
-  const [profilePic, setProfilePic] = useState("");
+  const [profilePic, setProfilePic] = useState(""); // volontairement URL simple pour cette V1
   const [linkedinUrl, setLinkedinUrl] = useState("");
 
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  // Load companies for dropdown
+  // ---------------------------------------------------------
+  // LOAD COMPANIES
+  // ---------------------------------------------------------
   useEffect(() => {
     async function loadCompanies() {
       const res = await api.get("/company/list");
@@ -29,7 +29,12 @@ export default function CreatePerson() {
     loadCompanies();
   }, []);
 
+  // ---------------------------------------------------------
+  // SAVE PERSON
+  // ---------------------------------------------------------
   async function save() {
+    if (!name.trim()) return alert("Merci de renseigner un nom");
+
     setSaving(true);
 
     const payload = {
@@ -45,35 +50,49 @@ export default function CreatePerson() {
     setSaving(false);
   }
 
+  // ---------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
 
+      {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Ajouter un intervenant</h1>
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
+          Ajouter un intervenant
+        </h1>
         <Link href="/admin/person" className="underline text-gray-600">
           ← Retour
         </Link>
       </div>
 
-      <input
-        placeholder="Nom"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="border p-2 w-full"
-      />
+      {/* NOM */}
+      <div>
+        <label className="font-medium">Nom complet</label>
+        <input
+          placeholder="Ex : Marie Dupont"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="border p-2 w-full rounded mt-1"
+        />
+      </div>
 
-      <input
-        placeholder="Fonction"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="border p-2 w-full"
-      />
+      {/* FONCTION */}
+      <div>
+        <label className="font-medium">Fonction</label>
+        <input
+          placeholder="Ex : Directrice Marketing"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="border p-2 w-full rounded mt-1"
+        />
+      </div>
 
-      {/* Company */}
+      {/* SOCIÉTÉ */}
       <div>
         <label className="font-medium">Société</label>
         <select
-          className="border p-2 w-full"
+          className="border p-2 w-full rounded mt-1"
           value={companyId}
           onChange={(e) => setCompanyId(e.target.value)}
         >
@@ -87,30 +106,40 @@ export default function CreatePerson() {
         </select>
       </div>
 
-      <input
-        placeholder="Photo (URL)"
-        value={profilePic}
-        onChange={(e) => setProfilePic(e.target.value)}
-        className="border p-2 w-full"
-      />
+      {/* PHOTO - VERSION SIMPLE */}
+      <div>
+        <label className="font-medium">Photo (URL)</label>
+        <input
+          placeholder="Ex : https://…"
+          value={profilePic}
+          onChange={(e) => setProfilePic(e.target.value)}
+          className="border p-2 w-full rounded mt-1"
+        />
+      </div>
 
-      <input
-        placeholder="URL LinkedIn"
-        value={linkedinUrl}
-        onChange={(e) => setLinkedinUrl(e.target.value)}
-        className="border p-2 w-full"
-      />
+      {/* LINKEDIN */}
+      <div>
+        <label className="font-medium">Profil LinkedIn</label>
+        <input
+          placeholder="Ex : https://linkedin.com/in/…"
+          value={linkedinUrl}
+          onChange={(e) => setLinkedinUrl(e.target.value)}
+          className="border p-2 w-full rounded mt-1"
+        />
+      </div>
 
+      {/* SAVE BUTTON */}
       <button
         onClick={save}
         disabled={saving}
-        className="bg-black text-white px-6 py-2 rounded"
+        className="bg-ratecard-blue text-white px-6 py-2 rounded shadow hover:bg-blue-700 transition"
       >
-        Enregistrer
+        {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
+      {/* RESULT */}
       {result && (
-        <pre className="bg-gray-100 p-4 rounded mt-4">
+        <pre className="bg-gray-100 p-4 rounded mt-4 whitespace-pre-wrap text-sm">
           {JSON.stringify(result, null, 2)}
         </pre>
       )}
