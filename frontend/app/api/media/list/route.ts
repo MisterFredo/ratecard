@@ -2,26 +2,28 @@ import { NextResponse } from "next/server";
 import { readdir } from "fs/promises";
 import path from "path";
 
-const BASE_DIR = path.join(process.cwd(), "public", "media");
+export const runtime = "nodejs";
 
-async function listFiles(folder: string) {
+// --------- Helper sécurisé ---------
+async function safeList(folder: string) {
   try {
-    const folderPath = path.join(BASE_DIR, folder);
-    const files = await readdir(folderPath);
+    const dir = path.join(process.cwd(), "public", "media", folder);
+    const files = await readdir(dir);
 
     return files.map((f) => `/media/${folder}/${f}`);
   } catch (e) {
-    console.error(`Erreur listage ${folder}:`, e);
+    // En production, on ne veut pas de crash pour un dossier manquant
+    console.warn(`⚠️ Dossier manquant (media/${folder}) — retourné vide`);
     return [];
   }
 }
 
 export async function GET() {
   try {
-    const logos = await listFiles("logos");
-    const logosCropped = await listFiles("logos-cropped");
-    const articles = await listFiles("articles");
-    const generics = await listFiles("generics");
+    const logos = await safeList("logos");
+    const logosCropped = await safeList("logos-cropped");
+    const articles = await safeList("articles");
+    const generics = await safeList("generics");
 
     return NextResponse.json({
       status: "ok",
@@ -29,13 +31,14 @@ export async function GET() {
         logos,
         logosCropped,
         articles,
-        generics,
+        generics
       },
     });
-  } catch (e: any) {
-    console.error("Erreur API media/list:", e);
+
+  } catch (err: any) {
+    console.error("Erreur API media/list", err);
     return NextResponse.json(
-      { status: "error", message: e.message },
+      { status: "error", message: err.message },
       { status: 500 }
     );
   }
