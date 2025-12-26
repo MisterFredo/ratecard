@@ -2,24 +2,31 @@
 
 import { useEffect, useState } from "react";
 import Drawer from "@/components/ui/Drawer";
-import { MediaItem } from "@/app/admin/media/page";
+
+export type PickerMediaItem = {
+  id: string;
+  url: string;
+  folder: string;     // très important → logos, logos-cropped, articles…
+  type?: string;
+  category?: string;  // peut exister mais ce n'est plus utilisé
+};
 
 export default function MediaPicker({
   open,
   onClose,
   onSelect,
-  category = "all",  // "logos", "logosCropped", "articles", "ia", "generics", "all"
+  category = "logos-cropped", // valeur par défaut pour SOCIÉTÉS
 }: {
   open: boolean;
   onClose: () => void;
   onSelect: (url: string) => void;
-  category?: string;
+  category?: string; // = "logos", "logos-cropped", "articles", "generics", "ia"
 }) {
   const [loading, setLoading] = useState(true);
-  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [media, setMedia] = useState<PickerMediaItem[]>([]);
 
   // ---------------------------------------------------------
-  // LOAD MEDIA
+  // LOAD MEDIA (nouvelle API renvoie json.media[])
   // ---------------------------------------------------------
   async function load() {
     setLoading(true);
@@ -28,7 +35,7 @@ export default function MediaPicker({
     const json = await res.json();
 
     if (json.status === "ok") {
-      setMedia(json.media); // tableau complet de MediaItem
+      setMedia(json.media); // on stocke tous les éléments
     }
 
     setLoading(false);
@@ -39,12 +46,12 @@ export default function MediaPicker({
   }, [open]);
 
   // ---------------------------------------------------------
-  // FILTERED MEDIA
+  // FILTRAGE PAR DOSSIER (le vrai critère)
   // ---------------------------------------------------------
   const filtered =
     category === "all"
       ? media
-      : media.filter((m) => m.category === category);
+      : media.filter((m) => m.folder === category);
 
   return (
     <Drawer open={open} onClose={onClose} title="Choisir un visuel" size="lg">
@@ -55,7 +62,7 @@ export default function MediaPicker({
           <p className="text-gray-500 text-sm">Chargement…</p>
         )}
 
-        {/* EMPTY STATE */}
+        {/* EMPTY */}
         {!loading && filtered.length === 0 && (
           <p className="text-gray-500 italic text-sm">
             Aucun visuel disponible dans cette catégorie.
@@ -70,23 +77,22 @@ export default function MediaPicker({
                 key={item.id}
                 className="border rounded p-2 bg-white hover:bg-gray-50 cursor-pointer transition"
                 onClick={() => {
-                  onSelect(item.url); // URL directe utilisée par Company / Articles / Axes
+                  onSelect(item.url); // renvoie l'URL directe
                   onClose();
                 }}
               >
-                {/* IMAGE */}
                 <img
                   src={item.url}
                   alt={item.id}
                   className="w-full h-24 object-contain rounded bg-gray-50 border"
                 />
 
-                {/* INFO */}
                 <p className="text-[10px] mt-1 break-all text-gray-700">
                   {item.id}
                 </p>
+
                 <p className="text-[10px] text-gray-400">
-                  {item.category} · {item.type}
+                  {item.folder} · {item.type}
                 </p>
               </div>
             ))}
