@@ -214,8 +214,8 @@ export default function EditArticle({ params }) {
         <div className="border p-4 rounded bg-white">
           <MediaUploader
             onUploadComplete={(urls) => {
-              setVisuelUrl(urls.rectangle);
-              setVisuelSquare(urls.square);
+              setVisuelUrl(urls.rectangle.url);
+              setVisuelSquare(urls.square.url);
               setUploaderOpen(false);
             }}
           />
