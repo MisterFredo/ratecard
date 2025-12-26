@@ -2,23 +2,25 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import MediaUploader from "@/components/admin/MediaUploader";
-import { api } from "@/lib/api";
+import MediaUploader, { MediaItem } from "@/components/admin/MediaUploader";
 
 export default function CreateMediaPage() {
   const [category, setCategory] = useState("article");
-  const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<{
+    square: MediaItem;
+    rectangle: MediaItem;
+  } | null>(null);
 
-  async function onUploadComplete(urls: { square: string; rectangle: string }) {
-    // Le MediaUploader a déjà écrit les fichiers sur le disque.
-    // On redirige ou on reste ici selon ton choix.
-    setResult(urls);
+  function onUploadComplete(result: {
+    square: MediaItem;
+    rectangle: MediaItem;
+  }) {
+    setResult(result);
 
-    // Auto-redirection après 1 seconde
+    // Auto redirection après courte pause UX
     setTimeout(() => {
       window.location.href = "/admin/media";
-    }, 800);
+    }, 600);
   }
 
   return (
@@ -44,7 +46,7 @@ export default function CreateMediaPage() {
           className="border rounded p-2 w-full"
         >
           <option value="article">Visuel d’article</option>
-          <option value="logo">Logo (version source)</option>
+          <option value="logo">Logo (source)</option>
           <option value="generic">Visuel générique (Ratecard)</option>
           <option value="ia">Visuel IA généré</option>
         </select>
@@ -62,22 +64,41 @@ export default function CreateMediaPage() {
         />
       </div>
 
-      {/* Résultat upload (facultatif) */}
+      {/* AFFICHAGE RESULTAT */}
       {result && (
-        <div className="bg-gray-100 p-4 rounded border space-y-2">
-          <p className="text-sm text-gray-700 font-semibold">Média créé :</p>
+        <div className="bg-gray-100 p-4 rounded border space-y-4">
 
+          <p className="text-sm text-gray-700 font-semibold">
+            Média créé :
+          </p>
+
+          {/* SQUARE */}
           <div>
             <p className="text-xs text-gray-600">Square :</p>
-            <img src={result.square} className="w-40 border rounded" />
+            <img
+              src={result.square.url}
+              className="w-40 border rounded"
+            />
+            <p className="text-[10px] text-gray-500 break-all mt-1">
+              {result.square.url}
+            </p>
           </div>
 
+          {/* RECTANGLE */}
           <div>
             <p className="text-xs text-gray-600">Rectangle :</p>
-            <img src={result.rectangle} className="w-60 border rounded" />
+            <img
+              src={result.rectangle.url}
+              className="w-60 border rounded"
+            />
+            <p className="text-[10px] text-gray-500 break-all mt-1">
+              {result.rectangle.url}
+            </p>
           </div>
+
         </div>
       )}
+
     </div>
   );
 }
