@@ -13,31 +13,22 @@ router = APIRouter()
 
 
 # ============================================================
-# CREATE
+# CREATE ARTICLE
 # ============================================================
 @router.post("/create")
-def create(data: ArticleCreate):
+def create_route(payload: ArticleCreate):
     try:
-        id_article = create_article(data)
+        id_article = create_article(payload)
         return {"status": "ok", "id_article": id_article}
     except Exception as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, f"Erreur création article : {e}")
 
 
 # ============================================================
-# LIST (ENRICHIE)
+# LIST ARTICLES (ADMIN)
 # ============================================================
 @router.get("/list")
-def list_all():
-    """
-    Retourne la liste enrichie des articles pour l’admin :
-    - TITRE
-    - DATE_PUBLICATION
-    - COMPANY_NAME (join)
-    - AXES (liste)
-    - IS_FEATURED
-    - IS_ARCHIVED
-    """
+def list_route():
     try:
         articles = list_articles()
         return {"status": "ok", "articles": articles}
@@ -46,33 +37,33 @@ def list_all():
 
 
 # ============================================================
-# GET ONE
+# GET ARTICLE
 # ============================================================
 @router.get("/{id_article}")
-def get_one(id_article: str):
-    a = get_article(id_article)
-    if not a:
+def get_route(id_article: str):
+    article = get_article(id_article)
+    if not article:
         raise HTTPException(404, "Article introuvable")
-    return {"status": "ok", "article": a}
+    return {"status": "ok", "article": article}
 
 
 # ============================================================
-# UPDATE
+# UPDATE ARTICLE
 # ============================================================
 @router.put("/update/{id_article}")
-def update_article_route(id_article: str, payload: ArticleCreate):
+def update_route(id_article: str, payload: ArticleCreate):
     try:
-        updated = update_article(id_article, payload)
-        return {"status": "ok", "updated": updated}
+        update_article(id_article, payload)
+        return {"status": "ok", "updated": id_article}
     except Exception as e:
         raise HTTPException(400, f"Erreur mise à jour article : {e}")
 
 
 # ============================================================
-# DELETE (SUPPRESSION DÉFINITIVE)
+# DELETE ARTICLE (DEFINITIF)
 # ============================================================
 @router.delete("/{id_article}")
-def delete_article_route(id_article: str):
+def delete_route(id_article: str):
     try:
         delete_article(id_article)
         return {"status": "ok", "deleted": id_article}
@@ -81,10 +72,10 @@ def delete_article_route(id_article: str):
 
 
 # ============================================================
-# ARCHIVE
+# ARCHIVE ARTICLE
 # ============================================================
 @router.put("/archive/{id_article}")
-def archive_article_route(id_article: str):
+def archive_route(id_article: str):
     try:
         archive_article(id_article)
         return {"status": "ok", "archived": id_article}
