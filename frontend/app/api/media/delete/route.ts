@@ -5,6 +5,7 @@ import path from "path";
 export async function POST(req: Request) {
   try {
     const { url } = await req.json();
+
     if (!url) {
       return NextResponse.json(
         { status: "error", message: "URL manquante" },
@@ -12,15 +13,21 @@ export async function POST(req: Request) {
       );
     }
 
-    // URL → filesystem path
-    const filePath = path.join(process.cwd(), "public", url.replace("/media/", "media/"));
+    // Convertit l'URL publique en chemin disque
+    const filePath = path.join(
+      process.cwd(),
+      "public",
+      url.replace("/media/", "media/")
+    );
 
     await unlink(filePath);
 
     return NextResponse.json({ status: "ok", deleted: url });
-  } catch (e: any) {
+
+  } catch (err: any) {
+    console.error("Erreur suppression fichier :", err);
     return NextResponse.json(
-      { status: "error", message: e.message },
+      { status: "error", message: err.message },
       { status: 500 }
     );
   }
