@@ -1,10 +1,9 @@
-// frontend/app/admin/company/edit/[id]/page.tsx
-
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import MediaPicker from "@/components/admin/MediaPicker";
 
 export default function EditCompany({ params }) {
   const { id } = params;
@@ -13,13 +12,20 @@ export default function EditCompany({ params }) {
   const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState("");
-  const [logoUrl, setLogoUrl] = useState("");
-  const [logoSquareUrl, setLogoSquareUrl] = useState("");
+
+  const [logoUrl, setLogoUrl] = useState("");         // RECTANGLE
+  const [logoSquareUrl, setLogoSquareUrl] = useState(""); // CARRE
+
+  const [pickerOpen, setPickerOpen] = useState(false);
+
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [description, setDescription] = useState("");
 
   const [result, setResult] = useState<any>(null);
 
+  // ------------------------------------------------
+  // LOAD COMPANY
+  // ------------------------------------------------
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -37,7 +43,12 @@ export default function EditCompany({ params }) {
     load();
   }, [id]);
 
+  // ------------------------------------------------
+  // UPDATE
+  // ------------------------------------------------
   async function update() {
+    if (!name) return alert("Merci de renseigner un nom de société");
+
     setSaving(true);
 
     const payload = {
@@ -56,30 +67,105 @@ export default function EditCompany({ params }) {
   if (loading) return <div>Chargement…</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
 
+      {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Modifier la société</h1>
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
+          Modifier la société
+        </h1>
         <Link href="/admin/company" className="underline text-gray-600">
           ← Retour
         </Link>
       </div>
 
-      <input value={name} onChange={(e) => setName(e.target.value)} className="border p-2 w-full" />
-      <input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} className="border p-2 w-full" />
-      <input value={logoSquareUrl} onChange={(e) => setLogoSquareUrl(e.target.value)} className="border p-2 w-full" />
-      <input value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} className="border p-2 w-full" />
-      <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="border p-2 w-full h-28" />
+      {/* NOM */}
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="border p-2 w-full rounded"
+      />
 
+      {/* LOGOS */}
+      <div className="space-y-3">
+        <label className="font-medium">Logo rectangulaire & carré</label>
+
+        <button
+          onClick={() => setPickerOpen(true)}
+          className="bg-ratecard-green text-white px-4 py-2 rounded"
+        >
+          Choisir un visuel dans la médiathèque
+        </button>
+
+        {/* PREVIEW RECTANGLE */}
+        {logoUrl && (
+          <div>
+            <p className="text-sm text-gray-500">Logo rectangle :</p>
+            <img
+              src={logoUrl}
+              alt="logo rectangle"
+              className="w-48 h-auto border rounded bg-white p-1 mt-1"
+            />
+          </div>
+        )}
+
+        {/* PREVIEW CARRE */}
+        {logoSquareUrl && (
+          <div>
+            <p className="text-sm text-gray-500">Logo carré :</p>
+            <img
+              src={logoSquareUrl}
+              alt="logo carré"
+              className="w-24 h-24 object-cover border rounded bg-white mt-1"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* DRAWER MEDIA PICKER */}
+      <MediaPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        category="logos-cropped"
+        onSelect={(url) => {
+          if (url.includes("square") || url.includes("_carre")) {
+            setLogoSquareUrl(url);
+          } else {
+            setLogoUrl(url);
+          }
+        }}
+      />
+
+      {/* LINKEDIN */}
+      <input
+        placeholder="URL LinkedIn"
+        value={linkedinUrl}
+        onChange={(e) => setLinkedinUrl(e.target.value)}
+        className="border p-2 w-full rounded"
+      />
+
+      {/* DESCRIPTION */}
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        className="border p-2 w-full rounded h-28"
+      />
+
+      {/* SAVE */}
       <button
         onClick={update}
         disabled={saving}
-        className="bg-black text-white px-6 py-2 rounded"
+        className="bg-ratecard-blue text-white px-6 py-2 rounded"
       >
-        Enregistrer
+        {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
-      {result && <pre className="bg-gray-100 p-4 rounded">{JSON.stringify(result, null, 2)}</pre>}
+      {result && (
+        <pre className="bg-gray-100 p-4 rounded mt-4">
+          {JSON.stringify(result, null, 2)}
+        </pre>
+      )}
     </div>
   );
 }
+
