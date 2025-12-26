@@ -1,22 +1,43 @@
-import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-
 export const runtime = "nodejs";
 
-// ==========================================
-// Helper global : choisit le bon dossier
-// ==========================================
-function getFolder(category: string | null, filename: string) {
-  if (category === "logo") return "logos-cropped";
-  if (category === "article") return "articles";
-  if (category === "generic") return "generics";
+import { NextResponse } from "next/server";
+import { writeFile, mkdir, stat } from "fs/promises";
+import path from "path";
 
-  // Auto-détection de fallback
-  const ext = filename.toLowerCase();
-  if (ext.endsWith(".svg") || ext.includes("logo")) return "logos-cropped";
+// Extensions valides
+const VALID_EXT = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
 
-  return "articles";
+// Mapping catégories → dossier réel
+const CATEGORY_FOLDER: Record<string, string> = {
+  "logo": "logos",
+  "logo-cropped": "logos-cropped",
+  "article": "articles",
+  "generic": "generics",
+  "ia": "articles/generated",
+};
+
+// Détection du type (square / rect / original)
+function detectType(filename: string) {
+  const lower = filename.toLowerCase();
+  if (lower.includes("_square")) return "square";
+  if (lower.includes("_rect")) return "rect";
+  return "original";
+}
+
+// Construction d'un MediaItem complet
+async function buildMediaItem(folder: string, filename: string) {
+  const filePath = path.join(process.cwd(), "public", "media", folder, filename);
+  const info = await stat(filePath);
+
+  return {
+    id: filename,
+    url: `/media/${folder}/${filename}`,
+    folder,
+    category: CATEGORY_FOLDER[folder] || "other",
+    type: detectType(filename),
+    size: info.size,
+    createdAt: info.mtimeMs,
+  };
 }
 
 export async function POST(req: Request) {
@@ -25,61 +46,52 @@ export async function POST(req: Request) {
 
     const square = form.get("square") as File | null;
     const rectangle = form.get("rectangle") as File | null;
-    const category = form.get("category") as string | null;
+    const category = (form.get("category") as string | null) || "article";
 
     if (!square || !rectangle) {
       return NextResponse.json(
-        { status: "error", message: "Fichiers square + rectangle requis" },
+        { status: "error", message: "square + rectangle requis" },
         { status: 400 }
       );
     }
 
+    // Dossier où ranger
+    const folder = CATEGORY_FOLDER[category] || "articles";
+
     const now = Date.now();
+    const squareName = `${now}_${square.name}`;
+    const rectName = `${now}_${rectangle.name}`;
 
-    const squareFolder = getFolder(category, square.name);
-    const rectFolder = getFolder(category, rectangle.name);
+    const baseDir = path.join(process.cwd(), "public", "media", folder);
 
-    const squareFilename = `${now}_${square.name}`;
-    const rectFilename = `${now}_${rectangle.name}`;
+    // Crée le dossier si manquant
+    await mkdir(baseDir, { recursive: true });
 
-    const squarePath = path.join(
-      process.cwd(),
-      "public",
-      "media",
-      squareFolder,
-      squareFilename
-    );
-
-    const rectPath = path.join(
-      process.cwd(),
-      "public",
-      "media",
-      rectFolder,
-      rectFilename
-    );
-
-    // ==========================================
-    // IMPORTANT : création auto des dossiers
-    // ==========================================
-    await mkdir(path.dirname(squarePath), { recursive: true });
-    await mkdir(path.dirname(rectPath), { recursive: true });
-
+    // Convertir File → Buffer
     const squareBuf = Buffer.from(await square.arrayBuffer());
     const rectBuf = Buffer.from(await rectangle.arrayBuffer());
 
+    const squarePath = path.join(baseDir, squareName);
+    const rectPath = path.join(baseDir, rectName);
+
+    // Écriture des fichiers
     await writeFile(squarePath, squareBuf);
     await writeFile(rectPath, rectBuf);
 
+    // Construire objets MediaItem
+    const squareItem = await buildMediaItem(folder, squareName);
+    const rectItem = await buildMediaItem(folder, rectName);
+
     return NextResponse.json({
       status: "ok",
-      urls: {
-        square: `/media/${squareFolder}/${squareFilename}`,
-        rectangle: `/media/${rectFolder}/${rectFilename}`,
+      items: {
+        square: squareItem,
+        rectangle: rectItem,
       },
     });
 
   } catch (err: any) {
-    console.error("Upload error:", err);
+    console.error("Erreur upload média :", err);
     return NextResponse.json(
       { status: "error", message: err.message },
       { status: 500 }
