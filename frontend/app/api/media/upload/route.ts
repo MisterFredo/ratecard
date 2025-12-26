@@ -2,13 +2,28 @@ import { NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import path from "path";
 
+// ============================
+// Helper GLOBAL (pas dans un bloc !)
+// ============================
+function getFolder(category: string | null, filename: string) {
+  if (category === "logo") return "logos-cropped";
+  if (category === "article") return "articles";
+  if (category === "generic") return "generics";
+
+  // Auto-détection basique
+  const ext = filename.toLowerCase();
+  if (ext.endsWith(".svg") || ext.includes("logo")) return "logos-cropped";
+
+  return "articles";
+}
+
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
 
     const square = form.get("square") as File | null;
     const rectangle = form.get("rectangle") as File | null;
-    const category = form.get("category") as string | null; // facultatif
+    const category = form.get("category") as string | null;
 
     if (!square || !rectangle) {
       return NextResponse.json(
@@ -17,19 +32,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Helper: choix du dossier
-    function getFolder(category: string | null, filename: string) {
-      if (category === "logo") return "logos-cropped";
-      if (category === "article") return "articles";
-      if (category === "generic") return "generics";
-
-      // Auto-détection si non spécifié
-      const ext = filename.toLowerCase();
-      if (ext.endsWith(".svg") || ext.includes("logo")) return "logos-cropped";
-      return "articles";
-    }
-
-    const now = Date.now(); // éviter collisions
+    const now = Date.now();
 
     const squareFolder = getFolder(category, square.name);
     const rectFolder = getFolder(category, rectangle.name);
@@ -44,6 +47,7 @@ export async function POST(req: Request) {
       squareFolder,
       squareFilename
     );
+
     const rectPath = path.join(
       process.cwd(),
       "public",
@@ -52,11 +56,9 @@ export async function POST(req: Request) {
       rectFilename
     );
 
-    // Convertir File → Buffer
     const squareBuf = Buffer.from(await square.arrayBuffer());
     const rectBuf = Buffer.from(await rectangle.arrayBuffer());
 
-    // Écriture sur le filesystem
     await writeFile(squarePath, squareBuf);
     await writeFile(rectPath, rectBuf);
 
