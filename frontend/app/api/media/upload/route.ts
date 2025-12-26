@@ -19,15 +19,19 @@ function detectType(filename: string) {
   return "original";
 }
 
-async function buildMediaItem(folder: string, filename: string) {
-  const filePath = path.join(
+// 🔥 IMPORTANT : CHEMIN SERVI PAR RENDER
+function getPublicBase() {
+  return path.join(
     process.cwd(),
+    ".next",
+    "standalone",
     "public",
-    "media",
-    folder,
-    filename
+    "media"
   );
+}
 
+async function buildMediaItem(folder: string, filename: string) {
+  const filePath = path.join(getPublicBase(), folder, filename);
   const info = await stat(filePath);
 
   return {
@@ -44,7 +48,6 @@ async function buildMediaItem(folder: string, filename: string) {
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
-
     const square = form.get("square") as File | null;
     const rectangle = form.get("rectangle") as File | null;
     const category = (form.get("category") as string) || "article";
@@ -62,29 +65,18 @@ export async function POST(req: Request) {
     const squareName = `${now}_${square.name}`;
     const rectName = `${now}_${rectangle.name}`;
 
-    // 📌 CHEMIN DÉFINITIF CORRECT
-    const baseDir = path.join(
-      process.cwd(),
-      "public",
-      "media",
-      folder
-    );
+    // 📌 CHEMIN SERVI PAR NEXT.js STANDALONE
+    const baseDir = path.join(getPublicBase(), folder);
 
-    console.log("📁 Ecriture dans:", baseDir);
+    console.log("📁 Writing into SERVED dir:", baseDir);
 
     await mkdir(baseDir, { recursive: true });
 
     const squareBuf = Buffer.from(await square.arrayBuffer());
     const rectBuf = Buffer.from(await rectangle.arrayBuffer());
 
-    const squarePath = path.join(baseDir, squareName);
-    const rectPath = path.join(baseDir, rectName);
-
-    console.log("➡️ Writing:", squarePath);
-    console.log("➡️ Writing:", rectPath);
-
-    await writeFile(squarePath, squareBuf);
-    await writeFile(rectPath, rectBuf);
+    await writeFile(path.join(baseDir, squareName), squareBuf);
+    await writeFile(path.join(baseDir, rectName), rectBuf);
 
     const squareItem = await buildMediaItem(folder, squareName);
     const rectItem = await buildMediaItem(folder, rectName);
