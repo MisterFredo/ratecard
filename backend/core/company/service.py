@@ -1,16 +1,16 @@
-# backend/core/company/service.py
-
 import uuid
 from datetime import datetime
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq, insert_bq
+from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client
 from api.company.models import CompanyCreate
-
 
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 
 
+# ============================================================
+# CREATE COMPANY
+# ============================================================
 def create_company(data: CompanyCreate) -> str:
     company_id = str(uuid.uuid4())
     now = datetime.utcnow()
@@ -30,6 +30,9 @@ def create_company(data: CompanyCreate) -> str:
     return company_id
 
 
+# ============================================================
+# LIST COMPANIES
+# ============================================================
 def list_companies():
     sql = f"""
         SELECT *
@@ -39,6 +42,9 @@ def list_companies():
     return query_bq(sql)
 
 
+# ============================================================
+# GET ONE COMPANY
+# ============================================================
 def get_company(company_id: str):
     sql = f"""
         SELECT *
@@ -49,6 +55,10 @@ def get_company(company_id: str):
     rows = query_bq(sql, {"id": company_id})
     return rows[0] if rows else None
 
+
+# ============================================================
+# UPDATE COMPANY
+# ============================================================
 def update_company(id_company: str, data: CompanyCreate):
     now = datetime.utcnow()
 
@@ -68,4 +78,5 @@ def update_company(id_company: str, data: CompanyCreate):
         raise RuntimeError(errors)
 
     return True
+
 
