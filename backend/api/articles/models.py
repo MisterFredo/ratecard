@@ -17,7 +17,10 @@ class ArticleCreate(BaseModel):
     titre: str
     excerpt: Optional[str] = None
     contenu_html: str
+
     visuel_url: Optional[str] = None
+    visuel_square_url: Optional[str] = None     # ← IMPORTANT
+
     auteur: Optional[str] = None
 
     is_featured: bool = False
@@ -33,7 +36,10 @@ class ArticleOut(BaseModel):
     titre: str
     excerpt: Optional[str]
     contenu_html: str
+
     visuel_url: Optional[str]
+    visuel_square_url: Optional[str]            # ← IMPORTANT
+
     auteur: Optional[str]
     date_publication: datetime
 
