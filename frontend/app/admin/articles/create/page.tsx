@@ -14,9 +14,6 @@ import HtmlEditor from "@/components/admin/HtmlEditor";
 export default function CreateArticlePage() {
   const [activeTab, setActiveTab] = useState<"scratch" | "source">("scratch");
 
-  // -------------------------------
-  // FORM FIELDS
-  // -------------------------------
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
@@ -28,14 +25,9 @@ export default function CreateArticlePage() {
   const [visuelUrl, setVisuelUrl] = useState("");
   const [visuelSquare, setVisuelSquare] = useState("");
 
-  // Media pickers
   const [pickerVisuelOpen, setPickerVisuelOpen] = useState(false);
-  const [pickerLogoCompanyOpen, setPickerLogoCompanyOpen] = useState(false);
-  const [pickerGenericOpen, setPickerGenericOpen] = useState(false);
-
   const [uploaderOpen, setUploaderOpen] = useState(false);
 
-  // Source transformer (AI)
   const [sourceType, setSourceType] = useState("LINKEDIN_POST");
   const [sourceText, setSourceText] = useState("");
   const [author, setAuthor] = useState("");
@@ -45,9 +37,6 @@ export default function CreateArticlePage() {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  // -------------------------------
-  // AI: Transformer une source
-  // -------------------------------
   async function generateDraft() {
     setLoadingDraft(true);
     setDraft(null);
@@ -60,40 +49,52 @@ export default function CreateArticlePage() {
 
     const res = await api.post("/lab-light/transform", payload);
     setDraft(res.draft || null);
-    setLoadingDraft(false);
 
     if (res.draft?.title_proposal) setTitle(res.draft.title_proposal);
     if (res.draft?.excerpt) setExcerpt(res.draft.excerpt);
     if (res.draft?.content_html) setContentHtml(res.draft.content_html);
+
+    setLoadingDraft(false);
   }
 
-  // -------------------------------
-  // SAVE ARTICLE
-  // -------------------------------
+  async function generateIA() {
+    if (!title && !excerpt) {
+      return alert("Merci de renseigner un titre ou un résumé");
+    }
+
+    setSaving(true);
+
+    const payload = {
+      title,
+      excerpt,
+      axes: axes.map(a => a.LABEL),
+      company: selectedCompany || null,
+    };
+
+    const res = await api.post("/media/generate", payload);
+
+    if (res.status === "ok") {
+      setVisuelUrl(res.urls.rectangle);
+      setVisuelSquare(res.urls.square);
+    }
+
+    setSaving(false);
+  }
+
   async function publishArticle() {
     setSaving(true);
 
     const payload = {
       titre: title,
-      excerpt: excerpt,
+      excerpt,
       contenu_html: contentHtml,
       visuel_url: visuelUrl || null,
       visuel_square_url: visuelSquare || null,
-
       is_featured: false,
       featured_order: null,
-
-      axes: axes.map((a) => ({
-        type: a.TYPE,
-        value: a.LABEL,
-      })),
-
+      axes: axes.map(a => ({ type: a.TYPE, value: a.LABEL })),
       companies: selectedCompany ? [selectedCompany] : [],
-      persons: selectedPersons.map((id) => ({
-        id_person: id,
-        role: null,
-      })),
-
+      persons: selectedPersons.map(id => ({ id_person: id, role: null })),
       auteur: author || null,
     };
 
@@ -105,15 +106,15 @@ export default function CreateArticlePage() {
   return (
     <div className="space-y-10">
 
-      {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-semibold text-ratecard-blue">Créer un article</h1>
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
+          Créer un article
+        </h1>
         <Link href="/admin/articles" className="underline text-gray-600">
           ← Retour
         </Link>
       </div>
 
-      {/* TABS */}
       <div className="flex border-b">
         <button
           onClick={() => setActiveTab("scratch")}
@@ -125,7 +126,6 @@ export default function CreateArticlePage() {
         >
           From scratch
         </button>
-
         <button
           onClick={() => setActiveTab("source")}
           className={`px-4 py-2 ${
@@ -138,50 +138,34 @@ export default function CreateArticlePage() {
         </button>
       </div>
 
-      {/* ======================== */}
-      {/*       ONGLET SCRATCH     */}
-      {/* ======================== */}
       {activeTab === "scratch" && (
         <div className="space-y-6">
 
-          {/* TITRE */}
           <input
             placeholder="Titre"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={e => setTitle(e.target.value)}
             className="border p-2 w-full rounded"
           />
 
-          {/* EXCERPT */}
           <textarea
             placeholder="Résumé"
             value={excerpt}
-            onChange={(e) => setExcerpt(e.target.value)}
+            onChange={e => setExcerpt(e.target.value)}
             className="border p-2 w-full h-24 rounded"
           />
 
-          {/* CONTENU */}
           <HtmlEditor value={contentHtml} onChange={setContentHtml} />
 
-          {/* COMPANY */}
           <CompanySelector value={selectedCompany} onChange={setSelectedCompany} />
-
-          {/* PERSONS */}
           <PersonSelector values={selectedPersons} onChange={setSelectedPersons} />
-
-          {/* AXES */}
           <AxesEditor values={axes} onChange={setAxes} />
 
-          {/* ========================= */}
-          {/*   SECTION VISUELS         */}
-          {/* ========================= */}
           <div className="space-y-4 p-4 border rounded bg-white">
-
             <h2 className="text-xl font-semibold text-ratecard-blue">
               Visuel de l’article
             </h2>
 
-            {/* Actions */}
             <div className="flex gap-3">
               <button
                 className="bg-ratecard-green text-white px-3 py-2 rounded"
@@ -199,13 +183,13 @@ export default function CreateArticlePage() {
 
               <button
                 className="bg-ratecard-blue text-white px-3 py-2 rounded"
-                disabled
+                onClick={generateIA}
+                disabled={saving}
               >
-                Générer via IA (bientôt)
+                {saving ? "Génération…" : "Générer via IA"}
               </button>
             </div>
 
-            {/* PREVIEW VISUEL */}
             {visuelUrl && (
               <div>
                 <img
@@ -217,21 +201,17 @@ export default function CreateArticlePage() {
             )}
           </div>
 
-          {/* PICKER: VISUELS ARTICLES */}
           <MediaPicker
             open={pickerVisuelOpen}
             onClose={() => setPickerVisuelOpen(false)}
             category="articles"
-            onSelect={(url) => {
-              setVisuelUrl(url);
-            }}
+            onSelect={url => setVisuelUrl(url)}
           />
 
-          {/* PICKER: UPLOAD */}
           {uploaderOpen && (
-            <div className="border rounded p-4 bg-white">
+            <div className="border p-4 rounded bg-white">
               <MediaUploader
-                onUploadComplete={(urls) => {
+                onUploadComplete={urls => {
                   setVisuelUrl(urls.rectangle);
                   setVisuelSquare(urls.square);
                   setUploaderOpen(false);
@@ -240,7 +220,6 @@ export default function CreateArticlePage() {
             </div>
           )}
 
-          {/* SAVE BUTTON */}
           <button
             onClick={publishArticle}
             disabled={saving}
@@ -257,14 +236,12 @@ export default function CreateArticlePage() {
         </div>
       )}
 
-      {/* ======================== */}
-      {/*      ONGLET SOURCE       */}
-      {/* ======================== */}
       {activeTab === "source" && (
         <div className="space-y-6">
+
           <select
             value={sourceType}
-            onChange={(e) => setSourceType(e.target.value)}
+            onChange={e => setSourceType(e.target.value)}
             className="border p-2 rounded"
           >
             <option value="LINKEDIN_POST">Post LinkedIn</option>
@@ -277,14 +254,14 @@ export default function CreateArticlePage() {
           <input
             placeholder="Auteur (optionnel)"
             value={author}
-            onChange={(e) => setAuthor(e.target.value)}
+            onChange={e => setAuthor(e.target.value)}
             className="border p-2 rounded w-full"
           />
 
           <textarea
             placeholder="Source brute…"
             value={sourceText}
-            onChange={(e) => setSourceText(e.target.value)}
+            onChange={e => setSourceText(e.target.value)}
             className="border p-2 rounded w-full h-48"
           />
 
@@ -296,17 +273,16 @@ export default function CreateArticlePage() {
             {loadingDraft ? "Génération…" : "Transformer en article"}
           </button>
 
-          {/* PREVIEW DU DRAFT */}
           {draft && (
             <div className="p-4 border rounded bg-white space-y-4">
               <input
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={e => setTitle(e.target.value)}
                 className="border p-2 w-full rounded font-semibold"
               />
               <textarea
                 value={excerpt}
-                onChange={(e) => setExcerpt(e.target.value)}
+                onChange={e => setExcerpt(e.target.value)}
                 className="border p-2 w-full rounded h-24"
               />
               <HtmlEditor value={contentHtml} onChange={setContentHtml} />
