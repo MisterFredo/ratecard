@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import MediaPicker from "@/components/admin/MediaPicker";
+import MediaUploader from "@/components/admin/MediaUploader";
 
 export default function EditCompany({ params }) {
   const { id } = params;
@@ -13,10 +14,11 @@ export default function EditCompany({ params }) {
 
   const [name, setName] = useState("");
 
-  const [logoUrl, setLogoUrl] = useState("");         // RECTANGLE
+  const [logoUrl, setLogoUrl] = useState("");           // RECTANGLE
   const [logoSquareUrl, setLogoSquareUrl] = useState(""); // CARRE
 
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [uploaderOpen, setUploaderOpen] = useState(false);
 
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [description, setDescription] = useState("");
@@ -44,7 +46,7 @@ export default function EditCompany({ params }) {
   }, [id]);
 
   // ------------------------------------------------
-  // UPDATE
+  // UPDATE COMPANY
   // ------------------------------------------------
   async function update() {
     if (!name) return alert("Merci de renseigner un nom de société");
@@ -90,12 +92,21 @@ export default function EditCompany({ params }) {
       <div className="space-y-3">
         <label className="font-medium">Logo rectangulaire & carré</label>
 
-        <button
-          onClick={() => setPickerOpen(true)}
-          className="bg-ratecard-green text-white px-4 py-2 rounded"
-        >
-          Choisir un visuel dans la médiathèque
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setPickerOpen(true)}
+            className="bg-ratecard-green text-white px-4 py-2 rounded"
+          >
+            Choisir dans la médiathèque
+          </button>
+
+          <button
+            onClick={() => setUploaderOpen(true)}
+            className="bg-gray-700 text-white px-4 py-2 rounded"
+          >
+            Uploader un logo
+          </button>
+        </div>
 
         {/* PREVIEW RECTANGLE */}
         {logoUrl && (
@@ -122,19 +133,33 @@ export default function EditCompany({ params }) {
         )}
       </div>
 
-      {/* DRAWER MEDIA PICKER */}
+      {/* MEDIA PICKER */}
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         category="logos-cropped"
         onSelect={(url) => {
-          if (url.includes("square") || url.includes("_carre")) {
+          if (url.includes("square")) {
             setLogoSquareUrl(url);
           } else {
             setLogoUrl(url);
           }
         }}
       />
+
+      {/* UPLOADER */}
+      {uploaderOpen && (
+        <div className="border rounded p-4 bg-white">
+          <MediaUploader
+            category="logo-cropped"
+            onUploadComplete={({ square, rectangle }) => {
+              setLogoSquareUrl(square.url);   // MediaItem.url
+              setLogoUrl(rectangle.url);      // MediaItem.url
+              setUploaderOpen(false);
+            }}
+          />
+        </div>
+      )}
 
       {/* LINKEDIN */}
       <input
@@ -161,11 +186,12 @@ export default function EditCompany({ params }) {
       </button>
 
       {result && (
-        <pre className="bg-gray-100 p-4 rounded mt-4">
+        <pre className="bg-gray-100 p-4 rounded mt-4 whitespace-pre-wrap">
           {JSON.stringify(result, null, 2)}
         </pre>
       )}
     </div>
   );
 }
+
 
