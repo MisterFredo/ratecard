@@ -14,8 +14,9 @@ export default function EditCompany({ params }) {
 
   const [name, setName] = useState("");
 
-  const [logoUrl, setLogoUrl] = useState("");           // RECTANGLE
-  const [logoSquareUrl, setLogoSquareUrl] = useState(""); // CARRE
+  // RECTANGLE + CARRE
+  const [logoUrl, setLogoUrl] = useState("");          // rectangle
+  const [logoSquareUrl, setLogoSquareUrl] = useState(""); // square
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploaderOpen, setUploaderOpen] = useState(false);
@@ -137,7 +138,7 @@ export default function EditCompany({ params }) {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="logos-cropped"
+        category="logos-cropped"   // DOIT ABSOLUMENT ÊTRE CE DOSSIER
         onSelect={(url) => {
           if (url.includes("square")) {
             setLogoSquareUrl(url);
@@ -151,10 +152,10 @@ export default function EditCompany({ params }) {
       {uploaderOpen && (
         <div className="border rounded p-4 bg-white">
           <MediaUploader
-            category="logo-cropped"
+            category="logos-cropped"   // correction : "logo-cropped" n'existe pas
             onUploadComplete={({ square, rectangle }) => {
-              setLogoSquareUrl(square.url);   // MediaItem.url
-              setLogoUrl(rectangle.url);      // MediaItem.url
+              setLogoSquareUrl(square.url);
+              setLogoUrl(rectangle.url);
               setUploaderOpen(false);
             }}
           />
@@ -193,5 +194,6 @@ export default function EditCompany({ params }) {
     </div>
   );
 }
+
 
 
