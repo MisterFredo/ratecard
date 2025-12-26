@@ -1,0 +1,77 @@
+import { NextResponse } from "next/server";
+import { writeFile } from "fs/promises";
+import path from "path";
+
+export async function POST(req: Request) {
+  try {
+    const form = await req.formData();
+
+    const square = form.get("square") as File | null;
+    const rectangle = form.get("rectangle") as File | null;
+    const category = form.get("category") as string | null; // facultatif
+
+    if (!square || !rectangle) {
+      return NextResponse.json(
+        { status: "error", message: "Fichiers square + rectangle requis" },
+        { status: 400 }
+      );
+    }
+
+    // Helper: choix du dossier
+    function getFolder(category: string | null, filename: string) {
+      if (category === "logo") return "logos-cropped";
+      if (category === "article") return "articles";
+      if (category === "generic") return "generics";
+
+      // Auto-détection si non spécifié
+      const ext = filename.toLowerCase();
+      if (ext.endsWith(".svg") || ext.includes("logo")) return "logos-cropped";
+      return "articles";
+    }
+
+    const now = Date.now(); // éviter collisions
+
+    const squareFolder = getFolder(category, square.name);
+    const rectFolder = getFolder(category, rectangle.name);
+
+    const squareFilename = `${now}_${square.name}`;
+    const rectFilename = `${now}_${rectangle.name}`;
+
+    const squarePath = path.join(
+      process.cwd(),
+      "public",
+      "media",
+      squareFolder,
+      squareFilename
+    );
+    const rectPath = path.join(
+      process.cwd(),
+      "public",
+      "media",
+      rectFolder,
+      rectFilename
+    );
+
+    // Convertir File → Buffer
+    const squareBuf = Buffer.from(await square.arrayBuffer());
+    const rectBuf = Buffer.from(await rectangle.arrayBuffer());
+
+    // Écriture sur le filesystem
+    await writeFile(squarePath, squareBuf);
+    await writeFile(rectPath, rectBuf);
+
+    return NextResponse.json({
+      status: "ok",
+      urls: {
+        square: `/media/${squareFolder}/${squareFilename}`,
+        rectangle: `/media/${rectFolder}/${rectFilename}`,
+      },
+    });
+  } catch (err: any) {
+    console.error("Upload error:", err);
+    return NextResponse.json(
+      { status: "error", message: err.message },
+      { status: 500 }
+    );
+  }
+}
