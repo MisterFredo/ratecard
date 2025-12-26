@@ -6,101 +6,70 @@ import sharp from "sharp";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
-// Destination réelle
 function getUploadDir(category: string) {
   return path.join(process.cwd(), "uploads", "media", category);
-}
-
-// Génère square 1:1
-async function generateSquare(buffer: Buffer, size = 600) {
-  return sharp(buffer)
-    .rotate() // EXIF auto-rotation
-    .resize(size, size, {
-      fit: "cover",
-      position: "centre"
-    })
-    .jpeg({ quality: 85 })
-    .toBuffer();
-}
-
-// Génère rectangulaire (ex: 16/9)
-async function generateRectangle(buffer: Buffer, width = 1200) {
-  return sharp(buffer)
-    .rotate()
-    .resize({
-      width,
-      height: Math.round(width * 9 / 16),
-      fit: "cover",
-      position: "centre"
-    })
-    .jpeg({ quality: 85 })
-    .toBuffer();
-}
-
-// Génère original optimisé (max 2000px)
-async function optimizeOriginal(buffer: Buffer) {
-  return sharp(buffer)
-    .rotate()
-    .resize({ width: 2000, withoutEnlargement: true })
-    .jpeg({ quality: 90 })
-    .toBuffer();
 }
 
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
-    const file = form.get("file") as File | null;
+
+    const square = form.get("square") as File | null;
+    const rectangle = form.get("rectangle") as File | null;
     const category = (form.get("category") as string) || "articles";
 
-    if (!file) {
+    if (!square || !rectangle) {
       return NextResponse.json(
-        { status: "error", message: "Fichier manquant" },
+        { status: "error", message: "Carré + rectangle requis" },
         { status: 400 }
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const now = Date.now();
-    const safeName = file.name.replace(/\s+/g, "-");
-
     const destDir = getUploadDir(category);
     await mkdir(destDir, { recursive: true });
 
-    // 1️⃣ ORIGINAL HD OPTIMISÉ
-    const original = await optimizeOriginal(buffer);
-    const originalName = `${now}_${safeName}`;
-    await writeFile(path.join(destDir, originalName), original);
+    const now = Date.now();
 
-    // 2️⃣ RECTANGLE (16/9)
-    const rect = await generateRectangle(buffer);
-    const rectName = `${now}_${safeName.replace(".", "_rect.")}`;
-    await writeFile(path.join(destDir, rectName), rect);
+    // SQUARE
+    const squareBuf = Buffer.from(await square.arrayBuffer());
+    const squareName = `${now}_${square.name}`;
+    await writeFile(path.join(destDir, squareName), squareBuf);
 
-    // 3️⃣ SQUARE (1:1)
-    const square = await generateSquare(buffer);
-    const squareName = `${now}_${safeName.replace(".", "_square.")}`;
-    await writeFile(path.join(destDir, squareName), square);
+    // RECTANGLE
+    const rectBuf = Buffer.from(await rectangle.arrayBuffer());
+    const rectName = `${now}_${rectangle.name}`;
+    await writeFile(path.join(destDir, rectName), rectBuf);
+
+    // ORIGINAL (optionnel : recompose depuis rect)
+    const originalName = `${now}_original.jpg`;
+    const optimizedOriginal = await sharp(rectBuf)
+      .rotate()
+      .resize({ width: 2000, withoutEnlargement: true })
+      .jpeg({ quality: 90 })
+      .toBuffer();
+    await writeFile(path.join(destDir, originalName), optimizedOriginal);
 
     return NextResponse.json({
       status: "ok",
       items: {
-        original: {
-          url: `/media/${category}/${originalName}`,
-          id: originalName,
+        square: {
+          id: squareName,
+          url: `/media/${category}/${squareName}`,
+          folder: category,
         },
         rectangle: {
-          url: `/media/${category}/${rectName}`,
           id: rectName,
-        },
-        square: {
-          url: `/media/${category}/${squareName}`,
-          id: squareName,
+          url: `/media/${category}/${rectName}`,
+          folder: category,
         }
       }
     });
 
   } catch (err: any) {
-    console.error("❌ Erreur upload Sharp:", err);
-    return NextResponse.json({ status: "error", message: err.message }, { status: 500 });
+    console.error("❌ Upload error :", err);
+    return NextResponse.json(
+      { status: "error", message: err.message },
+      { status: 500 }
+    );
   }
 }
