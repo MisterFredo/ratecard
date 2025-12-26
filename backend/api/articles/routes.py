@@ -20,9 +20,12 @@ def create(data: ArticleCreate):
 
 
 @router.get("/list")
-def list_all(limit: int = 50):
-    return {"status": "ok", "articles": list_articles(limit)}
-
+def list_all():
+    from core.articles.service import list_articles
+    try:
+        return {"status": "ok", "articles": list_articles()}
+    except Exception as e:
+        raise HTTPException(500, f"Erreur list articles : {e}")
 
 @router.get("/{id_article}")
 def get_one(id_article: str):
