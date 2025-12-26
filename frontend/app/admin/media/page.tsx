@@ -1,132 +1,133 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import MediaUploader from "@/components/admin/MediaUploader";
+import Link from "next/link";
+import MediaGrid from "./grid";
+import MediaTable from "./table";
 
-export default function MediaLibraryPage() {
-  const [media, setMedia] = useState<any>({
-    logos: [],
-    logosCropped: [],
-    articles: [],
-    generics: [],
-    generated: [],
-  });
+export type MediaItem = {
+  id: string;
+  url: string;
+  folder: string;
+  category: string;
+  type: string;
+  size: number;
+  createdAt: number;
+};
 
+const FILTERS = [
+  { key: "all", label: "Tous" },
+  { key: "logos", label: "Logos" },
+  { key: "logosCropped", label: "Formatés" },
+  { key: "articles", label: "Articles" },
+  { key: "ia", label: "IA générés" },
+  { key: "generics", label: "Génériques" },
+];
+
+export default function MediaManagerPage() {
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [filtered, setFiltered] = useState<MediaItem[]>([]);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [view, setView] = useState<"grid" | "table">("grid");
   const [loading, setLoading] = useState(true);
-  const [openCategory, setOpenCategory] = useState<string | null>("logos");
 
-  async function load() {
+  async function loadMedia() {
     setLoading(true);
     const res = await fetch("/api/media/list");
     const json = await res.json();
-    if (json.status === "ok") setMedia(json.media);
+
+    if (json.status === "ok") {
+      setMedia(json.media);
+      applyFilter(json.media, activeFilter);
+    }
+
     setLoading(false);
   }
 
   useEffect(() => {
-    load();
+    loadMedia();
   }, []);
 
-  async function deleteFile(url: string) {
-    if (!confirm("Supprimer ce fichier ?")) return;
-    await fetch("/api/media/delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
-    load();
+  function applyFilter(list: MediaItem[], key: string) {
+    if (key === "all") {
+      setFiltered(list);
+    } else {
+      setFiltered(list.filter((m) => m.category === key));
+    }
   }
 
-  function Category({ title, files, keyName }) {
-    const isOpen = openCategory === keyName;
-
-    return (
-      <div className="border rounded bg-white overflow-hidden">
-
-        <div
-          className="flex justify-between items-center px-4 py-3 cursor-pointer bg-gray-100 hover:bg-gray-200"
-          onClick={() => setOpenCategory(isOpen ? null : keyName)}
-        >
-          <h3 className="font-semibold text-ratecard-blue">{title}</h3>
-          <span className="text-gray-600 text-sm">{isOpen ? "▼" : "▶"}</span>
-        </div>
-
-        {isOpen && (
-          <div className="p-4">
-
-            {loading ? (
-              <p className="text-gray-500">Chargement…</p>
-            ) : files.length === 0 ? (
-              <p className="text-gray-400 italic">Aucun visuel.</p>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {files.map((url: string) => (
-                  <div
-                    key={url}
-                    className="border p-2 rounded-lg bg-white shadow-sm flex flex-col items-center"
-                  >
-                    <img
-                      src={url}
-                      className="w-full h-24 object-contain rounded bg-gray-50 border"
-                    />
-                    <p className="text-[10px] text-gray-500 break-all mt-1">{url}</p>
-
-                    <button
-                      className="text-red-600 text-xs underline mt-1"
-                      onClick={() => deleteFile(url)}
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-          </div>
-        )}
-
-      </div>
-    );
+  function onFilterChange(key: string) {
+    setActiveFilter(key);
+    applyFilter(media, key);
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
 
-      <h1 className="text-3xl font-semibold text-ratecard-blue">Media Library</h1>
+      {/* HEADER */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
+          Media Manager
+        </h1>
 
-      <div className="border rounded bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold mb-4 text-ratecard-blue">
-          Ajouter un visuel
-        </h2>
-
-        <MediaUploader onUploadComplete={load} />
+        <Link
+          href="/admin/media/create"
+          className="bg-ratecard-green px-4 py-2 rounded text-white"
+        >
+          + Ajouter un visuel
+        </Link>
       </div>
 
-      <Category keyName="logos" title="Logos (originaux)" files={media.logos} />
+      {/* FILTERS */}
+      <div className="flex gap-2">
+        {FILTERS.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => onFilterChange(f.key)}
+            className={`px-3 py-2 rounded text-sm border ${
+              activeFilter === f.key
+                ? "bg-ratecard-blue text-white"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
 
-      <Category
-        keyName="logosCropped"
-        title="Logos formatés (square + rect)"
-        files={media.logosCropped}
-      />
+      {/* VIEW SWITCH */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setView("grid")}
+          className={`px-3 py-1 rounded ${
+            view === "grid"
+              ? "bg-ratecard-blue text-white"
+              : "bg-gray-200 text-gray-700"
+          }`}
+        >
+          Grid
+        </button>
+        <button
+          onClick={() => setView("table")}
+          className={`px-3 py-1 rounded ${
+            view === "table"
+              ? "bg-ratecard-blue text-white"
+              : "bg-gray-200 text-gray-700"
+          }`}
+        >
+          Table
+        </button>
+      </div>
 
-      <Category
-        keyName="articles"
-        title="Visuels d’articles (upload manuel)"
-        files={media.articles}
-      />
+      {/* CONTENT */}
+      {loading ? (
+        <p className="text-gray-500">Chargement…</p>
+      ) : view === "grid" ? (
+        <MediaGrid items={filtered} refresh={loadMedia} />
+      ) : (
+        <MediaTable items={filtered} refresh={loadMedia} />
+      )}
 
-      <Category
-        keyName="generated"
-        title="Visuels IA générés"
-        files={media.generated}
-      />
-
-      <Category
-        keyName="generics"
-        title="Visuels génériques"
-        files={media.generics}
-      />
     </div>
   );
 }
