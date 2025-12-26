@@ -17,9 +17,6 @@ export default function EditArticle({ params }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // -------------------------------
-  // FIELDS
-  // -------------------------------
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
@@ -31,15 +28,14 @@ export default function EditArticle({ params }) {
   const [visuelUrl, setVisuelUrl] = useState("");
   const [visuelSquare, setVisuelSquare] = useState("");
 
-  // pickers
   const [pickerVisuelOpen, setPickerVisuelOpen] = useState(false);
   const [uploaderOpen, setUploaderOpen] = useState(false);
 
   const [result, setResult] = useState<any>(null);
 
-  // -------------------------------
-  // LOAD ARTICLE
-  // -------------------------------
+  // ================================================================
+  // LOAD ARTICLE DATA
+  // ================================================================
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -55,6 +51,7 @@ export default function EditArticle({ params }) {
 
       setSelectedCompany(a.companies?.[0] || "");
       setSelectedPersons(a.persons?.map((p) => p.ID_PERSON) || []);
+
       setAxes(
         (a.axes || []).map((ax: any) => ({
           TYPE: ax.AXE_TYPE,
@@ -64,12 +61,40 @@ export default function EditArticle({ params }) {
 
       setLoading(false);
     }
+
     load();
   }, [id]);
 
-  // -------------------------------
-  // SAVE
-  // -------------------------------
+  // ================================================================
+  // GENERATE IA VISUAL (coming next)
+  // ================================================================
+  async function generateIA() {
+    if (!title && !excerpt) {
+      return alert("Merci de renseigner un titre ou un résumé");
+    }
+
+    setSaving(true);
+
+    const payload = {
+      title,
+      excerpt,
+      axes: axes.map((a) => a.LABEL),
+      company: selectedCompany || null,
+    };
+
+    const res = await api.post("/media/generate", payload);
+
+    if (res.status === "ok") {
+      setVisuelUrl(res.urls.rectangle);
+      setVisuelSquare(res.urls.square);
+    }
+
+    setSaving(false);
+  }
+
+  // ================================================================
+  // SAVE ARTICLE
+  // ================================================================
   async function save() {
     setSaving(true);
 
@@ -77,24 +102,13 @@ export default function EditArticle({ params }) {
       titre: title,
       excerpt: excerpt,
       contenu_html: contentHtml,
-
       visuel_url: visuelUrl || null,
       visuel_square_url: visuelSquare || null,
-
       is_featured: false,
       featured_order: null,
-
-      axes: axes.map((a) => ({
-        type: a.TYPE,
-        value: a.LABEL,
-      })),
-
+      axes: axes.map((a) => ({ type: a.TYPE, value: a.LABEL })),
       companies: selectedCompany ? [selectedCompany] : [],
-      persons: selectedPersons.map((id) => ({
-        id_person: id,
-        role: null,
-      })),
-
+      persons: selectedPersons.map((id) => ({ id_person: id, role: null })),
       auteur: null,
     };
 
@@ -132,7 +146,7 @@ export default function EditArticle({ params }) {
         className="border p-2 w-full rounded h-24"
       />
 
-      {/* HTML */}
+      {/* CONTENU */}
       <HtmlEditor value={contentHtml} onChange={setContentHtml} />
 
       {/* COMPANY */}
@@ -144,21 +158,20 @@ export default function EditArticle({ params }) {
       {/* AXES */}
       <AxesEditor values={axes} onChange={setAxes} />
 
-      {/* ======================== */}
+      {/* ======================================================= */}
       {/* VISUELS */}
-      {/* ======================== */}
+      {/* ======================================================= */}
       <div className="space-y-4 p-4 border rounded bg-white">
         <h2 className="text-xl font-semibold text-ratecard-blue">
           Visuel de l’article
         </h2>
 
-        {/* ACTIONS */}
         <div className="flex gap-3">
           <button
             className="bg-ratecard-green text-white px-3 py-2 rounded"
             onClick={() => setPickerVisuelOpen(true)}
           >
-            Choisir depuis la médiathèque
+            Choisir dans la médiathèque
           </button>
 
           <button
@@ -170,13 +183,13 @@ export default function EditArticle({ params }) {
 
           <button
             className="bg-ratecard-blue text-white px-3 py-2 rounded"
-            disabled
+            onClick={generateIA}
+            disabled={saving}
           >
-            Générer via IA (bientôt)
+            {saving ? "Génération…" : "Générer via IA"}
           </button>
         </div>
 
-        {/* PREVIEW */}
         {visuelUrl && (
           <div className="mt-2">
             <img
@@ -188,14 +201,12 @@ export default function EditArticle({ params }) {
         )}
       </div>
 
-      {/* PICKER : ARTICLES */}
+      {/* PICKER */}
       <MediaPicker
         open={pickerVisuelOpen}
         onClose={() => setPickerVisuelOpen(false)}
         category="articles"
-        onSelect={(url) => {
-          setVisuelUrl(url);
-        }}
+        onSelect={(url) => setVisuelUrl(url)}
       />
 
       {/* UPLOADER */}
@@ -221,7 +232,7 @@ export default function EditArticle({ params }) {
       </button>
 
       {result && (
-        <pre className="bg-gray-100 p-4 rounded mt-4 whitespace-pre-wrap">
+        <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap mt-4">
           {JSON.stringify(result, null, 2)}
         </pre>
       )}
