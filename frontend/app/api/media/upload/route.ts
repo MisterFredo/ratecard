@@ -1,91 +1,106 @@
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { writeFile, mkdir, stat } from "fs/promises";
+import sharp from "sharp";
+import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
-const CATEGORY_FOLDER: Record<string, string> = {
-  logo: "logos",
-  "logo-cropped": "logos-cropped",
-  article: "articles",
-  generic: "generics",
-  ia: "articles/generated",
-};
-
-function detectType(filename: string) {
-  const lower = filename.toLowerCase();
-  if (lower.includes("_square")) return "square";
-  if (lower.includes("_rect")) return "rect";
-  return "original";
+// Destination réelle
+function getUploadDir(category: string) {
+  return path.join(process.cwd(), "uploads", "media", category);
 }
 
-function getUploadRoot() {
-  // EMPLACEMENT PERSISTANT ET ACCESSIBLE À RUNTIME
-  return path.join(process.cwd(), "uploads", "media");
+// Génère square 1:1
+async function generateSquare(buffer: Buffer, size = 600) {
+  return sharp(buffer)
+    .rotate() // EXIF auto-rotation
+    .resize(size, size, {
+      fit: "cover",
+      position: "centre"
+    })
+    .jpeg({ quality: 85 })
+    .toBuffer();
 }
 
-async function buildMediaItem(folder: string, filename: string) {
-  const filePath = path.join(getUploadRoot(), folder, filename);
-  const info = await stat(filePath);
+// Génère rectangulaire (ex: 16/9)
+async function generateRectangle(buffer: Buffer, width = 1200) {
+  return sharp(buffer)
+    .rotate()
+    .resize({
+      width,
+      height: Math.round(width * 9 / 16),
+      fit: "cover",
+      position: "centre"
+    })
+    .jpeg({ quality: 85 })
+    .toBuffer();
+}
 
-  return {
-    id: filename,
-    url: `/media/${folder}/${filename}`,
-    folder,
-    type: detectType(filename),
-    size: info.size,
-    createdAt: info.mtimeMs,
-  };
+// Génère original optimisé (max 2000px)
+async function optimizeOriginal(buffer: Buffer) {
+  return sharp(buffer)
+    .rotate()
+    .resize({ width: 2000, withoutEnlargement: true })
+    .jpeg({ quality: 90 })
+    .toBuffer();
 }
 
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
+    const file = form.get("file") as File | null;
+    const category = (form.get("category") as string) || "articles";
 
-    const square = form.get("square") as File | null;
-    const rectangle = form.get("rectangle") as File | null;
-    const category = (form.get("category") as string) || "article";
-
-    if (!square || !rectangle) {
+    if (!file) {
       return NextResponse.json(
-        { status: "error", message: "square + rectangle requis" },
+        { status: "error", message: "Fichier manquant" },
         { status: 400 }
       );
     }
 
-    const folder = CATEGORY_FOLDER[category];
+    const buffer = Buffer.from(await file.arrayBuffer());
     const now = Date.now();
-    const squareName = `${now}_${square.name}`;
-    const rectName = `${now}_${rectangle.name}`;
+    const safeName = file.name.replace(/\s+/g, "-");
 
-    const baseDir = path.join(getUploadRoot(), folder);
+    const destDir = getUploadDir(category);
+    await mkdir(destDir, { recursive: true });
 
-    console.log("📁 Writing into UPLOAD dir:", baseDir);
+    // 1️⃣ ORIGINAL HD OPTIMISÉ
+    const original = await optimizeOriginal(buffer);
+    const originalName = `${now}_${safeName}`;
+    await writeFile(path.join(destDir, originalName), original);
 
-    await mkdir(baseDir, { recursive: true });
+    // 2️⃣ RECTANGLE (16/9)
+    const rect = await generateRectangle(buffer);
+    const rectName = `${now}_${safeName.replace(".", "_rect.")}`;
+    await writeFile(path.join(destDir, rectName), rect);
 
-    const squareBuf = Buffer.from(await square.arrayBuffer());
-    const rectBuf = Buffer.from(await rectangle.arrayBuffer());
-
-    await writeFile(path.join(baseDir, squareName), squareBuf);
-    await writeFile(path.join(baseDir, rectName), rectBuf);
-
-    const squareItem = await buildMediaItem(folder, squareName);
-    const rectItem = await buildMediaItem(folder, rectName);
+    // 3️⃣ SQUARE (1:1)
+    const square = await generateSquare(buffer);
+    const squareName = `${now}_${safeName.replace(".", "_square.")}`;
+    await writeFile(path.join(destDir, squareName), square);
 
     return NextResponse.json({
       status: "ok",
       items: {
-        square: squareItem,
-        rectangle: rectItem,
-      },
+        original: {
+          url: `/media/${category}/${originalName}`,
+          id: originalName,
+        },
+        rectangle: {
+          url: `/media/${category}/${rectName}`,
+          id: rectName,
+        },
+        square: {
+          url: `/media/${category}/${squareName}`,
+          id: squareName,
+        }
+      }
     });
 
   } catch (err: any) {
-    console.error("❌ Erreur upload média :", err);
-    return NextResponse.json(
-      { status: "error", message: err.message },
-      { status: 500 }
-    );
+    console.error("❌ Erreur upload Sharp:", err);
+    return NextResponse.json({ status: "error", message: err.message }, { status: 500 });
   }
 }
