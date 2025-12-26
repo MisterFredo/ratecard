@@ -9,9 +9,11 @@ import MediaUploader from "@/components/admin/MediaUploader";
 export default function CreateCompany() {
   const [name, setName] = useState("");
 
-  const [logoUrl, setLogoUrl] = useState("");          // rectangle
-  const [logoSquareUrl, setLogoSquareUrl] = useState(""); // square
+  // RECTANGLE + CARRE
+  const [logoUrl, setLogoUrl] = useState("");          // rectangle 1200x900
+  const [logoSquareUrl, setLogoSquareUrl] = useState(""); // carré 600x600
 
+  // UI états
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploaderOpen, setUploaderOpen] = useState(false);
 
@@ -21,6 +23,9 @@ export default function CreateCompany() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [description, setDescription] = useState("");
 
+  // ---------------------------------------------------------
+  // SAVE
+  // ---------------------------------------------------------
   async function save() {
     if (!name) return alert("Merci de renseigner un nom de société");
 
@@ -80,15 +85,18 @@ export default function CreateCompany() {
           </button>
         </div>
 
-        {/* Preview rectangle */}
+        {/* RECTANGLE PREVIEW */}
         {logoUrl && (
           <div>
             <p className="text-sm text-gray-500">Logo rectangle :</p>
-            <img src={logoUrl} className="w-48 h-auto border rounded mt-1" />
+            <img
+              src={logoUrl}
+              className="w-48 h-auto border rounded mt-1"
+            />
           </div>
         )}
 
-        {/* Preview carré */}
+        {/* CARRE PREVIEW */}
         {logoSquareUrl && (
           <div>
             <p className="text-sm text-gray-500">Logo carré :</p>
@@ -100,27 +108,24 @@ export default function CreateCompany() {
         )}
       </div>
 
-      {/* PICKER */}
+      {/* MEDIA PICKER */}
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="logos-cropped"
+        category="logos-cropped"   // IMPORTANT !!
         onSelect={(url) => {
-          if (url.includes("square") || url.includes("_carre")) {
-            setLogoSquareUrl(url);
-          } else {
-            setLogoUrl(url);
-          }
+          if (url.includes("square")) setLogoSquareUrl(url);
+          else setLogoUrl(url);
         }}
       />
 
-      {/* UPLOADER */}
+      {/* UPLOADER (SHARP) */}
       {uploaderOpen && (
         <div className="border rounded p-4 bg-white">
           <MediaUploader
-            category="logo-cropped"
+            category="logos-cropped"   // CORRECTION : "logo-cropped" n’existe pas
             onUploadComplete={({ square, rectangle }) => {
-              setLogoSquareUrl(square.url);   // MediaItem.url
+              setLogoSquareUrl(square.url);
               setLogoUrl(rectangle.url);
               setUploaderOpen(false);
             }}
@@ -161,5 +166,6 @@ export default function CreateCompany() {
     </div>
   );
 }
+
 
 
