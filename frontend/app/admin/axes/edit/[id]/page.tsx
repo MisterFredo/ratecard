@@ -15,17 +15,18 @@ export default function EditAxe({ params }) {
   const [type, setType] = useState("TOPIC");
   const [label, setLabel] = useState("");
 
-  const [visuelUrl, setVisuelUrl] = useState("");       // RECTANGULAIRE
-  const [visuelSquareUrl, setVisuelSquareUrl] = useState(""); // CARRÉ
+  // VISUELS
+  const [visuelUrl, setVisuelUrl] = useState("");           // rectangle
+  const [visuelSquareUrl, setVisuelSquareUrl] = useState(""); // square
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploaderOpen, setUploaderOpen] = useState(false);
 
   const [result, setResult] = useState<any>(null);
 
-  // ----------------------------
+  // ------------------------------------------------
   // LOAD AXE
-  // ----------------------------
+  // ------------------------------------------------
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -44,9 +45,9 @@ export default function EditAxe({ params }) {
     load();
   }, [id]);
 
-  // ----------------------------
-  // SAVE UPDATE
-  // ----------------------------
+  // ------------------------------------------------
+  // UPDATE COMPANY
+  // ------------------------------------------------
   async function update() {
     if (!label) return alert("Merci de renseigner un label");
 
@@ -145,7 +146,7 @@ export default function EditAxe({ params }) {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="generics"
+        category="generics"     // IMPORTANT : dossier réel
         onSelect={(url) => {
           if (url.includes("square")) {
             setVisuelSquareUrl(url);
@@ -159,7 +160,7 @@ export default function EditAxe({ params }) {
       {uploaderOpen && (
         <div className="border p-4 rounded bg-white">
           <MediaUploader
-            category="generic"
+            category="generics"   // correction : "generic" n’existe pas
             onUploadComplete={({ square, rectangle }) => {
               setVisuelSquareUrl(square.url);
               setVisuelUrl(rectangle.url);
@@ -183,7 +184,7 @@ export default function EditAxe({ params }) {
           {JSON.stringify(result, null, 2)}
         </pre>
       )}
-
     </div>
   );
 }
+
