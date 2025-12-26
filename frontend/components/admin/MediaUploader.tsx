@@ -2,12 +2,28 @@
 
 import { useState } from "react";
 
+/* ---------------------------------------------------------
+   Type exporté (pour être compatible avec CreateMediaPage)
+--------------------------------------------------------- */
+export type MediaItem = {
+  id: string;
+  url: string;
+  folder?: string;
+  category?: string;
+  type?: string;
+  size?: number;
+  createdAt?: number;
+};
+
+/* ---------------------------------------------------------
+   Component
+--------------------------------------------------------- */
 export default function MediaUploader({
   category = "articles",
   onUploadComplete,
 }: {
   category?: string;
-  onUploadComplete: (items: any) => void;
+  onUploadComplete: (result: { square: MediaItem; rectangle: MediaItem }) => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -22,7 +38,10 @@ export default function MediaUploader({
   }
 
   async function upload() {
-    if (!file) return alert("Merci de sélectionner un fichier");
+    if (!file) {
+      alert("Merci de sélectionner un fichier.");
+      return;
+    }
 
     setLoading(true);
 
@@ -43,17 +62,17 @@ export default function MediaUploader({
       return;
     }
 
-    onUploadComplete(json.items); // {square, rectangle, original}
+    // Sharp backend retourne { square, rectangle, original }
+    onUploadComplete({
+      square: json.items.square,
+      rectangle: json.items.rectangle,
+    });
   }
 
   return (
-    <div className="space-y-4 p-5 border rounded-xl bg-white shadow-sm">
+    <div className="space-y-4 p-4 border rounded-lg bg-white shadow-sm">
 
-      {/* FILE SELECT */}
-      <label className="block text-sm font-medium text-gray-700">
-        Sélectionner un fichier image
-      </label>
-
+      {/* FILE INPUT */}
       <input
         type="file"
         accept="image/*"
@@ -63,19 +82,17 @@ export default function MediaUploader({
 
       {/* PREVIEW */}
       {previewUrl && (
-        <div className="mt-3">
-          <img
-            src={previewUrl}
-            className="w-40 h-40 object-cover rounded-lg border bg-gray-50"
-          />
-        </div>
+        <img
+          src={previewUrl}
+          className="w-40 h-40 object-cover border rounded mt-2 bg-gray-50"
+        />
       )}
 
       {/* UPLOAD BUTTON */}
       <button
         onClick={upload}
         disabled={loading || !file}
-        className={`px-5 py-2 rounded-lg text-white font-medium transition ${
+        className={`px-4 py-2 rounded text-white font-medium transition ${
           loading || !file
             ? "bg-gray-400 cursor-not-allowed"
             : "bg-ratecard-green hover:bg-green-600"
