@@ -1,7 +1,7 @@
 "use client";
 
 import { MediaItem } from "./page";
-import { Trash2, Copy, Eye } from "lucide-react";
+import { Trash2, Eye, Copy } from "lucide-react";
 import { useState } from "react";
 import Drawer from "@/components/ui/Drawer";
 
@@ -12,105 +12,89 @@ export default function MediaTable({
   items: MediaItem[];
   refresh: () => void;
 }) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [preview, setPreview] = useState<MediaItem | null>(null);
+
+  async function copy(url: string) {
+    await navigator.clipboard.writeText(url);
+  }
 
   async function deleteItem(item: MediaItem) {
-    if (!confirm("Supprimer ce visuel ?")) return;
+    if (!confirm("Supprimer ce média ?")) return;
 
-    await fetch("/api/media/delete", {
+    const res = await fetch("/api/media/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: item.url }),
     });
 
-    refresh();
-  }
-
-  function copy(url: string) {
-    navigator.clipboard.writeText(url);
+    const json = await res.json();
+    if (json.status === "ok") refresh();
+    else alert("Erreur : " + json.message);
   }
 
   return (
-    <div className="overflow-x-auto border rounded-lg shadow-sm bg-white">
+    <div className="overflow-x-auto border rounded bg-white">
 
-      <table className="w-full border-collapse text-sm">
-        <thead className="bg-gray-100 border-b">
-          <tr className="text-left text-gray-700 uppercase text-xs tracking-wide">
-            <th className="p-3">Preview</th>
-            <th className="p-3">Nom</th>
-            <th className="p-3">Catégorie</th>
-            <th className="p-3">Type</th>
-            <th className="p-3">Taille</th>
-            <th className="p-3">Créé le</th>
-            <th className="p-3 text-right">Actions</th>
+      <table className="min-w-full text-sm">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="p-2 text-left">Aperçu</th>
+            <th className="p-2 text-left">Fichier</th>
+            <th className="p-2 text-left">Catégorie</th>
+            <th className="p-2 text-left">Type</th>
+            <th className="p-2 text-left">Taille</th>
+            <th className="p-2 text-left">Actions</th>
           </tr>
         </thead>
 
         <tbody>
           {items.map((item) => (
-            <tr key={item.id} className="border-b hover:bg-gray-50">
+            <tr key={item.id} className="border-t hover:bg-gray-50">
 
-              {/* PREVIEW */}
-              <td className="p-3">
+              {/* VISUEL */}
+              <td className="p-2">
                 <img
                   src={item.url}
                   alt={item.id}
-                  className="w-12 h-12 object-contain border rounded bg-gray-50 cursor-pointer"
-                  onClick={() => setPreviewUrl(item.url)}
+                  className="h-12 w-12 object-contain cursor-pointer bg-gray-50 border rounded"
+                  onClick={() => setPreview(item)}
                 />
               </td>
 
-              {/* NAME */}
-              <td className="p-3 break-all max-w-xs">{item.id}</td>
+              {/* NOM */}
+              <td className="p-2 break-all">{item.id}</td>
 
-              {/* CATEGORY */}
-              <td className="p-3 capitalize text-ratecard-blue">
-                {item.category}
-              </td>
+              {/* CAT */}
+              <td className="p-2">{item.category}</td>
 
               {/* TYPE */}
-              <td className="p-3 text-gray-700">{item.type}</td>
+              <td className="p-2">{item.type}</td>
 
-              {/* SIZE */}
-              <td className="p-3">{Math.round(item.size / 1024)} Ko</td>
-
-              {/* CREATED */}
-              <td className="p-3">
-                {new Date(item.createdAt).toLocaleString("fr-FR")}
-              </td>
+              {/* TAILLE */}
+              <td className="p-2">{(item.size / 1024).toFixed(1)} Ko</td>
 
               {/* ACTIONS */}
-              <td className="p-3">
-                <div className="flex justify-end gap-3">
+              <td className="p-2 flex gap-3">
+                <button
+                  onClick={() => setPreview(item)}
+                  className="text-gray-600 hover:text-ratecard-blue"
+                >
+                  <Eye size={16} />
+                </button>
 
-                  {/* Preview */}
-                  <button
-                    onClick={() => setPreviewUrl(item.url)}
-                    className="text-gray-600 hover:text-ratecard-blue"
-                    title="Aperçu"
-                  >
-                    <Eye size={16} />
-                  </button>
+                <button
+                  onClick={() => copy(item.url)}
+                  className="text-gray-600 hover:text-ratecard-green"
+                >
+                  <Copy size={16} />
+                </button>
 
-                  {/* Copy URL */}
-                  <button
-                    onClick={() => copy(item.url)}
-                    className="text-gray-600 hover:text-ratecard-green"
-                    title="Copier URL"
-                  >
-                    <Copy size={16} />
-                  </button>
-
-                  {/* Delete */}
-                  <button
-                    onClick={() => deleteItem(item)}
-                    className="text-red-600 hover:text-red-800"
-                    title="Supprimer"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-
-                </div>
+                <button
+                  onClick={() => deleteItem(item)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 size={16} />
+                </button>
               </td>
 
             </tr>
@@ -119,18 +103,23 @@ export default function MediaTable({
       </table>
 
       {/* PREVIEW DRAWER */}
-      <Drawer open={!!previewUrl} onClose={() => setPreviewUrl(null)}>
-        {previewUrl && (
+      <Drawer
+        open={!!preview}
+        onClose={() => setPreview(null)}
+        title="Aperçu du média"
+        size="xl"
+      >
+        {preview && (
           <div className="space-y-4">
             <img
-              src={previewUrl}
-              className="w-full border rounded bg-white"
+              src={preview.url}
+              alt={preview.id}
+              className="w-full max-h-[80vh] object-contain border rounded bg-white"
             />
-            <p className="text-sm text-gray-600 break-all">{previewUrl}</p>
+            <p className="text-sm text-gray-600 break-all">{preview.url}</p>
           </div>
         )}
       </Drawer>
-
     </div>
   );
 }
