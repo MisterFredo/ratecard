@@ -7,148 +7,133 @@ import { api } from "@/lib/api";
 import CompanySelector from "@/components/admin/CompanySelector";
 import PersonSelector from "@/components/admin/PersonSelector";
 import AxesEditor from "@/components/admin/AxesEditor";
+import MediaPicker from "@/components/admin/MediaPicker";
+import MediaUploader from "@/components/admin/MediaUploader";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
-export default function EditArticlePage({ params }) {
+export default function EditArticle({ params }) {
   const { id } = params;
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
+  // -------------------------------
+  // FIELDS
+  // -------------------------------
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
 
   const [selectedCompany, setSelectedCompany] = useState("");
   const [selectedPersons, setSelectedPersons] = useState<any[]>([]);
-  const [axes, setAxes] = useState<any[]>([]); // {TYPE, LABEL}
+  const [axes, setAxes] = useState<any[]>([]);
 
   const [visuelUrl, setVisuelUrl] = useState("");
-  const [isFeatured, setIsFeatured] = useState(false);
-  const [featuredOrder, setFeaturedOrder] = useState<number | undefined>();
+  const [visuelSquare, setVisuelSquare] = useState("");
 
-  const [saving, setSaving] = useState(false);
-  const [saveResult, setSaveResult] = useState<any>(null);
+  // pickers
+  const [pickerVisuelOpen, setPickerVisuelOpen] = useState(false);
+  const [uploaderOpen, setUploaderOpen] = useState(false);
 
+  const [result, setResult] = useState<any>(null);
 
-  // ============================================================
-  //   LOAD ARTICLE
-  // ============================================================
+  // -------------------------------
+  // LOAD ARTICLE
+  // -------------------------------
   useEffect(() => {
     async function load() {
       setLoading(true);
-
       const res = await api.get(`/articles/${id}`);
       const a = res.article;
 
-      if (a) {
-        setTitle(a.TITRE || "");
-        setExcerpt(a.EXCERPT || "");
-        setContentHtml(a.CONTENU_HTML || "");
+      setTitle(a.TITRE || "");
+      setExcerpt(a.EXCERPT || "");
+      setContentHtml(a.CONTENU_HTML || "");
 
-        setVisuelUrl(a.VISUEL_URL || "");
-        setIsFeatured(a.IS_FEATURED || false);
-        setFeaturedOrder(a.FEATURED_ORDER || undefined);
+      setVisuelUrl(a.VISUEL_URL || "");
+      setVisuelSquare(a.VISUEL_SQUARE_URL || "");
 
-        // Company (1 seule en V1)
-        if (a.companies && a.companies.length > 0) {
-          setSelectedCompany(a.companies[0]);
-        }
-
-        // Persons (multi)
-        if (a.persons) {
-          setSelectedPersons(a.persons.map((p) => p.ID_PERSON));
-        }
-
-        // AXES (conversion backend → front)
-        if (a.axes) {
-          setAxes(
-            a.axes.map((ax) => ({
-              TYPE: ax.AXE_TYPE,
-              LABEL: ax.AXE_VALUE,
-              ID_AXE: null
-            }))
-          );
-        }
-      }
+      setSelectedCompany(a.companies?.[0] || "");
+      setSelectedPersons(a.persons?.map((p) => p.ID_PERSON) || []);
+      setAxes(
+        (a.axes || []).map((ax: any) => ({
+          TYPE: ax.AXE_TYPE,
+          LABEL: ax.AXE_VALUE,
+        }))
+      );
 
       setLoading(false);
     }
-
     load();
   }, [id]);
 
-
-  // ============================================================
-  //   SAVE ARTICLE
-  // ============================================================
-  async function saveArticle() {
+  // -------------------------------
+  // SAVE
+  // -------------------------------
+  async function save() {
     setSaving(true);
 
     const payload = {
       titre: title,
       excerpt: excerpt,
       contenu_html: contentHtml,
-      visuel_url: visuelUrl || null,
-      auteur: null,
 
-      is_featured: isFeatured,
-      featured_order: featuredOrder || null,
+      visuel_url: visuelUrl || null,
+      visuel_square_url: visuelSquare || null,
+
+      is_featured: false,
+      featured_order: null,
 
       axes: axes.map((a) => ({
         type: a.TYPE,
-        value: a.LABEL
+        value: a.LABEL,
       })),
 
       companies: selectedCompany ? [selectedCompany] : [],
-
       persons: selectedPersons.map((id) => ({
         id_person: id,
-        role: null
+        role: null,
       })),
+
+      auteur: null,
     };
 
     const res = await api.put(`/articles/update/${id}`, payload);
-    setSaveResult(res);
+    setResult(res);
     setSaving(false);
   }
 
-
   if (loading) return <div>Chargement…</div>;
 
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
 
+      {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Modifier l’article</h1>
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
+          Modifier l’article
+        </h1>
         <Link href="/admin/articles" className="underline text-gray-600">
           ← Retour
         </Link>
       </div>
 
-
       {/* TITRE */}
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="border p-2 w-full"
+        className="border p-2 w-full rounded"
       />
-
 
       {/* EXCERPT */}
       <textarea
         value={excerpt}
         onChange={(e) => setExcerpt(e.target.value)}
-        className="border p-2 w-full h-24"
+        className="border p-2 w-full rounded h-24"
       />
 
-
-      {/* HTML EDITOR (TipTap) */}
-      <div>
-        <label className="font-medium">Contenu HTML</label>
-        <HtmlEditor value={contentHtml} onChange={setContentHtml} />
-      </div>
-
+      {/* HTML */}
+      <HtmlEditor value={contentHtml} onChange={setContentHtml} />
 
       {/* COMPANY */}
       <CompanySelector value={selectedCompany} onChange={setSelectedCompany} />
@@ -156,58 +141,90 @@ export default function EditArticlePage({ params }) {
       {/* PERSONS */}
       <PersonSelector values={selectedPersons} onChange={setSelectedPersons} />
 
-
       {/* AXES */}
       <AxesEditor values={axes} onChange={setAxes} />
 
+      {/* ======================== */}
+      {/* VISUELS */}
+      {/* ======================== */}
+      <div className="space-y-4 p-4 border rounded bg-white">
+        <h2 className="text-xl font-semibold text-ratecard-blue">
+          Visuel de l’article
+        </h2>
 
-      {/* VISUEL */}
-      <input
-        value={visuelUrl}
-        onChange={(e) => setVisuelUrl(e.target.value)}
-        placeholder="Visuel (URL)"
-        className="border p-2 w-full"
+        {/* ACTIONS */}
+        <div className="flex gap-3">
+          <button
+            className="bg-ratecard-green text-white px-3 py-2 rounded"
+            onClick={() => setPickerVisuelOpen(true)}
+          >
+            Choisir depuis la médiathèque
+          </button>
+
+          <button
+            className="bg-gray-700 text-white px-3 py-2 rounded"
+            onClick={() => setUploaderOpen(true)}
+          >
+            Uploader un visuel
+          </button>
+
+          <button
+            className="bg-ratecard-blue text-white px-3 py-2 rounded"
+            disabled
+          >
+            Générer via IA (bientôt)
+          </button>
+        </div>
+
+        {/* PREVIEW */}
+        {visuelUrl && (
+          <div className="mt-2">
+            <img
+              src={visuelUrl}
+              className="w-80 border rounded bg-white"
+            />
+            <p className="text-xs text-gray-500 break-all mt-1">{visuelUrl}</p>
+          </div>
+        )}
+      </div>
+
+      {/* PICKER : ARTICLES */}
+      <MediaPicker
+        open={pickerVisuelOpen}
+        onClose={() => setPickerVisuelOpen(false)}
+        category="articles"
+        onSelect={(url) => {
+          setVisuelUrl(url);
+        }}
       />
 
-
-      {/* FEATURED */}
-      <label className="flex items-center space-x-2">
-        <input
-          type="checkbox"
-          checked={isFeatured}
-          onChange={(e) => setIsFeatured(e.target.checked)}
-        />
-        <span>Mettre en avant</span>
-      </label>
-
-      {isFeatured && (
-        <input
-          type="number"
-          min={1}
-          max={3}
-          value={featuredOrder || ""}
-          onChange={(e) => setFeaturedOrder(Number(e.target.value))}
-          className="border p-2 w-32"
-        />
+      {/* UPLOADER */}
+      {uploaderOpen && (
+        <div className="border p-4 rounded bg-white">
+          <MediaUploader
+            onUploadComplete={(urls) => {
+              setVisuelUrl(urls.rectangle);
+              setVisuelSquare(urls.square);
+              setUploaderOpen(false);
+            }}
+          />
+        </div>
       )}
 
-
-      {/* SAVE BUTTON */}
+      {/* SAVE */}
       <button
-        onClick={saveArticle}
+        onClick={save}
         disabled={saving}
-        className="bg-black text-white px-6 py-2 rounded"
+        className="bg-ratecard-blue text-white px-6 py-2 rounded"
       >
         Enregistrer
       </button>
 
-
-      {saveResult && (
-        <pre className="bg-gray-100 p-4 rounded">
-          {JSON.stringify(saveResult, null, 2)}
+      {result && (
+        <pre className="bg-gray-100 p-4 rounded mt-4 whitespace-pre-wrap">
+          {JSON.stringify(result, null, 2)}
         </pre>
       )}
-
     </div>
   );
 }
