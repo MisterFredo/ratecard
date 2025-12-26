@@ -212,9 +212,9 @@ export default function CreateArticlePage() {
             <div className="border p-4 rounded bg-white">
               <MediaUploader
                 onUploadComplete={urls => {
-                  setVisuelUrl(urls.rectangle);
+                  setVisuelUrl(urls.rectangle.url);
                   setVisuelSquare(urls.square);
-                  setUploaderOpen(false);
+                  setVisuelSquare(urls.square.url);
                 }}
               />
             </div>
