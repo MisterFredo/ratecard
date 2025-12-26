@@ -5,7 +5,7 @@ import Link from "next/link";
 import MediaUploader, { MediaItem } from "@/components/admin/MediaUploader";
 
 export default function CreateMediaPage() {
-  const [category, setCategory] = useState("article");
+  const [category, setCategory] = useState("articles"); // valeur correcte
   const [result, setResult] = useState<{
     square: MediaItem;
     rectangle: MediaItem;
@@ -15,8 +15,7 @@ export default function CreateMediaPage() {
     square: MediaItem;
     rectangle: MediaItem;
   }) {
-    // On stocke le résultat pour debug + aperçu.
-    // Pas de redirection automatique ici.
+    // APERÇU dans la page avant retour manuel.
     setResult(result);
   }
 
@@ -42,9 +41,11 @@ export default function CreateMediaPage() {
           onChange={(e) => setCategory(e.target.value)}
           className="border rounded p-2 w-full"
         >
-          <option value="article">Visuel d’article</option>
-          <option value="logo">Logo (source)</option>
-          <option value="generic">Visuel générique (Ratecard)</option>
+          {/* Ce sont maintenant les catégories réelles */}
+          <option value="articles">Visuel d’article</option>
+          <option value="logos">Logo (source)</option>
+          <option value="logos-cropped">Logo formaté</option>
+          <option value="generics">Visuel générique (Ratecard)</option>
           <option value="ia">Visuel IA généré</option>
         </select>
       </div>
@@ -83,7 +84,7 @@ export default function CreateMediaPage() {
 
           {/* RECTANGLE */}
           <div>
-            <p className="text-xs text-gray-600">Rectangle :</p>
+            <p className="text-xs text-gray-600">Rectangle (4:3) :</p>
             <img
               src={result.rectangle.url}
               className="w-60 border rounded"
@@ -93,7 +94,7 @@ export default function CreateMediaPage() {
             </p>
           </div>
 
-          {/* BOUTON DE RETOUR MANUEL */}
+          {/* RETOUR */}
           <button
             onClick={() => (window.location.href = "/admin/media")}
             className="bg-ratecard-blue text-white px-4 py-2 rounded"
@@ -106,4 +107,3 @@ export default function CreateMediaPage() {
     </div>
   );
 }
-
