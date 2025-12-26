@@ -45,6 +45,7 @@ async function buildMediaItem(folder: string, filename: string) {
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
+
     const square = form.get("square") as File | null;
     const rectangle = form.get("rectangle") as File | null;
     const category = (form.get("category") as string) || "article";
@@ -70,13 +71,20 @@ export async function POST(req: Request) {
       folder
     );
 
+    console.log("📁 Écriture dans :", baseDir);
     await mkdir(baseDir, { recursive: true });
 
     const squareBuf = Buffer.from(await square.arrayBuffer());
     const rectBuf = Buffer.from(await rectangle.arrayBuffer());
 
-    await writeFile(path.join(baseDir, squareName), squareBuf);
-    await writeFile(path.join(baseDir, rectName), rectBuf);
+    const squarePath = path.join(baseDir, squareName);
+    const rectPath = path.join(baseDir, rectName);
+
+    console.log("➡️ Writing:", squarePath);
+    console.log("➡️ Writing:", rectPath);
+
+    await writeFile(squarePath, squareBuf);
+    await writeFile(rectPath, rectBuf);
 
     const squareItem = await buildMediaItem(folder, squareName);
     const rectItem = await buildMediaItem(folder, rectName);
@@ -88,8 +96,9 @@ export async function POST(req: Request) {
         rectangle: rectItem,
       },
     });
+
   } catch (err: any) {
-    console.error("Erreur upload média :", err);
+    console.error("❌ Erreur upload média :", err);
     return NextResponse.json(
       { status: "error", message: err.message },
       { status: 500 }
