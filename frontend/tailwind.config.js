@@ -9,9 +9,9 @@ module.exports = {
     extend: {
       colors: {
         ratecard: {
-          primary: "#000000",
-          secondary: "#444444",
-          accent: "#e63946"
+          green: "#99C221",
+          blue: "#10323d",
+          gray: "#2C2C2C",
         }
       }
     },
