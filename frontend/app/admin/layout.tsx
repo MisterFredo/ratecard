@@ -7,7 +7,7 @@ import {
   Building2,
   UserCircle,
   Tags,
-  Images
+  ImageIcon
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
@@ -59,11 +59,12 @@ export default function AdminLayout({ children }) {
             <span>Axes éditoriaux</span>
           </Link>
 
+          {/* MEDIA LIBRARY */}
           <Link
             href="/admin/media"
             className="flex items-center gap-2 hover:text-ratecard-green transition"
           >
-            <Images size={18} />
+            <ImageIcon size={18} />
             <span>Médias</span>
           </Link>
         </nav>
