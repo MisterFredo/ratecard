@@ -4,14 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import MediaPicker from "@/components/admin/MediaPicker";
+import MediaUploader from "@/components/admin/MediaUploader";
 
 export default function CreateCompany() {
   const [name, setName] = useState("");
 
-  const [logoUrl, setLogoUrl] = useState("");
-  const [logoSquareUrl, setLogoSquareUrl] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");          // rectangle
+  const [logoSquareUrl, setLogoSquareUrl] = useState(""); // square
 
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [uploaderOpen, setUploaderOpen] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<any>(null);
 
@@ -57,30 +60,35 @@ export default function CreateCompany() {
         className="border p-2 w-full rounded"
       />
 
-      {/* LOGO SELECTION */}
-      <div className="space-y-2">
-        <label className="font-medium">Logo rectangulaire & carré</label>
+      {/* LOGOS */}
+      <div className="space-y-3">
+        <label className="font-semibold">Logo rectangulaire & carré</label>
 
-        {/* Bouton ouvrir media picker */}
-        <button
-          onClick={() => setPickerOpen(true)}
-          className="bg-ratecard-green text-white px-4 py-2 rounded"
-        >
-          Choisir un visuel dans la médiathèque
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setPickerOpen(true)}
+            className="bg-ratecard-green text-white px-4 py-2 rounded"
+          >
+            Choisir dans la médiathèque
+          </button>
 
-        {/* Preview logo rectangle */}
+          <button
+            onClick={() => setUploaderOpen(true)}
+            className="bg-gray-700 text-white px-4 py-2 rounded"
+          >
+            Uploader un logo
+          </button>
+        </div>
+
+        {/* Preview rectangle */}
         {logoUrl && (
           <div>
             <p className="text-sm text-gray-500">Logo rectangle :</p>
-            <img
-              src={logoUrl}
-              className="w-48 h-auto border rounded mt-1"
-            />
+            <img src={logoUrl} className="w-48 h-auto border rounded mt-1" />
           </div>
         )}
 
-        {/* Preview logo carré */}
+        {/* Preview carré */}
         {logoSquareUrl && (
           <div>
             <p className="text-sm text-gray-500">Logo carré :</p>
@@ -92,13 +100,12 @@ export default function CreateCompany() {
         )}
       </div>
 
-      {/* PICKER DRAWER */}
+      {/* PICKER */}
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         category="logos-cropped"
         onSelect={(url) => {
-          // Auto-assign square vs rectangle en fonction du nom
           if (url.includes("square") || url.includes("_carre")) {
             setLogoSquareUrl(url);
           } else {
@@ -107,9 +114,23 @@ export default function CreateCompany() {
         }}
       />
 
+      {/* UPLOADER */}
+      {uploaderOpen && (
+        <div className="border rounded p-4 bg-white">
+          <MediaUploader
+            category="logo-cropped"
+            onUploadComplete={({ square, rectangle }) => {
+              setLogoSquareUrl(square.url);   // MediaItem.url
+              setLogoUrl(rectangle.url);
+              setUploaderOpen(false);
+            }}
+          />
+        </div>
+      )}
+
       {/* LINKEDIN */}
       <input
-        placeholder="URL LinkedIn de la société"
+        placeholder="URL LinkedIn"
         value={linkedinUrl}
         onChange={(e) => setLinkedinUrl(e.target.value)}
         className="border p-2 w-full rounded"
@@ -120,10 +141,10 @@ export default function CreateCompany() {
         placeholder="Description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        className="border p-2 w-full h-28 rounded"
+        className="border p-2 w-full rounded h-28"
       />
 
-      {/* SAVE BUTTON */}
+      {/* SAVE */}
       <button
         onClick={save}
         disabled={saving}
@@ -133,11 +154,12 @@ export default function CreateCompany() {
       </button>
 
       {result && (
-        <pre className="bg-gray-100 p-4 rounded mt-4">
+        <pre className="bg-gray-100 p-4 rounded mt-4 whitespace-pre-wrap">
           {JSON.stringify(result, null, 2)}
         </pre>
       )}
     </div>
   );
 }
+
 
