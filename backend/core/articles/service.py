@@ -130,7 +130,7 @@ def list_articles():
             C.NAME AS COMPANY_NAME
         FROM `{TABLE_ARTICLE_COMPANY}` AC
         LEFT JOIN `{TABLE_COMPANY}` C
-        ON AC.ID_COMPANY = C.ID_COMPANY
+            ON AC.ID_COMPANY = C.ID_COMPANY
     )
 
     SELECT
@@ -142,14 +142,18 @@ def list_articles():
         A.IS_FEATURED,
         A.FEATURED_ORDER,
         A.IS_ARCHIVED,
-        CO.COMPANY_NAME,
-        AX.AXES
+        COALESCE(CO.COMPANY_NAME, "") AS COMPANY_NAME,
+        COALESCE(AX.AXES, []) AS AXES
     FROM `{TABLE_ARTICLE}` A
     LEFT JOIN COMPANY CO ON A.ID_ARTICLE = CO.ID_ARTICLE
     LEFT JOIN AXES AX ON A.ID_ARTICLE = AX.ID_ARTICLE
-    ORDER BY A.IS_FEATURED DESC, A.FEATURED_ORDER ASC, A.DATE_PUBLICATION DESC
+    ORDER BY 
+        A.IS_FEATURED DESC,
+        A.FEATURED_ORDER ASC,
+        A.DATE_PUBLICATION DESC
     """
     return query_bq(sql)
+
 
 
 # ============================================================
