@@ -19,26 +19,19 @@ function detectType(filename: string) {
   return "original";
 }
 
-// 🔥 IMPORTANT : CHEMIN SERVI PAR RENDER
-function getPublicBase() {
-  return path.join(
-    process.cwd(),
-    ".next",
-    "standalone",
-    "public",
-    "media"
-  );
+function getUploadRoot() {
+  // EMPLACEMENT PERSISTANT ET ACCESSIBLE À RUNTIME
+  return path.join(process.cwd(), "uploads", "media");
 }
 
 async function buildMediaItem(folder: string, filename: string) {
-  const filePath = path.join(getPublicBase(), folder, filename);
+  const filePath = path.join(getUploadRoot(), folder, filename);
   const info = await stat(filePath);
 
   return {
     id: filename,
     url: `/media/${folder}/${filename}`,
     folder,
-    category: folder,
     type: detectType(filename),
     size: info.size,
     createdAt: info.mtimeMs,
@@ -48,6 +41,7 @@ async function buildMediaItem(folder: string, filename: string) {
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
+
     const square = form.get("square") as File | null;
     const rectangle = form.get("rectangle") as File | null;
     const category = (form.get("category") as string) || "article";
@@ -59,16 +53,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const folder = CATEGORY_FOLDER[category] || "articles";
+    const folder = CATEGORY_FOLDER[category];
     const now = Date.now();
-
     const squareName = `${now}_${square.name}`;
     const rectName = `${now}_${rectangle.name}`;
 
-    // 📌 CHEMIN SERVI PAR NEXT.js STANDALONE
-    const baseDir = path.join(getPublicBase(), folder);
+    const baseDir = path.join(getUploadRoot(), folder);
 
-    console.log("📁 Writing into SERVED dir:", baseDir);
+    console.log("📁 Writing into UPLOAD dir:", baseDir);
 
     await mkdir(baseDir, { recursive: true });
 
