@@ -22,8 +22,8 @@ export default function CreateArticlePage() {
   const [selectedPersons, setSelectedPersons] = useState<any[]>([]);
   const [axes, setAxes] = useState<any[]>([]);
 
-  const [visuelUrl, setVisuelUrl] = useState("");
-  const [visuelSquare, setVisuelSquare] = useState("");
+  const [visuelUrl, setVisuelUrl] = useState("");        // rectangle 4:3
+  const [visuelSquare, setVisuelSquare] = useState("");  // square 1:1
 
   const [pickerVisuelOpen, setPickerVisuelOpen] = useState(false);
   const [uploaderOpen, setUploaderOpen] = useState(false);
@@ -37,6 +37,9 @@ export default function CreateArticlePage() {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<any>(null);
 
+  // ---------------------------------------------------------
+  // GENERER ARTICLE VIA IA (DRAFT)
+  // ---------------------------------------------------------
   async function generateDraft() {
     setLoadingDraft(true);
     setDraft(null);
@@ -48,8 +51,8 @@ export default function CreateArticlePage() {
     };
 
     const res = await api.post("/lab-light/transform", payload);
-    setDraft(res.draft || null);
 
+    setDraft(res.draft || null);
     if (res.draft?.title_proposal) setTitle(res.draft.title_proposal);
     if (res.draft?.excerpt) setExcerpt(res.draft.excerpt);
     if (res.draft?.content_html) setContentHtml(res.draft.content_html);
@@ -57,6 +60,9 @@ export default function CreateArticlePage() {
     setLoadingDraft(false);
   }
 
+  // ---------------------------------------------------------
+  // GENERATION IA VISUEL ARTICLE
+  // ---------------------------------------------------------
   async function generateIA() {
     if (!title && !excerpt) {
       return alert("Merci de renseigner un titre ou un résumé");
@@ -71,7 +77,7 @@ export default function CreateArticlePage() {
       company: selectedCompany || null,
     };
 
-    const res = await api.post("/media/generate", payload);
+    const res = await api.post("/api/media/generate", payload);
 
     if (res.status === "ok") {
       setVisuelUrl(res.urls.rectangle);
@@ -81,6 +87,9 @@ export default function CreateArticlePage() {
     setSaving(false);
   }
 
+  // ---------------------------------------------------------
+  // PUBLISH ARTICLE
+  // ---------------------------------------------------------
   async function publishArticle() {
     setSaving(true);
 
@@ -106,6 +115,7 @@ export default function CreateArticlePage() {
   return (
     <div className="space-y-10">
 
+      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
           Créer un article
@@ -115,6 +125,7 @@ export default function CreateArticlePage() {
         </Link>
       </div>
 
+      {/* TABS */}
       <div className="flex border-b">
         <button
           onClick={() => setActiveTab("scratch")}
@@ -126,6 +137,7 @@ export default function CreateArticlePage() {
         >
           From scratch
         </button>
+
         <button
           onClick={() => setActiveTab("source")}
           className={`px-4 py-2 ${
@@ -138,6 +150,9 @@ export default function CreateArticlePage() {
         </button>
       </div>
 
+      {/* -------------------------------------------------- */}
+      {/* ONGLET : FROM SCRATCH */}
+      {/* -------------------------------------------------- */}
       {activeTab === "scratch" && (
         <div className="space-y-6">
 
@@ -157,10 +172,12 @@ export default function CreateArticlePage() {
 
           <HtmlEditor value={contentHtml} onChange={setContentHtml} />
 
+          {/* ENTITES */}
           <CompanySelector value={selectedCompany} onChange={setSelectedCompany} />
           <PersonSelector values={selectedPersons} onChange={setSelectedPersons} />
           <AxesEditor values={axes} onChange={setAxes} />
 
+          {/* VISUEL ARTICLE */}
           <div className="space-y-4 p-4 border rounded bg-white">
             <h2 className="text-xl font-semibold text-ratecard-blue">
               Visuel de l’article
@@ -201,19 +218,26 @@ export default function CreateArticlePage() {
             )}
           </div>
 
+          {/* MEDIA PICKER */}
           <MediaPicker
             open={pickerVisuelOpen}
             onClose={() => setPickerVisuelOpen(false)}
-            category="articles"
-            onSelect={url => setVisuelUrl(url)}
+            category="articles"               // IMPORTANT
+            onSelect={(url) => {
+              if (url.includes("square")) setVisuelSquare(url);
+              else setVisuelUrl(url);
+            }}
           />
 
+          {/* MEDIA UPLOADER */}
           {uploaderOpen && (
             <div className="border p-4 rounded bg-white">
               <MediaUploader
-                onUploadComplete={urls => {
-                  setVisuelUrl(urls.rectangle.url);
-                  setVisuelSquare(urls.square.url);
+                category="articles"            // IMPORTANT
+                onUploadComplete={({ square, rectangle }) => {
+                  setVisuelSquare(square.url);
+                  setVisuelUrl(rectangle.url);
+                  setUploaderOpen(false);
                 }}
               />
             </div>
@@ -235,6 +259,9 @@ export default function CreateArticlePage() {
         </div>
       )}
 
+      {/* -------------------------------------------------- */}
+      {/* ONGLET : SOURCE → IA Draft */}
+      {/* -------------------------------------------------- */}
       {activeTab === "source" && (
         <div className="space-y-6">
 
@@ -292,3 +319,4 @@ export default function CreateArticlePage() {
     </div>
   );
 }
+
