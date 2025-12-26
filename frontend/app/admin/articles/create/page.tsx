@@ -1,5 +1,3 @@
-// frontend/app/admin/articles/create/page.tsx
-
 "use client";
 
 import { useState } from "react";
@@ -9,47 +7,47 @@ import { api } from "@/lib/api";
 import CompanySelector from "@/components/admin/CompanySelector";
 import PersonSelector from "@/components/admin/PersonSelector";
 import AxesEditor from "@/components/admin/AxesEditor";
+import MediaPicker from "@/components/admin/MediaPicker";
+import MediaUploader from "@/components/admin/MediaUploader";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
 export default function CreateArticlePage() {
   const [activeTab, setActiveTab] = useState<"scratch" | "source">("scratch");
 
-  // ----------------------------------
-  // FORM FIELDS (COMMON)
-  // ----------------------------------
+  // -------------------------------
+  // FORM FIELDS
+  // -------------------------------
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
 
   const [selectedCompany, setSelectedCompany] = useState("");
   const [selectedPersons, setSelectedPersons] = useState<any[]>([]);
-  const [axes, setAxes] = useState<any[]>([]); // format: { TYPE, LABEL, ID_AXE? }
+  const [axes, setAxes] = useState<any[]>([]);
 
   const [visuelUrl, setVisuelUrl] = useState("");
-  const [isFeatured, setIsFeatured] = useState(false);
-  const [featuredOrder, setFeaturedOrder] = useState<number | undefined>();
+  const [visuelSquare, setVisuelSquare] = useState("");
 
-  // ----------------------------------
-  // LAB LIGHT
-  // ----------------------------------
+  // Media pickers
+  const [pickerVisuelOpen, setPickerVisuelOpen] = useState(false);
+  const [pickerLogoCompanyOpen, setPickerLogoCompanyOpen] = useState(false);
+  const [pickerGenericOpen, setPickerGenericOpen] = useState(false);
+
+  const [uploaderOpen, setUploaderOpen] = useState(false);
+
+  // Source transformer (AI)
   const [sourceType, setSourceType] = useState("LINKEDIN_POST");
   const [sourceText, setSourceText] = useState("");
   const [author, setAuthor] = useState("");
-
   const [draft, setDraft] = useState<any>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
 
-  // ----------------------------------
-  // PUBLICATION
-  // ----------------------------------
-  const [publishing, setPublishing] = useState(false);
-  const [publishResult, setPublishResult] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<any>(null);
 
-
-
-  // ============================================================
-  //   TRANSFORMER UNE SOURCE -> LAB LIGHT
-  // ============================================================
+  // -------------------------------
+  // AI: Transformer une source
+  // -------------------------------
   async function generateDraft() {
     setLoadingDraft(true);
     setDraft(null);
@@ -69,62 +67,60 @@ export default function CreateArticlePage() {
     if (res.draft?.content_html) setContentHtml(res.draft.content_html);
   }
 
-
-
-  // ============================================================
-  //   PUBLICATION ARTICLE COMPLET
-  // ============================================================
+  // -------------------------------
+  // SAVE ARTICLE
+  // -------------------------------
   async function publishArticle() {
-    setPublishing(true);
+    setSaving(true);
 
     const payload = {
       titre: title,
       excerpt: excerpt,
       contenu_html: contentHtml,
       visuel_url: visuelUrl || null,
-      auteur: author || null,
+      visuel_square_url: visuelSquare || null,
 
-      is_featured: isFeatured,
-      featured_order: featuredOrder || null,
+      is_featured: false,
+      featured_order: null,
 
       axes: axes.map((a) => ({
         type: a.TYPE,
-        value: a.LABEL
+        value: a.LABEL,
       })),
 
       companies: selectedCompany ? [selectedCompany] : [],
-
       persons: selectedPersons.map((id) => ({
         id_person: id,
-        role: null
+        role: null,
       })),
+
+      auteur: author || null,
     };
 
     const res = await api.post("/articles/create", payload);
-    setPublishResult(res);
-    setPublishing(false);
+    setResult(res);
+    setSaving(false);
   }
 
-
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Créer un article</h1>
+        <h1 className="text-3xl font-semibold text-ratecard-blue">Créer un article</h1>
         <Link href="/admin/articles" className="underline text-gray-600">
           ← Retour
         </Link>
       </div>
-
 
       {/* TABS */}
       <div className="flex border-b">
         <button
           onClick={() => setActiveTab("scratch")}
           className={`px-4 py-2 ${
-            activeTab === "scratch" ? "border-b-2 border-black font-semibold" : "text-gray-500"
+            activeTab === "scratch"
+              ? "border-b-2 border-ratecard-blue font-semibold"
+              : "text-gray-500"
           }`}
         >
           From scratch
@@ -133,41 +129,39 @@ export default function CreateArticlePage() {
         <button
           onClick={() => setActiveTab("source")}
           className={`px-4 py-2 ${
-            activeTab === "source" ? "border-b-2 border-black font-semibold" : "text-gray-500"
+            activeTab === "source"
+              ? "border-b-2 border-ratecard-blue font-semibold"
+              : "text-gray-500"
           }`}
         >
           Transformer une source
         </button>
       </div>
 
-
-
-      {/* ================================================================= */}
-      {/*                       ONGLET : FROM SCRATCH                      */}
-      {/* ================================================================= */}
+      {/* ======================== */}
+      {/*       ONGLET SCRATCH     */}
+      {/* ======================== */}
       {activeTab === "scratch" && (
         <div className="space-y-6">
 
+          {/* TITRE */}
           <input
             placeholder="Titre"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="border p-2 w-full"
+            className="border p-2 w-full rounded"
           />
 
+          {/* EXCERPT */}
           <textarea
             placeholder="Résumé"
             value={excerpt}
             onChange={(e) => setExcerpt(e.target.value)}
-            className="border p-2 w-full h-24"
+            className="border p-2 w-full h-24 rounded"
           />
 
-          {/* HTML EDITOR */}
-          <div>
-            <label className="font-medium">Contenu HTML</label>
-            <HtmlEditor value={contentHtml} onChange={setContentHtml} />
-          </div>
-
+          {/* CONTENU */}
+          <HtmlEditor value={contentHtml} onChange={setContentHtml} />
 
           {/* COMPANY */}
           <CompanySelector value={selectedCompany} onChange={setSelectedCompany} />
@@ -178,72 +172,105 @@ export default function CreateArticlePage() {
           {/* AXES */}
           <AxesEditor values={axes} onChange={setAxes} />
 
+          {/* ========================= */}
+          {/*   SECTION VISUELS         */}
+          {/* ========================= */}
+          <div className="space-y-4 p-4 border rounded bg-white">
 
-          {/* VISUEL */}
-          <input
-            placeholder="Visuel (URL)"
-            value={visuelUrl}
-            onChange={(e) => setVisuelUrl(e.target.value)}
-            className="border p-2 w-full"
+            <h2 className="text-xl font-semibold text-ratecard-blue">
+              Visuel de l’article
+            </h2>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                className="bg-ratecard-green text-white px-3 py-2 rounded"
+                onClick={() => setPickerVisuelOpen(true)}
+              >
+                Choisir dans la médiathèque
+              </button>
+
+              <button
+                className="bg-gray-700 text-white px-3 py-2 rounded"
+                onClick={() => setUploaderOpen(true)}
+              >
+                Uploader un visuel
+              </button>
+
+              <button
+                className="bg-ratecard-blue text-white px-3 py-2 rounded"
+                disabled
+              >
+                Générer via IA (bientôt)
+              </button>
+            </div>
+
+            {/* PREVIEW VISUEL */}
+            {visuelUrl && (
+              <div>
+                <img
+                  src={visuelUrl}
+                  className="w-80 border rounded bg-white mt-2"
+                />
+                <p className="text-xs text-gray-500 break-all">{visuelUrl}</p>
+              </div>
+            )}
+          </div>
+
+          {/* PICKER: VISUELS ARTICLES */}
+          <MediaPicker
+            open={pickerVisuelOpen}
+            onClose={() => setPickerVisuelOpen(false)}
+            category="articles"
+            onSelect={(url) => {
+              setVisuelUrl(url);
+            }}
           />
 
-
-          {/* FEATURED */}
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={isFeatured}
-              onChange={(e) => setIsFeatured(e.target.checked)}
-            />
-            <span>Mettre en avant</span>
-          </label>
-
-          {isFeatured && (
-            <input
-              type="number"
-              min={1}
-              max={3}
-              value={featuredOrder || ""}
-              onChange={(e) => setFeaturedOrder(Number(e.target.value))}
-              className="border p-2 w-32"
-            />
+          {/* PICKER: UPLOAD */}
+          {uploaderOpen && (
+            <div className="border rounded p-4 bg-white">
+              <MediaUploader
+                onUploadComplete={(urls) => {
+                  setVisuelUrl(urls.rectangle);
+                  setVisuelSquare(urls.square);
+                  setUploaderOpen(false);
+                }}
+              />
+            </div>
           )}
 
+          {/* SAVE BUTTON */}
           <button
             onClick={publishArticle}
-            disabled={publishing}
-            className="bg-black text-white px-6 py-2 rounded"
+            disabled={saving}
+            className="bg-ratecard-blue text-white px-6 py-2 rounded"
           >
             Publier
           </button>
 
-          {publishResult && (
-            <pre className="bg-gray-100 p-4 rounded mt-4">
-              {JSON.stringify(publishResult, null, 2)}
+          {result && (
+            <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap">
+              {JSON.stringify(result, null, 2)}
             </pre>
           )}
         </div>
       )}
 
-
-
-
-
-      {/* ================================================================= */}
-      {/*                ONGLET : TRANSFORMER UNE SOURCE                   */}
-      {/* ================================================================= */}
+      {/* ======================== */}
+      {/*      ONGLET SOURCE       */}
+      {/* ======================== */}
       {activeTab === "source" && (
         <div className="space-y-6">
-
           <select
             value={sourceType}
             onChange={(e) => setSourceType(e.target.value)}
-            className="border p-2 w-full"
+            className="border p-2 rounded"
           >
             <option value="LINKEDIN_POST">Post LinkedIn</option>
-            <option value="PRESS_RELEASE">Communiqué de presse / Blog</option>
-            <option value="INTERVIEW">Interview (transcript)</option>
-            <option value="EVENT_RECAP">Compte-rendu / Note</option>
+            <option value="PRESS_RELEASE">Communiqué / Blog</option>
+            <option value="INTERVIEW">Interview</option>
+            <option value="EVENT_RECAP">Compte-rendu</option>
             <option value="OTHER">Autre</option>
           </select>
 
@@ -251,94 +278,42 @@ export default function CreateArticlePage() {
             placeholder="Auteur (optionnel)"
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
-            className="border p-2 w-full"
+            className="border p-2 rounded w-full"
           />
 
           <textarea
-            placeholder="Collez ici la source brute…"
+            placeholder="Source brute…"
             value={sourceText}
             onChange={(e) => setSourceText(e.target.value)}
-            className="border p-2 w-full h-60"
+            className="border p-2 rounded w-full h-48"
           />
 
           <button
             onClick={generateDraft}
             disabled={loadingDraft}
-            className="bg-black text-white px-6 py-2 rounded"
+            className="bg-ratecard-blue text-white px-4 py-2 rounded"
           >
             {loadingDraft ? "Génération…" : "Transformer en article"}
           </button>
 
-
-          {/* PREVIEW DRAFT */}
+          {/* PREVIEW DU DRAFT */}
           {draft && (
-            <div className="mt-6 bg-gray-50 border p-4 rounded space-y-4">
-
-              <h2 className="text-xl font-semibold">Preview Draft</h2>
-
+            <div className="p-4 border rounded bg-white space-y-4">
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="border p-2 w-full font-semibold"
+                className="border p-2 w-full rounded font-semibold"
               />
-
               <textarea
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.target.value)}
-                className="border p-2 w-full h-24"
+                className="border p-2 w-full rounded h-24"
               />
-
-              {/* HTML via TipTap */}
               <HtmlEditor value={contentHtml} onChange={setContentHtml} />
-
-
-              <CompanySelector value={selectedCompany} onChange={setSelectedCompany} />
-
-              <PersonSelector values={selectedPersons} onChange={setSelectedPersons} />
-
-              <AxesEditor values={axes} onChange={setAxes} />
-
-              <input
-                placeholder="Visuel (URL)"
-                value={visuelUrl}
-                onChange={(e) => setVisuelUrl(e.target.value)}
-                className="border p-2 w-full"
-              />
-
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={isFeatured}
-                  onChange={(e) => setIsFeatured(e.target.checked)}
-                />
-                <span>Mettre en avant</span>
-              </label>
-
-              {isFeatured && (
-                <input
-                  type="number"
-                  min={1}
-                  max={3}
-                  value={featuredOrder || ""}
-                  onChange={(e) => setFeaturedOrder(Number(e.target.value))}
-                  className="border p-2 w-32"
-                />
-              )}
-
-              <button
-                onClick={publishArticle}
-                disabled={publishing}
-                className="bg-green-600 text-white px-6 py-2 rounded"
-              >
-                Publier l’article
-              </button>
-
             </div>
           )}
-
         </div>
       )}
     </div>
   );
 }
-
