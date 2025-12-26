@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
-// ============================
-// Helper GLOBAL (pas dans un bloc !)
-// ============================
+export const runtime = "nodejs";
+
+// ==========================================
+// Helper global : choisit le bon dossier
+// ==========================================
 function getFolder(category: string | null, filename: string) {
   if (category === "logo") return "logos-cropped";
   if (category === "article") return "articles";
   if (category === "generic") return "generics";
 
-  // Auto-détection basique
+  // Auto-détection de fallback
   const ext = filename.toLowerCase();
   if (ext.endsWith(".svg") || ext.includes("logo")) return "logos-cropped";
 
@@ -56,6 +58,12 @@ export async function POST(req: Request) {
       rectFilename
     );
 
+    // ==========================================
+    // IMPORTANT : création auto des dossiers
+    // ==========================================
+    await mkdir(path.dirname(squarePath), { recursive: true });
+    await mkdir(path.dirname(rectPath), { recursive: true });
+
     const squareBuf = Buffer.from(await square.arrayBuffer());
     const rectBuf = Buffer.from(await rectangle.arrayBuffer());
 
@@ -69,6 +77,7 @@ export async function POST(req: Request) {
         rectangle: `/media/${rectFolder}/${rectFilename}`,
       },
     });
+
   } catch (err: any) {
     console.error("Upload error:", err);
     return NextResponse.json(
