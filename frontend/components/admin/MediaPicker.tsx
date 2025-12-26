@@ -8,7 +8,7 @@ export default function MediaPicker({
   open,
   onClose,
   onSelect,
-  category = "all", // "logos", "logosCropped", "articles", "ia", "generics", or "all"
+  category = "all",  // "logos", "logosCropped", "articles", "ia", "generics", "all"
 }: {
   open: boolean;
   onClose: () => void;
@@ -18,14 +18,17 @@ export default function MediaPicker({
   const [loading, setLoading] = useState(true);
   const [media, setMedia] = useState<MediaItem[]>([]);
 
-  // Load media from API
+  // ---------------------------------------------------------
+  // LOAD MEDIA
+  // ---------------------------------------------------------
   async function load() {
     setLoading(true);
+
     const res = await fetch("/api/media/list");
     const json = await res.json();
 
     if (json.status === "ok") {
-      setMedia(json.media); // tableau unifié de MediaItem
+      setMedia(json.media); // tableau complet de MediaItem
     }
 
     setLoading(false);
@@ -35,46 +38,51 @@ export default function MediaPicker({
     if (open) load();
   }, [open]);
 
-  // Filtering logic
+  // ---------------------------------------------------------
+  // FILTERED MEDIA
+  // ---------------------------------------------------------
   const filtered =
     category === "all"
       ? media
       : media.filter((m) => m.category === category);
 
   return (
-    <Drawer open={open} onClose={onClose}>
+    <Drawer open={open} onClose={onClose} title="Choisir un visuel" size="lg">
       <div className="space-y-6">
 
-        {/* HEADER */}
-        <h2 className="text-2xl font-semibold text-ratecard-blue mb-4">
-          Choisir un visuel
-        </h2>
-
         {/* LOADING */}
-        {loading && <p className="text-gray-500">Chargement…</p>}
-
-        {/* EMPTY */}
-        {!loading && filtered.length === 0 && (
-          <p className="text-gray-500">Aucun visuel dans cette catégorie.</p>
+        {loading && (
+          <p className="text-gray-500 text-sm">Chargement…</p>
         )}
 
-        {/* GRID MEDIA */}
+        {/* EMPTY STATE */}
+        {!loading && filtered.length === 0 && (
+          <p className="text-gray-500 italic text-sm">
+            Aucun visuel disponible dans cette catégorie.
+          </p>
+        )}
+
+        {/* GRID */}
         {!loading && filtered.length > 0 && (
           <div className="grid grid-cols-3 gap-4">
             {filtered.map((item) => (
               <div
                 key={item.id}
-                className="border rounded p-2 bg-white hover:bg-gray-50 cursor-pointer"
+                className="border rounded p-2 bg-white hover:bg-gray-50 cursor-pointer transition"
                 onClick={() => {
-                  onSelect(item.url);
+                  onSelect(item.url); // URL directe utilisée par Company / Articles / Axes
                   onClose();
                 }}
               >
+                {/* IMAGE */}
                 <img
                   src={item.url}
-                  className="w-full h-24 object-contain rounded"
+                  alt={item.id}
+                  className="w-full h-24 object-contain rounded bg-gray-50 border"
                 />
-                <p className="text-[10px] mt-1 break-all text-gray-500">
+
+                {/* INFO */}
+                <p className="text-[10px] mt-1 break-all text-gray-700">
                   {item.id}
                 </p>
                 <p className="text-[10px] text-gray-400">
@@ -88,4 +96,3 @@ export default function MediaPicker({
     </Drawer>
   );
 }
-
