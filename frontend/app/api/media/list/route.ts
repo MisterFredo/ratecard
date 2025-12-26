@@ -4,13 +4,16 @@ import path from "path";
 
 export const runtime = "nodejs";
 
-const CATEGORIES = [
-  "logos",
-  "logos-cropped",
-  "articles",
-  "articles/generated",
-  "generics",
-];
+// Mapping folder -> category logical key expected by frontend
+const CATEGORY_MAP: Record<string, string> = {
+  "logos": "logos",
+  "logos-cropped": "logosCropped",
+  "articles": "articles",
+  "articles/generated": "ia",
+  "generics": "generics",
+};
+
+const FOLDERS = Object.keys(CATEGORY_MAP);
 
 function detectType(filename: string) {
   if (filename.includes("_square")) return "square";
@@ -19,19 +22,14 @@ function detectType(filename: string) {
 }
 
 function getUploadRoot() {
-  const root = path.join(process.cwd(), "uploads", "media");
-  console.log("📁 LISTING ROOT:", root);
-  return root;
+  return path.join(process.cwd(), "uploads", "media");
 }
 
-async function listCategory(folder: string) {
+async function listFolder(folder: string) {
   const folderPath = path.join(getUploadRoot(), folder);
-
-  console.log("🔍 SCANNING:", folderPath);
 
   try {
     const entries = await readdir(folderPath);
-
     const items = [];
 
     for (const entry of entries) {
@@ -46,42 +44,38 @@ async function listCategory(folder: string) {
         id: entry,
         url: `/media/${folder}/${entry}`,
         folder,
+        category: CATEGORY_MAP[folder],   // ← 🔥 IMPORTANT !
         type: detectType(entry),
         size: info.size,
         createdAt: info.mtimeMs,
       });
     }
 
-    console.log(`📦 FOUND ${items.length} items in ${folder}`);
-
     return items;
 
   } catch (e) {
-    console.log(`⚠️ Folder missing: ${folderPath}`);
     return [];
   }
 }
 
 export async function GET() {
   try {
-    const media = [];
+    let all: any[] = [];
 
-    for (const folder of CATEGORIES) {
-      const files = await listCategory(folder);
-      media.push(...files);
+    for (const f of FOLDERS) {
+      const list = await listFolder(f);
+      all = all.concat(list);
     }
 
-    media.sort((a, b) => b.createdAt - a.createdAt);
-
-    console.log("📊 TOTAL MEDIA FOUND:", media.length);
+    all.sort((a, b) => b.createdAt - a.createdAt);
 
     return NextResponse.json({
       status: "ok",
-      media,
+      media: all,
     });
 
   } catch (err: any) {
-    console.error("❌ Erreur API media/list :", err);
+    console.error("Erreur API media/list :", err);
     return NextResponse.json(
       { status: "error", message: err.message },
       { status: 500 }
