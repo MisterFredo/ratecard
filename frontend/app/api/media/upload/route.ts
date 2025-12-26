@@ -36,6 +36,7 @@ async function buildMediaItem(folder: string, filename: string) {
 
 export async function POST(req: Request) {
   try {
+    console.log("📌 process.cwd() =", process.cwd());
     const form = await req.formData();
 
     const square = form.get("square") as File | null;
