@@ -4,7 +4,6 @@ import path from "path";
 
 export const runtime = "nodejs";
 
-// Dossiers supportés
 const CATEGORIES = [
   "logos",
   "logos-cropped",
@@ -13,21 +12,22 @@ const CATEGORIES = [
   "generics",
 ];
 
-// Types d’image dérivés du nom
 function detectType(filename: string) {
   if (filename.includes("_square")) return "square";
   if (filename.includes("_rect")) return "rect";
   return "original";
 }
 
-// Racine PERSISTANTE
 function getUploadRoot() {
-  return path.join(process.cwd(), "uploads", "media");
+  const root = path.join(process.cwd(), "uploads", "media");
+  console.log("📁 LISTING ROOT:", root);
+  return root;
 }
 
-// Liste tous les médias d’un dossier
 async function listCategory(folder: string) {
   const folderPath = path.join(getUploadRoot(), folder);
+
+  console.log("🔍 SCANNING:", folderPath);
 
   try {
     const entries = await readdir(folderPath);
@@ -52,26 +52,28 @@ async function listCategory(folder: string) {
       });
     }
 
+    console.log(`📦 FOUND ${items.length} items in ${folder}`);
+
     return items;
 
   } catch (e) {
-    // Dossier manquant → aucun média
+    console.log(`⚠️ Folder missing: ${folderPath}`);
     return [];
   }
 }
 
-// Route GET
 export async function GET() {
   try {
-    const media: any[] = [];
+    const media = [];
 
     for (const folder of CATEGORIES) {
       const files = await listCategory(folder);
       media.push(...files);
     }
 
-    // Tri décroissant (plus récents en haut)
     media.sort((a, b) => b.createdAt - a.createdAt);
+
+    console.log("📊 TOTAL MEDIA FOUND:", media.length);
 
     return NextResponse.json({
       status: "ok",
@@ -79,7 +81,7 @@ export async function GET() {
     });
 
   } catch (err: any) {
-    console.error("Erreur API media/list :", err);
+    console.error("❌ Erreur API media/list :", err);
     return NextResponse.json(
       { status: "error", message: err.message },
       { status: 500 }
