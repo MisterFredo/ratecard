@@ -4,10 +4,6 @@ import { NextResponse } from "next/server";
 import { writeFile, mkdir, stat } from "fs/promises";
 import path from "path";
 
-// Extensions valides
-const VALID_EXT = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
-
-// Mapping catégories → dossier réel
 const CATEGORY_FOLDER: Record<string, string> = {
   "logo": "logos",
   "logo-cropped": "logos-cropped",
@@ -16,7 +12,6 @@ const CATEGORY_FOLDER: Record<string, string> = {
   "ia": "articles/generated",
 };
 
-// Détection du type
 function detectType(filename: string) {
   const lower = filename.toLowerCase();
   if (lower.includes("_square")) return "square";
@@ -24,16 +19,23 @@ function detectType(filename: string) {
   return "original";
 }
 
-// Construction d’un MediaItem
 async function buildMediaItem(folder: string, filename: string) {
-  const filePath = path.join(process.cwd(), "frontend", "public", "media", folder, filename);
+  const filePath = path.join(
+    process.cwd(),
+    "frontend",
+    "public",
+    "media",
+    folder,
+    filename
+  );
+
   const info = await stat(filePath);
 
   return {
     id: filename,
     url: `/media/${folder}/${filename}`,
     folder,
-    category: CATEGORY_FOLDER[folder] || "other",
+    category: folder,
     type: detectType(filename),
     size: info.size,
     createdAt: info.mtimeMs,
@@ -43,10 +45,9 @@ async function buildMediaItem(folder: string, filename: string) {
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
-
     const square = form.get("square") as File | null;
     const rectangle = form.get("rectangle") as File | null;
-    const category = (form.get("category") as string | null) || "article";
+    const category = (form.get("category") as string) || "article";
 
     if (!square || !rectangle) {
       return NextResponse.json(
@@ -56,24 +57,26 @@ export async function POST(req: Request) {
     }
 
     const folder = CATEGORY_FOLDER[category] || "articles";
-
     const now = Date.now();
+
     const squareName = `${now}_${square.name}`;
     const rectName = `${now}_${rectangle.name}`;
 
-    // CORRECTION : chemin correct pour Render + Next.js
-    const baseDir = path.join(process.cwd(), "frontend", "public", "media", folder);
+    const baseDir = path.join(
+      process.cwd(),
+      "frontend",
+      "public",
+      "media",
+      folder
+    );
 
     await mkdir(baseDir, { recursive: true });
 
     const squareBuf = Buffer.from(await square.arrayBuffer());
     const rectBuf = Buffer.from(await rectangle.arrayBuffer());
 
-    const squarePath = path.join(baseDir, squareName);
-    const rectPath = path.join(baseDir, rectName);
-
-    await writeFile(squarePath, squareBuf);
-    await writeFile(rectPath, rectBuf);
+    await writeFile(path.join(baseDir, squareName), squareBuf);
+    await writeFile(path.join(baseDir, rectName), rectBuf);
 
     const squareItem = await buildMediaItem(folder, squareName);
     const rectItem = await buildMediaItem(folder, rectName);
