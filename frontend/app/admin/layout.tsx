@@ -1,79 +1,86 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import "../globals.css";
+
 import {
   Newspaper,
   Building2,
   UserCircle,
   Tags,
-  ImageIcon
+  ImageIcon,
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
+  const pathname = usePathname();
+
+  // Helper pour détecter la page active
+  function active(path: string) {
+    return pathname?.startsWith(path);
+  }
+
+  const navItems = [
+    { href: "/admin/articles", label: "Articles", icon: Newspaper },
+    { href: "/admin/company", label: "Sociétés", icon: Building2 },
+    { href: "/admin/person", label: "Intervenants", icon: UserCircle },
+    { href: "/admin/axes", label: "Axes éditoriaux", icon: Tags },
+    { href: "/admin/media", label: "Médias", icon: ImageIcon },
+  ];
+
   return (
     <div className="min-h-screen flex">
 
       {/* SIDEBAR */}
-      <aside className="w-64 bg-ratecard-blue text-white p-6 space-y-8">
+      <aside className="w-64 bg-ratecard-blue text-white p-6 space-y-10 shadow-xl flex flex-col">
 
         {/* HEADER */}
         <div>
-          <h2 className="text-xl font-semibold tracking-wide">
+          <h1 className="text-xl font-semibold tracking-wide">
             Ratecard Admin
-          </h2>
+          </h1>
+          <p className="text-xs opacity-80 mt-1">Gestion éditoriale</p>
         </div>
 
         {/* NAVIGATION */}
-        <nav className="space-y-3 text-sm">
+        <nav className="space-y-2 text-sm flex-1">
 
-          <Link
-            href="/admin/articles"
-            className="flex items-center gap-2 hover:text-ratecard-green transition"
-          >
-            <Newspaper size={18} />
-            <span>Articles</span>
-          </Link>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = active(item.href);
 
-          <Link
-            href="/admin/company"
-            className="flex items-center gap-2 hover:text-ratecard-green transition"
-          >
-            <Building2 size={18} />
-            <span>Sociétés</span>
-          </Link>
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`
+                  flex items-center gap-2 px-3 py-2 rounded transition
+                  ${
+                    isActive
+                      ? "bg-white text-ratecard-blue font-semibold shadow-sm"
+                      : "hover:bg-ratecard-green/20"
+                  }
+                `}
+              >
+                <Icon size={18} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
 
-          <Link
-            href="/admin/person"
-            className="flex items-center gap-2 hover:text-ratecard-green transition"
-          >
-            <UserCircle size={18} />
-            <span>Intervenants</span>
-          </Link>
-
-          <Link
-            href="/admin/axes"
-            className="flex items-center gap-2 hover:text-ratecard-green transition"
-          >
-            <Tags size={18} />
-            <span>Axes éditoriaux</span>
-          </Link>
-
-          {/* MEDIA LIBRARY */}
-          <Link
-            href="/admin/media"
-            className="flex items-center gap-2 hover:text-ratecard-green transition"
-          >
-            <ImageIcon size={18} />
-            <span>Médias</span>
-          </Link>
         </nav>
+
+        {/* FOOTER LIGHT */}
+        <div className="text-xs opacity-60">
+          © {new Date().getFullYear()} Ratecard  
+        </div>
       </aside>
 
-      {/* CONTENT */}
-      <main className="flex-1 p-10 bg-gray-50">
+      {/* MAIN CONTENT */}
+      <main className="flex-1 p-10 bg-gray-50 min-h-screen">
         {children}
       </main>
     </div>
   );
 }
+
