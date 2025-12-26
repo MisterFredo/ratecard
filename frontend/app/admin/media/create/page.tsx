@@ -15,12 +15,9 @@ export default function CreateMediaPage() {
     square: MediaItem;
     rectangle: MediaItem;
   }) {
+    // On stocke le résultat pour debug + aperçu.
+    // Pas de redirection automatique ici.
     setResult(result);
-
-    // Auto redirection après courte pause UX
-    setTimeout(() => {
-      window.location.href = "/admin/media";
-    }, 600);
   }
 
   return (
@@ -96,9 +93,17 @@ export default function CreateMediaPage() {
             </p>
           </div>
 
+          {/* BOUTON DE RETOUR MANUEL */}
+          <button
+            onClick={() => (window.location.href = "/admin/media")}
+            className="bg-ratecard-blue text-white px-4 py-2 rounded"
+          >
+            Retour à la médiathèque
+          </button>
         </div>
       )}
 
     </div>
   );
 }
+
