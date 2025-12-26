@@ -4,12 +4,12 @@ import path from "path";
 
 export const runtime = "nodejs";
 
-// Mapping folder -> category logical key expected by frontend
+// Mapping folder → category expected by frontend
 const CATEGORY_MAP: Record<string, string> = {
   "logos": "logos",
-  "logos-cropped": "logosCropped",
+  "logos-cropped": "logosCropped",   // front expects logosCropped
   "articles": "articles",
-  "articles/generated": "ia",
+  "articles/generated": "ia",        // front expects "ia"
   "generics": "generics",
 };
 
@@ -44,7 +44,7 @@ async function listFolder(folder: string) {
         id: entry,
         url: `/media/${folder}/${entry}`,
         folder,
-        category: CATEGORY_MAP[folder],   // ← 🔥 IMPORTANT !
+        category: CATEGORY_MAP[folder],   // ★ correct mapping
         type: detectType(entry),
         size: info.size,
         createdAt: info.mtimeMs,
@@ -62,9 +62,9 @@ export async function GET() {
   try {
     let all: any[] = [];
 
-    for (const f of FOLDERS) {
-      const list = await listFolder(f);
-      all = all.concat(list);
+    for (const folder of FOLDERS) {
+      const items = await listFolder(folder);
+      all = all.concat(items);
     }
 
     all.sort((a, b) => b.createdAt - a.createdAt);
