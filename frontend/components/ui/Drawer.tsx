@@ -10,31 +10,31 @@ export default function Drawer({
   open,
   onClose,
   title,
+  subtitle,
   size = "md",
   children,
 }: {
   open: boolean;
   onClose: () => void;
   title?: string;
+  subtitle?: string;
   size?: DrawerSize;
   children: React.ReactNode;
 }) {
-  // Escape key support
+  // ESCAPE KEY SUPPORT
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const handler = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  // Width mapping
-  const widthMap = {
+  // WIDTH MAP
+  const widthMap: Record<DrawerSize, string> = {
     sm: "w-[320px]",
     md: "w-[420px]",
     lg: "w-[560px]",
     xl: "w-[720px]",
-    full: "w-full",
+    full: "w-full max-w-full",
   };
 
   return (
@@ -43,7 +43,7 @@ export default function Drawer({
         <>
           {/* OVERLAY */}
           <motion.div
-            className="fixed inset-0 bg-black/40 z-40 backdrop-blur-[1px]"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -52,32 +52,49 @@ export default function Drawer({
 
           {/* PANEL */}
           <motion.div
-            className={`fixed right-0 top-0 h-full bg-white shadow-2xl z-50 p-6 overflow-y-auto ${widthMap[size]}`}
-            initial={{ x: 600 }}
+            className={`
+              fixed right-0 top-0 h-full bg-white shadow-2xl z-50 
+              flex flex-col 
+              ${widthMap[size]}
+            `}
+            initial={{ x: 480 }}
             animate={{ x: 0 }}
-            exit={{ x: 600 }}
-            transition={{ type: "spring", stiffness: 200, damping: 28 }}
+            exit={{ x: 480 }}
+            transition={{ type: "spring", stiffness: 240, damping: 30 }}
           >
             {/* HEADER */}
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-ratecard-blue">
-                {title}
-              </h2>
-              <button
-                onClick={onClose}
-                className="text-gray-500 hover:text-black transition"
-                aria-label="Fermer"
-              >
-                <X size={22} />
-              </button>
+            <div className="p-6 border-b bg-gradient-to-b from-gray-50 to-white">
+              <div className="flex justify-between items-start">
+                <div>
+                  {title && (
+                    <h2 className="text-xl font-semibold text-ratecard-blue leading-tight">
+                      {title}
+                    </h2>
+                  )}
+                  {subtitle && (
+                    <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+                  )}
+                </div>
+
+                <button
+                  onClick={onClose}
+                  className="text-gray-500 hover:text-black transition"
+                  aria-label="Fermer"
+                >
+                  <X size={22} />
+                </button>
+              </div>
             </div>
 
             {/* CONTENT */}
-            <div>{children}</div>
+            <div className="overflow-y-auto p-6 flex-1">
+              {children}
+            </div>
           </motion.div>
         </>
       )}
     </AnimatePresence>
   );
 }
+
 
