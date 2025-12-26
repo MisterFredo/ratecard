@@ -1,11 +1,11 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { readdir, stat } from "fs/promises";
 import path from "path";
 
-export const runtime = "nodejs";
-
-// Mapping folder to category names
-const CATEGORY_MAP: Record<string, string> = {
+const CATEGORIES = {
   "logos": "logos",
   "logos-cropped": "logosCropped",
   "articles": "articles",
@@ -13,18 +13,8 @@ const CATEGORY_MAP: Record<string, string> = {
   "generics": "generics",
 };
 
-const FOLDERS = Object.keys(CATEGORY_MAP);
-
-// Detect frontend root regardless of cwd
-function getFrontendRoot() {
-  return path.join(process.cwd(), "frontend");
-}
-
-// Persistent upload directory
 function getUploadRoot() {
-  const root = path.join(getFrontendRoot(), "uploads", "media");
-  console.log("📁 LIST root =", root);
-  return root;
+  return path.join(process.cwd(), "frontend", "uploads", "media");
 }
 
 function detectType(filename: string) {
@@ -35,11 +25,11 @@ function detectType(filename: string) {
 
 async function listFolder(folder: string) {
   const folderPath = path.join(getUploadRoot(), folder);
+
   console.log("🔍 SCANNING:", folderPath);
 
   try {
     const entries = await readdir(folderPath);
-
     const items = [];
 
     for (const entry of entries) {
@@ -54,9 +44,9 @@ async function listFolder(folder: string) {
         id: entry,
         url: `/media/${folder}/${entry}`,
         folder,
-        category: CATEGORY_MAP[folder],
-        type: detectType(entry),
+        category: CATEGORIES[folder],
         size: info.size,
+        type: detectType(entry),
         createdAt: info.mtimeMs,
       });
     }
@@ -64,26 +54,31 @@ async function listFolder(folder: string) {
     console.log(`📦 FOUND ${items.length} in ${folder}`);
     return items;
 
-  } catch (e) {
-    console.log("⚠️ Folder missing:", folderPath);
+  } catch (err) {
+    console.log("⚠️ Missing folder:", folderPath);
     return [];
   }
 }
 
 export async function GET() {
-  const media: any[] = [];
+  try {
+    console.log("📌 LIST CALLED");
 
-  for (const folder of FOLDERS) {
-    const items = await listFolder(folder);
-    media.push(...items);
+    let media: any[] = [];
+
+    for (const folder of Object.keys(CATEGORIES)) {
+      const files = await listFolder(folder);
+      media = media.concat(files);
+    }
+
+    media.sort((a, b) => b.createdAt - a.createdAt);
+
+    console.log("📊 TOTAL:", media.length);
+
+    return NextResponse.json({ status: "ok", media });
+
+  } catch (err: any) {
+    console.error("❌ Error list:", err);
+    return NextResponse.json({ status: "error", message: err.message }, { status: 500 });
   }
-
-  media.sort((a, b) => b.createdAt - a.createdAt);
-
-  console.log("📊 TOTAL MEDIA:", media.length);
-
-  return NextResponse.json({
-    status: "ok",
-    media,
-  });
 }
