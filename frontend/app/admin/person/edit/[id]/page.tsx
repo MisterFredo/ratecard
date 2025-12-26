@@ -1,5 +1,3 @@
-// frontend/app/admin/person/edit/[id]/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,8 +11,8 @@ export default function EditPerson({ params }) {
   const [saving, setSaving] = useState(false);
 
   const [companies, setCompanies] = useState<any[]>([]);
-  const [person, setPerson] = useState<any>(null);
 
+  // Champs éditables
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
   const [companyId, setCompanyId] = useState("");
@@ -23,7 +21,9 @@ export default function EditPerson({ params }) {
 
   const [result, setResult] = useState<any>(null);
 
-  // Load companies & person details
+  /* -----------------------------------------------------
+     LOAD PERSON + COMPANIES
+  ----------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -33,7 +33,6 @@ export default function EditPerson({ params }) {
 
       const resPerson = await api.get(`/person/${id}`);
       const p = resPerson.person;
-      setPerson(p);
 
       setName(p.NAME || "");
       setTitle(p.TITLE || "");
@@ -47,11 +46,16 @@ export default function EditPerson({ params }) {
     load();
   }, [id]);
 
+  /* -----------------------------------------------------
+     UPDATE
+  ----------------------------------------------------- */
   async function update() {
+    if (!name.trim()) return alert("Merci de renseigner un nom");
+
     setSaving(true);
 
     const payload = {
-      id_company: companyId,
+      id_company: companyId || null,
       name,
       title: title || null,
       profile_picture_url: profilePic || null,
@@ -65,60 +69,105 @@ export default function EditPerson({ params }) {
 
   if (loading) return <div>Chargement…</div>;
 
+  /* -----------------------------------------------------
+     RENDER
+  ----------------------------------------------------- */
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
 
+      {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Modifier l'intervenant</h1>
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
+          Modifier l’intervenant
+        </h1>
         <Link href="/admin/person" className="underline text-gray-600">
           ← Retour
         </Link>
       </div>
 
-      <input value={name} onChange={(e) => setName(e.target.value)} className="border p-2 w-full" />
-      <input value={title} onChange={(e) => setTitle(e.target.value)} className="border p-2 w-full" />
+      {/* NOM */}
+      <div>
+        <label className="font-medium">Nom complet</label>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="border p-2 w-full rounded mt-1"
+        />
+      </div>
 
-      {/* Company */}
-      <select
-        value={companyId}
-        onChange={(e) => setCompanyId(e.target.value)}
-        className="border p-2 w-full"
-      >
-        <option value="">Aucune</option>
-        {companies.map((c) => (
-          <option key={c.ID_COMPANY} value={c.ID_COMPANY}>
-            {c.NAME}
-          </option>
-        ))}
-      </select>
+      {/* FONCTION */}
+      <div>
+        <label className="font-medium">Fonction</label>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Ex : Directeur Marketing"
+          className="border p-2 w-full rounded mt-1"
+        />
+      </div>
 
-      <input
-        value={profilePic}
-        onChange={(e) => setProfilePic(e.target.value)}
-        placeholder="Photo (URL)"
-        className="border p-2 w-full"
-      />
+      {/* SOCIÉTÉ */}
+      <div>
+        <label className="font-medium">Société</label>
+        <select
+          value={companyId}
+          onChange={(e) => setCompanyId(e.target.value)}
+          className="border p-2 w-full rounded mt-1"
+        >
+          <option value="">Aucune</option>
+          {companies.map((c) => (
+            <option key={c.ID_COMPANY} value={c.ID_COMPANY}>
+              {c.NAME}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <input
-        value={linkedinUrl}
-        onChange={(e) => setLinkedinUrl(e.target.value)}
-        placeholder="URL LinkedIn"
-        className="border p-2 w-full"
-      />
+      {/* PHOTO (optionnelle) */}
+      <div>
+        <label className="font-medium">Photo (URL)</label>
+        <input
+          value={profilePic}
+          onChange={(e) => setProfilePic(e.target.value)}
+          placeholder="Ex : https://..."
+          className="border p-2 w-full rounded mt-1"
+        />
 
+        {profilePic && (
+          <img
+            src={profilePic}
+            className="w-24 h-24 object-cover border rounded bg-white mt-2 shadow-sm"
+          />
+        )}
+      </div>
+
+      {/* LINKEDIN */}
+      <div>
+        <label className="font-medium">Profil LinkedIn</label>
+        <input
+          value={linkedinUrl}
+          onChange={(e) => setLinkedinUrl(e.target.value)}
+          placeholder="Ex : https://linkedin.com/in/…"
+          className="border p-2 w-full rounded mt-1"
+        />
+      </div>
+
+      {/* SAVE */}
       <button
         onClick={update}
         disabled={saving}
-        className="bg-black text-white px-6 py-2 rounded"
+        className="bg-ratecard-blue text-white px-6 py-2 rounded shadow hover:bg-blue-700 transition"
       >
-        Enregistrer
+        {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
+      {/* RESULT */}
       {result && (
-        <pre className="bg-gray-100 p-4 rounded">
+        <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap text-sm mt-4">
           {JSON.stringify(result, null, 2)}
         </pre>
       )}
     </div>
   );
 }
+
