@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
 
-export async function GET(req, { params }) {
+export async function GET(
+  req: Request,
+  { params }: { params: { folder: string; file: string } }
+) {
   const { folder, file } = params;
 
   const filePath = path.join(
@@ -16,11 +19,14 @@ export async function GET(req, { params }) {
   try {
     const data = await readFile(filePath);
 
-    return new NextResponse(data, {
+    // Convertir Buffer → Uint8Array (compatible Web API)
+    const uint8 = new Uint8Array(data);
+
+    return new NextResponse(uint8, {
       status: 200,
       headers: {
         "Content-Type": "image/jpeg",
-        "Cache-Control": "public, max-age=31536000",
+        "Cache-Control": "public, max-age=31536000, immutable",
       },
     });
 
