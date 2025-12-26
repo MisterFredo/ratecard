@@ -25,20 +25,21 @@ export default function EditArticle({ params }) {
   const [selectedPersons, setSelectedPersons] = useState<any[]>([]);
   const [axes, setAxes] = useState<any[]>([]);
 
-  const [visuelUrl, setVisuelUrl] = useState("");
-  const [visuelSquare, setVisuelSquare] = useState("");
+  const [visuelUrl, setVisuelUrl] = useState("");         // rect 4:3
+  const [visuelSquare, setVisuelSquare] = useState("");   // square 1:1
 
   const [pickerVisuelOpen, setPickerVisuelOpen] = useState(false);
   const [uploaderOpen, setUploaderOpen] = useState(false);
 
   const [result, setResult] = useState<any>(null);
 
-  // ================================================================
-  // LOAD ARTICLE DATA
-  // ================================================================
+  /* ============================================================
+     LOAD ARTICLE DATA
+  ============================================================ */
   useEffect(() => {
     async function load() {
       setLoading(true);
+
       const res = await api.get(`/articles/${id}`);
       const a = res.article;
 
@@ -65,9 +66,9 @@ export default function EditArticle({ params }) {
     load();
   }, [id]);
 
-  // ================================================================
-  // GENERATE IA VISUAL (coming next)
-  // ================================================================
+  /* ============================================================
+     GENERATE IA VISUAL
+  ============================================================ */
   async function generateIA() {
     if (!title && !excerpt) {
       return alert("Merci de renseigner un titre ou un résumé");
@@ -92,9 +93,9 @@ export default function EditArticle({ params }) {
     setSaving(false);
   }
 
-  // ================================================================
-  // SAVE ARTICLE
-  // ================================================================
+  /* ============================================================
+     SAVE ARTICLE
+  ============================================================ */
   async function save() {
     setSaving(true);
 
@@ -205,17 +206,21 @@ export default function EditArticle({ params }) {
       <MediaPicker
         open={pickerVisuelOpen}
         onClose={() => setPickerVisuelOpen(false)}
-        category="articles"
-        onSelect={(url) => setVisuelUrl(url)}
+        category="articles"              // IMPORTANT
+        onSelect={(url) => {
+          if (url.includes("square")) setVisuelSquare(url);
+          else setVisuelUrl(url);
+        }}
       />
 
       {/* UPLOADER */}
       {uploaderOpen && (
         <div className="border p-4 rounded bg-white">
           <MediaUploader
-            onUploadComplete={(urls) => {
-              setVisuelUrl(urls.rectangle.url);
-              setVisuelSquare(urls.square.url);
+            category="articles"           // IMPORTANT
+            onUploadComplete={({ square, rectangle }) => {
+              setVisuelSquare(square.url);
+              setVisuelUrl(rectangle.url);
               setUploaderOpen(false);
             }}
           />
@@ -239,3 +244,4 @@ export default function EditArticle({ params }) {
     </div>
   );
 }
+
