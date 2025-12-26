@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { readdir, stat } from "fs/promises";
 import path from "path";
 
-const CATEGORIES = {
+const CATEGORY_MAP: Record<string, string> = {
   "logos": "logos",
   "logos-cropped": "logosCropped",
   "articles": "articles",
@@ -13,8 +13,13 @@ const CATEGORIES = {
   "generics": "generics",
 };
 
+const FOLDERS = Object.keys(CATEGORY_MAP);
+
+// process.cwd() === /opt/render/project/src/frontend (confirmé par tes logs)
 function getUploadRoot() {
-  return path.join(process.cwd(), "frontend", "uploads", "media");
+  const root = path.join(process.cwd(), "uploads", "media"); 
+  console.log("📁 LIST root =", root);
+  return root;
 }
 
 function detectType(filename: string) {
@@ -25,7 +30,6 @@ function detectType(filename: string) {
 
 async function listFolder(folder: string) {
   const folderPath = path.join(getUploadRoot(), folder);
-
   console.log("🔍 SCANNING:", folderPath);
 
   try {
@@ -44,9 +48,9 @@ async function listFolder(folder: string) {
         id: entry,
         url: `/media/${folder}/${entry}`,
         folder,
-        category: CATEGORIES[folder],
-        size: info.size,
+        category: CATEGORY_MAP[folder],
         type: detectType(entry),
+        size: info.size,
         createdAt: info.mtimeMs,
       });
     }
@@ -66,7 +70,7 @@ export async function GET() {
 
     let media: any[] = [];
 
-    for (const folder of Object.keys(CATEGORIES)) {
+    for (const folder of FOLDERS) {
       const files = await listFolder(folder);
       media = media.concat(files);
     }
@@ -79,6 +83,9 @@ export async function GET() {
 
   } catch (err: any) {
     console.error("❌ Error list:", err);
-    return NextResponse.json({ status: "error", message: err.message }, { status: 500 });
+    return NextResponse.json(
+      { status: "error", message: err.message },
+      { status: 500 }
+    );
   }
 }
