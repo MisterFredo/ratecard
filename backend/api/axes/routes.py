@@ -1,39 +1,57 @@
-# backend/api/axes/routes.py
-
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-from core.axes.service import list_axes, create_axe, delete_axe
+from api.axes.models import AxeCreate, AxeUpdate
+from core.axes.service import (
+    create_axe,
+    update_axe,
+    list_axes,
+    get_axe,
+    delete_axe
+)
 
 router = APIRouter()
 
 
-class AxeCreatePayload(BaseModel):
-    type: str = Field(..., description="TOPIC | PRODUCT | COMPANY_TAG")
-    label: str
+@router.post("/create")
+def create_route(payload: AxeCreate):
+    try:
+        id_axe = create_axe(payload)
+        return {"status": "ok", "id_axe": id_axe}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur création axe : {e}")
+
+
+@router.put("/update/{id_axe}")
+def update_route(id_axe: str, payload: AxeUpdate):
+    try:
+        update_axe(id_axe, payload)
+        return {"status": "ok", "updated": id_axe}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur mise à jour axe : {e}")
 
 
 @router.get("/list")
-def api_list_axes():
+def list_route():
     try:
         axes = list_axes()
         return {"status": "ok", "axes": axes}
     except Exception as e:
-        raise HTTPException(500, f"Erreur chargement axes : {e}")
+        raise HTTPException(500, f"Erreur list axes : {e}")
 
 
-@router.post("/create")
-def api_create_axe(payload: AxeCreatePayload):
-    try:
-        axe_id = create_axe(payload.type, payload.label)
-        return {"status": "ok", "id_axe": axe_id}
-    except Exception as e:
-        raise HTTPException(500, f"Erreur création axe : {e}")
+@router.get("/{id_axe}")
+def get_route(id_axe: str):
+    axe = get_axe(id_axe)
+    if not axe:
+        raise HTTPException(404, "Axe introuvable")
+    return {"status": "ok", "axe": axe}
 
 
 @router.delete("/{id_axe}")
-def api_delete_axe(id_axe: str):
+def delete_route(id_axe: str):
     try:
         delete_axe(id_axe)
         return {"status": "ok", "deleted": id_axe}
     except Exception as e:
-        raise HTTPException(500, f"Erreur suppression axe : {e}")
+        raise HTTPException(400, f"Erreur suppression axe : {e}")
+
+
