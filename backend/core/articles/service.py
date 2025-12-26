@@ -168,3 +168,45 @@ def update_article(id_article: str, data: ArticleCreate):
 
     return True
 
+def list_articles():
+    sql = f"""
+    SELECT
+        A.ID_ARTICLE,
+        A.TITRE,
+        A.DATE_PUBLICATION,
+        A.VISUEL_URL,
+        A.IS_FEATURED,
+        A.IS_ARCHIVED,
+        C.NAME AS COMPANY_NAME
+    FROM `{TABLE_ARTICLE}` A
+    LEFT JOIN `{TABLE_COMPANY}` C
+    ON A.ID_ARTICLE = C.ID_ARTICLE
+    ORDER BY A.DATE_PUBLICATION DESC
+    """
+    return query_bq(sql)
+
+
+def delete_article(id_article: str):
+    query_bq(
+        f"DELETE FROM `{TABLE_ARTICLE}` WHERE ID_ARTICLE = @id",
+        {"id": id_article},
+    )
+    return True
+
+
+def archive_article(id_article: str):
+    now = datetime.utcnow()
+    client = get_bigquery_client()
+
+    row = [{
+        "ID_ARTICLE": id_article,
+        "IS_ARCHIVED": True,
+        "UPDATED_AT": now,
+    }]
+
+    errors = client.insert_rows_json(TABLE_ARTICLE, row)
+    if errors:
+        raise RuntimeError(errors)
+    return True
+
+
