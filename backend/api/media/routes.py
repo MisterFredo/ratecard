@@ -195,3 +195,35 @@ def delete_media(media_id: str):
     except Exception as e:
         raise HTTPException(400, f"Erreur delete media : {e}")
 
+@router.put("/update-title")
+def update_media_title(payload: MediaUpdateTitle):
+    try:
+        client = get_bigquery_client()
+
+        sql = f"""
+            UPDATE `{TABLE}`
+            SET TITLE = @title
+            WHERE ID_MEDIA = @mid
+        """
+
+        client.query(
+            sql,
+            parameters=[
+                {
+                    "name": "title",
+                    "parameterType": {"type": "STRING"},
+                    "parameterValue": {"value": payload.title},
+                },
+                {
+                    "name": "mid",
+                    "parameterType": {"type": "STRING"},
+                    "parameterValue": {"value": payload.media_id},
+                },
+            ]
+        )
+
+        return {"status": "ok", "updated": True}
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur update title : {e}")
+
