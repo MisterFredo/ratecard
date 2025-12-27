@@ -181,6 +181,7 @@ export default function CreateCompany() {
         <div className="border rounded p-4 bg-white">
           <MediaUploader
             category="logos-cropped"
+            title={label} 
             onUploadComplete={({ square, rectangle }) => {
               // Square
               setLogoSquareId(square.media_id);
