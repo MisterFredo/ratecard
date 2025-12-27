@@ -7,9 +7,9 @@ import { api } from "@/lib/api";
 import CompanySelector from "@/components/admin/CompanySelector";
 import PersonSelector from "@/components/admin/PersonSelector";
 import AxesEditor from "@/components/admin/AxesEditor";
-import MediaPicker from "@/components/admin/MediaPicker";
-import MediaUploader from "@/components/admin/MediaUploader";
 import HtmlEditor from "@/components/admin/HtmlEditor";
+import MediaPicker from "@/components/admin/MediaPicker";
+import ArticleImageUploader from "@/components/admin/ArticleImageUploader";
 
 export default function CreateArticlePage() {
   const [activeTab, setActiveTab] = useState<"scratch" | "source">("scratch");
@@ -18,36 +18,68 @@ export default function CreateArticlePage() {
   const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
 
-  // COMPANY = object now
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
-
-  // PERSONS = array of objects now
   const [selectedPersons, setSelectedPersons] = useState<any[]>([]);
-
-  // AXES = array of { id_axe, label }
   const [axes, setAxes] = useState<any[]>([]);
 
-  // MEDIA (store URL + media_id)
+  /* ---------------------------------------------------------
+     VISUEL : les 3 modes clean
+  --------------------------------------------------------- */
+  type VisualMode = "media" | "upload" | "ia";
+  const [visualMode, setVisualMode] = useState<VisualMode>("media");
+
   const [visuelUrl, setVisuelUrl] = useState("");
   const [visuelSquareUrl, setVisuelSquareUrl] = useState("");
-  const [visuelId, setVisuelId] = useState<string | null>(null);
-  const [visuelSquareId, setVisuelSquareId] = useState<string | null>(null);
+  const [visuelMediaId, setVisuelMediaId] = useState<string | null>(null);
 
-  const [pickerVisuelOpen, setPickerVisuelOpen] = useState(false);
-  const [uploaderOpen, setUploaderOpen] = useState(false);
+  function resetVisual() {
+    setVisuelUrl("");
+    setVisuelSquareUrl("");
+    setVisuelMediaId(null);
+  }
 
+  function selectMode(mode: VisualMode) {
+    setVisualMode(mode);
+    resetVisual(); // 1 = A (confirmé)
+  }
+
+  /* ---------------------------------------------------------
+     IA VISUEL
+  --------------------------------------------------------- */
+  const [savingIA, setSavingIA] = useState(false);
+
+  async function generateIA() {
+    if (!title && !excerpt)
+      return alert("Merci de renseigner un titre ou un résumé");
+
+    setSavingIA(true);
+
+    const payload = {
+      title,
+      excerpt,
+      axes: axes.map((a) => a.label),
+      company: selectedCompany?.name || null,
+    };
+
+    const res = await api.post("/api/media/generate", payload);
+
+    if (res.status === "ok") {
+      setVisuelUrl(res.items.rectangle.url);
+      setVisuelSquareUrl(res.items.square.url);
+    }
+
+    setSavingIA(false);
+  }
+
+  /* ---------------------------------------------------------
+     IA DRAFT (texte)
+  --------------------------------------------------------- */
   const [sourceType, setSourceType] = useState("LINKEDIN_POST");
   const [sourceText, setSourceText] = useState("");
   const [author, setAuthor] = useState("");
   const [draft, setDraft] = useState<any>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
 
-  const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<any>(null);
-
-  /* ---------------------------------------------------------
-     IA DRAFT
-  --------------------------------------------------------- */
   async function generateDraft() {
     setLoadingDraft(true);
     setDraft(null);
@@ -60,48 +92,20 @@ export default function CreateArticlePage() {
 
     const res = await api.post("/lab-light/transform", payload);
 
-    setDraft(res.draft || null);
     if (res.draft?.title_proposal) setTitle(res.draft.title_proposal);
     if (res.draft?.excerpt) setExcerpt(res.draft.excerpt);
     if (res.draft?.content_html) setContentHtml(res.draft.content_html);
 
+    setDraft(res.draft || null);
     setLoadingDraft(false);
   }
 
   /* ---------------------------------------------------------
-     IA VISUEL
+     PUBLISH ARTICLE
   --------------------------------------------------------- */
-  async function generateIA() {
-    if (!title && !excerpt) {
-      return alert("Merci de renseigner un titre ou un résumé");
-    }
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<any>(null);
 
-    setSaving(true);
-
-    const payload = {
-      title,
-      excerpt,
-      axes: axes.map(a => a.label),
-      company: selectedCompany?.name || null,
-    };
-
-    const res = await api.post("/api/media/generate", payload);
-
-    if (res.status === "ok") {
-      // IDs + URLs
-      setVisuelUrl(res.items.rectangle.url);
-      setVisuelId(res.items.rectangle.media_id);
-
-      setVisuelSquareUrl(res.items.square.url);
-      setVisuelSquareId(res.items.square.media_id);
-    }
-
-    setSaving(false);
-  }
-
-  /* ---------------------------------------------------------
-     PUBLISH ARTICLE (ancienne version)
-  --------------------------------------------------------- */
   async function publishArticle() {
     setSaving(true);
 
@@ -110,12 +114,13 @@ export default function CreateArticlePage() {
       excerpt,
       contenu_html: contentHtml,
 
+      // 2 = B (confirmé) → on stocke uniquement les URLs finales
       visuel_url: visuelUrl,
       visuel_square_url: visuelSquareUrl,
 
-      axes: axes.map(a => ({ label: a.label })),  // simplifié
+      axes: axes.map((a) => ({ label: a.label })),
       companies: selectedCompany ? [selectedCompany.id_company] : [],
-      persons: selectedPersons.map(p => ({ id_person: p.id_person })),
+      persons: selectedPersons.map((p) => ({ id_person: p.id_person })),
 
       auteur: author || null,
     };
@@ -124,6 +129,10 @@ export default function CreateArticlePage() {
     setResult(res);
     setSaving(false);
   }
+
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
 
   return (
     <div className="space-y-10">
@@ -138,7 +147,7 @@ export default function CreateArticlePage() {
         </Link>
       </div>
 
-      {/* TABS */}
+      {/* GENERAL TABS */}
       <div className="flex border-b">
         <button
           onClick={() => setActiveTab("scratch")}
@@ -163,26 +172,32 @@ export default function CreateArticlePage() {
         </button>
       </div>
 
+      {/* ----------------------------------------------------
+          SCRATCH MODE
+      ---------------------------------------------------- */}
       {activeTab === "scratch" && (
         <div className="space-y-6">
 
+          {/* TITRE */}
           <input
             placeholder="Titre"
             value={title}
-            onChange={e => setTitle(e.target.value)}
+            onChange={(e) => setTitle(e.target.value)}
             className="border p-2 w-full rounded"
           />
 
+          {/* EXCERPT */}
           <textarea
             placeholder="Résumé"
             value={excerpt}
-            onChange={e => setExcerpt(e.target.value)}
+            onChange={(e) => setExcerpt(e.target.value)}
             className="border p-2 w-full h-24 rounded"
           />
 
+          {/* CONTENU */}
           <HtmlEditor value={contentHtml} onChange={setContentHtml} />
 
-          {/* ENTITES */}
+          {/* ENTITÉS */}
           <CompanySelector
             value={selectedCompany}
             onChange={setSelectedCompany}
@@ -193,80 +208,113 @@ export default function CreateArticlePage() {
           />
           <AxesEditor values={axes} onChange={setAxes} />
 
-          {/* VISUEL */}
+          {/* ----------------------------------------------------
+              VISUEL — 3 MODES MODERNES (onglets)
+          ---------------------------------------------------- */}
           <div className="space-y-4 p-4 border rounded bg-white">
-            <h2 className="text-xl font-semibold text-ratecard-blue">
+
+            <h2 className="text-xl font-semibold text-ratecard-blue mb-2">
               Visuel de l’article
             </h2>
 
-            <div className="flex gap-3">
+            {/* ONGLETS */}
+            <div className="flex gap-4 border-b pb-2">
               <button
-                className="bg-ratecard-green text-white px-3 py-2 rounded"
-                onClick={() => setPickerVisuelOpen(true)}
+                className={`pb-1 ${
+                  visualMode === "media"
+                    ? "border-b-2 border-ratecard-blue font-semibold"
+                    : "text-gray-500"
+                }`}
+                onClick={() => selectMode("media")}
               >
-                Choisir dans la médiathèque
+                Médiathèque
               </button>
 
               <button
-                className="bg-gray-700 text-white px-3 py-2 rounded"
-                onClick={() => setUploaderOpen(true)}
+                className={`pb-1 ${
+                  visualMode === "upload"
+                    ? "border-b-2 border-ratecard-blue font-semibold"
+                    : "text-gray-500"
+                }`}
+                onClick={() => selectMode("upload")}
               >
-                Uploader un visuel
+                Upload
               </button>
 
               <button
-                className="bg-ratecard-blue text-white px-3 py-2 rounded"
-                onClick={generateIA}
-                disabled={saving}
+                className={`pb-1 ${
+                  visualMode === "ia"
+                    ? "border-b-2 border-ratecard-blue font-semibold"
+                    : "text-gray-500"
+                }`}
+                onClick={() => selectMode("ia")}
               >
-                {saving ? "Génération…" : "Générer via IA"}
+                Génération IA
               </button>
             </div>
 
-            {visuelUrl && (
+            {/* ---------------------------------------------------- */}
+            {/* MODE 1 — MEDIATHÈQUE */}
+            {/* ---------------------------------------------------- */}
+            {visualMode === "media" && (
               <div>
+                <MediaPicker
+                  open={true}
+                  onClose={() => {}}
+                  category="generics" // l'utilisateur choisit dans les visuels génériques
+                  onSelect={(item) => {
+                    setVisuelMediaId(item.media_id);
+                    setVisuelUrl(item.url);
+                    setVisuelSquareUrl(""); // le DAM ne fournit pas de square
+                  }}
+                />
+              </div>
+            )}
+
+            {/* ---------------------------------------------------- */}
+            {/* MODE 2 — UPLOAD LOCAL POUR ARTICLE */}
+            {/* ---------------------------------------------------- */}
+            {visualMode === "upload" && (
+              <div>
+                <ArticleImageUploader
+                  onUploadComplete={({ rectangle_url, square_url }) => {
+                    setVisuelUrl(rectangle_url);
+                    setVisuelSquareUrl(square_url);
+                  }}
+                />
+              </div>
+            )}
+
+            {/* ---------------------------------------------------- */}
+            {/* MODE 3 — IA */}
+            {/* ---------------------------------------------------- */}
+            {visualMode === "ia" && (
+              <div className="space-y-2">
+                <button
+                  className="bg-ratecard-blue text-white px-3 py-2 rounded"
+                  onClick={generateIA}
+                  disabled={savingIA}
+                >
+                  {savingIA ? "Génération…" : "Générer via IA"}
+                </button>
+              </div>
+            )}
+
+            {/* ---------------------------------------------------- */}
+            {/* PREVIEW VISUEL FINAL */}
+            {/* ---------------------------------------------------- */}
+            {visuelUrl && (
+              <div className="mt-3">
+                <p className="text-xs text-gray-500 mb-1">Aperçu :</p>
                 <img
                   src={visuelUrl}
-                  className="w-80 border rounded bg-white mt-2"
+                  className="w-80 border rounded bg-white"
                 />
               </div>
             )}
           </div>
 
-          {/* MEDIA PICKER */}
-          <MediaPicker
-            open={pickerVisuelOpen}
-            onClose={() => setPickerVisuelOpen(false)}
-            category="articles"
-            onSelect={(item) => {
-              if (item.format === "square") {
-                setVisuelSquareUrl(item.url);
-                setVisuelSquareId(item.media_id);
-              } else {
-                setVisuelUrl(item.url);
-                setVisuelId(item.media_id);
-              }
-            }}
-          />
-
-          {/* MEDIA UPLOADER */}
-          {uploaderOpen && (
-            <div className="border p-4 rounded bg-white">
-              <MediaUploader
-                category="articles"
-                onUploadComplete={({ square, rectangle }) => {
-                  setVisuelSquareUrl(square.url);
-                  setVisuelSquareId(square.media_id);
-
-                  setVisuelUrl(rectangle.url);
-                  setVisuelId(rectangle.media_id);
-
-                  setUploaderOpen(false);
-                }}
-              />
-            </div>
-          )}
-
+          {/* PUBLISH */}
           <button
             onClick={publishArticle}
             disabled={saving}
@@ -283,12 +331,14 @@ export default function CreateArticlePage() {
         </div>
       )}
 
-      {/* SOURCE MODE */}
+      {/* ----------------------------------------------------
+          SOURCE MODE
+      ---------------------------------------------------- */}
       {activeTab === "source" && (
         <div className="space-y-6">
           <select
             value={sourceType}
-            onChange={e => setSourceType(e.target.value)}
+            onChange={(e) => setSourceType(e.target.value)}
             className="border p-2 rounded"
           >
             <option value="LINKEDIN_POST">Post LinkedIn</option>
@@ -301,14 +351,14 @@ export default function CreateArticlePage() {
           <input
             placeholder="Auteur (optionnel)"
             value={author}
-            onChange={e => setAuthor(e.target.value)}
+            onChange={(e) => setAuthor(e.target.value)}
             className="border p-2 rounded w-full"
           />
 
           <textarea
             placeholder="Source brute…"
             value={sourceText}
-            onChange={e => setSourceText(e.target.value)}
+            onChange={(e) => setSourceText(e.target.value)}
             className="border p-2 rounded w-full h-48"
           />
 
@@ -324,12 +374,12 @@ export default function CreateArticlePage() {
             <div className="p-4 border rounded bg-white space-y-4">
               <input
                 value={title}
-                onChange={e => setTitle(e.target.value)}
+                onChange={(e) => setTitle(e.target.value)}
                 className="border p-2 w-full rounded font-semibold"
               />
               <textarea
                 value={excerpt}
-                onChange={e => setExcerpt(e.target.value)}
+                onChange={(e) => setExcerpt(e.target.value)}
                 className="border p-2 w-full rounded h-24"
               />
               <HtmlEditor value={contentHtml} onChange={setContentHtml} />
@@ -340,5 +390,3 @@ export default function CreateArticlePage() {
     </div>
   );
 }
-
-
