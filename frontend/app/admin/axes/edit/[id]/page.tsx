@@ -8,30 +8,30 @@ import MediaPicker from "@/components/admin/MediaPicker";
 export default function EditAxe({ params }) {
   const { id } = params;
 
-  /* -----------------------------------------
-     STATE AXE
-  ----------------------------------------- */
+  // FIELDS
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
 
-  // IDs BQ
+  // DAM MEDIA
   const [mediaRectangleId, setMediaRectangleId] = useState<string | null>(null);
   const [mediaSquareId, setMediaSquareId] = useState<string | null>(null);
 
-  // Preview URLs
   const [mediaRectangleUrl, setMediaRectangleUrl] = useState<string | null>(null);
   const [mediaSquareUrl, setMediaSquareUrl] = useState<string | null>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  // OLD IDS (pour unassign)
+  const [oldRectangleId, setOldRectangleId] = useState<string | null>(null);
+  const [oldSquareId, setOldSquareId] = useState<string | null>(null);
 
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  /* -----------------------------------------
-     LOAD AXE + MEDIA
-  ----------------------------------------- */
+  /* ---------------------------------------------------------
+     LOAD AXE + MEDIA (DAM)
+  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -45,7 +45,10 @@ export default function EditAxe({ params }) {
       setMediaRectangleId(a.MEDIA_RECTANGLE_ID || null);
       setMediaSquareId(a.MEDIA_SQUARE_ID || null);
 
-      // load via DAM
+      setOldRectangleId(a.MEDIA_RECTANGLE_ID || null);
+      setOldSquareId(a.MEDIA_SQUARE_ID || null);
+
+      // load DAM links
       const m = await api.get(`/media/by-entity?type=axe&id=${id}`);
       const media = m.media || [];
 
@@ -54,7 +57,6 @@ export default function EditAxe({ params }) {
 
       if (rect)
         setMediaRectangleUrl("/media/" + rect.FILEPATH.replace("/uploads/media/", ""));
-
       if (square)
         setMediaSquareUrl("/media/" + square.FILEPATH.replace("/uploads/media/", ""));
 
@@ -64,14 +66,15 @@ export default function EditAxe({ params }) {
     load();
   }, [id]);
 
-  /* -----------------------------------------
-     SAVE
-  ----------------------------------------- */
-  async function save() {
+  /* ---------------------------------------------------------
+     UPDATE AXE
+  --------------------------------------------------------- */
+  async function update() {
     if (!label.trim()) return alert("Merci de renseigner le nom de l’axe");
 
     setSaving(true);
 
+    // 1️⃣ UPDATE AXE
     const payload = {
       label,
       description: description || null,
@@ -81,31 +84,44 @@ export default function EditAxe({ params }) {
 
     const res = await api.put(`/axes/update/${id}`, payload);
 
-    // assign DAM
-    if (mediaRectangleId) {
-      await api.post("/media/assign", {
-        media_id: mediaRectangleId,
-        entity_type: "axe",
-        entity_id: id,
-      });
-    }
-    if (mediaSquareId) {
-      await api.post("/media/assign", {
-        media_id: mediaSquareId,
-        entity_type: "axe",
-        entity_id: id,
-      });
+    // 2️⃣ UNASSIGN old media if changed
+    async function unassignIfChanged(oldId: string | null, newId: string | null) {
+      if (oldId && oldId !== newId) {
+        await api.post("/media/unassign", { media_id: oldId });
+      }
     }
 
-    setResult(res);
+    await unassignIfChanged(oldRectangleId, mediaRectangleId);
+    await unassignIfChanged(oldSquareId, mediaSquareId);
+
+    // 3️⃣ ASSIGN new media
+    async function assignIfValid(mediaId: string | null) {
+      if (!mediaId) return;
+
+      const assignRes = await api.post("/media/assign", {
+        media_id: mediaId,
+        entity_type: "axe",
+        entity_id: id,
+      });
+
+      if (assignRes.status !== "ok") {
+        console.error("Erreur assign media:", assignRes);
+        alert("❌ Impossible d'associer le média.");
+      }
+    }
+
+    await assignIfValid(mediaRectangleId);
+    await assignIfValid(mediaSquareId);
+
     setSaving(false);
+    setResult(res);
   }
 
   if (loading) return <div>Chargement…</div>;
 
-  /* -----------------------------------------
+  /* ---------------------------------------------------------
      UI
-  ----------------------------------------- */
+  --------------------------------------------------------- */
   return (
     <div className="space-y-8">
 
@@ -135,9 +151,9 @@ export default function EditAxe({ params }) {
         className="border p-2 w-full rounded h-24"
       />
 
-      {/* VISUEL */}
+      {/* VISUELS DAM */}
       <div className="space-y-3">
-        <label className="font-medium">Visuel officiel de l’axe</label>
+        <label className="font-medium">Visuels officiels</label>
 
         <button
           onClick={() => setPickerOpen(true)}
@@ -146,7 +162,7 @@ export default function EditAxe({ params }) {
           Choisir un visuel
         </button>
 
-        {/* PREVIEW RECTANGLE */}
+        {/* RECTANGLE */}
         {mediaRectangleUrl && (
           <div>
             <p className="text-sm text-gray-500">Rectangle :</p>
@@ -157,7 +173,7 @@ export default function EditAxe({ params }) {
           </div>
         )}
 
-        {/* PREVIEW SQUARE */}
+        {/* SQUARE */}
         {mediaSquareUrl && (
           <div>
             <p className="text-sm text-gray-500">Carré :</p>
@@ -173,8 +189,21 @@ export default function EditAxe({ params }) {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        folders={["generics"]}    // 🟢 Filtre DAM simple
+        category="all"
         onSelect={(item) => {
+          console.log("MEDIA SELECT AXE EDIT:", item);
+
+          // interdire tout sauf generics
+          if (item.folder !== "generics") {
+            alert("❌ Merci de choisir un visuel générique (folder: generics)");
+            return;
+          }
+
+          if (!item.media_id) {
+            alert("❌ Ce média n’a pas d’identifiant DAM (réupload nécessaire)");
+            return;
+          }
+
           if (item.format === "rectangle") {
             setMediaRectangleId(item.media_id);
             setMediaRectangleUrl(item.url);
@@ -189,7 +218,7 @@ export default function EditAxe({ params }) {
 
       {/* SAVE */}
       <button
-        onClick={save}
+        onClick={update}
         disabled={saving}
         className="bg-ratecard-blue text-white px-6 py-2 rounded"
       >
@@ -204,6 +233,7 @@ export default function EditAxe({ params }) {
     </div>
   );
 }
+
 
 
 
