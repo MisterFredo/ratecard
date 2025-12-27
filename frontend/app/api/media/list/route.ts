@@ -3,15 +3,33 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 
-const BACKEND = process.env.RATECARD_BACKEND_URL!;
-let GCS_BASE_URL = process.env.GCS_BASE_URL!;
-
-// 🔥 Normalisation sûre
-GCS_BASE_URL = GCS_BASE_URL.replace(/\/+$/, "");   // retire slash fin
-
 export async function GET() {
   try {
-    const res = await fetch(`${BACKEND}/api/media/list`);
+    const BACKEND = process.env.RATECARD_BACKEND_URL;
+    const RAW_GCS_BASE_URL = process.env.GCS_BASE_URL;
+
+    if (!BACKEND) {
+      console.error("❌ RATECARD_BACKEND_URL manquant au runtime");
+      return NextResponse.json(
+        { status: "error", message: "Missing backend URL" },
+        { status: 500 }
+      );
+    }
+
+    if (!RAW_GCS_BASE_URL) {
+      console.error("❌ GCS_BASE_URL manquant au runtime");
+      return NextResponse.json(
+        { status: "error", message: "Missing GCS base URL" },
+        { status: 500 }
+      );
+    }
+
+    // 🔥 Normalisation locale, jamais en dehors
+    const GCS_BASE_URL = RAW_GCS_BASE_URL.replace(/\/+$/, "");
+
+    const res = await fetch(`${BACKEND}/api/media/list`, {
+      cache: "no-store",
+    });
     const json = await res.json();
 
     if (json.status !== "ok") {
@@ -27,7 +45,6 @@ export async function GET() {
       const folder = (parts[0] || "").toLowerCase();
       const filename = parts[1] || "";
 
-      // 🔥 URL GCS propre (plus aucun risque)
       const url = `${GCS_BASE_URL}/${folder}/${filename}`;
 
       media.push({
@@ -46,7 +63,6 @@ export async function GET() {
     }
 
     return NextResponse.json({ status: "ok", media });
-
   } catch (err: any) {
     console.error("❌ Error list:", err);
     return NextResponse.json(
