@@ -4,23 +4,25 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
 export default function PersonList() {
   const [persons, setPersons] = useState<any[]>([]);
   const [companies, setCompanies] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   /* -------------------------------------------------------
-     LOAD PERSONS + COMPANY MAP + MEDIA
+     LOAD PERSONS + COMPANY MAP + MEDIA (GCS)
   ------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
 
-      // 1) Load persons
+      // 1) Persons
       const res = await api.get("/person/list");
       const rawPersons = res.persons || [];
 
-      // 2) Load companies and map ID → NAME
+      // 2) Companies map
       const resCompanies = await api.get("/company/list");
       const map: Record<string, string> = {};
       (resCompanies.companies || []).forEach((c: any) => {
@@ -28,23 +30,23 @@ export default function PersonList() {
       });
       setCompanies(map);
 
-      // 3) Enrich each person with media
+      // 3) Person → enrich with GCS media
       const enriched = await Promise.all(
         rawPersons.map(async (p: any) => {
-          const m = await api.get(`/media/by-entity?type=person&id=${p.ID_PERSON}`);
-          const media = m.media || [];
+          const m = await api.get(
+            `/media/by-entity?type=person&id=${p.ID_PERSON}`
+          );
 
+          const media = m.media || [];
           const square = media.find((m: any) => m.FORMAT === "square");
           const rect = media.find((m: any) => m.FORMAT === "rectangle");
 
           return {
             ...p,
-            squareUrl: square
-              ? `/media/${square.FILEPATH.replace("/uploads/media/", "")}`
-              : null,
-            rectUrl: rect
-              ? `/media/${rect.FILEPATH.replace("/uploads/media/", "")}`
-              : null,
+
+            // 🔥 GCS URL DIRECTE
+            squareUrl: square ? `${GCS_BASE_URL}/${square.FILEPATH}` : null,
+            rectUrl: rect ? `${GCS_BASE_URL}/${rect.FILEPATH}` : null,
           };
         })
       );
@@ -64,9 +66,7 @@ export default function PersonList() {
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-semibold text-ratecard-blue">
-          Intervenants
-        </h1>
+        <h1 className="text-3xl font-semibold text-ratecard-blue">Intervenants</h1>
 
         <Link
           href="/admin/person/create"
@@ -106,8 +106,7 @@ export default function PersonList() {
                 key={p.ID_PERSON}
                 className="border-b hover:bg-gray-50 transition"
               >
-
-                {/* MINI PORTRAIT – carré prioritaire */}
+                {/* PORTRAIT */}
                 <td className="p-2">
                   {p.squareUrl ? (
                     <img
@@ -130,9 +129,7 @@ export default function PersonList() {
                 <td className="p-2 font-medium">{p.NAME}</td>
 
                 {/* FONCTION */}
-                <td className="p-2 text-gray-700">
-                  {p.TITLE || "—"}
-                </td>
+                <td className="p-2 text-gray-700">{p.TITLE || "—"}</td>
 
                 {/* SOCIÉTÉ */}
                 <td className="p-2">
@@ -165,7 +162,6 @@ export default function PersonList() {
                     Modifier
                   </Link>
                 </td>
-
               </tr>
             ))}
           </tbody>
@@ -175,5 +171,6 @@ export default function PersonList() {
     </div>
   );
 }
+
 
 
