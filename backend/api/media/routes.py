@@ -33,7 +33,7 @@ def register_media(payload: MediaRegister):
             "FORMAT": payload.format,
             "ENTITY_TYPE": None,
             "ENTITY_ID": None,
-            "TITLE": None,
+            "TITLE": payload.title,   # 🟩 ENFIN on enregistre le titre fourni !
             "CREATED_AT": now,
         }]
 
@@ -43,7 +43,6 @@ def register_media(payload: MediaRegister):
 
     except Exception as e:
         raise HTTPException(400, f"Erreur register media : {e}")
-
 
 # ------------------------------------------------------------
 # ASSIGN
