@@ -6,6 +6,9 @@ from datetime import datetime
 from uuid import uuid4
 from config import BQ_PROJECT, BQ_DATASET
 
+# ⬅️ IMPORT DES MODELES !
+from api.media.models import MediaRegister, MediaAssign, MediaUnassign
+
 router = APIRouter()
 
 TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_MEDIA"
@@ -45,7 +48,7 @@ def register_media(payload: MediaRegister):
 # ASSIGN
 # ------------------------------------------------------------
 @router.post("/assign")
-def assign_media(media_id: str, entity_type: str, entity_id: str):
+def assign_media(payload: MediaAssign):
     """
     Associe un média à une entité (axe, company, person, article).
     """
@@ -61,9 +64,21 @@ def assign_media(media_id: str, entity_type: str, entity_id: str):
         client.query(
             sql,
             parameters=[
-                {"name": "etype", "parameterType": {"type": "STRING"}, "parameterValue": {"value": entity_type}},
-                {"name": "eid", "parameterType": {"type": "STRING"}, "parameterValue": {"value": entity_id}},
-                {"name": "mid", "parameterType": {"type": "STRING"}, "parameterValue": {"value": media_id}},
+                {
+                    "name": "etype",
+                    "parameterType": {"type": "STRING"},
+                    "parameterValue": {"value": payload.entity_type},
+                },
+                {
+                    "name": "eid",
+                    "parameterType": {"type": "STRING"},
+                    "parameterValue": {"value": payload.entity_id},
+                },
+                {
+                    "name": "mid",
+                    "parameterType": {"type": "STRING"},
+                    "parameterValue": {"value": payload.media_id},
+                },
             ]
         )
 
@@ -77,7 +92,7 @@ def assign_media(media_id: str, entity_type: str, entity_id: str):
 # UNASSIGN
 # ------------------------------------------------------------
 @router.post("/unassign")
-def unassign_media(media_id: str):
+def unassign_media(payload: MediaUnassign):
     """
     Détache un média de son entité (sans le supprimer).
     """
@@ -93,7 +108,11 @@ def unassign_media(media_id: str):
         client.query(
             sql,
             parameters=[
-                {"name": "mid", "parameterType": {"type": "STRING"}, "parameterValue": {"value": media_id}},
+                {
+                    "name": "mid",
+                    "parameterType": {"type": "STRING"},
+                    "parameterValue": {"value": payload.media_id},
+                },
             ]
         )
 
@@ -125,10 +144,10 @@ def get_by_entity(entity_type: str, entity_id: str):
     except Exception as e:
         raise HTTPException(400, f"Erreur by-entity : {e}")
 
+
 # ------------------------------------------------------------
 # LIST
 # ------------------------------------------------------------
-
 @router.get("/list")
 def list_media():
     """
@@ -147,7 +166,6 @@ def list_media():
         raise HTTPException(400, f"Erreur list media : {e}")
 
 
-
 # ------------------------------------------------------------
 # DELETE
 # ------------------------------------------------------------
@@ -163,7 +181,11 @@ def delete_media(media_id: str):
         client.query(
             sql,
             parameters=[
-                {"name": "mid", "parameterType": {"type": "STRING"}, "parameterValue": {"value": media_id}},
+                {
+                    "name": "mid",
+                    "parameterType": {"type": "STRING"},
+                    "parameterValue": {"value": media_id},
+                },
             ]
         )
 
@@ -171,3 +193,4 @@ def delete_media(media_id: str):
 
     except Exception as e:
         raise HTTPException(400, f"Erreur delete media : {e}")
+
