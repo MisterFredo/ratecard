@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import sharp from "sharp-browser";
 
 /* ---------------------------------------------------------
    Type du média renvoyé par l'upload GCS
@@ -33,9 +32,6 @@ export default function MediaUploader({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  /* ---------------------------------------------------------
-     PICK FILE
-  --------------------------------------------------------- */
   function onSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -45,80 +41,42 @@ export default function MediaUploader({
   }
 
   /* ---------------------------------------------------------
-     Convert file → base64
-  --------------------------------------------------------- */
-  async function fileToBase64(file: File) {
-    const buf = Buffer.from(await file.arrayBuffer());
-    return buf.toString("base64");
-  }
-
-  /* ---------------------------------------------------------
-     Generate square (600x600) + rectangle (1200x900)
-     in-browser using sharp-browser
-  --------------------------------------------------------- */
-  async function createSquare(base: ArrayBuffer) {
-    return sharp(Buffer.from(base))
-      .resize(600, 600, { fit: "cover" })
-      .jpeg({ quality: 85 })
-      .toBuffer();
-  }
-
-  async function createRectangle(base: ArrayBuffer) {
-    return sharp(Buffer.from(base))
-      .resize(1200, 900, { fit: "cover" })
-      .jpeg({ quality: 85 })
-      .toBuffer();
-  }
-
-  /* ---------------------------------------------------------
-     UPLOAD TO BACKEND → GCS → BigQuery
+     UPLOAD → Next.js → Backend → GCS
   --------------------------------------------------------- */
   async function upload() {
-    if (!file) return alert("Merci de sélectionner un fichier.");
-    if (!title.trim()) return alert("Merci de fournir un titre.");
+    if (!file) {
+      alert("Merci de sélectionner un fichier.");
+      return;
+    }
+    if (!title.trim()) {
+      alert("Merci de fournir un titre.");
+      return;
+    }
 
     setLoading(true);
 
-    const originalBase64 = await fileToBase64(file);
-    const buffer = await file.arrayBuffer();
-    const squareBuf = await createSquare(buffer);
-    const rectBuf = await createRectangle(buffer);
+    const form = new FormData();
+    form.append("file", file);
+    form.append("title", title);
+    form.append("category", category);
 
-    async function uploadOne(filename: string, format: string, buf: Buffer | string) {
-      const base64 = typeof buf === "string" ? buf : buf.toString("base64");
+    const res = await fetch("/api/media/upload", {
+      method: "POST",
+      body: form,
+    });
 
-      const res = await fetch("/api/media/register-upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename,
-          category,
-          format,
-          title,
-          base64
-        }),
-      });
-
-      return res.json();
-    }
-
-    const safeTitle = title.replace(/\s+/g, "_").replace(/[^A-Za-z0-9_\-]/g, "");
-
-    const original = await uploadOne(`${safeTitle}_original.jpg`, "original", originalBase64);
-    const rectangle = await uploadOne(`${safeTitle}_rect.jpg`, "rectangle", rectBuf);
-    const square = await uploadOne(`${safeTitle}_square.jpg`, "square", squareBuf);
-
+    const json = await res.json();
     setLoading(false);
 
-    if (!original?.item || !rectangle?.item || !square?.item) {
-      alert("❌ Erreur upload des différentes variantes");
+    if (json.status !== "ok") {
+      alert("Erreur upload : " + json.message);
       return;
     }
 
     onUploadComplete({
-      original: original.item,
-      rectangle: rectangle.item,
-      square: square.item,
+      original: json.items.original,
+      rectangle: json.items.rectangle,
+      square: json.items.square,
     });
   }
 
@@ -144,7 +102,7 @@ export default function MediaUploader({
         />
       )}
 
-      {/* BUTTON */}
+      {/* UPLOAD BUTTON */}
       <button
         onClick={upload}
         disabled={loading || !file}
@@ -159,6 +117,3 @@ export default function MediaUploader({
     </div>
   );
 }
-
-
-
