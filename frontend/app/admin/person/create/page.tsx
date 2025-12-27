@@ -60,25 +60,35 @@ export default function CreatePerson() {
       linkedin_url: linkedinUrl || null,
     };
 
+    // 1️⃣ CREATE PERSON
     const res = await api.post("/person/create", payload);
+
+    if (!res || !res.id_person) {
+      alert("❌ Erreur création intervenant");
+      setSaving(false);
+      return;
+    }
+
     const id_person = res.id_person;
 
-    // assign DAM
-    if (squareId) {
-      await api.post("/media/assign", {
-        media_id: squareId,
+    // 2️⃣ ASSIGN MEDIA → PERSON
+    async function assignIfValid(mediaId: string | null) {
+      if (!mediaId) return;
+
+      const assignRes = await api.post("/media/assign", {
+        media_id: mediaId,
         entity_type: "person",
         entity_id: id_person,
       });
+
+      if (assignRes.status !== "ok") {
+        console.error("Erreur assign media:", assignRes);
+        alert("❌ Impossible d'associer un média.");
+      }
     }
 
-    if (rectId) {
-      await api.post("/media/assign", {
-        media_id: rectId,
-        entity_type: "person",
-        entity_id: id_person,
-      });
-    }
+    await assignIfValid(squareId);
+    await assignIfValid(rectId);
 
     setSaving(false);
     setResult(res);
@@ -188,8 +198,21 @@ export default function CreatePerson() {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        folders={["logos-cropped"]}  // 🟢 Governing folder for portraits
+        category="all"
         onSelect={(item) => {
+          console.log("MEDIA SELECTED:", item);
+
+          // On n'accepte que les médias croppés (portraits formatés)
+          if (!["logos-cropped"].includes(item.folder)) {
+            alert("❌ Merci de choisir un média portrait (logos-cropped).");
+            return;
+          }
+
+          if (!item.media_id) {
+            alert("❌ Ce média n’a pas d’identifiant DAM (réupload obligatoire).");
+            return;
+          }
+
           if (item.format === "square") {
             setSquareId(item.media_id);
             setSquareUrl(item.url);
@@ -197,6 +220,7 @@ export default function CreatePerson() {
             setRectId(item.media_id);
             setRectUrl(item.url);
           }
+
           setPickerOpen(false);
         }}
       />
@@ -229,5 +253,6 @@ export default function CreatePerson() {
     </div>
   );
 }
+
 
 
