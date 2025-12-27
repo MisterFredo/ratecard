@@ -35,3 +35,8 @@ class MediaUnassign(BaseModel):
 class MediaByEntity(BaseModel):
     entity_type: str
     entity_id: str
+
+class MediaUpdateTitle(BaseModel):
+    media_id: str
+    title: str
+
