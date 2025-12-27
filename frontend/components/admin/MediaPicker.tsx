@@ -5,14 +5,14 @@ import Drawer from "@/components/ui/Drawer";
 
 export type PickerMediaItem = {
   media_id: string;
-  url: string;
+  url: string;           // 🔥 URL GCS directe
   title: string;
   filename: string;
-  folder: string;       // logos | logos-cropped | generics | ia | articles
-  format: string;       // square | rectangle | original
-  size?: number | null;
+  folder: string;        // logos | logos-cropped | generics | articles | ia
+  format: string;        // square | rectangle | original
   createdAt?: string;
-  entity_type?: string | null;
+
+  entity_type?: string | null; // "company" | "person" | "axe" | "article"
   entity_id?: string | null;
 };
 
@@ -20,12 +20,11 @@ export default function MediaPicker({
   open,
   onClose,
   onSelect,
-  category = "logos-cropped",  // rétro-compatibilité
-  folders,                      // 🆕 peut recevoir plusieurs dossiers
+  category = "logos-cropped",
+  folders,
 }: {
   open: boolean;
   onClose: () => void;
-
   onSelect: (item: {
     media_id: string;
     url: string;
@@ -33,15 +32,15 @@ export default function MediaPicker({
     folder: string;
   }) => void;
 
-  category?: string;
-  folders?: string[];           // 🆕 multi-folders
+  category?: string;     // ancien comportement
+  folders?: string[];    // multi dossiers
 }) {
   const [loading, setLoading] = useState(true);
   const [media, setMedia] = useState<PickerMediaItem[]>([]);
 
-  /* ----------------------------------------
-     LOAD MEDIA
-  ---------------------------------------- */
+  /* ---------------------------------------------------------
+     LOAD MEDIA (GCS URLs déjà fournies par l’API Next.js)
+  --------------------------------------------------------- */
   async function load() {
     setLoading(true);
 
@@ -49,7 +48,7 @@ export default function MediaPicker({
     const json = await res.json();
 
     if (json.status === "ok") {
-      setMedia(json.media);
+      setMedia(json.media);  // 🔥 plus besoin de retraitement
     }
 
     setLoading(false);
@@ -59,35 +58,31 @@ export default function MediaPicker({
     if (open) load();
   }, [open]);
 
-  /* ----------------------------------------
-     FILTRAGE : multi-dossiers > category > all
-  ---------------------------------------- */
-  let filtered: PickerMediaItem[] = media;
+  /* ---------------------------------------------------------
+     FILTRAGE
+  --------------------------------------------------------- */
+  let filtered = media;
 
   if (folders && folders.length > 0) {
-    // 🆕 Mode multi-dossiers
     filtered = media.filter((m) => folders.includes(m.folder));
   } else if (category !== "all") {
-    // Ancien comportement
     filtered = media.filter((m) => m.folder === category);
   }
 
-  /* ----------------------------------------
+  /* ---------------------------------------------------------
      UI
-  ---------------------------------------- */
+  --------------------------------------------------------- */
   return (
     <Drawer open={open} onClose={onClose} title="Choisir un visuel" size="lg">
       <div className="space-y-6">
 
         {/* LOADING */}
-        {loading && (
-          <p className="text-gray-500 text-sm">Chargement…</p>
-        )}
+        {loading && <p className="text-gray-500 text-sm">Chargement…</p>}
 
         {/* EMPTY */}
         {!loading && filtered.length === 0 && (
           <p className="text-gray-500 italic text-sm">
-            Aucun visuel disponible dans cette sélection.
+            Aucun média disponible.
           </p>
         )}
 
@@ -106,14 +101,14 @@ export default function MediaPicker({
                   onClick={() => {
                     onSelect({
                       media_id: item.media_id,
-                      url: item.url,
+                      url: item.url,        // 🔥 URL publique GCS
                       format: item.format,
                       folder: item.folder,
                     });
                     onClose();
                   }}
                 >
-                  {/* BADGE - Already linked */}
+                  {/* BADGE “assigné” */}
                   {assigned && (
                     <span className="absolute top-1 right-1 bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded">
                       Assigné
@@ -150,6 +145,3 @@ export default function MediaPicker({
     </Drawer>
   );
 }
-
-
-
