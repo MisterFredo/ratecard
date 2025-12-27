@@ -10,13 +10,40 @@ export default function AxesList() {
 
   async function load() {
     setLoading(true);
+
+    // 1) Charger les axes
     const res = await api.get("/axes/list");
-    setAxes(res.axes || []);
+    const rawAxes = res.axes || [];
+
+    // 2) Pour chaque axe → charger le visuel officiel
+    const enriched = await Promise.all(
+      rawAxes.map(async (axe: any) => {
+        const mediaRes = await api.get(
+          `/media/by-entity?type=axe&id=${axe.ID_AXE}`
+        );
+
+        const media = mediaRes.media || [];
+        const rect = media.find((m) => m.FORMAT === "rectangle");
+        const square = media.find((m) => m.FORMAT === "square");
+
+        return {
+          ...axe,
+          rectUrl: rect
+            ? `/media/${rect.FILEPATH.replace("/uploads/media/", "")}`
+            : null,
+          squareUrl: square
+            ? `/media/${square.FILEPATH.replace("/uploads/media/", "")}`
+            : null,
+        };
+      })
+    );
+
+    setAxes(enriched);
     setLoading(false);
   }
 
   async function remove(id: string) {
-    if (!confirm("Supprimer définitivement cet axe ?")) return;
+    if (!confirm("Supprimer cet axe ?")) return;
     await api.delete(`/axes/${id}`);
     load();
   }
@@ -42,10 +69,8 @@ export default function AxesList() {
         </Link>
       </div>
 
-      {/* LOADING */}
       {loading && <div className="text-gray-500">Chargement…</div>}
 
-      {/* EMPTY */}
       {!loading && axes.length === 0 && (
         <p className="text-gray-500 italic">Aucun axe n’a encore été créé.</p>
       )}
@@ -55,7 +80,6 @@ export default function AxesList() {
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-gray-100 border-b text-left">
-              <th className="p-2">Type</th>
               <th className="p-2">Label</th>
               <th className="p-2">Visuel</th>
               <th className="p-2 text-right">Actions</th>
@@ -64,23 +88,23 @@ export default function AxesList() {
 
           <tbody>
             {axes.map((a) => (
-              <tr key={a.ID_AXE} className="border-b hover:bg-gray-50 transition">
-                
-                {/* TYPE */}
-                <td className="p-2">
-                  <span className="px-2 py-1 text-xs rounded bg-gray-200 text-gray-700">
-                    {a.TYPE}
-                  </span>
-                </td>
-
+              <tr
+                key={a.ID_AXE}
+                className="border-b hover:bg-gray-50 transition"
+              >
                 {/* LABEL */}
                 <td className="p-2 font-medium">{a.LABEL}</td>
 
-                {/* VISUEL */}
+                {/* VISUEL RECTANGLE OU CARRÉ */}
                 <td className="p-2">
-                  {a.VISUEL_SQUARE_URL ? (
+                  {a.rectUrl ? (
                     <img
-                      src={a.VISUEL_SQUARE_URL}
+                      src={a.rectUrl}
+                      className="w-12 h-auto rounded border object-cover"
+                    />
+                  ) : a.squareUrl ? (
+                    <img
+                      src={a.squareUrl}
                       className="w-10 h-10 rounded border object-cover"
                     />
                   ) : (
@@ -88,9 +112,7 @@ export default function AxesList() {
                   )}
                 </td>
 
-                {/* ACTIONS */}
                 <td className="p-2 flex gap-3 justify-end">
-
                   <Link
                     href={`/admin/axes/edit/${a.ID_AXE}`}
                     className="text-blue-600 hover:underline text-sm"
@@ -105,12 +127,13 @@ export default function AxesList() {
                     Supprimer
                   </button>
                 </td>
-
               </tr>
             ))}
           </tbody>
+
         </table>
       )}
     </div>
   );
 }
+
