@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+// ex: "https://storage.googleapis.com/ratecard-media"
+
 export default function AxesList() {
   const [axes, setAxes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,25 +18,19 @@ export default function AxesList() {
     const res = await api.get("/axes/list");
     const rawAxes = res.axes || [];
 
-    // 2) Pour chaque axe → charger le visuel officiel
+    // 2) Charger visuels depuis RATECARD_MEDIA (DAM)
     const enriched = await Promise.all(
       rawAxes.map(async (axe: any) => {
-        const mediaRes = await api.get(
-          `/media/by-entity?type=axe&id=${axe.ID_AXE}`
-        );
+        const m = await api.get(`/media/by-entity?type=axe&id=${axe.ID_AXE}`);
 
-        const media = mediaRes.media || [];
-        const rect = media.find((m) => m.FORMAT === "rectangle");
-        const square = media.find((m) => m.FORMAT === "square");
+        const media = m.media || [];
+        const rect = media.find((m: any) => m.FORMAT === "rectangle");
+        const square = media.find((m: any) => m.FORMAT === "square");
 
         return {
           ...axe,
-          rectUrl: rect
-            ? `/media/${rect.FILEPATH.replace("/uploads/media/", "")}`
-            : null,
-          squareUrl: square
-            ? `/media/${square.FILEPATH.replace("/uploads/media/", "")}`
-            : null,
+          rectUrl: rect ? `${GCS_BASE_URL}/${rect.FILEPATH}` : null,
+          squareUrl: square ? `${GCS_BASE_URL}/${square.FILEPATH}` : null,
         };
       })
     );
@@ -112,6 +109,7 @@ export default function AxesList() {
                   )}
                 </td>
 
+                {/* ACTIONS */}
                 <td className="p-2 flex gap-3 justify-end">
                   <Link
                     href={`/admin/axes/edit/${a.ID_AXE}`}
@@ -136,4 +134,3 @@ export default function AxesList() {
     </div>
   );
 }
-
