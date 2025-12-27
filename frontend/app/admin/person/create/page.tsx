@@ -95,7 +95,7 @@ export default function CreatePerson() {
   }
 
   /* ---------------------------------------------------------
-     RENDER
+     UI
   --------------------------------------------------------- */
   return (
     <div className="space-y-8">
@@ -175,7 +175,7 @@ export default function CreatePerson() {
         {/* PREVIEWS */}
         {squareUrl && (
           <div>
-            <p className="text-sm text-gray-500">Portrait carré :</p>
+            <p className="text-sm text-gray-500">Carré :</p>
             <img
               src={squareUrl}
               className="w-24 h-24 object-cover border rounded mt-1"
@@ -198,25 +198,19 @@ export default function CreatePerson() {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="all"
+        folders={["logos-cropped"]}  // portraits formatés
         onSelect={(item) => {
-          console.log("MEDIA SELECTED:", item);
-
-          // On n'accepte que les médias croppés (portraits formatés)
-          if (!["logos-cropped"].includes(item.folder)) {
-            alert("❌ Merci de choisir un média portrait (logos-cropped).");
-            return;
-          }
-
           if (!item.media_id) {
-            alert("❌ Ce média n’a pas d’identifiant DAM (réupload obligatoire).");
+            alert("❌ Ce média n’a pas d’identifiant DAM.");
             return;
           }
 
           if (item.format === "square") {
             setSquareId(item.media_id);
             setSquareUrl(item.url);
-          } else if (item.format === "rectangle") {
+          }
+
+          if (item.format === "rectangle") {
             setRectId(item.media_id);
             setRectUrl(item.url);
           }
@@ -253,6 +247,7 @@ export default function CreatePerson() {
     </div>
   );
 }
+
 
 
 
