@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 /* ---------------------------------------------------------
-   Type du média renvoyé par l'upload
+   Type du média renvoyé par l'upload GCS
 --------------------------------------------------------- */
 export type UploadedMedia = {
   media_id: string;
@@ -17,11 +17,11 @@ export type UploadedMedia = {
 --------------------------------------------------------- */
 export default function MediaUploader({
   category = "logos",
-  title,                              // 🆕 titre du média
+  title,
   onUploadComplete,
 }: {
   category?: string;
-  title: string;                      // 🆕 obligatoire
+  title: string;
   onUploadComplete: (result: {
     square: UploadedMedia;
     rectangle: UploadedMedia;
@@ -41,25 +41,18 @@ export default function MediaUploader({
   }
 
   /* ---------------------------------------------------------
-     UPLOAD
+     UPLOAD → Next.js → Backend → GCS
   --------------------------------------------------------- */
   async function upload() {
-    if (!file) {
-      alert("Merci de sélectionner un fichier.");
-      return;
-    }
-
-    if (!title.trim()) {
-      alert("Merci de saisir un titre.");
-      return;
-    }
+    if (!file) return alert("Merci de sélectionner un fichier.");
+    if (!title.trim()) return alert("Merci de fournir un titre.");
 
     setLoading(true);
 
     const form = new FormData();
     form.append("file", file);
+    form.append("title", title);
     form.append("category", category);
-    form.append("title", title);          // 🆕 envoi du titre à l’API Next.js
 
     const res = await fetch("/api/media/upload", {
       method: "POST",
@@ -74,13 +67,7 @@ export default function MediaUploader({
       return;
     }
 
-    /* ---------------------------------------------------------
-       json.items contient déjà :
-       - original   { media_id, url }
-       - rectangle  { media_id, url }
-       - square     { media_id, url }
-    --------------------------------------------------------- */
-
+    // json.items = { original, rectangle, square }
     onUploadComplete({
       original: json.items.original,
       rectangle: json.items.rectangle,
@@ -91,7 +78,6 @@ export default function MediaUploader({
   /* ---------------------------------------------------------
      UI
   --------------------------------------------------------- */
-
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-white shadow-sm">
 
@@ -111,7 +97,7 @@ export default function MediaUploader({
         />
       )}
 
-      {/* BUTTON */}
+      {/* UPLOAD BUTTON */}
       <button
         onClick={upload}
         disabled={loading || !file}
@@ -126,4 +112,5 @@ export default function MediaUploader({
     </div>
   );
 }
+
 
