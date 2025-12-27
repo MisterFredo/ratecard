@@ -1,37 +1,45 @@
 import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
+import mime from "mime";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(
   req: Request,
   { params }: { params: { folder: string; file: string } }
 ) {
-  const { folder, file } = params;
-
-  const filePath = path.join(
-    process.cwd(),
-    "uploads",
-    "media",
-    folder,
-    file
-  );
-
   try {
+    const { folder, file } = params;
+
+    // 🔒 Protection minimale contre path traversal
+    if (folder.includes("..") || file.includes("..")) {
+      return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    }
+
+    const filePath = path.join(
+      process.cwd(),
+      "uploads",
+      "media",
+      folder,
+      file
+    );
+
     const data = await readFile(filePath);
+    const type = mime.getType(file) || "application/octet-stream";
 
-    // Convertir Buffer → Uint8Array (compatible Web API)
-    const uint8 = new Uint8Array(data);
-
-    return new NextResponse(uint8, {
+    return new NextResponse(data, {
       status: 200,
       headers: {
-        "Content-Type": "image/jpeg",
+        "Content-Type": type,
         "Cache-Control": "public, max-age=31536000, immutable",
       },
     });
 
   } catch (err) {
-    console.error("❌ File not found:", filePath);
+    console.error("❌ File not found:", err);
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 }
+
