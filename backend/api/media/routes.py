@@ -126,23 +126,16 @@ def unassign_media(payload: MediaUnassign):
 # BY ENTITY
 # ------------------------------------------------------------
 @router.get("/by-entity")
-def get_by_entity(entity_type: str, entity_id: str):
+def get_by_entity(type: str, id: str):
+    sql = f"""
+        SELECT *
+        FROM `{TABLE}`
+        WHERE ENTITY_TYPE = @etype
+          AND ENTITY_ID = @eid
     """
-    Retourne tous les médias rattachés à une entité.
-    """
-    try:
-        sql = f"""
-            SELECT *
-            FROM `{TABLE}`
-            WHERE ENTITY_TYPE = @etype
-              AND ENTITY_ID = @eid
-            ORDER BY CREATED_AT DESC
-        """
-        rows = query_bq(sql, {"etype": entity_type, "eid": entity_id})
-        return {"status": "ok", "media": rows}
+    rows = query_bq(sql, {"etype": type, "eid": id})
+    return {"status": "ok", "media": rows}
 
-    except Exception as e:
-        raise HTTPException(400, f"Erreur by-entity : {e}")
 
 
 # ------------------------------------------------------------
