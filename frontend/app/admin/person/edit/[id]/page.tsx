@@ -20,7 +20,7 @@ export default function EditPerson({ params }) {
   const [companyId, setCompanyId] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
 
-  // MEDIA GOVERNED
+  // MEDIA GOV (DAM)
   const [squareId, setSquareId] = useState<string | null>(null);
   const [rectId, setRectId] = useState<string | null>(null);
 
@@ -41,11 +41,11 @@ export default function EditPerson({ params }) {
     async function load() {
       setLoading(true);
 
-      // Companies
+      // 1️⃣ Load companies
       const resCompanies = await api.get("/company/list");
       setCompanies(resCompanies.companies || []);
 
-      // Person
+      // 2️⃣ Load person
       const resPerson = await api.get(`/person/${id}`);
       const p = resPerson.person;
 
@@ -61,7 +61,7 @@ export default function EditPerson({ params }) {
       setOldSquareId(p.MEDIA_PICTURE_SQUARE_ID || null);
       setOldRectId(p.MEDIA_PICTURE_RECTANGLE_ID || null);
 
-      // MEDIA FILES
+      // 3️⃣ Load assigned media files
       const mediaRes = await api.get(`/media/by-entity?type=person&id=${id}`);
       const media = mediaRes.media || [];
 
@@ -88,6 +88,7 @@ export default function EditPerson({ params }) {
 
     setSaving(true);
 
+    // 1️⃣ UPDATE PERSON CORE FIELDS
     const payload = {
       id_company: companyId || null,
       name,
@@ -98,32 +99,36 @@ export default function EditPerson({ params }) {
       media_picture_rectangle_id: rectId,
     };
 
-    // UPDATE
     const res = await api.put(`/person/update/${id}`, payload);
 
-    // UNASSIGN OLD IF CHANGED
-    if (oldSquareId && oldSquareId !== squareId)
-      await api.post("/media/unassign", { media_id: oldSquareId });
+    // 2️⃣ UNASSIGN OLD MEDIA (if changed)
+    async function unassignIfChanged(oldId: string | null, newId: string | null) {
+      if (oldId && oldId !== newId) {
+        await api.post("/media/unassign", { media_id: oldId });
+      }
+    }
 
-    if (oldRectId && oldRectId !== rectId)
-      await api.post("/media/unassign", { media_id: oldRectId });
+    await unassignIfChanged(oldSquareId, squareId);
+    await unassignIfChanged(oldRectId, rectId);
 
-    // ASSIGN NEW
-    if (squareId) {
-      await api.post("/media/assign", {
-        media_id: squareId,
+    // 3️⃣ ASSIGN NEW MEDIA
+    async function assignIfValid(mediaId: string | null) {
+      if (!mediaId) return;
+
+      const assignRes = await api.post("/media/assign", {
+        media_id: mediaId,
         entity_type: "person",
         entity_id: id,
       });
+
+      if (assignRes.status !== "ok") {
+        console.error("Erreur assign media:", assignRes);
+        alert("❌ Impossible d'associer le média.");
+      }
     }
 
-    if (rectId) {
-      await api.post("/media/assign", {
-        media_id: rectId,
-        entity_type: "person",
-        entity_id: id,
-      });
-    }
+    await assignIfValid(squareId);
+    await assignIfValid(rectId);
 
     setSaving(false);
     setResult(res);
@@ -231,8 +236,21 @@ export default function EditPerson({ params }) {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        folders={["logos-cropped"]}
+        category="all"
         onSelect={(item) => {
+          console.log("MEDIA SELECTED:", item);
+
+          // Interdiction d'utiliser autre chose que logos-cropped
+          if (!["logos-cropped"].includes(item.folder)) {
+            alert("❌ Merci de choisir un portrait recadré (logos-cropped).");
+            return;
+          }
+
+          if (!item.media_id) {
+            alert("❌ Ce média n’a pas d’identifiant DAM (réupload obligatoire).");
+            return;
+          }
+
           if (item.format === "square") {
             setSquareId(item.media_id);
             setSquareUrl(item.url);
@@ -240,6 +258,7 @@ export default function EditPerson({ params }) {
             setRectId(item.media_id);
             setRectUrl(item.url);
           }
+
           setPickerOpen(false);
         }}
       />
@@ -254,7 +273,7 @@ export default function EditPerson({ params }) {
         />
       </div>
 
-      {/* SAVE */}
+      {/* SAVE BUTTON */}
       <button
         onClick={update}
         disabled={saving}
@@ -268,7 +287,7 @@ export default function EditPerson({ params }) {
           {JSON.stringify(result, null, 2)}
         </pre>
       )}
-
     </div>
   );
 }
+
