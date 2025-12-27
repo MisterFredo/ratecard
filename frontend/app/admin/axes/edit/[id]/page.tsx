@@ -5,6 +5,9 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import MediaPicker from "@/components/admin/MediaPicker";
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+// ex: https://storage.googleapis.com/ratecard-media
+
 export default function EditAxe({ params }) {
   const { id } = params;
 
@@ -12,14 +15,15 @@ export default function EditAxe({ params }) {
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
 
-  // DAM MEDIA
+  // DAM MEDIA IDS
   const [mediaRectangleId, setMediaRectangleId] = useState<string | null>(null);
   const [mediaSquareId, setMediaSquareId] = useState<string | null>(null);
 
+  // URL (GCS)
   const [mediaRectangleUrl, setMediaRectangleUrl] = useState<string | null>(null);
   const [mediaSquareUrl, setMediaSquareUrl] = useState<string | null>(null);
 
-  // OLD IDS (pour unassign)
+  // OLD IDs (pour unassign)
   const [oldRectangleId, setOldRectangleId] = useState<string | null>(null);
   const [oldSquareId, setOldSquareId] = useState<string | null>(null);
 
@@ -30,12 +34,13 @@ export default function EditAxe({ params }) {
   const [result, setResult] = useState<any>(null);
 
   /* ---------------------------------------------------------
-     LOAD AXE + MEDIA (DAM)
+     LOAD AXE + MEDIA (GCS)
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
 
+      // 1️⃣ LOAD AXE
       const res = await api.get(`/axes/${id}`);
       const a = res.axe;
 
@@ -48,7 +53,7 @@ export default function EditAxe({ params }) {
       setOldRectangleId(a.MEDIA_RECTANGLE_ID || null);
       setOldSquareId(a.MEDIA_SQUARE_ID || null);
 
-      // load DAM links
+      // 2️⃣ LOAD MEDIA (GCS)
       const m = await api.get(`/media/by-entity?type=axe&id=${id}`);
       const media = m.media || [];
 
@@ -56,9 +61,10 @@ export default function EditAxe({ params }) {
       const square = media.find((m) => m.FORMAT === "square");
 
       if (rect)
-        setMediaRectangleUrl("/media/" + rect.FILEPATH.replace("/uploads/media/", ""));
+        setMediaRectangleUrl(`${GCS_BASE_URL}/${rect.FILEPATH}`);
+
       if (square)
-        setMediaSquareUrl("/media/" + square.FILEPATH.replace("/uploads/media/", ""));
+        setMediaSquareUrl(`${GCS_BASE_URL}/${square.FILEPATH}`);
 
       setLoading(false);
     }
@@ -74,7 +80,7 @@ export default function EditAxe({ params }) {
 
     setSaving(true);
 
-    // 1️⃣ UPDATE AXE
+    // 1️⃣ UPDATE AXE METADATA
     const payload = {
       label,
       description: description || null,
@@ -84,7 +90,7 @@ export default function EditAxe({ params }) {
 
     const res = await api.put(`/axes/update/${id}`, payload);
 
-    // 2️⃣ UNASSIGN old media if changed
+    // 2️⃣ UNASSIGN OLD IF CHANGED
     async function unassignIfChanged(oldId: string | null, newId: string | null) {
       if (oldId && oldId !== newId) {
         await api.post("/media/unassign", { media_id: oldId });
@@ -94,7 +100,7 @@ export default function EditAxe({ params }) {
     await unassignIfChanged(oldRectangleId, mediaRectangleId);
     await unassignIfChanged(oldSquareId, mediaSquareId);
 
-    // 3️⃣ ASSIGN new media
+    // 3️⃣ ASSIGN NEW
     async function assignIfValid(mediaId: string | null) {
       if (!mediaId) return;
 
@@ -162,7 +168,7 @@ export default function EditAxe({ params }) {
           Choisir un visuel
         </button>
 
-        {/* RECTANGLE */}
+        {/* RECTANGLE PREVIEW */}
         {mediaRectangleUrl && (
           <div>
             <p className="text-sm text-gray-500">Rectangle :</p>
@@ -173,7 +179,7 @@ export default function EditAxe({ params }) {
           </div>
         )}
 
-        {/* SQUARE */}
+        {/* SQUARE PREVIEW */}
         {mediaSquareUrl && (
           <div>
             <p className="text-sm text-gray-500">Carré :</p>
@@ -189,18 +195,17 @@ export default function EditAxe({ params }) {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="all"
+        folders={["generics"]}    // 🟢 Seuls visuels génériques autorisés
         onSelect={(item) => {
           console.log("MEDIA SELECT AXE EDIT:", item);
 
-          // interdire tout sauf generics
           if (item.folder !== "generics") {
             alert("❌ Merci de choisir un visuel générique (folder: generics)");
             return;
           }
 
           if (!item.media_id) {
-            alert("❌ Ce média n’a pas d’identifiant DAM (réupload nécessaire)");
+            alert("❌ Ce média n’a pas d’identifiant DAM.");
             return;
           }
 
@@ -233,6 +238,7 @@ export default function EditAxe({ params }) {
     </div>
   );
 }
+
 
 
 
