@@ -5,6 +5,9 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import MediaPicker from "@/components/admin/MediaPicker";
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+// ex: https://storage.googleapis.com/ratecard-media
+
 export default function CreateAxe() {
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
@@ -112,7 +115,7 @@ export default function CreateAxe() {
           Choisir un visuel
         </button>
 
-        {/* RECTANGLE PREVIEW */}
+        {/* PREVIEW RECTANGLE */}
         {mediaRectangleUrl && (
           <div>
             <p className="text-sm text-gray-500">Rectangle :</p>
@@ -123,7 +126,7 @@ export default function CreateAxe() {
           </div>
         )}
 
-        {/* SQUARE PREVIEW */}
+        {/* PREVIEW SQUARE */}
         {mediaSquareUrl && (
           <div>
             <p className="text-sm text-gray-500">Carré :</p>
@@ -135,22 +138,16 @@ export default function CreateAxe() {
         )}
       </div>
 
-      {/* MEDIA PICKER (generics uniquement) */}
+      {/* MEDIA PICKER */}
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="all"
+        folders={["generics"]}   // 🟢 seuls visuels génériques autorisés pour AXE
         onSelect={(item) => {
           console.log("MEDIA SELECT AXE:", item);
 
-          // 🔐 Autoriser uniquement les generics
-          if (item.folder !== "generics") {
-            alert("❌ Merci de choisir un visuel générique.");
-            return;
-          }
-
           if (!item.media_id) {
-            alert("❌ Ce média n’a pas d’identifiant DAM (réupload requis).");
+            alert("❌ Ce média n’a pas d’identifiant DAM.");
             return;
           }
 
@@ -183,3 +180,4 @@ export default function CreateAxe() {
     </div>
   );
 }
+
