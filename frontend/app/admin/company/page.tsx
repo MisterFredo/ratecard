@@ -10,8 +10,35 @@ export default function CompanyList() {
 
   async function load() {
     setLoading(true);
+
+    // 1) Charger les sociétés
     const res = await api.get("/company/list");
-    setCompanies(res.companies || []);
+    const rawCompanies = res.companies || [];
+
+    // 2) Charger les visuels liés via RATECARD_MEDIA
+    const enriched = await Promise.all(
+      rawCompanies.map(async (c: any) => {
+        const m = await api.get(
+          `/media/by-entity?type=company&id=${c.ID_COMPANY}`
+        );
+
+        const media = m.media || [];
+        const rect = media.find((m) => m.FORMAT === "rectangle");
+        const square = media.find((m) => m.FORMAT === "square");
+
+        return {
+          ...c,
+          rectUrl: rect
+            ? `/media/${rect.FILEPATH.replace("/uploads/media/", "")}`
+            : null,
+          squareUrl: square
+            ? `/media/${square.FILEPATH.replace("/uploads/media/", "")}`
+            : null,
+        };
+      })
+    );
+
+    setCompanies(enriched);
     setLoading(false);
   }
 
@@ -61,19 +88,17 @@ export default function CompanyList() {
 
           <tbody>
             {companies.map((c) => (
-              <tr
-                key={c.ID_COMPANY}
-                className="border-b hover:bg-gray-50 transition"
-              >
+              <tr key={c.ID_COMPANY} className="border-b hover:bg-gray-50 transition">
+
                 {/* NOM */}
                 <td className="p-2 font-medium">{c.NAME}</td>
 
                 {/* LOGO RECTANGLE */}
                 <td className="p-2">
-                  {c.LOGO_URL ? (
+                  {c.rectUrl ? (
                     <img
-                      src={c.LOGO_URL}
-                      alt="logo"
+                      src={c.rectUrl}
+                      alt="logo rectangle"
                       className="h-10 w-auto object-contain border rounded bg-white p-1 shadow-sm"
                     />
                   ) : (
@@ -83,9 +108,9 @@ export default function CompanyList() {
 
                 {/* LOGO CARRÉ */}
                 <td className="p-2">
-                  {c.LOGO_SQUARE_URL ? (
+                  {c.squareUrl ? (
                     <img
-                      src={c.LOGO_SQUARE_URL}
+                      src={c.squareUrl}
                       alt="logo carré"
                       className="h-10 w-10 object-cover border rounded bg-white shadow-sm"
                     />
@@ -118,6 +143,7 @@ export default function CompanyList() {
                     Modifier
                   </Link>
                 </td>
+
               </tr>
             ))}
           </tbody>
@@ -127,5 +153,6 @@ export default function CompanyList() {
     </div>
   );
 }
+
 
 
