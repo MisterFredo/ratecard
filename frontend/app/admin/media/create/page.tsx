@@ -5,38 +5,17 @@ import Link from "next/link";
 import MediaUploader from "@/components/admin/MediaUploader";
 
 export default function CreateMediaPage() {
-  // Catégorie réelle de stockage
-  const [category, setCategory] = useState("articles");
+  // Catégories officielles validées
+  const [category, setCategory] = useState("logos");
 
-  // Résultat du MediaUploader → square + rectangle
   const [result, setResult] = useState<{
-    square: {
-      media_id: string;
-      url: string;
-      format: string;
-      folder: string;
-    };
-    rectangle: {
-      media_id: string;
-      url: string;
-      format: string;
-      folder: string;
-    };
+    square: { media_id: string; url: string };
+    rectangle: { media_id: string; url: string };
   } | null>(null);
 
   function onUploadComplete(res: {
-    square: {
-      media_id: string;
-      url: string;
-      format: string;
-      folder: string;
-    };
-    rectangle: {
-      media_id: string;
-      url: string;
-      format: string;
-      folder: string;
-    };
+    square: { media_id: string; url: string };
+    rectangle: { media_id: string; url: string };
   }) {
     setResult(res);
   }
@@ -58,16 +37,20 @@ export default function CreateMediaPage() {
       {/* CHOIX CATEGORIE */}
       <div className="space-y-2">
         <label className="font-semibold text-sm">Catégorie du média</label>
+
+        <p className="text-xs text-gray-500 mb-1">
+          Ces catégories servent uniquement à organiser la médiathèque.
+          Les visuels d'article ne passent pas par ici.
+        </p>
+
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           className="border rounded p-2 w-full"
         >
-          <option value="articles">Visuel d’article</option>
-          <option value="logos">Logo (source)</option>
-          <option value="logos-cropped">Logo formaté</option>
-          <option value="generics">Visuel générique (Ratecard)</option>
-          <option value="articles/generated">Visuel IA généré</option>
+          <option value="logos">Logos (originaux)</option>
+          <option value="logos-cropped">Logos formatés (carré & rect.)</option>
+          <option value="generics">Visuels génériques Ratecard</option>
         </select>
       </div>
 
@@ -77,23 +60,26 @@ export default function CreateMediaPage() {
           Uploader une image
         </h2>
 
-        <MediaUploader category={category} onUploadComplete={onUploadComplete} />
+        <MediaUploader
+          category={category}
+          onUploadComplete={onUploadComplete}
+        />
       </div>
 
-      {/* AFFICHAGE RESULTAT */}
+      {/* RESULT */}
       {result && (
         <div className="bg-gray-100 p-4 rounded border space-y-4">
 
           <p className="text-sm text-gray-700 font-semibold">
-            Média créé :
+            Média ajouté :
           </p>
 
           {/* SQUARE */}
           <div>
-            <p className="text-xs text-gray-600">Square :</p>
+            <p className="text-xs text-gray-600">Square (1:1)</p>
             <img
               src={result.square.url}
-              className="w-40 border rounded"
+              className="w-32 border rounded bg-white"
             />
             <p className="text-[10px] text-gray-500 break-all mt-1">
               {result.square.url}
@@ -102,17 +88,16 @@ export default function CreateMediaPage() {
 
           {/* RECTANGLE */}
           <div>
-            <p className="text-xs text-gray-600">Rectangle (4:3) :</p>
+            <p className="text-xs text-gray-600">Rectangle (4:3)</p>
             <img
               src={result.rectangle.url}
-              className="w-60 border rounded"
+              className="w-48 border rounded bg-white"
             />
             <p className="text-[10px] text-gray-500 break-all mt-1">
               {result.rectangle.url}
             </p>
           </div>
 
-          {/* RETOUR */}
           <button
             onClick={() => (window.location.href = "/admin/media")}
             className="bg-ratecard-blue text-white px-4 py-2 rounded"
@@ -121,7 +106,7 @@ export default function CreateMediaPage() {
           </button>
         </div>
       )}
+
     </div>
   );
 }
-
