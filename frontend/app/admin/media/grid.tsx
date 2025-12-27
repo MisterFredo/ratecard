@@ -24,7 +24,10 @@ export default function MediaGrid({
     const res = await fetch("/api/media/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: item.url }),
+      body: JSON.stringify({
+        url: item.url,
+        media_id: item.media_id,   // 🆕 indispensable
+      }),
     });
 
     const json = await res.json();
@@ -41,30 +44,35 @@ export default function MediaGrid({
 
       {items.map((item) => (
         <div
-          key={item.id}
-          className="border rounded-lg bg-white shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
+          key={item.media_id}
+          className="border rounded-lg bg-white shadow-sm p-2 flex flex-col items-center hover:shadow-md transition cursor-pointer"
         >
           {/* IMAGE */}
           <img
             src={item.url}
-            alt={item.id}
-            className="w-full h-28 object-contain border bg-gray-50 rounded cursor-pointer"
+            alt={item.filename}
+            className="w-full h-28 object-contain border bg-gray-50 rounded"
             onClick={() => setPreview(item)}
           />
 
+          {/* TITLE */}
+          <p className="text-xs font-semibold text-gray-800 mt-2 text-center px-1 truncate w-full">
+            {item.title}
+          </p>
+
           {/* FILENAME */}
-          <p className="text-[10px] text-gray-600 mt-2 text-center break-all px-1">
-            {item.id}
+          <p className="text-[10px] text-gray-500 text-center break-all px-1">
+            {item.filename}
           </p>
 
-          {/* CATEGORY */}
-          <p className="text-[10px] mt-1 text-ratecard-blue uppercase tracking-wide">
-            {item.category}
+          {/* FOLDER + FORMAT */}
+          <p className="text-[10px] text-gray-400 mt-1">
+            {item.folder} · {item.format}
           </p>
 
-          {/* TYPE */}
+          {/* TAILLE */}
           <p className="text-[10px] text-gray-500">
-            {item.type}
+            {item.size ? `${Math.round(item.size / 1024)} Ko` : "—"}
           </p>
 
           {/* ACTIONS */}
@@ -111,10 +119,21 @@ export default function MediaGrid({
           <div className="space-y-4">
             <img
               src={preview.url}
-              alt={preview.id}
+              alt={preview.filename}
               className="w-full max-h-[80vh] object-contain border rounded bg-white"
             />
-            <p className="text-sm text-gray-600 break-all">{preview.url}</p>
+
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-gray-800">
+                {preview.title}
+              </p>
+              <p className="text-xs text-gray-500 break-all">
+                {preview.filename}
+              </p>
+              <p className="text-xs text-gray-500">
+                {preview.folder} · {preview.format}
+              </p>
+            </div>
           </div>
         )}
       </Drawer>
@@ -122,3 +141,4 @@ export default function MediaGrid({
     </div>
   );
 }
+
