@@ -22,7 +22,10 @@ export async function GET() {
       // FILEPATH = "/uploads/media/<folder>/<filename>"
       const relative = m.FILEPATH.replace("/uploads/media/", "");
 
-      const [folder, filename] = relative.split("/");
+      let [folder, filename] = relative.split("/");
+
+      // 🔥 NORMALISATION CRITIQUE
+      folder = folder.toLowerCase();
 
       // Chemin physique pour récupérer la taille réelle
       const physicalPath = path.join(
@@ -43,7 +46,10 @@ export async function GET() {
 
       media.push({
         media_id: m.ID_MEDIA,
-        format: m.FORMAT,
+
+        // 🔥 FORMAT NORMALISÉ
+        format: m.FORMAT?.toLowerCase() || null,
+
         entity_type: m.ENTITY_TYPE,
         entity_id: m.ENTITY_ID,
 
@@ -51,14 +57,14 @@ export async function GET() {
         url: `/media/${folder}/${filename}`,
 
         // Nouveau champ lisible
-        title: m.TITLE || filename,     // 🆕 Ajout essentiel
+        title: m.TITLE || filename,
         filename,
 
-        // Catégorie = dossier
+        // 🔥 Catégorie = dossier normalisé en minuscule
         folder,
 
         // Compatibilité MediaPicker (ancien type)
-        type: m.FORMAT,
+        type: m.FORMAT?.toLowerCase() || null,
 
         // Taille récupérée localement
         size,
@@ -77,4 +83,5 @@ export async function GET() {
     );
   }
 }
+
 
