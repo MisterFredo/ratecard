@@ -17,16 +17,26 @@ export default function EditArticle({ params }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // BASIC FIELDS
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
 
-  const [selectedCompany, setSelectedCompany] = useState("");
+  // COMPANY = object
+  const [selectedCompany, setSelectedCompany] = useState<any>(null);
+
+  // PERSON = array of objects
   const [selectedPersons, setSelectedPersons] = useState<any[]>([]);
+
+  // AXES = array of { id_axe, label }
   const [axes, setAxes] = useState<any[]>([]);
 
-  const [visuelUrl, setVisuelUrl] = useState("");         // rect 4:3
-  const [visuelSquare, setVisuelSquare] = useState("");   // square 1:1
+  // MEDIA (URL + ID)
+  const [visuelUrl, setVisuelUrl] = useState("");
+  const [visuelSquareUrl, setVisuelSquareUrl] = useState("");
+
+  const [visuelId, setVisuelId] = useState<string | null>(null);
+  const [visuelSquareId, setVisuelSquareId] = useState<string | null>(null);
 
   const [pickerVisuelOpen, setPickerVisuelOpen] = useState(false);
   const [uploaderOpen, setUploaderOpen] = useState(false);
@@ -34,7 +44,7 @@ export default function EditArticle({ params }) {
   const [result, setResult] = useState<any>(null);
 
   /* ============================================================
-     LOAD ARTICLE DATA
+     LOAD ARTICLE
   ============================================================ */
   useEffect(() => {
     async function load() {
@@ -47,16 +57,37 @@ export default function EditArticle({ params }) {
       setExcerpt(a.EXCERPT || "");
       setContentHtml(a.CONTENU_HTML || "");
 
+      // VISUELS — anciens champs, en attendant la refonte totale ARTICLES
       setVisuelUrl(a.VISUEL_URL || "");
-      setVisuelSquare(a.VISUEL_SQUARE_URL || "");
+      setVisuelSquareUrl(a.VISUEL_SQUARE_URL || "");
 
-      setSelectedCompany(a.companies?.[0] || "");
-      setSelectedPersons(a.persons?.map((p) => p.ID_PERSON) || []);
+      // COMPANY (string → object map)
+      // Dans l'ancien backend, companies était une liste d'IDs
+      if (a.companies && a.companies.length > 0) {
+        const companyId = a.companies[0];
+        const companyRes = await api.get(`/company/${companyId}`);
+        setSelectedCompany(companyRes.company);
+      }
 
+      // PERSONS (IDs → objects pour PersonSelector)
+      if (a.persons) {
+        const personObjects = [];
+        for (const person of a.persons) {
+          const p = await api.get(`/person/${person.ID_PERSON}`);
+          personObjects.push({
+            id_person: p.person.ID_PERSON,
+            name: p.person.NAME,
+            title: p.person.TITLE,
+          });
+        }
+        setSelectedPersons(personObjects);
+      }
+
+      // AXES (anciennes données → conversion)
       setAxes(
         (a.axes || []).map((ax: any) => ({
-          TYPE: ax.AXE_TYPE,
-          LABEL: ax.AXE_VALUE,
+          id_axe: ax.ID_AXE || null,
+          label: ax.AXE_VALUE,
         }))
       );
 
@@ -67,49 +98,54 @@ export default function EditArticle({ params }) {
   }, [id]);
 
   /* ============================================================
-     GENERATE IA VISUAL
+     IA VISUEL
   ============================================================ */
   async function generateIA() {
-    if (!title && !excerpt) {
-      return alert("Merci de renseigner un titre ou un résumé");
-    }
+    if (!title && !excerpt) return alert("Merci de renseigner un titre ou résumé");
 
     setSaving(true);
 
     const payload = {
       title,
       excerpt,
-      axes: axes.map((a) => a.LABEL),
-      company: selectedCompany || null,
+      axes: axes.map(a => a.label),
+      company: selectedCompany?.name || null,
     };
 
-    const res = await api.post("/media/generate", payload);
+    const res = await api.post("/api/media/generate", payload);
 
     if (res.status === "ok") {
-      setVisuelUrl(res.urls.rectangle);
-      setVisuelSquare(res.urls.square);
+      setVisuelUrl(res.items.rectangle.url);
+      setVisuelId(res.items.rectangle.media_id);
+
+      setVisuelSquareUrl(res.items.square.url);
+      setVisuelSquareId(res.items.square.media_id);
     }
 
     setSaving(false);
+    return;
   }
 
   /* ============================================================
-     SAVE ARTICLE
+     SAVE ARTICLE (PROVISOIRE)
+     → On ne touche pas encore au backend tant que MEDIA/AXES/PERSON
+       refonte n’est pas terminée.
   ============================================================ */
   async function save() {
     setSaving(true);
 
     const payload = {
       titre: title,
-      excerpt: excerpt,
+      excerpt,
       contenu_html: contentHtml,
-      visuel_url: visuelUrl || null,
-      visuel_square_url: visuelSquare || null,
-      is_featured: false,
-      featured_order: null,
-      axes: axes.map((a) => ({ type: a.TYPE, value: a.LABEL })),
-      companies: selectedCompany ? [selectedCompany] : [],
-      persons: selectedPersons.map((id) => ({ id_person: id, role: null })),
+
+      visuel_url: visuelUrl,
+      visuel_square_url: visuelSquareUrl,
+
+      axes: axes.map(a => ({ value: a.label })),
+      companies: selectedCompany ? [selectedCompany.ID_COMPANY] : [],
+      persons: selectedPersons.map(p => ({ id_person: p.id_person })),
+
       auteur: null,
     };
 
@@ -120,6 +156,9 @@ export default function EditArticle({ params }) {
 
   if (loading) return <div>Chargement…</div>;
 
+  /* ============================================================
+     RENDER
+  ============================================================ */
   return (
     <div className="space-y-10">
 
@@ -133,35 +172,27 @@ export default function EditArticle({ params }) {
         </Link>
       </div>
 
-      {/* TITRE */}
+      {/* BASIC FIELDS */}
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         className="border p-2 w-full rounded"
       />
 
-      {/* EXCERPT */}
       <textarea
         value={excerpt}
         onChange={(e) => setExcerpt(e.target.value)}
-        className="border p-2 w-full rounded h-24"
+        className="border p-2 rounded w-full h-24"
       />
 
-      {/* CONTENU */}
       <HtmlEditor value={contentHtml} onChange={setContentHtml} />
 
-      {/* COMPANY */}
+      {/* ENTITIES */}
       <CompanySelector value={selectedCompany} onChange={setSelectedCompany} />
-
-      {/* PERSONS */}
       <PersonSelector values={selectedPersons} onChange={setSelectedPersons} />
-
-      {/* AXES */}
       <AxesEditor values={axes} onChange={setAxes} />
 
-      {/* ======================================================= */}
       {/* VISUELS */}
-      {/* ======================================================= */}
       <div className="space-y-4 p-4 border rounded bg-white">
         <h2 className="text-xl font-semibold text-ratecard-blue">
           Visuel de l’article
@@ -193,38 +224,41 @@ export default function EditArticle({ params }) {
 
         {visuelUrl && (
           <div className="mt-2">
-            <img
-              src={visuelUrl}
-              className="w-80 border rounded bg-white"
-            />
-            <p className="text-xs text-gray-500 break-all mt-1">{visuelUrl}</p>
+            <img src={visuelUrl} className="w-80 border rounded bg-white" />
           </div>
         )}
       </div>
 
-      {/* PICKER */}
+      {/* PICKER MEDIA */}
       <MediaPicker
         open={pickerVisuelOpen}
         onClose={() => setPickerVisuelOpen(false)}
-        category="articles"              // IMPORTANT
-        onSelect={(url) => {
-          if (url.includes("square")) setVisuelSquare(url);
-          else setVisuelUrl(url);
+        category="articles"
+        onSelect={(item) => {
+          if (item.format === "square") {
+            setVisuelSquareUrl(item.url);
+            setVisuelSquareId(item.media_id);
+          } else {
+            setVisuelUrl(item.url);
+            setVisuelId(item.media_id);
+          }
         }}
       />
 
       {/* UPLOADER */}
       {uploaderOpen && (
-        <div className="border p-4 rounded bg-white">
-          <MediaUploader
-            category="articles"           // IMPORTANT
-            onUploadComplete={({ square, rectangle }) => {
-              setVisuelSquare(square.url);
-              setVisuelUrl(rectangle.url);
-              setUploaderOpen(false);
-            }}
-          />
-        </div>
+        <MediaUploader
+          category="articles"
+          onUploadComplete={({ square, rectangle }) => {
+            setVisuelSquareUrl(square.url);
+            setVisuelSquareId(square.media_id);
+
+            setVisuelUrl(rectangle.url);
+            setVisuelId(rectangle.media_id);
+
+            setUploaderOpen(false);
+          }}
+        />
       )}
 
       {/* SAVE */}
@@ -244,4 +278,5 @@ export default function EditArticle({ params }) {
     </div>
   );
 }
+
 
