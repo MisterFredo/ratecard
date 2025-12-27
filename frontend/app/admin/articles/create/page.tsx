@@ -18,12 +18,20 @@ export default function CreateArticlePage() {
   const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
 
-  const [selectedCompany, setSelectedCompany] = useState("");
+  // COMPANY = object now
+  const [selectedCompany, setSelectedCompany] = useState<any>(null);
+
+  // PERSONS = array of objects now
   const [selectedPersons, setSelectedPersons] = useState<any[]>([]);
+
+  // AXES = array of { id_axe, label }
   const [axes, setAxes] = useState<any[]>([]);
 
-  const [visuelUrl, setVisuelUrl] = useState("");        // rectangle 4:3
-  const [visuelSquare, setVisuelSquare] = useState("");  // square 1:1
+  // MEDIA (store URL + media_id)
+  const [visuelUrl, setVisuelUrl] = useState("");
+  const [visuelSquareUrl, setVisuelSquareUrl] = useState("");
+  const [visuelId, setVisuelId] = useState<string | null>(null);
+  const [visuelSquareId, setVisuelSquareId] = useState<string | null>(null);
 
   const [pickerVisuelOpen, setPickerVisuelOpen] = useState(false);
   const [uploaderOpen, setUploaderOpen] = useState(false);
@@ -37,9 +45,9 @@ export default function CreateArticlePage() {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  // ---------------------------------------------------------
-  // GENERER ARTICLE VIA IA (DRAFT)
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     IA DRAFT
+  --------------------------------------------------------- */
   async function generateDraft() {
     setLoadingDraft(true);
     setDraft(null);
@@ -60,9 +68,9 @@ export default function CreateArticlePage() {
     setLoadingDraft(false);
   }
 
-  // ---------------------------------------------------------
-  // GENERATION IA VISUEL ARTICLE
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     IA VISUEL
+  --------------------------------------------------------- */
   async function generateIA() {
     if (!title && !excerpt) {
       return alert("Merci de renseigner un titre ou un résumé");
@@ -73,23 +81,27 @@ export default function CreateArticlePage() {
     const payload = {
       title,
       excerpt,
-      axes: axes.map(a => a.LABEL),
-      company: selectedCompany || null,
+      axes: axes.map(a => a.label),
+      company: selectedCompany?.name || null,
     };
 
     const res = await api.post("/api/media/generate", payload);
 
     if (res.status === "ok") {
-      setVisuelUrl(res.urls.rectangle);
-      setVisuelSquare(res.urls.square);
+      // IDs + URLs
+      setVisuelUrl(res.items.rectangle.url);
+      setVisuelId(res.items.rectangle.media_id);
+
+      setVisuelSquareUrl(res.items.square.url);
+      setVisuelSquareId(res.items.square.media_id);
     }
 
     setSaving(false);
   }
 
-  // ---------------------------------------------------------
-  // PUBLISH ARTICLE
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     PUBLISH ARTICLE (ancienne version)
+  --------------------------------------------------------- */
   async function publishArticle() {
     setSaving(true);
 
@@ -97,13 +109,14 @@ export default function CreateArticlePage() {
       titre: title,
       excerpt,
       contenu_html: contentHtml,
-      visuel_url: visuelUrl || null,
-      visuel_square_url: visuelSquare || null,
-      is_featured: false,
-      featured_order: null,
-      axes: axes.map(a => ({ type: a.TYPE, value: a.LABEL })),
-      companies: selectedCompany ? [selectedCompany] : [],
-      persons: selectedPersons.map(id => ({ id_person: id, role: null })),
+
+      visuel_url: visuelUrl,
+      visuel_square_url: visuelSquareUrl,
+
+      axes: axes.map(a => ({ label: a.label })),  // simplifié
+      companies: selectedCompany ? [selectedCompany.id_company] : [],
+      persons: selectedPersons.map(p => ({ id_person: p.id_person })),
+
       auteur: author || null,
     };
 
@@ -150,9 +163,6 @@ export default function CreateArticlePage() {
         </button>
       </div>
 
-      {/* -------------------------------------------------- */}
-      {/* ONGLET : FROM SCRATCH */}
-      {/* -------------------------------------------------- */}
       {activeTab === "scratch" && (
         <div className="space-y-6">
 
@@ -173,11 +183,17 @@ export default function CreateArticlePage() {
           <HtmlEditor value={contentHtml} onChange={setContentHtml} />
 
           {/* ENTITES */}
-          <CompanySelector value={selectedCompany} onChange={setSelectedCompany} />
-          <PersonSelector values={selectedPersons} onChange={setSelectedPersons} />
+          <CompanySelector
+            value={selectedCompany}
+            onChange={setSelectedCompany}
+          />
+          <PersonSelector
+            values={selectedPersons}
+            onChange={setSelectedPersons}
+          />
           <AxesEditor values={axes} onChange={setAxes} />
 
-          {/* VISUEL ARTICLE */}
+          {/* VISUEL */}
           <div className="space-y-4 p-4 border rounded bg-white">
             <h2 className="text-xl font-semibold text-ratecard-blue">
               Visuel de l’article
@@ -213,7 +229,6 @@ export default function CreateArticlePage() {
                   src={visuelUrl}
                   className="w-80 border rounded bg-white mt-2"
                 />
-                <p className="text-xs text-gray-500 break-all">{visuelUrl}</p>
               </div>
             )}
           </div>
@@ -222,10 +237,15 @@ export default function CreateArticlePage() {
           <MediaPicker
             open={pickerVisuelOpen}
             onClose={() => setPickerVisuelOpen(false)}
-            category="articles"               // IMPORTANT
-            onSelect={(url) => {
-              if (url.includes("square")) setVisuelSquare(url);
-              else setVisuelUrl(url);
+            category="articles"
+            onSelect={(item) => {
+              if (item.format === "square") {
+                setVisuelSquareUrl(item.url);
+                setVisuelSquareId(item.media_id);
+              } else {
+                setVisuelUrl(item.url);
+                setVisuelId(item.media_id);
+              }
             }}
           />
 
@@ -233,10 +253,14 @@ export default function CreateArticlePage() {
           {uploaderOpen && (
             <div className="border p-4 rounded bg-white">
               <MediaUploader
-                category="articles"            // IMPORTANT
+                category="articles"
                 onUploadComplete={({ square, rectangle }) => {
-                  setVisuelSquare(square.url);
+                  setVisuelSquareUrl(square.url);
+                  setVisuelSquareId(square.media_id);
+
                   setVisuelUrl(rectangle.url);
+                  setVisuelId(rectangle.media_id);
+
                   setUploaderOpen(false);
                 }}
               />
@@ -259,12 +283,9 @@ export default function CreateArticlePage() {
         </div>
       )}
 
-      {/* -------------------------------------------------- */}
-      {/* ONGLET : SOURCE → IA Draft */}
-      {/* -------------------------------------------------- */}
+      {/* SOURCE MODE */}
       {activeTab === "source" && (
         <div className="space-y-6">
-
           <select
             value={sourceType}
             onChange={e => setSourceType(e.target.value)}
@@ -319,4 +340,5 @@ export default function CreateArticlePage() {
     </div>
   );
 }
+
 
