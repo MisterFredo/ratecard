@@ -29,7 +29,8 @@ export async function GET(
     const data = await readFile(filePath);
     const type = mime.getType(file) || "application/octet-stream";
 
-    return new NextResponse(data, {
+    // ✅ Buffer → Uint8Array (type-safe pour NextResponse)
+    return new NextResponse(new Uint8Array(data), {
       status: 200,
       headers: {
         "Content-Type": type,
@@ -42,4 +43,3 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 }
-
