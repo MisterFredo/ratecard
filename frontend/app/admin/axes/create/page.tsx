@@ -181,6 +181,7 @@ export default function CreateAxe() {
         <MediaUploader
           category="generics"
           /* 🔥 NOUVEAU : uploader renvoie media_id déjà indexé BQ */
+          title={label} 
           onUploadComplete={(meta) => {
             // meta = { original, rectangle, square } avec media_id
             setMediaRectangleId(meta.rectangle.media_id);
