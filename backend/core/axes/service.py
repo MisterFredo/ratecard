@@ -1,3 +1,5 @@
+# backend/core/axes/service.py
+
 import uuid
 from datetime import datetime
 
@@ -14,12 +16,15 @@ def create_axe(data: AxeCreate) -> str:
 
     row = [{
         "ID_AXE": axe_id,
-        "TYPE": data.type,
         "LABEL": data.label,
-        "VISUEL_URL": data.visuel_url,
-        "VISUEL_SQUARE_URL": data.visuel_square_url,
+        "DESCRIPTION": data.description,
+        "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
+        "MEDIA_SQUARE_ID": data.media_square_id,
+        "SEO_TITLE": data.seo_title,
+        "SEO_DESCRIPTION": data.seo_description,
         "CREATED_AT": now,
         "UPDATED_AT": now,
+        "IS_ACTIVE": True,
     }]
 
     insert_bq(TABLE_AXE, row)
@@ -29,16 +34,12 @@ def create_axe(data: AxeCreate) -> str:
 def update_axe(id_axe: str, data: AxeUpdate):
     now = datetime.utcnow()
 
-    row = [{
-        "ID_AXE": id_axe,
-        "TYPE": data.type,
-        "LABEL": data.label,
-        "VISUEL_URL": data.visuel_url,
-        "VISUEL_SQUARE_URL": data.visuel_square_url,
-        "UPDATED_AT": now,
-    }]
+    # PATCH-like construction
+    updates = {k.upper(): v for k, v in data.dict(exclude_unset=True).items()}
+    updates["ID_AXE"] = id_axe
+    updates["UPDATED_AT"] = now
 
-    insert_bq(TABLE_AXE, row)
+    insert_bq(TABLE_AXE, [updates])
     return True
 
 
@@ -46,6 +47,7 @@ def list_axes():
     sql = f"""
         SELECT *
         FROM `{TABLE_AXE}`
+        WHERE IS_ACTIVE = TRUE
         ORDER BY LABEL ASC
     """
     return query_bq(sql)
@@ -63,8 +65,11 @@ def get_axe(id_axe: str):
 
 
 def delete_axe(id_axe: str):
-    query_bq(
-        f"DELETE FROM `{TABLE_AXE}` WHERE ID_AXE = @id",
-        {"id": id_axe}
-    )
+    sql = f"""
+        UPDATE `{TABLE_AXE}`
+        SET IS_ACTIVE = FALSE,
+            UPDATED_AT = CURRENT_TIMESTAMP()
+        WHERE ID_AXE = @id
+    """
+    query_bq(sql, {"id": id_axe})
     return True
