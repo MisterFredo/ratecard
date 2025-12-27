@@ -2,21 +2,43 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import MediaUploader, { MediaItem } from "@/components/admin/MediaUploader";
+import MediaUploader from "@/components/admin/MediaUploader";
 
 export default function CreateMediaPage() {
-  const [category, setCategory] = useState("articles"); // valeur correcte
+  // Catégorie réelle de stockage
+  const [category, setCategory] = useState("articles");
+
+  // Résultat du MediaUploader → square + rectangle
   const [result, setResult] = useState<{
-    square: MediaItem;
-    rectangle: MediaItem;
+    square: {
+      media_id: string;
+      url: string;
+      format: string;
+      folder: string;
+    };
+    rectangle: {
+      media_id: string;
+      url: string;
+      format: string;
+      folder: string;
+    };
   } | null>(null);
 
-  function onUploadComplete(result: {
-    square: MediaItem;
-    rectangle: MediaItem;
+  function onUploadComplete(res: {
+    square: {
+      media_id: string;
+      url: string;
+      format: string;
+      folder: string;
+    };
+    rectangle: {
+      media_id: string;
+      url: string;
+      format: string;
+      folder: string;
+    };
   }) {
-    // APERÇU dans la page avant retour manuel.
-    setResult(result);
+    setResult(res);
   }
 
   return (
@@ -41,12 +63,11 @@ export default function CreateMediaPage() {
           onChange={(e) => setCategory(e.target.value)}
           className="border rounded p-2 w-full"
         >
-          {/* Ce sont maintenant les catégories réelles */}
           <option value="articles">Visuel d’article</option>
           <option value="logos">Logo (source)</option>
           <option value="logos-cropped">Logo formaté</option>
           <option value="generics">Visuel générique (Ratecard)</option>
-          <option value="ia">Visuel IA généré</option>
+          <option value="articles/generated">Visuel IA généré</option>
         </select>
       </div>
 
@@ -56,10 +77,7 @@ export default function CreateMediaPage() {
           Uploader une image
         </h2>
 
-        <MediaUploader
-          category={category}
-          onUploadComplete={onUploadComplete}
-        />
+        <MediaUploader category={category} onUploadComplete={onUploadComplete} />
       </div>
 
       {/* AFFICHAGE RESULTAT */}
@@ -103,7 +121,7 @@ export default function CreateMediaPage() {
           </button>
         </div>
       )}
-
     </div>
   );
 }
+
