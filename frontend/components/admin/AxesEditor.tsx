@@ -8,96 +8,96 @@ export default function AxesEditor({ values, onChange }) {
   const [input, setInput] = useState("");
   const [filtered, setFiltered] = useState([]);
 
-  // Charger tous les axes
+  /* ---------------------------------------------------------
+     LOAD ALL AXES
+  --------------------------------------------------------- */
   useEffect(() => {
     api.get("/axes/list").then((res) => {
       setAxes(res.axes || []);
     });
   }, []);
 
-  // Auto-complétion
+  /* ---------------------------------------------------------
+     FILTER ON INPUT
+  --------------------------------------------------------- */
   useEffect(() => {
     if (!input.trim()) {
       setFiltered([]);
       return;
     }
     const l = input.toLowerCase();
+
     setFiltered(
       axes.filter((a) => a.LABEL.toLowerCase().includes(l))
     );
   }, [input, axes]);
 
-  // Ajouter un axe existant
+  /* ---------------------------------------------------------
+     ADD EXISTING AXE
+  --------------------------------------------------------- */
   function addAxe(axe) {
-    if (values.find((v) => v.LABEL === axe.LABEL)) return;
-    onChange([...values, axe]);
+    if (values.find((v) => v.id_axe === axe.ID_AXE)) return;
+
+    const updated = [
+      ...values,
+      {
+        id_axe: axe.ID_AXE,
+        label: axe.LABEL,
+      },
+    ];
+
+    onChange(updated);
     setInput("");
     setFiltered([]);
   }
 
-  // Ajouter un axe libre (TOPIC par défaut)
-  function addFree() {
-    if (!input.trim()) return;
-    const axe = {
-      TYPE: "TOPIC",
-      LABEL: input.trim(),
-      ID_AXE: null,
-    };
-    addAxe(axe);
+  /* ---------------------------------------------------------
+     REMOVE AXE
+  --------------------------------------------------------- */
+  function removeAxe(id_axe) {
+    onChange(values.filter((v) => v.id_axe !== id_axe));
   }
 
-  function removeAxe(label) {
-    onChange(values.filter((v) => v.LABEL !== label));
-  }
-
+  /* ---------------------------------------------------------
+     RENDER
+  --------------------------------------------------------- */
   return (
     <div className="space-y-2">
       <label className="font-medium">Axes éditoriaux</label>
 
+      {/* INPUT */}
       <input
-        className="border p-2 w-full"
-        placeholder="Rechercher ou ajouter un axe…"
+        className="border p-2 w-full rounded"
+        placeholder="Rechercher un axe…"
         value={input}
         onChange={(e) => setInput(e.target.value)}
       />
 
-      {/* Suggestions */}
+      {/* SUGGESTIONS */}
       {filtered.length > 0 && (
         <div className="border p-2 bg-white rounded shadow max-h-60 overflow-auto">
           {filtered.map((f) => (
             <div
               key={f.ID_AXE}
-              className="p-2 hover:bg-gray-100 cursor-pointer flex justify-between"
+              className="p-2 hover:bg-gray-100 cursor-pointer"
               onClick={() => addAxe(f)}
             >
-              <span>{f.LABEL}</span>
-              <span className="text-xs text-gray-500">{f.TYPE}</span>
+              {f.LABEL}
             </div>
           ))}
         </div>
       )}
 
-      {/* Ajouter axe libre */}
-      {input.trim() !== "" && filtered.length === 0 && (
-        <button
-          onClick={addFree}
-          className="bg-black text-white px-4 py-1 rounded text-sm"
-        >
-          Ajouter “{input}”
-        </button>
-      )}
-
-      {/* Tags sélectionnés */}
+      {/* TAGS */}
       <div className="flex flex-wrap gap-2 mt-2">
         {values.map((v) => (
           <span
-            key={v.LABEL}
-            className="bg-gray-200 px-2 py-1 rounded text-sm flex items-center gap-1"
+            key={v.id_axe}
+            className="bg-gray-200 px-2 py-1 rounded text-sm flex items-center gap-2"
           >
-            <span>{v.LABEL}</span>
-            <span className="text-[10px] text-gray-600">({v.TYPE})</span>
+            <span>{v.label}</span>
             <button
-              onClick={() => removeAxe(v.LABEL)}
+              onClick={() => removeAxe(v.id_axe)}
               className="text-red-600 font-bold"
             >
               ×
@@ -108,3 +108,4 @@ export default function AxesEditor({ values, onChange }) {
     </div>
   );
 }
+
