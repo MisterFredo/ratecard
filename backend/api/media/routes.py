@@ -90,6 +90,12 @@ def assign_media(payload: MediaAssign):
         etype = payload.entity_type.strip()
         eid = payload.entity_id.strip()
 
+        # 🔥 Force read before update
+        _ = query_bq(
+            f"SELECT ID_MEDIA FROM `{TABLE}` WHERE ID_MEDIA=@id LIMIT 1",
+            {"id": mid}
+        )
+
         sql = f"""
             UPDATE `{TABLE}`
             SET ENTITY_TYPE = @etype,
@@ -110,6 +116,7 @@ def assign_media(payload: MediaAssign):
 
     except Exception as e:
         raise HTTPException(400, f"Erreur assign media : {e}")
+
 
 
 
