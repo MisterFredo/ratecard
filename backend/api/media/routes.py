@@ -125,6 +125,28 @@ def get_by_entity(entity_type: str, entity_id: str):
     except Exception as e:
         raise HTTPException(400, f"Erreur by-entity : {e}")
 
+# ------------------------------------------------------------
+# LIST
+# ------------------------------------------------------------
+
+@router.get("/list")
+def list_media():
+    """
+    Retourne tous les médias avec toutes leurs métadonnées BQ.
+    (Le frontend Next.js ne gère plus BigQuery)
+    """
+    try:
+        sql = f"""
+            SELECT *
+            FROM `{TABLE}`
+            ORDER BY CREATED_AT DESC
+        """
+        rows = query_bq(sql)
+        return {"status": "ok", "media": rows}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur list media : {e}")
+
+
 
 # ------------------------------------------------------------
 # DELETE
