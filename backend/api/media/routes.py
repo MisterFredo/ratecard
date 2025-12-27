@@ -33,6 +33,7 @@ def register_media(payload: MediaRegister):
             "FORMAT": payload.format,
             "ENTITY_TYPE": None,
             "ENTITY_ID": None,
+            "TITLE": None,
             "CREATED_AT": now,
         }]
 
