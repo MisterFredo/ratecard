@@ -24,7 +24,7 @@ export async function GET() {
 
       const [folder, filename] = relative.split("/");
 
-      // Chemin physique pour récupérer la taille
+      // Chemin physique pour récupérer la taille réelle
       const physicalPath = path.join(
         process.cwd(),
         "uploads",
@@ -47,19 +47,20 @@ export async function GET() {
         entity_type: m.ENTITY_TYPE,
         entity_id: m.ENTITY_ID,
 
-        // URL publique
+        // URL publique servie par Next.js
         url: `/media/${folder}/${filename}`,
 
-        // Ajout du filename lisible
+        // Nouveau champ lisible
+        title: m.TITLE || filename,     // 🆕 Ajout essentiel
         filename,
 
         // Catégorie = dossier
         folder,
 
-        // Pour MediaPicker :
+        // Compatibilité MediaPicker (ancien type)
         type: m.FORMAT,
 
-        // Taille en octets
+        // Taille récupérée localement
         size,
 
         createdAt: m.CREATED_AT,
@@ -76,3 +77,4 @@ export async function GET() {
     );
   }
 }
+
