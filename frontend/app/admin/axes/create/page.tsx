@@ -9,7 +9,7 @@ export default function CreateAxe() {
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
 
-  // IDs et URLs des visuels DAM
+  // MEDIA GOV (DAM)
   const [mediaRectangleId, setMediaRectangleId] = useState<string | null>(null);
   const [mediaSquareId, setMediaSquareId] = useState<string | null>(null);
 
@@ -17,7 +17,6 @@ export default function CreateAxe() {
   const [mediaSquareUrl, setMediaSquareUrl] = useState<string | null>(null);
 
   const [pickerOpen, setPickerOpen] = useState(false);
-
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<any>(null);
 
@@ -29,6 +28,7 @@ export default function CreateAxe() {
 
     setSaving(true);
 
+    // 1️⃣ CREATE AXE
     const payload = {
       label,
       description: description || null,
@@ -37,29 +37,40 @@ export default function CreateAxe() {
     };
 
     const res = await api.post("/axes/create", payload);
+
+    if (!res || !res.id_axe) {
+      alert("❌ Erreur : impossible de créer l’axe.");
+      setSaving(false);
+      return;
+    }
+
     const id_axe = res.id_axe;
 
-    // Lien DAM -> Axe
-    if (mediaRectangleId)
-      await api.post("/media/assign", {
-        media_id: mediaRectangleId,
+    // 2️⃣ ASSIGN MEDIA → AXE
+    async function assignIfValid(mediaId: string | null) {
+      if (!mediaId) return;
+
+      const assignRes = await api.post("/media/assign", {
+        media_id: mediaId,
         entity_type: "axe",
         entity_id: id_axe,
       });
 
-    if (mediaSquareId)
-      await api.post("/media/assign", {
-        media_id: mediaSquareId,
-        entity_type: "axe",
-        entity_id: id_axe,
-      });
+      if (assignRes.status !== "ok") {
+        console.error("Erreur assign :", assignRes);
+        alert("❌ Impossible d'associer un média.");
+      }
+    }
+
+    await assignIfValid(mediaRectangleId);
+    await assignIfValid(mediaSquareId);
 
     setResult(res);
     setSaving(false);
   }
 
   /* ---------------------------------------------------------
-     RENDER
+     UI
   --------------------------------------------------------- */
   return (
     <div className="space-y-8">
@@ -128,8 +139,21 @@ export default function CreateAxe() {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        folders={["generics"]}         // 🟢 multi-folders si besoin
+        category="all"
         onSelect={(item) => {
+          console.log("MEDIA SELECT AXE:", item);
+
+          // 🔐 Autoriser uniquement les generics
+          if (item.folder !== "generics") {
+            alert("❌ Merci de choisir un visuel générique.");
+            return;
+          }
+
+          if (!item.media_id) {
+            alert("❌ Ce média n’a pas d’identifiant DAM (réupload requis).");
+            return;
+          }
+
           if (item.format === "rectangle") {
             setMediaRectangleId(item.media_id);
             setMediaRectangleUrl(item.url);
@@ -159,7 +183,3 @@ export default function CreateAxe() {
     </div>
   );
 }
-
-
-
-
