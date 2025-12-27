@@ -238,6 +238,7 @@ export default function EditCompany({ params }) {
       {uploaderOpen && (
         <MediaUploader
           category="logos-cropped"
+          title={label} 
           onUploadComplete={({ square, rectangle }) => {
             // rectangle
             setLogoRectId(rectangle.media_id);
