@@ -21,17 +21,18 @@ export default function EditCompany({ params }) {
   const [logoRectId, setLogoRectId] = useState<string | null>(null);
   const [logoSquareId, setLogoSquareId] = useState<string | null>(null);
 
-  // MEDIA URL PREVIEW
+  // PREVIEWS
   const [logoRectUrl, setLogoRectUrl] = useState<string | null>(null);
   const [logoSquareUrl, setLogoSquareUrl] = useState<string | null>(null);
 
+  // OLD IDs (pour unassign)
   const [oldLogoRectId, setOldLogoRectId] = useState<string | null>(null);
   const [oldLogoSquareId, setOldLogoSquareId] = useState<string | null>(null);
 
   const [pickerOpen, setPickerOpen] = useState(false);
 
   /* ---------------------------------------------------------
-     LOAD COMPANY
+     LOAD COMPANY + MEDIA
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
@@ -45,25 +46,24 @@ export default function EditCompany({ params }) {
       setLinkedinUrl(c.LINKEDIN_URL || "");
       setWebsiteUrl(c.WEBSITE_URL || "");
 
+      // BQ IDs
       setLogoRectId(c.MEDIA_LOGO_RECTANGLE_ID || null);
       setLogoSquareId(c.MEDIA_LOGO_SQUARE_ID || null);
 
       setOldLogoRectId(c.MEDIA_LOGO_RECTANGLE_ID || null);
       setOldLogoSquareId(c.MEDIA_LOGO_SQUARE_ID || null);
 
-      // Load Media URLs
+      // Charger les visuels assignés
       const m = await api.get(`/media/by-entity?type=company&id=${id}`);
       const media = m.media || [];
 
       const rect = media.find((m) => m.FORMAT === "rectangle");
       const square = media.find((m) => m.FORMAT === "square");
 
-      if (rect) {
+      if (rect)
         setLogoRectUrl("/media/" + rect.FILEPATH.replace("/uploads/media/", ""));
-      }
-      if (square) {
+      if (square)
         setLogoSquareUrl("/media/" + square.FILEPATH.replace("/uploads/media/", ""));
-      }
 
       setLoading(false);
     }
@@ -79,6 +79,7 @@ export default function EditCompany({ params }) {
 
     setSaving(true);
 
+    // 1️⃣ UPDATE COMPANY
     const payload = {
       name,
       description: description || null,
@@ -90,29 +91,34 @@ export default function EditCompany({ params }) {
 
     const res = await api.put(`/company/update/${id}`, payload);
 
-    // Unassign anciens si changés
-    if (oldLogoRectId && oldLogoRectId !== logoRectId) {
-      await api.post("/media/unassign", { media_id: oldLogoRectId });
-    }
-    if (oldLogoSquareId && oldLogoSquareId !== logoSquareId) {
-      await api.post("/media/unassign", { media_id: oldLogoSquareId });
+    // 2️⃣ UNASSIGN OLD IF CHANGED
+    async function unassignIfChanged(oldId: string | null, newId: string | null) {
+      if (oldId && oldId !== newId) {
+        await api.post("/media/unassign", { media_id: oldId });
+      }
     }
 
-    // Assign nouveaux
-    if (logoRectId) {
-      await api.post("/media/assign", {
-        media_id: logoRectId,
+    await unassignIfChanged(oldLogoRectId, logoRectId);
+    await unassignIfChanged(oldLogoSquareId, logoSquareId);
+
+    // 3️⃣ ASSIGN NEW
+    async function assignIfValid(mediaId: string | null) {
+      if (!mediaId) return;
+
+      const assignRes = await api.post("/media/assign", {
+        media_id: mediaId,
         entity_type: "company",
         entity_id: id,
       });
+
+      if (assignRes.status !== "ok") {
+        console.error("❌ Erreur assign :", assignRes);
+        alert("Impossible d'associer un média.");
+      }
     }
-    if (logoSquareId) {
-      await api.post("/media/assign", {
-        media_id: logoSquareId,
-        entity_type: "company",
-        entity_id: id,
-      });
-    }
+
+    await assignIfValid(logoRectId);
+    await assignIfValid(logoSquareId);
 
     setSaving(false);
     alert("Société mise à jour !");
@@ -161,7 +167,7 @@ export default function EditCompany({ params }) {
           Choisir un logo
         </button>
 
-        {/* SQUARE PREVIEW */}
+        {/* PREVIEWS */}
         {logoSquareUrl && (
           <div>
             <p className="text-sm text-gray-500">Carré :</p>
@@ -172,7 +178,6 @@ export default function EditCompany({ params }) {
           </div>
         )}
 
-        {/* RECT PREVIEW */}
         {logoRectUrl && (
           <div>
             <p className="text-sm text-gray-500">Rectangle :</p>
@@ -190,7 +195,18 @@ export default function EditCompany({ params }) {
         onClose={() => setPickerOpen(false)}
         category="all"
         onSelect={(item) => {
-          if (!["logos", "logos-cropped"].includes(item.folder)) return;
+          console.log("MEDIA SELECT:", item);
+
+          // accepter seulement logos / logos-cropped
+          if (!["logos", "logos-cropped"].includes(item.folder)) {
+            alert("Veuillez choisir un média de type logo.");
+            return;
+          }
+
+          if (!item.media_id) {
+            alert("❌ Ce média n’a pas d’identifiant DAM (réupload obligatoire).");
+            return;
+          }
 
           if (item.format === "square") {
             setLogoSquareId(item.media_id);
@@ -231,6 +247,7 @@ export default function EditCompany({ params }) {
     </div>
   );
 }
+
 
 
 
