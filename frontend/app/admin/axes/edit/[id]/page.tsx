@@ -220,6 +220,7 @@ export default function EditAxe({ params }) {
       {uploaderOpen && (
         <MediaUploader
           category="generics"
+          title={label} 
           onUploadComplete={(meta) => {
             // meta.rectangle|square contient { media_id, url }
             setMediaRectangleId(meta.rectangle.media_id);
