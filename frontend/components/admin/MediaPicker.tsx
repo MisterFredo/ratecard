@@ -4,31 +4,31 @@ import { useEffect, useState } from "react";
 import Drawer from "@/components/ui/Drawer";
 
 export type PickerMediaItem = {
-  id: string;           // filename
-  url: string;          // /media/<folder>/<file>
-  folder: string;       // logos, articles, generics, ia…
-  type?: string;        // original | rect | square
-  category?: string;
-  media_id?: string;    // 🆕 ID BigQuery
-  bq_format?: string;   // 🆕 original | rectangle | square
-  entity_type?: string; // 🆕 axe | company | person | article
-  entity_id?: string;   // 🆕 ID_AXE …
+  media_id: string;
+  url: string;
+  title: string;
+  filename: string;
+  folder: string;       // logos | logos-cropped | generics
+  format: string;       // square | rectangle | original
+  size?: number | null;
+  createdAt?: string;
+  entity_type?: string | null;
+  entity_id?: string | null;
 };
 
 export default function MediaPicker({
   open,
   onClose,
   onSelect,
-  category = "logos-cropped",
+  category = "logos-cropped", // default for companies
 }: {
   open: boolean;
   onClose: () => void;
 
-  // 🆕 now returns metadata
   onSelect: (item: {
-    media_id: string | null;
+    media_id: string;
     url: string;
-    format: string | null;
+    format: string;
     folder: string;
   }) => void;
 
@@ -65,12 +65,17 @@ export default function MediaPicker({
       ? media
       : media.filter((m) => m.folder === category);
 
+  /* ----------------------------------------
+     UI
+  ---------------------------------------- */
   return (
     <Drawer open={open} onClose={onClose} title="Choisir un visuel" size="lg">
       <div className="space-y-6">
 
         {/* LOADING */}
-        {loading && <p className="text-gray-500 text-sm">Chargement…</p>}
+        {loading && (
+          <p className="text-gray-500 text-sm">Chargement…</p>
+        )}
 
         {/* EMPTY */}
         {!loading && filtered.length === 0 && (
@@ -87,18 +92,17 @@ export default function MediaPicker({
 
               return (
                 <div
-                  key={item.id}
-                  className={`border rounded p-2 bg-white hover:bg-gray-50 cursor-pointer transition relative ${
+                  key={item.media_id}
+                  className={`border rounded p-3 bg-white hover:bg-gray-50 cursor-pointer transition relative ${
                     assigned ? "ring-2 ring-blue-500" : ""
                   }`}
                   onClick={() => {
                     onSelect({
-                      media_id: item.media_id || null,
+                      media_id: item.media_id,
                       url: item.url,
-                      format: item.bq_format || null,
+                      format: item.format,
                       folder: item.folder,
                     });
-
                     onClose();
                   }}
                 >
@@ -109,18 +113,26 @@ export default function MediaPicker({
                     </span>
                   )}
 
+                  {/* IMAGE */}
                   <img
                     src={item.url}
-                    alt={item.id}
+                    alt={item.filename}
                     className="w-full h-24 object-contain rounded bg-gray-50 border"
                   />
 
-                  <p className="text-[10px] mt-1 break-all text-gray-700">
-                    {item.id}
+                  {/* TITLE */}
+                  <p className="text-xs mt-2 font-medium text-gray-800 truncate">
+                    {item.title}
                   </p>
 
+                  {/* FILENAME */}
+                  <p className="text-[10px] text-gray-500 truncate">
+                    {item.filename}
+                  </p>
+
+                  {/* FORMAT */}
                   <p className="text-[10px] text-gray-400">
-                    {item.folder} · {item.type || item.bq_format}
+                    {item.folder} · {item.format}
                   </p>
                 </div>
               );
@@ -131,4 +143,5 @@ export default function MediaPicker({
     </Drawer>
   );
 }
+
 
