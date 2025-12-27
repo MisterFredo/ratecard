@@ -1,12 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client
-from utils.gcs import upload_bytes, delete_file   # 🟩 NOUVEAU : module GCS
+from utils.gcs import upload_bytes, delete_file
 from datetime import datetime
 from uuid import uuid4
 from config import BQ_PROJECT, BQ_DATASET
 
 from api.media.models import (
-    MediaRegister,
     MediaAssign,
     MediaUnassign,
     MediaUpdateTitle
@@ -14,51 +13,47 @@ from api.media.models import (
 
 from google.cloud import bigquery
 
-import base64
-
 router = APIRouter()
 
 TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_MEDIA"
 
 
-# ------------------------------------------------------------
-# 🆕 REGISTER UPLOAD (UPLOAD GCS + INSERT BQ)
-# ------------------------------------------------------------
+# =====================================================================
+# 🆕 REGISTER UPLOAD (GCS + BigQuery)
+# =====================================================================
 @router.post("/register-upload")
-def register_media_upload(payload: dict):
+async def register_media_upload(
+    file: UploadFile = File(...),
+    category: str = Form(...),
+    format_: str = Form(...),       # "square" | "rectangle" | "original"
+    title: str = Form(...)
+):
     """
     Upload d’un média vers Google Cloud Storage + enregistrement BigQuery.
     Reçoit :
-    - filename
-    - category
-    - format (rectangle, square, original)
-    - title (titre gouverné)
-    - base64 (binaire image)
+      - file        -> binaire de l’image
+      - category    -> logos / logos-cropped / generics / ...
+      - format_     -> original / square / rectangle
+      - title       -> nom gouverné
     """
 
     try:
-        filename = payload["filename"]
-        category = payload["category"]
-        format_ = payload["format"]
-        title = payload["title"]
-        base64_data = payload["base64"]
+        # 1️⃣ Lire le fichier envoyé
+        binary_data = await file.read()
 
-        # Décodage du buffer image
-        try:
-            binary_data = base64.b64decode(base64_data)
-        except Exception:
-            raise HTTPException(400, "Invalid base64 image data")
+        # Nettoyage du nom de fichier
+        filename = file.filename.replace(" ", "_")
 
-        # Upload vers GCS
+        # 2️⃣ Upload GCS
         url = upload_bytes(category, filename, binary_data)
 
-        # Génération ID + insertion BigQuery
+        # 3️⃣ Create ID + insert BQ
         media_id = str(uuid4())
         now = datetime.utcnow().isoformat()
 
         row = [{
             "ID_MEDIA": media_id,
-            "FILEPATH": f"{category}/{filename}",   # chemin interne bucket
+            "FILEPATH": f"{category}/{filename}",  # GCS internal path
             "FORMAT": format_,
             "TITLE": title,
             "ENTITY_TYPE": None,
@@ -82,23 +77,22 @@ def register_media_upload(payload: dict):
         raise HTTPException(400, f"Erreur register-upload : {e}")
 
 
-# ------------------------------------------------------------
-# (Legacy) REGISTER — toujours là pour compatibilité mais non utilisé
-# ------------------------------------------------------------
+# =====================================================================
+# ❌ Legacy REGISTER (désactivé)
+# =====================================================================
 @router.post("/register")
-def deprecated_register_media(payload: MediaRegister):
-    """
-    Compatibilité ancienne version.
-    Ne fait plus rien en production.
-    """
-    raise HTTPException(400, "Deprecated : utilisez /register-upload")
+def deprecated_register_media(_payload):
+    raise HTTPException(400, "Deprecated: utilisez /register-upload")
 
 
-# ------------------------------------------------------------
-# ASSIGN
-# ------------------------------------------------------------
+# =====================================================================
+# ASSIGN MEDIA
+# =====================================================================
 @router.post("/assign")
 def assign_media(payload: MediaAssign):
+    """
+    Associe un média à une entité (company, person, axe, article).
+    """
     try:
         client = get_bigquery_client()
 
@@ -125,9 +119,9 @@ def assign_media(payload: MediaAssign):
         raise HTTPException(400, f"Erreur assign media : {e}")
 
 
-# ------------------------------------------------------------
+# =====================================================================
 # UNASSIGN
-# ------------------------------------------------------------
+# =====================================================================
 @router.post("/unassign")
 def unassign_media(payload: MediaUnassign):
     try:
@@ -154,11 +148,14 @@ def unassign_media(payload: MediaUnassign):
         raise HTTPException(400, f"Erreur unassign media : {e}")
 
 
-# ------------------------------------------------------------
+# =====================================================================
 # BY ENTITY
-# ------------------------------------------------------------
+# =====================================================================
 @router.get("/by-entity")
 def get_by_entity(type: str, id: str):
+    """
+    Retourne la liste des médias associés à une entité.
+    """
     try:
         sql = f"""
             SELECT *
@@ -175,9 +172,9 @@ def get_by_entity(type: str, id: str):
         raise HTTPException(400, f"Erreur by-entity : {e}")
 
 
-# ------------------------------------------------------------
-# LIST ALL MEDIA
-# ------------------------------------------------------------
+# =====================================================================
+# LIST ALL
+# =====================================================================
 @router.get("/list")
 def list_media():
     try:
@@ -189,15 +186,11 @@ def list_media():
         raise HTTPException(400, f"Erreur list media : {e}")
 
 
-# ------------------------------------------------------------
-# DELETE (supprime BQ uniquement)
-# ------------------------------------------------------------
+# =====================================================================
+# DELETE (BQ only)
+# =====================================================================
 @router.delete("/delete/{media_id}")
 def delete_media(media_id: str):
-    """
-    Supprime un média (BigQuery uniquement).
-    Le fichier physique GCS peut être supprimé plus tard si besoin.
-    """
     try:
         client = get_bigquery_client()
 
@@ -217,13 +210,13 @@ def delete_media(media_id: str):
         raise HTTPException(400, f"Erreur delete media : {e}")
 
 
-# ------------------------------------------------------------
+# =====================================================================
 # UPDATE TITLE
-# ------------------------------------------------------------
+# =====================================================================
 @router.put("/update-title")
 def update_media_title(payload: MediaUpdateTitle):
     """
-    Modifie le titre (gouverné) d’un média.
+    Met à jour le titre gouverné.
     """
     try:
         client = get_bigquery_client()
@@ -247,4 +240,5 @@ def update_media_title(payload: MediaUpdateTitle):
 
     except Exception as e:
         raise HTTPException(400, f"Erreur update title : {e}")
+
 
