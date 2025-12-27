@@ -17,17 +17,17 @@ export default function EditCompany({ params }) {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
 
-  // MEDIA IDs
+  // MEDIA IDs (DAM)
   const [logoRectId, setLogoRectId] = useState<string | null>(null);
   const [logoSquareId, setLogoSquareId] = useState<string | null>(null);
-
-  // PREVIEWS
-  const [logoRectUrl, setLogoRectUrl] = useState<string | null>(null);
-  const [logoSquareUrl, setLogoSquareUrl] = useState<string | null>(null);
 
   // OLD IDs (pour unassign)
   const [oldLogoRectId, setOldLogoRectId] = useState<string | null>(null);
   const [oldLogoSquareId, setOldLogoSquareId] = useState<string | null>(null);
+
+  // PREVIEWS (URLs GCS)
+  const [logoRectUrl, setLogoRectUrl] = useState<string | null>(null);
+  const [logoSquareUrl, setLogoSquareUrl] = useState<string | null>(null);
 
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -46,24 +46,22 @@ export default function EditCompany({ params }) {
       setLinkedinUrl(c.LINKEDIN_URL || "");
       setWebsiteUrl(c.WEBSITE_URL || "");
 
-      // BQ IDs
+      // DAM IDs en BQ
       setLogoRectId(c.MEDIA_LOGO_RECTANGLE_ID || null);
       setLogoSquareId(c.MEDIA_LOGO_SQUARE_ID || null);
 
       setOldLogoRectId(c.MEDIA_LOGO_RECTANGLE_ID || null);
       setOldLogoSquareId(c.MEDIA_LOGO_SQUARE_ID || null);
 
-      // Charger les visuels assignés
+      // Charger les visuels assignés via DAM
       const m = await api.get(`/media/by-entity?type=company&id=${id}`);
       const media = m.media || [];
 
       const rect = media.find((m) => m.FORMAT === "rectangle");
       const square = media.find((m) => m.FORMAT === "square");
 
-      if (rect)
-        setLogoRectUrl("/media/" + rect.FILEPATH.replace("/uploads/media/", ""));
-      if (square)
-        setLogoSquareUrl("/media/" + square.FILEPATH.replace("/uploads/media/", ""));
+      if (rect) setLogoRectUrl(rect.URL || rect.url || null);
+      if (square) setLogoSquareUrl(square.URL || square.url || null);
 
       setLoading(false);
     }
@@ -112,8 +110,8 @@ export default function EditCompany({ params }) {
       });
 
       if (assignRes.status !== "ok") {
-        console.error("❌ Erreur assign :", assignRes);
-        alert("Impossible d'associer un média.");
+        console.error("Erreur assign :", assignRes);
+        alert("Impossible d'associer le média.");
       }
     }
 
@@ -127,7 +125,7 @@ export default function EditCompany({ params }) {
   if (loading) return <div>Chargement…</div>;
 
   /* ---------------------------------------------------------
-     RENDER
+     UI
   --------------------------------------------------------- */
   return (
     <div className="space-y-8">
@@ -146,6 +144,7 @@ export default function EditCompany({ params }) {
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
+        placeholder="Nom de la société"
         className="border p-2 w-full rounded"
       />
 
@@ -153,6 +152,7 @@ export default function EditCompany({ params }) {
       <textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
+        placeholder="Description (optionnel)"
         className="border p-2 w-full rounded h-28"
       />
 
@@ -167,7 +167,7 @@ export default function EditCompany({ params }) {
           Choisir un logo
         </button>
 
-        {/* PREVIEWS */}
+        {/* PREVIEW SQUARE */}
         {logoSquareUrl && (
           <div>
             <p className="text-sm text-gray-500">Carré :</p>
@@ -178,6 +178,7 @@ export default function EditCompany({ params }) {
           </div>
         )}
 
+        {/* PREVIEW RECT */}
         {logoRectUrl && (
           <div>
             <p className="text-sm text-gray-500">Rectangle :</p>
@@ -193,25 +194,19 @@ export default function EditCompany({ params }) {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="all"
+        folders={["logos", "logos-cropped"]} // 🔥 filtrage DAM
         onSelect={(item) => {
-          console.log("MEDIA SELECT:", item);
-
-          // accepter seulement logos / logos-cropped
-          if (!["logos", "logos-cropped"].includes(item.folder)) {
-            alert("Veuillez choisir un média de type logo.");
-            return;
-          }
-
           if (!item.media_id) {
-            alert("❌ Ce média n’a pas d’identifiant DAM (réupload obligatoire).");
+            alert("❌ Ce média n’a pas d’identifiant DAM.");
             return;
           }
 
           if (item.format === "square") {
             setLogoSquareId(item.media_id);
             setLogoSquareUrl(item.url);
-          } else if (item.format === "rectangle") {
+          }
+
+          if (item.format === "rectangle") {
             setLogoRectId(item.media_id);
             setLogoRectUrl(item.url);
           }
@@ -222,17 +217,17 @@ export default function EditCompany({ params }) {
 
       {/* LinkedIn */}
       <input
-        placeholder="URL LinkedIn"
         value={linkedinUrl}
         onChange={(e) => setLinkedinUrl(e.target.value)}
+        placeholder="URL LinkedIn"
         className="border p-2 w-full rounded"
       />
 
       {/* Website */}
       <input
-        placeholder="Site web (optionnel)"
         value={websiteUrl}
         onChange={(e) => setWebsiteUrl(e.target.value)}
+        placeholder="Site web (optionnel)"
         className="border p-2 w-full rounded"
       />
 
@@ -247,6 +242,7 @@ export default function EditCompany({ params }) {
     </div>
   );
 }
+
 
 
 
