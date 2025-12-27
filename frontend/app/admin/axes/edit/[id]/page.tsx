@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import MediaPicker from "@/components/admin/MediaPicker";
-import MediaUploader from "@/components/admin/MediaUploader";
 
 export default function EditAxe({ params }) {
   const { id } = params;
@@ -19,7 +18,7 @@ export default function EditAxe({ params }) {
   const [mediaRectangleId, setMediaRectangleId] = useState<string | null>(null);
   const [mediaSquareId, setMediaSquareId] = useState<string | null>(null);
 
-  // URLs pour affichage
+  // Preview URLs
   const [mediaRectangleUrl, setMediaRectangleUrl] = useState<string | null>(null);
   const [mediaSquareUrl, setMediaSquareUrl] = useState<string | null>(null);
 
@@ -27,20 +26,16 @@ export default function EditAxe({ params }) {
   const [saving, setSaving] = useState(false);
 
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerMode, setPickerMode] = useState<"rectangle" | "square">("rectangle");
-
-  const [uploaderOpen, setUploaderOpen] = useState(false);
 
   const [result, setResult] = useState<any>(null);
 
   /* -----------------------------------------
-     LOAD AXE + VISUELS LIÉS
+     LOAD AXE + MEDIA
   ----------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
 
-      // 1) Charger AXE
       const res = await api.get(`/axes/${id}`);
       const a = res.axe;
 
@@ -50,15 +45,18 @@ export default function EditAxe({ params }) {
       setMediaRectangleId(a.MEDIA_RECTANGLE_ID || null);
       setMediaSquareId(a.MEDIA_SQUARE_ID || null);
 
-      // 2) Charger les visuels liés à cet axe
-      const mediaRes = await api.get(`/media/by-entity?type=axe&id=${id}`);
-      const media = mediaRes.media || [];
+      // load via DAM
+      const m = await api.get(`/media/by-entity?type=axe&id=${id}`);
+      const media = m.media || [];
 
       const rect = media.find((m) => m.FORMAT === "rectangle");
       const square = media.find((m) => m.FORMAT === "square");
 
-      if (rect) setMediaRectangleUrl(`/media/${rect.FILEPATH.replace("/uploads/media/", "")}`);
-      if (square) setMediaSquareUrl(`/media/${square.FILEPATH.replace("/uploads/media/", "")}`);
+      if (rect)
+        setMediaRectangleUrl("/media/" + rect.FILEPATH.replace("/uploads/media/", ""));
+
+      if (square)
+        setMediaSquareUrl("/media/" + square.FILEPATH.replace("/uploads/media/", ""));
 
       setLoading(false);
     }
@@ -67,26 +65,23 @@ export default function EditAxe({ params }) {
   }, [id]);
 
   /* -----------------------------------------
-     SAVE AXE
+     SAVE
   ----------------------------------------- */
   async function save() {
-    if (!label) return alert("Merci de renseigner un nom d’axe");
+    if (!label.trim()) return alert("Merci de renseigner le nom de l’axe");
 
     setSaving(true);
 
     const payload = {
       label,
-      description,
+      description: description || null,
       media_rectangle_id: mediaRectangleId,
       media_square_id: mediaSquareId,
-      seo_title: null,
-      seo_description: null,
     };
 
-    // 1) Mise à jour AXE
     const res = await api.put(`/axes/update/${id}`, payload);
 
-    // 2) Assign média → Axe
+    // assign DAM
     if (mediaRectangleId) {
       await api.post("/media/assign", {
         media_id: mediaRectangleId,
@@ -109,11 +104,11 @@ export default function EditAxe({ params }) {
   if (loading) return <div>Chargement…</div>;
 
   /* -----------------------------------------
-     RENDER
+     UI
   ----------------------------------------- */
-
   return (
     <div className="space-y-8">
+
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-ratecard-blue">
@@ -140,43 +135,21 @@ export default function EditAxe({ params }) {
         className="border p-2 w-full rounded h-24"
       />
 
-      {/* VISUELS */}
+      {/* VISUEL */}
       <div className="space-y-3">
-        <label className="font-medium">Visuels officiels de l’axe</label>
+        <label className="font-medium">Visuel officiel de l’axe</label>
 
-        <div className="flex gap-3">
-          <button
-            onClick={() => {
-              setPickerMode("rectangle");
-              setPickerOpen(true);
-            }}
-            className="bg-ratecard-green text-white px-4 py-2 rounded"
-          >
-            Choisir rectangle
-          </button>
-
-          <button
-            onClick={() => {
-              setPickerMode("square");
-              setPickerOpen(true);
-            }}
-            className="bg-ratecard-green text-white px-4 py-2 rounded"
-          >
-            Choisir carré
-          </button>
-
-          <button
-            onClick={() => setUploaderOpen(true)}
-            className="bg-gray-700 text-white px-4 py-2 rounded"
-          >
-            Uploader un visuel
-          </button>
-        </div>
+        <button
+          onClick={() => setPickerOpen(true)}
+          className="bg-ratecard-green text-white px-4 py-2 rounded"
+        >
+          Choisir un visuel
+        </button>
 
         {/* PREVIEW RECTANGLE */}
         {mediaRectangleUrl && (
           <div>
-            <p className="text-sm text-gray-500">Visuel rectangle :</p>
+            <p className="text-sm text-gray-500">Rectangle :</p>
             <img
               src={mediaRectangleUrl}
               className="w-60 h-auto border rounded bg-white mt-1"
@@ -187,7 +160,7 @@ export default function EditAxe({ params }) {
         {/* PREVIEW SQUARE */}
         {mediaSquareUrl && (
           <div>
-            <p className="text-sm text-gray-500">Visuel carré :</p>
+            <p className="text-sm text-gray-500">Carré :</p>
             <img
               src={mediaSquareUrl}
               className="w-24 h-24 object-cover border rounded bg-white mt-1"
@@ -200,14 +173,12 @@ export default function EditAxe({ params }) {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="generics"
+        folders={["generics"]}    // 🟢 Filtre DAM simple
         onSelect={(item) => {
-          // item = { media_id, url, format }
-
-          if (pickerMode === "rectangle") {
+          if (item.format === "rectangle") {
             setMediaRectangleId(item.media_id);
             setMediaRectangleUrl(item.url);
-          } else {
+          } else if (item.format === "square") {
             setMediaSquareId(item.media_id);
             setMediaSquareUrl(item.url);
           }
@@ -215,24 +186,6 @@ export default function EditAxe({ params }) {
           setPickerOpen(false);
         }}
       />
-
-      {/* UPLOADER */}
-      {uploaderOpen && (
-        <MediaUploader
-          category="generics"
-          title={label} 
-          onUploadComplete={(meta) => {
-            // meta.rectangle|square contient { media_id, url }
-            setMediaRectangleId(meta.rectangle.media_id);
-            setMediaRectangleUrl(meta.rectangle.url);
-
-            setMediaSquareId(meta.square.media_id);
-            setMediaSquareUrl(meta.square.url);
-
-            setUploaderOpen(false);
-          }}
-        />
-      )}
 
       {/* SAVE */}
       <button
@@ -251,5 +204,6 @@ export default function EditAxe({ params }) {
     </div>
   );
 }
+
 
 
