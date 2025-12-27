@@ -6,28 +6,50 @@ import { api } from "@/lib/api";
 
 export default function PersonList() {
   const [persons, setPersons] = useState<any[]>([]);
-  const [companies, setCompanies] = useState<any>({});
+  const [companies, setCompanies] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   /* -------------------------------------------------------
-     LOAD DATA (persons + companies mapping)
+     LOAD PERSONS + COMPANY MAP + MEDIA
   ------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
 
-      // Load persons
+      // 1) Load persons
       const res = await api.get("/person/list");
-      setPersons(res.persons || []);
+      const rawPersons = res.persons || [];
 
-      // Load companies for readable mapping
+      // 2) Load companies and map ID → NAME
       const resCompanies = await api.get("/company/list");
-      const map: any = {};
+      const map: Record<string, string> = {};
       (resCompanies.companies || []).forEach((c: any) => {
         map[c.ID_COMPANY] = c.NAME;
       });
       setCompanies(map);
 
+      // 3) Enrich each person with media
+      const enriched = await Promise.all(
+        rawPersons.map(async (p: any) => {
+          const m = await api.get(`/media/by-entity?type=person&id=${p.ID_PERSON}`);
+          const media = m.media || [];
+
+          const square = media.find((m: any) => m.FORMAT === "square");
+          const rect = media.find((m: any) => m.FORMAT === "rectangle");
+
+          return {
+            ...p,
+            squareUrl: square
+              ? `/media/${square.FILEPATH.replace("/uploads/media/", "")}`
+              : null,
+            rectUrl: rect
+              ? `/media/${rect.FILEPATH.replace("/uploads/media/", "")}`
+              : null,
+          };
+        })
+      );
+
+      setPersons(enriched);
       setLoading(false);
     }
 
@@ -69,6 +91,7 @@ export default function PersonList() {
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-gray-100 border-b text-left text-gray-700">
+              <th className="p-2">Portrait</th>
               <th className="p-2">Nom</th>
               <th className="p-2">Fonction</th>
               <th className="p-2">Société</th>
@@ -83,6 +106,26 @@ export default function PersonList() {
                 key={p.ID_PERSON}
                 className="border-b hover:bg-gray-50 transition"
               >
+
+                {/* MINI PORTRAIT – carré prioritaire */}
+                <td className="p-2">
+                  {p.squareUrl ? (
+                    <img
+                      src={p.squareUrl}
+                      alt="portrait"
+                      className="h-12 w-12 rounded-full object-cover border shadow-sm bg-white"
+                    />
+                  ) : p.rectUrl ? (
+                    <img
+                      src={p.rectUrl}
+                      alt="portrait"
+                      className="h-12 w-auto rounded border shadow-sm bg-white"
+                    />
+                  ) : (
+                    <span className="text-gray-400 italic">—</span>
+                  )}
+                </td>
+
                 {/* NOM */}
                 <td className="p-2 font-medium">{p.NAME}</td>
 
@@ -91,7 +134,7 @@ export default function PersonList() {
                   {p.TITLE || "—"}
                 </td>
 
-                {/* SOCIETE (mapping ID → NAME) */}
+                {/* SOCIÉTÉ */}
                 <td className="p-2">
                   {p.ID_COMPANY
                     ? companies[p.ID_COMPANY] || p.ID_COMPANY
@@ -132,4 +175,5 @@ export default function PersonList() {
     </div>
   );
 }
+
 
