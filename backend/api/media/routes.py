@@ -12,6 +12,7 @@ from api.media.models import (
 )
 
 from google.cloud import bigquery
+import base64   # 🔥🔥🔥 OBLIGATOIRE
 
 router = APIRouter()
 
