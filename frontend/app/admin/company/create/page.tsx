@@ -32,33 +32,45 @@ export default function CreateCompany() {
 
     setSaving(true);
 
+    // 1️⃣ CREATE COMPANY
     const payload = {
       name,
       description: description || null,
       linkedin_url: linkedinUrl || null,
       website_url: websiteUrl || null,
-
       media_logo_rectangle_id: logoRectId,
       media_logo_square_id: logoSquareId,
     };
 
     const res = await api.post("/company/create", payload);
+
+    // Vérification backend
+    if (!res || !res.id_company) {
+      alert("❌ Erreur : impossible de créer la société.");
+      setSaving(false);
+      return;
+    }
+
     const id_company = res.id_company;
 
-    // Link media → entity
-    if (logoRectId)
-      await api.post("/media/assign", {
-        media_id: logoRectId,
+    // 2️⃣ ASSIGN MEDIA → COMPANY
+    async function assignIfValid(mediaId: string | null) {
+      if (!mediaId) return;
+
+      const assignRes = await api.post("/media/assign", {
+        media_id: mediaId,
         entity_type: "company",
         entity_id: id_company,
       });
 
-    if (logoSquareId)
-      await api.post("/media/assign", {
-        media_id: logoSquareId,
-        entity_type: "company",
-        entity_id: id_company,
-      });
+      if (assignRes.status !== "ok") {
+        console.error("Erreur assign : ", assignRes);
+        alert("❌ Impossible d'associer le média.");
+      }
+    }
+
+    await assignIfValid(logoRectId);
+    await assignIfValid(logoSquareId);
 
     setResult(res);
     setSaving(false);
@@ -124,14 +136,24 @@ export default function CreateCompany() {
         )}
       </div>
 
-      {/* MEDIA PICKER : logos + logos-cropped */}
+      {/* MEDIA PICKER */}
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="all"  // on va filtrer en interne
+        category="all"
         onSelect={(item) => {
-          // On accepte uniquement logos & logos-cropped
-          if (!["logos", "logos-cropped"].includes(item.folder)) return;
+          console.log("MEDIA PICKED:", item);
+
+          // 🔥 Filtrage strict : logos & logos-cropped seulement
+          if (!["logos", "logos-cropped"].includes(item.folder)) {
+            alert("Veuillez choisir un média de type logo.");
+            return;
+          }
+
+          if (!item.media_id) {
+            alert("❌ Ce média n'a pas d'identifiant DAM (réupload requis).");
+            return;
+          }
 
           if (item.format === "square") {
             setLogoSquareId(item.media_id);
@@ -175,6 +197,7 @@ export default function CreateCompany() {
     </div>
   );
 }
+
 
 
 
