@@ -5,18 +5,19 @@ import Link from "next/link";
 import MediaUploader from "@/components/admin/MediaUploader";
 
 export default function CreateMediaPage() {
-  // Catégories officielles validées
+  // Catégorie sélectionnée
   const [category, setCategory] = useState("logos");
+
+  // Nouveau : TITRE du média
+  const [title, setTitle] = useState("");
 
   const [result, setResult] = useState<{
     square: { media_id: string; url: string };
     rectangle: { media_id: string; url: string };
+    original: { media_id: string; url: string };
   } | null>(null);
 
-  function onUploadComplete(res: {
-    square: { media_id: string; url: string };
-    rectangle: { media_id: string; url: string };
-  }) {
+  function onUploadComplete(res: any) {
     setResult(res);
   }
 
@@ -34,13 +35,26 @@ export default function CreateMediaPage() {
         </Link>
       </div>
 
+      {/* TITRE */}
+      <div className="space-y-2">
+        <label className="font-semibold text-sm">Titre du média</label>
+        <p className="text-xs text-gray-500">
+          Ce titre servira à générer automatiquement les noms de fichiers.
+        </p>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="ex: ADEX_PROGRAMMATIQUE"
+          className="border rounded p-2 w-full"
+        />
+      </div>
+
       {/* CHOIX CATEGORIE */}
       <div className="space-y-2">
         <label className="font-semibold text-sm">Catégorie du média</label>
 
         <p className="text-xs text-gray-500 mb-1">
           Ces catégories servent uniquement à organiser la médiathèque.
-          Les visuels d'article ne passent pas par ici.
         </p>
 
         <select
@@ -62,6 +76,7 @@ export default function CreateMediaPage() {
 
         <MediaUploader
           category={category}
+          title={title}                 // 🆕 indispensable
           onUploadComplete={onUploadComplete}
         />
       </div>
@@ -74,9 +89,21 @@ export default function CreateMediaPage() {
             Média ajouté :
           </p>
 
+          {/* ORIGINAL */}
+          <div>
+            <p className="text-xs text-gray-600">Original</p>
+            <img
+              src={result.original.url}
+              className="w-48 border rounded bg-white"
+            />
+            <p className="text-[10px] text-gray-500 break-all mt-1">
+              {result.original.url}
+            </p>
+          </div>
+
           {/* SQUARE */}
           <div>
-            <p className="text-xs text-gray-600">Square (1:1)</p>
+            <p className="text-xs text-gray-600">Carré (1:1)</p>
             <img
               src={result.square.url}
               className="w-32 border rounded bg-white"
@@ -98,6 +125,7 @@ export default function CreateMediaPage() {
             </p>
           </div>
 
+          {/* BOUTON RETOUR */}
           <button
             onClick={() => (window.location.href = "/admin/media")}
             className="bg-ratecard-blue text-white px-4 py-2 rounded"
@@ -106,7 +134,7 @@ export default function CreateMediaPage() {
           </button>
         </div>
       )}
-
     </div>
   );
 }
+
