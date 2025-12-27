@@ -278,7 +278,7 @@ export default function EditPerson({ params }) {
       {uploaderOpen && (
         <MediaUploader
           category="logos-cropped"
-          title={label} 
+          title={name} 
           onUploadComplete={({ square, rectangle }) => {
             setSquareId(square.media_id);
             setSquareUrl(square.url);
