@@ -3,16 +3,13 @@
 import { useState } from "react";
 
 /* ---------------------------------------------------------
-   Type exporté (pour être compatible avec CreateMediaPage)
+   Nouveau type MEDIA (gouverné par BigQuery)
 --------------------------------------------------------- */
-export type MediaItem = {
-  id: string;
-  url: string;
-  folder?: string;
-  category?: string;
-  type?: string;
-  size?: number;
-  createdAt?: number;
+export type UploadedMedia = {
+  media_id: string;     // 🆕 BigQuery ID_MEDIA
+  url: string;          // /media/<folder>/<name>
+  format: "rectangle" | "square" | "original";
+  folder: string;
 };
 
 /* ---------------------------------------------------------
@@ -23,7 +20,11 @@ export default function MediaUploader({
   onUploadComplete,
 }: {
   category?: string;
-  onUploadComplete: (result: { square: MediaItem; rectangle: MediaItem }) => void;
+  onUploadComplete: (result: {
+    square: UploadedMedia;
+    rectangle: UploadedMedia;
+    original?: UploadedMedia;
+  }) => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -32,11 +33,13 @@ export default function MediaUploader({
   function onSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
-
     setFile(f);
     setPreviewUrl(URL.createObjectURL(f));
   }
 
+  /* ---------------------------------------------------------
+     UPLOAD
+  --------------------------------------------------------- */
   async function upload() {
     if (!file) {
       alert("Merci de sélectionner un fichier.");
@@ -62,17 +65,64 @@ export default function MediaUploader({
       return;
     }
 
-    // Sharp backend retourne { square, rectangle, original }
+    /* ---------------------------------------------------------
+       json.items contient :
+       {
+         original: { id, url, folder },
+         rectangle: { id, url, folder },
+         square: { id, url, folder }
+       }
+
+       MAIS → nous devons enrichir ces infos avec les media_id
+       enregistrés dans BigQuery
+    --------------------------------------------------------- */
+
+    const findMediaId = async (fileUrl: string): Promise<string | null> => {
+      const bqPath = fileUrl.replace("/media/", "/uploads/media/");
+      const query = await fetch(
+        `/api/media/find?filepath=${encodeURIComponent(bqPath)}`
+      );
+      const result = await query.json();
+      return result.media_id || null;
+    };
+
+    const squareUrl = json.items.square.url;
+    const rectUrl = json.items.rectangle.url;
+    const originalUrl = json.items.original.url;
+
+    const squareId = await findMediaId(squareUrl);
+    const rectId = await findMediaId(rectUrl);
+    const originalId = await findMediaId(originalUrl);
+
     onUploadComplete({
-      square: json.items.square,
-      rectangle: json.items.rectangle,
+      square: {
+        media_id: squareId,
+        url: squareUrl,
+        format: "square",
+        folder: category,
+      },
+      rectangle: {
+        media_id: rectId,
+        url: rectUrl,
+        format: "rectangle",
+        folder: category,
+      },
+      original: {
+        media_id: originalId,
+        url: originalUrl,
+        format: "original",
+        folder: category,
+      },
     });
   }
 
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
+
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-white shadow-sm">
-
-      {/* FILE INPUT */}
+      {/* INPUT */}
       <input
         type="file"
         accept="image/*"
@@ -88,7 +138,7 @@ export default function MediaUploader({
         />
       )}
 
-      {/* UPLOAD BUTTON */}
+      {/* BUTTON */}
       <button
         onClick={upload}
         disabled={loading || !file}
@@ -103,3 +153,4 @@ export default function MediaUploader({
     </div>
   );
 }
+
