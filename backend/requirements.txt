@@ -2,8 +2,9 @@
 fastapi==0.115.5
 uvicorn==0.32.1
 
-# --- BigQuery ---
+# --- Google Cloud (BigQuery + Storage) ---
 google-cloud-bigquery==3.25.0
+google-cloud-storage==2.17.0
 google-auth==2.35.0
 google-auth-oauthlib==1.2.1
 
