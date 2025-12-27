@@ -13,8 +13,7 @@ from google.oauth2 import service_account
 def get_bigquery_client() -> bigquery.Client:
     """
     Crée un client BigQuery.
-    - Charge un fichier credentials JSON depuis GOOGLE_CREDENTIALS_FILE si défini.
-    - Sinon fallback sur les Application Default Credentials (local / GCP).
+    Forcé en région EU car les UPDATE/DELETE échouent sinon.
     """
 
     credentials_path = os.environ.get("GOOGLE_CREDENTIALS_FILE")
@@ -23,12 +22,19 @@ def get_bigquery_client() -> bigquery.Client:
         # Render : fichier JSON monté via Secret File
         with open(credentials_path, "r") as f:
             info = json.load(f)
+
         credentials = service_account.Credentials.from_service_account_info(info)
         project_id = info.get("project_id")
-        return bigquery.Client(credentials=credentials, project=project_id)
+
+        return bigquery.Client(
+            credentials=credentials,
+            project=project_id,
+            location="EU"          # 🔥 CRITIQUE !!!
+        )
 
     # Local dev / ADC
-    return bigquery.Client()
+    return bigquery.Client(location="EU")  # 🔥 Idem ici
+
 
 
 # ---------------------------------------------------------
