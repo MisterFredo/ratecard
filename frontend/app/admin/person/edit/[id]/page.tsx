@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import MediaPicker from "@/components/admin/MediaPicker";
-import MediaUploader from "@/components/admin/MediaUploader";
 
 export default function EditPerson({ params }) {
   const { id } = params;
@@ -16,47 +15,42 @@ export default function EditPerson({ params }) {
 
   // FIELDS
   const [name, setName] = useState("");
-  const [title, setTitle] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
   const [description, setDescription] = useState("");
   const [companyId, setCompanyId] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
 
-  // MEDIA IDS (new)
+  // MEDIA GOVERNED
   const [squareId, setSquareId] = useState<string | null>(null);
   const [rectId, setRectId] = useState<string | null>(null);
 
-  // OLD MEDIA IDS (for unassign)
   const [oldSquareId, setOldSquareId] = useState<string | null>(null);
   const [oldRectId, setOldRectId] = useState<string | null>(null);
 
-  // PREVIEW URLS
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerMode, setPickerMode] = useState<"square" | "rectangle">("square");
-
-  const [uploaderOpen, setUploaderOpen] = useState(false);
 
   const [result, setResult] = useState<any>(null);
 
   /* ---------------------------------------------------------
-     LOAD COMPANIES + PERSON + MEDIA
+     LOAD PERSON + MEDIA
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
 
-      // 1) companies
+      // Companies
       const resCompanies = await api.get("/company/list");
       setCompanies(resCompanies.companies || []);
 
-      // 2) person
+      // Person
       const resPerson = await api.get(`/person/${id}`);
       const p = resPerson.person;
 
       setName(p.NAME || "");
-      setTitle(p.TITLE || "");
+      setJobTitle(p.TITLE || "");
       setDescription(p.DESCRIPTION || "");
       setCompanyId(p.ID_COMPANY || "");
       setLinkedinUrl(p.LINKEDIN_URL || "");
@@ -67,19 +61,18 @@ export default function EditPerson({ params }) {
       setOldSquareId(p.MEDIA_PICTURE_SQUARE_ID || null);
       setOldRectId(p.MEDIA_PICTURE_RECTANGLE_ID || null);
 
-      // 3) media files
+      // MEDIA FILES
       const mediaRes = await api.get(`/media/by-entity?type=person&id=${id}`);
       const media = mediaRes.media || [];
 
-      const rect = media.find((m) => m.FORMAT === "rectangle");
       const square = media.find((m) => m.FORMAT === "square");
+      const rect = media.find((m) => m.FORMAT === "rectangle");
 
-      if (square) {
-        setSquareUrl(`/media/${square.FILEPATH.replace("/uploads/media/", "")}`);
-      }
-      if (rect) {
-        setRectUrl(`/media/${rect.FILEPATH.replace("/uploads/media/", "")}`);
-      }
+      if (square)
+        setSquareUrl("/media/" + square.FILEPATH.replace("/uploads/media/", ""));
+
+      if (rect)
+        setRectUrl("/media/" + rect.FILEPATH.replace("/uploads/media/", ""));
 
       setLoading(false);
     }
@@ -98,23 +91,22 @@ export default function EditPerson({ params }) {
     const payload = {
       id_company: companyId || null,
       name,
-      title: title || null,
+      title: jobTitle || null,
       description: description || null,
       linkedin_url: linkedinUrl || null,
       media_picture_square_id: squareId,
       media_picture_rectangle_id: rectId,
     };
 
-    // UPDATE BQ
+    // UPDATE
     const res = await api.put(`/person/update/${id}`, payload);
 
     // UNASSIGN OLD IF CHANGED
-    if (oldSquareId && oldSquareId !== squareId) {
+    if (oldSquareId && oldSquareId !== squareId)
       await api.post("/media/unassign", { media_id: oldSquareId });
-    }
-    if (oldRectId && oldRectId !== rectId) {
+
+    if (oldRectId && oldRectId !== rectId)
       await api.post("/media/unassign", { media_id: oldRectId });
-    }
 
     // ASSIGN NEW
     if (squareId) {
@@ -124,6 +116,7 @@ export default function EditPerson({ params }) {
         entity_id: id,
       });
     }
+
     if (rectId) {
       await api.post("/media/assign", {
         media_id: rectId,
@@ -132,14 +125,14 @@ export default function EditPerson({ params }) {
       });
     }
 
-    setResult(res);
     setSaving(false);
+    setResult(res);
   }
 
   if (loading) return <div>Chargement…</div>;
 
   /* ---------------------------------------------------------
-     RENDER
+     UI
   --------------------------------------------------------- */
   return (
     <div className="space-y-8">
@@ -154,7 +147,7 @@ export default function EditPerson({ params }) {
         </Link>
       </div>
 
-      {/* NOM */}
+      {/* NAME */}
       <div>
         <label className="font-medium">Nom complet</label>
         <input
@@ -164,12 +157,12 @@ export default function EditPerson({ params }) {
         />
       </div>
 
-      {/* FONCTION */}
+      {/* JOB TITLE */}
       <div>
         <label className="font-medium">Fonction</label>
         <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={jobTitle}
+          onChange={(e) => setJobTitle(e.target.value)}
           className="border p-2 w-full rounded mt-1"
         />
       </div>
@@ -184,7 +177,7 @@ export default function EditPerson({ params }) {
         />
       </div>
 
-      {/* SOCIÉTÉ */}
+      {/* COMPANY */}
       <div>
         <label className="font-medium">Société</label>
         <select
@@ -201,43 +194,21 @@ export default function EditPerson({ params }) {
         </select>
       </div>
 
-      {/* PHOTOS */}
+      {/* PORTRAIT */}
       <div className="space-y-3">
-        <label className="font-medium">Portraits</label>
+        <label className="font-medium">Photo officielle</label>
 
-        <div className="flex gap-3">
-          <button
-            onClick={() => {
-              setPickerMode("square");
-              setPickerOpen(true);
-            }}
-            className="bg-ratecard-green text-white px-4 py-2 rounded"
-          >
-            Portrait carré
-          </button>
+        <button
+          onClick={() => setPickerOpen(true)}
+          className="bg-ratecard-green text-white px-4 py-2 rounded"
+        >
+          Choisir une photo
+        </button>
 
-          <button
-            onClick={() => {
-              setPickerMode("rectangle");
-              setPickerOpen(true);
-            }}
-            className="bg-ratecard-green text-white px-4 py-2 rounded"
-          >
-            Rectangle (optionnel)
-          </button>
-
-          <button
-            onClick={() => setUploaderOpen(true)}
-            className="bg-gray-700 text-white px-4 py-2 rounded"
-          >
-            Uploader une photo
-          </button>
-        </div>
-
-        {/* PREVIEW SQUARE */}
+        {/* PREVIEWS */}
         {squareUrl && (
           <div>
-            <p className="text-sm text-gray-500">Portrait carré :</p>
+            <p className="text-sm text-gray-500">Carré :</p>
             <img
               src={squareUrl}
               className="w-24 h-24 object-cover border rounded mt-2 bg-white"
@@ -245,7 +216,6 @@ export default function EditPerson({ params }) {
           </div>
         )}
 
-        {/* PREVIEW RECTANGLE */}
         {rectUrl && (
           <div>
             <p className="text-sm text-gray-500">Rectangle :</p>
@@ -261,35 +231,18 @@ export default function EditPerson({ params }) {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="logos-cropped"
+        folders={["logos-cropped"]}
         onSelect={(item) => {
-          if (pickerMode === "square") {
+          if (item.format === "square") {
             setSquareId(item.media_id);
             setSquareUrl(item.url);
-          } else {
+          } else if (item.format === "rectangle") {
             setRectId(item.media_id);
             setRectUrl(item.url);
           }
           setPickerOpen(false);
         }}
       />
-
-      {/* MEDIA UPLOADER */}
-      {uploaderOpen && (
-        <MediaUploader
-          category="logos-cropped"
-          title={name} 
-          onUploadComplete={({ square, rectangle }) => {
-            setSquareId(square.media_id);
-            setSquareUrl(square.url);
-
-            setRectId(rectangle.media_id);
-            setRectUrl(rectangle.url);
-
-            setUploaderOpen(false);
-          }}
-        />
-      )}
 
       {/* LINKEDIN */}
       <div>
@@ -310,14 +263,12 @@ export default function EditPerson({ params }) {
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
-      {/* RESULT */}
       {result && (
         <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap text-sm mt-4">
           {JSON.stringify(result, null, 2)}
         </pre>
       )}
+
     </div>
   );
 }
-
-
