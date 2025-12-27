@@ -6,8 +6,8 @@ import { useState } from "react";
    Nouveau type MEDIA (gouverné par BigQuery)
 --------------------------------------------------------- */
 export type UploadedMedia = {
-  media_id: string;     // 🆕 BigQuery ID_MEDIA
-  url: string;          // /media/<folder>/<name>
+  media_id: string;
+  url: string;
   format: "rectangle" | "square" | "original";
   folder: string;
 };
@@ -16,14 +16,14 @@ export type UploadedMedia = {
    Component
 --------------------------------------------------------- */
 export default function MediaUploader({
-  category = "articles",
+  category = "logos",
   onUploadComplete,
 }: {
   category?: string;
   onUploadComplete: (result: {
     square: UploadedMedia;
     rectangle: UploadedMedia;
-    original?: UploadedMedia;
+    original: UploadedMedia;
   }) => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
@@ -33,6 +33,7 @@ export default function MediaUploader({
   function onSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
+
     setFile(f);
     setPreviewUrl(URL.createObjectURL(f));
   }
@@ -66,53 +67,15 @@ export default function MediaUploader({
     }
 
     /* ---------------------------------------------------------
-       json.items contient :
-       {
-         original: { id, url, folder },
-         rectangle: { id, url, folder },
-         square: { id, url, folder }
-       }
-
-       MAIS → nous devons enrichir ces infos avec les media_id
-       enregistrés dans BigQuery
+       json.items = { original, rectangle, square }
+       et CHACUN contient déjà : media_id, url, folder, format
+       → on peut renvoyer tel quel
     --------------------------------------------------------- */
 
-    const findMediaId = async (fileUrl: string): Promise<string | null> => {
-      const bqPath = fileUrl.replace("/media/", "/uploads/media/");
-      const query = await fetch(
-        `/api/media/find?filepath=${encodeURIComponent(bqPath)}`
-      );
-      const result = await query.json();
-      return result.media_id || null;
-    };
-
-    const squareUrl = json.items.square.url;
-    const rectUrl = json.items.rectangle.url;
-    const originalUrl = json.items.original.url;
-
-    const squareId = await findMediaId(squareUrl);
-    const rectId = await findMediaId(rectUrl);
-    const originalId = await findMediaId(originalUrl);
-
     onUploadComplete({
-      square: {
-        media_id: squareId,
-        url: squareUrl,
-        format: "square",
-        folder: category,
-      },
-      rectangle: {
-        media_id: rectId,
-        url: rectUrl,
-        format: "rectangle",
-        folder: category,
-      },
-      original: {
-        media_id: originalId,
-        url: originalUrl,
-        format: "original",
-        folder: category,
-      },
+      square: json.items.square,
+      rectangle: json.items.rectangle,
+      original: json.items.original,
     });
   }
 
@@ -122,7 +85,8 @@ export default function MediaUploader({
 
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-white shadow-sm">
-      {/* INPUT */}
+
+      {/* FILE INPUT */}
       <input
         type="file"
         accept="image/*"
@@ -138,7 +102,7 @@ export default function MediaUploader({
         />
       )}
 
-      {/* BUTTON */}
+      {/* UPLOAD BUTTON */}
       <button
         onClick={upload}
         disabled={loading || !file}
@@ -153,4 +117,3 @@ export default function MediaUploader({
     </div>
   );
 }
-
