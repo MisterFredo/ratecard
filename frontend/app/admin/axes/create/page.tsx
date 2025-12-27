@@ -7,77 +7,124 @@ import MediaPicker from "@/components/admin/MediaPicker";
 import MediaUploader from "@/components/admin/MediaUploader";
 
 export default function CreateAxe() {
-  const [type, setType] = useState("TOPIC");
+  /* -----------------------------------------
+     STATE — modèle final
+  ----------------------------------------- */
   const [label, setLabel] = useState("");
+  const [description, setDescription] = useState("");
 
-  const [visuelUrl, setVisuelUrl] = useState("");          // rectangle
-  const [visuelSquareUrl, setVisuelSquareUrl] = useState(""); // carré
+  // IDs BQ des médias
+  const [mediaRectangleId, setMediaRectangleId] = useState<string | null>(null);
+  const [mediaSquareId, setMediaSquareId] = useState<string | null>(null);
+
+  // URLs pour preview (frontend only)
+  const [mediaRectangleUrl, setMediaRectangleUrl] = useState<string | null>(null);
+  const [mediaSquareUrl, setMediaSquareUrl] = useState<string | null>(null);
 
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerMode, setPickerMode] = useState<"rectangle" | "square">("rectangle");
+
   const [uploaderOpen, setUploaderOpen] = useState(false);
 
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<any>(null);
 
-  // SAVE AXE
+  /* -----------------------------------------
+     SAVE AXE
+  ----------------------------------------- */
   async function save() {
     if (!label) return alert("Merci de renseigner le label");
 
     setSaving(true);
 
-    const res = await api.post("/axes/create", {
-      type,
+    // 1) Création AXE
+    const axeRes = await api.post("/axes/create", {
       label,
-      visuel_url: visuelUrl || null,
-      visuel_square_url: visuelSquareUrl || null,
+      description,
+      media_rectangle_id: mediaRectangleId,
+      media_square_id: mediaSquareId,
+      seo_title: null,
+      seo_description: null,
     });
 
-    setResult(res);
+    const id_axe = axeRes.id_axe;
+    setResult(axeRes);
+
+    // 2) Assign média → Axe
+    if (mediaRectangleId) {
+      await api.post("/media/assign", {
+        media_id: mediaRectangleId,
+        entity_type: "axe",
+        entity_id: id_axe,
+      });
+    }
+
+    if (mediaSquareId) {
+      await api.post("/media/assign", {
+        media_id: mediaSquareId,
+        entity_type: "axe",
+        entity_id: id_axe,
+      });
+    }
+
     setSaving(false);
   }
 
+  /* -----------------------------------------
+     RENDER
+  ----------------------------------------- */
+
   return (
     <div className="space-y-8">
-
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-ratecard-blue">
-          Ajouter un axe
+          Ajouter un axe éditorial
         </h1>
         <Link href="/admin/axes" className="underline text-gray-600">
           ← Retour
         </Link>
       </div>
 
-      {/* TYPE */}
-      <select
-        value={type}
-        onChange={(e) => setType(e.target.value)}
-        className="border p-2 w-full rounded"
-      >
-        <option value="TOPIC">Topic</option>
-        <option value="PRODUCT">Product</option>
-        <option value="COMPANY_TAG">Company Tag</option>
-      </select>
-
       {/* LABEL */}
       <input
-        placeholder="Label"
+        placeholder="Nom de l’axe éditorial"
         value={label}
         onChange={(e) => setLabel(e.target.value)}
         className="border p-2 w-full rounded"
       />
 
-      {/* VISUEL */}
+      {/* DESCRIPTION */}
+      <textarea
+        placeholder="Description (optionnel)"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        className="border p-2 w-full rounded h-24"
+      />
+
+      {/* VISUELS */}
       <div className="space-y-3">
-        <label className="font-medium">Visuel associé à l’axe</label>
+        <label className="font-medium">Visuels officiels de l’axe</label>
 
         <div className="flex gap-3">
           <button
-            onClick={() => setPickerOpen(true)}
+            onClick={() => {
+              setPickerMode("rectangle");
+              setPickerOpen(true);
+            }}
             className="bg-ratecard-green text-white px-4 py-2 rounded"
           >
-            Choisir dans la médiathèque
+            Choisir rectangle
+          </button>
+
+          <button
+            onClick={() => {
+              setPickerMode("square");
+              setPickerOpen(true);
+            }}
+            className="bg-ratecard-green text-white px-4 py-2 rounded"
+          >
+            Choisir carré
           </button>
 
           <button
@@ -88,23 +135,23 @@ export default function CreateAxe() {
           </button>
         </div>
 
-        {/* PREVIEW RECT */}
-        {visuelUrl && (
+        {/* PREVIEW RECTANGLE */}
+        {mediaRectangleUrl && (
           <div>
             <p className="text-sm text-gray-500">Visuel rectangle :</p>
             <img
-              src={visuelUrl}
+              src={mediaRectangleUrl}
               className="w-60 h-auto border rounded bg-white mt-1"
             />
           </div>
         )}
 
         {/* PREVIEW SQUARE */}
-        {visuelSquareUrl && (
+        {mediaSquareUrl && (
           <div>
             <p className="text-sm text-gray-500">Visuel carré :</p>
             <img
-              src={visuelSquareUrl}
+              src={mediaSquareUrl}
               className="w-24 h-24 object-cover border rounded bg-white mt-1"
             />
           </div>
@@ -115,28 +162,36 @@ export default function CreateAxe() {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="generics"  // correct
-        onSelect={(url) => {
-          if (url.includes("square")) {
-            setVisuelSquareUrl(url);
+        category="generics"
+        /* 🔥 NOUVEAU : onSelect renvoie { media_id, url, format } */
+        onSelect={(item) => {
+          if (pickerMode === "rectangle") {
+            setMediaRectangleId(item.media_id);
+            setMediaRectangleUrl(item.url);
           } else {
-            setVisuelUrl(url);
+            setMediaSquareId(item.media_id);
+            setMediaSquareUrl(item.url);
           }
+          setPickerOpen(false);
         }}
       />
 
       {/* MEDIA UPLOADER */}
       {uploaderOpen && (
-        <div className="border rounded p-4 bg-white">
-          <MediaUploader
-            category="generics"  // correction → dossier réel
-            onUploadComplete={({ square, rectangle }) => {
-              setVisuelSquareUrl(square.url);
-              setVisuelUrl(rectangle.url);
-              setUploaderOpen(false);
-            }}
-          />
-        </div>
+        <MediaUploader
+          category="generics"
+          /* 🔥 NOUVEAU : uploader renvoie media_id déjà indexé BQ */
+          onUploadComplete={(meta) => {
+            // meta = { original, rectangle, square } avec media_id
+            setMediaRectangleId(meta.rectangle.media_id);
+            setMediaRectangleUrl(meta.rectangle.url);
+
+            setMediaSquareId(meta.square.media_id);
+            setMediaSquareUrl(meta.square.url);
+
+            setUploaderOpen(false);
+          }}
+        />
       )}
 
       {/* SAVE */}
@@ -156,5 +211,6 @@ export default function CreateAxe() {
     </div>
   );
 }
+
 
 
