@@ -79,28 +79,34 @@ def deprecated_register_media(_payload):
 
 
 # =====================================================================
-# ASSIGN MEDIA
+# ASSIGN MEDIA — version MERGE (compatible streaming buffer)
 # =====================================================================
 @router.post("/assign")
 def assign_media(payload: MediaAssign):
     """
     Associe un média à une entité (company, person, axe, article).
+    Compatible streaming buffer grâce à MERGE.
     """
     try:
         client = get_bigquery_client()
 
         sql = f"""
-            UPDATE `{TABLE}`
-            SET ENTITY_TYPE = @etype,
-                ENTITY_ID = @eid
-            WHERE ID_MEDIA = @mid
+            MERGE `{TABLE}` T
+            USING (SELECT @mid AS ID_MEDIA,
+                          @etype AS ENTITY_TYPE,
+                          @eid AS ENTITY_ID) S
+            ON T.ID_MEDIA = S.ID_MEDIA
+            WHEN MATCHED THEN
+              UPDATE SET
+                ENTITY_TYPE = S.ENTITY_TYPE,
+                ENTITY_ID = S.ENTITY_ID
         """
 
         job_config = bigquery.QueryJobConfig(
             query_parameters=[
+                bigquery.ScalarQueryParameter("mid", "STRING", payload.media_id),
                 bigquery.ScalarQueryParameter("etype", "STRING", payload.entity_type),
                 bigquery.ScalarQueryParameter("eid", "STRING", payload.entity_id),
-                bigquery.ScalarQueryParameter("mid", "STRING", payload.media_id),
             ]
         )
 
@@ -113,18 +119,25 @@ def assign_media(payload: MediaAssign):
 
 
 # =====================================================================
-# UNASSIGN
+# UNASSIGN MEDIA — version MERGE
 # =====================================================================
 @router.post("/unassign")
 def unassign_media(payload: MediaUnassign):
+    """
+    Désassocie un média de toute entité.
+    Compatible streaming buffer grâce à MERGE.
+    """
     try:
         client = get_bigquery_client()
 
         sql = f"""
-            UPDATE `{TABLE}`
-            SET ENTITY_TYPE = NULL,
+            MERGE `{TABLE}` T
+            USING (SELECT @mid AS ID_MEDIA) S
+            ON T.ID_MEDIA = S.ID_MEDIA
+            WHEN MATCHED THEN
+              UPDATE SET
+                ENTITY_TYPE = NULL,
                 ENTITY_ID = NULL
-            WHERE ID_MEDIA = @mid
         """
 
         job_config = bigquery.QueryJobConfig(
