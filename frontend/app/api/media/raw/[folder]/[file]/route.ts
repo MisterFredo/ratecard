@@ -18,6 +18,7 @@ export async function GET(
       return NextResponse.json({ error: "Invalid path" }, { status: 400 });
     }
 
+    // Chemin physique
     const filePath = path.join(
       process.cwd(),
       "uploads",
@@ -26,15 +27,26 @@ export async function GET(
       file
     );
 
+    // Lecture du fichier
     const data = await readFile(filePath);
+
+    // Détection du type MIME
     const type = mime.getType(file) || "application/octet-stream";
 
-    // ✅ Buffer → Uint8Array (type-safe pour NextResponse)
-    return new NextResponse(new Uint8Array(data), {
+    // ⚠️ Correctif TypeScript + Next.js
+    // NextResponse n’accepte pas Buffer → conversion en Uint8Array
+    const uint8 = new Uint8Array(data);
+
+    return new NextResponse(uint8, {
       status: 200,
       headers: {
         "Content-Type": type,
-        "Cache-Control": "public, max-age=31536000, immutable",
+
+        // 🚫 IMPORTANT : Pas de cache → sinon suppression/upload non visibles
+        "Cache-Control": "no-store",
+
+        // Option alternative si tu veux :
+        // "Cache-Control": "max-age=0, must-revalidate"
       },
     });
 
