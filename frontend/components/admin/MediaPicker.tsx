@@ -8,7 +8,7 @@ export type PickerMediaItem = {
   url: string;
   title: string;
   filename: string;
-  folder: string;       // logos | logos-cropped | generics
+  folder: string;       // logos | logos-cropped | generics | ia | articles
   format: string;       // square | rectangle | original
   size?: number | null;
   createdAt?: string;
@@ -20,7 +20,8 @@ export default function MediaPicker({
   open,
   onClose,
   onSelect,
-  category = "logos-cropped", // default for companies
+  category = "logos-cropped",  // rétro-compatibilité
+  folders,                      // 🆕 peut recevoir plusieurs dossiers
 }: {
   open: boolean;
   onClose: () => void;
@@ -33,6 +34,7 @@ export default function MediaPicker({
   }) => void;
 
   category?: string;
+  folders?: string[];           // 🆕 multi-folders
 }) {
   const [loading, setLoading] = useState(true);
   const [media, setMedia] = useState<PickerMediaItem[]>([]);
@@ -58,12 +60,17 @@ export default function MediaPicker({
   }, [open]);
 
   /* ----------------------------------------
-     FILTRAGE PAR DOSSIER
+     FILTRAGE : multi-dossiers > category > all
   ---------------------------------------- */
-  const filtered =
-    category === "all"
-      ? media
-      : media.filter((m) => m.folder === category);
+  let filtered: PickerMediaItem[] = media;
+
+  if (folders && folders.length > 0) {
+    // 🆕 Mode multi-dossiers
+    filtered = media.filter((m) => folders.includes(m.folder));
+  } else if (category !== "all") {
+    // Ancien comportement
+    filtered = media.filter((m) => m.folder === category);
+  }
 
   /* ----------------------------------------
      UI
@@ -80,7 +87,7 @@ export default function MediaPicker({
         {/* EMPTY */}
         {!loading && filtered.length === 0 && (
           <p className="text-gray-500 italic text-sm">
-            Aucun visuel disponible dans cette catégorie.
+            Aucun visuel disponible dans cette sélection.
           </p>
         )}
 
@@ -143,5 +150,6 @@ export default function MediaPicker({
     </Drawer>
   );
 }
+
 
 
