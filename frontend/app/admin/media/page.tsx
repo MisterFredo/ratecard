@@ -7,22 +7,26 @@ import MediaTable from "./table";
 import { LayoutGrid, Table as TableIcon, Plus } from "lucide-react";
 
 export type MediaItem = {
-  id: string;
+  media_id: string;
   url: string;
+  title: string;
+  filename: string;
   folder: string;
-  category: string;
-  type: string;
-  size: number;
-  createdAt: number;
+  format: string;
+  size: number | null;
+  createdAt: string;
+  entity_type?: string | null;
+  entity_id?: string | null;
 };
 
+/* ---------------------------------------------------------
+   FILTRES SIMPLIFIÉS (nouvelle architecture MEDIA)
+--------------------------------------------------------- */
 const FILTERS = [
   { key: "all", label: "Tous" },
-  { key: "logos", label: "Logos" },
-  { key: "logosCropped", label: "Formatés" },
-  { key: "articles", label: "Articles" },
-  { key: "ia", label: "IA générés" },
-  { key: "generics", label: "Génériques" },
+  { key: "logos", label: "Logos originaux" },
+  { key: "logos-cropped", label: "Logos formatés" },
+  { key: "generics", label: "Génériques Ratecard" },
 ];
 
 export default function MediaManagerPage() {
@@ -32,6 +36,9 @@ export default function MediaManagerPage() {
   const [view, setView] = useState<"grid" | "table">("grid");
   const [loading, setLoading] = useState(true);
 
+  /* ---------------------------------------
+     LOAD MEDIA FROM NEXT.JS API
+  --------------------------------------- */
   async function loadMedia() {
     setLoading(true);
     const res = await fetch("/api/media/list");
@@ -49,9 +56,15 @@ export default function MediaManagerPage() {
     loadMedia();
   }, []);
 
+  /* ---------------------------------------
+     FILTRAGE
+  --------------------------------------- */
   function applyFilter(list: MediaItem[], key: string) {
-    if (key === "all") setFiltered(list);
-    else setFiltered(list.filter((m) => m.category === key));
+    if (key === "all") {
+      setFiltered(list);
+    } else {
+      setFiltered(list.filter((m) => m.folder === key));
+    }
   }
 
   function onFilterChange(key: string) {
@@ -59,6 +72,9 @@ export default function MediaManagerPage() {
     applyFilter(media, key);
   }
 
+  /* ---------------------------------------
+     UI
+  --------------------------------------- */
   return (
     <div className="space-y-6">
 
@@ -69,7 +85,7 @@ export default function MediaManagerPage() {
             Médiathèque
           </h1>
           <p className="text-gray-500 mt-1">
-            Gérez vos logos, visuels d’articles et visuels IA.
+            Gérez vos logos, visuels génériques et éléments média globaux.
           </p>
         </div>
 
@@ -92,9 +108,11 @@ export default function MediaManagerPage() {
               onClick={() => onFilterChange(f.key)}
               className={`
                 px-4 py-2 rounded-full text-sm font-medium transition
-                ${active
-                  ? "bg-ratecard-blue text-white shadow"
-                  : "bg-white text-gray-700 border hover:bg-gray-100"}
+                ${
+                  active
+                    ? "bg-ratecard-blue text-white shadow"
+                    : "bg-white text-gray-700 border hover:bg-gray-100"
+                }
               `}
             >
               {f.label}
@@ -145,3 +163,4 @@ export default function MediaManagerPage() {
     </div>
   );
 }
+
