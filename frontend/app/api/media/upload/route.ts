@@ -1,3 +1,4 @@
+/** NEXT.JS — /api/media/upload */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -7,9 +8,8 @@ import sharp from "sharp";
 const BACKEND = process.env.RATECARD_BACKEND_URL!;
 
 /* ---------------------------------------------------------
-   Helpers
+   Helper sécurisé
 --------------------------------------------------------- */
-
 async function registerMediaToBackend(
   base64: string,
   filename: string,
@@ -29,13 +29,19 @@ async function registerMediaToBackend(
     }),
   });
 
-  return res.json();
+  const json = await res.json();
+
+  if (json.status !== "ok") {
+    console.error("❌ register-upload backend error:", json);
+    throw new Error(json.message || "Erreur backend register-upload");
+  }
+
+  return json;
 }
 
 /* ---------------------------------------------------------
    MAIN ROUTE
 --------------------------------------------------------- */
-
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
@@ -58,10 +64,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Normalisation du nom
+    // Nom fichier propre
     let title = titleRaw.trim().replace(/\s+/g, "_");
     title = title.replace(/[^A-Za-z0-9_\-]/g, "");
-
     const ext = "jpg";
 
     const nameOriginal = `${title}_original.${ext}`;
@@ -71,9 +76,8 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(await file.arrayBuffer());
 
     /* ---------------------------------------------------------
-       GÉNÉRATION DES FORMATS
+       Génération des 3 formats
     --------------------------------------------------------- */
-
     const bufOriginal = await sharp(buffer)
       .rotate()
       .resize({ width: 2000, withoutEnlargement: true })
@@ -93,9 +97,8 @@ export async function POST(req: Request) {
       .toBuffer();
 
     /* ---------------------------------------------------------
-       ENVOI AU BACKEND (upload + BQ)
+       Upload + BQ via le backend GCS
     --------------------------------------------------------- */
-
     const regOriginal = await registerMediaToBackend(
       bufOriginal.toString("base64"),
       nameOriginal,
@@ -130,12 +133,13 @@ export async function POST(req: Request) {
     });
 
   } catch (err: any) {
-    console.error("❌ Upload error :", err);
+    console.error("❌ Upload GCS error:", err);
     return NextResponse.json(
-      { status: "error", message: err.message },
+      { status: "error", message: err.message || "Erreur upload GCS" },
       { status: 500 }
     );
   }
 }
+
 
 
