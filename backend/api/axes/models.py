@@ -1,16 +1,22 @@
+# backend/api/axes/models.py
+
 from pydantic import BaseModel
 from typing import Optional
 
-
 class AxeCreate(BaseModel):
-    type: str
     label: str
-    visuel_url: Optional[str] = None
-    visuel_square_url: Optional[str] = None
+    description: Optional[str] = None
+    media_rectangle_id: Optional[str] = None
+    media_square_id: Optional[str] = None
+    seo_title: Optional[str] = None
+    seo_description: Optional[str] = None
 
 
 class AxeUpdate(BaseModel):
-    type: str
-    label: str
-    visuel_url: Optional[str] = None
-    visuel_square_url: Optional[str] = None
+    label: Optional[str] = None
+    description: Optional[str] = None
+    media_rectangle_id: Optional[str] = None
+    media_square_id: Optional[str] = None
+    seo_title: Optional[str] = None
+    seo_description: Optional[str] = None
+    is_active: Optional[bool] = None
