@@ -2,10 +2,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import path from "path";
-import { stat } from "fs/promises";
 
 const BACKEND = process.env.RATECARD_BACKEND_URL!;
+const GCS_BASE_URL = process.env.GCS_BASE_URL!; // 🔥 https://storage.googleapis.com/ratecard-media
 
 export async function GET() {
   try {
@@ -19,55 +18,37 @@ export async function GET() {
     const media = [];
 
     for (const m of json.media) {
-      // FILEPATH = "/uploads/media/<folder>/<filename>"
-      const relative = m.FILEPATH.replace("/uploads/media/", "");
+      // Exemple m.FILEPATH = "logos/Logo_BESPOKE_rect.jpg"
+      const filepath = m.FILEPATH || "";
+      const parts = filepath.split("/");
 
-      let [folder, filename] = relative.split("/");
+      const folder = parts[0]?.toLowerCase() || "unknown";
+      const filename = parts[1] || "";
 
-      // 🔥 NORMALISATION CRITIQUE
-      folder = folder.toLowerCase();
-
-      // Chemin physique pour récupérer la taille réelle
-      const physicalPath = path.join(
-        process.cwd(),
-        "uploads",
-        "media",
-        folder,
-        filename
-      );
-
-      let size = null;
-      try {
-        const stats = await stat(physicalPath);
-        size = stats.size; // en octets
-      } catch {
-        size = null;
-      }
+      // 🔥 URL GCS PUBLIQUE
+      const url = `${GCS_BASE_URL}/${folder}/${filename}`;
 
       media.push({
         media_id: m.ID_MEDIA,
+        folder,
+        filename,
 
-        // 🔥 FORMAT NORMALISÉ
+        // GCS URL directe
+        url,
+
+        // Lecture gouvernée
+        title: m.TITLE || filename,
+
+        // Normalisation format
         format: m.FORMAT?.toLowerCase() || null,
+        type: m.FORMAT?.toLowerCase() || null,
 
+        // Assignation d'entité
         entity_type: m.ENTITY_TYPE,
         entity_id: m.ENTITY_ID,
 
-        // URL publique servie par Next.js
-        url: `/media/${folder}/${filename}`,
-
-        // Nouveau champ lisible
-        title: m.TITLE || filename,
-        filename,
-
-        // 🔥 Catégorie = dossier normalisé en minuscule
-        folder,
-
-        // Compatibilité MediaPicker (ancien type)
-        type: m.FORMAT?.toLowerCase() || null,
-
-        // Taille récupérée localement
-        size,
+        // Taille : plus disponible → on laisse null
+        size: null,
 
         createdAt: m.CREATED_AT,
       });
@@ -83,5 +64,6 @@ export async function GET() {
     );
   }
 }
+
 
 
