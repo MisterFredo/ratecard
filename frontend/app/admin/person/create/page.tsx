@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import MediaPicker from "@/components/admin/MediaPicker";
-import MediaUploader from "@/components/admin/MediaUploader";
 
 export default function CreatePerson() {
   const [companies, setCompanies] = useState<any[]>([]);
@@ -12,23 +11,19 @@ export default function CreatePerson() {
 
   // FIELDS
   const [name, setName] = useState("");
-  const [title, setTitle] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
   const [description, setDescription] = useState("");
   const [companyId, setCompanyId] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
 
-  // MEDIA IDs
+  // MEDIA GOV (DAM)
   const [squareId, setSquareId] = useState<string | null>(null);
   const [rectId, setRectId] = useState<string | null>(null);
 
-  // PREVIEW URLS
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerMode, setPickerMode] = useState<"square" | "rectangle">("square");
-
-  const [uploaderOpen, setUploaderOpen] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -56,7 +51,7 @@ export default function CreatePerson() {
     const payload = {
       id_company: companyId || null,
       name,
-      title: title || null,
+      title: jobTitle || null,
       description: description || null,
 
       media_picture_square_id: squareId,
@@ -65,11 +60,10 @@ export default function CreatePerson() {
       linkedin_url: linkedinUrl || null,
     };
 
-    // 1) Create PERSON
     const res = await api.post("/person/create", payload);
     const id_person = res.id_person;
 
-    // 2) Assign media
+    // assign DAM
     if (squareId) {
       await api.post("/media/assign", {
         media_id: squareId,
@@ -86,8 +80,8 @@ export default function CreatePerson() {
       });
     }
 
-    setResult(res);
     setSaving(false);
+    setResult(res);
   }
 
   /* ---------------------------------------------------------
@@ -122,8 +116,8 @@ export default function CreatePerson() {
         <label className="font-medium">Fonction</label>
         <input
           placeholder="Ex : Directrice Marketing"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={jobTitle}
+          onChange={(e) => setJobTitle(e.target.value)}
           className="border p-2 w-full rounded mt-1"
         />
       </div>
@@ -132,7 +126,7 @@ export default function CreatePerson() {
       <div>
         <label className="font-medium">Description (optionnelle)</label>
         <textarea
-          placeholder="Petite bio, rôle, responsabilité…"
+          placeholder="Bio courte…"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           className="border p-2 w-full rounded h-24 mt-1"
@@ -141,7 +135,7 @@ export default function CreatePerson() {
 
       {/* SOCIÉTÉ */}
       <div>
-        <label className="font-medium">Société (optionnel)</label>
+        <label className="font-medium">Société (optionnelle)</label>
         <select
           className="border p-2 w-full rounded mt-1"
           value={companyId}
@@ -157,58 +151,33 @@ export default function CreatePerson() {
         </select>
       </div>
 
-      {/* PHOTO */}
+      {/* PHOTO (DAM) */}
       <div className="space-y-3">
-        <label className="font-medium">Photos</label>
+        <label className="font-medium">Photo officielle</label>
 
-        <div className="flex gap-3">
-          <button
-            onClick={() => {
-              setPickerMode("square");
-              setPickerOpen(true);
-            }}
-            className="bg-ratecard-green text-white px-4 py-2 rounded"
-          >
-            Portrait carré
-          </button>
+        <button
+          onClick={() => setPickerOpen(true)}
+          className="bg-ratecard-green text-white px-4 py-2 rounded"
+        >
+          Choisir une photo
+        </button>
 
-          <button
-            onClick={() => {
-              setPickerMode("rectangle");
-              setPickerOpen(true);
-            }}
-            className="bg-ratecard-green text-white px-4 py-2 rounded"
-          >
-            Rectangle (optionnel)
-          </button>
-
-          <button
-            onClick={() => setUploaderOpen(true)}
-            className="bg-gray-700 text-white px-4 py-2 rounded"
-          >
-            Uploader une photo
-          </button>
-        </div>
-
-        {/* SQUARE PREVIEW */}
+        {/* PREVIEWS */}
         {squareUrl && (
           <div>
             <p className="text-sm text-gray-500">Portrait carré :</p>
             <img
               src={squareUrl}
-              alt="portrait carré"
               className="w-24 h-24 object-cover border rounded mt-1"
             />
           </div>
         )}
 
-        {/* RECT PREVIEW */}
         {rectUrl && (
           <div>
             <p className="text-sm text-gray-500">Rectangle :</p>
             <img
               src={rectUrl}
-              alt="portrait rectangle"
               className="w-48 h-auto border rounded mt-1"
             />
           </div>
@@ -219,62 +188,46 @@ export default function CreatePerson() {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="logos-cropped" 
+        folders={["logos-cropped"]}  // 🟢 Governing folder for portraits
         onSelect={(item) => {
-          if (pickerMode === "square") {
+          if (item.format === "square") {
             setSquareId(item.media_id);
             setSquareUrl(item.url);
-          } else {
+          } else if (item.format === "rectangle") {
             setRectId(item.media_id);
             setRectUrl(item.url);
           }
+          setPickerOpen(false);
         }}
       />
-
-      {/* MEDIA UPLOADER */}
-      {uploaderOpen && (
-        <MediaUploader
-          category="logos-cropped"
-          title={name} 
-          onUploadComplete={({ square, rectangle }) => {
-            setSquareId(square.media_id);
-            setSquareUrl(square.url);
-
-            setRectId(rectangle.media_id);
-            setRectUrl(rectangle.url);
-
-            setUploaderOpen(false);
-          }}
-        />
-      )}
 
       {/* LINKEDIN */}
       <div>
         <label className="font-medium">Profil LinkedIn</label>
         <input
-          placeholder="Ex : https://linkedin.com/in/…"
+          placeholder="https://linkedin.com/in/…"
           value={linkedinUrl}
           onChange={(e) => setLinkedinUrl(e.target.value)}
           className="border p-2 w-full rounded mt-1"
         />
       </div>
 
-      {/* SAVE BUTTON */}
+      {/* SAVE */}
       <button
         onClick={save}
         disabled={saving}
-        className="bg-ratecard-blue text-white px-6 py-2 rounded shadow hover:bg-blue-700 transition"
+        className="bg-ratecard-blue text-white px-6 py-2 rounded mt-3"
       >
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
-      {/* RESULT */}
       {result && (
-        <pre className="bg-gray-100 p-4 rounded mt-4 whitespace-pre-wrap text-sm">
+        <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap mt-4">
           {JSON.stringify(result, null, 2)}
         </pre>
       )}
     </div>
   );
 }
+
 
