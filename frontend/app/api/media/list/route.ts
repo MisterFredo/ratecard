@@ -4,7 +4,10 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 
 const BACKEND = process.env.RATECARD_BACKEND_URL!;
-const GCS_BASE_URL = process.env.GCS_BASE_URL!; // 🔥 https://storage.googleapis.com/ratecard-media
+let GCS_BASE_URL = process.env.GCS_BASE_URL!;
+
+// 🔥 Normalisation sûre
+GCS_BASE_URL = GCS_BASE_URL.replace(/\/+$/, "");   // retire slash fin
 
 export async function GET() {
   try {
@@ -18,39 +21,27 @@ export async function GET() {
     const media = [];
 
     for (const m of json.media) {
-      // Exemple m.FILEPATH = "logos/Logo_BESPOKE_rect.jpg"
       const filepath = m.FILEPATH || "";
       const parts = filepath.split("/");
 
-      const folder = parts[0]?.toLowerCase() || "unknown";
+      const folder = (parts[0] || "").toLowerCase();
       const filename = parts[1] || "";
 
-      // 🔥 URL GCS PUBLIQUE
+      // 🔥 URL GCS propre (plus aucun risque)
       const url = `${GCS_BASE_URL}/${folder}/${filename}`;
 
       media.push({
         media_id: m.ID_MEDIA,
         folder,
         filename,
-
-        // GCS URL directe
         url,
-
-        // Lecture gouvernée
         title: m.TITLE || filename,
-
-        // Normalisation format
         format: m.FORMAT?.toLowerCase() || null,
         type: m.FORMAT?.toLowerCase() || null,
-
-        // Assignation d'entité
         entity_type: m.ENTITY_TYPE,
         entity_id: m.ENTITY_ID,
-
-        // Taille : plus disponible → on laisse null
-        size: null,
-
         createdAt: m.CREATED_AT,
+        size: null,
       });
     }
 
@@ -64,6 +55,3 @@ export async function GET() {
     );
   }
 }
-
-
-
