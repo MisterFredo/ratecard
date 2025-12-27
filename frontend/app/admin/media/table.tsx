@@ -26,13 +26,26 @@ export default function MediaTable({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         url: item.url,
-        media_id: item.media_id, // 🆕 indispensable
+        media_id: item.media_id,
       }),
     });
 
     const json = await res.json();
     if (json.status === "ok") refresh();
     else alert("Erreur : " + json.message);
+  }
+
+  async function updateTitle(item: MediaItem, title: string) {
+    await fetch("/api/media/update-title", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        media_id: item.media_id,
+        title,
+      }),
+    });
+
+    refresh();
   }
 
   return (
@@ -65,17 +78,21 @@ export default function MediaTable({
                 />
               </td>
 
-              {/* TITLE */}
-              <td className="p-2 text-gray-800 font-medium">
-                {item.title}
+              {/* TITRE EDILABLE */}
+              <td className="p-2 w-64">
+                <input
+                  defaultValue={item.title}
+                  onBlur={(e) => updateTitle(item, e.target.value)}
+                  className="w-full border rounded p-1 text-gray-800 font-medium"
+                />
               </td>
 
-              {/* FILENAME */}
-              <td className="p-2 break-all text-gray-600 text-xs">
+              {/* FICHIER */}
+              <td className="p-2 text-xs text-gray-600 break-all">
                 {item.filename}
               </td>
 
-              {/* CAT */}
+              {/* CATÉGORIE */}
               <td className="p-2 uppercase text-ratecard-blue text-xs tracking-wide">
                 {item.folder}
               </td>
@@ -86,7 +103,7 @@ export default function MediaTable({
               </td>
 
               {/* TAILLE */}
-              <td className="p-2 text-gray-600">
+              <td className="p-2">
                 {item.size ? `${(item.size / 1024).toFixed(1)} Ko` : "—"}
               </td>
 
@@ -95,7 +112,6 @@ export default function MediaTable({
                 <button
                   onClick={() => setPreview(item)}
                   className="text-gray-600 hover:text-ratecard-blue"
-                  title="Aperçu"
                 >
                   <Eye size={16} />
                 </button>
@@ -103,7 +119,6 @@ export default function MediaTable({
                 <button
                   onClick={() => copy(item.url)}
                   className="text-gray-600 hover:text-ratecard-green"
-                  title="Copier URL"
                 >
                   <Copy size={16} />
                 </button>
@@ -111,7 +126,6 @@ export default function MediaTable({
                 <button
                   onClick={() => deleteItem(item)}
                   className="text-red-500 hover:text-red-700"
-                  title="Supprimer"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -155,4 +169,3 @@ export default function MediaTable({
     </div>
   );
 }
-
