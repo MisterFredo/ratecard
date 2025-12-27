@@ -15,12 +15,11 @@ export default function CreateCompany() {
   const [logoRectId, setLogoRectId] = useState<string | null>(null);
   const [logoSquareId, setLogoSquareId] = useState<string | null>(null);
 
-  // PREVIEW URLS
+  // PREVIEW URLS (GCS)
   const [logoRectUrl, setLogoRectUrl] = useState<string | null>(null);
   const [logoSquareUrl, setLogoSquareUrl] = useState<string | null>(null);
 
   const [pickerOpen, setPickerOpen] = useState(false);
-
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<any>(null);
 
@@ -32,7 +31,6 @@ export default function CreateCompany() {
 
     setSaving(true);
 
-    // 1️⃣ CREATE COMPANY
     const payload = {
       name,
       description: description || null,
@@ -44,45 +42,43 @@ export default function CreateCompany() {
 
     const res = await api.post("/company/create", payload);
 
-    // Vérification backend
     if (!res || !res.id_company) {
-      alert("❌ Erreur : impossible de créer la société.");
+      alert("❌ Erreur lors de la création.");
       setSaving(false);
       return;
     }
 
     const id_company = res.id_company;
 
-    // 2️⃣ ASSIGN MEDIA → COMPANY
-    async function assignIfValid(mediaId: string | null) {
+    /** Assignation DAM → Company */
+    async function assign(mediaId: string | null) {
       if (!mediaId) return;
 
-      const assignRes = await api.post("/media/assign", {
+      const r = await api.post("/media/assign", {
         media_id: mediaId,
         entity_type: "company",
         entity_id: id_company,
       });
 
-      if (assignRes.status !== "ok") {
-        console.error("Erreur assign : ", assignRes);
-        alert("❌ Impossible d'associer le média.");
+      if (r.status !== "ok") {
+        alert("❌ Impossible d'associer un média.");
+        console.error("Assign error", r);
       }
     }
 
-    await assignIfValid(logoRectId);
-    await assignIfValid(logoSquareId);
+    await assign(logoRectId);
+    await assign(logoSquareId);
 
     setResult(res);
     setSaving(false);
   }
 
   /* ---------------------------------------------------------
-     RENDER
+     UI
   --------------------------------------------------------- */
   return (
     <div className="space-y-8">
 
-      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-ratecard-blue">
           Ajouter une société
@@ -92,7 +88,6 @@ export default function CreateCompany() {
         </Link>
       </div>
 
-      {/* NAME */}
       <input
         placeholder="Nom de la société"
         value={name}
@@ -100,7 +95,6 @@ export default function CreateCompany() {
         className="border p-2 w-full rounded"
       />
 
-      {/* DESCRIPTION */}
       <textarea
         placeholder="Description (optionnel)"
         value={description}
@@ -108,9 +102,9 @@ export default function CreateCompany() {
         className="border p-2 w-full rounded h-28"
       />
 
-      {/* LOGO PICKER */}
+      {/* LOGOS */}
       <div className="space-y-3">
-        <label className="font-semibold">Logo (rectangle & carré)</label>
+        <label className="font-semibold">Logos (rectangle & carré)</label>
 
         <button
           onClick={() => setPickerOpen(true)}
@@ -119,18 +113,16 @@ export default function CreateCompany() {
           Choisir un logo
         </button>
 
-        {/* SQUARE PREVIEW */}
         {logoSquareUrl && (
           <div>
-            <p className="text-sm text-gray-500">Format carré :</p>
+            <p className="text-sm text-gray-500">Carré :</p>
             <img src={logoSquareUrl} className="w-24 h-24 object-cover border rounded mt-1" />
           </div>
         )}
 
-        {/* RECT PREVIEW */}
         {logoRectUrl && (
           <div>
-            <p className="text-sm text-gray-500">Format rectangle :</p>
+            <p className="text-sm text-gray-500">Rectangle :</p>
             <img src={logoRectUrl} className="w-48 h-auto border rounded mt-1" />
           </div>
         )}
@@ -140,32 +132,26 @@ export default function CreateCompany() {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="all"
+        folders={["logos", "logos-cropped"]} // 🔥 filtrage gouverné
         onSelect={(item) => {
-          console.log("MEDIA PICKED:", item);
-
-          // 🔥 Filtrage strict : logos & logos-cropped seulement
-          if (!["logos", "logos-cropped"].includes(item.folder)) {
-            alert("Veuillez choisir un média de type logo.");
-            return;
-          }
 
           if (!item.media_id) {
-            alert("❌ Ce média n'a pas d'identifiant DAM (réupload requis).");
+            alert("❌ Ce média n'a pas d'identifiant DAM.");
             return;
           }
 
           if (item.format === "square") {
             setLogoSquareId(item.media_id);
             setLogoSquareUrl(item.url);
-          } else if (item.format === "rectangle") {
+          }
+
+          if (item.format === "rectangle") {
             setLogoRectId(item.media_id);
             setLogoRectUrl(item.url);
           }
         }}
       />
 
-      {/* LINKS */}
       <input
         placeholder="URL LinkedIn"
         value={linkedinUrl}
@@ -180,7 +166,6 @@ export default function CreateCompany() {
         className="border p-2 w-full rounded"
       />
 
-      {/* SAVE */}
       <button
         onClick={save}
         disabled={saving}
@@ -197,9 +182,3 @@ export default function CreateCompany() {
     </div>
   );
 }
-
-
-
-
-
-
