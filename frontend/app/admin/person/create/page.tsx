@@ -235,6 +235,7 @@ export default function CreatePerson() {
       {uploaderOpen && (
         <MediaUploader
           category="logos-cropped"
+          title={label} 
           onUploadComplete={({ square, rectangle }) => {
             setSquareId(square.media_id);
             setSquareUrl(square.url);
