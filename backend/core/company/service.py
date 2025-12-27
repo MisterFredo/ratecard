@@ -18,12 +18,17 @@ def create_company(data: CompanyCreate) -> str:
     row = [{
         "ID_COMPANY": company_id,
         "NAME": data.name,
-        "LOGO_URL": data.logo_url,
-        "LOGO_SQUARE_URL": data.logo_square_url,
-        "LINKEDIN_URL": data.linkedin_url,
         "DESCRIPTION": data.description,
+
+        "MEDIA_LOGO_RECTANGLE_ID": data.media_logo_rectangle_id,
+        "MEDIA_LOGO_SQUARE_ID": data.media_logo_square_id,
+
+        "LINKEDIN_URL": data.linkedin_url,
+        "WEBSITE_URL": data.website_url,
+
         "CREATED_AT": now,
         "UPDATED_AT": now,
+        "IS_ACTIVE": True,
     }]
 
     insert_bq(TABLE_COMPANY, row)
@@ -37,6 +42,7 @@ def list_companies():
     sql = f"""
         SELECT *
         FROM `{TABLE_COMPANY}`
+        WHERE IS_ACTIVE = TRUE
         ORDER BY NAME ASC
     """
     return query_bq(sql)
@@ -65,10 +71,14 @@ def update_company(id_company: str, data: CompanyCreate):
     row = [{
         "ID_COMPANY": id_company,
         "NAME": data.name,
-        "LOGO_URL": data.logo_url,
-        "LOGO_SQUARE_URL": data.logo_square_url,
-        "LINKEDIN_URL": data.linkedin_url,
         "DESCRIPTION": data.description,
+
+        "MEDIA_LOGO_RECTANGLE_ID": data.media_logo_rectangle_id,
+        "MEDIA_LOGO_SQUARE_ID": data.media_logo_square_id,
+
+        "LINKEDIN_URL": data.linkedin_url,
+        "WEBSITE_URL": data.website_url,
+
         "UPDATED_AT": now,
     }]
 
@@ -78,5 +88,3 @@ def update_company(id_company: str, data: CompanyCreate):
         raise RuntimeError(errors)
 
     return True
-
-
