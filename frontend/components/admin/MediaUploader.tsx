@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 /* ---------------------------------------------------------
-   Nouveau type MEDIA (gouverné par BigQuery)
+   Type du média renvoyé par l'upload
 --------------------------------------------------------- */
 export type UploadedMedia = {
   media_id: string;
@@ -17,9 +17,11 @@ export type UploadedMedia = {
 --------------------------------------------------------- */
 export default function MediaUploader({
   category = "logos",
+  title,                              // 🆕 titre du média
   onUploadComplete,
 }: {
   category?: string;
+  title: string;                      // 🆕 obligatoire
   onUploadComplete: (result: {
     square: UploadedMedia;
     rectangle: UploadedMedia;
@@ -47,11 +49,17 @@ export default function MediaUploader({
       return;
     }
 
+    if (!title.trim()) {
+      alert("Merci de saisir un titre.");
+      return;
+    }
+
     setLoading(true);
 
     const form = new FormData();
     form.append("file", file);
     form.append("category", category);
+    form.append("title", title);          // 🆕 envoi du titre à l’API Next.js
 
     const res = await fetch("/api/media/upload", {
       method: "POST",
@@ -67,15 +75,16 @@ export default function MediaUploader({
     }
 
     /* ---------------------------------------------------------
-       json.items = { original, rectangle, square }
-       et CHACUN contient déjà : media_id, url, folder, format
-       → on peut renvoyer tel quel
+       json.items contient déjà :
+       - original   { media_id, url }
+       - rectangle  { media_id, url }
+       - square     { media_id, url }
     --------------------------------------------------------- */
 
     onUploadComplete({
-      square: json.items.square,
-      rectangle: json.items.rectangle,
       original: json.items.original,
+      rectangle: json.items.rectangle,
+      square: json.items.square,
     });
   }
 
@@ -86,7 +95,7 @@ export default function MediaUploader({
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-white shadow-sm">
 
-      {/* FILE INPUT */}
+      {/* INPUT FILE */}
       <input
         type="file"
         accept="image/*"
@@ -102,7 +111,7 @@ export default function MediaUploader({
         />
       )}
 
-      {/* UPLOAD BUTTON */}
+      {/* BUTTON */}
       <button
         onClick={upload}
         disabled={loading || !file}
@@ -117,3 +126,4 @@ export default function MediaUploader({
     </div>
   );
 }
+
