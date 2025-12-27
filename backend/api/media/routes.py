@@ -83,39 +83,34 @@ def deprecated_register_media(_payload):
 # =====================================================================
 @router.post("/assign")
 def assign_media(payload: MediaAssign):
-    """
-    Associe un média à une entité (company, person, axe, article).
-    Compatible streaming buffer grâce à MERGE.
-    """
     try:
         client = get_bigquery_client()
 
+        mid = payload.media_id.strip()
+        etype = payload.entity_type.strip()
+        eid = payload.entity_id.strip()
+
         sql = f"""
-            MERGE `{TABLE}` T
-            USING (SELECT @mid AS ID_MEDIA,
-                          @etype AS ENTITY_TYPE,
-                          @eid AS ENTITY_ID) S
-            ON T.ID_MEDIA = S.ID_MEDIA
-            WHEN MATCHED THEN
-              UPDATE SET
-                ENTITY_TYPE = S.ENTITY_TYPE,
-                ENTITY_ID = S.ENTITY_ID
+            UPDATE `{TABLE}`
+            SET ENTITY_TYPE = @etype,
+                ENTITY_ID = @eid
+            WHERE ID_MEDIA = @mid
         """
 
         job_config = bigquery.QueryJobConfig(
             query_parameters=[
-                bigquery.ScalarQueryParameter("mid", "STRING", payload.media_id),
-                bigquery.ScalarQueryParameter("etype", "STRING", payload.entity_type),
-                bigquery.ScalarQueryParameter("eid", "STRING", payload.entity_id),
+                bigquery.ScalarQueryParameter("etype", "STRING", etype),
+                bigquery.ScalarQueryParameter("eid", "STRING", eid),
+                bigquery.ScalarQueryParameter("mid", "STRING", mid),
             ]
         )
 
         client.query(sql, job_config=job_config).result()
-
         return {"status": "ok", "assigned": True}
 
     except Exception as e:
         raise HTTPException(400, f"Erreur assign media : {e}")
+
 
 
 # =====================================================================
