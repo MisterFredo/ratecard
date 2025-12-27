@@ -22,7 +22,9 @@
     "@tiptap/pm": "^2.3.2",
 
     "sharp": "^0.33.0",
-    "openai": "^4.28.0"
+    "openai": "^4.28.0",
+
+    "mime": "^3.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
@@ -34,4 +36,5 @@
     "autoprefixer": "^10.4.14"
   }
 }
+
 
