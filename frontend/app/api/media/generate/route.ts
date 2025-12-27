@@ -5,29 +5,24 @@ import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import sharp from "sharp";
-import { BigQuery } from "@google-cloud/bigquery";
-import { v4 as uuidv4 } from "uuid";
+
+const BACKEND = process.env.RATECARD_BACKEND_URL!;
 
 /* ---------------------------------------------------------
-   BigQuery init
+   Call backend to register media in BigQuery
 --------------------------------------------------------- */
-const projectId = process.env.BQ_PROJECT!;
-const dataset = process.env.BQ_DATASET!;
-const tableName = `${projectId}.${dataset}.RATECARD_MEDIA`;
-
-const bq = new BigQuery({
-  projectId,
-  credentials: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!),
-});
-
-async function bqInsert(rows: any[]) {
-  return bq.dataset(dataset).table("RATECARD_MEDIA").insert(rows);
+async function registerMedia(filepath: string, format: string) {
+  const res = await fetch(`${BACKEND}/api/media/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filepath, format }),
+  });
+  return res.json();
 }
 
 /* ---------------------------------------------------------
    ROUTE
 --------------------------------------------------------- */
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -68,10 +63,8 @@ Produit une image carrée 1024x1024 SANS TEXTE.
     const base64 = img.data[0].b64_json!;
     const buffer = Buffer.from(base64, "base64");
 
-    // 4) Save square + rectangle dans uploads/media/articles/generated
+    // 4) Save locally
     const now = Date.now();
-    const nowIso = new Date().toISOString();
-
     const category = "articles/generated";
     const baseDir = path.join(process.cwd(), "uploads", "media", category);
     await mkdir(baseDir, { recursive: true });
@@ -90,37 +83,27 @@ Produit une image carrée 1024x1024 SANS TEXTE.
       .resize(1200, 628, { fit: "cover", position: "center" })
       .jpeg({ quality: 90 })
       .toBuffer();
-
     await writeFile(rectPath, rectangle);
 
-    // 5) BQ indexing
-    const rows = [
-      {
-        ID_MEDIA: uuidv4(),
-        FILEPATH: `/uploads/media/${category}/${squareName}`,
-        FORMAT: "square",
-        ENTITY_TYPE: null,
-        ENTITY_ID: null,
-        CREATED_AT: nowIso,
-      },
-      {
-        ID_MEDIA: uuidv4(),
-        FILEPATH: `/uploads/media/${category}/${rectName}`,
-        FORMAT: "rectangle",
-        ENTITY_TYPE: null,
-        ENTITY_ID: null,
-        CREATED_AT: nowIso,
-      },
-    ];
+    // 5) Register media in backend (instead of BigQuery here)
+    const squarePublic = `/uploads/media/${category}/${squareName}`;
+    const rectPublic = `/uploads/media/${category}/${rectName}`;
 
-    await bqInsert(rows);
+    const regSquare = await registerMedia(squarePublic, "square");
+    const regRect = await registerMedia(rectPublic, "rectangle");
 
-    // 6) Retour pour le front
+    // 6) Return response
     return NextResponse.json({
       status: "ok",
-      urls: {
-        square: `/media/${category}/${squareName}`,
-        rectangle: `/media/${category}/${rectName}`,
+      items: {
+        square: {
+          media_id: regSquare.media_id,
+          url: `/media/${category}/${squareName}`,
+        },
+        rectangle: {
+          media_id: regRect.media_id,
+          url: `/media/${category}/${rectName}`,
+        },
       },
     });
 
@@ -132,4 +115,5 @@ Produit une image carrée 1024x1024 SANS TEXTE.
     );
   }
 }
+
 
