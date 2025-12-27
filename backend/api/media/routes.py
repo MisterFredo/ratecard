@@ -22,38 +22,42 @@ TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_MEDIA"
 # 🆕 REGISTER UPLOAD (GCS + BigQuery)
 # =====================================================================
 @router.post("/register-upload")
-async def register_media_upload(
-    file: UploadFile = File(...),
-    category: str = Form(...),
-    format_: str = Form(...),       # "square" | "rectangle" | "original"
-    title: str = Form(...)
-):
+async def register_media_upload(request):
     """
     Upload d’un média vers Google Cloud Storage + enregistrement BigQuery.
-    Reçoit :
-      - file        -> binaire de l’image
-      - category    -> logos / logos-cropped / generics / ...
-      - format_     -> original / square / rectangle
-      - title       -> nom gouverné
     """
-
     try:
-        # 1️⃣ Lire le fichier envoyé
-        binary_data = await file.read()
+        # On récupère le JSON brut sans validation Pydantic
+        payload = await request.json()
 
-        # Nettoyage du nom de fichier
-        filename = file.filename.replace(" ", "_")
+        # Validation manuelle
+        required = ["filename", "category", "format", "title", "base64"]
+        for field in required:
+            if field not in payload or not payload[field]:
+                raise HTTPException(400, f"Missing field: {field}")
 
-        # 2️⃣ Upload GCS
+        filename = payload["filename"]
+        category = payload["category"]
+        format_ = payload["format"]
+        title = payload["title"]
+        base64_data = payload["base64"]
+
+        # Décodage base64 → bytes
+        try:
+            binary_data = base64.b64decode(base64_data)
+        except Exception:
+            raise HTTPException(400, "Invalid base64")
+
+        # Upload GCS
         url = upload_bytes(category, filename, binary_data)
 
-        # 3️⃣ Create ID + insert BQ
+        # Enregistrement BQ
         media_id = str(uuid4())
         now = datetime.utcnow().isoformat()
 
         row = [{
             "ID_MEDIA": media_id,
-            "FILEPATH": f"{category}/{filename}",  # GCS internal path
+            "FILEPATH": f"{category}/{filename}",
             "FORMAT": format_,
             "TITLE": title,
             "ENTITY_TYPE": None,
@@ -69,13 +73,12 @@ async def register_media_upload(
                 "media_id": media_id,
                 "url": url,
                 "format": format_,
-                "folder": category
+                "folder": category,
             }
         }
 
     except Exception as e:
         raise HTTPException(400, f"Erreur register-upload : {e}")
-
 
 # =====================================================================
 # ❌ Legacy REGISTER (désactivé)
