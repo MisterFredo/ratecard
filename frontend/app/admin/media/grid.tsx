@@ -26,17 +26,26 @@ export default function MediaGrid({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         url: item.url,
-        media_id: item.media_id,   // 🆕 indispensable
+        media_id: item.media_id,
       }),
     });
 
     const json = await res.json();
+    if (json.status === "ok") refresh();
+    else alert("Erreur : " + json.message);
+  }
 
-    if (json.status === "ok") {
-      refresh();
-    } else {
-      alert("Erreur : " + json.message);
-    }
+  async function updateTitle(item: MediaItem, title: string) {
+    await fetch("/api/media/update-title", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        media_id: item.media_id,
+        title,
+      }),
+    });
+
+    refresh();
   }
 
   return (
@@ -45,7 +54,7 @@ export default function MediaGrid({
       {items.map((item) => (
         <div
           key={item.media_id}
-          className="border rounded-lg bg-white shadow-sm p-2 flex flex-col items-center hover:shadow-md transition cursor-pointer"
+          className="border rounded-lg bg-white shadow-sm p-3 flex flex-col items-center hover:shadow-md transition cursor-pointer"
         >
           {/* IMAGE */}
           <img
@@ -55,18 +64,20 @@ export default function MediaGrid({
             onClick={() => setPreview(item)}
           />
 
-          {/* TITLE */}
-          <p className="text-xs font-semibold text-gray-800 mt-2 text-center px-1 truncate w-full">
-            {item.title}
-          </p>
+          {/* TITLE (ÉDITABLE) */}
+          <input
+            defaultValue={item.title}
+            onBlur={(e) => updateTitle(item, e.target.value)}
+            className="text-xs font-semibold text-gray-800 mt-2 text-center w-full border rounded p-1"
+          />
 
           {/* FILENAME */}
-          <p className="text-[10px] text-gray-500 text-center break-all px-1">
+          <p className="text-[10px] text-gray-500 mt-1 text-center break-all">
             {item.filename}
           </p>
 
-          {/* FOLDER + FORMAT */}
-          <p className="text-[10px] text-gray-400 mt-1">
+          {/* FORMAT + FOLDER */}
+          <p className="text-[10px] text-gray-400">
             {item.folder} · {item.format}
           </p>
 
@@ -141,4 +152,3 @@ export default function MediaGrid({
     </div>
   );
 }
-
