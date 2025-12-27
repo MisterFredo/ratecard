@@ -1,19 +1,43 @@
 import { NextResponse } from "next/server";
 import { unlink, stat } from "fs/promises";
 import path from "path";
+import { BigQuery } from "@google-cloud/bigquery";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic"; // Important pour accès FS
 
-// Exemple d’URL reçue : /media/articles/xxxx_rect.jpg
-// On doit convertir en chemin physique : uploads/media/articles/xxxx_rect.jpg
-function resolvePhysicalPath(url: string) {
-  // URL publique -> /media/<folder>/<file>
-  const relative = url.replace("/media/", ""); // "articles/xxx.jpg"
+/* ---------------------------------------------------------
+   BigQuery INIT
+--------------------------------------------------------- */
 
-  // Emplacement réel en production :
+const projectId = process.env.BQ_PROJECT!;
+const dataset = process.env.BQ_DATASET!;
+const tableName = `${projectId}.${dataset}.RATECARD_MEDIA`;
+
+const bq = new BigQuery({
+  projectId,
+  credentials: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!),
+});
+
+/* ---------------------------------------------------------
+   Helpers
+--------------------------------------------------------- */
+
+// Exemple input: /media/articles/xxx_rect.jpg
+function resolvePhysicalPath(url: string) {
+  const relative = url.replace("/media/", ""); 
   return path.join(process.cwd(), "uploads", "media", relative);
 }
+
+// Convert public URL → filepath stored in BQ
+function makeBQFilepath(url: string) {
+  // /media/articles/xxx.jpg → /uploads/media/articles/xxx.jpg
+  return url.replace("/media/", "/uploads/media/");
+}
+
+/* ---------------------------------------------------------
+   ROUTE DELETE
+--------------------------------------------------------- */
 
 export async function POST(req: Request) {
   try {
@@ -33,8 +57,11 @@ export async function POST(req: Request) {
       );
     }
 
+    /* ----------------------------------------------
+       1) Suppression du fichier physique
+    ---------------------------------------------- */
     const filePath = resolvePhysicalPath(url);
-    console.log("🗑 SUPPRESSION :", filePath);
+    console.log("🗑️ SUPPRESSION FICHIER :", filePath);
 
     const info = await stat(filePath).catch(() => null);
 
@@ -54,6 +81,29 @@ export async function POST(req: Request) {
 
     await unlink(filePath);
 
+    /* ----------------------------------------------
+       2) Suppression BigQuery
+          (si le fichier a été indexé dans RATECARD_MEDIA)
+    ---------------------------------------------- */
+
+    const bqFilepath = makeBQFilepath(url);
+
+    const deleteSQL = `
+      DELETE FROM \`${tableName}\`
+      WHERE FILEPATH = @filepath
+    `;
+
+    await bq.query({
+      query: deleteSQL,
+      params: { filepath: bqFilepath },
+    });
+
+    console.log("🗂️ BQ metadata supprimée pour :", bqFilepath);
+
+    /* ----------------------------------------------
+       3) Réponse JSON
+    ---------------------------------------------- */
+
     return NextResponse.json({
       status: "ok",
       deleted: url,
@@ -67,3 +117,4 @@ export async function POST(req: Request) {
     );
   }
 }
+
