@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Request
 from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client
 from utils.gcs import upload_bytes, delete_file
 from datetime import datetime
@@ -23,15 +23,10 @@ TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_MEDIA"
 # 🆕 REGISTER UPLOAD (GCS + BigQuery)
 # =====================================================================
 @router.post("/register-upload")
-async def register_media_upload(request):
-    """
-    Upload d’un média vers Google Cloud Storage + enregistrement BigQuery.
-    """
+async def register_media_upload(request: Request):
     try:
-        # On récupère le JSON brut sans validation Pydantic
         payload = await request.json()
-
-        # Validation manuelle
+        
         required = ["filename", "category", "format", "title", "base64"]
         for field in required:
             if field not in payload or not payload[field]:
@@ -43,16 +38,10 @@ async def register_media_upload(request):
         title = payload["title"]
         base64_data = payload["base64"]
 
-        # Décodage base64 → bytes
-        try:
-            binary_data = base64.b64decode(base64_data)
-        except Exception:
-            raise HTTPException(400, "Invalid base64")
+        binary_data = base64.b64decode(base64_data)
 
-        # Upload GCS
         url = upload_bytes(category, filename, binary_data)
 
-        # Enregistrement BQ
         media_id = str(uuid4())
         now = datetime.utcnow().isoformat()
 
