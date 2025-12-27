@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!; 
+// ex: https://storage.googleapis.com/ratecard-media
+
 export default function CompanyList() {
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -11,11 +14,11 @@ export default function CompanyList() {
   async function load() {
     setLoading(true);
 
-    // 1) Charger les sociétés
+    // 1️⃣ Charger sociétés
     const res = await api.get("/company/list");
     const rawCompanies = res.companies || [];
 
-    // 2) Charger les visuels liés via RATECARD_MEDIA
+    // 2️⃣ Charger visuels DAM liés
     const enriched = await Promise.all(
       rawCompanies.map(async (c: any) => {
         const m = await api.get(
@@ -23,17 +26,16 @@ export default function CompanyList() {
         );
 
         const media = m.media || [];
+
         const rect = media.find((m) => m.FORMAT === "rectangle");
         const square = media.find((m) => m.FORMAT === "square");
 
         return {
           ...c,
-          rectUrl: rect
-            ? `/media/${rect.FILEPATH.replace("/uploads/media/", "")}`
-            : null,
-          squareUrl: square
-            ? `/media/${square.FILEPATH.replace("/uploads/media/", "")}`
-            : null,
+
+          // 🔥 URL GCS DIRECTE
+          rectUrl: rect ? `${GCS_BASE_URL}/${rect.FILEPATH}` : null,
+          squareUrl: square ? `${GCS_BASE_URL}/${square.FILEPATH}` : null,
         };
       })
     );
@@ -51,9 +53,7 @@ export default function CompanyList() {
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-semibold text-ratecard-blue">
-          Sociétés
-        </h1>
+        <h1 className="text-3xl font-semibold text-ratecard-blue">Sociétés</h1>
 
         <Link
           href="/admin/company/create"
@@ -88,17 +88,17 @@ export default function CompanyList() {
 
           <tbody>
             {companies.map((c) => (
-              <tr key={c.ID_COMPANY} className="border-b hover:bg-gray-50 transition">
-
-                {/* NOM */}
+              <tr
+                key={c.ID_COMPANY}
+                className="border-b hover:bg-gray-50 transition"
+              >
                 <td className="p-2 font-medium">{c.NAME}</td>
 
-                {/* LOGO RECTANGLE */}
+                {/* RECTANGLE */}
                 <td className="p-2">
                   {c.rectUrl ? (
                     <img
                       src={c.rectUrl}
-                      alt="logo rectangle"
                       className="h-10 w-auto object-contain border rounded bg-white p-1 shadow-sm"
                     />
                   ) : (
@@ -106,12 +106,11 @@ export default function CompanyList() {
                   )}
                 </td>
 
-                {/* LOGO CARRÉ */}
+                {/* SQUARE */}
                 <td className="p-2">
                   {c.squareUrl ? (
                     <img
                       src={c.squareUrl}
-                      alt="logo carré"
                       className="h-10 w-10 object-cover border rounded bg-white shadow-sm"
                     />
                   ) : (
@@ -143,7 +142,6 @@ export default function CompanyList() {
                     Modifier
                   </Link>
                 </td>
-
               </tr>
             ))}
           </tbody>
@@ -153,6 +151,3 @@ export default function CompanyList() {
     </div>
   );
 }
-
-
-
