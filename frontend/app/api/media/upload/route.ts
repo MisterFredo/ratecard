@@ -16,20 +16,19 @@ function getUploadDir(category: string) {
   return path.join(process.cwd(), "uploads", "media", category);
 }
 
-async function registerMedia(filepath: string, format: string) {
+async function registerMedia(filepath: string, format: string, title: string) {
   const res = await fetch(`${BACKEND}/api/media/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ filepath, format }),
+    body: JSON.stringify({ filepath, format, title }), // 🆕 title envoyé au backend
   });
   return res.json();
 }
 
-/* Resize methods identical to before */
 async function createSquare(buffer: Buffer) {
   return sharp(buffer)
     .rotate()
-    .resize(600, 600, { fit: "cover", position: "centre" })
+    .resize(600, 600, { fit: "cover" })
     .jpeg({ quality: 85 })
     .toBuffer();
 }
@@ -37,7 +36,7 @@ async function createSquare(buffer: Buffer) {
 async function createRectangle(buffer: Buffer) {
   return sharp(buffer)
     .rotate()
-    .resize(1200, 900, { fit: "cover", position: "centre" })
+    .resize(1200, 900, { fit: "cover" })
     .jpeg({ quality: 85 })
     .toBuffer();
 }
@@ -58,7 +57,8 @@ export async function POST(req: Request) {
   try {
     const form = await req.formData();
     const file = form.get("file") as File | null;
-    const category = (form.get("category") as string) || "articles";
+    const category = (form.get("category") as string) || "logos";
+    const titleRaw = (form.get("title") as string | null) || "";
 
     if (!file) {
       return NextResponse.json(
@@ -66,39 +66,70 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+    if (!titleRaw.trim()) {
+      return NextResponse.json(
+        { status: "error", message: "Titre manquant." },
+        { status: 400 }
+      );
+    }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const baseName = file.name.replace(/\s+/g, "-");
-    const now = Date.now();
+    /* ---------------------------------------------------------
+       NORMALISATION DU TITRE → nom de fichier
+    --------------------------------------------------------- */
+    let title = titleRaw.trim().replace(/\s+/g, "_");
+    title = title.replace(/[^A-Za-z0-9_\-]/g, ""); // sécurité
+    const ext = "jpg";
+
+    const originalName = `${title}_original.${ext}`;
+    const rectName = `${title}_rect.${ext}`;
+    const squareName = `${title}_square.${ext}`;
 
     const dir = getUploadDir(category);
     await mkdir(dir, { recursive: true });
 
-    /* 1) ORIGINAL */
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    /* ---------------------------------------------------------
+       ORIGINAL
+    --------------------------------------------------------- */
     const originalBuf = await optimizeOriginal(buffer);
-    const originalName = `${now}_${baseName}`;
     const originalPath = path.join(dir, originalName);
     await writeFile(originalPath, originalBuf);
-    const originalPublic = `/uploads/media/${category}/${originalName}`;
 
-    /* 2) RECTANGLE */
+    /* ---------------------------------------------------------
+       RECTANGLE
+    --------------------------------------------------------- */
     const rectBuf = await createRectangle(buffer);
-    const rectName = `${now}_${baseName.replace(".", "_rect.")}`;
     const rectPath = path.join(dir, rectName);
     await writeFile(rectPath, rectBuf);
-    const rectPublic = `/uploads/media/${category}/${rectName}`;
 
-    /* 3) SQUARE */
+    /* ---------------------------------------------------------
+       SQUARE
+    --------------------------------------------------------- */
     const squareBuf = await createSquare(buffer);
-    const squareName = `${now}_${baseName.replace(".", "_square.")}`;
     const squarePath = path.join(dir, squareName);
     await writeFile(squarePath, squareBuf);
-    const squarePublic = `/uploads/media/${category}/${squareName}`;
 
-    /* REGISTER IN BACKEND */
-    const regOriginal = await registerMedia(originalPublic, "original");
-    const regRect = await registerMedia(rectPublic, "rectangle");
-    const regSquare = await registerMedia(squarePublic, "square");
+    /* ---------------------------------------------------------
+       REGISTER IN BACKEND (avec TITLE !)
+    --------------------------------------------------------- */
+    const regOriginal = await registerMedia(
+      `/uploads/media/${category}/${originalName}`,
+      "original",
+      titleRaw          // 🆕 version non-normalisée stockée en BQ
+    );
+
+    const regRect = await registerMedia(
+      `/uploads/media/${category}/${rectName}`,
+      "rectangle",
+      titleRaw
+    );
+
+    const regSquare = await registerMedia(
+      `/uploads/media/${category}/${squareName}`,
+      "square",
+      titleRaw
+    );
 
     return NextResponse.json({
       status: "ok",
@@ -126,3 +157,4 @@ export async function POST(req: Request) {
     );
   }
 }
+
