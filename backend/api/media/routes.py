@@ -222,6 +222,9 @@ def delete_media(media_id: str):
 # ------------------------------------------------------------
 @router.put("/update-title")
 def update_media_title(payload: MediaUpdateTitle):
+    """
+    Modifie le titre (gouverné) d’un média.
+    """
     try:
         client = get_bigquery_client()
 
@@ -243,7 +246,5 @@ def update_media_title(payload: MediaUpdateTitle):
         return {"status": "ok", "updated": True}
 
     except Exception as e:
-        raise HTTPException(400, f"Erreur update title : {e}"}
-
-
+        raise HTTPException(400, f"Erreur update title : {e}")
 
