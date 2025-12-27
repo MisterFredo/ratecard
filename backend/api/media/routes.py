@@ -7,7 +7,7 @@ from uuid import uuid4
 from config import BQ_PROJECT, BQ_DATASET
 
 # ⬅️ IMPORT DES MODELES !
-from api.media.models import MediaRegister, MediaAssign, MediaUnassign
+from api.media.models import MediaRegister, MediaAssign, MediaUnassign, MediaUpdateTitle
 
 router = APIRouter()
 
