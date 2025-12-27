@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
-const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!; 
-// ex: https://storage.googleapis.com/ratecard-media
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+// Exemple : https://storage.googleapis.com/ratecard-media
 
 export default function CompanyList() {
   const [companies, setCompanies] = useState<any[]>([]);
@@ -30,12 +30,21 @@ export default function CompanyList() {
         const rect = media.find((m) => m.FORMAT === "rectangle");
         const square = media.find((m) => m.FORMAT === "square");
 
+        // 🔥 reconstruire PROPREMENT l’URL GCS
+        const rectUrl =
+          rect && rect.FILEPATH
+            ? `${GCS_BASE_URL}/${rect.FILEPATH}`
+            : null;
+
+        const squareUrl =
+          square && square.FILEPATH
+            ? `${GCS_BASE_URL}/${square.FILEPATH}`
+            : null;
+
         return {
           ...c,
-
-          // 🔥 URL GCS DIRECTE
-          rectUrl: rect ? `${GCS_BASE_URL}/${rect.FILEPATH}` : null,
-          squareUrl: square ? `${GCS_BASE_URL}/${square.FILEPATH}` : null,
+          rectUrl,
+          squareUrl,
         };
       })
     );
@@ -94,7 +103,7 @@ export default function CompanyList() {
               >
                 <td className="p-2 font-medium">{c.NAME}</td>
 
-                {/* RECTANGLE */}
+                {/* LOGO RECTANGLE */}
                 <td className="p-2">
                   {c.rectUrl ? (
                     <img
@@ -106,7 +115,7 @@ export default function CompanyList() {
                   )}
                 </td>
 
-                {/* SQUARE */}
+                {/* LOGO CARRÉ */}
                 <td className="p-2">
                   {c.squareUrl ? (
                     <img
@@ -133,7 +142,6 @@ export default function CompanyList() {
                   )}
                 </td>
 
-                {/* ACTIONS */}
                 <td className="p-2 text-right">
                   <Link
                     href={`/admin/company/edit/${c.ID_COMPANY}`}
@@ -151,3 +159,4 @@ export default function CompanyList() {
     </div>
   );
 }
+
