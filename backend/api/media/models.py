@@ -8,8 +8,9 @@ from typing import Optional
 # REGISTER MEDIA (payload JSON envoyé par Next.js)
 # ------------------------------------------------------------
 class MediaRegister(BaseModel):
-    filepath: str           # ex: "/uploads/media/logos/1234_logo.jpg"
+    filepath: str           # ex: "/uploads/media/logos/myfile_square.jpg"
     format: str             # "square" | "rectangle" | "original"
+    title: str              # 🆕 Titre éditorial fourni par l’utilisateur
 
 
 # ------------------------------------------------------------
@@ -22,21 +23,25 @@ class MediaAssign(BaseModel):
 
 
 # ------------------------------------------------------------
-# UNASSIGN MEDIA (remove binding)
+# UNASSIGN MEDIA
 # ------------------------------------------------------------
 class MediaUnassign(BaseModel):
     media_id: str
 
 
 # ------------------------------------------------------------
-# BY ENTITY (not strictly needed as Pydantic model,
-# but useful if the route ever moves to POST)
+# BY ENTITY (utile si un jour la route passe en POST)
 # ------------------------------------------------------------
 class MediaByEntity(BaseModel):
     entity_type: str
     entity_id: str
 
+
+# ------------------------------------------------------------
+# UPDATE TITLE
+# ------------------------------------------------------------
 class MediaUpdateTitle(BaseModel):
     media_id: str
     title: str
+
 
