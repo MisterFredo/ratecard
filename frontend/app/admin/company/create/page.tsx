@@ -8,42 +8,71 @@ import MediaUploader from "@/components/admin/MediaUploader";
 
 export default function CreateCompany() {
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
 
-  // RECTANGLE + CARRE
-  const [logoUrl, setLogoUrl] = useState("");          // rectangle 1200x900
-  const [logoSquareUrl, setLogoSquareUrl] = useState(""); // carré 600x600
+  // IDs BQ + URLs pour preview
+  const [logoRectId, setLogoRectId] = useState<string | null>(null);
+  const [logoSquareId, setLogoSquareId] = useState<string | null>(null);
 
-  // UI états
+  const [logoRectUrl, setLogoRectUrl] = useState<string | null>(null);
+  const [logoSquareUrl, setLogoSquareUrl] = useState<string | null>(null);
+
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerMode, setPickerMode] = useState<"rectangle" | "square">("rectangle");
+
   const [uploaderOpen, setUploaderOpen] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  const [linkedinUrl, setLinkedinUrl] = useState("");
-  const [description, setDescription] = useState("");
-
-  // ---------------------------------------------------------
-  // SAVE
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     SAVE COMPANY
+  --------------------------------------------------------- */
   async function save() {
     if (!name) return alert("Merci de renseigner un nom de société");
 
     setSaving(true);
 
+    // 1) Création elle-même
     const payload = {
       name,
-      logo_url: logoUrl || null,
-      logo_square_url: logoSquareUrl || null,
-      linkedin_url: linkedinUrl || null,
       description: description || null,
+      linkedin_url: linkedinUrl || null,
+      website_url: websiteUrl || null,
+
+      media_logo_rectangle_id: logoRectId,
+      media_logo_square_id: logoSquareId,
     };
 
     const res = await api.post("/company/create", payload);
+    const id_company = res.id_company;
+
+    // 2) Assign des médias
+    if (logoRectId) {
+      await api.post("/media/assign", {
+        media_id: logoRectId,
+        entity_type: "company",
+        entity_id: id_company,
+      });
+    }
+
+    if (logoSquareId) {
+      await api.post("/media/assign", {
+        media_id: logoSquareId,
+        entity_type: "company",
+        entity_id: id_company,
+      });
+    }
+
     setResult(res);
     setSaving(false);
   }
 
+  /* ---------------------------------------------------------
+     RENDER
+  --------------------------------------------------------- */
   return (
     <div className="space-y-8">
 
@@ -57,7 +86,7 @@ export default function CreateCompany() {
         </Link>
       </div>
 
-      {/* NOM */}
+      {/* NAME */}
       <input
         placeholder="Nom de la société"
         value={name}
@@ -65,16 +94,37 @@ export default function CreateCompany() {
         className="border p-2 w-full rounded"
       />
 
-      {/* LOGOS */}
+      {/* DESCRIPTION */}
+      <textarea
+        placeholder="Description (optionnel)"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        className="border p-2 w-full rounded h-28"
+      />
+
+      {/* LOGO PICKER */}
       <div className="space-y-3">
-        <label className="font-semibold">Logo rectangulaire & carré</label>
+        <label className="font-semibold">Logos officiels (rectangle & carré)</label>
 
         <div className="flex gap-3">
           <button
-            onClick={() => setPickerOpen(true)}
+            onClick={() => {
+              setPickerMode("rectangle");
+              setPickerOpen(true);
+            }}
             className="bg-ratecard-green text-white px-4 py-2 rounded"
           >
-            Choisir dans la médiathèque
+            Choisir rectangle
+          </button>
+
+          <button
+            onClick={() => {
+              setPickerMode("square");
+              setPickerOpen(true);
+            }}
+            className="bg-ratecard-green text-white px-4 py-2 rounded"
+          >
+            Choisir carré
           </button>
 
           <button
@@ -85,18 +135,18 @@ export default function CreateCompany() {
           </button>
         </div>
 
-        {/* RECTANGLE PREVIEW */}
-        {logoUrl && (
+        {/* RECT PREVIEW */}
+        {logoRectUrl && (
           <div>
             <p className="text-sm text-gray-500">Logo rectangle :</p>
             <img
-              src={logoUrl}
+              src={logoRectUrl}
               className="w-48 h-auto border rounded mt-1"
             />
           </div>
         )}
 
-        {/* CARRE PREVIEW */}
+        {/* SQUARE PREVIEW */}
         {logoSquareUrl && (
           <div>
             <p className="text-sm text-gray-500">Logo carré :</p>
@@ -112,21 +162,34 @@ export default function CreateCompany() {
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        category="logos-cropped"   // IMPORTANT !!
-        onSelect={(url) => {
-          if (url.includes("square")) setLogoSquareUrl(url);
-          else setLogoUrl(url);
+        category="logos-cropped"
+        onSelect={(item) => {
+          if (pickerMode === "rectangle") {
+            setLogoRectId(item.media_id);
+            setLogoRectUrl(item.url);
+          } else {
+            setLogoSquareId(item.media_id);
+            setLogoSquareUrl(item.url);
+          }
+
+          setPickerOpen(false);
         }}
       />
 
-      {/* UPLOADER (SHARP) */}
+      {/* UPLOADER */}
       {uploaderOpen && (
         <div className="border rounded p-4 bg-white">
           <MediaUploader
-            category="logos-cropped"   // CORRECTION : "logo-cropped" n’existe pas
+            category="logos-cropped"
             onUploadComplete={({ square, rectangle }) => {
+              // Square
+              setLogoSquareId(square.media_id);
               setLogoSquareUrl(square.url);
-              setLogoUrl(rectangle.url);
+
+              // Rectangle
+              setLogoRectId(rectangle.media_id);
+              setLogoRectUrl(rectangle.url);
+
               setUploaderOpen(false);
             }}
           />
@@ -141,12 +204,12 @@ export default function CreateCompany() {
         className="border p-2 w-full rounded"
       />
 
-      {/* DESCRIPTION */}
-      <textarea
-        placeholder="Description"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        className="border p-2 w-full rounded h-28"
+      {/* WEBSITE */}
+      <input
+        placeholder="Site web (optionnel)"
+        value={websiteUrl}
+        onChange={(e) => setWebsiteUrl(e.target.value)}
+        className="border p-2 w-full rounded"
       />
 
       {/* SAVE */}
@@ -163,9 +226,11 @@ export default function CreateCompany() {
           {JSON.stringify(result, null, 2)}
         </pre>
       )}
+
     </div>
   );
 }
+
 
 
 
