@@ -3,23 +3,39 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import MediaPicker from "@/components/admin/MediaPicker";
+import MediaUploader from "@/components/admin/MediaUploader";
 
 export default function CreatePerson() {
   const [companies, setCompanies] = useState<any[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
 
+  // FIELDS
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [companyId, setCompanyId] = useState("");
-  const [profilePic, setProfilePic] = useState(""); // volontairement URL simple pour cette V1
   const [linkedinUrl, setLinkedinUrl] = useState("");
+
+  // MEDIA IDs
+  const [squareId, setSquareId] = useState<string | null>(null);
+  const [rectId, setRectId] = useState<string | null>(null);
+
+  // PREVIEW URLS
+  const [squareUrl, setSquareUrl] = useState<string | null>(null);
+  const [rectUrl, setRectUrl] = useState<string | null>(null);
+
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerMode, setPickerMode] = useState<"square" | "rectangle">("square");
+
+  const [uploaderOpen, setUploaderOpen] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  // ---------------------------------------------------------
-  // LOAD COMPANIES
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     LOAD COMPANIES
+  --------------------------------------------------------- */
   useEffect(() => {
     async function loadCompanies() {
       const res = await api.get("/company/list");
@@ -29,9 +45,9 @@ export default function CreatePerson() {
     loadCompanies();
   }, []);
 
-  // ---------------------------------------------------------
-  // SAVE PERSON
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     SAVE PERSON
+  --------------------------------------------------------- */
   async function save() {
     if (!name.trim()) return alert("Merci de renseigner un nom");
 
@@ -41,18 +57,42 @@ export default function CreatePerson() {
       id_company: companyId || null,
       name,
       title: title || null,
-      profile_picture_url: profilePic || null,
+      description: description || null,
+
+      media_picture_square_id: squareId,
+      media_picture_rectangle_id: rectId,
+
       linkedin_url: linkedinUrl || null,
     };
 
+    // 1) Create PERSON
     const res = await api.post("/person/create", payload);
+    const id_person = res.id_person;
+
+    // 2) Assign media
+    if (squareId) {
+      await api.post("/media/assign", {
+        media_id: squareId,
+        entity_type: "person",
+        entity_id: id_person,
+      });
+    }
+
+    if (rectId) {
+      await api.post("/media/assign", {
+        media_id: rectId,
+        entity_type: "person",
+        entity_id: id_person,
+      });
+    }
+
     setResult(res);
     setSaving(false);
   }
 
-  // ---------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     RENDER
+  --------------------------------------------------------- */
   return (
     <div className="space-y-8">
 
@@ -88,9 +128,20 @@ export default function CreatePerson() {
         />
       </div>
 
+      {/* DESCRIPTION */}
+      <div>
+        <label className="font-medium">Description (optionnelle)</label>
+        <textarea
+          placeholder="Petite bio, rôle, responsabilité…"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="border p-2 w-full rounded h-24 mt-1"
+        />
+      </div>
+
       {/* SOCIÉTÉ */}
       <div>
-        <label className="font-medium">Société</label>
+        <label className="font-medium">Société (optionnel)</label>
         <select
           className="border p-2 w-full rounded mt-1"
           value={companyId}
@@ -106,16 +157,95 @@ export default function CreatePerson() {
         </select>
       </div>
 
-      {/* PHOTO - VERSION SIMPLE */}
-      <div>
-        <label className="font-medium">Photo (URL)</label>
-        <input
-          placeholder="Ex : https://…"
-          value={profilePic}
-          onChange={(e) => setProfilePic(e.target.value)}
-          className="border p-2 w-full rounded mt-1"
-        />
+      {/* PHOTO */}
+      <div className="space-y-3">
+        <label className="font-medium">Photos</label>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              setPickerMode("square");
+              setPickerOpen(true);
+            }}
+            className="bg-ratecard-green text-white px-4 py-2 rounded"
+          >
+            Portrait carré
+          </button>
+
+          <button
+            onClick={() => {
+              setPickerMode("rectangle");
+              setPickerOpen(true);
+            }}
+            className="bg-ratecard-green text-white px-4 py-2 rounded"
+          >
+            Rectangle (optionnel)
+          </button>
+
+          <button
+            onClick={() => setUploaderOpen(true)}
+            className="bg-gray-700 text-white px-4 py-2 rounded"
+          >
+            Uploader une photo
+          </button>
+        </div>
+
+        {/* SQUARE PREVIEW */}
+        {squareUrl && (
+          <div>
+            <p className="text-sm text-gray-500">Portrait carré :</p>
+            <img
+              src={squareUrl}
+              alt="portrait carré"
+              className="w-24 h-24 object-cover border rounded mt-1"
+            />
+          </div>
+        )}
+
+        {/* RECT PREVIEW */}
+        {rectUrl && (
+          <div>
+            <p className="text-sm text-gray-500">Rectangle :</p>
+            <img
+              src={rectUrl}
+              alt="portrait rectangle"
+              className="w-48 h-auto border rounded mt-1"
+            />
+          </div>
+        )}
       </div>
+
+      {/* MEDIA PICKER */}
+      <MediaPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        category="logos-cropped" 
+        onSelect={(item) => {
+          if (pickerMode === "square") {
+            setSquareId(item.media_id);
+            setSquareUrl(item.url);
+          } else {
+            setRectId(item.media_id);
+            setRectUrl(item.url);
+          }
+        }}
+      />
+
+      {/* MEDIA UPLOADER */}
+      {uploaderOpen && (
+        <MediaUploader
+          category="logos-cropped"
+          onUploadComplete={({ square, rectangle }) => {
+            setSquareId(square.media_id);
+            setSquareUrl(square.url);
+
+            setRectId(rectangle.media_id);
+            setRectUrl(rectangle.url);
+
+            setUploaderOpen(false);
+          }}
+        />
+      )}
 
       {/* LINKEDIN */}
       <div>
@@ -146,3 +276,4 @@ export default function CreatePerson() {
     </div>
   );
 }
+
