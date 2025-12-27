@@ -15,7 +15,7 @@ TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_MEDIA"
 # REGISTER (appelé par Next.js après upload)
 # ------------------------------------------------------------
 @router.post("/register")
-def register_media(filepath: str, format: str):
+def register_media(payload: MediaRegister):
     """
     Enregistre un média dans BigQuery après upload Next.js.
     Retourne ID_MEDIA.
@@ -26,8 +26,8 @@ def register_media(filepath: str, format: str):
 
         row = [{
             "ID_MEDIA": media_id,
-            "FILEPATH": filepath,
-            "FORMAT": format,
+            "FILEPATH": payload.filepath,
+            "FORMAT": payload.format,
             "ENTITY_TYPE": None,
             "ENTITY_ID": None,
             "CREATED_AT": now,
