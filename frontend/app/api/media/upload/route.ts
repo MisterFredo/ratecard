@@ -21,6 +21,10 @@ const bq = new BigQuery({
   credentials: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!),
 });
 
+async function bqInsert(rows: any[]) {
+  return bq.dataset(dataset).table("RATECARD_MEDIA").insert(rows);
+}
+
 /* ---------------------------------------------------------
    Helpers
 --------------------------------------------------------- */
@@ -29,15 +33,14 @@ function getUploadDir(category: string) {
   return path.join(process.cwd(), "uploads", "media", category);
 }
 
-function bqInsert(row: any) {
-  return bq.dataset(dataset).table("RATECARD_MEDIA").insert(row);
-}
-
 // Square = 600×600
 async function createSquare(buffer: Buffer) {
   return sharp(buffer)
     .rotate()
-    .resize(600, 600, { fit: "cover", position: "centre" })
+    .resize(600, 600, {
+      fit: "cover",
+      position: "centre",
+    })
     .jpeg({ quality: 85 })
     .toBuffer();
 }
@@ -46,7 +49,10 @@ async function createSquare(buffer: Buffer) {
 async function createRectangle(buffer: Buffer) {
   return sharp(buffer)
     .rotate()
-    .resize(1200, 900, { fit: "cover", position: "centre" })
+    .resize(1200, 900, {
+      fit: "cover",
+      position: "centre",
+    })
     .jpeg({ quality: 85 })
     .toBuffer();
 }
@@ -109,13 +115,17 @@ export async function POST(req: Request) {
     const squarePath = path.join(dir, squareName);
     await writeFile(squarePath, square);
 
-    /* -------------------------------------------------
-       INSERTION BIGQUERY (3 médias)
-    ------------------------------------------------- */
+    /* ----------------------------------------------
+       4) INSERTION BIGQUERY
+    ---------------------------------------------- */
+
+    const originalId = uuidv4();
+    const rectId = uuidv4();
+    const squareId = uuidv4();
 
     const rows = [
       {
-        ID_MEDIA: uuidv4(),
+        ID_MEDIA: originalId,
         FILEPATH: `/uploads/media/${category}/${originalName}`,
         FORMAT: "original",
         ENTITY_TYPE: null,
@@ -123,7 +133,7 @@ export async function POST(req: Request) {
         CREATED_AT: nowIso,
       },
       {
-        ID_MEDIA: uuidv4(),
+        ID_MEDIA: rectId,
         FILEPATH: `/uploads/media/${category}/${rectName}`,
         FORMAT: "rectangle",
         ENTITY_TYPE: null,
@@ -131,7 +141,7 @@ export async function POST(req: Request) {
         CREATED_AT: nowIso,
       },
       {
-        ID_MEDIA: uuidv4(),
+        ID_MEDIA: squareId,
         FILEPATH: `/uploads/media/${category}/${squareName}`,
         FORMAT: "square",
         ENTITY_TYPE: null,
@@ -140,33 +150,39 @@ export async function POST(req: Request) {
       },
     ];
 
-    // BQ insert (safe, non bloquant)
     await bqInsert(rows);
 
     /* ----------------------------------------------
-       RÉPONSE JSON (identique à l'ancien système)
+       5) RESPONSE JSON — ENRICHIE (★ important)
     ---------------------------------------------- */
 
     return NextResponse.json({
       status: "ok",
       items: {
         original: {
+          media_id: originalId,
           id: originalName,
           url: `/media/${category}/${originalName}`,
           folder: category,
+          format: "original",
         },
         rectangle: {
+          media_id: rectId,
           id: rectName,
           url: `/media/${category}/${rectName}`,
           folder: category,
+          format: "rectangle",
         },
         square: {
+          media_id: squareId,
           id: squareName,
           url: `/media/${category}/${squareName}`,
           folder: category,
+          format: "square",
         },
       },
     });
+
   } catch (err: any) {
     console.error("❌ Sharp upload error :", err);
     return NextResponse.json(
@@ -175,4 +191,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
