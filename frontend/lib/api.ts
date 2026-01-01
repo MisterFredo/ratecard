@@ -1,38 +1,40 @@
-const BASE_URL =
+// frontend/lib/api.ts
+
+const RAW_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://ratecard.onrender.com/api";
 
-export const api = {
-  async get(path: string) {
-    const res = await fetch(`${BASE_URL}${path}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" }
-    });
-    return res.json();
-  },
+// 🔥 Normalisation (toujours finir par "/")
+const BASE_URL = RAW_BASE_URL.replace(/\/+$/, "");
 
-  async post(path: string, body: any) {
-    const res = await fetch(`${BASE_URL}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    return res.json();
-  },
+async function request(method: string, path: string, body?: any) {
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
 
-  async put(path: string, body: any) {
-    const res = await fetch(`${BASE_URL}${path}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    return res.json();
-  },
+  const res = await fetch(`${BASE_URL}${cleanPath}`, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store", // 🔥 important en admin
+  });
 
-  async delete(path: string) {
-    const res = await fetch(`${BASE_URL}${path}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" }
-    });
-    return res.json();
+  let json: any = null;
+  try {
+    json = await res.json();
+  } catch (e) {
+    throw new Error(`Réponse non JSON du backend (${res.status})`);
   }
+
+  if (!res.ok) {
+    console.error("❌ API error:", json);
+    throw new Error(json.detail || json.message || "Erreur API");
+  }
+
+  return json;
+}
+
+export const api = {
+  get: (path: string) => request("GET", path),
+  post: (path: string, body: any) => request("POST", path, body),
+  put: (path: string, body: any) => request("PUT", path, body),
+  delete: (path: string) => request("DELETE", path),
 };
+
