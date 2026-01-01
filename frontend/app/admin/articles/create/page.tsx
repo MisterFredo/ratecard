@@ -2,48 +2,55 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
 import { api } from "@/lib/api";
 
-import HtmlEditor from "@/components/admin/HtmlEditor";
+// Sélecteurs modernisés
 import CompanySelector from "@/components/admin/CompanySelector";
 import PersonSelector from "@/components/admin/PersonSelector";
-import AxesSelector from "@/components/admin/AxesSelector";
-import ArticleVisualSelector from "@/components/admin/ArticleVisualSelector";
+import AxesEditor from "@/components/admin/AxesEditor";
+import HtmlEditor from "@/components/admin/HtmlEditor";
+
+// Nouveau bloc visuel unifié
+import ArticleVisualSection from "@/components/admin/articles/ArticleVisualSection";
 
 export default function CreateArticlePage() {
-  const [activeTab, setActiveTab] = useState<"scratch" | "source">("scratch");
-
-  // CORE FIELDS
+  /* ---------------------------------------------------------
+     CORE FIELDS
+  --------------------------------------------------------- */
   const [title, setTitle] = useState("");
-  const [resume, setResume] = useState("");
+  const [resume, setResume] = useState(""); // devient RESUME côté backend
   const [contentHtml, setContentHtml] = useState("");
 
-  // ENTITÉS
-  const [axes, setAxes] = useState<any[]>([]);        // [{ id_axe, label, square_url }]
-  const [companies, setCompanies] = useState<any[]>([]); // [{ id_company, name, square_url }]
-  const [persons, setPersons] = useState<any[]>([]);  // [{ id_person, name, role }]
+  /* ---------------------------------------------------------
+     ENTITÉS
+  --------------------------------------------------------- */
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [persons, setPersons] = useState<any[]>([]);
+  const [axes, setAxes] = useState<any[]>([]);
 
-  // VISUELS FINAUX
+  /* ---------------------------------------------------------
+     VISUEL ARTICLE (rectangle + square) — via ArticleVisualSection
+  --------------------------------------------------------- */
   const [mediaRectangleId, setMediaRectangleId] = useState<string | null>(null);
   const [mediaSquareId, setMediaSquareId] = useState<string | null>(null);
-  const [visualUrls, setVisualUrls] = useState<{ rectangle_url: string; square_url: string } | null>(null);
+  const [previewRectUrl, setPreviewRectUrl] = useState<string | null>(null);
 
-  // IA draft
+  /* ---------------------------------------------------------
+     IA OLD DRAFT (source → article) — conservé
+  --------------------------------------------------------- */
+  const [sourceMode, setSourceMode] = useState<"scratch" | "source">("scratch");
   const [sourceType, setSourceType] = useState("LINKEDIN_POST");
   const [sourceText, setSourceText] = useState("");
   const [author, setAuthor] = useState("");
-  const [draft, setDraft] = useState<any>(null);
-  const [generatingDraft, setGeneratingDraft] = useState(false);
+  const [loadingDraft, setLoadingDraft] = useState(false);
 
   async function generateDraft() {
-    setGeneratingDraft(true);
-    setDraft(null);
+    setLoadingDraft(true);
 
     const payload = {
       source_type: sourceType,
       source_text: sourceText,
-      author: author || ""
+      author: author || "",
     };
 
     const res = await api.post("/lab-light/transform", payload);
@@ -52,23 +59,18 @@ export default function CreateArticlePage() {
     if (res.draft?.excerpt) setResume(res.draft.excerpt);
     if (res.draft?.content_html) setContentHtml(res.draft.content_html);
 
-    setDraft(res.draft || null);
-    setGeneratingDraft(false);
+    setLoadingDraft(false);
   }
 
-  // ---------------------------------------------------------
-  // PUBLISH
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     CREATE ARTICLE
+  --------------------------------------------------------- */
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  async function publish() {
-    if (!title.trim()) {
-      alert("Merci de renseigner un titre");
-      return;
-    }
+  async function save() {
+    if (!title.trim()) return alert("Merci de renseigner un titre");
 
-    // On crée d'abord la ligne article pour obtenir son ID
     setSaving(true);
 
     const payload = {
@@ -79,53 +81,51 @@ export default function CreateArticlePage() {
       media_rectangle_id: mediaRectangleId,
       media_square_id: mediaSquareId,
 
-      axes: axes.map(a => a.id_axe),
-      companies: companies.map(c => c.id_company),
-      persons: persons.map(p => ({
-        id_person: p.id_person,
-        role: p.role || null
-      })),
-
       auteur: author || null,
+
+      axes: axes.map((a) => a.id_axe),
+      companies: companies.map((c) => c.id_company),
+      persons: persons.map((p) => ({ id_person: p.id_person, role: "contributeur" })),
     };
 
     const res = await api.post("/articles/create", payload);
-
-    setSaving(false);
     setResult(res);
+    setSaving(false);
   }
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <div className="space-y-10">
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-semibold text-ratecard-blue">Créer un article</h1>
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
+          Créer un article
+        </h1>
         <Link href="/admin/articles" className="underline text-gray-600">
           ← Retour
         </Link>
       </div>
 
-      {/* TABS */}
-      <div className="flex border-b gap-4">
+      {/* MODE SELECTEUR */}
+      <div className="flex border-b">
         <button
-          onClick={() => setActiveTab("scratch")}
-          className={`pb-2 ${
-            activeTab === "scratch"
+          onClick={() => setSourceMode("scratch")}
+          className={`px-4 py-2 ${
+            sourceMode === "scratch"
               ? "border-b-2 border-ratecard-blue font-semibold"
               : "text-gray-500"
           }`}
         >
-          Rédaction libre
+          From scratch
         </button>
 
         <button
-          onClick={() => setActiveTab("source")}
-          className={`pb-2 ${
-            activeTab === "source"
+          onClick={() => setSourceMode("source")}
+          className={`px-4 py-2 ${
+            sourceMode === "source"
               ? "border-b-2 border-ratecard-blue font-semibold"
               : "text-gray-500"
           }`}
@@ -134,67 +134,79 @@ export default function CreateArticlePage() {
         </button>
       </div>
 
-      {/* ---------------------------------------------------------
-         MODE SCRATCH
-      --------------------------------------------------------- */}
-      {activeTab === "scratch" && (
-        <div className="space-y-8">
+      {/* ----------------------------------------------------
+          MODE FROM SCRATCH
+      ---------------------------------------------------- */}
+      {sourceMode === "scratch" && (
+        <div className="space-y-6">
 
+          {/* TITRE */}
           <input
-            placeholder="Titre"
             value={title}
+            placeholder="Titre"
             onChange={(e) => setTitle(e.target.value)}
             className="border p-2 w-full rounded"
           />
 
+          {/* RESUME */}
           <textarea
-            placeholder="Résumé"
             value={resume}
+            placeholder="Résumé court"
             onChange={(e) => setResume(e.target.value)}
             className="border p-2 w-full h-24 rounded"
           />
 
+          {/* CONTENU HTML */}
           <HtmlEditor value={contentHtml} onChange={setContentHtml} />
 
-          <AxesSelector values={axes} onChange={setAxes} />
-          <CompanySelector values={companies} onChange={setCompanies} />
-          <PersonSelector values={persons} onChange={setPersons} />
+          {/* SELECTEURS */}
+          <CompanySelector
+            value={companies}
+            onChange={setCompanies}
+            multi
+          />
 
-          {/* -----------------------------------------------------
-             VISUEL UNIQUE (selector modernisé)
-          ----------------------------------------------------- */}
-          <ArticleVisualSelector
-            articleId="new"       // Front-only ; backend upload ne dépend pas encore de l'ID
+          <PersonSelector
+            values={persons}
+            onChange={setPersons}
+          />
+
+          <AxesEditor values={axes} onChange={setAxes} />
+
+          {/* VISUEL ARTICLE */}
+          <ArticleVisualSection
             title={title}
             axes={axes}
-            companies={companies}
-            onChange={(urls) => {
-              setVisualUrls(urls);
-              // Ces IDs doivent venir de l’API upload
-              // On les mettra à jour plus tard dans la version finale
+            mediaRectangleId={mediaRectangleId}
+            mediaSquareId={mediaSquareId}
+            previewRectUrl={previewRectUrl}
+            onChange={({ rectangleId, squareId, previewUrl }) => {
+              setMediaRectangleId(rectangleId);
+              setMediaSquareId(squareId);
+              setPreviewRectUrl(previewUrl);
             }}
           />
 
           <button
-            onClick={publish}
+            onClick={save}
             disabled={saving}
             className="bg-ratecard-blue text-white px-6 py-2 rounded"
           >
-            {saving ? "Enregistrement…" : "Publier"}
+            {saving ? "Enregistrement…" : "Publier l’article"}
           </button>
 
           {result && (
-            <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap mt-4">
+            <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap">
               {JSON.stringify(result, null, 2)}
             </pre>
           )}
         </div>
       )}
 
-      {/* ---------------------------------------------------------
-         MODE TRANSFORMATION SOURCE
-      --------------------------------------------------------- */}
-      {activeTab === "source" && (
+      {/* ----------------------------------------------------
+          MODE TRANSFORMER UNE SOURCE
+      ---------------------------------------------------- */}
+      {sourceMode === "source" && (
         <div className="space-y-6">
           <select
             value={sourceType}
@@ -209,14 +221,14 @@ export default function CreateArticlePage() {
           </select>
 
           <input
-            placeholder="Auteur"
+            placeholder="Auteur (optionnel)"
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
             className="border p-2 rounded w-full"
           />
 
           <textarea
-            placeholder="Contenu brut…"
+            placeholder="Source brute…"
             value={sourceText}
             onChange={(e) => setSourceText(e.target.value)}
             className="border p-2 rounded w-full h-48"
@@ -224,27 +236,11 @@ export default function CreateArticlePage() {
 
           <button
             onClick={generateDraft}
-            disabled={generatingDraft}
+            disabled={loadingDraft}
             className="bg-ratecard-blue text-white px-4 py-2 rounded"
           >
-            {generatingDraft ? "Génération…" : "Transformer en article"}
+            {loadingDraft ? "Génération…" : "Transformer en article"}
           </button>
-
-          {draft && (
-            <div className="p-4 border rounded bg-white space-y-4">
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="border p-2 w-full rounded font-semibold"
-              />
-              <textarea
-                value={resume}
-                onChange={(e) => setResume(e.target.value)}
-                className="border p-2 w-full rounded h-24"
-              />
-              <HtmlEditor value={contentHtml} onChange={setContentHtml} />
-            </div>
-          )}
         </div>
       )}
     </div>
