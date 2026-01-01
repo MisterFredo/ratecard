@@ -4,9 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
-const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
-// Exemple : https://storage.googleapis.com/ratecard-media
-
 export default function CompanyList() {
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -14,42 +11,17 @@ export default function CompanyList() {
   async function load() {
     setLoading(true);
 
-    // 1️⃣ Charger sociétés
+    // 1️⃣ Charger sociétés (avec URLs GCS directement)
     const res = await api.get("/company/list");
-    const rawCompanies = res.companies || [];
+    const raw = res.companies || [];
 
-    // 2️⃣ Charger visuels DAM liés
-    const enriched = await Promise.all(
-      rawCompanies.map(async (c: any) => {
-        const m = await api.get(
-          `/media/by-entity?type=company&id=${c.ID_COMPANY}`
-        );
+    const list = raw.map((c: any) => ({
+      ...c,
+      rectUrl: c.MEDIA_LOGO_RECTANGLE_URL || null,
+      squareUrl: c.MEDIA_LOGO_SQUARE_URL || null,
+    }));
 
-        const media = m.media || [];
-
-        const rect = media.find((m) => m.FORMAT === "rectangle");
-        const square = media.find((m) => m.FORMAT === "square");
-
-        // 🔥 reconstruire PROPREMENT l’URL GCS
-        const rectUrl =
-          rect && rect.FILEPATH
-            ? `${GCS_BASE_URL}/${rect.FILEPATH}`
-            : null;
-
-        const squareUrl =
-          square && square.FILEPATH
-            ? `${GCS_BASE_URL}/${square.FILEPATH}`
-            : null;
-
-        return {
-          ...c,
-          rectUrl,
-          squareUrl,
-        };
-      })
-    );
-
-    setCompanies(enriched);
+    setCompanies(list);
     setLoading(false);
   }
 
@@ -103,7 +75,7 @@ export default function CompanyList() {
               >
                 <td className="p-2 font-medium">{c.NAME}</td>
 
-                {/* LOGO RECTANGLE */}
+                {/* RECTANGLE */}
                 <td className="p-2">
                   {c.rectUrl ? (
                     <img
@@ -115,7 +87,7 @@ export default function CompanyList() {
                   )}
                 </td>
 
-                {/* LOGO CARRÉ */}
+                {/* SQUARE */}
                 <td className="p-2">
                   {c.squareUrl ? (
                     <img
@@ -133,7 +105,7 @@ export default function CompanyList() {
                     <a
                       href={c.LINKEDIN_URL}
                       target="_blank"
-                      className="text-blue-600 hover:text-blue-800 underline"
+                      className="text-blue-600 hover:underline"
                     >
                       Profil
                     </a>
@@ -159,4 +131,5 @@ export default function CompanyList() {
     </div>
   );
 }
+
 
