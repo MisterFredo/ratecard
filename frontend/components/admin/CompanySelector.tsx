@@ -3,47 +3,38 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
-
-export default function CompanySelector({ value, onChange }) {
-  const [companies, setCompanies] = useState<any[]>([]);
+export default function PersonSelector({ values, onChange }) {
+  const [persons, setPersons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   /* -------------------------------------------------------
-     LOAD COMPANIES + VISUELS DAM
+     LOAD PERSONS + VISUELS DAM
   ------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
 
-      // 1️⃣ Load companies
-      const res = await api.get("/company/list");
-      const raw = res.companies || [];
+      const res = await api.get("/person/list");
+      const raw = res.persons || [];
 
-      // 2️⃣ Load their visuals (rectangle / square)
+      // Enrichir avec portrait carrés/rectangles
       const enriched = await Promise.all(
-        raw.map(async (c: any) => {
-          const m = await api.get(
-            `/media/by-entity?type=company&id=${c.ID_COMPANY}`
-          );
-
-          const media = m.media || [];
-
-          const rect = media.find((m) => m.FORMAT === "rectangle");
-          const square = media.find((m) => m.FORMAT === "square");
+        raw.map(async (p: any) => {
+          const visu = await api.get(`/visuals/person/get?id_person=${p.ID_PERSON}`);
 
           return {
-            id_company: c.ID_COMPANY,
-            name: c.NAME,
+            id_person: p.ID_PERSON,
+            name: p.NAME,
+            title: p.TITLE || "",
+            company: p.ID_COMPANY || null,
 
-            // 🔥 Always prefer m.URL returned by backend visuals/*
-            rectUrl: rect?.URL || null,
-            squareUrl: square?.URL || null,
+            squareUrl: visu?.square_url || null,
+            rectUrl: visu?.rectangle_url || null,
           };
         })
       );
 
-      setCompanies(enriched);
+      setPersons(enriched);
       setLoading(false);
     }
 
@@ -51,61 +42,67 @@ export default function CompanySelector({ value, onChange }) {
   }, []);
 
   /* -------------------------------------------------------
-     SELECTED VALUE
+     SELECTED (0..N persons)
   ------------------------------------------------------- */
-  const selected = companies.find(
-    (c) => c.id_company === (value?.id_company || value)
-  );
+  const selectedIds = values?.map((v: any) => v.id_person) || [];
+
+  function toggle(p: any) {
+    const already = selectedIds.includes(p.id_person);
+
+    if (already) {
+      onChange(values.filter((v: any) => v.id_person !== p.id_person));
+    } else {
+      onChange([...values, p]);
+    }
+  }
 
   /* -------------------------------------------------------
      UI
   ------------------------------------------------------- */
   return (
     <div className="space-y-2">
-      <label className="font-medium">Société</label>
+      <label className="font-medium">Intervenants</label>
 
       {loading ? (
         <div className="text-gray-500 text-sm">Chargement…</div>
       ) : (
-        <select
-          className="border p-2 w-full rounded"
-          value={selected?.id_company || ""}
-          onChange={(e) => {
-            const id = e.target.value;
-            const comp = companies.find((c) => c.id_company === id) || null;
-            onChange(comp);
-          }}
-        >
-          <option value="">Aucune</option>
+        <div className="border rounded p-3 space-y-2 bg-white max-h-64 overflow-auto">
+          {persons.map((p) => {
+            const selected = selectedIds.includes(p.id_person);
 
-          {companies.map((c) => (
-            <option key={c.id_company} value={c.id_company}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      )}
+            return (
+              <div
+                key={p.id_person}
+                onClick={() => toggle(p)}
+                className={`flex items-center gap-3 p-2 rounded cursor-pointer ${
+                  selected ? "bg-blue-50 border-blue-300 border" : "hover:bg-gray-50"
+                }`}
+              >
+                {/* PORTRAIT */}
+                {p.squareUrl ? (
+                  <img
+                    src={p.squareUrl}
+                    className="h-10 w-10 rounded-full object-cover border bg-white"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">
+                    —
+                  </div>
+                )}
 
-      {/* PREVIEW */}
-      {selected && (
-        <div className="flex items-center gap-3 mt-2">
-          {selected.rectUrl && (
-            <img
-              src={selected.rectUrl}
-              className="h-10 w-auto rounded border bg-white p-1"
-            />
-          )}
+                <div className="flex-1">
+                  <div className="font-medium">{p.name}</div>
+                  <div className="text-xs text-gray-500">{p.title}</div>
+                </div>
 
-          {selected.squareUrl && (
-            <img
-              src={selected.squareUrl}
-              className="h-10 w-10 rounded border bg-white object-cover"
-            />
-          )}
+                {selected && (
+                  <div className="text-blue-600 font-semibold text-xs">Sélectionné</div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
-
-
