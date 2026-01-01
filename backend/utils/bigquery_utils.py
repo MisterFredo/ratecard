@@ -12,28 +12,24 @@ from google.oauth2 import service_account
 # ---------------------------------------------------------
 def get_bigquery_client() -> bigquery.Client:
     """
-    Crée un client BigQuery.
-    Forcé en région EU car les UPDATE/DELETE échouent sinon.
+    Crée un client BigQuery dans la région correcte.
     """
-
     credentials_path = os.environ.get("GOOGLE_CREDENTIALS_FILE")
 
     if credentials_path:
-        # Render : fichier JSON monté via Secret File
         with open(credentials_path, "r") as f:
             info = json.load(f)
-
         credentials = service_account.Credentials.from_service_account_info(info)
         project_id = info.get("project_id")
-
         return bigquery.Client(
             credentials=credentials,
             project=project_id,
-            location="EU"          # 🔥 CRITIQUE !!!
+            location="EU"   # 🔥 FORCE LA RÉGION CORRECTE
         )
 
-    # Local dev / ADC
-    return bigquery.Client(location="EU")  # 🔥 Idem ici
+    # Local dev ou ADC
+    return bigquery.Client(location="EU")
+
 
 
 
