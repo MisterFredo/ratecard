@@ -1,111 +1,108 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 export default function AxesEditor({ values, onChange }) {
-  const [axes, setAxes] = useState([]);
-  const [input, setInput] = useState("");
-  const [filtered, setFiltered] = useState([]);
+  const [axes, setAxes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  /* ---------------------------------------------------------
-     LOAD ALL AXES
-  --------------------------------------------------------- */
+  /* -------------------------------------------------------
+     LOAD AXES + VISUELS GCS
+  ------------------------------------------------------- */
   useEffect(() => {
-    api.get("/axes/list").then((res) => {
-      setAxes(res.axes || []);
-    });
+    async function load() {
+      setLoading(true);
+
+      const res = await api.get("/axes/list");
+      const raw = res.axes || [];
+
+      const enriched = await Promise.all(
+        raw.map(async (a: any) => {
+          const visu = await api.get(`/visuals/axe/get?id_axe=${a.ID_AXE}`);
+
+          return {
+            id_axe: a.ID_AXE,
+            label: a.LABEL,
+            description: a.DESCRIPTION || "",
+
+            squareUrl: visu?.square_url || null,
+            rectUrl: visu?.rectangle_url || null,
+          };
+        })
+      );
+
+      setAxes(enriched);
+      setLoading(false);
+    }
+
+    load();
   }, []);
 
-  /* ---------------------------------------------------------
-     FILTER ON INPUT
-  --------------------------------------------------------- */
-  useEffect(() => {
-    if (!input.trim()) {
-      setFiltered([]);
-      return;
+  /* -------------------------------------------------------
+     SELECTED AXES
+  ------------------------------------------------------- */
+  const selectedIds = values?.map((v: any) => v.id_axe) || [];
+
+  function toggle(axis: any) {
+    const already = selectedIds.includes(axis.id_axe);
+
+    if (already) {
+      onChange(values.filter((v: any) => v.id_axe !== axis.id_axe));
+    } else {
+      onChange([...values, axis]);
     }
-    const l = input.toLowerCase();
-
-    setFiltered(
-      axes.filter((a) => a.LABEL.toLowerCase().includes(l))
-    );
-  }, [input, axes]);
-
-  /* ---------------------------------------------------------
-     ADD EXISTING AXE
-  --------------------------------------------------------- */
-  function addAxe(axe) {
-    if (values.find((v) => v.id_axe === axe.ID_AXE)) return;
-
-    const updated = [
-      ...values,
-      {
-        id_axe: axe.ID_AXE,
-        label: axe.LABEL,
-      },
-    ];
-
-    onChange(updated);
-    setInput("");
-    setFiltered([]);
   }
 
-  /* ---------------------------------------------------------
-     REMOVE AXE
-  --------------------------------------------------------- */
-  function removeAxe(id_axe) {
-    onChange(values.filter((v) => v.id_axe !== id_axe));
-  }
-
-  /* ---------------------------------------------------------
-     RENDER
-  --------------------------------------------------------- */
+  /* -------------------------------------------------------
+     UI
+  ------------------------------------------------------- */
   return (
     <div className="space-y-2">
       <label className="font-medium">Axes éditoriaux</label>
 
-      {/* INPUT */}
-      <input
-        className="border p-2 w-full rounded"
-        placeholder="Rechercher un axe…"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-      />
+      {loading ? (
+        <div className="text-gray-500 text-sm">Chargement…</div>
+      ) : (
+        <div className="border rounded p-3 bg-white max-h-64 overflow-auto space-y-2">
+          {axes.map((a) => {
+            const selected = selectedIds.includes(a.id_axe);
 
-      {/* SUGGESTIONS */}
-      {filtered.length > 0 && (
-        <div className="border p-2 bg-white rounded shadow max-h-60 overflow-auto">
-          {filtered.map((f) => (
-            <div
-              key={f.ID_AXE}
-              className="p-2 hover:bg-gray-100 cursor-pointer"
-              onClick={() => addAxe(f)}
-            >
-              {f.LABEL}
-            </div>
-          ))}
+            return (
+              <div
+                key={a.id_axe}
+                onClick={() => toggle(a)}
+                className={`flex items-center gap-3 p-2 rounded cursor-pointer ${
+                  selected ? "bg-blue-50 border border-blue-300" : "hover:bg-gray-50"
+                }`}
+              >
+                {/* ICON / IMAGE */}
+                {a.squareUrl ? (
+                  <img
+                    src={a.squareUrl}
+                    className="h-10 w-10 rounded object-cover border bg-white"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded bg-gray-200 flex items-center justify-center text-xs text-gray-500">
+                    —
+                  </div>
+                )}
+
+                <div className="flex-1">
+                  <div className="font-medium">{a.label}</div>
+                  {a.description && (
+                    <div className="text-xs text-gray-500">{a.description}</div>
+                  )}
+                </div>
+
+                {selected && (
+                  <div className="text-blue-600 text-xs font-semibold">Sélectionné</div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
-
-      {/* TAGS */}
-      <div className="flex flex-wrap gap-2 mt-2">
-        {values.map((v) => (
-          <span
-            key={v.id_axe}
-            className="bg-gray-200 px-2 py-1 rounded text-sm flex items-center gap-2"
-          >
-            <span>{v.label}</span>
-            <button
-              onClick={() => removeAxe(v.id_axe)}
-              className="text-red-600 font-bold"
-            >
-              ×
-            </button>
-          </span>
-        ))}
-      </div>
     </div>
   );
 }
-
