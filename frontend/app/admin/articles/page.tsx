@@ -6,6 +6,10 @@ import { api } from "@/lib/api";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
+// ------------------------------------------------------------------
+// TYPE LOCAL POUR LA LISTE
+// (on étend ArticleLite avec les URLs visuelles reconstruites)
+// ------------------------------------------------------------------
 type ArticleLite = {
   ID_ARTICLE: string;
   TITRE: string;
@@ -16,6 +20,10 @@ type ArticleLite = {
   IS_ARCHIVED: boolean;
   MEDIA_RECTANGLE_ID?: string | null;
   MEDIA_SQUARE_ID?: string | null;
+
+  // 🔥 Champs dérivés — ajoutés ensuite côté front
+  rectUrl?: string | null;
+  squareUrl?: string | null;
 };
 
 export default function ArticleListPage() {
@@ -29,10 +37,10 @@ export default function ArticleListPage() {
     setLoading(true);
 
     const res = await api.get("/articles/list");
-    const list = res.articles || [];
+    const list: ArticleLite[] = res.articles || [];
 
-    // Construire les URLs GCS uniquement si ID visuel présent
-    const enriched = list.map((a: ArticleLite) => {
+    // 🔥 Construire dynamiquement les URLs GCS
+    const enriched = list.map((a) => {
       const rectUrl = a.MEDIA_RECTANGLE_ID
         ? `${GCS_BASE_URL}/articles/${a.MEDIA_RECTANGLE_ID}.jpg`
         : null;
@@ -129,14 +137,14 @@ export default function ArticleListPage() {
               </td>
 
               {/* ACTIONS */}
-              <td className="p-2 text-right">
+              <td className="p-2 text-right space-x-2">
                 <Link
                   href={`/admin/articles/preview/${a.ID_ARTICLE}`}
                   className="text-blue-600 hover:underline"
                 >
                   Voir
                 </Link>
-                {" | "}
+
                 <Link
                   href={`/admin/articles/edit/${a.ID_ARTICLE}`}
                   className="text-ratecard-blue hover:underline"
