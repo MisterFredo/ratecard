@@ -171,4 +171,4 @@ async def reset_company_visual(payload: CompanyVisualReset):
         return {"status": "ok", "reset": True}
 
     except Exception as e:
-        raise HTTPException(400, f"Erreur reset société : {e}"}
+        raise HTTPException(400, f"Erreur reset société : {e}")
