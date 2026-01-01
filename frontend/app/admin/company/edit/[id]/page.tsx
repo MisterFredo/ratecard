@@ -3,28 +3,24 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import VisualSection from "@/components/visuals/VisualSection";
 
-import CompanyVisualSection from "./VisualSection";
+const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
-export default function EditCompanyPage({ params }) {
+export default function EditCompany({ params }) {
   const { id } = params;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Champs société
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
 
-  // URLs visuels (stockées dans BQ)
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  /* ---------------------------------------------------------
-     LOAD COMPANY
-  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -32,14 +28,16 @@ export default function EditCompanyPage({ params }) {
       const res = await api.get(`/company/${id}`);
       const c = res.company;
 
-      setName(c.NAME || "");
-      setDescription(c.DESCRIPTION || "");
-      setLinkedinUrl(c.LINKEDIN_URL || "");
-      setWebsiteUrl(c.WEBSITE_URL || "");
+      setName(c.NAME);
+      setDescription(c.DESCRIPTION);
+      setLinkedinUrl(c.LINKEDIN_URL);
+      setWebsiteUrl(c.WEBSITE_URL);
 
-      // Directement depuis BQ
-      setSquareUrl(c.MEDIA_LOGO_SQUARE_URL || null);
-      setRectUrl(c.MEDIA_LOGO_RECT_URL || null);
+      if (c.MEDIA_LOGO_SQUARE_ID)
+        setSquareUrl(`${GCS}/companies/COMPANY_${id}_square.jpg`);
+
+      if (c.MEDIA_LOGO_RECTANGLE_ID)
+        setRectUrl(`${GCS}/companies/COMPANY_${id}_rect.jpg`);
 
       setLoading(false);
     }
@@ -47,90 +45,73 @@ export default function EditCompanyPage({ params }) {
     load();
   }, [id]);
 
-  /* ---------------------------------------------------------
-     SAVE
-  --------------------------------------------------------- */
   async function save() {
-    if (!name.trim()) return alert("Merci de renseigner un nom");
-
     setSaving(true);
 
-    const payload = {
+    await api.put(`/company/update/${id}`, {
       name,
-      description: description || null,
-      linkedin_url: linkedinUrl || null,
-      website_url: websiteUrl || null,
-      media_logo_square_url: squareUrl,     // 🔥 nouvelle logique : URL directe
-      media_logo_rectangle_url: rectUrl,    // idem
-    };
+      description,
+      linkedin_url: linkedinUrl,
+      website_url: websiteUrl,
+    });
 
-    const res = await api.put(`/company/update/${id}`, payload);
-
+    alert("Modifié !");
     setSaving(false);
-    alert("Société mise à jour !");
   }
 
-  if (loading) return <div>Chargement…</div>;
+  if (loading) return <p>Chargement…</p>;
 
   return (
-    <div className="space-y-10">
-
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-semibold text-ratecard-blue">
-          Modifier la société
-        </h1>
-        <Link href="/admin/company" className="underline text-gray-600">
+    <div className="space-y-8">
+      <div className="flex justify-between">
+        <h1 className="text-3xl font-semibold">Modifier la société</h1>
+        <Link href="/admin/company" className="underline">
           ← Retour
         </Link>
       </div>
 
-      {/* CHAMPS TEXTE */}
       <input
+        className="border p-2 w-full rounded"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Nom"
-        className="border p-2 w-full rounded"
       />
 
       <textarea
+        className="border p-2 w-full rounded h-28"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        placeholder="Description"
-        className="border p-2 w-full rounded h-24"
       />
 
       <input
+        className="border p-2 w-full rounded"
         value={linkedinUrl}
         onChange={(e) => setLinkedinUrl(e.target.value)}
-        placeholder="URL LinkedIn"
-        className="border p-2 w-full rounded"
       />
 
       <input
+        className="border p-2 w-full rounded"
         value={websiteUrl}
         onChange={(e) => setWebsiteUrl(e.target.value)}
-        placeholder="Site web"
-        className="border p-2 w-full rounded"
       />
 
-      {/* VISUAL SECTION */}
-      <CompanyVisualSection
-        id_company={id}
-        squareUrl={squareUrl}
-        rectUrl={rectUrl}
-        onSquareChange={setSquareUrl}
-        onRectChange={setRectUrl}
-      />
-
-      {/* SAVE */}
       <button
+        className="bg-ratecard-blue px-4 py-2 text-white rounded"
         onClick={save}
         disabled={saving}
-        className="bg-ratecard-blue text-white px-6 py-2 rounded"
       >
-        {saving ? "Enregistrement…" : "Enregistrer"}
+        Enregistrer
       </button>
+
+      <VisualSection
+        entityType="company"
+        entityId={id}
+        squareUrl={squareUrl}
+        rectUrl={rectUrl}
+        onUpdated={({ square, rectangle }) => {
+          setSquareUrl(square);
+          setRectUrl(rectangle);
+        }}
+      />
     </div>
   );
 }
