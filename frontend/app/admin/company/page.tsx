@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
 export default function CompanyList() {
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -11,17 +13,24 @@ export default function CompanyList() {
   async function load() {
     setLoading(true);
 
-    // 1️⃣ Charger sociétés (avec URLs GCS directement)
     const res = await api.get("/company/list");
-    const raw = res.companies || [];
+    const rawCompanies = res.companies || [];
 
-    const list = raw.map((c: any) => ({
-      ...c,
-      rectUrl: c.MEDIA_LOGO_RECTANGLE_URL || null,
-      squareUrl: c.MEDIA_LOGO_SQUARE_URL || null,
-    }));
+    const enriched = await Promise.all(
+      rawCompanies.map(async (c: any) => {
+        const sq = c.MEDIA_LOGO_SQUARE_ID
+          ? `${GCS_BASE_URL}/companies/COMPANY_${c.ID_COMPANY}_square.jpg`
+          : null;
 
-    setCompanies(list);
+        const rect = c.MEDIA_LOGO_RECTANGLE_ID
+          ? `${GCS_BASE_URL}/companies/COMPANY_${c.ID_COMPANY}_rect.jpg`
+          : null;
+
+        return { ...c, squareUrl: sq, rectUrl: rect };
+      })
+    );
+
+    setCompanies(enriched);
     setLoading(false);
   }
 
@@ -31,84 +40,47 @@ export default function CompanyList() {
 
   return (
     <div className="space-y-8">
-
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between">
         <h1 className="text-3xl font-semibold text-ratecard-blue">Sociétés</h1>
 
         <Link
           href="/admin/company/create"
-          className="bg-ratecard-green text-white px-4 py-2 rounded shadow hover:bg-green-600 transition"
+          className="bg-ratecard-green px-4 py-2 text-white rounded"
         >
           + Ajouter une société
         </Link>
       </div>
 
-      {/* LOADING */}
-      {loading && <div className="text-gray-500">Chargement…</div>}
-
-      {/* EMPTY */}
-      {!loading && companies.length === 0 && (
-        <div className="border p-6 rounded text-gray-500 italic">
-          Aucune société enregistrée.
-        </div>
-      )}
-
-      {/* TABLE */}
-      {!loading && companies.length > 0 && (
-        <table className="w-full border-collapse text-sm">
+      {loading ? (
+        <p className="text-gray-500">Chargement…</p>
+      ) : companies.length === 0 ? (
+        <p className="italic text-gray-500">Aucune société.</p>
+      ) : (
+        <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-gray-100 border-b text-left text-gray-700">
+            <tr className="bg-gray-100 border-b text-left">
               <th className="p-2">Nom</th>
-              <th className="p-2">Logo rectangle</th>
               <th className="p-2">Logo carré</th>
-              <th className="p-2">LinkedIn</th>
+              <th className="p-2">Logo rectangle</th>
               <th className="p-2 text-right">Actions</th>
             </tr>
           </thead>
-
           <tbody>
             {companies.map((c) => (
-              <tr
-                key={c.ID_COMPANY}
-                className="border-b hover:bg-gray-50 transition"
-              >
-                <td className="p-2 font-medium">{c.NAME}</td>
+              <tr key={c.ID_COMPANY} className="border-b hover:bg-gray-50">
+                <td className="p-2">{c.NAME}</td>
 
-                {/* RECTANGLE */}
-                <td className="p-2">
-                  {c.rectUrl ? (
-                    <img
-                      src={c.rectUrl}
-                      className="h-10 w-auto object-contain border rounded bg-white p-1 shadow-sm"
-                    />
-                  ) : (
-                    <span className="text-gray-400 italic">—</span>
-                  )}
-                </td>
-
-                {/* SQUARE */}
                 <td className="p-2">
                   {c.squareUrl ? (
-                    <img
-                      src={c.squareUrl}
-                      className="h-10 w-10 object-cover border rounded bg-white shadow-sm"
-                    />
+                    <img src={c.squareUrl} className="w-12 h-12 rounded border" />
                   ) : (
-                    <span className="text-gray-400 italic">—</span>
+                    "—"
                   )}
                 </td>
 
-                {/* LINKEDIN */}
                 <td className="p-2">
-                  {c.LINKEDIN_URL ? (
-                    <a
-                      href={c.LINKEDIN_URL}
-                      target="_blank"
-                      className="text-blue-600 hover:underline"
-                    >
-                      Profil
-                    </a>
+                  {c.rectUrl ? (
+                    <img src={c.rectUrl} className="h-10 border rounded" />
                   ) : (
                     "—"
                   )}
@@ -117,7 +89,7 @@ export default function CompanyList() {
                 <td className="p-2 text-right">
                   <Link
                     href={`/admin/company/edit/${c.ID_COMPANY}`}
-                    className="text-ratecard-blue hover:underline"
+                    className="text-blue-600 hover:underline"
                   >
                     Modifier
                   </Link>
@@ -127,9 +99,6 @@ export default function CompanyList() {
           </tbody>
         </table>
       )}
-
     </div>
   );
 }
-
-
