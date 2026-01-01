@@ -112,6 +112,8 @@ export default function CreatePerson() {
         <VisualSection
           entityType="person"
           entityId={personId}
+          squareUrl=""
+          rectUrl=""
           onUpdated={() => {}}
         />
       )}
