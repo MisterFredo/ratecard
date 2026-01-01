@@ -6,33 +6,27 @@ import { api } from "@/lib/api";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
-/**
- * Page d’administration — Liste des Articles
- */
-export default function ArticleListPage() {
+export default function ArticlesListPage() {
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* ---------------------------------------------------------
-     LOAD ARTICLES
-  --------------------------------------------------------- */
   async function load() {
     setLoading(true);
 
     const res = await api.get("/articles/list");
-    const raw = res.articles || [];
+    const rows = res.articles || [];
 
-    // Reconstruction visuels GCS
-    const enriched = raw.map((a: any) => {
-      const rectUrl =
-        a.MEDIA_RECTANGLE_ID && a.VISUEL_RECTANGLE_PATH
-          ? `${GCS_BASE_URL}/${a.VISUEL_RECTANGLE_PATH}`
-          : a.VISUEL_URL || null;
+    // Construction URLs GCS
+    const enriched = rows.map((a: any) => {
+      const rectUrl = a.MEDIA_RECTANGLE_ID
+        ? `${GCS_BASE_URL}/articles/${a.MEDIA_RECTANGLE_ID}.jpg`
+        : null;
 
-      return {
-        ...a,
-        rectUrl,
-      };
+      const squareUrl = a.MEDIA_SQUARE_ID
+        ? `${GCS_BASE_URL}/articles/${a.MEDIA_SQUARE_ID}.jpg`
+        : null;
+
+      return { ...a, rectUrl, squareUrl };
     });
 
     setArticles(enriched);
@@ -43,12 +37,9 @@ export default function ArticleListPage() {
     load();
   }, []);
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
-    <div className="space-y-10">
-
+    <div className="space-y-8">
+      
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
@@ -57,46 +48,49 @@ export default function ArticleListPage() {
 
         <Link
           href="/admin/articles/create"
-          className="bg-ratecard-green text-white px-4 py-2 rounded shadow hover:bg-green-600 transition"
+          className="bg-ratecard-green px-4 py-2 text-white rounded shadow hover:bg-green-600 transition"
         >
-          + Ajouter un article
+          + Nouveau
         </Link>
       </div>
 
       {/* LOADING */}
-      {loading && <p className="text-gray-500">Chargement…</p>}
+      {loading && <div className="text-gray-500">Chargement…</div>}
 
       {/* EMPTY */}
       {!loading && articles.length === 0 && (
-        <p className="text-gray-500 italic">
+        <div className="text-gray-400 italic border p-4 rounded">
           Aucun article pour le moment.
-        </p>
+        </div>
       )}
 
       {/* TABLE */}
       {!loading && articles.length > 0 && (
-        <table className="w-full border-collapse text-sm">
+        <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-gray-100 border-b text-left text-gray-700">
-              <th className="p-2">Visuel</th>
+            <tr className="bg-gray-100 border-b text-left text-gray-600">
+              <th className="p-2 w-16">Visuel</th>
               <th className="p-2">Titre</th>
               <th className="p-2">Axes</th>
               <th className="p-2">Sociétés</th>
-              <th className="p-2">Publication</th>
+              <th className="p-2">Créé le</th>
+              <th className="p-2">Status</th>
               <th className="p-2 text-right">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {articles.map((a) => (
-              <tr key={a.ID_ARTICLE} className="border-b hover:bg-gray-50">
-
-                {/* VISUEL */}
+              <tr
+                key={a.ID_ARTICLE}
+                className="border-b hover:bg-gray-50 transition"
+              >
+                {/* MINI VISUEL */}
                 <td className="p-2">
                   {a.rectUrl ? (
                     <img
                       src={a.rectUrl}
-                      className="h-12 w-auto rounded border bg-white object-cover"
+                      className="h-12 w-auto rounded border bg-white shadow-sm"
                     />
                   ) : (
                     <span className="text-gray-400 italic">—</span>
@@ -108,42 +102,45 @@ export default function ArticleListPage() {
 
                 {/* AXES */}
                 <td className="p-2">
-                  {a.axes && a.axes.length > 0
-                    ? a.axes.join(", ")
+                  {Array.isArray(a.AXES) && a.AXES.length > 0
+                    ? a.AXES.join(", ")
                     : "—"}
                 </td>
 
-                {/* SOCIETES */}
+                {/* COMPANIES */}
                 <td className="p-2">
-                  {a.companies && a.companies.length > 0
-                    ? a.companies
+                  {Array.isArray(a.COMPANIES) && a.COMPANIES.length > 0
+                    ? a.COMPANIES.join(", ")
                     : "—"}
                 </td>
 
                 {/* DATE */}
-                <td className="p-2 text-gray-600">
-                  {a.DATE_PUBLICATION
-                    ? new Date(a.DATE_PUBLICATION).toLocaleDateString("fr-FR")
-                    : "—"}
+                <td className="p-2">
+                  {a.CREATED_AT
+                    ? new Date(a.CREATED_AT).toLocaleDateString("fr-FR")
+                    : ""}
+                </td>
+
+                {/* STATUS */}
+                <td className="p-2">
+                  {a.IS_ARCHIVED ? (
+                    <span className="text-red-600">Archivé</span>
+                  ) : a.IS_FEATURED ? (
+                    <span className="text-green-600 font-semibold">En une</span>
+                  ) : (
+                    <span className="text-gray-600">Actif</span>
+                  )}
                 </td>
 
                 {/* ACTIONS */}
                 <td className="p-2 text-right">
                   <Link
                     href={`/admin/articles/edit/${a.ID_ARTICLE}`}
-                    className="text-ratecard-blue hover:underline mr-4"
+                    className="text-ratecard-blue hover:underline"
                   >
                     Modifier
                   </Link>
-
-                  <Link
-                    href={`/admin/articles/preview/${a.ID_ARTICLE}`}
-                    className="text-gray-600 hover:underline"
-                  >
-                    Aperçu
-                  </Link>
                 </td>
-
               </tr>
             ))}
           </tbody>
