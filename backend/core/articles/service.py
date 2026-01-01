@@ -1,251 +1,279 @@
 import uuid
 from datetime import datetime
+from typing import Optional, List
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client
-from api.articles.models import ArticleCreate
+from api.articles.models import ArticleCreate, ArticleUpdate
 
 from google.cloud import bigquery
 
 
-# ------------------------------------------------
-# TABLE NAMES
-# ------------------------------------------------
+# =====================================================================
+# TABLES
+# =====================================================================
 TABLE_ARTICLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE"
-TABLE_AXE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE_AXE"
 TABLE_ARTICLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE_COMPANY"
 TABLE_ARTICLE_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE_PERSON"
-TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
+TABLE_ARTICLE_AXE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE_AXE"
 
 
-# ============================================================
-# CREATE ARTICLE
-# ============================================================
-def create_article(data: ArticleCreate) -> str:
-    article_id = str(uuid.uuid4())
-    now = datetime.utcnow()
+# =====================================================================
+# HELPERS
+# =====================================================================
 
-    # VISUEL LOGIC (fallback to company logo)
-    visuel_final = data.visuel_url
-    visuel_square_final = data.visuel_square_url
+def _insert_join(table: str, id_article: str, ids: List[str], col: str):
+    """
+    Inserts relations N:N into join tables.
+    """
+    if not ids:
+        return
 
-    if not visuel_final and data.companies:
-        rows = query_bq(
-            f"SELECT LOGO_URL FROM `{TABLE_COMPANY}` WHERE ID_COMPANY = @id LIMIT 1",
-            {"id": data.companies[0]},
+    rows = [
+        {
+            "ID_ARTICLE": id_article,
+            col: _id,
+            "CREATED_AT": datetime.utcnow().isoformat(),
+        }
+        for _id in ids
+    ]
+
+    errors = insert_bq(table, rows)
+    if errors:
+        raise RuntimeError(f"Insertion join failed: {errors}")
+
+
+def _delete_join(table: str, id_article: str):
+    """
+    Deletes previous relations for an article.
+    """
+    client = get_bigquery_client()
+
+    sql = f"DELETE FROM `{table}` WHERE ID_ARTICLE = @id"
+
+    client.query(
+        sql,
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("id", "STRING", id_article)
+            ]
         )
-        if rows and rows[0].get("LOGO_URL"):
-            visuel_final = rows[0]["LOGO_URL"]
+    ).result()
 
-    insert_bq(TABLE_ARTICLE, [{
-        "ID_ARTICLE": article_id,
-        "TITRE": data.titre,
-        "EXCERPT": data.excerpt,
-        "CONTENU_HTML": data.contenu_html,
-        "VISUEL_URL": visuel_final,
-        "VISUEL_SQUARE_URL": visuel_square_final,
-        "AUTEUR": data.auteur,
-        "DATE_PUBLICATION": now,
+
+# =====================================================================
+# CREATE ARTICLE
+# =====================================================================
+
+def create_article(payload: ArticleCreate) -> str:
+    """
+    Creates article + relations + visual IDs.
+    """
+    id_article = str(uuid.uuid4())
+    now = datetime.utcnow().isoformat()
+
+    row = [{
+        "ID_ARTICLE": id_article,
+        "TITLE": payload.title,
+        "EXCERPT": payload.excerpt,
+        "CONTENT_HTML": payload.content_html,
+
+        # VISUELS → IDs GCS
+        "MEDIA_RECTANGLE_ID": payload.media_rectangle_id,
+        "MEDIA_SQUARE_ID": payload.media_square_id,
+
+        "AUTHOR": payload.author,
+
         "CREATED_AT": now,
         "UPDATED_AT": now,
-        "IS_FEATURED": data.is_featured,
-        "FEATURED_ORDER": data.featured_order,
-        "IS_ARCHIVED": False,
-    }])
+        "IS_ACTIVE": True,
+    }]
 
-    # Save axes
-    if data.axes:
-        insert_bq(TABLE_AXE, [
-            {"ID_ARTICLE": article_id, "AXE_TYPE": a.type, "AXE_VALUE": a.value}
-            for a in data.axes
-        ])
+    errors = insert_bq(TABLE_ARTICLE, row)
+    if errors:
+        raise RuntimeError(errors)
 
-    # Save companies
-    if data.companies:
-        insert_bq(TABLE_ARTICLE_COMPANY, [
-            {"ID_ARTICLE": article_id, "ID_COMPANY": cid}
-            for cid in data.companies
-        ])
+    # relations
+    _insert_join(TABLE_ARTICLE_COMPANY, id_article, payload.companies, "ID_COMPANY")
+    _insert_join(TABLE_ARTICLE_PERSON, id_article, [p.id_person for p in payload.persons], "ID_PERSON")
+    _insert_join(TABLE_ARTICLE_AXE, id_article, payload.axes, "ID_AXE")
 
-    # Save persons
-    if data.persons:
-        insert_bq(TABLE_ARTICLE_PERSON, [
-            {"ID_ARTICLE": article_id, "ID_PERSON": p.id_person, "ROLE": p.role}
-            for p in data.persons
-        ])
-
-    return article_id
+    return id_article
 
 
-# ============================================================
-# GET ONE ARTICLE
-# ============================================================
+# =====================================================================
+# GET ARTICLE FULL
+# =====================================================================
+
 def get_article(id_article: str):
+    """
+    Returns a fully enriched article: article + companies + persons + axes.
+    """
     rows = query_bq(
-        f"SELECT * FROM `{TABLE_ARTICLE}` WHERE ID_ARTICLE = @id LIMIT 1",
+        f"SELECT * FROM `{TABLE_ARTICLE}` WHERE ID_ARTICLE = @id",
         {"id": id_article}
     )
     if not rows:
         return None
 
-    article = rows[0]
+    a = rows[0]
 
-    # AXES
-    article["axes"] = query_bq(
-        f"SELECT AXE_TYPE, AXE_VALUE FROM `{TABLE_AXE}` WHERE ID_ARTICLE = @id",
-        {"id": id_article}
-    )
-
-    # COMPANIES
-    comps = query_bq(
+    companies = query_bq(
         f"SELECT ID_COMPANY FROM `{TABLE_ARTICLE_COMPANY}` WHERE ID_ARTICLE = @id",
         {"id": id_article}
     )
-    article["companies"] = [c["ID_COMPANY"] for c in comps]
-
-    # PERSONS
-    article["persons"] = query_bq(
-        f"SELECT ID_PERSON, ROLE FROM `{TABLE_ARTICLE_PERSON}` WHERE ID_ARTICLE = @id",
+    persons = query_bq(
+        f"SELECT ID_PERSON FROM `{TABLE_ARTICLE_PERSON}` WHERE ID_ARTICLE = @id",
+        {"id": id_article}
+    )
+    axes = query_bq(
+        f"SELECT ID_AXE FROM `{TABLE_ARTICLE_AXE}` WHERE ID_ARTICLE = @id",
         {"id": id_article}
     )
 
-    return article
+    a["companies"] = [c["ID_COMPANY"] for c in companies]
+    a["persons"] = [p["ID_PERSON"] for p in persons]
+    a["axes"] = [x["ID_AXE"] for x in axes]
+
+    return a
 
 
-# ============================================================
-# LIST ARTICLES
-# ============================================================
+# =====================================================================
+# LIST ARTICLES (SUMMARY)
+# =====================================================================
+
 def list_articles():
+    """
+    Returns all articles with basic metadata + joined axes & company names.
+    """
     sql = f"""
     WITH AXES AS (
         SELECT
             ID_ARTICLE,
-            ARRAY_AGG(AXE_VALUE ORDER BY AXE_VALUE) AS AXES
-        FROM `{TABLE_AXE}`
+            ARRAY_AGG(ID_AXE ORDER BY ID_AXE) AS AXES
+        FROM `{TABLE_ARTICLE_AXE}`
         GROUP BY ID_ARTICLE
     ),
-    COMPANY AS (
+    COMPANIES AS (
         SELECT
             AC.ID_ARTICLE,
-            C.NAME AS COMPANY_NAME
+            ARRAY_AGG(C.NAME ORDER BY C.NAME) AS COMPANIES
         FROM `{TABLE_ARTICLE_COMPANY}` AC
-        LEFT JOIN `{TABLE_COMPANY}` C
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` C
             ON AC.ID_COMPANY = C.ID_COMPANY
+        GROUP BY AC.ID_ARTICLE
     )
 
     SELECT
-        A.ID_ARTICLE,
-        A.TITRE,
-        A.DATE_PUBLICATION,
-        A.VISUEL_URL,
-        A.VISUEL_SQUARE_URL,
-        A.IS_FEATURED,
-        A.FEATURED_ORDER,
-        A.IS_ARCHIVED,
-        IFNULL(CO.COMPANY_NAME, "") AS COMPANY_NAME,
-        IFNULL(AX.AXES, ARRAY<STRING>[] ) AS AXES
-
+        A.*,
+        IFNULL(AX.AXES, []) AS AXES,
+        IFNULL(CO.COMPANIES, []) AS COMPANIES
     FROM `{TABLE_ARTICLE}` A
-    LEFT JOIN COMPANY CO ON A.ID_ARTICLE = CO.ID_ARTICLE
     LEFT JOIN AXES AX ON A.ID_ARTICLE = AX.ID_ARTICLE
-
-    ORDER BY 
-        A.IS_FEATURED DESC,
-        A.FEATURED_ORDER ASC,
-        A.DATE_PUBLICATION DESC
+    LEFT JOIN COMPANIES CO ON A.ID_ARTICLE = CO.ID_ARTICLE
+    WHERE A.IS_ACTIVE = TRUE
+    ORDER BY A.CREATED_AT DESC
     """
+
     return query_bq(sql)
 
 
-
-# ============================================================
+# =====================================================================
 # UPDATE ARTICLE
-# ============================================================
-def update_article(id_article: str, data: ArticleCreate):
-    now = datetime.utcnow()
+# =====================================================================
 
+def update_article(id_article: str, payload: ArticleUpdate):
+    """
+    Updates article + resets and reinserts relations.
+    """
     client = get_bigquery_client()
+    now = datetime.utcnow().isoformat()
 
-    row = [{
-        "ID_ARTICLE": id_article,
-        "TITRE": data.titre,
-        "EXCERPT": data.excerpt,
-        "CONTENU_HTML": data.contenu_html,
-        "VISUEL_URL": data.visuel_url,
-        "VISUEL_SQUARE_URL": data.visuel_square_url,
-        "AUTEUR": data.auteur,
-        "UPDATED_AT": now,
-        "IS_FEATURED": data.is_featured,
-        "FEATURED_ORDER": data.featured_order,
-    }]
+    fields = []
+    params = {"id": id_article, "now": now}
 
-    errors = client.insert_rows_json(TABLE_ARTICLE, row)
-    if errors:
-        raise RuntimeError(errors)
+    if payload.title is not None:
+        fields.append("TITLE = @title")
+        params["title"] = payload.title
 
-    # CLEAN relationships
+    if payload.excerpt is not None:
+        fields.append("EXCERPT = @excerpt")
+        params["excerpt"] = payload.excerpt
+
+    if payload.content_html is not None:
+        fields.append("CONTENT_HTML = @html")
+        params["html"] = payload.content_html
+
+    if payload.media_rectangle_id is not None:
+        fields.append("MEDIA_RECTANGLE_ID = @rect")
+        params["rect"] = payload.media_rectangle_id
+
+    if payload.media_square_id is not None:
+        fields.append("MEDIA_SQUARE_ID = @square")
+        params["square"] = payload.media_square_id
+
+    if payload.author is not None:
+        fields.append("AUTHOR = @author")
+        params["author"] = payload.author
+
+    fields.append("UPDATED_AT = @now")
+
+    sql = f"""
+        UPDATE `{TABLE_ARTICLE}`
+        SET {", ".join(fields)}
+        WHERE ID_ARTICLE = @id
+    """
+
     client.query(
-        f"DELETE FROM `{TABLE_AXE}` WHERE ID_ARTICLE = @id",
+        sql,
         job_config=bigquery.QueryJobConfig(
-            query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_article)]
+            query_parameters=[
+                bigquery.ScalarQueryParameter(name, "STRING", value)
+                for name, value in params.items()
+            ]
         )
     ).result()
 
-    client.query(
-        f"DELETE FROM `{TABLE_ARTICLE_COMPANY}` WHERE ID_ARTICLE = @id",
-        job_config=bigquery.QueryJobConfig(
-            query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_article)]
-        )
-    ).result()
+    # relations update
+    if payload.companies is not None:
+        _delete_join(TABLE_ARTICLE_COMPANY, id_article)
+        _insert_join(TABLE_ARTICLE_COMPANY, id_article, payload.companies, "ID_COMPANY")
 
-    client.query(
-        f"DELETE FROM `{TABLE_ARTICLE_PERSON}` WHERE ID_ARTICLE = @id",
-        job_config=bigquery.QueryJobConfig(
-            query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_article)]
-        )
-    ).result()
+    if payload.persons is not None:
+        _delete_join(TABLE_ARTICLE_PERSON, id_article)
+        _insert_join(TABLE_ARTICLE_PERSON, id_article, [p.id_person for p in payload.persons], "ID_PERSON")
 
-    # RE-INSERT relationships
-    if data.axes:
-        insert_bq(TABLE_AXE, [
-            {"ID_ARTICLE": id_article, "AXE_TYPE": a.type, "AXE_VALUE": a.value}
-            for a in data.axes
-        ])
-
-    if data.companies:
-        insert_bq(TABLE_ARTICLE_COMPANY, [
-            {"ID_ARTICLE": id_article, "ID_COMPANY": cid}
-            for cid in data.companies
-        ])
-
-    if data.persons:
-        insert_bq(TABLE_ARTICLE_PERSON, [
-            {"ID_ARTICLE": id_article, "ID_PERSON": p.id_person, "ROLE": p.role}
-            for p in data.persons
-        ])
+    if payload.axes is not None:
+        _delete_join(TABLE_ARTICLE_AXE, id_article)
+        _insert_join(TABLE_ARTICLE_AXE, id_article, payload.axes, "ID_AXE")
 
     return True
 
 
-# ============================================================
-# DELETE + ARCHIVE
-# ============================================================
+# =====================================================================
+# DELETE / ARCHIVE
+# =====================================================================
+
 def delete_article(id_article: str):
+    """
+    Hard delete.
+    """
     query_bq(
         f"DELETE FROM `{TABLE_ARTICLE}` WHERE ID_ARTICLE = @id",
-        {"id": id_article},
+        {"id": id_article}
     )
     return True
 
 
 def archive_article(id_article: str):
-    now = datetime.utcnow()
+    """
+    Soft delete.
+    """
+    now = datetime.utcnow().isoformat()
     row = [{
         "ID_ARTICLE": id_article,
-        "IS_ARCHIVED": True,
+        "IS_ACTIVE": False,
         "UPDATED_AT": now,
     }]
-    errors = insert_bq(TABLE_ARTICLE, row)
-    if errors:
-        raise RuntimeError(errors)
+    insert_bq(TABLE_ARTICLE, row)
     return True
