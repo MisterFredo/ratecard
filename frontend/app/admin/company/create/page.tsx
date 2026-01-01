@@ -3,74 +3,53 @@
 import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import MediaPicker from "@/components/admin/MediaPicker";
 
-export default function CreateCompany() {
+import CompanyVisualSection from "../edit/[id]/VisualSection"; 
+// 🔥 Le même composant que pour Edit
+
+export default function CreateCompanyPage() {
+  // Données de la société
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
 
-  // IDs BigQuery des médias sélectionnés
-  const [logoRectId, setLogoRectId] = useState<string | null>(null);
-  const [logoSquareId, setLogoSquareId] = useState<string | null>(null);
+  // URLs visuels (gérés par CompanyVisualSection)
+  const [squareUrl, setSquareUrl] = useState<string | null>(null);
+  const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  // URLs publiques GCS pour prévisualisation
-  const [logoRectUrl, setLogoRectUrl] = useState<string | null>(null);
-  const [logoSquareUrl, setLogoSquareUrl] = useState<string | null>(null);
-
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
-     SAVE COMPANY
+     SAVE
   --------------------------------------------------------- */
   async function save() {
-    if (!name.trim()) return alert("Merci de renseigner un nom de société");
+    if (!name.trim()) return alert("Merci de renseigner un nom");
 
     setSaving(true);
 
-    // 1️⃣ Création de la société
     const payload = {
       name,
       description: description || null,
       linkedin_url: linkedinUrl || null,
       website_url: websiteUrl || null,
-      media_logo_rectangle_id: logoRectId,
-      media_logo_square_id: logoSquareId,
+
+      // Nouveau modèle :
+      media_logo_square_url: squareUrl,
+      media_logo_rectangle_url: rectUrl,
     };
 
     const res = await api.post("/company/create", payload);
 
     if (!res || !res.id_company) {
-      alert("❌ Erreur lors de la création de la société.");
+      alert("❌ Erreur lors de la création.");
       setSaving(false);
       return;
     }
 
-    const id_company = res.id_company;
-
-    // 2️⃣ Assignation DAM → company
-    async function assign(mediaId: string | null) {
-      if (!mediaId) return;
-
-      const r = await api.post("/media/assign", {
-        media_id: mediaId,
-        entity_type: "company",
-        entity_id: id_company,
-      });
-
-      if (r.status !== "ok") {
-        console.error("Assign error:", r);
-        alert("❌ Impossible d'associer le média (attendre 90 sec si nouvel upload).");
-      }
-    }
-
-    await assign(logoRectId);
-    await assign(logoSquareId);
-
-    setResult(res);
+    setCreatedId(res.id_company);
+    alert("Société créée !");
     setSaving(false);
   }
 
@@ -78,19 +57,19 @@ export default function CreateCompany() {
      UI
   --------------------------------------------------------- */
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
 
       {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-ratecard-blue">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
           Ajouter une société
         </h1>
-        <Link href="/admin/company" className="underline text-gray-600">
+        <Link href="/admin/company" className="text-gray-600 underline">
           ← Retour
         </Link>
       </div>
 
-      {/* NAME */}
+      {/* NOM */}
       <input
         placeholder="Nom de la société"
         value={name}
@@ -103,68 +82,21 @@ export default function CreateCompany() {
         placeholder="Description (optionnel)"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        className="border p-2 w-full rounded h-28"
+        className="border p-2 w-full h-24 rounded"
       />
 
-      {/* LOGOS */}
-      <div className="space-y-3">
-        <label className="font-semibold">Logos (rectangle & carré)</label>
-
-        <button
-          onClick={() => setPickerOpen(true)}
-          className="bg-ratecard-green text-white px-4 py-2 rounded"
-        >
-          Choisir un logo
-        </button>
-
-        {/* PREVIEW SQUARE */}
-        {logoSquareUrl && (
-          <div>
-            <p className="text-sm text-gray-500">Carré :</p>
-            <img
-              src={logoSquareUrl}
-              className="w-24 h-24 object-cover border rounded mt-1"
-            />
-          </div>
-        )}
-
-        {/* PREVIEW RECT */}
-        {logoRectUrl && (
-          <div>
-            <p className="text-sm text-gray-500">Rectangle :</p>
-            <img
-              src={logoRectUrl}
-              className="w-48 h-auto border rounded mt-1"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* MEDIA PICKER */}
-      <MediaPicker
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        folders={["logos", "logos-cropped"]} // 🔒 gouvernance logos
-        onSelect={(item) => {
-          if (!item.media_id) {
-            alert("❌ Ce média n'a pas d'identifiant DAM.");
-            return;
-          }
-
-          // IMPORTANT : utiliser item.url (déjà GCS)
-          if (item.format === "square") {
-            setLogoSquareId(item.media_id);
-            setLogoSquareUrl(item.url);
-          }
-
-          if (item.format === "rectangle") {
-            setLogoRectId(item.media_id);
-            setLogoRectUrl(item.url);
-          }
-        }}
+      {/* VISUELS : carré + rectangle générés automatiquement */}
+      <CompanyVisualSection
+        id_company={createdId ?? "__new__"} 
+        // pour create: ID temporaire, backend renommera ensuite
+        squareUrl={squareUrl}
+        rectUrl={rectUrl}
+        onSquareChange={setSquareUrl}
+        onRectChange={setRectUrl}
+        isNew={true}
       />
 
-      {/* SOCIAL */}
+      {/* LINKEDIN */}
       <input
         placeholder="URL LinkedIn"
         value={linkedinUrl}
@@ -172,6 +104,7 @@ export default function CreateCompany() {
         className="border p-2 w-full rounded"
       />
 
+      {/* WEBSITE */}
       <input
         placeholder="Site web (optionnel)"
         value={websiteUrl}
@@ -179,7 +112,7 @@ export default function CreateCompany() {
         className="border p-2 w-full rounded"
       />
 
-      {/* SUBMIT */}
+      {/* SAVE */}
       <button
         onClick={save}
         disabled={saving}
@@ -188,12 +121,6 @@ export default function CreateCompany() {
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
-      {result && (
-        <pre className="bg-gray-100 p-4 rounded mt-4 whitespace-pre-wrap">
-          {JSON.stringify(result, null, 2)}
-        </pre>
-      )}
     </div>
   );
 }
-
