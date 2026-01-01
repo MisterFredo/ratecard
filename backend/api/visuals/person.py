@@ -1,76 +1,78 @@
+# backend/api/visuals/person.py
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from datetime import datetime
 import base64
+import requests
 
 from google.cloud import bigquery
 from utils.bigquery_utils import get_bigquery_client
-from utils.gcs_service import upload_image_buffer
+from utils.gcs import upload_bytes, delete_file
 
 router = APIRouter()
 
 BQ_TABLE_PERSON = "adex-5555.RATECARD.RATECARD_PERSON"
 
 
-# -------------------------------------------------------------------
-# Payload upload manuel
-# -------------------------------------------------------------------
+# ============================================================
+# MODELS
+# ============================================================
+
 class PersonVisualUpload(BaseModel):
+    """
+    Upload d’un portrait de personne.
+    Le frontend génère déjà le carré / rectangle.
+    """
     id_person: str
-    base64_image: str     # image brute envoyée par le front
-    want_rectangle: bool = True  # optionnel : rectangulaire ou non
+    filename: str          # doit contenir "square" ou "rect"
+    base64_image: str      # image transformée côté front
 
 
-# -------------------------------------------------------------------
-# Upload photo (manuel)
-# -------------------------------------------------------------------
+class PersonApplyExisting(BaseModel):
+    id_person: str
+    square_url: str | None = None
+    rectangle_url: str | None = None
+
+
+class PersonVisualReset(BaseModel):
+    id_person: str
+
+
+# ============================================================
+# UPLOAD (square OU rectangle)
+# ============================================================
 @router.post("/upload")
 async def upload_person_visual(payload: PersonVisualUpload):
     """
-    Upload manuel d’un portrait :
-    - obligatoire carré (600×600)
-    - optionnel rectangle (1200×900)
-    - stockage GCS
-    - mise à jour BigQuery
+    Upload d’un portrait (square OU rectangle).
+    Pas de sharp backend : image déjà transformée côté front.
     """
-
     try:
         id_person = payload.id_person
+        filename = payload.filename.strip()
 
-        # Décodage base64
+        # Validation format
+        if "square" not in filename.lower() and "rect" not in filename.lower():
+            raise HTTPException(400, "Le filename doit contenir 'square' ou 'rect'")
+
+        # Base64 → bytes
         try:
-            raw_bytes = base64.b64decode(payload.base64_image)
+            img_bytes = base64.b64decode(payload.base64_image)
         except Exception:
             raise HTTPException(400, "Base64 invalide")
 
-        # On utilise sharp (ou équivalent backend) pour transformer
-        import sharp
+        # Upload dans GCS
+        url = upload_bytes("persons", filename, img_bytes)
 
-        # Carré obligatoire
-        square_bytes = sharp(raw_bytes).resize(600, 600).jpeg().to_buffer()
-
-        # Option rectangle
-        rect_bytes = None
-        if payload.want_rectangle:
-            rect_bytes = sharp(raw_bytes).resize(1200, 900).jpeg().to_buffer()
-
-        # Filenames normalisés
-        square_name = f"PERSON_{id_person}_square.jpg"
-        rect_name = f"PERSON_{id_person}_rect.jpg" if rect_bytes else None
-
-        # Upload GCS
-        square_url = upload_image_buffer("persons", square_name, square_bytes)
-        rect_url = None
-        if rect_bytes:
-            rect_url = upload_image_buffer("persons", rect_name, rect_bytes)
+        # Choix colonne BQ
+        column = "MEDIA_PICTURE_SQUARE_ID" if "square" in filename.lower() else "MEDIA_PICTURE_RECTANGLE_ID"
 
         # Update BQ
         client = get_bigquery_client()
-
         sql = f"""
             UPDATE `{BQ_TABLE_PERSON}`
-            SET MEDIA_PICTURE_SQUARE_ID = @square,
-                MEDIA_PICTURE_RECTANGLE_ID = @rect,
+            SET {column} = @fname,
                 UPDATED_AT = @now
             WHERE ID_PERSON = @id
         """
@@ -79,71 +81,120 @@ async def upload_person_visual(payload: PersonVisualUpload):
             sql,
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter("square", "STRING", square_name),
-                    bigquery.ScalarQueryParameter("rect", "STRING", rect_name),
+                    bigquery.ScalarQueryParameter("fname", "STRING", filename),
                     bigquery.ScalarQueryParameter("now", "TIMESTAMP", datetime.utcnow()),
                     bigquery.ScalarQueryParameter("id", "STRING", id_person),
                 ]
-            ),
+            )
         ).result()
 
-        return {
-            "status": "ok",
-            "urls": {
-                "square": square_url,
-                "rectangle": rect_url,
-            }
-        }
+        return {"status": "ok", "url": url}
 
     except Exception as e:
         raise HTTPException(400, f"Erreur upload portrait personne : {e}")
 
 
-# -------------------------------------------------------------------
-# Application d’un visuel externe (ex : copie société ou axe)
-# -------------------------------------------------------------------
-class PersonApplyExisting(BaseModel):
-    id_person: str
-    square_url: str       # obligatoire
-    rectangle_url: str | None = None
-
-
+# ============================================================
+# APPLY EXISTING (clone d'un autre média)
+# ============================================================
 @router.post("/apply-existing")
 async def apply_existing_person(payload: PersonApplyExisting):
     """
-    Applique un visuel déjà existant (copie depuis URL).
-    Les fichiers sont ré-uploadés pour être dédiés à la personne.
+    Copie un portrait existant (square et/ou rectangle) et le réimporte
+    pour l'associer à cette personne.
     """
-
     try:
-        import requests
-
         id_person = payload.id_person
-
-        # Télécharger square obligatoire
-        square_bytes = requests.get(payload.square_url).content
-
-        rect_bytes = None
-        if payload.rectangle_url:
-            rect_bytes = requests.get(payload.rectangle_url).content
-
-        # Filenames dédiés
-        square_name = f"PERSON_{id_person}_square.jpg"
-        rect_name = f"PERSON_{id_person}_rect.jpg" if rect_bytes else None
-
-        # Upload GCS
-        square_url = upload_image_buffer("persons", square_name, square_bytes)
-
-        rect_url = None
-        if rect_bytes:
-            rect_url = upload_image_buffer("persons", rect_name, rect_bytes)
-
-        # Update BQ
         client = get_bigquery_client()
+        results = {}
+
+        items = []
+
+        if payload.square_url:
+            items.append(("square", payload.square_url))
+        if payload.rectangle_url:
+            items.append(("rect", payload.rectangle_url))
+
+        for fmt, src_url in items:
+            try:
+                img_bytes = requests.get(src_url).content
+            except Exception:
+                raise HTTPException(400, f"Impossible de télécharger {src_url}")
+
+            filename = f"PERSON_{id_person}_{fmt}.jpg"
+            url = upload_bytes("persons", filename, img_bytes)
+
+            column = "MEDIA_PICTURE_SQUARE_ID" if fmt == "square" else "MEDIA_PICTURE_RECTANGLE_ID"
+
+            sql = f"""
+                UPDATE `{BQ_TABLE_PERSON}`
+                SET {column} = @fname,
+                    UPDATED_AT = @now
+                WHERE ID_PERSON = @id
+            """
+
+            client.query(
+                sql,
+                job_config=bigquery.QueryJobConfig(
+                    query_parameters=[
+                        bigquery.ScalarQueryParameter("fname", "STRING", filename),
+                        bigquery.ScalarQueryParameter("now", "TIMESTAMP", datetime.utcnow()),
+                        bigquery.ScalarQueryParameter("id", "STRING", id_person),
+                    ]
+                )
+            ).result()
+
+            results[fmt] = url
+
+        return {"status": "ok", "urls": results}
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur apply-existing personne : {e}")
+
+
+# ============================================================
+# RESET (supprime BQ + fichiers GCS)
+# ============================================================
+@router.post("/reset")
+async def reset_person_visual(payload: PersonVisualReset):
+    """
+    Supprime les visuels associés à une personne :
+    - supprime fichiers GCS
+    - met à NULL dans BigQuery
+    """
+    try:
+        id_person = payload.id_person
+        client = get_bigquery_client()
+
+        # Lire valeurs actuelles
+        query = client.query(
+            f"""
+            SELECT MEDIA_PICTURE_SQUARE_ID, MEDIA_PICTURE_RECTANGLE_ID
+            FROM `{BQ_TABLE_PERSON}`
+            WHERE ID_PERSON = @id
+            """,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("id", "STRING", id_person)
+                ]
+            )
+        )
+
+        rows = list(query.result())
+        old_square = rows[0]["MEDIA_PICTURE_SQUARE_ID"] if rows else None
+        old_rect = rows[0]["MEDIA_PICTURE_RECTANGLE_ID"] if rows else None
+
+        # Suppression GCS
+        if old_square:
+            delete_file("persons", old_square)
+        if old_rect:
+            delete_file("persons", old_rect)
+
+        # Reset BQ
         sql = f"""
             UPDATE `{BQ_TABLE_PERSON}`
-            SET MEDIA_PICTURE_SQUARE_ID = @square,
-                MEDIA_PICTURE_RECTANGLE_ID = @rect,
+            SET MEDIA_PICTURE_SQUARE_ID = NULL,
+                MEDIA_PICTURE_RECTANGLE_ID = NULL,
                 UPDATED_AT = @now
             WHERE ID_PERSON = @id
         """
@@ -152,21 +203,14 @@ async def apply_existing_person(payload: PersonApplyExisting):
             sql,
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter("square", "STRING", square_name),
-                    bigquery.ScalarQueryParameter("rect", "STRING", rect_name),
                     bigquery.ScalarQueryParameter("now", "TIMESTAMP", datetime.utcnow()),
                     bigquery.ScalarQueryParameter("id", "STRING", id_person),
                 ]
-            ),
+            )
         ).result()
 
-        return {
-            "status": "ok",
-            "urls": {
-                "square": square_url,
-                "rectangle": rect_url,
-            }
-        }
+        return {"status": "ok", "reset": True}
 
     except Exception as e:
-        raise HTTPException(400, f"Erreur apply-existing (person) : {e}")
+        raise HTTPException(400, f"Erreur reset portrait personne : {e}")
+
