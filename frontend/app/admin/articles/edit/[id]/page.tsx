@@ -186,21 +186,9 @@ export default function EditArticlePage({ params }) {
       <HtmlEditor value={contentHtml} onChange={setContentHtml} />
 
       {/* ENTITÉS */}
-      <CompanySelector 
-        value={companies}
-        onChange={setCompanies}
-        multi
-      />
-
-      <PersonSelector
-        values={persons}
-        onChange={setPersons}
-      />
-
-      <AxesEditor
-        values={axes}
-        onChange={setAxes}
-      />
+      <CompanySelector values={companies} onChange={setCompanies} multi />
+      <PersonSelector values={persons} onChange={setPersons} multi />
+      <AxesEditor values={axes} onChange={setAxes} multi />
 
       {/* VISUEL ARTICLE */}
       <ArticleVisualSection
