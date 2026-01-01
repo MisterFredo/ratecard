@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from datetime import datetime
-from uuid import uuid4
 import base64
-import sharp  # ⚠️ sera remplacé par notre service interne dans utils (voir étape 5)
-from utils.gcs_service import upload_image_buffer
+
+from google.cloud import bigquery
 from utils.bigquery_utils import get_bigquery_client
+from utils.gcs_service import upload_image_buffer
 
 router = APIRouter()
 
@@ -13,93 +13,186 @@ BQ_TABLE_AXE = "adex-5555.RATECARD.RATECARD_AXE"
 
 
 # -------------------------------------------------------------------
-# Payload reçu depuis le front
+# Payload upload manuel
 # -------------------------------------------------------------------
 class AxeVisualUpload(BaseModel):
     id_axe: str
-    title: str
-    base64_image: str  # image d'origine envoyée par le front en base64
+    base64_image: str   # image brute
+    generate_rectangle: bool = True  # par défaut on génère rect + carré
 
 
 # -------------------------------------------------------------------
-# MAIN ENDPOINT
+# Upload visuel axe (manuel)
 # -------------------------------------------------------------------
 @router.post("/upload")
 async def upload_axe_visual(payload: AxeVisualUpload):
     """
-    Upload d’un visuel pour un axe.
-    - Génère rectangle + square
-    - Upload dans GCS
-    - Met à jour directement RATECARD_AXE (pas d’assign)
+    Upload d’un visuel pour un axe éditorial.
+    - carré (600×600)
+    - rectangle (1200×900)
+    Les deux sont toujours générés.
     """
 
     try:
         id_axe = payload.id_axe
-        title = payload.title.strip()
 
-        if not title:
-            raise HTTPException(400, "Titre manquant")
-
-        # Décodage base64 → buffer
         try:
-            img_bytes = base64.b64decode(payload.base64_image)
+            raw_bytes = base64.b64decode(payload.base64_image)
         except Exception:
             raise HTTPException(400, "Base64 invalide")
 
-        # Normalisation nom
-        safe_title = title.replace(" ", "_").replace("/", "_")
-        filename_base = f"AXE_{safe_title}"
+        # Transformation via sharp-like
+        import sharp
 
-        # -------------------------------------------------------------------
-        # Génération formats
-        # -------------------------------------------------------------------
-        # NOTE : Dans la version finale, nous utiliserons sharp côté Next.js,
-        # ici on garde le principe. Le module sera factorisé dans utils.
-        rectangle = sharp(img_bytes).resize(1200, 900).jpeg().to_buffer()
-        square = sharp(img_bytes).resize(600, 600).jpeg().to_buffer()
+        square_bytes = sharp(raw_bytes).resize(600, 600).jpeg().to_buffer()
 
-        # -------------------------------------------------------------------
-        # Upload GCS
-        # -------------------------------------------------------------------
-        rect_name = f"{filename_base}_rect.jpg"
-        square_name = f"{filename_base}_square.jpg"
+        rect_bytes = sharp(raw_bytes).resize(1200, 900).jpeg().to_buffer()
 
-        rect_url = upload_image_buffer("axes", rect_name, rectangle)
-        square_url = upload_image_buffer("axes", square_name, square)
+        square_name = f"AXE_{id_axe}_square.jpg"
+        rect_name = f"AXE_{id_axe}_rect.jpg"
 
-        # -------------------------------------------------------------------
-        # Enregistrement dans BigQuery (mise à jour axe)
-        # -------------------------------------------------------------------
+        # Upload to GCS
+        square_url = upload_image_buffer("axes", square_name, square_bytes)
+        rect_url = upload_image_buffer("axes", rect_name, rect_bytes)
+
+        # Update BQ
         client = get_bigquery_client()
 
         sql = f"""
             UPDATE `{BQ_TABLE_AXE}`
-            SET MEDIA_RECTANGLE_ID = @rect,
-                MEDIA_SQUARE_ID = @square,
+            SET MEDIA_SQUARE_ID = @square,
+                MEDIA_RECTANGLE_ID = @rect,
                 UPDATED_AT = @now
             WHERE ID_AXE = @id
         """
 
-        job = client.query(
+        client.query(
             sql,
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter("rect", "STRING", rect_name),
                     bigquery.ScalarQueryParameter("square", "STRING", square_name),
+                    bigquery.ScalarQueryParameter("rect", "STRING", rect_name),
                     bigquery.ScalarQueryParameter("now", "TIMESTAMP", datetime.utcnow()),
                     bigquery.ScalarQueryParameter("id", "STRING", id_axe),
                 ]
             )
-        )
-        job.result()
+        ).result()
 
         return {
             "status": "ok",
             "urls": {
-                "rectangle": rect_url,
                 "square": square_url,
+                "rectangle": rect_url
             }
         }
 
     except Exception as e:
         raise HTTPException(400, f"Erreur upload visuel axe : {e}")
+
+
+# -------------------------------------------------------------------
+# Application d’un visuel existant (ex : société, article…)
+# -------------------------------------------------------------------
+class AxeApplyExisting(BaseModel):
+    id_axe: str
+    square_url: str
+    rectangle_url: str
+
+
+@router.post("/apply-existing")
+async def apply_existing_axe(payload: AxeApplyExisting):
+    """
+    Applique des visuels existants en les téléchargeant et en les
+    ré-uploade dans GCS sous la forme dédiée à l’axe.
+    """
+
+    try:
+        import requests
+
+        id_axe = payload.id_axe
+
+        # Télécharger depuis URLs existantes
+        square_bytes = requests.get(payload.square_url).content
+        rect_bytes = requests.get(payload.rectangle_url).content
+
+        # Filenames dédiés
+        square_name = f"AXE_{id_axe}_square.jpg"
+        rect_name = f"AXE_{id_axe}_rect.jpg"
+
+        square_url = upload_image_buffer("axes", square_name, square_bytes)
+        rect_url = upload_image_buffer("axes", rect_name, rect_bytes)
+
+        # Update BQ
+        client = get_bigquery_client()
+        sql = f"""
+            UPDATE `{BQ_TABLE_AXE}`
+            SET MEDIA_SQUARE_ID = @square,
+                MEDIA_RECTANGLE_ID = @rect,
+                UPDATED_AT = @now
+            WHERE ID_AXE = @id
+        """
+
+        client.query(
+            sql,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("square", "STRING", square_name),
+                    bigquery.ScalarQueryParameter("rect", "STRING", rect_name),
+                    bigquery.ScalarQueryParameter("now", "TIMESTAMP", datetime.utcnow()),
+                    bigquery.ScalarQueryParameter("id", "STRING", id_axe),
+                ]
+            )
+        ).result()
+
+        return {
+            "status": "ok",
+            "urls": {
+                "square": square_url,
+                "rectangle": rect_url,
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur apply-existing axe : {e}")
+
+
+# -------------------------------------------------------------------
+# Reset visuels axe
+# -------------------------------------------------------------------
+class AxeVisualReset(BaseModel):
+    id_axe: str
+
+
+@router.post("/reset")
+async def reset_axe_visual(payload: AxeVisualReset):
+    """
+    Supprime les références visuelles de l’axe sans supprimer les fichiers GCS.
+    """
+
+    try:
+        id_axe = payload.id_axe
+
+        client = get_bigquery_client()
+
+        sql = f"""
+            UPDATE `{BQ_TABLE_AXE}`
+            SET MEDIA_SQUARE_ID = NULL,
+                MEDIA_RECTANGLE_ID = NULL,
+                UPDATED_AT = @now
+            WHERE ID_AXE = @id
+        """
+
+        client.query(
+            sql,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("now", "TIMESTAMP", datetime.utcnow()),
+                    bigquery.ScalarQueryParameter("id", "STRING", id_axe),
+                ]
+            )
+        ).result()
+
+        return {"status": "ok", "reset": True}
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur reset axe : {e}"}
