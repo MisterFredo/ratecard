@@ -3,23 +3,39 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import Drawer from "@/components/ui/Drawer";
-import ArticlePreview from "@/components/articles/ArticlePreview";
 
-export default function ArticlesList() {
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
+/**
+ * Page d’administration — Liste des Articles
+ */
+export default function ArticleListPage() {
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [previewArticle, setPreviewArticle] = useState<any>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-
-  /* ---------------------------------------------
+  /* ---------------------------------------------------------
      LOAD ARTICLES
-  --------------------------------------------- */
+  --------------------------------------------------------- */
   async function load() {
     setLoading(true);
+
     const res = await api.get("/articles/list");
-    setArticles(res.articles || []);
+    const raw = res.articles || [];
+
+    // Reconstruction visuels GCS
+    const enriched = raw.map((a: any) => {
+      const rectUrl =
+        a.MEDIA_RECTANGLE_ID && a.VISUEL_RECTANGLE_PATH
+          ? `${GCS_BASE_URL}/${a.VISUEL_RECTANGLE_PATH}`
+          : a.VISUEL_URL || null;
+
+      return {
+        ...a,
+        rectUrl,
+      };
+    });
+
+    setArticles(enriched);
     setLoading(false);
   }
 
@@ -27,157 +43,113 @@ export default function ArticlesList() {
     load();
   }, []);
 
-  /* ---------------------------------------------
-     ACTIONS
-  --------------------------------------------- */
-  async function archive(id: string) {
-    if (!confirm("Archiver cet article ?")) return;
-    await api.put(`/articles/archive/${id}`, {});
-    load();
-  }
-
-  async function remove(id: string) {
-    if (!confirm("Supprimer définitivement cet article ?")) return;
-    await api.delete(`/articles/${id}`);
-    load();
-  }
-
-  async function preview(a: any) {
-    const res = await api.get(`/articles/${a.ID_ARTICLE}`);
-    setPreviewArticle(res.article);
-    setDrawerOpen(true);
-  }
-
-  /* ---------------------------------------------
-     RENDER
-  --------------------------------------------- */
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-semibold text-ratecard-blue">Articles</h1>
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
+          Articles
+        </h1>
 
-        <Link href="/admin/articles/create">
-          <button className="bg-ratecard-green text-white px-4 py-2 rounded shadow-md hover:bg-green-600 transition">
-            + Créer un article
-          </button>
+        <Link
+          href="/admin/articles/create"
+          className="bg-ratecard-green text-white px-4 py-2 rounded shadow hover:bg-green-600 transition"
+        >
+          + Ajouter un article
         </Link>
       </div>
 
-      {/* TABLE */}
-      {loading ? (
-        <div className="text-gray-500">Chargement…</div>
-      ) : articles.length === 0 ? (
-        <div className="text-gray-500 italic">
+      {/* LOADING */}
+      {loading && <p className="text-gray-500">Chargement…</p>}
+
+      {/* EMPTY */}
+      {!loading && articles.length === 0 && (
+        <p className="text-gray-500 italic">
           Aucun article pour le moment.
-        </div>
-      ) : (
+        </p>
+      )}
+
+      {/* TABLE */}
+      {!loading && articles.length > 0 && (
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="bg-gray-100 border-b text-left">
+            <tr className="bg-gray-100 border-b text-left text-gray-700">
+              <th className="p-2">Visuel</th>
               <th className="p-2">Titre</th>
-              <th className="p-2">Société</th>
-              <th className="p-2">Date</th>
               <th className="p-2">Axes</th>
-              <th className="p-2">Statut</th>
+              <th className="p-2">Sociétés</th>
+              <th className="p-2">Publication</th>
               <th className="p-2 text-right">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {articles.map((a) => (
-              <tr
-                key={a.ID_ARTICLE}
-                className="border-b hover:bg-gray-50 transition"
-              >
+              <tr key={a.ID_ARTICLE} className="border-b hover:bg-gray-50">
+
+                {/* VISUEL */}
+                <td className="p-2">
+                  {a.rectUrl ? (
+                    <img
+                      src={a.rectUrl}
+                      className="h-12 w-auto rounded border bg-white object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-400 italic">—</span>
+                  )}
+                </td>
+
                 {/* TITRE */}
                 <td className="p-2 font-medium">{a.TITRE}</td>
 
-                {/* SOCIÉTÉ */}
+                {/* AXES */}
                 <td className="p-2">
-                  {a.COMPANY_NAME || "—"}
+                  {a.axes && a.axes.length > 0
+                    ? a.axes.join(", ")
+                    : "—"}
+                </td>
+
+                {/* SOCIETES */}
+                <td className="p-2">
+                  {a.companies && a.companies.length > 0
+                    ? a.companies
+                    : "—"}
                 </td>
 
                 {/* DATE */}
-                <td className="p-2">
+                <td className="p-2 text-gray-600">
                   {a.DATE_PUBLICATION
                     ? new Date(a.DATE_PUBLICATION).toLocaleDateString("fr-FR")
                     : "—"}
                 </td>
 
-                {/* AXES */}
-                <td className="p-2 text-gray-600">
-                  {Array.isArray(a.AXES) && a.AXES.length > 0
-                    ? a.AXES.join(", ")
-                    : "—"}
-                </td>
-
-                {/* STATUT */}
-                <td className="p-2">
-                  {a.IS_ARCHIVED ? (
-                    <span className="text-xs bg-gray-300 text-gray-800 px-2 py-1 rounded">
-                      Archivé
-                    </span>
-                  ) : (
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                      Actif
-                    </span>
-                  )}
-                </td>
-
                 {/* ACTIONS */}
-                <td className="p-2 flex gap-3 justify-end">
-
-                  {/* APERÇU */}
-                  <button
-                    onClick={() => preview(a)}
-                    className="text-ratecard-blue hover:underline"
-                  >
-                    Aperçu
-                  </button>
-
-                  {/* EDIT */}
+                <td className="p-2 text-right">
                   <Link
                     href={`/admin/articles/edit/${a.ID_ARTICLE}`}
-                    className="text-blue-600 hover:underline"
+                    className="text-ratecard-blue hover:underline mr-4"
                   >
                     Modifier
                   </Link>
 
-                  {/* ARCHIVE */}
-                  {!a.IS_ARCHIVED && (
-                    <button
-                      onClick={() => archive(a.ID_ARTICLE)}
-                      className="text-orange-600 hover:underline"
-                    >
-                      Archiver
-                    </button>
-                  )}
-
-                  {/* DELETE */}
-                  <button
-                    onClick={() => remove(a.ID_ARTICLE)}
-                    className="text-red-600 hover:underline"
+                  <Link
+                    href={`/admin/articles/preview/${a.ID_ARTICLE}`}
+                    className="text-gray-600 hover:underline"
                   >
-                    Supprimer
-                  </button>
+                    Aperçu
+                  </Link>
                 </td>
+
               </tr>
             ))}
           </tbody>
         </table>
       )}
 
-      {/* PREVIEW DRAWER */}
-      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="Aperçu article" size="xl">
-        {previewArticle ? (
-          <ArticlePreview article={previewArticle} />
-        ) : (
-          <div className="text-gray-500">Chargement…</div>
-        )}
-      </Drawer>
     </div>
   );
 }
-
