@@ -1,116 +1,134 @@
 "use client";
 
 import { useState } from "react";
-import ImageUploadField from "@/components/visuals/ImageUploadField";
+import { api } from "@/lib/api";
 
-export default function CompanyVisualSection({
-  id_company,
+export default function VisualSection({
+  id,
   squareUrl,
   rectUrl,
-  onSquareChange,
-  onRectChange,
+  onUpdated,
 }: {
-  id_company: string;
+  id: string;
   squareUrl: string | null;
   rectUrl: string | null;
-  onSquareChange: (u: string | null) => void;
-  onRectChange: (u: string | null) => void;
+  onUpdated: (urls: { square: string | null; rectangle: string | null }) => void;
 }) {
   const [loading, setLoading] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
-  const [showApplyExisting, setShowApplyExisting] = useState(false);
 
-  const [existingSquare, setExistingSquare] = useState("");
-  const [existingRect, setExistingRect] = useState("");
+  // -------------------------------------------------------------------
+  //  Convert file → base64
+  // -------------------------------------------------------------------
+  async function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = () => {
+        const result = reader.result?.toString() || "";
+        resolve(result.replace(/^data:image\/\w+;base64,/, ""));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 
-  // ----------------------------------------------------
-  // UPLOAD MANUEL → /api/visuals/company/upload
-  // ----------------------------------------------------
-  async function uploadManual(base64: string) {
+  // -------------------------------------------------------------------
+  // UPLOAD manually
+  // -------------------------------------------------------------------
+  async function uploadManual(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     setLoading(true);
 
-    const res = await fetch("/api/visuals/company/upload", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id_company,
+    try {
+      const base64 = await fileToBase64(file);
+
+      const res = await api.post("/visuals/company/upload", {
+        id_company: id,
         base64_image: base64,
-      }),
-    }).then((r) => r.json());
+      });
 
-    setLoading(false);
+      if (res.status !== "ok") throw new Error("Erreur upload");
 
-    if (res.status !== "ok") {
-      alert("❌ Erreur upload société");
-      return;
+      onUpdated({
+        square: res.urls.square,
+        rectangle: res.urls.rectangle,
+      });
+
+      alert("Visuel mis à jour !");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Erreur lors de l’upload");
     }
 
-    onSquareChange(res.urls.square);
-    onRectChange(res.urls.rectangle);
-    setShowUpload(false);
+    setLoading(false);
   }
 
-  // ----------------------------------------------------
-  // APPLY EXISTING → /api/visuals/company/apply-existing
-  // ----------------------------------------------------
-  async function applyExisting() {
-    if (!existingSquare) return alert("URL carré obligatoire");
-
+  // -------------------------------------------------------------------
+  // APPLY existing visual (from axe/company/article)
+  // -------------------------------------------------------------------
+  async function applyExisting(square_url: string, rectangle_url: string) {
     setLoading(true);
 
-    const res = await fetch("/api/visuals/company/apply-existing", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id_company,
-        square_url: existingSquare,
-        rectangle_url: existingRect || existingSquare,
-      }),
-    }).then((r) => r.json());
+    try {
+      const res = await api.post("/visuals/company/apply-existing", {
+        id_company: id,
+        square_url,
+        rectangle_url,
+      });
 
-    setLoading(false);
+      if (res.status !== "ok") throw new Error("Erreur apply-existing");
 
-    if (res.status !== "ok") {
-      alert("❌ Erreur apply-existing société");
-      return;
+      onUpdated({
+        square: res.urls.square,
+        rectangle: res.urls.rectangle,
+      });
+
+      alert("Visuel appliqué !");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Erreur lors de la copie du visuel");
     }
 
-    onSquareChange(res.urls.square);
-    onRectChange(res.urls.rectangle);
-    setShowApplyExisting(false);
+    setLoading(false);
   }
 
-  // ----------------------------------------------------
-  // RESET → /api/visuals/company/reset
-  // ----------------------------------------------------
-  async function resetVisuals() {
+  // -------------------------------------------------------------------
+  // RESET
+  // -------------------------------------------------------------------
+  async function resetVisual() {
     if (!confirm("Supprimer les visuels de cette société ?")) return;
 
     setLoading(true);
 
-    const res = await fetch("/api/visuals/company/reset", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id_company }),
-    }).then((r) => r.json());
+    try {
+      const res = await api.post("/visuals/company/reset", {
+        id_company: id,
+      });
 
-    setLoading(false);
+      if (res.status !== "ok") throw new Error("Erreur reset");
 
-    if (res.status !== "ok") {
-      alert("❌ Erreur reset société");
-      return;
+      onUpdated({ square: null, rectangle: null });
+
+      alert("Visuels supprimés !");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Erreur lors du reset");
     }
 
-    onSquareChange(null);
-    onRectChange(null);
+    setLoading(false);
   }
 
+  // -------------------------------------------------------------------
+  // UI
+  // -------------------------------------------------------------------
   return (
-    <div className="p-4 border rounded bg-white space-y-6">
-
-      <h2 className="text-lg font-semibold text-ratecard-blue">
-        Visuels de la société
+    <div className="p-4 border rounded bg-white space-y-4">
+      <h2 className="text-xl font-semibold text-ratecard-blue">
+        Visuels officiels
       </h2>
+
+      {loading && <p className="text-gray-500 text-sm">Traitement…</p>}
 
       {/* PREVIEWS */}
       <div className="flex gap-6">
@@ -119,10 +137,10 @@ export default function CompanyVisualSection({
           {squareUrl ? (
             <img
               src={squareUrl}
-              className="w-24 h-24 object-cover rounded border shadow bg-white"
+              className="w-24 h-24 object-cover border rounded shadow bg-white"
             />
           ) : (
-            <div className="w-24 h-24 border rounded bg-gray-100 text-xs text-gray-400 flex items-center justify-center">
+            <div className="w-24 h-24 bg-gray-100 border rounded flex items-center justify-center text-xs text-gray-500">
               Aucun
             </div>
           )}
@@ -133,10 +151,10 @@ export default function CompanyVisualSection({
           {rectUrl ? (
             <img
               src={rectUrl}
-              className="w-48 h-auto rounded border shadow bg-white"
+              className="w-48 h-auto border rounded shadow bg-white"
             />
           ) : (
-            <div className="w-48 h-24 border rounded bg-gray-100 text-xs text-gray-400 flex items-center justify-center">
+            <div className="w-48 h-24 bg-gray-100 border rounded flex items-center justify-center text-xs text-gray-500">
               Aucun
             </div>
           )}
@@ -144,74 +162,40 @@ export default function CompanyVisualSection({
       </div>
 
       {/* ACTIONS */}
-      <div className="flex gap-3">
+      <div className="space-y-3">
+
+        {/* UPLOAD */}
+        <label className="block">
+          <span className="text-sm font-medium">Uploader un visuel</span>
+          <input
+            type="file"
+            accept="image/*"
+            className="mt-1"
+            onChange={uploadManual}
+          />
+        </label>
+
+        {/* APPLY EXISTING */}
         <button
-          onClick={() => {
-            setShowUpload(true);
-            setShowApplyExisting(false);
-          }}
-          className="px-3 py-2 bg-ratecard-green text-white rounded"
+          onClick={() =>
+            applyExisting(
+              "/PLACEHOLDER_SQUARE.jpg", // ← dans EditCompany, tu passeras les valeurs réelles
+              "/PLACEHOLDER_RECT.jpg"
+            )
+          }
+          className="px-3 py-2 bg-blue-600 text-white rounded text-sm"
         >
-          Upload manuel
+          Appliquer depuis un visuel existant
         </button>
 
+        {/* RESET */}
         <button
-          onClick={() => {
-            setShowApplyExisting(true);
-            setShowUpload(false);
-          }}
-          className="px-3 py-2 bg-blue-600 text-white rounded"
+          onClick={resetVisual}
+          className="px-3 py-2 bg-red-600 text-white rounded text-sm"
         >
-          Appliquer un visuel existant
-        </button>
-
-        <button
-          onClick={resetVisuals}
-          className="px-3 py-2 bg-red-600 text-white rounded"
-        >
-          Reset
+          Réinitialiser les visuels
         </button>
       </div>
-
-      {/* UPLOAD MANUEL */}
-      {showUpload && (
-        <div className="border rounded p-4 bg-gray-50">
-          <ImageUploadField
-            label="Uploader une image"
-            onUpload={uploadManual}
-          />
-        </div>
-      )}
-
-      {/* APPLY EXISTING */}
-      {showApplyExisting && (
-        <div className="border rounded p-4 bg-gray-50 space-y-3">
-          <p className="font-medium text-sm">Appliquer depuis URLs existantes</p>
-
-          <input
-            placeholder="URL carré obligatoire"
-            value={existingSquare}
-            onChange={(e) => setExistingSquare(e.target.value)}
-            className="border p-2 rounded w-full text-sm"
-          />
-
-          <input
-            placeholder="URL rectangle (optionnel)"
-            value={existingRect}
-            onChange={(e) => setExistingRect(e.target.value)}
-            className="border p-2 rounded w-full text-sm"
-          />
-
-          <button
-            onClick={applyExisting}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Appliquer
-          </button>
-        </div>
-      )}
-
-      {loading && <p className="text-gray-500 text-sm">Chargement…</p>}
     </div>
   );
 }
