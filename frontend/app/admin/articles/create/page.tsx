@@ -8,121 +8,94 @@ import CompanySelector from "@/components/admin/CompanySelector";
 import PersonSelector from "@/components/admin/PersonSelector";
 import AxesSelector from "@/components/admin/AxesSelector";
 import HtmlEditor from "@/components/admin/HtmlEditor";
-import ArticleImageUploader from "@/components/admin/ArticleImageUploader";
 
-// -------------------------------------------------------
-// TYPES VISUELS
-// -------------------------------------------------------
-type VisualMode = "none" | "axe" | "upload" | "ia";
+import ArticleImageUploader from "@/components/admin/ArticleImageUploader";
+import MediaPicker from "@/components/admin/MediaPicker";
+
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 export default function CreateArticlePage() {
-  /* ---------------------------------------------
-     FIELDS
-  --------------------------------------------- */
+  /* ---------------------------------------------------------
+     TEXTE
+  --------------------------------------------------------- */
   const [title, setTitle] = useState("");
-  const [resume, setResume] = useState("");
+  const [resume, setResume] = useState(""); // texte NL + Home
   const [contentHtml, setContentHtml] = useState("");
 
-  const [axes, setAxes] = useState<any[]>([]);
+  /* ---------------------------------------------------------
+     ENTITÉS
+  --------------------------------------------------------- */
   const [companies, setCompanies] = useState<any[]>([]);
   const [persons, setPersons] = useState<any[]>([]);
+  const [axes, setAxes] = useState<any[]>([]); // ID_AXE[]
 
-  /* ---------------------------------------------
-     VISUEL (UN SEUL)
-  --------------------------------------------- */
-  const [visualMode, setVisualMode] = useState<VisualMode>("none");
+  /* ---------------------------------------------------------
+     VISUELS
+  --------------------------------------------------------- */
+  const [visualMode, setVisualMode] = useState<"axe" | "company" | "upload" | "ia">(
+    "axe"
+  );
 
   const [mediaRectangleId, setMediaRectangleId] = useState<string | null>(null);
   const [mediaSquareId, setMediaSquareId] = useState<string | null>(null);
-  const [visualUrl, setVisualUrl] = useState<string | null>(null);
 
-  function resetVisual() {
+  const [mediaRectangleUrl, setMediaRectangleUrl] = useState<string | null>(null);
+  const [mediaSquareUrl, setMediaSquareUrl] = useState<string | null>(null);
+
+  const resetVisual = () => {
     setMediaRectangleId(null);
     setMediaSquareId(null);
-    setVisualUrl(null);
-  }
+    setMediaRectangleUrl(null);
+    setMediaSquareUrl(null);
+  };
 
-  function pickMode(mode: VisualMode) {
-    setVisualMode(mode);
-    resetVisual();
-  }
+  /* ---------------------------------------------------------
+     MODE IA → uniquement basé sur AXE(S)
+  --------------------------------------------------------- */
+  const [generatingAI, setGeneratingAI] = useState(false);
 
-  /* ---------------------------------------------
-     VISUEL PAR AXE (mode A)
-  --------------------------------------------- */
-  async function applyAxisVisual() {
+  async function generateAI() {
+    if (!title && !resume) {
+      alert("Merci d’indiquer un titre ou un résumé.");
+      return;
+    }
     if (axes.length === 0) {
-      alert("Choisis au moins un axe.");
+      alert("La génération IA nécessite au moins un axe éditorial.");
       return;
     }
 
-    const axis = axes[0]; // axe principal
-    const res = await api.post("/visuals/article/apply-existing", {
-      id_article: "temp", // backend override via return-only (no update)
-      rectangle_url: axis.media_rectangle_url,
-      square_url: axis.media_square_url,
-    });
+    setGeneratingAI(true);
 
-    if (res.status === "ok") {
-      setVisualUrl(res.urls.rectangle);
-      setMediaRectangleId(res.media_rectangle_id);
-      setMediaSquareId(res.media_square_id);
-    }
-  }
-
-  /* ---------------------------------------------
-     VISUEL UPLOAD (mode B)
-  --------------------------------------------- */
-  async function handleUpload({ rectangle_id, rectangle_url, square_id, square_url }) {
-    setMediaRectangleId(rectangle_id);
-    setMediaSquareId(square_id);
-    setVisualUrl(rectangle_url);
-  }
-
-  /* ---------------------------------------------
-     IA VISUEL (inspiré AXE uniquement)
-  --------------------------------------------- */
-  const [iaLoading, setIaLoading] = useState(false);
-
-  async function generateIA() {
-    if (axes.length === 0) {
-      alert("Un axe est obligatoire pour la génération IA.");
-      return;
-    }
-    if (!title.trim() && !resume.trim()) {
-      alert("Titre ou résumé requis pour IA.");
-      return;
-    }
-
-    setIaLoading(true);
-
-    const res = await api.post("/visuals/article/generate-ai", {
-      id_article: "temp", // backend ignore pour generate-only
+    const payload = {
+      id_article: "temp", // sera remplacé lors du update après création
       title,
       excerpt: resume,
-      axe_visual_square_url: axes[0].media_square_url,
-    });
+      axe_ids: axes, // 1..N
+    };
 
-    if (res.status === "ok") {
-      setMediaRectangleId(res.media_rectangle_id);
-      setMediaSquareId(res.media_square_id);
-      setVisualUrl(res.urls.rectangle);
+    const res = await api.post("/visuals/article/generate-ai", payload);
+    setGeneratingAI(false);
+
+    if (res.status !== "ok") {
+      alert("Erreur IA : " + res.message);
+      return;
     }
 
-    setIaLoading(false);
+    setMediaRectangleId(res.media_rectangle_id);
+    setMediaSquareId(res.media_square_id);
+    setMediaRectangleUrl(res.urls.rectangle);
+    setMediaSquareUrl(res.urls.square);
   }
 
-  /* ---------------------------------------------
-     SAVE
-  --------------------------------------------- */
+  /* ---------------------------------------------------------
+     PUBLICATION ARTICLE
+  --------------------------------------------------------- */
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  async function save() {
-    if (!title.trim()) return alert("Titre manquant");
-    if (axes.length === 0) return alert("Au moins un axe obligatoire");
-    if (!mediaRectangleId || !mediaSquareId)
-      return alert("Un visuel est obligatoire (axe / upload / IA)");
+  async function publish() {
+    if (!title.trim()) return alert("Titre requis");
+    if (axes.length === 0) return alert("Un article doit être associé à ≥ 1 axe.");
 
     setSaving(true);
 
@@ -130,16 +103,16 @@ export default function CreateArticlePage() {
       titre: title,
       resume,
       contenu_html: contentHtml,
+      axes, // 1..N
+      companies: companies.map((c) => c.id_company),
+      persons: persons.map((p) => ({ id_person: p.id_person, role: p.role })),
 
-      axes: axes.map((a) => a.id_axe),
-      companies: companies.map((c) => c.ID_COMPANY),
-      persons: persons.map((p) => ({
-        id_person: p.ID_PERSON,
-        role: p.ROLE || null,
-      })),
+      media_rectangle_id,
+      media_square_id,
 
-      media_rectangle_id: mediaRectangleId,
-      media_square_id: mediaSquareId,
+      auteur: null,
+      is_featured: false,
+      featured_order: null,
     };
 
     const res = await api.post("/articles/create", payload);
@@ -147,124 +120,220 @@ export default function CreateArticlePage() {
     setResult(res);
   }
 
-  /* ---------------------------------------------
+  /* ---------------------------------------------------------
      UI
-  --------------------------------------------- */
+  --------------------------------------------------------- */
   return (
     <div className="space-y-10">
 
       {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-semibold text-ratecard-blue">Créer un article</h1>
-
+      <div className="flex justify-between">
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
+          Créer un article
+        </h1>
         <Link href="/admin/articles" className="underline text-gray-600">
           ← Retour
         </Link>
       </div>
 
-      {/* TEXT FIELDS */}
-      <input
-        placeholder="Titre de l’article"
-        className="border p-2 w-full rounded"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
+      {/* ---------------------------------------------------------
+         SECTION TEXTE
+      --------------------------------------------------------- */}
+      <div className="space-y-4">
+        <input
+          placeholder="Titre de l’article"
+          className="border p-2 w-full rounded"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
 
-      <textarea
-        placeholder="Résumé"
-        className="border p-2 w-full rounded h-24"
-        value={resume}
-        onChange={(e) => setResume(e.target.value)}
-      />
+        <textarea
+          placeholder="Résumé / accroche"
+          className="border p-2 w-full rounded h-24"
+          value={resume}
+          onChange={(e) => setResume(e.target.value)}
+        />
 
-      <HtmlEditor value={contentHtml} onChange={setContentHtml} />
+        <HtmlEditor value={contentHtml} onChange={setContentHtml} />
+      </div>
 
-      {/* ENTITIES */}
+      {/* ---------------------------------------------------------
+         ENTITÉS
+      --------------------------------------------------------- */}
       <AxesSelector values={axes} onChange={setAxes} />
-      <CompanySelector values={companies} onChange={setCompanies} />
-      <PersonSelector values={persons} onChange={setPersons} />
+      <CompanySelector values={companies} onChange={setCompanies} multi />
+      <PersonSelector values={persons} onChange={setPersons} multi />
 
-      {/* VISUEL */}
-      <div className="p-4 border rounded bg-white space-y-4">
-        <h2 className="text-xl font-semibold">Visuel de l’article</h2>
+      {/* ---------------------------------------------------------
+         VISUELS
+      --------------------------------------------------------- */}
+      <div className="border rounded p-4 space-y-4 bg-white">
+        <h2 className="text-xl font-semibold text-ratecard-blue">
+          Visuel de l’article
+        </h2>
 
-        {/* MODES */}
-        <div className="flex gap-6">
+        {/* TABS */}
+        <div className="flex gap-4 border-b pb-2">
           <button
-            className={visualMode === "axe" ? "font-bold text-blue-600" : "text-gray-600"}
-            onClick={() => pickMode("axe")}
+            onClick={() => {
+              setVisualMode("axe");
+              resetVisual();
+            }}
+            className={`pb-1 ${
+              visualMode === "axe" ? "border-b-2 border-ratecard-blue" : "text-gray-500"
+            }`}
           >
-            Depuis un axe
+            Visuel(s) axe
           </button>
 
           <button
-            className={visualMode === "upload" ? "font-bold text-blue-600" : "text-gray-600"}
-            onClick={() => pickMode("upload")}
+            onClick={() => {
+              setVisualMode("company");
+              resetVisual();
+            }}
+            className={`pb-1 ${
+              visualMode === "company"
+                ? "border-b-2 border-ratecard-blue"
+                : "text-gray-500"
+            }`}
           >
-            Upload
+            Visuels société
           </button>
 
           <button
-            className={visualMode === "ia" ? "font-bold text-blue-600" : "text-gray-600"}
-            onClick={() => pickMode("ia")}
+            onClick={() => {
+              setVisualMode("upload");
+              resetVisual();
+            }}
+            className={`pb-1 ${
+              visualMode === "upload"
+                ? "border-b-2 border-ratecard-blue"
+                : "text-gray-500"
+            }`}
           >
-            Génération IA
+            Upload local
+          </button>
+
+          <button
+            onClick={() => {
+              setVisualMode("ia");
+              resetVisual();
+            }}
+            className={`pb-1 ${
+              visualMode === "ia"
+                ? "border-b-2 border-ratecard-blue"
+                : "text-gray-500"
+            }`}
+          >
+            IA (via axes)
           </button>
         </div>
 
-        {/* AXE MODE */}
+        {/* MODE AXE */}
         {visualMode === "axe" && (
-          <div className="space-y-2">
-            <p className="text-xs text-gray-500">
-              Utilise le visuel principal du premier axe sélectionné.
-            </p>
+          <div>
+            {axes.length === 0 ? (
+              <p className="text-xs text-red-500">
+                Associe un axe pour afficher ses visuels.
+              </p>
+            ) : (
+              <>
+                <MediaPicker
+                  open={true}
+                  onClose={() => {}}
+                  folders={["axes"]}
+                  onSelect={(item) => {
+                    setMediaRectangleId(item.media_id);
+                    setMediaRectangleUrl(item.url);
+                    resetVisual();
+                  }}
+                />
 
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded"
-              onClick={applyAxisVisual}
-            >
-              Utiliser visuel de l’axe
-            </button>
+                {/* preview */}
+                {mediaRectangleUrl && (
+                  <img
+                    src={mediaRectangleUrl}
+                    className="w-80 border rounded bg-white mt-2"
+                  />
+                )}
+              </>
+            )}
           </div>
         )}
 
-        {/* UPLOAD MODE */}
+        {/* MODE COMPANY */}
+        {visualMode === "company" && (
+          <div>
+            {companies.length === 0 ? (
+              <p className="text-xs text-red-500">
+                Associe au moins une société pour afficher leurs visuels.
+              </p>
+            ) : (
+              <MediaPicker
+                open={true}
+                onClose={() => {}}
+                folders={["companies"]}
+                onSelect={(item) => {
+                  setMediaRectangleId(item.media_id);
+                  setMediaRectangleUrl(item.url);
+                }}
+              />
+            )}
+
+            {mediaRectangleUrl && (
+              <img
+                src={mediaRectangleUrl}
+                className="w-80 border rounded bg-white mt-2"
+              />
+            )}
+          </div>
+        )}
+
+        {/* MODE UPLOAD */}
         {visualMode === "upload" && (
-          <ArticleImageUploader onUploadComplete={handleUpload} />
+          <ArticleImageUploader
+            onUploadComplete={(r) => {
+              setMediaRectangleId(r.rectangle_id);
+              setMediaSquareId(r.square_id);
+              setMediaRectangleUrl(r.rectangle_url);
+              setMediaSquareUrl(r.square_url);
+            }}
+          />
         )}
 
-        {/* IA MODE */}
+        {/* MODE IA */}
         {visualMode === "ia" && (
-          <div>
-            <button
-              className="bg-purple-600 text-white px-4 py-2 rounded"
-              onClick={generateIA}
-              disabled={iaLoading}
-            >
-              {iaLoading ? "Génération…" : "Générer le visuel IA"}
-            </button>
-          </div>
+          <button
+            onClick={generateAI}
+            disabled={generatingAI}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            {generatingAI ? "Génération…" : "Générer via IA"}
+          </button>
         )}
 
-        {/* PREVIEW */}
-        {visualUrl && (
+        {mediaRectangleUrl && (
           <div>
-            <img src={visualUrl} className="w-80 border rounded bg-white" />
+            <p className="text-xs text-gray-500 mt-2">Aperçu :</p>
+            <img
+              src={mediaRectangleUrl}
+              className="w-80 border rounded bg-white mt-1"
+            />
           </div>
         )}
       </div>
 
-      {/* SAVE */}
+      {/* PUBLISH */}
       <button
-        onClick={save}
+        onClick={publish}
         disabled={saving}
         className="bg-ratecard-blue text-white px-6 py-2 rounded"
       >
-        {saving ? "Enregistrement…" : "Publier l’article"}
+        {saving ? "Publication…" : "Publier"}
       </button>
 
       {result && (
-        <pre className="bg-gray-100 mt-4 p-4 rounded whitespace-pre-wrap">
+        <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap mt-4">
           {JSON.stringify(result, null, 2)}
         </pre>
       )}
