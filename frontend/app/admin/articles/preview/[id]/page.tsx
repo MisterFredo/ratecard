@@ -26,20 +26,17 @@ export default function ArticlePreviewPage({ params }) {
 
     const a = res.article;
 
-    // Reconstruction URL GCS du visuel rectangulaire
+    // -------------------------------------------------------
+    // VISUEL : reconstruction GCS
+    // -------------------------------------------------------
     let rectUrl = null;
-    if (a.VISUEL_RECTANGLE_PATH) {
-      rectUrl = `${GCS_BASE_URL}/${a.VISUEL_RECTANGLE_PATH}`;
-    } else if (a.VISUEL_URL) {
-      rectUrl = a.VISUEL_URL; // fallback legacy
+    if (a.media_rectangle_path) {
+      rectUrl = `${GCS_BASE_URL}/${a.media_rectangle_path}`;
     }
 
-    // reconstruction square
     let squareUrl = null;
-    if (a.VISUEL_SQUARE_PATH) {
-      squareUrl = `${GCS_BASE_URL}/${a.VISUEL_SQUARE_PATH}`;
-    } else if (a.VISUEL_SQUARE_URL) {
-      squareUrl = a.VISUEL_SQUARE_URL;
+    if (a.media_square_path) {
+      squareUrl = `${GCS_BASE_URL}/${a.media_square_path}`;
     }
 
     setArticle({
@@ -66,7 +63,7 @@ export default function ArticlePreviewPage({ params }) {
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
-          Aperçu article
+          Aperçu de l’article
         </h1>
 
         <Link
@@ -80,10 +77,16 @@ export default function ArticlePreviewPage({ params }) {
       {/* VISUEL */}
       <div className="space-y-2">
         <p className="text-xs text-gray-500">Visuel principal :</p>
+
         {article.rectUrl ? (
           <img
             src={article.rectUrl}
             className="w-full max-w-3xl rounded border bg-white shadow"
+          />
+        ) : article.squareUrl ? (
+          <img
+            src={article.squareUrl}
+            className="w-64 rounded border bg-white shadow"
           />
         ) : (
           <p className="text-gray-400 italic">Aucun visuel</p>
@@ -91,45 +94,53 @@ export default function ArticlePreviewPage({ params }) {
       </div>
 
       {/* META */}
-      <div className="bg-white border rounded p-4 space-y-2 shadow-sm">
+      <div className="bg-white border rounded p-4 space-y-3 shadow-sm max-w-3xl">
+
         <h2 className="text-xl font-bold">{article.TITRE}</h2>
 
-        {article.EXCERPT && (
-          <p className="text-gray-600 italic">{article.EXCERPT}</p>
+        {article.RESUME && (
+          <p className="text-gray-600 italic">{article.RESUME}</p>
         )}
 
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-600 space-y-1">
+
+          {/* AXES */}
           <div>
             <strong>Axes :</strong>{" "}
             {article.axes && article.axes.length > 0
-              ? article.axes.map((a) => a.AXE_VALUE).join(", ")
+              ? article.axes.map((ax) => ax.LABEL).join(", ")
               : "—"}
           </div>
 
+          {/* COMPANIES */}
           <div>
             <strong>Sociétés :</strong>{" "}
             {article.companies && article.companies.length > 0
-              ? article.companies.join(", ")
+              ? article.companies.map((c) => c.NAME).join(", ")
               : "—"}
           </div>
 
+          {/* PERSONS */}
           <div>
             <strong>Personnes :</strong>{" "}
             {article.persons && article.persons.length > 0
-              ? article.persons.map((p) => p.ID_PERSON).join(", ")
+              ? article.persons
+                  .map((p) => `${p.NAME}${p.ROLE ? " (" + p.ROLE + ")" : ""}`)
+                  .join(", ")
               : "—"}
           </div>
 
+          {/* PUBLICATION */}
           <div>
-            <strong>Publication :</strong>{" "}
-            {article.DATE_PUBLICATION
-              ? new Date(article.DATE_PUBLICATION).toLocaleString("fr-FR")
+            <strong>Créé le :</strong>{" "}
+            {article.CREATED_AT
+              ? new Date(article.CREATED_AT).toLocaleString("fr-FR")
               : "—"}
           </div>
         </div>
       </div>
 
-      {/* CONTENU HTML */}
+      {/* CONTENT */}
       <div className="bg-white p-6 border rounded shadow-sm max-w-3xl">
         <div
           className="prose prose-gray max-w-none"
@@ -138,7 +149,7 @@ export default function ArticlePreviewPage({ params }) {
       </div>
 
       {/* ACTIONS FUTURES */}
-      <div className="bg-white border rounded p-4 shadow-sm space-y-4">
+      <div className="bg-white border rounded p-4 shadow-sm space-y-4 max-w-3xl">
         <h3 className="text-lg font-semibold">Actions (à venir)</h3>
 
         <div className="flex gap-3 flex-wrap">
@@ -163,6 +174,7 @@ export default function ArticlePreviewPage({ params }) {
           >
             Ajouter à la newsletter Brevo
           </button>
+
         </div>
       </div>
     </div>
