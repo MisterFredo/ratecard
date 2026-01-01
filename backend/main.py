@@ -54,7 +54,6 @@ include_router("api.articles", "/api/articles", "ARTICLES")
 include_router("api.company", "/api/company", "COMPANY")
 include_router("api.person", "/api/person", "PERSON")
 include_router("api.axes", "/api/axes", "AXES")
-include_router("api.media", "/api/media", "MEDIA")          # ← AJOUT ICI
 include_router("api.lab_light", "/api/lab-light", "LAB-LIGHT")
 
 
