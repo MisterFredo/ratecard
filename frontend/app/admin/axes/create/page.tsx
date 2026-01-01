@@ -3,181 +3,79 @@
 import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import MediaPicker from "@/components/admin/MediaPicker";
-
-const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
-// ex: https://storage.googleapis.com/ratecard-media
+import VisualSection from "@/components/visuals/VisualSection";
 
 export default function CreateAxe() {
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
 
-  // MEDIA GOV (DAM)
-  const [mediaRectangleId, setMediaRectangleId] = useState<string | null>(null);
-  const [mediaSquareId, setMediaSquareId] = useState<string | null>(null);
-
-  const [mediaRectangleUrl, setMediaRectangleUrl] = useState<string | null>(null);
-  const [mediaSquareUrl, setMediaSquareUrl] = useState<string | null>(null);
-
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [axeId, setAxeId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<any>(null);
 
-  /* ---------------------------------------------------------
-     SAVE AXE
-  --------------------------------------------------------- */
   async function save() {
-    if (!label.trim()) return alert("Merci de renseigner le nom de l’axe");
+    if (!label.trim()) return alert("Nom d’axe requis");
 
     setSaving(true);
 
-    // 1️⃣ CREATE AXE
     const payload = {
       label,
       description: description || null,
-      media_rectangle_id: mediaRectangleId,
-      media_square_id: mediaSquareId,
+      media_rectangle_id: null,
+      media_square_id: null,
     };
 
     const res = await api.post("/axes/create", payload);
-
-    if (!res || !res.id_axe) {
-      alert("❌ Erreur : impossible de créer l’axe.");
+    if (!res.id_axe) {
+      alert("Erreur création axe");
       setSaving(false);
       return;
     }
 
-    const id_axe = res.id_axe;
-
-    // 2️⃣ ASSIGN MEDIA → AXE
-    async function assignIfValid(mediaId: string | null) {
-      if (!mediaId) return;
-
-      const assignRes = await api.post("/media/assign", {
-        media_id: mediaId,
-        entity_type: "axe",
-        entity_id: id_axe,
-      });
-
-      if (assignRes.status !== "ok") {
-        console.error("Erreur assign :", assignRes);
-        alert("❌ Impossible d'associer un média.");
-      }
-    }
-
-    await assignIfValid(mediaRectangleId);
-    await assignIfValid(mediaSquareId);
-
-    setResult(res);
+    setAxeId(res.id_axe);
+    alert("Axe créé : ajoutez un visuel");
     setSaving(false);
   }
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
     <div className="space-y-8">
-
-      {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-ratecard-blue">
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
           Ajouter un axe éditorial
         </h1>
-        <Link href="/admin/axes" className="underline text-gray-600">
+        <Link href="/admin/axes" className="underline">
           ← Retour
         </Link>
       </div>
 
-      {/* LABEL */}
       <input
-        placeholder="Nom de l’axe éditorial"
+        placeholder="Nom de l’axe"
         value={label}
         onChange={(e) => setLabel(e.target.value)}
-        className="border p-2 w-full rounded"
+        className="border p-2 rounded w-full"
       />
 
-      {/* DESCRIPTION */}
       <textarea
         placeholder="Description (optionnel)"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        className="border p-2 w-full rounded h-24"
+        className="border p-2 rounded w-full h-24"
       />
 
-      {/* VISUEL OFFICIEL */}
-      <div className="space-y-3">
-        <label className="font-medium">Visuel officiel de l’axe</label>
-
-        <button
-          onClick={() => setPickerOpen(true)}
-          className="bg-ratecard-green text-white px-4 py-2 rounded"
-        >
-          Choisir un visuel
-        </button>
-
-        {/* PREVIEW RECTANGLE */}
-        {mediaRectangleUrl && (
-          <div>
-            <p className="text-sm text-gray-500">Rectangle :</p>
-            <img
-              src={mediaRectangleUrl}
-              className="w-60 h-auto border rounded bg-white mt-1"
-            />
-          </div>
-        )}
-
-        {/* PREVIEW SQUARE */}
-        {mediaSquareUrl && (
-          <div>
-            <p className="text-sm text-gray-500">Carré :</p>
-            <img
-              src={mediaSquareUrl}
-              className="w-24 h-24 object-cover border rounded bg-white mt-1"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* MEDIA PICKER */}
-      <MediaPicker
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        folders={["generics"]}   // 🟢 seuls visuels génériques autorisés pour AXE
-        onSelect={(item) => {
-          console.log("MEDIA SELECT AXE:", item);
-
-          if (!item.media_id) {
-            alert("❌ Ce média n’a pas d’identifiant DAM.");
-            return;
-          }
-
-          if (item.format === "rectangle") {
-            setMediaRectangleId(item.media_id);
-            setMediaRectangleUrl(item.url);
-          } else if (item.format === "square") {
-            setMediaSquareId(item.media_id);
-            setMediaSquareUrl(item.url);
-          }
-
-          setPickerOpen(false);
-        }}
-      />
-
-      {/* SAVE */}
       <button
         onClick={save}
         disabled={saving}
         className="bg-ratecard-blue text-white px-6 py-2 rounded"
       >
-        {saving ? "Enregistrement…" : "Enregistrer"}
+        {saving ? "Enregistrement…" : "Créer"}
       </button>
 
-      {result && (
-        <pre className="bg-gray-100 p-4 rounded mt-4 whitespace-pre-wrap">
-          {JSON.stringify(result, null, 2)}
-        </pre>
+      {axeId && (
+        <VisualSection
+          entityType="axe"
+          entityId={axeId}
+          onUpdated={() => {}}
+        />
       )}
     </div>
   );
 }
-
