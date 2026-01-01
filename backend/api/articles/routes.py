@@ -19,6 +19,12 @@ router = APIRouter()
 # ============================================================
 @router.post("/create")
 def create_route(payload: ArticleCreate):
+    """
+    Création d’un article :
+    - texte (titre / résumé / html)
+    - relations : axes (1..N), companies (0..N), persons (0..N)
+    - médias : IDs du DAM déjà choisis par le front
+    """
     try:
         id_article = create_article(payload)
         return {"status": "ok", "id_article": id_article}
@@ -39,7 +45,7 @@ def list_route():
 
 
 # ============================================================
-# GET ARTICLE (détail + entités + axes)
+# GET ARTICLE
 # ============================================================
 @router.get("/{id_article}")
 def get_route(id_article: str):
@@ -54,6 +60,11 @@ def get_route(id_article: str):
 # ============================================================
 @router.put("/update/{id_article}")
 def update_route(id_article: str, payload: ArticleUpdate):
+    """
+    Mise à jour d’un article existant :
+    - même schéma que create
+    - update + remplacement complet des relations
+    """
     try:
         update_article(id_article, payload)
         return {"status": "ok", "updated": id_article}
