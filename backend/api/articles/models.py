@@ -1,92 +1,60 @@
-# backend/api/articles/routes.py
+# backend/api/articles/models.py
 
-from fastapi import APIRouter, HTTPException
-from api.articles.models import ArticleCreate, ArticleUpdate
-
-from core.articles.service import (
-    create_article,
-    list_articles,
-    get_article,
-    update_article,
-    delete_article,
-    archive_article,
-)
-
-router = APIRouter()
+from pydantic import BaseModel
+from typing import List, Optional
 
 
 # ============================================================
-# CREATE ARTICLE
+# AXES / PERSONS / COMPANIES RELATIONS
 # ============================================================
-@router.post("/create")
-def create_route(payload: ArticleCreate):
-    try:
-        article_id = create_article(payload)
-        return {"status": "ok", "id_article": article_id}
-    except Exception as e:
-        raise HTTPException(400, f"Erreur création article : {e}")
+
+class ArticlePerson(BaseModel):
+    id_person: str
+    role: Optional[str] = None
 
 
 # ============================================================
-# LIST ARTICLES (ADMIN)
+# ARTICLE CREATE
 # ============================================================
-@router.get("/list")
-def list_route():
-    try:
-        articles = list_articles()
-        return {"status": "ok", "articles": articles}
-    except Exception as e:
-        raise HTTPException(500, f"Erreur list articles : {e}")
+class ArticleCreate(BaseModel):
+    titre: str
+    resume: Optional[str] = None
+    contenu_html: str
 
+    # MEDIA (IDs BQ du DAM)
+    media_rectangle_id: Optional[str] = None
+    media_square_id: Optional[str] = None
 
-# ============================================================
-# GET ARTICLE
-# ============================================================
-@router.get("/{id_article}")
-def get_route(id_article: str):
-    try:
-        article = get_article(id_article)
-        if not article:
-            raise HTTPException(404, "Article introuvable")
+    # RELATIONS
+    axes: List[str] = []           # liste des ID_AXE
+    companies: List[str] = []      # liste des ID_COMPANY
+    persons: List[ArticlePerson] = []
 
-        return {"status": "ok", "article": article}
-    except Exception as e:
-        raise HTTPException(400, f"Erreur récupération article : {e}")
+    # Auteur
+    auteur: Optional[str] = None
+
+    # Mise en avant
+    is_featured: bool = False
+    featured_order: Optional[int] = None
 
 
 # ============================================================
-# UPDATE ARTICLE
+# ARTICLE UPDATE
 # ============================================================
-@router.put("/update/{id_article}")
-def update_route(id_article: str, payload: ArticleUpdate):
-    try:
-        update_article(id_article, payload)
-        return {"status": "ok", "updated": id_article}
-    except Exception as e:
-        raise HTTPException(400, f"Erreur mise à jour article : {e}")
+class ArticleUpdate(BaseModel):
+    titre: str
+    resume: Optional[str] = None
+    contenu_html: str
 
+    # MEDIA
+    media_rectangle_id: Optional[str] = None
+    media_square_id: Optional[str] = None
 
-# ============================================================
-# DELETE ARTICLE
-# ============================================================
-@router.delete("/{id_article}")
-def delete_route(id_article: str):
-    try:
-        delete_article(id_article)
-        return {"status": "ok", "deleted": id_article}
-    except Exception as e:
-        raise HTTPException(400, f"Erreur suppression article : {e}")
+    # RELATIONS
+    axes: List[str] = []
+    companies: List[str] = []
+    persons: List[ArticlePerson] = []
 
-
-# ============================================================
-# ARCHIVE ARTICLE
-# ============================================================
-@router.put("/archive/{id_article}")
-def archive_route(id_article: str):
-    try:
-        archive_article(id_article)
-        return {"status": "ok", "archived": id_article}
-    except Exception as e:
-        raise HTTPException(400, f"Erreur archivage article : {e}")
-
-
+    auteur: Optional[str] = None
+    is_featured: bool = False
+    featured_order: Optional[int] = None
