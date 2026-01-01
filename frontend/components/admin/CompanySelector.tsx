@@ -3,27 +3,30 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
 export default function CompanySelector({ value, onChange }) {
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   /* -------------------------------------------------------
-     LOAD COMPANIES + VISUELS
+     LOAD COMPANIES + VISUELS DAM
   ------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
 
-      // 1) companies
+      // 1️⃣ Load companies
       const res = await api.get("/company/list");
       const raw = res.companies || [];
 
-      // 2) enrich with media
+      // 2️⃣ Load their visuals (rectangle / square)
       const enriched = await Promise.all(
         raw.map(async (c: any) => {
           const m = await api.get(
             `/media/by-entity?type=company&id=${c.ID_COMPANY}`
           );
+
           const media = m.media || [];
 
           const rect = media.find((m) => m.FORMAT === "rectangle");
@@ -32,12 +35,10 @@ export default function CompanySelector({ value, onChange }) {
           return {
             id_company: c.ID_COMPANY,
             name: c.NAME,
-            rectUrl: rect
-              ? `/media/${rect.FILEPATH.replace("/uploads/media/", "")}`
-              : null,
-            squareUrl: square
-              ? `/media/${square.FILEPATH.replace("/uploads/media/", "")}`
-              : null,
+
+            // 🔥 Always prefer m.URL returned by backend visuals/*
+            rectUrl: rect?.URL || null,
+            squareUrl: square?.URL || null,
           };
         })
       );
@@ -50,7 +51,7 @@ export default function CompanySelector({ value, onChange }) {
   }, []);
 
   /* -------------------------------------------------------
-     FIND SELECTED COMPANY
+     SELECTED VALUE
   ------------------------------------------------------- */
   const selected = companies.find(
     (c) => c.id_company === (value?.id_company || value)
@@ -71,11 +72,12 @@ export default function CompanySelector({ value, onChange }) {
           value={selected?.id_company || ""}
           onChange={(e) => {
             const id = e.target.value;
-            const c = companies.find((co) => co.id_company === id) || null;
-            onChange(c);
+            const comp = companies.find((c) => c.id_company === id) || null;
+            onChange(comp);
           }}
         >
           <option value="">Aucune</option>
+
           {companies.map((c) => (
             <option key={c.id_company} value={c.id_company}>
               {c.name}
@@ -84,7 +86,7 @@ export default function CompanySelector({ value, onChange }) {
         </select>
       )}
 
-      {/* Preview (optionnel) */}
+      {/* PREVIEW */}
       {selected && (
         <div className="flex items-center gap-3 mt-2">
           {selected.rectUrl && (
@@ -93,6 +95,7 @@ export default function CompanySelector({ value, onChange }) {
               className="h-10 w-auto rounded border bg-white p-1"
             />
           )}
+
           {selected.squareUrl && (
             <img
               src={selected.squareUrl}
@@ -104,4 +107,5 @@ export default function CompanySelector({ value, onChange }) {
     </div>
   );
 }
+
 
