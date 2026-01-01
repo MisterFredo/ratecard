@@ -3,75 +3,76 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 
+type VisualState = {
+  rectangleId: string | null;
+  squareId: string | null;
+  previewUrl: string | null;
+};
+
 export default function ArticleVisualSection({
+  articleId = null,        // null en mode création, ID réel en édition
   title,
   axes,
-  mediaRectangleId,
-  mediaSquareId,
-  previewRectUrl,
   onChange,
+  initialRectangleUrl,
+  initialSquareUrl,
 }: {
+  articleId?: string | null;
   title: string;
-  axes: any[];
-  mediaRectangleId: string | null;
-  mediaSquareId: string | null;
-  previewRectUrl: string | null;
+  axes: { id_axe: string; label: string }[];
+  onChange: (v: VisualState) => void;
 
-  onChange: (v: {
-    rectangleId: string | null;
-    squareId: string | null;
-    previewUrl: string | null;
-  }) => void;
+  initialRectangleUrl?: string | null;
+  initialSquareUrl?: string | null;
 }) {
-  /* ------------------------------------------------------------------
-     TABS : upload | existing | ai
-  ------------------------------------------------------------------ */
-  type Mode = "upload" | "existing" | "ia";
+  /* ---------------------------------------------------------
+     MODE D'ACTION
+  --------------------------------------------------------- */
+  type Mode = "upload" | "existing" | "ai";
   const [mode, setMode] = useState<Mode>("upload");
 
   function reset() {
-    onChange({
-      rectangleId: null,
-      squareId: null,
-      previewUrl: null,
-    });
+    onChange({ rectangleId: null, squareId: null, previewUrl: null });
   }
 
-  function switchMode(m: Mode) {
-    setMode(m);
+  function switchMode(next: Mode) {
+    setMode(next);
     reset();
   }
 
-  /* ------------------------------------------------------------------
-     MODE 1 : UPLOAD LOCAL
-  ------------------------------------------------------------------ */
-  const [uploading, setUploading] = useState(false);
+  /* ---------------------------------------------------------
+     UPLOAD LOCAL
+  --------------------------------------------------------- */
   const [file, setFile] = useState<File | null>(null);
-  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-  function onSelectFile(e: any) {
+  function selectFile(e: any) {
     const f = e.target.files?.[0];
     if (!f) return;
     setFile(f);
-    setUploadPreview(URL.createObjectURL(f));
+    setLocalPreview(URL.createObjectURL(f));
   }
 
-  async function uploadFile() {
+  async function uploadLocal() {
     if (!file) return alert("Sélectionnez un fichier");
+    if (!title?.trim()) return alert("Titre requis");
 
     setUploading(true);
 
     const arrayBuf = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuf).toString("base64");
 
+    const id = articleId || "_temp_";
+
     const res = await api.post("/visuals/article/upload", {
-      id_article: "_temp_", // ⚠️ remplacé dans la page Create via override
-      title: title || "article",
+      id_article: id,
+      title,
       base64_image: base64,
     });
 
     if (res.status !== "ok") {
-      alert("Erreur upload visuel article");
+      alert("Erreur upload article");
       setUploading(false);
       return;
     }
@@ -85,50 +86,40 @@ export default function ArticleVisualSection({
     setUploading(false);
   }
 
-  /* ------------------------------------------------------------------
-     MODE 2 : EXISTING (VISUEL AXE OU SOCIÉTÉ)
-  ------------------------------------------------------------------ */
-  const [selectingExisting, setSelectingExisting] = useState(false);
+  /* ---------------------------------------------------------
+     EXISTING (AXE) — strict
+  --------------------------------------------------------- */
+  const [importingExisting, setImportingExisting] = useState(false);
 
-  async function applyExisting(type: "axe" | "company") {
-    if (!axes?.length && type === "axe") {
-      alert("Aucun axe sélectionné");
+  async function applyFromAxe() {
+    if (!axes.length) return alert("Sélectionnez au moins un axe");
+
+    const axeId = axes[0].id_axe; // règle validée : 1 seul inspire
+
+    setImportingExisting(true);
+
+    const axeRes = await api.get(`/axes/${axeId}`);
+
+    const squareUrl = axeRes?.axe?.MEDIA_SQUARE_URL;
+    const rectUrl = axeRes?.axe?.MEDIA_RECTANGLE_URL;
+
+    if (!squareUrl || !rectUrl) {
+      alert("Cet axe n’a pas de visuel complet (carre + rectangle)");
+      setImportingExisting(false);
       return;
     }
 
-    setSelectingExisting(true);
-
-    let urlRect = null;
-    let urlSquare = null;
-
-    if (type === "axe") {
-      const axeId = axes[0].id_axe;
-      const res = await api.get(`/axes/${axeId}`);
-      urlRect = res?.axe?.MEDIA_RECTANGLE_URL || null;
-      urlSquare = res?.axe?.MEDIA_SQUARE_URL || null;
-    }
-
-    if (type === "company") {
-      alert("Sélection d’une société → à implémenter page parent");
-      setSelectingExisting(false);
-      return;
-    }
-
-    if (!urlRect || !urlSquare) {
-      alert("Visuel indisponible");
-      setSelectingExisting(false);
-      return;
-    }
+    const id = articleId || "_temp_";
 
     const res = await api.post("/visuals/article/apply-existing", {
-      id_article: "_temp_",
-      rectangle_url: urlRect,
-      square_url: urlSquare,
+      id_article: id,
+      square_url: squareUrl,
+      rectangle_url: rectUrl,
     });
 
     if (res.status !== "ok") {
-      alert("Erreur import visuel existant");
-      setSelectingExisting(false);
+      alert("Erreur import visuel axe");
+      setImportingExisting(false);
       return;
     }
 
@@ -138,34 +129,41 @@ export default function ArticleVisualSection({
       previewUrl: res.urls.rectangle,
     });
 
-    setSelectingExisting(false);
+    setImportingExisting(false);
   }
 
-  /* ------------------------------------------------------------------
-     MODE 3 : IA (UNIQUEMENT AXES)
-  ------------------------------------------------------------------ */
+  /* ---------------------------------------------------------
+     IA — uniquement axes (strict)
+  --------------------------------------------------------- */
   const [generatingAI, setGeneratingAI] = useState(false);
 
   async function generateAI() {
     if (!title?.trim()) return alert("Titre requis");
-    if (!axes?.length) return alert("Un axe est requis pour générer un visuel IA");
+    if (!axes.length)
+      return alert("Un axe est requis pour générer un visuel IA");
+
+    const axeId = axes[0].id_axe;
+    const axeRes = await api.get(`/axes/${axeId}`);
+
+    const squareInspiration = axeRes?.axe?.MEDIA_SQUARE_URL;
+    if (!squareInspiration) {
+      alert("Aucun visuel carré inspirant pour cet axe");
+      return;
+    }
 
     setGeneratingAI(true);
 
-    const axeId = axes[0].id_axe;
-
-    const axeData = await api.get(`/axes/${axeId}`);
-    const inspirationUrl = axeData?.axe?.MEDIA_SQUARE_URL;
+    const id = articleId || "_temp_";
 
     const res = await api.post("/visuals/article/generate-ai", {
-      id_article: "_temp_",
+      id_article: id,
       title,
-      resume: "",
-      axe_visual_square_url: inspirationUrl,
+      excerpt: "",
+      axe_visual_square_url: squareInspiration,
     });
 
     if (res.status !== "ok") {
-      alert("Erreur IA");
+      alert("Erreur génération IA");
       setGeneratingAI(false);
       return;
     }
@@ -179,10 +177,9 @@ export default function ArticleVisualSection({
     setGeneratingAI(false);
   }
 
-  /* ------------------------------------------------------------------
+  /* ---------------------------------------------------------
      UI
-  ------------------------------------------------------------------ */
-
+  --------------------------------------------------------- */
   return (
     <div className="p-4 border rounded bg-white space-y-4">
 
@@ -190,44 +187,44 @@ export default function ArticleVisualSection({
         Visuel de l’article
       </h2>
 
-      {/* TABS */}
+      {/* MODES */}
       <div className="flex gap-4 border-b pb-2">
-        <button
-          onClick={() => switchMode("upload")}
-          className={mode === "upload" ? "font-semibold border-b-2 border-ratecard-blue" : ""}
-        >
-          Upload local
-        </button>
-
-        <button
-          onClick={() => switchMode("existing")}
-          className={mode === "existing" ? "font-semibold border-b-2 border-ratecard-blue" : ""}
-        >
-          Visuel existant
-        </button>
-
-        <button
-          onClick={() => switchMode("ia")}
-          className={mode === "ia" ? "font-semibold border-b-2 border-ratecard-blue" : ""}
-        >
-          Génération IA
-        </button>
+        {[
+          ["upload", "Upload"],
+          ["existing", "Visuel existant"],
+          ["ai", "Génération IA"],
+        ].map(([val, label]) => (
+          <button
+            key={val}
+            onClick={() => switchMode(val as Mode)}
+            className={
+              mode === val
+                ? "font-semibold border-b-2 border-ratecard-blue"
+                : "text-gray-500"
+            }
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* -------------------------- */}
-      {/* MODE 1 — UPLOAD */}
-      {/* -------------------------- */}
+      {/* ---------------------------------- */}
+      {/* UPLOAD */}
+      {/* ---------------------------------- */}
       {mode === "upload" && (
         <div className="space-y-3">
-          <input type="file" accept="image/*" onChange={onSelectFile} />
+          <input type="file" accept="image/*" onChange={selectFile} />
 
-          {uploadPreview && (
-            <img src={uploadPreview} className="w-60 rounded border" />
+          {localPreview && (
+            <img
+              src={localPreview}
+              className="w-60 border rounded bg-white"
+            />
           )}
 
           <button
-            disabled={uploading || !file}
-            onClick={uploadFile}
+            disabled={!file || uploading}
+            onClick={uploadLocal}
             className="px-4 py-2 bg-ratecard-blue text-white rounded"
           >
             {uploading ? "Upload…" : "Uploader"}
@@ -235,44 +232,37 @@ export default function ArticleVisualSection({
         </div>
       )}
 
-      {/* -------------------------- */}
-      {/* MODE 2 — EXISTING */}
-      {/* -------------------------- */}
+      {/* ---------------------------------- */}
+      {/* EXISTING (AXE) */}
+      {/* ---------------------------------- */}
       {mode === "existing" && (
         <div className="space-y-3">
           <p className="text-sm text-gray-600">
-            Vous pouvez appliquer le visuel d’un axe ou d’une société.
+            Le visuel sera importé depuis le premier axe sélectionné.
           </p>
 
           <button
-            onClick={() => applyExisting("axe")}
-            disabled={!axes?.length || selectingExisting}
+            disabled={!axes.length || importingExisting}
+            onClick={applyFromAxe}
             className="px-4 py-2 bg-ratecard-blue text-white rounded"
           >
-            {selectingExisting ? "Import…" : "Visuel de l’axe"}
-          </button>
-
-          <button
-            disabled
-            className="px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed"
-          >
-            Visuel de la société (bientôt)
+            {importingExisting ? "Import…" : "Visuel de l’axe"}
           </button>
         </div>
       )}
 
-      {/* -------------------------- */}
-      {/* MODE 3 — IA */}
-      {/* -------------------------- */}
-      {mode === "ia" && (
+      {/* ---------------------------------- */}
+      {/* IA */}
+      {/* ---------------------------------- */}
+      {mode === "ai" && (
         <div className="space-y-3">
           <p className="text-sm text-gray-600">
-            Le visuel IA est généré uniquement à partir des axes choisis.
+            Le visuel IA s’appuie uniquement sur le 1er axe.
           </p>
 
           <button
+            disabled={!axes.length || generatingAI}
             onClick={generateAI}
-            disabled={!axes?.length || generatingAI}
             className="px-4 py-2 bg-purple-600 text-white rounded"
           >
             {generatingAI ? "Génération…" : "Générer via IA"}
@@ -280,13 +270,17 @@ export default function ArticleVisualSection({
         </div>
       )}
 
-      {/* PREVIEW FINALE */}
-      {previewRectUrl && (
+      {/* PREVIEW */}
+      {(initialRectangleUrl || localPreview) && (
         <div className="mt-4">
-          <p className="text-xs text-gray-500">Aperçu final :</p>
-          <img src={previewRectUrl} className="w-80 border rounded bg-white" />
+          <p className="text-xs text-gray-500 mb-1">Aperçu :</p>
+          <img
+            src={localPreview || initialRectangleUrl!}
+            className="w-80 border rounded bg-white"
+          />
         </div>
       )}
     </div>
   );
 }
+
