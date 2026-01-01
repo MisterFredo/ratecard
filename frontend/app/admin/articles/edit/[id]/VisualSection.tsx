@@ -1,165 +1,101 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { api } from "@/lib/api";
 
-/**
- * Composant visuel pour l’édition d’un article
- */
-export default function ArticleEditVisualSection({
-  id_article,
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
+type Mode = "upload" | "ai";
+
+export default function VisualSection({
+  article,
+  onChange,
   axes,
   companies,
-  title,
-  excerpt,
-  rectangleId,
-  squareId,
-  onChangeRectangle,
-  onChangeSquare,
 }: {
-  id_article: string;
-  axes: string[];
-  companies: string[];
-
-  title: string;
-  excerpt: string;
-
-  rectangleId: string | null;
-  squareId: string | null;
-
-  onChangeRectangle: (id: string | null) => void;
-  onChangeSquare: (id: string | null) => void;
+  article: any;
+  onChange: (rectUrl: string | null, squareUrl: string | null) => void;
+  axes: any[];
+  companies: any[];
 }) {
-  const [mode, setMode] = useState<"upload" | "ai">("upload");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>("upload");
+  const [loadingAI, setLoadingAI] = useState(false);
 
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [generating, setGenerating] = useState(false);
+  const rectPath = article?.media_rectangle_path;
+  const squarePath = article?.media_square_path;
 
-  /* ---------------------------------------------------------
-     LOAD EXISTING VISUALS
-  --------------------------------------------------------- */
-  useEffect(() => {
-    async function load() {
-      if (!id_article) return;
-
-      setLoading(true);
-
-      const res = await api.get(`/visuals/article/${id_article}`);
-      if (res.status === "ok" && res.visual) {
-        setPreviewUrl(res.visual.rectangle_url || null);
-
-        if (res.visual.rectangle_id) onChangeRectangle(res.visual.rectangle_id);
-        if (res.visual.square_id) onChangeSquare(res.visual.square_id);
-      }
-
-      setLoading(false);
-    }
-
-    load();
-  }, [id_article]);
+  const rectUrl = rectPath ? `${GCS_BASE_URL}/${rectPath}` : null;
+  const squareUrl = squarePath ? `${GCS_BASE_URL}/${squarePath}` : null;
 
   /* ---------------------------------------------------------
-     UPLOAD MANUEL
+      UPLOAD MANUEL
   --------------------------------------------------------- */
-  async function onUploadLocal(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleManualUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!title.trim()) {
-      alert("Veuillez d'abord saisir un titre pour nommer le fichier.");
-      return;
+    const base64 = await fileToBase64(file);
+
+    const payload = {
+      id_article: article.ID_ARTICLE,
+      title: article.TITRE,
+      base64_image: base64,
+    };
+
+    const res = await api.post("/visuals/article/upload", payload);
+
+    if (res.status === "ok") {
+      onChange(res.urls.rectangle, res.urls.square);
     }
-
-    const b64 = await fileToBase64(file);
-
-    setUploading(true);
-
-    const res = await api.post("/visuals/article/upload", {
-      id_article,
-      title,
-      base64_image: b64,
-    });
-
-    setUploading(false);
-
-    if (res.status !== "ok") {
-      alert("Erreur upload visuel");
-      return;
-    }
-
-    // MAJ des IDs BQ
-    onChangeRectangle(res.urls.rectangle_id);
-    onChangeSquare(res.urls.square_id);
-
-    // Mise à jour visuel affiché
-    setPreviewUrl(res.urls.rectangle_url);
   }
 
-  /* ---------------------------------------------------------
-     IA VISUEL
-  --------------------------------------------------------- */
-  async function generateAI() {
-    if (!title.trim()) {
-      return alert("Veuillez saisir un titre avant génération IA.");
-    }
-
-    setGenerating(true);
-
-    const res = await api.post("/visuals/article/generate-ai", {
-      id_article,
-      title,
-      excerpt,
-      axes,
-      companies,
-    });
-
-    setGenerating(false);
-
-    if (res.status !== "ok") {
-      alert("Erreur lors de la génération IA");
-      return;
-    }
-
-    onChangeRectangle(res.urls.rectangle_id);
-    onChangeSquare(res.urls.square_id);
-
-    setPreviewUrl(res.urls.rectangle_url);
-  }
-
-  /* ---------------------------------------------------------
-     UTILITAIRE — f → base64
-  --------------------------------------------------------- */
   function fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = () =>
-        resolve((reader.result as string).replace(/^data:.+;base64,/, ""));
-      reader.onerror = reject;
+      reader.onloadend = () =>
+        resolve((reader.result as string).replace(/^data:.*;base64,/, ""));
       reader.readAsDataURL(file);
     });
   }
 
   /* ---------------------------------------------------------
-     RENDER
+      IA VISUEL ARTICLE
+      (uniquement influences → axes)
   --------------------------------------------------------- */
-  if (loading) {
-    return (
-      <div className="p-4 border rounded bg-white">
-        <p className="text-gray-500">Chargement du visuel…</p>
-      </div>
-    );
+  async function generateAI() {
+    setLoadingAI(true);
+
+    const primaryAxe = axes?.[0] ?? null;
+    const axeVisual = primaryAxe?.media_square_url ?? null;
+
+    const payload = {
+      id_article: article.ID_ARTICLE,
+      title: article.TITRE,
+      excerpt: article.RESUME || "",
+      axe_visual_square_url: axeVisual,
+      company_visual_square_url: null, // ❌ interdit comme décidé
+    };
+
+    const res = await api.post("/visuals/article/generate-ai", payload);
+
+    if (res.status === "ok") {
+      onChange(res.urls.rectangle, res.urls.square);
+    }
+
+    setLoadingAI(false);
   }
 
+  /* ---------------------------------------------------------
+      UI
+  --------------------------------------------------------- */
   return (
-    <div className="p-4 border rounded bg-white space-y-4">
+    <div className="border rounded p-4 space-y-4 bg-white">
       <h2 className="text-xl font-semibold text-ratecard-blue">
         Visuel de l’article
       </h2>
 
-      {/* ONGLETS */}
-      <div className="flex gap-6 border-b pb-2">
+      {/* Onglets */}
+      <div className="flex gap-4 border-b pb-2">
         <button
           className={
             mode === "upload"
@@ -177,7 +113,7 @@ export default function ArticleEditVisualSection({
               ? "border-b-2 border-ratecard-blue font-semibold"
               : "text-gray-500"
           }
-          onClick={() => setMode("ia")}
+          onClick={() => setMode("ai")}
         >
           Génération IA
         </button>
@@ -185,56 +121,38 @@ export default function ArticleEditVisualSection({
 
       {/* MODE UPLOAD */}
       {mode === "upload" && (
-        <div className="space-y-3">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={onUploadLocal}
-            disabled={uploading}
-            className="border p-2 rounded w-full"
-          />
-          {uploading && (
-            <p className="text-gray-500 text-sm">Traitement…</p>
-          )}
+        <div className="space-y-2">
+          <input type="file" accept="image/*" onChange={handleManualUpload} />
         </div>
       )}
 
       {/* MODE IA */}
       {mode === "ai" && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">
-            Le visuel IA sera inspiré :
-            <br />• de l’axe principal (axes[0]) si présent
-            <br />• sinon d’une société associée
-            <br />• sinon du titre + résumé
-          </p>
-
           <button
             onClick={generateAI}
-            disabled={generating}
+            disabled={loadingAI}
             className="bg-ratecard-blue text-white px-4 py-2 rounded"
           >
-            {generating ? "Génération…" : "Générer via IA"}
+            {loadingAI ? "Génération…" : "Générer via IA"}
           </button>
+
+          {axes.length === 0 && (
+            <p className="text-xs text-red-500">
+              ⚠️ Aucun axe assigné → IA impossible (obligatoire).
+            </p>
+          )}
         </div>
       )}
 
-      {/* APERÇU FINAL */}
-      {previewUrl && (
+      {/* APERÇU */}
+      {rectUrl && (
         <div>
-          <p className="text-xs text-gray-500 mb-1">Aperçu :</p>
+          <p className="text-xs text-gray-500">Aperçu :</p>
           <img
-            src={previewUrl}
-            className="w-80 border rounded bg-white shadow"
+            src={rectUrl}
+            className="w-96 rounded border shadow bg-white"
           />
-        </div>
-      )}
-
-      {/* IDS TECH */}
-      {(rectangleId || squareId) && (
-        <div className="text-xs text-gray-400">
-          {rectangleId && <p>Rectangle ID : {rectangleId}</p>}
-          {squareId && <p>Carré ID : {squareId}</p>}
         </div>
       )}
     </div>
