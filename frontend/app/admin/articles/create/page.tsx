@@ -160,9 +160,9 @@ export default function CreateArticlePage() {
           <HtmlEditor value={contentHtml} onChange={setContentHtml} />
 
           {/* SELECTEURS */}
-          <CompanySelector values={companies} onChange={setCompanies} multi />
-          <PersonSelector values={persons} onChange={setPersons} multi />
-          <AxesEditor values={axes} onChange={setAxes} multi />
+          <CompanySelector values={companies} onChange={setCompanies} />
+          <PersonSelector values={persons} onChange={setPersons} />
+          <AxesEditor values={axes} onChange={setAxes} />
 
           {/* VISUEL ARTICLE */}
           <ArticleVisualSection
