@@ -1,51 +1,62 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
-from datetime import datetime
+from pydantic import BaseModel
+from typing import List, Optional
 
 
-class AxeItem(BaseModel):
-    type: str = Field(..., pattern="^(TOPIC|COMPANY|PRODUCT)$")
-    value: str
-
-
-class ArticlePersonItem(BaseModel):
-    id_person: str
-    role: Optional[str] = None
-
+# ============================================================
+# ARTICLE CREATE
+# ============================================================
 
 class ArticleCreate(BaseModel):
-    titre: str
+    title: str
     excerpt: Optional[str] = None
-    contenu_html: str
+    content_html: Optional[str] = None
 
-    visuel_url: Optional[str] = None
-    visuel_square_url: Optional[str] = None     # ← IMPORTANT
+    companies: List[str] = []      # liste d’ID_COMPANY
+    persons: List[str] = []        # liste d’ID_PERSON
+    axes: List[str] = []           # liste d’ID_AXE (obligatoire 1..N côté front)
 
-    auteur: Optional[str] = None
+    media_rectangle_id: Optional[str] = None
+    media_square_id: Optional[str] = None
 
-    is_featured: bool = False
-    featured_order: Optional[int] = None
-
-    axes: List[AxeItem] = []
-    companies: List[str] = []
-    persons: List[ArticlePersonItem] = []
+    author: Optional[str] = None
 
 
-class ArticleOut(BaseModel):
+# ============================================================
+# ARTICLE UPDATE
+# ============================================================
+
+class ArticleUpdate(BaseModel):
+    title: Optional[str] = None
+    excerpt: Optional[str] = None
+    content_html: Optional[str] = None
+
+    companies: Optional[List[str]] = None
+    persons: Optional[List[str]] = None
+    axes: Optional[List[str]] = None
+
+    media_rectangle_id: Optional[str] = None
+    media_square_id: Optional[str] = None
+
+    author: Optional[str] = None
+
+
+# ============================================================
+# ARTICLE RESPONSE (FULL)
+# ============================================================
+
+class ArticleResponse(BaseModel):
     id_article: str
-    titre: str
+    title: str
     excerpt: Optional[str]
-    contenu_html: str
+    content_html: Optional[str]
 
-    visuel_url: Optional[str]
-    visuel_square_url: Optional[str]            # ← IMPORTANT
+    media_rectangle_url: Optional[str]
+    media_square_url: Optional[str]
 
-    auteur: Optional[str]
-    date_publication: datetime
+    companies: List[dict] = []
+    persons: List[dict] = []
+    axes: List[dict] = []
 
-    is_featured: bool
-    featured_order: Optional[int]
-
-    axes: List[AxeItem] = []
-    companies: List[str] = []
-    persons: List[ArticlePersonItem] = []
+    author: Optional[str]
+    created_at: Optional[str]
+    updated_at: Optional[str]
