@@ -1,73 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
-import CompanySelector from "@/components/admin/CompanySelector";
-import PersonSelector from "@/components/admin/PersonSelector";
-import AxesEditor from "@/components/admin/AxesEditor";
-import HtmlEditor from "@/components/admin/HtmlEditor";
+import CompanyMultiSelector from "@/components/admin/CompanyMultiSelector";
+import PersonMultiSelector from "@/components/admin/PersonMultiSelector";
+import AxeMultiSelector from "@/components/admin/AxeMultiSelector";
 
-import MediaPicker from "@/components/admin/MediaPicker";
-import ArticleImageUploader from "@/components/admin/ArticleImageUploader";
+import ArticleEditVisualSection from "./VisualSection";
 
-export default function EditArticle({ params }) {
+export default function EditArticlePage({ params }) {
   const { id } = params;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // BASIC FIELDS
+  // FIELDS
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
 
   // ENTITIES
-  const [selectedCompany, setSelectedCompany] = useState<any>(null);
-  const [selectedPersons, setSelectedPersons] = useState<any[]>([]);
-  const [axes, setAxes] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<string[]>([]);
+  const [persons, setPersons] = useState<string[]>([]);
+  const [axes, setAxes] = useState<string[]>([]);
 
-  /* ---------------------------------------------------------
-     VISUEL — 3 modes = media / upload / ia
-  --------------------------------------------------------- */
-  type VisualMode = "media" | "upload" | "ia";
-  const [visualMode, setVisualMode] = useState<VisualMode>("upload");
-
-  const [visuelUrl, setVisuelUrl] = useState("");
-  const [visuelSquareUrl, setVisuelSquareUrl] = useState("");
-
-  function resetVisual() {
-    setVisuelUrl("");
-    setVisuelSquareUrl("");
-  }
-
-  function selectMode(mode: VisualMode) {
-    resetVisual();
-    setVisualMode(mode);
-  }
-
-  function autodetectMode(url: string): VisualMode {
-    if (!url) return "upload";
-
-    if (
-      url.includes("/media/logos") ||
-      url.includes("/media/logos-cropped") ||
-      url.includes("/media/generics")
-    ) {
-      return "media";
-    }
-
-    if (url.includes("/media/articles/generated")) {
-      return "ia";
-    }
-
-    if (url.includes("/media/articles/")) {
-      return "upload";
-    }
-
-    return "upload";
-  }
+  // VISUELS
+  const [rectangleId, setRectangleId] = useState<string | null>(null);
+  const [squareId, setSquareId] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
      LOAD ARTICLE
@@ -79,80 +40,25 @@ export default function EditArticle({ params }) {
       const res = await api.get(`/articles/${id}`);
       const a = res.article;
 
-      // BASIC
+      // FIELDS
       setTitle(a.TITRE || "");
       setExcerpt(a.EXCERPT || "");
       setContentHtml(a.CONTENU_HTML || "");
 
-      // VISUEL
-      setVisuelUrl(a.VISUEL_URL || "");
-      setVisuelSquareUrl(a.VISUEL_SQUARE_URL || "");
+      // ENTITIES
+      setCompanies(a.companies || []);
+      setPersons((a.persons || []).map((p) => p.ID_PERSON));
+      setAxes((a.axes || []).map((ax) => ax.AXE_VALUE));
 
-      // AUTO-DETECT VISUAL MODE
-      setVisualMode(autodetectMode(a.VISUEL_URL || ""));
-
-      // COMPANY
-      if (a.companies?.length > 0) {
-        const cid = a.companies[0];
-        const companyRes = await api.get(`/company/${cid}`);
-        setSelectedCompany(companyRes.company);
-      }
-
-      // PERSONS
-      if (a.persons) {
-        const personObjects = [];
-        for (const person of a.persons) {
-          const p = await api.get(`/person/${person.ID_PERSON}`);
-          personObjects.push({
-            id_person: p.person.ID_PERSON,
-            name: p.person.NAME,
-            title: p.person.TITLE,
-          });
-        }
-        setSelectedPersons(personObjects);
-      }
-
-      // AXES
-      setAxes(
-        (a.axes || []).map((ax: any) => ({
-          id_axe: ax.ID_AXE,
-          label: ax.AXE_VALUE,
-        }))
-      );
+      // VISUELS stockés en base
+      if (a.VISUEL_RECTANGLE_ID) setRectangleId(a.VISUEL_RECTANGLE_ID);
+      if (a.VISUEL_SQUARE_ID) setSquareId(a.VISUEL_SQUARE_ID);
 
       setLoading(false);
     }
 
     load();
   }, [id]);
-
-  /* ---------------------------------------------------------
-     IA VISUEL
-  --------------------------------------------------------- */
-  const [savingIA, setSavingIA] = useState(false);
-
-  async function generateIA() {
-    if (!title && !excerpt)
-      return alert("Merci de renseigner un titre ou résumé");
-
-    setSavingIA(true);
-
-    const payload = {
-      title,
-      excerpt,
-      axes: axes.map((a) => a.label),
-      company: selectedCompany?.name || null,
-    };
-
-    const res = await api.post("/api/media/generate", payload);
-
-    if (res.status === "ok") {
-      setVisuelUrl(res.items.rectangle.url);
-      setVisuelSquareUrl(res.items.square.url);
-    }
-
-    setSavingIA(false);
-  }
 
   /* ---------------------------------------------------------
      SAVE ARTICLE
@@ -165,147 +71,88 @@ export default function EditArticle({ params }) {
       excerpt,
       contenu_html: contentHtml,
 
-      visuel_url: visuelUrl,
-      visuel_square_url: visuelSquareUrl,
+      // Nouvelles colonnes
+      media_rectangle_id: rectangleId,
+      media_square_id: squareId,
 
-      axes: axes.map((a) => ({ value: a.label })),
-      companies: selectedCompany ? [selectedCompany.ID_COMPANY] : [],
-      persons: selectedPersons.map((p) => ({ id_person: p.id_person })),
-
-      auteur: null,
+      companies,
+      persons,
+      axes,
     };
 
     const res = await api.put(`/articles/update/${id}`, payload);
-    setSaving(false);
 
+    setSaving(false);
     alert("Article mis à jour !");
   }
 
   if (loading) return <div>Chargement…</div>;
 
   /* ---------------------------------------------------------
-     RENDER
+     UI
   --------------------------------------------------------- */
   return (
     <div className="space-y-10">
+
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
           Modifier l’article
         </h1>
-        <Link href="/admin/articles" className="underline text-gray-600">
+        <Link href="/admin/articles" className="underline text-gray-500">
           ← Retour
         </Link>
       </div>
 
-      {/* BASIC FIELDS */}
+      {/* TITRE */}
       <input
+        className="border p-2 w-full rounded"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="border p-2 w-full rounded"
       />
 
+      {/* EXCERPT */}
       <textarea
+        className="border p-2 w-full rounded h-24"
         value={excerpt}
         onChange={(e) => setExcerpt(e.target.value)}
-        className="border p-2 rounded w-full h-24"
       />
 
-      <HtmlEditor value={contentHtml} onChange={setContentHtml} />
+      {/* CONTENU HTML */}
+      <textarea
+        className="border p-2 w-full rounded h-72 font-mono text-sm"
+        value={contentHtml}
+        onChange={(e) => setContentHtml(e.target.value)}
+      />
 
-      <CompanySelector value={selectedCompany} onChange={setSelectedCompany} />
-      <PersonSelector values={selectedPersons} onChange={setSelectedPersons} />
-      <AxesEditor values={axes} onChange={setAxes} />
+      {/* ENTITÉS MULTI */}
+      <CompanyMultiSelector
+        values={companies}
+        onChange={setCompanies}
+      />
 
-      {/* ---------------------------------------------------------
-          VISUEL : 3 modes modernes
-      --------------------------------------------------------- */}
-      <div className="p-4 border rounded bg-white space-y-4">
-        <h2 className="text-xl font-semibold text-ratecard-blue">
-          Visuel de l’article
-        </h2>
+      <PersonMultiSelector
+        values={persons}
+        onChange={setPersons}
+      />
 
-        {/* ONGLET DE MODE */}
-        <div className="flex gap-4 border-b pb-2">
-          <button
-            className={`pb-1 ${
-              visualMode === "media"
-                ? "border-b-2 border-ratecard-blue font-semibold"
-                : "text-gray-500"
-            }`}
-            onClick={() => selectMode("media")}
-          >
-            Médiathèque
-          </button>
+      <AxeMultiSelector
+        values={axes}
+        onChange={setAxes}
+      />
 
-          <button
-            className={`pb-1 ${
-              visualMode === "upload"
-                ? "border-b-2 border-ratecard-blue font-semibold"
-                : "text-gray-500"
-            }`}
-            onClick={() => selectMode("upload")}
-          >
-            Upload
-          </button>
-
-          <button
-            className={`pb-1 ${
-              visualMode === "ia"
-                ? "border-b-2 border-ratecard-blue font-semibold"
-                : "text-gray-500"
-            }`}
-            onClick={() => selectMode("ia")}
-          >
-            Génération IA
-          </button>
-        </div>
-
-        {/* MODE 1 — Médiathèque */}
-        {visualMode === "media" && (
-          <MediaPicker
-            open={true}
-            onClose={() => {}}
-            category="generics"
-            onSelect={(item) => {
-              setVisuelUrl(item.url);
-              setVisuelSquareUrl("");
-            }}
-          />
-        )}
-
-        {/* MODE 2 — Upload local */}
-        {visualMode === "upload" && (
-          <ArticleImageUploader
-            onUploadComplete={({ rectangle_url, square_url }) => {
-              setVisuelUrl(rectangle_url);
-              setVisuelSquareUrl(square_url);
-            }}
-          />
-        )}
-
-        {/* MODE 3 — IA */}
-        {visualMode === "ia" && (
-          <button
-            className="bg-ratecard-blue text-white px-3 py-2 rounded"
-            onClick={generateIA}
-            disabled={savingIA}
-          >
-            {savingIA ? "Génération…" : "Générer IA"}
-          </button>
-        )}
-
-        {/* PREVIEW */}
-        {visuelUrl && (
-          <div className="mt-3">
-            <p className="text-xs text-gray-500 mb-1">Aperçu :</p>
-            <img
-              src={visuelUrl}
-              className="w-80 border rounded bg-white"
-            />
-          </div>
-        )}
-      </div>
+      {/* VISUELS */}
+      <ArticleEditVisualSection
+        id_article={id}
+        axes={axes}
+        companies={companies}
+        title={title}
+        excerpt={excerpt}
+        rectangleId={rectangleId}
+        squareId={squareId}
+        onChangeRectangle={setRectangleId}
+        onChangeSquare={setSquareId}
+      />
 
       {/* SAVE */}
       <button
@@ -313,11 +160,8 @@ export default function EditArticle({ params }) {
         disabled={saving}
         className="bg-ratecard-blue text-white px-6 py-2 rounded"
       >
-        Enregistrer
+        {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
     </div>
   );
 }
-
-
-
