@@ -3,100 +3,102 @@
 import { useState } from "react";
 import Image from "next/image";
 
+import { api } from "@/lib/api";
+
 export default function ArticleImageUploader({
+  articleId,
+  title,
   onUploadComplete,
 }: {
-  onUploadComplete: (result: {
-    rectangle_id: string;
+  articleId: string;
+  title: string;
+  onUploadComplete: (r: {
     rectangle_url: string;
-    square_id: string;
     square_url: string;
   }) => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  /* --------------------------------------------
-     SÉLECTION FICHIER
-  -------------------------------------------- */
-  function selectFile(e: React.ChangeEvent<HTMLInputElement>) {
+  // -----------------------------------------
+  // Select local file
+  // -----------------------------------------
+  function onSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
-
     setFile(f);
-    setPreviewUrl(URL.createObjectURL(f));
+    setPreview(URL.createObjectURL(f));
   }
 
-  /* --------------------------------------------
-     UPLOAD MAXI SIMPLE → Next.js → Backend
-  -------------------------------------------- */
+  // -----------------------------------------
+  // Upload to backend → GCS
+  // -----------------------------------------
   async function upload() {
-    if (!file) return alert("Sélectionne une image.");
+    if (!file) {
+      alert("Merci de sélectionner un fichier.");
+      return;
+    }
+
+    if (!title.trim()) {
+      alert("Merci de renseigner un titre d’article avant l’upload.");
+      return;
+    }
 
     setLoading(true);
 
-    // Conversion file → base64 pour backend
-    const arrayBuffer = await file.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    // Convertir en base64
+    const buffer = await file.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString("base64");
 
-    const res = await fetch("/visuals/article/upload", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id_article: "temp", // Pour création → remplacé ensuite par Edit
-        title: file.name.replace(/\.[^.]+$/, ""),
-        base64_image: base64,
-      }),
-    });
+    const payload = {
+      id_article: articleId,
+      title,
+      base64_image: base64,
+    };
 
-    const json = await res.json();
+    const res = await api.post("/visuals/articles/upload", payload);
+
     setLoading(false);
 
-    if (json.status !== "ok") {
-      alert("Erreur upload article : " + json.detail || json.message);
+    if (res.status !== "ok") {
+      console.error("❌ Upload error:", res);
+      alert("Erreur upload visuel : " + (res.detail || res.message));
       return;
     }
 
     onUploadComplete({
-      rectangle_id: json.media_rectangle_id,
-      rectangle_url: json.urls.rectangle,
-      square_id: json.media_square_id,
-      square_url: json.urls.square,
+      rectangle_url: res.urls.rectangle,
+      square_url: res.urls.square,
     });
   }
 
-  /* --------------------------------------------
-     UI
-  -------------------------------------------- */
+  // -----------------------------------------
+  // UI
+  // -----------------------------------------
   return (
-    <div className="space-y-4 p-4 border rounded bg-white shadow">
+    <div className="space-y-4 p-4 border rounded bg-white shadow-sm">
 
-      <input
-        type="file"
-        accept="image/*"
-        onChange={selectFile}
-        className="text-sm"
-      />
+      <input type="file" accept="image/*" onChange={onSelect} />
 
-      {previewUrl && (
+      {preview && (
         <Image
-          src={previewUrl}
+          src={preview}
           alt="preview"
           width={300}
           height={200}
-          className="border rounded object-contain bg-gray-100"
+          className="border rounded mt-2 object-contain bg-gray-50"
         />
       )}
 
       <button
         onClick={upload}
-        disabled={!file || loading}
-        className={`px-4 py-2 rounded text-white font-medium ${
-          loading ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"
+        disabled={loading || !file}
+        className={`px-4 py-2 text-white rounded ${
+          loading ? "bg-gray-400" : "bg-ratecard-blue hover:bg-blue-700"
         }`}
       >
-        {loading ? "Traitement…" : "Uploader et générer formats"}
+        {loading ? "Traitement…" : "Uploader l’image"}
       </button>
     </div>
   );
