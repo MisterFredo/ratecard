@@ -3,36 +3,27 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import MediaPicker from "@/components/admin/MediaPicker";
 
-export default function EditCompany({ params }) {
+import CompanyVisualSection from "./VisualSection";
+
+export default function EditCompanyPage({ params }) {
   const { id } = params;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // FIELDS
+  // Champs société
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
 
-  // DAM IDs
-  const [logoRectId, setLogoRectId] = useState<string | null>(null);
-  const [logoSquareId, setLogoSquareId] = useState<string | null>(null);
-
-  // OLD IDs
-  const [oldLogoRectId, setOldLogoRectId] = useState<string | null>(null);
-  const [oldLogoSquareId, setOldLogoSquareId] = useState<string | null>(null);
-
-  // GCS URL previews
-  const [logoRectUrl, setLogoRectUrl] = useState<string | null>(null);
-  const [logoSquareUrl, setLogoSquareUrl] = useState<string | null>(null);
-
-  const [pickerOpen, setPickerOpen] = useState(false);
+  // URLs visuels (stockées dans BQ)
+  const [squareUrl, setSquareUrl] = useState<string | null>(null);
+  const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
-     LOAD COMPANY DATA
+     LOAD COMPANY
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
@@ -46,22 +37,9 @@ export default function EditCompany({ params }) {
       setLinkedinUrl(c.LINKEDIN_URL || "");
       setWebsiteUrl(c.WEBSITE_URL || "");
 
-      setLogoRectId(c.MEDIA_LOGO_RECTANGLE_ID || null);
-      setLogoSquareId(c.MEDIA_LOGO_SQUARE_ID || null);
-
-      setOldLogoRectId(c.MEDIA_LOGO_RECTANGLE_ID || null);
-      setOldLogoSquareId(c.MEDIA_LOGO_SQUARE_ID || null);
-
-      // Load assigned logos via DAM
-      const m = await api.get(`/media/by-entity?type=company&id=${id}`);
-      const media = m.media || [];
-
-      const rect = media.find((m) => m.FORMAT === "rectangle");
-      const square = media.find((m) => m.FORMAT === "square");
-
-      // ❗️ Correction : toujours utiliser "url"
-      if (rect) setLogoRectUrl(rect.url);
-      if (square) setLogoSquareUrl(square.url);
+      // Directement depuis BQ
+      setSquareUrl(c.MEDIA_LOGO_SQUARE_URL || null);
+      setRectUrl(c.MEDIA_LOGO_RECT_URL || null);
 
       setLoading(false);
     }
@@ -70,53 +48,23 @@ export default function EditCompany({ params }) {
   }, [id]);
 
   /* ---------------------------------------------------------
-     UPDATE COMPANY
+     SAVE
   --------------------------------------------------------- */
-  async function update() {
+  async function save() {
     if (!name.trim()) return alert("Merci de renseigner un nom");
 
     setSaving(true);
 
-    // 1️⃣ Update metadata
     const payload = {
       name,
       description: description || null,
       linkedin_url: linkedinUrl || null,
       website_url: websiteUrl || null,
-      media_logo_rectangle_id: logoRectId,
-      media_logo_square_id: logoSquareId,
+      media_logo_square_url: squareUrl,     // 🔥 nouvelle logique : URL directe
+      media_logo_rectangle_url: rectUrl,    // idem
     };
 
     const res = await api.put(`/company/update/${id}`, payload);
-
-    // 2️⃣ Unassign old
-    async function unassign(oldId: string | null, newId: string | null) {
-      if (oldId && oldId !== newId) {
-        await api.post("/media/unassign", { media_id: oldId });
-      }
-    }
-
-    await unassign(oldLogoRectId, logoRectId);
-    await unassign(oldLogoSquareId, logoSquareId);
-
-    // 3️⃣ Assign new
-    async function assign(mediaId: string | null) {
-      if (!mediaId) return;
-
-      const r = await api.post("/media/assign", {
-        media_id: mediaId,
-        entity_type: "company",
-        entity_id: id,
-      });
-
-      if (r.status !== "ok") {
-        console.error("Erreur assign:", r);
-        alert("Impossible d'associer le média.");
-      }
-    }
-
-    await assign(logoRectId);
-    await assign(logoSquareId);
 
     setSaving(false);
     alert("Société mise à jour !");
@@ -124,12 +72,10 @@ export default function EditCompany({ params }) {
 
   if (loading) return <div>Chargement…</div>;
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
 
+      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
           Modifier la société
@@ -139,79 +85,47 @@ export default function EditCompany({ params }) {
         </Link>
       </div>
 
+      {/* CHAMPS TEXTE */}
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
+        placeholder="Nom"
         className="border p-2 w-full rounded"
       />
 
       <textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        className="border p-2 w-full rounded h-28"
-      />
-
-      {/* LOGOS */}
-      <div className="space-y-3">
-        <label className="font-medium">Logo (rectangle & carré)</label>
-
-        <button
-          onClick={() => setPickerOpen(true)}
-          className="bg-ratecard-green text-white px-4 py-2 rounded"
-        >
-          Choisir un logo
-        </button>
-
-        {logoSquareUrl && (
-          <div>
-            <p className="text-sm text-gray-500">Carré :</p>
-            <img src={logoSquareUrl} className="w-24 h-24 object-cover border rounded mt-1" />
-          </div>
-        )}
-
-        {logoRectUrl && (
-          <div>
-            <p className="text-sm text-gray-500">Rectangle :</p>
-            <img src={logoRectUrl} className="w-48 h-auto border rounded mt-1" />
-          </div>
-        )}
-      </div>
-
-      <MediaPicker
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        folders={["logos", "logos-cropped"]}
-        onSelect={(item) => {
-          if (!item.media_id) return;
-
-          if (item.format === "square") {
-            setLogoSquareId(item.media_id);
-            setLogoSquareUrl(item.url);
-          }
-
-          if (item.format === "rectangle") {
-            setLogoRectId(item.media_id);
-            setLogoRectUrl(item.url);
-          }
-
-          setPickerOpen(false);
-        }}
+        placeholder="Description"
+        className="border p-2 w-full rounded h-24"
       />
 
       <input
         value={linkedinUrl}
         onChange={(e) => setLinkedinUrl(e.target.value)}
+        placeholder="URL LinkedIn"
         className="border p-2 w-full rounded"
       />
 
       <input
         value={websiteUrl}
         onChange={(e) => setWebsiteUrl(e.target.value)}
+        placeholder="Site web"
         className="border p-2 w-full rounded"
       />
 
+      {/* VISUAL SECTION */}
+      <CompanyVisualSection
+        id_company={id}
+        squareUrl={squareUrl}
+        rectUrl={rectUrl}
+        onSquareChange={setSquareUrl}
+        onRectChange={setRectUrl}
+      />
+
+      {/* SAVE */}
       <button
-        onClick={update}
+        onClick={save}
         disabled={saving}
         className="bg-ratecard-blue text-white px-6 py-2 rounded"
       >
@@ -220,11 +134,3 @@ export default function EditCompany({ params }) {
     </div>
   );
 }
-
-
-
-
-
-
-
-
