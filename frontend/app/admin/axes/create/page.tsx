@@ -73,6 +73,8 @@ export default function CreateAxe() {
         <VisualSection
           entityType="axe"
           entityId={axeId}
+          squareUrl=""
+          rectUrl=""
           onUpdated={() => {}}
         />
       )}
