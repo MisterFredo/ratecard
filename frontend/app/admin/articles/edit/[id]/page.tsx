@@ -192,11 +192,11 @@ export default function EditArticlePage({ params }) {
 
       {/* VISUEL ARTICLE */}
       <ArticleVisualSection
+        articleId={null}          // création → pas encore d’ID
         title={title}
         axes={axes}
-        mediaRectangleId={mediaRectangleId}
-        mediaSquareId={mediaSquareId}
-        previewRectUrl={previewRectUrl}
+        initialRectangleUrl={null}
+        initialSquareUrl={null}
         onChange={({ rectangleId, squareId, previewUrl }) => {
           setMediaRectangleId(rectangleId);
           setMediaSquareId(squareId);
