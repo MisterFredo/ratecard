@@ -3,124 +3,105 @@
 import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import VisualSection from "@/components/visuals/VisualSection";
 
-import CompanyVisualSection from "../edit/[id]/VisualSection"; 
-// 🔥 Le même composant que pour Edit
-
-export default function CreateCompanyPage() {
-  // Données de la société
+export default function CreateCompany() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
 
-  // URLs visuels (gérés par CompanyVisualSection)
+  // Les visuels seront associés APRÈS création
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
+  const [companyId, setCompanyId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [createdId, setCreatedId] = useState<string | null>(null);
 
-  /* ---------------------------------------------------------
-     SAVE
-  --------------------------------------------------------- */
   async function save() {
-    if (!name.trim()) return alert("Merci de renseigner un nom");
+    if (!name.trim()) return alert("Nom requis");
 
     setSaving(true);
 
-    const payload = {
+    const res = await api.post("/company/create", {
       name,
       description: description || null,
       linkedin_url: linkedinUrl || null,
       website_url: websiteUrl || null,
+    });
 
-      // Nouveau modèle :
-      media_logo_square_url: squareUrl,
-      media_logo_rectangle_url: rectUrl,
-    };
-
-    const res = await api.post("/company/create", payload);
-
-    if (!res || !res.id_company) {
-      alert("❌ Erreur lors de la création.");
+    if (!res.id_company) {
+      alert("Erreur création société");
       setSaving(false);
       return;
     }
 
-    setCreatedId(res.id_company);
-    alert("Société créée !");
+    setCompanyId(res.id_company);
+    alert("Société créée ! Ajoutez maintenant les visuels.");
+
     setSaving(false);
   }
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
-    <div className="space-y-10">
-
-      {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-semibold text-ratecard-blue">
+    <div className="space-y-8">
+      <div className="flex justify-between">
+        <h1 className="text-2xl font-semibold text-ratecard-blue">
           Ajouter une société
         </h1>
-        <Link href="/admin/company" className="text-gray-600 underline">
+        <Link href="/admin/company" className="underline">
           ← Retour
         </Link>
       </div>
 
-      {/* NOM */}
       <input
-        placeholder="Nom de la société"
+        className="border p-2 w-full rounded"
+        placeholder="Nom"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="border p-2 w-full rounded"
       />
 
-      {/* DESCRIPTION */}
       <textarea
-        placeholder="Description (optionnel)"
+        className="border p-2 w-full rounded h-28"
+        placeholder="Description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        className="border p-2 w-full h-24 rounded"
       />
 
-      {/* VISUELS : carré + rectangle générés automatiquement */}
-      <CompanyVisualSection
-        id_company={createdId ?? "__new__"} 
-        // pour create: ID temporaire, backend renommera ensuite
-        squareUrl={squareUrl}
-        rectUrl={rectUrl}
-        onSquareChange={setSquareUrl}
-        onRectChange={setRectUrl}
-        isNew={true}
-      />
-
-      {/* LINKEDIN */}
       <input
-        placeholder="URL LinkedIn"
+        className="border p-2 w-full rounded"
+        placeholder="LinkedIn"
         value={linkedinUrl}
         onChange={(e) => setLinkedinUrl(e.target.value)}
-        className="border p-2 w-full rounded"
       />
 
-      {/* WEBSITE */}
       <input
-        placeholder="Site web (optionnel)"
+        className="border p-2 w-full rounded"
+        placeholder="Site web"
         value={websiteUrl}
         onChange={(e) => setWebsiteUrl(e.target.value)}
-        className="border p-2 w-full rounded"
       />
 
-      {/* SAVE */}
       <button
         onClick={save}
         disabled={saving}
-        className="bg-ratecard-blue text-white px-6 py-2 rounded"
+        className="bg-ratecard-blue px-4 py-2 text-white rounded"
       >
-        {saving ? "Enregistrement…" : "Enregistrer"}
+        {saving ? "Enregistrement…" : "Créer"}
       </button>
 
+      {/* VISUAL SECTION — ACTIVÉE UNIQUEMENT APRÈS CREATION */}
+      {companyId && (
+        <VisualSection
+          entityType="company"
+          entityId={companyId}
+          squareUrl={squareUrl}
+          rectUrl={rectUrl}
+          onUpdated={({ square, rectangle }) => {
+            setSquareUrl(square);
+            setRectUrl(rectangle);
+          }}
+        />
+      )}
     </div>
   );
 }
