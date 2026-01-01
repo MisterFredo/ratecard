@@ -1,68 +1,92 @@
-# backend/api/articles/models.py
+# backend/api/articles/routes.py
 
-from pydantic import BaseModel
-from typing import List, Optional
+from fastapi import APIRouter, HTTPException
+from api.articles.models import ArticleCreate, ArticleUpdate
 
+from core.articles.service import (
+    create_article,
+    list_articles,
+    get_article,
+    update_article,
+    delete_article,
+    archive_article,
+)
 
-# ============================================================
-# PERSON & COMPANY linking models
-# ============================================================
-
-class ArticlePerson(BaseModel):
-    id_person: str
-    role: Optional[str] = None
-
-
-# ============================================================
-# CREATE ARTICLE — utilisé pour POST /articles/create
-# ============================================================
-class ArticleCreate(BaseModel):
-    # TEXTE
-    titre: str
-    resume: str                          # Texte libre, sera affiché comme accroche
-    contenu_html: str                    # HTML final (converti côté front)
-
-    # VISUEL (1 seul visuel final, rectangle & square sont dérivés)
-    media_rectangle_id: Optional[str] = None
-    media_square_id: Optional[str] = None
-
-    # AUTEUR
-    auteur: Optional[str] = None
-
-    # AXES (1..N)
-    axes: List[str] = []                 # liste d'ID_AXE
-
-    # SOCIÉTÉS (0..N)
-    companies: List[str] = []            # liste d'ID_COMPANY
-
-    # PERSONNES (0..N)
-    persons: List[ArticlePerson] = []    # liste complète {id_person, role}
-
-    # OPTIONS (homepage)
-    is_featured: bool = False
-    featured_order: Optional[int] = None
+router = APIRouter()
 
 
 # ============================================================
-# UPDATE ARTICLE — utilisé pour PUT /articles/update/{id}
+# CREATE ARTICLE
 # ============================================================
-class ArticleUpdate(BaseModel):
-    # TEXTE
-    titre: str
-    resume: str
-    contenu_html: str
+@router.post("/create")
+def create_route(payload: ArticleCreate):
+    try:
+        article_id = create_article(payload)
+        return {"status": "ok", "id_article": article_id}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur création article : {e}")
 
-    # VISUEL final
-    media_rectangle_id: Optional[str] = None
-    media_square_id: Optional[str] = None
 
-    auteur: Optional[str] = None
+# ============================================================
+# LIST ARTICLES (ADMIN)
+# ============================================================
+@router.get("/list")
+def list_route():
+    try:
+        articles = list_articles()
+        return {"status": "ok", "articles": articles}
+    except Exception as e:
+        raise HTTPException(500, f"Erreur list articles : {e}")
 
-    # AXES / COMPAGNIES / PERSONNES
-    axes: List[str] = []
-    companies: List[str] = []
-    persons: List[ArticlePerson] = []
 
-    # Options
-    is_featured: bool = False
-    featured_order: Optional[int] = None
+# ============================================================
+# GET ARTICLE
+# ============================================================
+@router.get("/{id_article}")
+def get_route(id_article: str):
+    try:
+        article = get_article(id_article)
+        if not article:
+            raise HTTPException(404, "Article introuvable")
+
+        return {"status": "ok", "article": article}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur récupération article : {e}")
+
+
+# ============================================================
+# UPDATE ARTICLE
+# ============================================================
+@router.put("/update/{id_article}")
+def update_route(id_article: str, payload: ArticleUpdate):
+    try:
+        update_article(id_article, payload)
+        return {"status": "ok", "updated": id_article}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur mise à jour article : {e}")
+
+
+# ============================================================
+# DELETE ARTICLE
+# ============================================================
+@router.delete("/{id_article}")
+def delete_route(id_article: str):
+    try:
+        delete_article(id_article)
+        return {"status": "ok", "deleted": id_article}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur suppression article : {e}")
+
+
+# ============================================================
+# ARCHIVE ARTICLE
+# ============================================================
+@router.put("/archive/{id_article}")
+def archive_route(id_article: str):
+    try:
+        archive_article(id_article)
+        return {"status": "ok", "archived": id_article}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur archivage article : {e}")
+
+
