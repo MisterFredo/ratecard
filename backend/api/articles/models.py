@@ -1,102 +1,68 @@
 # backend/api/articles/models.py
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import List, Optional
 
 
 # ============================================================
-# RELATIONS
+# PERSON & COMPANY linking models
 # ============================================================
 
-class ArticleCompanyRef(BaseModel):
-    """Référence simple vers une société associée à l’article."""
-    id_company: str
-
-
-class ArticlePersonRef(BaseModel):
-    """Référence vers une personne associée à l’article."""
+class ArticlePerson(BaseModel):
     id_person: str
-    role: Optional[str] = None   # Optionnel (ex : auteur, intervenant…)
-
-
-class ArticleAxeRef(BaseModel):
-    """Axe éditorial associé à l’article."""
-    id_axe: str
-    label: Optional[str] = None   # facultatif, utile pour affichage front
+    role: Optional[str] = None
 
 
 # ============================================================
-# CRÉATION D'ARTICLE
+# CREATE ARTICLE — utilisé pour POST /articles/create
 # ============================================================
-
 class ArticleCreate(BaseModel):
-    """
-    Modèle utilisé pour créer / mettre à jour un article.
-    - L’utilisateur saisit du texte brut → rendu HTML côté front.
-    - Les visuels sont gérés via le module VISUALS.
-    """
+    # TEXTE
+    titre: str
+    resume: str                          # Texte libre, sera affiché comme accroche
+    contenu_html: str                    # HTML final (converti côté front)
 
-    # --- Champs éditoriaux ---
-    titre: str = Field(..., description="Titre principal de l’article")
-    resume: Optional[str] = Field(None, description="Résumé utilisé comme accroche newsletter / home")
-    contenu_html: Optional[str] = Field(None, description="Contenu final HTML")
-
-    # --- Relations ---
-    companies: List[str] = Field(default_factory=list)   # 0..N
-    persons: List[ArticlePersonRef] = Field(default_factory=list)  # 0..N
-    axes: List[str] = Field(..., min_length=1, description="Liste des axes éditoriaux (1..N)")
-
-    # --- Visuels Article ---
+    # VISUEL (1 seul visuel final, rectangle & square sont dérivés)
     media_rectangle_id: Optional[str] = None
     media_square_id: Optional[str] = None
 
-    # --- Métadonnées ---
+    # AUTEUR
     auteur: Optional[str] = None
+
+    # AXES (1..N)
+    axes: List[str] = []                 # liste d'ID_AXE
+
+    # SOCIÉTÉS (0..N)
+    companies: List[str] = []            # liste d'ID_COMPANY
+
+    # PERSONNES (0..N)
+    persons: List[ArticlePerson] = []    # liste complète {id_person, role}
+
+    # OPTIONS (homepage)
     is_featured: bool = False
     featured_order: Optional[int] = None
 
 
 # ============================================================
-# LECTURE / MISE À JOUR
+# UPDATE ARTICLE — utilisé pour PUT /articles/update/{id}
 # ============================================================
-
-class ArticleUpdate(ArticleCreate):
-    """
-    Identique à ArticleCreate mais utilisé pour update.
-    Rien à changer pour le moment.
-    """
-    pass
-
-
-# ============================================================
-# DTO Retour API
-# ============================================================
-
-class ArticleFront(BaseModel):
-    """
-    Format renvoyé au front :
-    - metadata
-    - relations enrichies
-    - visuels
-    """
-
-    id_article: str
+class ArticleUpdate(BaseModel):
+    # TEXTE
     titre: str
-    resume: Optional[str]
-    contenu_html: Optional[str]
+    resume: str
+    contenu_html: str
 
-    # Relations enrichies
-    companies: List[dict]
-    persons: List[dict]
-    axes: List[dict]
+    # VISUEL final
+    media_rectangle_id: Optional[str] = None
+    media_square_id: Optional[str] = None
 
-    # Visuels GCS directs
-    media_rectangle_url: Optional[str]
-    media_square_url: Optional[str]
+    auteur: Optional[str] = None
 
-    auteur: Optional[str]
-    created_at: str
-    updated_at: str
-    is_featured: bool
-    featured_order: Optional[int]
-    is_archived: bool
+    # AXES / COMPAGNIES / PERSONNES
+    axes: List[str] = []
+    companies: List[str] = []
+    persons: List[ArticlePerson] = []
+
+    # Options
+    is_featured: bool = False
+    featured_order: Optional[int] = None
