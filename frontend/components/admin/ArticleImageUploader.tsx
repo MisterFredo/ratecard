@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 export default function ArticleImageUploader({
   onUploadComplete,
 }: {
   onUploadComplete: (result: {
+    rectangle_id: string;
     rectangle_url: string;
+    square_id: string;
     square_url: string;
   }) => void;
 }) {
@@ -14,65 +17,86 @@ export default function ArticleImageUploader({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function onSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  /* --------------------------------------------
+     SÉLECTION FICHIER
+  -------------------------------------------- */
+  function selectFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
+
     setFile(f);
     setPreviewUrl(URL.createObjectURL(f));
   }
 
+  /* --------------------------------------------
+     UPLOAD MAXI SIMPLE → Next.js → Backend
+  -------------------------------------------- */
   async function upload() {
-    if (!file) {
-      alert("Merci de sélectionner un fichier.");
-      return;
-    }
+    if (!file) return alert("Sélectionne une image.");
 
     setLoading(true);
 
-    const form = new FormData();
-    form.append("file", file);
+    // Conversion file → base64 pour backend
+    const arrayBuffer = await file.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
 
-    const res = await fetch("/api/article/upload-image", {
+    const res = await fetch("/visuals/article/upload", {
       method: "POST",
-      body: form,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_article: "temp", // Pour création → remplacé ensuite par Edit
+        title: file.name.replace(/\.[^.]+$/, ""),
+        base64_image: base64,
+      }),
     });
 
     const json = await res.json();
     setLoading(false);
 
     if (json.status !== "ok") {
-      alert("Erreur upload image article : " + json.message);
+      alert("Erreur upload article : " + json.detail || json.message);
       return;
     }
 
     onUploadComplete({
-      rectangle_url: json.rectangle_url,
-      square_url: json.square_url,
+      rectangle_id: json.media_rectangle_id,
+      rectangle_url: json.urls.rectangle,
+      square_id: json.media_square_id,
+      square_url: json.urls.square,
     });
   }
 
+  /* --------------------------------------------
+     UI
+  -------------------------------------------- */
   return (
-    <div className="space-y-4 p-4 border rounded bg-white">
+    <div className="space-y-4 p-4 border rounded bg-white shadow">
 
-      <input type="file" accept="image/*" onChange={onSelect} />
+      <input
+        type="file"
+        accept="image/*"
+        onChange={selectFile}
+        className="text-sm"
+      />
 
       {previewUrl && (
-        <img
+        <Image
           src={previewUrl}
-          className="w-40 h-40 object-cover border rounded bg-gray-50"
+          alt="preview"
+          width={300}
+          height={200}
+          className="border rounded object-contain bg-gray-100"
         />
       )}
 
       <button
         onClick={upload}
-        disabled={loading || !file}
-        className={`px-4 py-2 rounded text-white font-medium transition ${
-          loading || !file
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-ratecard-blue hover:bg-blue-700"
+        disabled={!file || loading}
+        className={`px-4 py-2 rounded text-white font-medium ${
+          loading ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"
         }`}
       >
-        {loading ? "Traitement…" : "Uploader l’image"}
+        {loading ? "Traitement…" : "Uploader et générer formats"}
       </button>
     </div>
   );
