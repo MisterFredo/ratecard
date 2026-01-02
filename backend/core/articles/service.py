@@ -1,106 +1,142 @@
-# backend/core/articles/service.py
-
 import uuid
 from datetime import datetime
 from typing import List
-from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client
 from api.articles.models import ArticleCreate, ArticleUpdate
 
-# ------------------------------------------------
+# ============================================================
 # TABLES
-# ------------------------------------------------
+# ============================================================
 TABLE_ARTICLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE"
-TABLE_ARTICLE_AXE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE_AXE"
+TABLE_ARTICLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE_TOPIC"
 TABLE_ARTICLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE_COMPANY"
 TABLE_ARTICLE_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ARTICLE_PERSON"
 
-TABLE_AXE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_AXE"
+TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_PERSON"
 
 
 # ============================================================
-# CREATE ARTICLE
+# CREATE ARTICLE — validation d’un draft
 # ============================================================
 def create_article(data: ArticleCreate) -> str:
+    """
+    Crée un Article à partir d’un draft validé.
+
+    Règles :
+    - title obligatoire
+    - content_html obligatoire
+    - au moins 1 topic obligatoire
+    - visuel non obligatoire à la création
+    """
+    if not data.title.strip():
+        raise ValueError("Le titre est obligatoire")
+
+    if not data.content_html.strip():
+        raise ValueError("Le contenu HTML est obligatoire")
+
+    if not data.topics or len(data.topics) == 0:
+        raise ValueError("Au moins un topic est obligatoire")
+
     article_id = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat()
+    now = datetime.utcnow()
 
     # ---------------------------------------------------------
-    # INSERT MAIN ROW — 1 VISUEL UNIQUE (rectangle)
+    # INSERT ARTICLE (DRAFT)
     # ---------------------------------------------------------
     insert_bq(TABLE_ARTICLE, [{
         "ID_ARTICLE": article_id,
-        "TITRE": data.titre,
+        "TITLE": data.title,
+        "CONTENT_HTML": data.content_html,
         "EXCERPT": data.excerpt,
-        "CONTENU_HTML": data.contenu_html,
-
-        "MEDIA_IMAGE_URL": data.media_image_url,    # 🔥 nouveau champ unique
-
-        "AUTEUR": data.auteur,
+        "INTRO": data.intro,
+        "OUTRO": data.outro,
+        "LINKEDIN_POST_TEXT": data.linkedin_post_text,
+        "CAROUSEL_CAPTION": data.carousel_caption,
+        "MEDIA_RECTANGLE_ID": None,
+        "MEDIA_SQUARE_ID": None,
+        "AUTHOR": data.author,
+        "STATUS": "DRAFT",
+        "PUBLISHED_AT": None,
         "CREATED_AT": now,
         "UPDATED_AT": now,
-        "IS_ARCHIVED": False,
+        "IS_ACTIVE": True,
     }])
 
     # ---------------------------------------------------------
-    # AXES (1..N)
+    # RELATIONS — TOPICS (1..N obligatoire)
     # ---------------------------------------------------------
-    if data.axes:
-        rows = [{"ID_ARTICLE": article_id, "ID_AXE": axe_id}
-                for axe_id in data.axes]
-        insert_bq(TABLE_ARTICLE_AXE, rows)
+    topic_rows = [{
+        "ID_ARTICLE": article_id,
+        "ID_TOPIC": topic_id,
+        "CREATED_AT": now,
+    } for topic_id in data.topics]
+
+    insert_bq(TABLE_ARTICLE_TOPIC, topic_rows)
 
     # ---------------------------------------------------------
-    # COMPANIES (0..N)
+    # RELATIONS — COMPANIES (0..N)
     # ---------------------------------------------------------
     if data.companies:
-        rows = [{"ID_ARTICLE": article_id, "ID_COMPANY": cid}
-                for cid in data.companies]
-        insert_bq(TABLE_ARTICLE_COMPANY, rows)
+        company_rows = [{
+            "ID_ARTICLE": article_id,
+            "ID_COMPANY": cid,
+            "CREATED_AT": now,
+        } for cid in data.companies]
+        insert_bq(TABLE_ARTICLE_COMPANY, company_rows)
 
     # ---------------------------------------------------------
-    # PERSONS (0..N)
+    # RELATIONS — PERSONS (0..N + rôle)
     # ---------------------------------------------------------
     if data.persons:
-        rows = [{"ID_ARTICLE": article_id, "ID_PERSON": pid}
-                for pid in data.persons]
-        insert_bq(TABLE_ARTICLE_PERSON, rows)
+        person_rows = [{
+            "ID_ARTICLE": article_id,
+            "ID_PERSON": p.id_person,
+            "ROLE": p.role,
+            "CREATED_AT": now,
+        } for p in data.persons]
+        insert_bq(TABLE_ARTICLE_PERSON, person_rows)
 
     return article_id
 
 
 # ============================================================
-# GET ONE ARTICLE
+# GET ONE ARTICLE — enrichi
 # ============================================================
 def get_article(id_article: str):
     rows = query_bq(
-        f"SELECT * FROM `{TABLE_ARTICLE}` WHERE ID_ARTICLE = @id LIMIT 1",
+        f"""
+        SELECT *
+        FROM `{TABLE_ARTICLE}`
+        WHERE ID_ARTICLE = @id
+        LIMIT 1
+        """,
         {"id": id_article}
     )
+
     if not rows:
         return None
 
     article = rows[0]
 
     # ---------------------------------------------------------
-    # AXES enrichis
+    # TOPICS
     # ---------------------------------------------------------
-    axes = query_bq(
+    topics = query_bq(
         f"""
-        SELECT AX.ID_AXE, AX.LABEL
-        FROM `{TABLE_ARTICLE_AXE}` A
-        JOIN `{TABLE_AXE}` AX ON A.ID_AXE = AX.ID_AXE
-        WHERE A.ID_ARTICLE = @id
+        SELECT T.ID_TOPIC, T.LABEL
+        FROM `{TABLE_ARTICLE_TOPIC}` AT
+        JOIN `{TABLE_TOPIC}` T ON AT.ID_TOPIC = T.ID_TOPIC
+        WHERE AT.ID_ARTICLE = @id
         """,
         {"id": id_article}
     )
 
     # ---------------------------------------------------------
-    # COMPANY enrichie
+    # COMPANIES
     # ---------------------------------------------------------
     companies = query_bq(
         f"""
@@ -113,11 +149,11 @@ def get_article(id_article: str):
     )
 
     # ---------------------------------------------------------
-    # PERSON enrichie
+    # PERSONS (avec rôle)
     # ---------------------------------------------------------
     persons = query_bq(
         f"""
-        SELECT P.ID_PERSON, P.NAME
+        SELECT P.ID_PERSON, P.NAME, AP.ROLE
         FROM `{TABLE_ARTICLE_PERSON}` AP
         JOIN `{TABLE_PERSON}` P ON AP.ID_PERSON = P.ID_PERSON
         WHERE AP.ID_ARTICLE = @id
@@ -125,7 +161,7 @@ def get_article(id_article: str):
         {"id": id_article}
     )
 
-    article["axes"] = axes
+    article["topics"] = topics
     article["companies"] = companies
     article["persons"] = persons
 
@@ -133,105 +169,164 @@ def get_article(id_article: str):
 
 
 # ============================================================
-# LIST ARTICLES (Admin)
+# LIST ARTICLES (ADMIN)
 # ============================================================
 def list_articles():
-    sql = f"""
+    return query_bq(
+        f"""
         SELECT
             ID_ARTICLE,
-            TITRE,
+            TITLE,
             EXCERPT,
-            MEDIA_IMAGE_URL,
+            MEDIA_RECTANGLE_ID,
+            MEDIA_SQUARE_ID,
+            STATUS,
             CREATED_AT,
-            UPDATED_AT,
-            IS_ARCHIVED
+            UPDATED_AT
         FROM `{TABLE_ARTICLE}`
+        WHERE IS_ACTIVE = TRUE
         ORDER BY CREATED_AT DESC
-    """
-    return query_bq(sql)
+        """
+    )
 
 
 # ============================================================
-# UPDATE ARTICLE
+# UPDATE ARTICLE — remplacement complet
 # ============================================================
 def update_article(id_article: str, data: ArticleUpdate):
-    now = datetime.utcnow().isoformat()
+    if not data.title.strip():
+        raise ValueError("Le titre est obligatoire")
+
+    if not data.content_html.strip():
+        raise ValueError("Le contenu HTML est obligatoire")
+
+    if not data.topics or len(data.topics) == 0:
+        raise ValueError("Au moins un topic est obligatoire")
+
+    now = datetime.utcnow()
     client = get_bigquery_client()
 
     # ---------------------------------------------------------
-    # UPSERT MAIN ARTICLE FIELDS
+    # UPDATE ARTICLE (SQL explicite)
     # ---------------------------------------------------------
-    row = [{
-        "ID_ARTICLE": id_article,
-        "TITRE": data.titre,
-        "EXCERPT": data.excerpt,
-        "CONTENU_HTML": data.contenu_html,
+    sql = f"""
+        UPDATE `{TABLE_ARTICLE}`
+        SET
+            TITLE = @title,
+            CONTENT_HTML = @content_html,
+            EXCERPT = @excerpt,
+            INTRO = @intro,
+            OUTRO = @outro,
+            LINKEDIN_POST_TEXT = @linkedin_post_text,
+            CAROUSEL_CAPTION = @carousel_caption,
+            MEDIA_RECTANGLE_ID = @media_rectangle_id,
+            MEDIA_SQUARE_ID = @media_square_id,
+            AUTHOR = @author,
+            UPDATED_AT = @updated_at
+        WHERE ID_ARTICLE = @id
+    """
 
-        "MEDIA_IMAGE_URL": data.media_image_url,    # 🔥 URL unique
-
-        "AUTEUR": data.auteur,
-        "UPDATED_AT": now,
-    }]
-
-    errors = client.insert_rows_json(TABLE_ARTICLE, row)
-    if errors:
-        raise RuntimeError(errors)
+    client.query(
+        sql,
+        job_config={
+            "query_parameters": [
+                {"name": "id", "parameterType": {"type": "STRING"}, "parameterValue": {"value": id_article}},
+                {"name": "title", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.title}},
+                {"name": "content_html", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.content_html}},
+                {"name": "excerpt", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.excerpt}},
+                {"name": "intro", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.intro}},
+                {"name": "outro", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.outro}},
+                {"name": "linkedin_post_text", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.linkedin_post_text}},
+                {"name": "carousel_caption", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.carousel_caption}},
+                {"name": "media_rectangle_id", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.media_rectangle_id}},
+                {"name": "media_square_id", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.media_square_id}},
+                {"name": "author", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.author}},
+                {"name": "updated_at", "parameterType": {"type": "TIMESTAMP"}, "parameterValue": {"value": now}},
+            ]
+        }
+    ).result()
 
     # ---------------------------------------------------------
     # CLEAN RELATIONS
     # ---------------------------------------------------------
-    for table in [TABLE_ARTICLE_AXE, TABLE_ARTICLE_COMPANY, TABLE_ARTICLE_PERSON]:
+    for table in [
+        TABLE_ARTICLE_TOPIC,
+        TABLE_ARTICLE_COMPANY,
+        TABLE_ARTICLE_PERSON,
+    ]:
         client.query(
             f"DELETE FROM `{table}` WHERE ID_ARTICLE = @id",
-            job_config=bigquery.QueryJobConfig(
-                query_parameters=[
-                    bigquery.ScalarQueryParameter("id", "STRING", id_article)
+            job_config={
+                "query_parameters": [
+                    {"name": "id", "parameterType": {"type": "STRING"}, "parameterValue": {"value": id_article}},
                 ]
-            )
+            }
         ).result()
 
     # ---------------------------------------------------------
     # REINSERT RELATIONS
     # ---------------------------------------------------------
-    if data.axes:
-        insert_bq(TABLE_ARTICLE_AXE,
-                  [{"ID_ARTICLE": id_article, "ID_AXE": axe} for axe in data.axes])
+    insert_bq(TABLE_ARTICLE_TOPIC, [{
+        "ID_ARTICLE": id_article,
+        "ID_TOPIC": topic_id,
+        "CREATED_AT": now,
+    } for topic_id in data.topics])
 
     if data.companies:
-        insert_bq(TABLE_ARTICLE_COMPANY,
-                  [{"ID_ARTICLE": id_article, "ID_COMPANY": cid} for cid in data.companies])
+        insert_bq(TABLE_ARTICLE_COMPANY, [{
+            "ID_ARTICLE": id_article,
+            "ID_COMPANY": cid,
+            "CREATED_AT": now,
+        } for cid in data.companies])
 
     if data.persons:
-        insert_bq(TABLE_ARTICLE_PERSON,
-                  [{"ID_ARTICLE": id_article, "ID_PERSON": pid} for pid in data.persons])
+        insert_bq(TABLE_ARTICLE_PERSON, [{
+            "ID_ARTICLE": id_article,
+            "ID_PERSON": p.id_person,
+            "ROLE": p.role,
+            "CREATED_AT": now,
+        } for p in data.persons])
 
     return True
 
 
 # ============================================================
-# DELETE ARTICLE
+# DELETE ARTICLE — suppression définitive
 # ============================================================
 def delete_article(id_article: str):
-    query_bq(
+    client = get_bigquery_client()
+    client.query(
         f"DELETE FROM `{TABLE_ARTICLE}` WHERE ID_ARTICLE = @id",
-        {"id": id_article},
-    )
+        job_config={
+            "query_parameters": [
+                {"name": "id", "parameterType": {"type": "STRING"}, "parameterValue": {"value": id_article}},
+            ]
+        }
+    ).result()
     return True
 
 
 # ============================================================
-# ARCHIVE ARTICLE
+# ARCHIVE ARTICLE — soft delete
 # ============================================================
 def archive_article(id_article: str):
-    now = datetime.utcnow().isoformat()
-    row = [{
-        "ID_ARTICLE": id_article,
-        "IS_ARCHIVED": True,
-        "UPDATED_AT": now,
-    }]
-    insert_bq(TABLE_ARTICLE, row)
+    client = get_bigquery_client()
+    now = datetime.utcnow()
+
+    client.query(
+        f"""
+        UPDATE `{TABLE_ARTICLE}`
+        SET
+            STATUS = "ARCHIVED",
+            UPDATED_AT = @now
+        WHERE ID_ARTICLE = @id
+        """,
+        job_config={
+            "query_parameters": [
+                {"name": "id", "parameterType": {"type": "STRING"}, "parameterValue": {"value": id_article}},
+                {"name": "now", "parameterType": {"type": "TIMESTAMP"}, "parameterValue": {"value": now}},
+            ]
+        }
+    ).result()
+
     return True
-
-
-
-
