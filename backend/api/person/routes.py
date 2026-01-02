@@ -1,89 +1,80 @@
-# backend/api/person/routes.py
-
 from fastapi import APIRouter, HTTPException
-from api.person.models import PersonCreate
+from api.person.models import (
+    PersonCreate,
+    PersonUpdate,
+)
 from core.person.service import (
     create_person,
     list_persons,
-    list_persons_by_company,
     get_person,
-    update_person
+    update_person,
 )
 
 router = APIRouter()
 
 
-# ------------------------------------------------------------
-# CREATE
-# ------------------------------------------------------------
+# ============================================================
+# CREATE — création d'une personne (DATA ONLY)
+# ============================================================
 @router.post("/create")
 def create_route(data: PersonCreate):
     """
-    Crée un intervenant.
+    Crée une personne (sans aucun visuel).
+
+    Les visuels sont associés UNIQUEMENT après création.
     """
     try:
         person_id = create_person(data)
         return {"status": "ok", "id_person": person_id}
     except Exception as e:
-        raise HTTPException(400, f"Erreur création intervenant : {e}")
+        raise HTTPException(400, f"Erreur création personne : {e}")
 
 
-# ------------------------------------------------------------
-# LIST ALL
-# ------------------------------------------------------------
+# ============================================================
+# LIST — liste des personnes actives
+# ============================================================
 @router.get("/list")
 def list_route():
     """
-    Retourne tous les intervenants actifs (toutes sociétés).
+    Retourne la liste des personnes actives.
     """
     try:
         persons = list_persons()
         return {"status": "ok", "persons": persons}
     except Exception as e:
-        raise HTTPException(400, f"Erreur liste intervenants : {e}")
+        raise HTTPException(400, f"Erreur liste personnes : {e}")
 
 
-# ------------------------------------------------------------
-# LIST BY COMPANY
-# ------------------------------------------------------------
-@router.get("/company/{id_company}")
-def by_company_route(id_company: str):
-    """
-    Retourne les intervenants d'une société donnée.
-    """
-    try:
-        persons = list_persons_by_company(id_company)
-        return {"status": "ok", "persons": persons}
-    except Exception as e:
-        raise HTTPException(400, f"Erreur récupération intervenants société : {e}")
-
-
-# ------------------------------------------------------------
-# GET ONE
-# ------------------------------------------------------------
+# ============================================================
+# GET ONE — récupération d'une personne
+# ============================================================
 @router.get("/{id_person}")
 def get_route(id_person: str):
     """
-    Retourne un intervenant par ID.
+    Récupère une personne par son ID.
     """
     person = get_person(id_person)
     if not person:
-        raise HTTPException(404, "Intervenant introuvable")
+        raise HTTPException(404, "Personne introuvable")
+
     return {"status": "ok", "person": person}
 
 
-# ------------------------------------------------------------
-# UPDATE
-# ------------------------------------------------------------
+# ============================================================
+# UPDATE — mise à jour d'une personne existante
+# ============================================================
 @router.put("/update/{id_person}")
-def update_route(id_person: str, data: PersonCreate):
+def update_route(id_person: str, data: PersonUpdate):
     """
-    Met à jour un intervenant.
+    Met à jour une personne existante.
+
+    Peut inclure :
+    - données métier
+    - rattachement société
+    - champs média (post-création)
     """
     try:
         updated = update_person(id_person, data)
         return {"status": "ok", "updated": updated}
     except Exception as e:
-        raise HTTPException(400, f"Erreur mise à jour intervenant : {e}")
-
-
+        raise HTTPException(400, f"Erreur mise à jour personne : {e}")
