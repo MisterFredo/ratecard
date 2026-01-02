@@ -1,11 +1,10 @@
-# backend/api/articles/models.py
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
+from datetime import datetime
 
 
 # ============================================================
-# AXES / PERSONS / COMPANIES RELATIONS
+# RELATION PERSONNE DANS UN ARTICLE
 # ============================================================
 
 class ArticlePerson(BaseModel):
@@ -14,47 +13,106 @@ class ArticlePerson(BaseModel):
 
 
 # ============================================================
-# ARTICLE CREATE
+# ARTICLE CREATE — validation d’un draft
 # ============================================================
 class ArticleCreate(BaseModel):
-    titre: str
-    resume: Optional[str] = None
-    contenu_html: str
+    """
+    Création d’un Article à partir d’un draft validé.
 
-    # MEDIA (IDs BQ du DAM)
-    media_rectangle_id: Optional[str] = None
-    media_square_id: Optional[str] = None
+    Règles :
+    - titre obligatoire
+    - contenu HTML obligatoire
+    - au moins 1 topic obligatoire
+    - visuel NON obligatoire à la création
+    """
+
+    # CONTENU PRINCIPAL
+    title: str
+    content_html: str
+
+    # VARIANTES ÉDITORIALES
+    excerpt: Optional[str] = None
+    intro: Optional[str] = None
+    outro: Optional[str] = None
+
+    linkedin_post_text: Optional[str] = None
+    carousel_caption: Optional[str] = None
 
     # RELATIONS
-    axes: List[str] = []           # liste des ID_AXE
-    companies: List[str] = []      # liste des ID_COMPANY
-    persons: List[ArticlePerson] = []
+    topics: List[str] = Field(default_factory=list)     # ID_TOPIC (>= 1 requis côté service)
+    companies: List[str] = Field(default_factory=list)  # ID_COMPANY
+    persons: List[ArticlePerson] = Field(default_factory=list)
 
-    # Auteur
-    auteur: Optional[str] = None
-
-    # Mise en avant
-    is_featured: bool = False
-    featured_order: Optional[int] = None
+    # META
+    author: Optional[str] = None
 
 
 # ============================================================
-# ARTICLE UPDATE
+# ARTICLE UPDATE — remplacement complet
 # ============================================================
 class ArticleUpdate(BaseModel):
-    titre: str
-    resume: Optional[str] = None
-    contenu_html: str
+    """
+    Mise à jour complète d’un Article existant.
+    (pas d’update partiel)
+    """
 
-    # MEDIA
+    # CONTENU PRINCIPAL
+    title: str
+    content_html: str
+
+    # VARIANTES ÉDITORIALES
+    excerpt: Optional[str] = None
+    intro: Optional[str] = None
+    outro: Optional[str] = None
+
+    linkedin_post_text: Optional[str] = None
+    carousel_caption: Optional[str] = None
+
+    # VISUEL (propriété de l’article)
     media_rectangle_id: Optional[str] = None
     media_square_id: Optional[str] = None
 
     # RELATIONS
-    axes: List[str] = []
-    companies: List[str] = []
-    persons: List[ArticlePerson] = []
+    topics: List[str] = Field(default_factory=list)
+    companies: List[str] = Field(default_factory=list)
+    persons: List[ArticlePerson] = Field(default_factory=list)
 
-    auteur: Optional[str] = None
-    is_featured: bool = False
-    featured_order: Optional[int] = None
+    # META
+    author: Optional[str] = None
+
+
+# ============================================================
+# ARTICLE OUT — représentation enrichie
+# ============================================================
+class ArticleOut(BaseModel):
+    """
+    Représentation complète d’un Article pour l’admin & le front.
+    """
+
+    id_article: str
+
+    title: str
+    content_html: str
+
+    excerpt: Optional[str] = None
+    intro: Optional[str] = None
+    outro: Optional[str] = None
+
+    linkedin_post_text: Optional[str] = None
+    carousel_caption: Optional[str] = None
+
+    media_rectangle_id: Optional[str] = None
+    media_square_id: Optional[str] = None
+
+    author: Optional[str] = None
+
+    status: str                     # DRAFT | PUBLISHED
+    published_at: Optional[datetime]
+
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+
+    # RELATIONS ENRICHIES
+    topics: List[dict] = []
+    companies: List[dict] = []
+    persons: List[dict] = []
