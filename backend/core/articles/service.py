@@ -128,9 +128,9 @@ def get_article(id_article: str):
     topics = query_bq(
         f"""
         SELECT T.ID_TOPIC, T.LABEL
-        FROM `{TABLE_ARTICLE_TOPIC}` AT
-        JOIN `{TABLE_TOPIC}` T ON AT.ID_TOPIC = T.ID_TOPIC
-        WHERE AT.ID_ARTICLE = @id
+        FROM `{TABLE_ARTICLE_TOPIC}` ART
+        JOIN `{TABLE_TOPIC}` T ON ART.ID_TOPIC = T.ID_TOPIC
+        WHERE ART.ID_ARTICLE = @id
         """,
         {"id": id_article}
     )
