@@ -9,7 +9,7 @@ from openai import OpenAI
 from google.cloud import bigquery
 
 from utils.bigquery_utils import get_bigquery_client
-from utils.gcs import upload_bytes, delete_file
+from utils.gcs import upload_bytes
 from config import BQ_PROJECT, BQ_DATASET
 
 router = APIRouter()
@@ -66,7 +66,13 @@ def to_rectangle(img_bytes: bytes) -> bytes:
 def upload_article_visual(payload: ArticleVisualUpload):
     try:
         if payload.format not in ("square", "rectangle"):
-            raise HTTPException(400, "Format invalide")
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "invalid_format",
+                    "message": "Format invalide (square ou rectangle attendu)"
+                }
+            )
 
         img_bytes = base64.b64decode(payload.base64_image)
 
@@ -102,7 +108,14 @@ def upload_article_visual(payload: ArticleVisualUpload):
         return {"status": "ok", "filename": filename}
 
     except Exception as e:
-        raise HTTPException(400, f"Erreur upload visuel article : {e}")
+        print("❌ UPLOAD ARTICLE VISUAL ERROR:", str(e))
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "article_visual_upload_failed",
+                "message": str(e),
+            }
+        )
 
 
 # ============================================================
@@ -133,7 +146,14 @@ def reset_article_visual(payload: ArticleVisualReset):
         return {"status": "ok"}
 
     except Exception as e:
-        raise HTTPException(400, f"Erreur reset visuel article : {e}")
+        print("❌ RESET ARTICLE VISUAL ERROR:", str(e))
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "article_visual_reset_failed",
+                "message": str(e),
+            }
+        )
 
 
 # ============================================================
@@ -146,13 +166,45 @@ def generate_ai_visual(payload: ArticleAIGenerate):
     Inspiration : topics + title + excerpt
     """
     try:
+        # ----------------------------------------------------
+        # GUARDS MÉTIER (OBLIGATOIRES)
+        # ----------------------------------------------------
+        if not payload.title.strip():
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "missing_title",
+                    "message": "Le titre est requis pour générer un visuel IA",
+                }
+            )
+
+        if not payload.excerpt.strip():
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "missing_excerpt",
+                    "message": "L’accroche (excerpt) est requise pour générer un visuel IA",
+                }
+            )
+
+        if not payload.topics or len(payload.topics) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "missing_topics",
+                    "message": "Au moins un topic est requis pour générer un visuel IA",
+                }
+            )
+
+        print("🧠 AI VISUAL PAYLOAD:", payload)
+
         client_ai = OpenAI()
 
         topics_text = ", ".join(payload.topics)
 
         prompt = f"""
 Tu es l’illustrateur officiel Ratecard.
-Crée une image moderne, sobre, professionnelle.
+Crée une image moderne, sobre et professionnelle.
 
 Titre de l’article :
 "{payload.title}"
@@ -163,11 +215,11 @@ Accroche :
 Thèmes éditoriaux :
 {topics_text}
 
-Style graphique :
+Contraintes graphiques :
 - ligne claire
 - fond clair
 - bleu Ratecard (#10323d)
-- pas de texte lisible dans l’image
+- aucun texte lisible dans l’image
 """
 
         result = client_ai.images.generate(
@@ -216,5 +268,16 @@ Style graphique :
             }
         }
 
+    except HTTPException:
+        # déjà structuré
+        raise
+
     except Exception as e:
-        raise HTTPException(400, f"Erreur génération IA visuel article : {e}")
+        print("❌ IA VISUAL ERROR:", str(e))
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "ai_visual_generation_failed",
+                "message": str(e),
+            }
+        )
