@@ -41,30 +41,19 @@ export default function ArticleContextBlock({
         Contexte éditorial
       </h2>
 
-      {/* ---------------------------------------
-          TOPICS (OBLIGATOIRES)
-      ---------------------------------------- */}
-      <div>
-        <TopicSelector
-          values={topics}
-          onChange={(values) => onChange({ topics: values })}
-        />
-        <p className="text-xs text-gray-500 mt-1">
-          Au moins un topic est requis pour créer l’article.
-        </p>
-      </div>
+      {/* TOPICS (OBLIGATOIRES) */}
+      <TopicSelector
+        values={topics}
+        onChange={(values) => onChange({ topics: values })}
+      />
 
-      {/* ---------------------------------------
-          SOCIÉTÉS (OPTIONNEL)
-      ---------------------------------------- */}
+      {/* SOCIÉTÉS (OPTIONNEL) */}
       <CompanySelector
         values={companies}
         onChange={(values) => onChange({ companies: values })}
       />
 
-      {/* ---------------------------------------
-          PERSONNES (OPTIONNEL)
-      ---------------------------------------- */}
+      {/* PERSONNES (OPTIONNEL) */}
       <PersonSelector
         values={persons}
         onChange={(values) => onChange({ persons: values })}
@@ -72,3 +61,4 @@ export default function ArticleContextBlock({
     </div>
   );
 }
+
