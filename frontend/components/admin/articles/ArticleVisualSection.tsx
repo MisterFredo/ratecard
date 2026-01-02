@@ -46,6 +46,12 @@ export default function ArticleVisualSection({
     return `${GCS_BASE_URL}/articles/${filename}`;
   }
 
+  function extractErrorMessage(e: any): string {
+    if (e?.message) return e.message;
+    if (e?.detail?.message) return e.detail.message;
+    return "Erreur inconnue";
+  }
+
   /* ---------------------------------------------------------
      UPLOAD MANUEL
   --------------------------------------------------------- */
@@ -64,7 +70,7 @@ export default function ArticleVisualSection({
       if (format === "rectangle") setRectFilename(res.filename);
     } catch (e) {
       console.error(e);
-      alert("Erreur upload visuel");
+      alert(extractErrorMessage(e));
     }
     setLoading(false);
   }
@@ -84,7 +90,7 @@ export default function ArticleVisualSection({
       setRectFilename(null);
     } catch (e) {
       console.error(e);
-      alert("Erreur reset visuel");
+      alert(extractErrorMessage(e));
     }
     setLoading(false);
   }
@@ -93,8 +99,19 @@ export default function ArticleVisualSection({
      GÉNÉRATION IA
   --------------------------------------------------------- */
   async function generateAI() {
+    // Guards UX stricts
+    if (!title.trim()) {
+      alert("Le titre est requis pour générer un visuel IA.");
+      return;
+    }
+
+    if (!excerpt.trim()) {
+      alert("L’accroche (excerpt) est requise pour générer un visuel IA.");
+      return;
+    }
+
     if (!topics || topics.length === 0) {
-      alert("Au moins un topic est requis pour la génération IA");
+      alert("Au moins un topic est requis pour générer un visuel IA.");
       return;
     }
 
@@ -111,7 +128,7 @@ export default function ArticleVisualSection({
       setRectFilename(res.filenames.rectangle);
     } catch (e) {
       console.error(e);
-      alert("Erreur génération IA");
+      alert(extractErrorMessage(e));
     }
     setLoading(false);
   }
