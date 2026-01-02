@@ -3,284 +3,180 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 
-type VisualState = {
-  rectangleId: string | null;
-  squareId: string | null;
-  previewUrl: string | null;
+type Topic = {
+  id_topic: string;
+  label: string;
+};
+
+type Props = {
+  articleId: string;
+  title: string;
+  excerpt: string;
+  topics: Topic[];
 };
 
 export default function ArticleVisualSection({
-  articleId = null,        // null en mode création, ID réel en édition
+  articleId,
   title,
-  axes,
-  onChange,
-  initialRectangleUrl,
-  initialSquareUrl,
-}: {
-  articleId?: string | null;
-  title: string;
-  axes: { id_axe: string; label: string }[];
-  onChange: (v: VisualState) => void;
-
-  initialRectangleUrl?: string | null;
-  initialSquareUrl?: string | null;
-}) {
-  /* ---------------------------------------------------------
-     MODE D'ACTION
-  --------------------------------------------------------- */
-  type Mode = "upload" | "existing" | "ai";
-  const [mode, setMode] = useState<Mode>("upload");
-
-  function reset() {
-    onChange({ rectangleId: null, squareId: null, previewUrl: null });
-  }
-
-  function switchMode(next: Mode) {
-    setMode(next);
-    reset();
-  }
+  excerpt,
+  topics,
+}: Props) {
+  const [loading, setLoading] = useState(false);
+  const [squareFilename, setSquareFilename] = useState<string | null>(null);
+  const [rectFilename, setRectFilename] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
-     UPLOAD LOCAL
+     UTILS
   --------------------------------------------------------- */
-  const [file, setFile] = useState<File | null>(null);
-  const [localPreview, setLocalPreview] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-
-  function selectFile(e: any) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setFile(f);
-    setLocalPreview(URL.createObjectURL(f));
-  }
-
-  async function uploadLocal() {
-    if (!file) return alert("Sélectionnez un fichier");
-    if (!title?.trim()) return alert("Titre requis");
-
-    setUploading(true);
-
-    const arrayBuf = await file.arrayBuffer();
-    const base64 = Buffer.from(arrayBuf).toString("base64");
-
-    const id = articleId || "_temp_";
-
-    const res = await api.post("/visuals/article/upload", {
-      id_article: id,
-      title,
-      base64_image: base64,
+  async function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = () => {
+        const res = reader.result?.toString() || "";
+        resolve(res.replace(/^data:image\/\w+;base64,/, ""));
+      };
+      reader.readAsDataURL(file);
     });
+  }
 
-    if (res.status !== "ok") {
-      alert("Erreur upload article");
-      setUploading(false);
-      return;
+  /* ---------------------------------------------------------
+     UPLOAD MANUEL
+  --------------------------------------------------------- */
+  async function upload(file: File, format: "square" | "rectangle") {
+    setLoading(true);
+    try {
+      const base64 = await fileToBase64(file);
+
+      const res = await api.post("/visuals/article/upload", {
+        id_article: articleId,
+        format,
+        base64_image: base64,
+      });
+
+      if (format === "square") setSquareFilename(res.filename);
+      if (format === "rectangle") setRectFilename(res.filename);
+    } catch (e) {
+      console.error(e);
+      alert("Erreur upload visuel");
     }
-
-    onChange({
-      rectangleId: res.ids.rectangle,
-      squareId: res.ids.square,
-      previewUrl: res.urls.rectangle,
-    });
-
-    setUploading(false);
+    setLoading(false);
   }
 
   /* ---------------------------------------------------------
-     EXISTING (AXE) — strict
+     RESET VISUEL
   --------------------------------------------------------- */
-  const [importingExisting, setImportingExisting] = useState(false);
+  async function resetVisual() {
+    if (!confirm("Supprimer le visuel de l’article ?")) return;
 
-  async function applyFromAxe() {
-    if (!axes.length) return alert("Sélectionnez au moins un axe");
-
-    const axeId = axes[0].id_axe; // règle validée : 1 seul inspire
-
-    setImportingExisting(true);
-
-    const axeRes = await api.get(`/axes/${axeId}`);
-
-    const squareUrl = axeRes?.axe?.MEDIA_SQUARE_URL;
-    const rectUrl = axeRes?.axe?.MEDIA_RECTANGLE_URL;
-
-    if (!squareUrl || !rectUrl) {
-      alert("Cet axe n’a pas de visuel complet (carre + rectangle)");
-      setImportingExisting(false);
-      return;
+    setLoading(true);
+    try {
+      await api.post("/visuals/article/reset", {
+        id_article: articleId,
+      });
+      setSquareFilename(null);
+      setRectFilename(null);
+    } catch (e) {
+      console.error(e);
+      alert("Erreur reset visuel");
     }
-
-    const id = articleId || "_temp_";
-
-    const res = await api.post("/visuals/article/apply-existing", {
-      id_article: id,
-      square_url: squareUrl,
-      rectangle_url: rectUrl,
-    });
-
-    if (res.status !== "ok") {
-      alert("Erreur import visuel axe");
-      setImportingExisting(false);
-      return;
-    }
-
-    onChange({
-      rectangleId: res.ids.rectangle,
-      squareId: res.ids.square,
-      previewUrl: res.urls.rectangle,
-    });
-
-    setImportingExisting(false);
+    setLoading(false);
   }
 
   /* ---------------------------------------------------------
-     IA — uniquement axes (strict)
+     GÉNÉRATION IA
   --------------------------------------------------------- */
-  const [generatingAI, setGeneratingAI] = useState(false);
-
   async function generateAI() {
-    if (!title?.trim()) return alert("Titre requis");
-    if (!axes.length)
-      return alert("Un axe est requis pour générer un visuel IA");
-
-    const axeId = axes[0].id_axe;
-    const axeRes = await api.get(`/axes/${axeId}`);
-
-    const squareInspiration = axeRes?.axe?.MEDIA_SQUARE_URL;
-    if (!squareInspiration) {
-      alert("Aucun visuel carré inspirant pour cet axe");
+    if (!topics || topics.length === 0) {
+      alert("Au moins un topic est requis pour la génération IA");
       return;
     }
 
-    setGeneratingAI(true);
+    setLoading(true);
+    try {
+      const res = await api.post("/visuals/article/generate-ai", {
+        id_article: articleId,
+        title,
+        excerpt,
+        topics: topics.map((t) => t.label),
+      });
 
-    const id = articleId || "_temp_";
-
-    const res = await api.post("/visuals/article/generate-ai", {
-      id_article: id,
-      title,
-      excerpt: "",
-      axe_visual_square_url: squareInspiration,
-    });
-
-    if (res.status !== "ok") {
+      setSquareFilename(res.filenames.square);
+      setRectFilename(res.filenames.rectangle);
+    } catch (e) {
+      console.error(e);
       alert("Erreur génération IA");
-      setGeneratingAI(false);
-      return;
     }
-
-    onChange({
-      rectangleId: res.ids.rectangle,
-      squareId: res.ids.square,
-      previewUrl: res.urls.rectangle,
-    });
-
-    setGeneratingAI(false);
+    setLoading(false);
   }
 
   /* ---------------------------------------------------------
      UI
   --------------------------------------------------------- */
   return (
-    <div className="p-4 border rounded bg-white space-y-4">
+    <div className="border rounded p-4 space-y-4 bg-white">
 
-      <h2 className="text-xl font-semibold text-ratecard-blue">
+      <h3 className="text-lg font-semibold text-ratecard-blue">
         Visuel de l’article
-      </h2>
+      </h3>
 
-      {/* MODES */}
-      <div className="flex gap-4 border-b pb-2">
-        {[
-          ["upload", "Upload"],
-          ["existing", "Visuel existant"],
-          ["ai", "Génération IA"],
-        ].map(([val, label]) => (
-          <button
-            key={val}
-            onClick={() => switchMode(val as Mode)}
-            className={
-              mode === val
-                ? "font-semibold border-b-2 border-ratecard-blue"
-                : "text-gray-500"
+      {loading && (
+        <p className="text-sm text-gray-500">Traitement en cours…</p>
+      )}
+
+      {/* ACTIONS */}
+      <div className="flex flex-wrap gap-3">
+        <label className="px-4 py-2 bg-gray-100 rounded cursor-pointer">
+          Importer un visuel
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) =>
+              e.target.files && upload(e.target.files[0], "rectangle")
             }
+          />
+        </label>
+
+        <label className="px-4 py-2 bg-gray-100 rounded cursor-pointer">
+          Importer version carrée
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) =>
+              e.target.files && upload(e.target.files[0], "square")
+            }
+          />
+        </label>
+
+        <button
+          onClick={generateAI}
+          className="px-4 py-2 bg-ratecard-blue text-white rounded"
+        >
+          Générer via IA
+        </button>
+
+        {(squareFilename || rectFilename) && (
+          <button
+            onClick={resetVisual}
+            className="px-4 py-2 bg-red-600 text-white rounded"
           >
-            {label}
+            Supprimer le visuel
           </button>
-        ))}
+        )}
       </div>
 
-      {/* ---------------------------------- */}
-      {/* UPLOAD */}
-      {/* ---------------------------------- */}
-      {mode === "upload" && (
-        <div className="space-y-3">
-          <input type="file" accept="image/*" onChange={selectFile} />
-
-          {localPreview && (
-            <img
-              src={localPreview}
-              className="w-60 border rounded bg-white"
-            />
-          )}
-
-          <button
-            disabled={!file || uploading}
-            onClick={uploadLocal}
-            className="px-4 py-2 bg-ratecard-blue text-white rounded"
-          >
-            {uploading ? "Upload…" : "Uploader"}
-          </button>
+      {/* ETAT */}
+      <div className="text-sm text-gray-600 space-y-1">
+        <div>
+          Carré : {squareFilename ? squareFilename : "—"}
         </div>
-      )}
-
-      {/* ---------------------------------- */}
-      {/* EXISTING (AXE) */}
-      {/* ---------------------------------- */}
-      {mode === "existing" && (
-        <div className="space-y-3">
-          <p className="text-sm text-gray-600">
-            Le visuel sera importé depuis le premier axe sélectionné.
-          </p>
-
-          <button
-            disabled={!axes.length || importingExisting}
-            onClick={applyFromAxe}
-            className="px-4 py-2 bg-ratecard-blue text-white rounded"
-          >
-            {importingExisting ? "Import…" : "Visuel de l’axe"}
-          </button>
+        <div>
+          Rectangle : {rectFilename ? rectFilename : "—"}
         </div>
-      )}
+      </div>
 
-      {/* ---------------------------------- */}
-      {/* IA */}
-      {/* ---------------------------------- */}
-      {mode === "ai" && (
-        <div className="space-y-3">
-          <p className="text-sm text-gray-600">
-            Le visuel IA s’appuie uniquement sur le 1er axe.
-          </p>
-
-          <button
-            disabled={!axes.length || generatingAI}
-            onClick={generateAI}
-            className="px-4 py-2 bg-purple-600 text-white rounded"
-          >
-            {generatingAI ? "Génération…" : "Générer via IA"}
-          </button>
-        </div>
-      )}
-
-      {/* PREVIEW */}
-      {(initialRectangleUrl || localPreview) && (
-        <div className="mt-4">
-          <p className="text-xs text-gray-500 mb-1">Aperçu :</p>
-          <img
-            src={localPreview || initialRectangleUrl!}
-            className="w-80 border rounded bg-white"
-          />
-        </div>
-      )}
     </div>
   );
 }
-
