@@ -68,28 +68,44 @@ def query_bq(sql: str, params: dict = None) -> list[dict]:
     job = client.query(sql, job_config=job_config)
     return [dict(row) for row in job.result()]
 
-
 # ---------------------------------------------------------
-# Insertion BigQuery (INSERT)
+# Insertion BigQuery (INSERT SQL, PAS de streaming)
 # ---------------------------------------------------------
-def insert_bq(table: str, rows: list):
+def insert_bq(table: str, rows: list[dict]):
     """
-    Insère des lignes dans une table BigQuery.
-    rows = liste de dictionnaires Python.
-    Convertit automatiquement les datetime en ISO.
+    Insère des lignes dans une table BigQuery via INSERT SQL
+    (évite le streaming buffer pour permettre UPDATE immédiat).
     """
     client = get_bigquery_client()
 
-    fixed = []
     for row in rows:
-        clean = {}
-        for k, v in row.items():
-            if hasattr(v, "isoformat"):
-                clean[k] = v.isoformat()
-            else:
-                clean[k] = v
-        fixed.append(clean)
+        columns = []
+        placeholders = []
+        params = []
 
-    errors = client.insert_rows_json(table, fixed)
-    if errors:
-        raise RuntimeError(f"BigQuery insert failed: {errors}")
+        for key, value in row.items():
+            columns.append(key)
+            placeholders.append(f"@{key}")
+
+            # Conversion datetime/date propre
+            if hasattr(value, "isoformat"):
+                value = value.isoformat()
+
+            params.append(
+                bigquery.ScalarQueryParameter(
+                    key,
+                    _infer_type(value),
+                    value
+                )
+            )
+
+        sql = f"""
+            INSERT INTO `{table}` ({", ".join(columns)})
+            VALUES ({", ".join(placeholders)})
+        """
+
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=params
+        )
+
+        client.query(sql, job_config=job_config).result()
