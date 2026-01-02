@@ -19,10 +19,26 @@ export default function AdminLayout({ children }) {
   }
 
   const navItems = [
-    { href: "/admin/articles", label: "Articles", icon: Newspaper },
-    { href: "/admin/company", label: "Sociétés", icon: Building2 },
-    { href: "/admin/person", label: "Intervenants", icon: UserCircle },
-    { href: "/admin/axes", label: "Axes éditoriaux", icon: Tags },
+    {
+      href: "/admin/articles",
+      label: "Articles",
+      icon: Newspaper,
+    },
+    {
+      href: "/admin/company",
+      label: "Sociétés",
+      icon: Building2,
+    },
+    {
+      href: "/admin/person",
+      label: "Personnes",
+      icon: UserCircle,
+    },
+    {
+      href: "/admin/topic",
+      label: "Topics",
+      icon: Tags,
+    },
   ];
 
   return (
@@ -36,7 +52,9 @@ export default function AdminLayout({ children }) {
           <h1 className="text-xl font-semibold tracking-wide">
             Ratecard Admin
           </h1>
-          <p className="text-xs opacity-80 mt-1">Gestion éditoriale</p>
+          <p className="text-xs opacity-80 mt-1">
+            Gestion éditoriale
+          </p>
         </div>
 
         {/* NAVIGATION */}
@@ -80,5 +98,6 @@ export default function AdminLayout({ children }) {
     </div>
   );
 }
+
 
 
