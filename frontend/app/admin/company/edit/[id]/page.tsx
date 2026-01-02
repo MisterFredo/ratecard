@@ -7,7 +7,7 @@ import VisualSection from "@/components/visuals/VisualSection";
 
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
-export default function EditCompany({ params }) {
+export default function EditCompany({ params }: { params: { id: string } }) {
   const { id } = params;
 
   const [loading, setLoading] = useState(true);
@@ -21,23 +21,39 @@ export default function EditCompany({ params }) {
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
+  // ---------------------------------------------------------
+  // LOAD COMPANY
+  // ---------------------------------------------------------
   useEffect(() => {
     async function load() {
       setLoading(true);
 
-      const res = await api.get(`/company/${id}`);
-      const c = res.company;
+      try {
+        const res = await api.get(`/company/${id}`);
+        const c = res.company;
 
-      setName(c.NAME);
-      setDescription(c.DESCRIPTION);
-      setLinkedinUrl(c.LINKEDIN_URL);
-      setWebsiteUrl(c.WEBSITE_URL);
+        setName(c.NAME);
+        setDescription(c.DESCRIPTION || "");
+        setLinkedinUrl(c.LINKEDIN_URL || "");
+        setWebsiteUrl(c.WEBSITE_URL || "");
 
-      if (c.MEDIA_LOGO_SQUARE_ID)
-        setSquareUrl(`${GCS}/companies/COMPANY_${id}_square.jpg`);
+        // Visuels — convention GCS
+        setSquareUrl(
+          c.MEDIA_LOGO_SQUARE_ID
+            ? `${GCS}/companies/COMPANY_${id}_square.jpg`
+            : null
+        );
 
-      if (c.MEDIA_LOGO_RECTANGLE_ID)
-        setRectUrl(`${GCS}/companies/COMPANY_${id}_rect.jpg`);
+        setRectUrl(
+          c.MEDIA_LOGO_RECTANGLE_ID
+            ? `${GCS}/companies/COMPANY_${id}_rect.jpg`
+            : null
+        );
+
+      } catch (e) {
+        console.error(e);
+        alert("❌ Erreur chargement société");
+      }
 
       setLoading(false);
     }
@@ -45,31 +61,47 @@ export default function EditCompany({ params }) {
     load();
   }, [id]);
 
+  // ---------------------------------------------------------
+  // SAVE DATA (UPDATE)
+  // ---------------------------------------------------------
   async function save() {
     setSaving(true);
 
-    await api.put(`/company/update/${id}`, {
-      name,
-      description,
-      linkedin_url: linkedinUrl,
-      website_url: websiteUrl,
-    });
+    try {
+      await api.put(`/company/update/${id}`, {
+        name,
+        description: description || null,
+        linkedin_url: linkedinUrl || null,
+        website_url: websiteUrl || null,
+      });
 
-    alert("Modifié !");
+      alert("Société modifiée");
+
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur mise à jour");
+    }
+
     setSaving(false);
   }
 
   if (loading) return <p>Chargement…</p>;
 
+  // ---------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------
   return (
     <div className="space-y-8">
       <div className="flex justify-between">
-        <h1 className="text-3xl font-semibold">Modifier la société</h1>
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
+          Modifier la société
+        </h1>
         <Link href="/admin/company" className="underline">
           ← Retour
         </Link>
       </div>
 
+      {/* DATA */}
       <input
         className="border p-2 w-full rounded"
         value={name}
@@ -99,17 +131,25 @@ export default function EditCompany({ params }) {
         onClick={save}
         disabled={saving}
       >
-        Enregistrer
+        {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
+      {/* VISUALS — POST CREATION */}
       <VisualSection
-        entityType="company"
         entityId={id}
         squareUrl={squareUrl}
         rectUrl={rectUrl}
         onUpdated={({ square, rectangle }) => {
-          setSquareUrl(square);
-          setRectUrl(rectangle);
+          setSquareUrl(
+            square
+              ? `${GCS}/companies/COMPANY_${id}_square.jpg`
+              : null
+          );
+          setRectUrl(
+            rectangle
+              ? `${GCS}/companies/COMPANY_${id}_rect.jpg`
+              : null
+          );
         }}
       />
     </div>
