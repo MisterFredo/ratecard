@@ -3,20 +3,47 @@
 import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import "@/components/admin/tiptap.css"; // <-- IMPORTANT : style TipTap minimal
+import "@/components/admin/tiptap.css";
 
-export default function HtmlEditor({ value, onChange }) {
-  // Prévenir SSR mismatch / initialisation tardive
-  useEffect(() => {}, []);
+type Props = {
+  value: string;
+  onChange: (html: string) => void;
+};
 
+export default function HtmlEditor({ value, onChange }: Props) {
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [2], // 🔒 uniquement H2 (pas de H1)
+        },
+        codeBlock: false,
+        blockquote: false,
+        horizontalRule: false,
+      }),
+    ],
     content: value || "<p></p>",
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
-      onChange(html === "<p></p>" ? "" : html);  // éviter HTML vide parasite
+      onChange(html === "<p></p>" ? "" : html);
     },
   });
+
+  /* ---------------------------------------------------------
+     SYNC EXTERNE (IMPORTANT)
+     Si la valeur change depuis le parent (IA, load, reset),
+     on met à jour le contenu de l’éditeur.
+  --------------------------------------------------------- */
+  useEffect(() => {
+    if (!editor) return;
+
+    const current = editor.getHTML();
+    const next = value || "<p></p>";
+
+    if (current !== next) {
+      editor.commands.setContent(next, false);
+    }
+  }, [value, editor]);
 
   if (!editor) return null;
 
@@ -46,7 +73,9 @@ export default function HtmlEditor({ value, onChange }) {
         </button>
 
         <button
-          onClick={safe(() => editor.chain().focus().toggleHeading({ level: 2 }).run())}
+          onClick={safe(() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          )}
           className="px-2 py-1 border rounded hover:bg-gray-100"
         >
           H2
@@ -56,7 +85,7 @@ export default function HtmlEditor({ value, onChange }) {
           onClick={safe(() => editor.chain().focus().toggleBulletList().run())}
           className="px-2 py-1 border rounded hover:bg-gray-100"
         >
-          • List
+          • Liste
         </button>
       </div>
 
