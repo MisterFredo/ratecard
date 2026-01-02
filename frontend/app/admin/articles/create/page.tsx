@@ -11,14 +11,7 @@ import ArticleContextBlock from "@/components/admin/articles/ArticleContextBlock
 import ArticleVariantsBlock from "@/components/admin/articles/ArticleVariantsBlock";
 import ArticleVisualSection from "@/components/admin/articles/ArticleVisualSection";
 
-type Mode = "scratch" | "source";
-
 export default function CreateArticleStudioPage() {
-  /* ---------------------------------------------------------
-     MODE STUDIO
-  --------------------------------------------------------- */
-  const [mode, setMode] = useState<Mode>("scratch");
-
   /* ---------------------------------------------------------
      STATE ARTICLE (DRAFT LOCAL)
   --------------------------------------------------------- */
@@ -43,6 +36,11 @@ export default function CreateArticleStudioPage() {
   --------------------------------------------------------- */
   const [articleId, setArticleId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  /* ---------------------------------------------------------
+     IA SOURCE PANEL (ACCORDÉON)
+  --------------------------------------------------------- */
+  const [showSourcePanel, setShowSourcePanel] = useState(false);
 
   /* ---------------------------------------------------------
      VALIDATION DU DRAFT → CREATE ARTICLE
@@ -111,46 +109,36 @@ export default function CreateArticleStudioPage() {
       </div>
 
       {/* -------------------------------------------------
-         MODE SELECTOR
+         ACCORDÉON IA — SOURCE → ARTICLE
       ------------------------------------------------- */}
       {!articleId && (
-        <div className="flex gap-4 border-b pb-3">
+        <div className="border rounded bg-white">
           <button
-            onClick={() => setMode("scratch")}
-            className={`px-4 py-2 rounded ${
-              mode === "scratch"
-                ? "bg-ratecard-blue text-white"
-                : "bg-gray-100 text-gray-700"
-            }`}
+            onClick={() => setShowSourcePanel(!showSourcePanel)}
+            className="w-full flex justify-between items-center px-4 py-3 border-b"
           >
-            Rédiger un article
+            <h2 className="text-lg font-semibold text-ratecard-blue">
+              Transformer une source (IA)
+            </h2>
+            <span className="text-sm text-gray-500">
+              {showSourcePanel ? "Masquer" : "Afficher"}
+            </span>
           </button>
 
-          <button
-            onClick={() => setMode("source")}
-            className={`px-4 py-2 rounded ${
-              mode === "source"
-                ? "bg-ratecard-blue text-white"
-                : "bg-gray-100 text-gray-700"
-            }`}
-          >
-            Transformer une source (IA)
-          </button>
+          {showSourcePanel && (
+            <div className="p-4">
+              <ArticleSourcePanel
+                onApplyDraft={(draft) => {
+                  if (draft.title) setTitle(draft.title);
+                  if (draft.excerpt) setExcerpt(draft.excerpt);
+                  if (draft.content_html)
+                    setContentHtml(draft.content_html);
+                  if (draft.intro) setIntro(draft.intro);
+                }}
+              />
+            </div>
+          )}
         </div>
-      )}
-
-      {/* -------------------------------------------------
-         MODE SOURCE → ARTICLE
-      ------------------------------------------------- */}
-      {mode === "source" && !articleId && (
-        <ArticleSourcePanel
-          onApplyDraft={(draft) => {
-            if (draft.title) setTitle(draft.title);
-            if (draft.excerpt) setExcerpt(draft.excerpt);
-            if (draft.content_html) setContentHtml(draft.content_html);
-            if (draft.intro) setIntro(draft.intro);
-          }}
-        />
       )}
 
       {/* -------------------------------------------------
@@ -163,7 +151,8 @@ export default function CreateArticleStudioPage() {
         onChange={(data) => {
           if (data.title !== undefined) setTitle(data.title);
           if (data.excerpt !== undefined) setExcerpt(data.excerpt);
-          if (data.contentHtml !== undefined) setContentHtml(data.contentHtml);
+          if (data.contentHtml !== undefined)
+            setContentHtml(data.contentHtml);
         }}
       />
 
