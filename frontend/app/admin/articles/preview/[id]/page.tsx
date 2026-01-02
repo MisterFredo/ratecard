@@ -6,8 +6,8 @@ import { api } from "@/lib/api";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
-export default function ArticlePreviewPage({ params }) {
-  const { id } = params;
+export default function ArticlePreviewPage({ params }: { params: { id: string } }) {
+  const { id: articleId } = params;
 
   const [loading, setLoading] = useState(true);
   const [article, setArticle] = useState<any>(null);
@@ -18,39 +18,34 @@ export default function ArticlePreviewPage({ params }) {
   async function load() {
     setLoading(true);
 
-    const res = await api.get(`/articles/${id}`);
-    if (!res || !res.article) {
+    try {
+      const res = await api.get(`/articles/${articleId}`);
+      const a = res.article;
+
+      const rectUrl = a.MEDIA_RECTANGLE_ID
+        ? `${GCS_BASE_URL}/articles/${a.MEDIA_RECTANGLE_ID}`
+        : null;
+
+      const squareUrl = a.MEDIA_SQUARE_ID
+        ? `${GCS_BASE_URL}/articles/${a.MEDIA_SQUARE_ID}`
+        : null;
+
+      setArticle({
+        ...a,
+        rectUrl,
+        squareUrl,
+      });
+    } catch (e) {
+      console.error(e);
       alert("Article introuvable");
-      return;
     }
-
-    const a = res.article;
-
-    // -------------------------------------------------------
-    // VISUEL : reconstruction GCS
-    // -------------------------------------------------------
-    let rectUrl = null;
-    if (a.media_rectangle_path) {
-      rectUrl = `${GCS_BASE_URL}/${a.media_rectangle_path}`;
-    }
-
-    let squareUrl = null;
-    if (a.media_square_path) {
-      squareUrl = `${GCS_BASE_URL}/${a.media_square_path}`;
-    }
-
-    setArticle({
-      ...a,
-      rectUrl,
-      squareUrl,
-    });
 
     setLoading(false);
   }
 
   useEffect(() => {
     load();
-  }, [id]);
+  }, [articleId]);
 
   if (loading || !article) return <div>Chargement…</div>;
 
@@ -67,7 +62,7 @@ export default function ArticlePreviewPage({ params }) {
         </h1>
 
         <Link
-          href={`/admin/articles/edit/${id}`}
+          href={`/admin/articles/edit/${articleId}`}
           className="underline text-gray-600"
         >
           ← Modifier
@@ -76,7 +71,7 @@ export default function ArticlePreviewPage({ params }) {
 
       {/* VISUEL */}
       <div className="space-y-2">
-        <p className="text-xs text-gray-500">Visuel principal :</p>
+        <p className="text-xs text-gray-500">Visuel principal</p>
 
         {article.rectUrl ? (
           <img
@@ -95,20 +90,19 @@ export default function ArticlePreviewPage({ params }) {
 
       {/* META */}
       <div className="bg-white border rounded p-4 space-y-3 shadow-sm max-w-3xl">
+        <h2 className="text-xl font-bold">{article.TITLE}</h2>
 
-        <h2 className="text-xl font-bold">{article.TITRE}</h2>
-
-        {article.RESUME && (
-          <p className="text-gray-600 italic">{article.RESUME}</p>
+        {article.EXCERPT && (
+          <p className="text-gray-600 italic">{article.EXCERPT}</p>
         )}
 
         <div className="text-sm text-gray-600 space-y-1">
 
-          {/* AXES */}
+          {/* TOPICS */}
           <div>
-            <strong>Axes :</strong>{" "}
-            {article.axes && article.axes.length > 0
-              ? article.axes.map((ax) => ax.LABEL).join(", ")
+            <strong>Topics :</strong>{" "}
+            {article.topics && article.topics.length > 0
+              ? article.topics.map((t: any) => t.LABEL).join(", ")
               : "—"}
           </div>
 
@@ -116,7 +110,7 @@ export default function ArticlePreviewPage({ params }) {
           <div>
             <strong>Sociétés :</strong>{" "}
             {article.companies && article.companies.length > 0
-              ? article.companies.map((c) => c.NAME).join(", ")
+              ? article.companies.map((c: any) => c.NAME).join(", ")
               : "—"}
           </div>
 
@@ -125,12 +119,14 @@ export default function ArticlePreviewPage({ params }) {
             <strong>Personnes :</strong>{" "}
             {article.persons && article.persons.length > 0
               ? article.persons
-                  .map((p) => `${p.NAME}${p.ROLE ? " (" + p.ROLE + ")" : ""}`)
+                  .map((p: any) =>
+                    `${p.NAME}${p.ROLE ? " (" + p.ROLE + ")" : ""}`
+                  )
                   .join(", ")
               : "—"}
           </div>
 
-          {/* PUBLICATION */}
+          {/* DATES */}
           <div>
             <strong>Créé le :</strong>{" "}
             {article.CREATED_AT
@@ -144,16 +140,15 @@ export default function ArticlePreviewPage({ params }) {
       <div className="bg-white p-6 border rounded shadow-sm max-w-3xl">
         <div
           className="prose prose-gray max-w-none"
-          dangerouslySetInnerHTML={{ __html: article.CONTENU_HTML || "" }}
+          dangerouslySetInnerHTML={{ __html: article.CONTENT_HTML || "" }}
         />
       </div>
 
       {/* ACTIONS FUTURES */}
       <div className="bg-white border rounded p-4 shadow-sm space-y-4 max-w-3xl">
-        <h3 className="text-lg font-semibold">Actions (à venir)</h3>
+        <h3 className="text-lg font-semibold">Actions</h3>
 
         <div className="flex gap-3 flex-wrap">
-
           <button
             disabled
             className="px-4 py-2 rounded bg-gray-300 text-gray-600 cursor-not-allowed"
@@ -172,9 +167,8 @@ export default function ArticlePreviewPage({ params }) {
             disabled
             className="px-4 py-2 rounded bg-gray-300 text-gray-600 cursor-not-allowed"
           >
-            Ajouter à la newsletter Brevo
+            Ajouter à la newsletter
           </button>
-
         </div>
       </div>
     </div>
