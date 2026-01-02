@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
 type Topic = {
   id_topic: string;
   label: string;
@@ -38,6 +40,10 @@ export default function ArticleVisualSection({
       };
       reader.readAsDataURL(file);
     });
+  }
+
+  function gcsUrl(filename: string) {
+    return `${GCS_BASE_URL}/articles/${filename}`;
   }
 
   /* ---------------------------------------------------------
@@ -124,10 +130,28 @@ export default function ArticleVisualSection({
         <p className="text-sm text-gray-500">Traitement en cours…</p>
       )}
 
+      {/* PREVIEW */}
+      {(rectFilename || squareFilename) && (
+        <div className="space-y-2">
+          {rectFilename && (
+            <img
+              src={gcsUrl(rectFilename)}
+              className="w-full max-w-xl rounded border"
+            />
+          )}
+          {!rectFilename && squareFilename && (
+            <img
+              src={gcsUrl(squareFilename)}
+              className="w-64 rounded border"
+            />
+          )}
+        </div>
+      )}
+
       {/* ACTIONS */}
       <div className="flex flex-wrap gap-3">
         <label className="px-4 py-2 bg-gray-100 rounded cursor-pointer">
-          Importer un visuel
+          Importer un visuel (rectangle)
           <input
             type="file"
             accept="image/*"
@@ -169,12 +193,8 @@ export default function ArticleVisualSection({
 
       {/* ETAT */}
       <div className="text-sm text-gray-600 space-y-1">
-        <div>
-          Carré : {squareFilename ? squareFilename : "—"}
-        </div>
-        <div>
-          Rectangle : {rectFilename ? rectFilename : "—"}
-        </div>
+        <div>Carré : {squareFilename ?? "—"}</div>
+        <div>Rectangle : {rectFilename ?? "—"}</div>
       </div>
 
     </div>
