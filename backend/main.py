@@ -4,10 +4,15 @@ import importlib
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Path fix
+# -------------------------------------------------------
+# PATH FIX
+# -------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
+# -------------------------------------------------------
+# APP
+# -------------------------------------------------------
 app = FastAPI(
     title="Ratecard Backend",
     version="1.0.0",
@@ -21,36 +26,48 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# -------------------------------------------------------
+# ROUTER INCLUSION HELPER
+# -------------------------------------------------------
 def include_router(module_path: str, prefix: str, tag: str):
     mod = importlib.import_module(module_path)
     router = getattr(mod, "router")
     app.include_router(router, prefix=prefix, tags=[tag])
-
 
 # -------------------------------------------------------
 # MODULE REGISTRATION
 # -------------------------------------------------------
 include_router("api.health", "/api/health", "HEALTH")
 include_router("api.articles", "/api/articles", "ARTICLES")
+
 include_router("api.company", "/api/company", "COMPANY")
 include_router("api.person", "/api/person", "PERSON")
-include_router("api.axes", "/api/axes", "AXES")
+include_router("api.topic", "/api/topic", "TOPIC")
+
 include_router("api.visuals", "/api/visuals", "VISUALS")
 include_router("api.lab_light", "/api/lab-light", "LAB-LIGHT")
 
-
+# -------------------------------------------------------
+# ROOT
+# -------------------------------------------------------
 @app.get("/")
 def root():
     return {
         "service": "ratecard-backend",
         "status": "ok",
         "modules": [
-            "articles", "company", "person",
-            "axes", "visuals", "lab-light"
+            "articles",
+            "company",
+            "person",
+            "topic",
+            "visuals",
+            "lab-light"
         ]
     }
 
-
+# -------------------------------------------------------
+# ROUTES DEBUG
+# -------------------------------------------------------
 @app.get("/__routes")
 def list_routes():
     return {
