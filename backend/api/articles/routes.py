@@ -1,7 +1,8 @@
-# backend/api/articles/routes.py
-
 from fastapi import APIRouter, HTTPException
-from api.articles.models import ArticleCreate, ArticleUpdate
+from api.articles.models import (
+    ArticleCreate,
+    ArticleUpdate,
+)
 from core.articles.service import (
     create_article,
     list_articles,
@@ -15,21 +16,27 @@ router = APIRouter()
 
 
 # ============================================================
-# CREATE ARTICLE
+# CREATE ARTICLE — validation d’un draft
 # ============================================================
 @router.post("/create")
 def create_route(payload: ArticleCreate):
     """
-    Création d’un article :
-    - texte (titre / résumé / html)
-    - relations : axes (1..N), companies (0..N), persons (0..N)
-    - médias : IDs du DAM déjà choisis par le front
+    Création d’un Article à partir d’un draft validé.
+
+    Règles :
+    - titre obligatoire
+    - contenu HTML obligatoire
+    - au moins 1 topic obligatoire
+    - visuel non obligatoire à la création
     """
     try:
         id_article = create_article(payload)
         return {"status": "ok", "id_article": id_article}
+    except ValueError as e:
+        # erreurs fonctionnelles explicites
+        raise HTTPException(400, str(e))
     except Exception as e:
-        raise HTTPException(400, f"Erreur création article : {e}")
+        raise HTTPException(500, f"Erreur création article : {e}")
 
 
 # ============================================================
@@ -45,7 +52,7 @@ def list_route():
 
 
 # ============================================================
-# GET ARTICLE
+# GET ARTICLE (ADMIN / PREVIEW)
 # ============================================================
 @router.get("/{id_article}")
 def get_route(id_article: str):
@@ -56,24 +63,25 @@ def get_route(id_article: str):
 
 
 # ============================================================
-# UPDATE ARTICLE
+# UPDATE ARTICLE — remplacement complet
 # ============================================================
 @router.put("/update/{id_article}")
 def update_route(id_article: str, payload: ArticleUpdate):
     """
-    Mise à jour d’un article existant :
-    - même schéma que create
-    - update + remplacement complet des relations
+    Mise à jour complète d’un Article existant.
+    (remplacement total, pas d’update partiel)
     """
     try:
         update_article(id_article, payload)
         return {"status": "ok", "updated": id_article}
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     except Exception as e:
-        raise HTTPException(400, f"Erreur mise à jour article : {e}")
+        raise HTTPException(500, f"Erreur mise à jour article : {e}")
 
 
 # ============================================================
-# DELETE ARTICLE
+# DELETE ARTICLE — suppression définitive
 # ============================================================
 @router.delete("/{id_article}")
 def delete_route(id_article: str):
@@ -85,7 +93,7 @@ def delete_route(id_article: str):
 
 
 # ============================================================
-# ARCHIVE ARTICLE
+# ARCHIVE ARTICLE — soft delete
 # ============================================================
 @router.put("/archive/{id_article}")
 def archive_route(id_article: str):
