@@ -1,25 +1,28 @@
-# backend/api/company/routes.py
-
 from fastapi import APIRouter, HTTPException
-from api.company.models import CompanyCreate
+from api.company.models import (
+    CompanyCreate,
+    CompanyUpdate,
+)
 from core.company.service import (
     create_company,
     list_companies,
     get_company,
-    update_company
+    update_company,
 )
 
 router = APIRouter()
 
 
-# ------------------------------------------------------------
-# CREATE
-# ------------------------------------------------------------
+# ============================================================
+# CREATE — création d'une société (DATA ONLY)
+# ============================================================
 @router.post("/create")
 def create_route(data: CompanyCreate):
     """
-    Crée une société avec son nom, description,
-    médias (rectangle / square), et liens externes.
+    Crée une société (sans aucun visuel).
+
+    Les visuels sont associés UNIQUEMENT après création,
+    via une action distincte.
     """
     try:
         company_id = create_company(data)
@@ -28,13 +31,13 @@ def create_route(data: CompanyCreate):
         raise HTTPException(400, f"Erreur création société : {e}")
 
 
-# ------------------------------------------------------------
-# LIST
-# ------------------------------------------------------------
+# ============================================================
+# LIST — liste des sociétés actives
+# ============================================================
 @router.get("/list")
 def list_route():
     """
-    Retourne toutes les sociétés actives.
+    Retourne la liste des sociétés actives.
     """
     try:
         companies = list_companies()
@@ -43,27 +46,32 @@ def list_route():
         raise HTTPException(400, f"Erreur liste sociétés : {e}")
 
 
-# ------------------------------------------------------------
-# GET ONE
-# ------------------------------------------------------------
+# ============================================================
+# GET ONE — récupération d'une société
+# ============================================================
 @router.get("/{id_company}")
 def get_route(id_company: str):
     """
-    Récupère une société par ID.
+    Récupère une société par son ID.
     """
     company = get_company(id_company)
     if not company:
         raise HTTPException(404, "Société introuvable")
+
     return {"status": "ok", "company": company}
 
 
-# ------------------------------------------------------------
-# UPDATE
-# ------------------------------------------------------------
+# ============================================================
+# UPDATE — mise à jour d'une société existante
+# ============================================================
 @router.put("/update/{id_company}")
-def update_route(id_company: str, data: CompanyCreate):
+def update_route(id_company: str, data: CompanyUpdate):
     """
-    Met à jour une société + rattachements média.
+    Met à jour une société existante.
+
+    Peut inclure :
+    - données métier
+    - champs média (post-création)
     """
     try:
         updated = update_company(id_company, data)
