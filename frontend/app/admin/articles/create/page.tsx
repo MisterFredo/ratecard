@@ -4,92 +4,89 @@ import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
-// Sélecteurs modernisés
+// Sélecteurs
 import CompanySelector from "@/components/admin/CompanySelector";
 import PersonSelector from "@/components/admin/PersonSelector";
-import AxesEditor from "@/components/admin/AxesEditor";
+import TopicSelector from "@/components/admin/TopicSelector";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
-// Nouveau bloc visuel unifié
+// Visuel Article (V2)
 import ArticleVisualSection from "@/components/admin/articles/ArticleVisualSection";
 
 export default function CreateArticlePage() {
   /* ---------------------------------------------------------
-     CORE FIELDS
+     CORE FIELDS (DRAFT LOCAL)
   --------------------------------------------------------- */
   const [title, setTitle] = useState("");
-  const [resume, setResume] = useState(""); // devient RESUME côté backend
+  const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
 
+  const [intro, setIntro] = useState("");
+  const [outro, setOutro] = useState("");
+
   /* ---------------------------------------------------------
-     ENTITÉS
+     RELATIONS
   --------------------------------------------------------- */
+  const [topics, setTopics] = useState<any[]>([]);     // obligatoire (>=1)
   const [companies, setCompanies] = useState<any[]>([]);
   const [persons, setPersons] = useState<any[]>([]);
-  const [axes, setAxes] = useState<any[]>([]);
 
   /* ---------------------------------------------------------
-     VISUEL ARTICLE (rectangle + square) — via ArticleVisualSection
+     META
   --------------------------------------------------------- */
-  const [mediaRectangleId, setMediaRectangleId] = useState<string | null>(null);
-  const [mediaSquareId, setMediaSquareId] = useState<string | null>(null);
-  const [previewRectUrl, setPreviewRectUrl] = useState<string | null>(null);
-
-  /* ---------------------------------------------------------
-     IA OLD DRAFT (source → article) — conservé
-  --------------------------------------------------------- */
-  const [sourceMode, setSourceMode] = useState<"scratch" | "source">("scratch");
-  const [sourceType, setSourceType] = useState("LINKEDIN_POST");
-  const [sourceText, setSourceText] = useState("");
   const [author, setAuthor] = useState("");
-  const [loadingDraft, setLoadingDraft] = useState(false);
-
-  async function generateDraft() {
-    setLoadingDraft(true);
-
-    const payload = {
-      source_type: sourceType,
-      source_text: sourceText,
-      author: author || "",
-    };
-
-    const res = await api.post("/lab-light/transform", payload);
-
-    if (res.draft?.title_proposal) setTitle(res.draft.title_proposal);
-    if (res.draft?.excerpt) setResume(res.draft.excerpt);
-    if (res.draft?.content_html) setContentHtml(res.draft.content_html);
-
-    setLoadingDraft(false);
-  }
 
   /* ---------------------------------------------------------
-     CREATE ARTICLE
+     ARTICLE STATE
   --------------------------------------------------------- */
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [articleId, setArticleId] = useState<string | null>(null);
 
-  async function save() {
-    if (!title.trim()) return alert("Merci de renseigner un titre");
+  /* ---------------------------------------------------------
+     CREATE ARTICLE (validation du draft)
+  --------------------------------------------------------- */
+  async function createArticle() {
+    if (!title.trim()) {
+      alert("Le titre est obligatoire");
+      return;
+    }
+
+    if (!contentHtml.trim()) {
+      alert("Le contenu est obligatoire");
+      return;
+    }
+
+    if (!topics || topics.length === 0) {
+      alert("Au moins un topic est obligatoire");
+      return;
+    }
 
     setSaving(true);
 
     const payload = {
-      titre: title,
-      resume,
-      contenu_html: contentHtml,
+      title,
+      content_html: contentHtml,
+      excerpt: excerpt || null,
+      intro: intro || null,
+      outro: outro || null,
+      author: author || null,
 
-      media_rectangle_id: mediaRectangleId,
-      media_square_id: mediaSquareId,
-
-      auteur: author || null,
-
-      axes: axes.map((a) => a.id_axe),
+      topics: topics.map((t) => t.id_topic),
       companies: companies.map((c) => c.id_company),
-      persons: persons.map((p) => ({ id_person: p.id_person, role: "contributeur" })),
+      persons: persons.map((p) => ({
+        id_person: p.id_person,
+        role: p.role || "contributeur",
+      })),
     };
 
-    const res = await api.post("/articles/create", payload);
-    setResult(res);
+    try {
+      const res = await api.post("/articles/create", payload);
+      setArticleId(res.id_article);
+    } catch (e) {
+      console.error(e);
+      alert("Erreur lors de la création de l’article");
+    }
+
     setSaving(false);
   }
 
@@ -109,130 +106,86 @@ export default function CreateArticlePage() {
         </Link>
       </div>
 
-      {/* MODE SELECTEUR */}
-      <div className="flex border-b">
+      {/* -------------------------------
+          SECTION A — CONTENU
+      -------------------------------- */}
+      <section className="space-y-6">
+        <input
+          value={title}
+          placeholder="Titre de l’article"
+          onChange={(e) => setTitle(e.target.value)}
+          className="border p-2 w-full rounded"
+        />
+
+        <textarea
+          value={excerpt}
+          placeholder="Accroche / résumé (excerpt)"
+          onChange={(e) => setExcerpt(e.target.value)}
+          className="border p-2 w-full h-24 rounded"
+        />
+
+        <HtmlEditor value={contentHtml} onChange={setContentHtml} />
+
+        <textarea
+          value={intro}
+          placeholder="Intro (idée forte)"
+          onChange={(e) => setIntro(e.target.value)}
+          className="border p-2 w-full h-20 rounded"
+        />
+
+        <textarea
+          value={outro}
+          placeholder="Outro (ce qu’il faut retenir)"
+          onChange={(e) => setOutro(e.target.value)}
+          className="border p-2 w-full h-20 rounded"
+        />
+      </section>
+
+      {/* -------------------------------
+          SECTION B — ENTITÉS
+      -------------------------------- */}
+      <section className="space-y-6">
+        <TopicSelector values={topics} onChange={setTopics} />
+        <CompanySelector values={companies} onChange={setCompanies} />
+        <PersonSelector values={persons} onChange={setPersons} />
+      </section>
+
+      {/* -------------------------------
+          SECTION C — MÉTA
+      -------------------------------- */}
+      <section className="space-y-4">
+        <input
+          value={author}
+          placeholder="Auteur (optionnel)"
+          onChange={(e) => setAuthor(e.target.value)}
+          className="border p-2 w-full rounded"
+        />
+      </section>
+
+      {/* -------------------------------
+          ACTION CREATE
+      -------------------------------- */}
+      {!articleId && (
         <button
-          onClick={() => setSourceMode("scratch")}
-          className={`px-4 py-2 ${
-            sourceMode === "scratch"
-              ? "border-b-2 border-ratecard-blue font-semibold"
-              : "text-gray-500"
-          }`}
+          onClick={createArticle}
+          disabled={saving}
+          className="bg-ratecard-blue text-white px-6 py-2 rounded"
         >
-          From scratch
+          {saving ? "Création…" : "Valider le draft"}
         </button>
-
-        <button
-          onClick={() => setSourceMode("source")}
-          className={`px-4 py-2 ${
-            sourceMode === "source"
-              ? "border-b-2 border-ratecard-blue font-semibold"
-              : "text-gray-500"
-          }`}
-        >
-          Transformer une source
-        </button>
-      </div>
-
-      {/* ----------------------------------------------------
-          MODE FROM SCRATCH
-      ---------------------------------------------------- */}
-      {sourceMode === "scratch" && (
-        <div className="space-y-6">
-
-          {/* TITRE */}
-          <input
-            value={title}
-            placeholder="Titre"
-            onChange={(e) => setTitle(e.target.value)}
-            className="border p-2 w-full rounded"
-          />
-
-          {/* RESUME */}
-          <textarea
-            value={resume}
-            placeholder="Résumé court"
-            onChange={(e) => setResume(e.target.value)}
-            className="border p-2 w-full h-24 rounded"
-          />
-
-          {/* CONTENU HTML */}
-          <HtmlEditor value={contentHtml} onChange={setContentHtml} />
-
-          {/* SELECTEURS */}
-          <CompanySelector values={companies} onChange={setCompanies} />
-          <PersonSelector values={persons} onChange={setPersons} />
-          <AxesEditor values={axes} onChange={setAxes} />
-
-          {/* VISUEL ARTICLE */}
-          <ArticleVisualSection
-            articleId={null}          // création → pas encore d’ID
-            title={title}
-            axes={axes}
-            initialRectangleUrl={null}
-            initialSquareUrl={null}
-            onChange={({ rectangleId, squareId, previewUrl }) => {
-              setMediaRectangleId(rectangleId);
-              setMediaSquareId(squareId);
-              setPreviewRectUrl(previewUrl);
-            }}
-          />
-
-          <button
-            onClick={save}
-            disabled={saving}
-            className="bg-ratecard-blue text-white px-6 py-2 rounded"
-          >
-            {saving ? "Enregistrement…" : "Publier l’article"}
-          </button>
-
-          {result && (
-            <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap">
-              {JSON.stringify(result, null, 2)}
-            </pre>
-          )}
-        </div>
       )}
 
-      {/* ----------------------------------------------------
-          MODE TRANSFORMER UNE SOURCE
-      ---------------------------------------------------- */}
-      {sourceMode === "source" && (
-        <div className="space-y-6">
-          <select
-            value={sourceType}
-            onChange={(e) => setSourceType(e.target.value)}
-            className="border p-2 rounded"
-          >
-            <option value="LINKEDIN_POST">Post LinkedIn</option>
-            <option value="PRESS_RELEASE">Communiqué / Blog</option>
-            <option value="INTERVIEW">Interview</option>
-            <option value="EVENT_RECAP">Compte-rendu</option>
-            <option value="OTHER">Autre</option>
-          </select>
-
-          <input
-            placeholder="Auteur (optionnel)"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            className="border p-2 rounded w-full"
-          />
-
-          <textarea
-            placeholder="Source brute…"
-            value={sourceText}
-            onChange={(e) => setSourceText(e.target.value)}
-            className="border p-2 rounded w-full h-48"
-          />
-
-          <button
-            onClick={generateDraft}
-            disabled={loadingDraft}
-            className="bg-ratecard-blue text-white px-4 py-2 rounded"
-          >
-            {loadingDraft ? "Génération…" : "Transformer en article"}
-          </button>
-        </div>
+      {/* -------------------------------
+          SECTION D — VISUEL ARTICLE
+          (après création uniquement)
+      -------------------------------- */}
+      {articleId && (
+        <ArticleVisualSection
+          articleId={articleId}
+          title={title}
+          excerpt={excerpt}
+          topics={topics}
+        />
       )}
     </div>
   );
