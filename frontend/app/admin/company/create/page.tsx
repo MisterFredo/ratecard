@@ -5,43 +5,63 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import VisualSection from "@/components/visuals/VisualSection";
 
+const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
 export default function CreateCompany() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
 
-  // Les visuels seront associés APRÈS création
+  // Visuels (post-création uniquement)
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // ---------------------------------------------------------
+  // CREATE COMPANY
+  // ---------------------------------------------------------
   async function save() {
-    if (!name.trim()) return alert("Nom requis");
-
-    setSaving(true);
-
-    const res = await api.post("/company/create", {
-      name,
-      description: description || null,
-      linkedin_url: linkedinUrl || null,
-      website_url: websiteUrl || null,
-    });
-
-    if (!res.id_company) {
-      alert("Erreur création société");
-      setSaving(false);
+    if (!name.trim()) {
+      alert("Nom requis");
       return;
     }
 
-    setCompanyId(res.id_company);
-    alert("Société créée ! Ajoutez maintenant les visuels.");
+    setSaving(true);
+
+    try {
+      const res = await api.post("/company/create", {
+        name,
+        description: description || null,
+        linkedin_url: linkedinUrl || null,
+        website_url: websiteUrl || null,
+      });
+
+      if (!res.id_company) {
+        throw new Error("ID société manquant");
+      }
+
+      setCompanyId(res.id_company);
+
+      // URLs construites par convention GCS
+      setSquareUrl(null);
+      setRectUrl(null);
+
+      alert("Société créée. Vous pouvez maintenant ajouter des visuels.");
+
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur création société");
+    }
 
     setSaving(false);
   }
 
+  // ---------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------
   return (
     <div className="space-y-8">
       <div className="flex justify-between">
@@ -53,6 +73,7 @@ export default function CreateCompany() {
         </Link>
       </div>
 
+      {/* DATA */}
       <input
         className="border p-2 w-full rounded"
         placeholder="Nom"
@@ -89,16 +110,23 @@ export default function CreateCompany() {
         {saving ? "Enregistrement…" : "Créer"}
       </button>
 
-      {/* VISUAL SECTION — ACTIVÉE UNIQUEMENT APRÈS CREATION */}
+      {/* VISUALS — POST CREATION ONLY */}
       {companyId && (
         <VisualSection
-          entityType="company"
           entityId={companyId}
           squareUrl={squareUrl}
           rectUrl={rectUrl}
           onUpdated={({ square, rectangle }) => {
-            setSquareUrl(square);
-            setRectUrl(rectangle);
+            setSquareUrl(
+              square
+                ? `${GCS}/companies/COMPANY_${companyId}_square.jpg`
+                : null
+            );
+            setRectUrl(
+              rectangle
+                ? `${GCS}/companies/COMPANY_${companyId}_rect.jpg`
+                : null
+            );
           }}
         />
       )}
