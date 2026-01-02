@@ -4,44 +4,51 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
-const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
+type CompanyRow = {
+  ID_COMPANY: string;
+  NAME: string;
+  MEDIA_LOGO_SQUARE_ID?: string | null;
+  MEDIA_LOGO_RECTANGLE_ID?: string | null;
+};
 
 export default function CompanyList() {
-  const [companies, setCompanies] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<CompanyRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  async function load() {
-    setLoading(true);
-
-    const res = await api.get("/company/list");
-    const rawCompanies = res.companies || [];
-
-    const enriched = await Promise.all(
-      rawCompanies.map(async (c: any) => {
-        const sq = c.MEDIA_LOGO_SQUARE_ID
-          ? `${GCS_BASE_URL}/companies/COMPANY_${c.ID_COMPANY}_square.jpg`
-          : null;
-
-        const rect = c.MEDIA_LOGO_RECTANGLE_ID
-          ? `${GCS_BASE_URL}/companies/COMPANY_${c.ID_COMPANY}_rect.jpg`
-          : null;
-
-        return { ...c, squareUrl: sq, rectUrl: rect };
-      })
-    );
-
-    setCompanies(enriched);
-    setLoading(false);
-  }
-
+  // ---------------------------------------------------------
+  // LOAD
+  // ---------------------------------------------------------
   useEffect(() => {
+    async function load() {
+      setLoading(true);
+
+      try {
+        const res = await api.get("/company/list");
+        const rows: CompanyRow[] = res.companies || [];
+
+        setCompanies(rows);
+      } catch (e) {
+        console.error(e);
+        alert("❌ Erreur chargement sociétés");
+      }
+
+      setLoading(false);
+    }
+
     load();
   }, []);
 
+  // ---------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------
   return (
     <div className="space-y-8">
       <div className="flex justify-between">
-        <h1 className="text-3xl font-semibold text-ratecard-blue">Sociétés</h1>
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
+          Sociétés
+        </h1>
 
         <Link
           href="/admin/company/create"
@@ -66,36 +73,55 @@ export default function CompanyList() {
             </tr>
           </thead>
           <tbody>
-            {companies.map((c) => (
-              <tr key={c.ID_COMPANY} className="border-b hover:bg-gray-50">
-                <td className="p-2">{c.NAME}</td>
+            {companies.map((c) => {
+              const squareUrl = c.MEDIA_LOGO_SQUARE_ID
+                ? `${GCS}/companies/COMPANY_${c.ID_COMPANY}_square.jpg`
+                : null;
 
-                <td className="p-2">
-                  {c.squareUrl ? (
-                    <img src={c.squareUrl} className="w-12 h-12 rounded border" />
-                  ) : (
-                    "—"
-                  )}
-                </td>
+              const rectUrl = c.MEDIA_LOGO_RECTANGLE_ID
+                ? `${GCS}/companies/COMPANY_${c.ID_COMPANY}_rect.jpg`
+                : null;
 
-                <td className="p-2">
-                  {c.rectUrl ? (
-                    <img src={c.rectUrl} className="h-10 border rounded" />
-                  ) : (
-                    "—"
-                  )}
-                </td>
+              return (
+                <tr
+                  key={c.ID_COMPANY}
+                  className="border-b hover:bg-gray-50"
+                >
+                  <td className="p-2">{c.NAME}</td>
 
-                <td className="p-2 text-right">
-                  <Link
-                    href={`/admin/company/edit/${c.ID_COMPANY}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    Modifier
-                  </Link>
-                </td>
-              </tr>
-            ))}
+                  <td className="p-2">
+                    {squareUrl ? (
+                      <img
+                        src={squareUrl}
+                        className="w-12 h-12 rounded border object-cover"
+                      />
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+
+                  <td className="p-2">
+                    {rectUrl ? (
+                      <img
+                        src={rectUrl}
+                        className="h-10 border rounded"
+                      />
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+
+                  <td className="p-2 text-right">
+                    <Link
+                      href={`/admin/company/edit/${c.ID_COMPANY}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Modifier
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}
