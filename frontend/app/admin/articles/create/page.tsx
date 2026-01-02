@@ -4,14 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
-// Blocs Studio (à brancher ensuite)
+// Blocs Studio
+import ArticleSourcePanel from "@/components/admin/articles/ArticleSourcePanel";
+import ArticleContentBlock from "@/components/admin/articles/ArticleContentBlock";
+import ArticleContextBlock from "@/components/admin/articles/ArticleContextBlock";
+import ArticleVariantsBlock from "@/components/admin/articles/ArticleVariantsBlock";
 import ArticleVisualSection from "@/components/admin/articles/ArticleVisualSection";
-
-// À venir (fichiers suivants)
-// import ArticleSourcePanel from "@/components/admin/articles/ArticleSourcePanel";
-// import ArticleContentBlock from "@/components/admin/articles/ArticleContentBlock";
-// import ArticleContextBlock from "@/components/admin/articles/ArticleContextBlock";
-// import ArticleVariantsBlock from "@/components/admin/articles/ArticleVariantsBlock";
 
 type Mode = "scratch" | "source";
 
@@ -31,6 +29,9 @@ export default function CreateArticleStudioPage() {
   const [intro, setIntro] = useState("");
   const [outro, setOutro] = useState("");
 
+  const [linkedinPostText, setLinkedinPostText] = useState("");
+  const [carouselCaption, setCarouselCaption] = useState("");
+
   const [topics, setTopics] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [persons, setPersons] = useState<any[]>([]);
@@ -44,7 +45,7 @@ export default function CreateArticleStudioPage() {
   const [saving, setSaving] = useState(false);
 
   /* ---------------------------------------------------------
-     CREATE ARTICLE (VALIDATION DU DRAFT)
+     VALIDATION DU DRAFT → CREATE ARTICLE
   --------------------------------------------------------- */
   async function validateDraft() {
     if (!title.trim()) {
@@ -70,6 +71,8 @@ export default function CreateArticleStudioPage() {
       excerpt: excerpt || null,
       intro: intro || null,
       outro: outro || null,
+      linkedin_post_text: linkedinPostText || null,
+      carousel_caption: carouselCaption || null,
       author: author || null,
 
       topics: topics.map((t) => t.id_topic),
@@ -137,52 +140,67 @@ export default function CreateArticleStudioPage() {
       )}
 
       {/* -------------------------------------------------
-         MODE SOURCE (à brancher)
+         MODE SOURCE → ARTICLE
       ------------------------------------------------- */}
       {mode === "source" && !articleId && (
-        <div className="border rounded p-4 bg-white text-gray-500">
-          Mode “Transformer une source” — composant à venir
-        </div>
+        <ArticleSourcePanel
+          onApplyDraft={(draft) => {
+            if (draft.title) setTitle(draft.title);
+            if (draft.excerpt) setExcerpt(draft.excerpt);
+            if (draft.content_html) setContentHtml(draft.content_html);
+            if (draft.intro) setIntro(draft.intro);
+          }}
+        />
       )}
 
       {/* -------------------------------------------------
-         CONTENU PRINCIPAL (temporaire inline)
-         → sera extrait dans ArticleContentBlock
+         CONTENU PRINCIPAL
       ------------------------------------------------- */}
-      <div className="space-y-4 border rounded p-4 bg-white">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Titre de l’article"
-          className="border p-2 w-full rounded"
-        />
-
-        <textarea
-          value={excerpt}
-          onChange={(e) => setExcerpt(e.target.value)}
-          placeholder="Accroche / résumé"
-          className="border p-2 w-full h-20 rounded"
-        />
-
-        {/* HtmlEditor branché ensuite */}
-        <textarea
-          value={contentHtml}
-          onChange={(e) => setContentHtml(e.target.value)}
-          placeholder="Contenu de l’article"
-          className="border p-2 w-full h-40 rounded"
-        />
-      </div>
+      <ArticleContentBlock
+        title={title}
+        excerpt={excerpt}
+        contentHtml={contentHtml}
+        onChange={(data) => {
+          if (data.title !== undefined) setTitle(data.title);
+          if (data.excerpt !== undefined) setExcerpt(data.excerpt);
+          if (data.contentHtml !== undefined) setContentHtml(data.contentHtml);
+        }}
+      />
 
       {/* -------------------------------------------------
-         CONTEXTE ÉDITORIAL (temporaire)
-         → sera extrait dans ArticleContextBlock
+         CONTEXTE ÉDITORIAL
       ------------------------------------------------- */}
-      <div className="border rounded p-4 bg-white text-gray-500">
-        Sélection Topics / Sociétés / Personnes — composant à venir
-      </div>
+      <ArticleContextBlock
+        topics={topics}
+        companies={companies}
+        persons={persons}
+        onChange={(data) => {
+          if (data.topics) setTopics(data.topics);
+          if (data.companies) setCompanies(data.companies);
+          if (data.persons) setPersons(data.persons);
+        }}
+      />
 
       {/* -------------------------------------------------
-         ACTION VALIDATION
+         VARIANTES ÉDITORIALES
+      ------------------------------------------------- */}
+      <ArticleVariantsBlock
+        intro={intro}
+        outro={outro}
+        linkedinPostText={linkedinPostText}
+        carouselCaption={carouselCaption}
+        onChange={(data) => {
+          if (data.intro !== undefined) setIntro(data.intro);
+          if (data.outro !== undefined) setOutro(data.outro);
+          if (data.linkedinPostText !== undefined)
+            setLinkedinPostText(data.linkedinPostText);
+          if (data.carouselCaption !== undefined)
+            setCarouselCaption(data.carouselCaption);
+        }}
+      />
+
+      {/* -------------------------------------------------
+         ACTION CREATE
       ------------------------------------------------- */}
       {!articleId && (
         <button
