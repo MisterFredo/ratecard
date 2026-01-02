@@ -7,45 +7,31 @@ import SearchableMultiSelect, {
 } from "@/components/ui/SearchableMultiSelect";
 
 /* ---------------------------------------------------------
-   TYPES
+   TYPES EXPORTÉS
 --------------------------------------------------------- */
-
-// Person référentiel (API /person/list)
-type PersonRef = {
-  id_person: string;
+export type Company = {
+  id_company: string;
   name: string;
-  title?: string;
-};
-
-// Person associée à un article (avec rôle)
-export type ArticlePerson = {
-  id_person: string;
-  name: string;
-  title?: string;
-  role: string;
 };
 
 type Props = {
-  values: ArticlePerson[];
-  onChange: (persons: ArticlePerson[]) => void;
+  values: Company[];
+  onChange: (companies: Company[]) => void;
 };
 
-export default function PersonSelector({ values, onChange }: Props) {
+export default function CompanySelector({ values, onChange }: Props) {
   const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* ---------------------------------------------------------
-     LOAD PERSONS
-  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
-        const res = await api.get("/person/list");
+        const res = await api.get("/company/list");
         setOptions(
-          (res.persons || []).map((p: any) => ({
-            id: p.ID_PERSON,
-            label: p.NAME,
+          (res.companies || []).map((c: any) => ({
+            id: c.ID_COMPANY,
+            label: c.NAME,
           }))
         );
       } catch (e) {
@@ -57,42 +43,33 @@ export default function PersonSelector({ values, onChange }: Props) {
     load();
   }, []);
 
-  /* ---------------------------------------------------------
-     HANDLE CHANGE
-  --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
-    const next: ArticlePerson[] = selected.map((s) => {
-      const existing = values.find((v) => v.id_person === s.id);
-      return (
-        existing || {
-          id_person: s.id,
-          name: s.label,
-          role: "contributeur", // rôle par défaut
-        }
-      );
-    });
+    onChange(
+      selected.map((s) => ({
+        id_company: s.id,
+        name: s.label,
+      }))
+    );
+  }
 
-    onChange(next);
+  if (loading) {
+    return (
+      <div className="text-sm text-gray-500">
+        Chargement des sociétés…
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-1">
-      {loading ? (
-        <div className="text-sm text-gray-500">
-          Chargement des personnes…
-        </div>
-      ) : (
-        <SearchableMultiSelect
-          label="Personnes"
-          placeholder="Rechercher une personne…"
-          options={options}
-          values={values.map((v) => ({
-            id: v.id_person,
-            label: v.name,
-          }))}
-          onChange={handleChange}
-        />
-      )}
-    </div>
+    <SearchableMultiSelect
+      label="Sociétés"
+      placeholder="Rechercher une société…"
+      options={options}
+      values={values.map((v) => ({
+        id: v.id_company,
+        label: v.name,
+      }))}
+      onChange={handleChange}
+    />
   );
 }
