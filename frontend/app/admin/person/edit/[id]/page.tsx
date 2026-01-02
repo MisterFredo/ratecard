@@ -123,8 +123,8 @@ export default function EditPerson({ params }) {
       <VisualSection
         entityType="person"
         entityId={id}
-        squareUrl={personSquareUrl}
-        rectUrl={personRectUrl}
+        squareUrl={SquareUrl}
+        rectUrl={RectUrl}
         onUpdated={loadPerson}  // recharge après mise à jour
       />
 
