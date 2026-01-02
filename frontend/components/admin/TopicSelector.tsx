@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import SearchableMultiSelect, {
+  SelectOption,
+} from "@/components/ui/SearchableMultiSelect";
 
 type Topic = {
   id_topic: string;
@@ -14,67 +17,54 @@ type Props = {
 };
 
 export default function TopicSelector({ values, onChange }: Props) {
-  const [topics, setTopics] = useState<Topic[]>([]);
+  const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const res = await api.get("/topic/list");
-      setTopics(
-        (res.topics || []).map((t: any) => ({
-          id_topic: t.ID_TOPIC,
-          label: t.LABEL,
-        }))
-      );
+      try {
+        const res = await api.get("/topic/list");
+        setOptions(
+          (res.topics || []).map((t: any) => ({
+            id: t.ID_TOPIC,
+            label: t.LABEL,
+          }))
+        );
+      } catch (e) {
+        console.error(e);
+      }
       setLoading(false);
     }
+
     load();
   }, []);
 
-  const selectedIds = values.map((v) => v.id_topic);
-
-  function toggle(topic: Topic) {
-    if (selectedIds.includes(topic.id_topic)) {
-      onChange(values.filter((v) => v.id_topic !== topic.id_topic));
-    } else {
-      onChange([...values, topic]);
-    }
+  function handleChange(selected: SelectOption[]) {
+    onChange(
+      selected.map((s) => ({
+        id_topic: s.id,
+        label: s.label,
+      }))
+    );
   }
 
   return (
-    <div className="space-y-2">
-      <label className="font-medium">
-        Topics <span className="text-red-500">*</span>
-      </label>
-
+    <div className="space-y-1">
       {loading ? (
-        <div className="text-sm text-gray-500">Chargement…</div>
+        <div className="text-sm text-gray-500">Chargement des topics…</div>
       ) : (
-        <div className="border rounded p-3 space-y-2 bg-white max-h-64 overflow-auto">
-          {topics.map((t) => {
-            const selected = selectedIds.includes(t.id_topic);
-
-            return (
-              <div
-                key={t.id_topic}
-                onClick={() => toggle(t)}
-                className={`p-2 rounded cursor-pointer ${
-                  selected
-                    ? "bg-blue-50 border border-blue-300"
-                    : "hover:bg-gray-50"
-                }`}
-              >
-                <span className="font-medium">{t.label}</span>
-                {selected && (
-                  <span className="ml-2 text-xs text-blue-600">
-                    Sélectionné
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <SearchableMultiSelect
+          label="Topics"
+          required
+          placeholder="Rechercher un topic…"
+          options={options}
+          values={values.map((v) => ({
+            id: v.id_topic,
+            label: v.label,
+          }))}
+          onChange={handleChange}
+        />
       )}
     </div>
   );
