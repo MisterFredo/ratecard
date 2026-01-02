@@ -3,100 +3,71 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-export default function PersonSelector({ values, onChange }) {
-  const [persons, setPersons] = useState<any[]>([]);
+type Company = {
+  id_company: string;
+  name: string;
+};
+
+type Props = {
+  values: Company[];
+  onChange: (companies: Company[]) => void;
+};
+
+export default function CompanySelector({ values, onChange }: Props) {
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* -------------------------------------------------------
-     LOAD PERSONS + VISUELS DAM
-  ------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
-
-      const res = await api.get("/person/list");
-      const raw = res.persons || [];
-
-      // Enrichir avec portrait carrés/rectangles
-      const enriched = await Promise.all(
-        raw.map(async (p: any) => {
-          const visu = await api.get(`/visuals/person/get?id_person=${p.ID_PERSON}`);
-
-          return {
-            id_person: p.ID_PERSON,
-            name: p.NAME,
-            title: p.TITLE || "",
-            company: p.ID_COMPANY || null,
-
-            squareUrl: visu?.square_url || null,
-            rectUrl: visu?.rectangle_url || null,
-          };
-        })
+      const res = await api.get("/company/list");
+      setCompanies(
+        (res.companies || []).map((c: any) => ({
+          id_company: c.ID_COMPANY,
+          name: c.NAME,
+        }))
       );
-
-      setPersons(enriched);
       setLoading(false);
     }
-
     load();
   }, []);
 
-  /* -------------------------------------------------------
-     SELECTED (0..N persons)
-  ------------------------------------------------------- */
-  const selectedIds = values?.map((v: any) => v.id_person) || [];
+  const selectedIds = values.map((v) => v.id_company);
 
-  function toggle(p: any) {
-    const already = selectedIds.includes(p.id_person);
-
-    if (already) {
-      onChange(values.filter((v: any) => v.id_person !== p.id_person));
+  function toggle(company: Company) {
+    if (selectedIds.includes(company.id_company)) {
+      onChange(values.filter((v) => v.id_company !== company.id_company));
     } else {
-      onChange([...values, p]);
+      onChange([...values, company]);
     }
   }
 
-  /* -------------------------------------------------------
-     UI
-  ------------------------------------------------------- */
   return (
     <div className="space-y-2">
-      <label className="font-medium">Intervenants</label>
+      <label className="font-medium">Sociétés</label>
 
       {loading ? (
-        <div className="text-gray-500 text-sm">Chargement…</div>
+        <div className="text-sm text-gray-500">Chargement…</div>
       ) : (
         <div className="border rounded p-3 space-y-2 bg-white max-h-64 overflow-auto">
-          {persons.map((p) => {
-            const selected = selectedIds.includes(p.id_person);
+          {companies.map((c) => {
+            const selected = selectedIds.includes(c.id_company);
 
             return (
               <div
-                key={p.id_person}
-                onClick={() => toggle(p)}
-                className={`flex items-center gap-3 p-2 rounded cursor-pointer ${
-                  selected ? "bg-blue-50 border-blue-300 border" : "hover:bg-gray-50"
+                key={c.id_company}
+                onClick={() => toggle(c)}
+                className={`p-2 rounded cursor-pointer ${
+                  selected
+                    ? "bg-blue-50 border border-blue-300"
+                    : "hover:bg-gray-50"
                 }`}
               >
-                {/* PORTRAIT */}
-                {p.squareUrl ? (
-                  <img
-                    src={p.squareUrl}
-                    className="h-10 w-10 rounded-full object-cover border bg-white"
-                  />
-                ) : (
-                  <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">
-                    —
-                  </div>
-                )}
-
-                <div className="flex-1">
-                  <div className="font-medium">{p.name}</div>
-                  <div className="text-xs text-gray-500">{p.title}</div>
-                </div>
-
+                <span className="font-medium">{c.name}</span>
                 {selected && (
-                  <div className="text-blue-600 font-semibold text-xs">Sélectionné</div>
+                  <span className="ml-2 text-xs text-blue-600">
+                    Sélectionnée
+                  </span>
                 )}
               </div>
             );
