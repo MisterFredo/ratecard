@@ -1,7 +1,9 @@
 "use client";
 
 import TopicSelector from "@/components/admin/TopicSelector";
-import CompanySelector from "@/components/admin/CompanySelector";
+import CompanySelector, {
+  Company,
+} from "@/components/admin/CompanySelector";
 import PersonSelector, {
   ArticlePerson,
 } from "@/components/admin/PersonSelector";
@@ -9,11 +11,6 @@ import PersonSelector, {
 type Topic = {
   id_topic: string;
   label: string;
-};
-
-type Company = {
-  id_company: string;
-  name: string;
 };
 
 type Props = {
@@ -44,19 +41,19 @@ export default function ArticleContextBlock({
       {/* TOPICS */}
       <TopicSelector
         values={topics}
-        onChange={(values: Topic[]) => onChange({ topics: values })}
+        onChange={(values) => onChange({ topics: values })}
       />
 
       {/* SOCIÉTÉS */}
       <CompanySelector
         values={companies}
-        onChange={(values: Company[]) => onChange({ companies: values })}
+        onChange={(values) => onChange({ companies: values })}
       />
 
       {/* PERSONNES */}
       <PersonSelector
         values={persons}
-        onChange={(values: ArticlePerson[]) => onChange({ persons: values })}
+        onChange={(values) => onChange({ persons: values })}
       />
     </div>
   );
