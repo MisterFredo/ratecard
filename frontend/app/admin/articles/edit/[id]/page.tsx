@@ -4,38 +4,38 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+// Sélecteurs
 import CompanySelector from "@/components/admin/CompanySelector";
 import PersonSelector from "@/components/admin/PersonSelector";
-import AxesEditor from "@/components/admin/AxesEditor";
+import TopicSelector from "@/components/admin/TopicSelector";
 import HtmlEditor from "@/components/admin/HtmlEditor";
+
+// Visuel Article (V2)
 import ArticleVisualSection from "@/components/admin/articles/ArticleVisualSection";
 
-const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
-
-export default function EditArticlePage({ params }) {
-  const { id } = params;
+export default function EditArticlePage({ params }: { params: { id: string } }) {
+  const { id: articleId } = params;
 
   /* ---------------------------------------------------------
-     STATE ARTICLE
+     STATE
   --------------------------------------------------------- */
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  /* CORE FIELDS */
+  /* CONTENU */
   const [title, setTitle] = useState("");
-  const [resume, setResume] = useState("");
+  const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
+  const [intro, setIntro] = useState("");
+  const [outro, setOutro] = useState("");
 
-  /* ENTITÉS */
+  /* RELATIONS */
+  const [topics, setTopics] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [persons, setPersons] = useState<any[]>([]);
-  const [axes, setAxes] = useState<any[]>([]);
 
-  /* VISUELS */
-  const [mediaRectangleId, setMediaRectangleId] = useState<string | null>(null);
-  const [mediaSquareId, setMediaSquareId] = useState<string | null>(null);
-  const [previewRectUrl, setPreviewRectUrl] = useState<string | null>(null);
+  /* META */
+  const [author, setAuthor] = useState("");
 
   /* ---------------------------------------------------------
      LOAD ARTICLE
@@ -43,54 +43,51 @@ export default function EditArticlePage({ params }) {
   async function load() {
     setLoading(true);
 
-    const res = await api.get(`/articles/${id}`);
-    if (!res || !res.article) {
-      setError("Article introuvable");
-      return;
-    }
+    try {
+      const res = await api.get(`/articles/${articleId}`);
+      const a = res.article;
 
-    const a = res.article;
+      // CONTENU
+      setTitle(a.TITLE || "");
+      setExcerpt(a.EXCERPT || "");
+      setContentHtml(a.CONTENT_HTML || "");
+      setIntro(a.INTRO || "");
+      setOutro(a.OUTRO || "");
+      setAuthor(a.AUTHOR || "");
 
-    /* CORE */
-    setTitle(a.TITRE || "");
-    setResume(a.RESUME || "");
-    setContentHtml(a.CONTENU_HTML || "");
+      // TOPICS
+      if (a.topics) {
+        setTopics(
+          a.topics.map((t: any) => ({
+            id_topic: t.ID_TOPIC,
+            label: t.LABEL,
+          }))
+        );
+      }
 
-    /* AXES */
-    if (a.axes) {
-      setAxes(a.axes.map((ax: any) => ({
-        id_axe: ax.ID_AXE,
-        LABEL: ax.LABEL
-      })));
-    }
+      // COMPANIES
+      if (a.companies) {
+        setCompanies(
+          a.companies.map((c: any) => ({
+            id_company: c.ID_COMPANY,
+            name: c.NAME,
+          }))
+        );
+      }
 
-    /* COMPANIES */
-    if (a.companies) {
-      setCompanies(
-        a.companies.map((c: any) => ({
-          id_company: c.ID_COMPANY,
-          name: c.NAME
-        }))
-      );
-    }
-
-    /* PERSONS */
-    if (a.persons) {
-      setPersons(
-        a.persons.map((p: any) => ({
-          id_person: p.ID_PERSON,
-          name: p.NAME,
-          role: p.ROLE || "contributeur"
-        }))
-      );
-    }
-
-    /* VISUELS */
-    setMediaRectangleId(a.MEDIA_RECTANGLE_ID || null);
-    setMediaSquareId(a.MEDIA_SQUARE_ID || null);
-
-    if (a.media_rectangle_path) {
-      setPreviewRectUrl(`${GCS_BASE_URL}/${a.media_rectangle_path}`);
+      // PERSONS
+      if (a.persons) {
+        setPersons(
+          a.persons.map((p: any) => ({
+            id_person: p.ID_PERSON,
+            name: p.NAME,
+            role: p.ROLE || "contributeur",
+          }))
+        );
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Erreur chargement article");
     }
 
     setLoading(false);
@@ -98,44 +95,57 @@ export default function EditArticlePage({ params }) {
 
   useEffect(() => {
     load();
-  }, [id]);
-
-  if (loading) return <div>Chargement…</div>;
-  if (error) return <div className="text-red-600">{error}</div>;
+  }, [articleId]);
 
   /* ---------------------------------------------------------
-     UPDATE ARTICLE
+     UPDATE ARTICLE — remplacement complet
   --------------------------------------------------------- */
   async function save() {
-    if (!title.trim()) return alert("Titre obligatoire");
+    if (!title.trim()) {
+      alert("Le titre est obligatoire");
+      return;
+    }
+
+    if (!contentHtml.trim()) {
+      alert("Le contenu est obligatoire");
+      return;
+    }
+
+    if (!topics || topics.length === 0) {
+      alert("Au moins un topic est obligatoire");
+      return;
+    }
 
     setSaving(true);
 
     const payload = {
-      titre: title,
-      resume,
-      contenu_html: contentHtml,
+      title,
+      content_html: contentHtml,
+      excerpt: excerpt || null,
+      intro: intro || null,
+      outro: outro || null,
+      author: author || null,
 
-      media_rectangle_id: mediaRectangleId,
-      media_square_id: mediaSquareId,
-
-      auteur: null, // pas encore géré
-
-      axes: axes.map((ax: any) => ax.id_axe),
+      topics: topics.map((t) => t.id_topic),
       companies: companies.map((c) => c.id_company),
-      persons: persons.map((p) => ({ id_person: p.id_person, role: p.role })),
+      persons: persons.map((p) => ({
+        id_person: p.id_person,
+        role: p.role || "contributeur",
+      })),
     };
 
-    const response = await api.put(`/articles/update/${id}`, payload);
-
-    if (response.status !== "ok") {
-      alert("Erreur sauvegarde article");
-      console.error(response);
+    try {
+      await api.put(`/articles/update/${articleId}`, payload);
+      alert("Article mis à jour");
+    } catch (e) {
+      console.error(e);
+      alert("Erreur mise à jour article");
     }
 
     setSaving(false);
-    alert("Article mis à jour !");
   }
+
+  if (loading) return <div>Chargement…</div>;
 
   /* ---------------------------------------------------------
      UI
@@ -149,62 +159,82 @@ export default function EditArticlePage({ params }) {
           Modifier l’article
         </h1>
 
-        <div className="space-x-3">
-          <Link 
-            href={`/admin/articles/preview/${id}`}
-            className="text-gray-600 underline"
+        <div className="space-x-4">
+          <Link
+            href={`/admin/articles/preview/${articleId}`}
+            className="underline text-gray-600"
           >
             Aperçu
           </Link>
 
-          <Link 
+          <Link
             href="/admin/articles"
-            className="text-gray-600 underline"
+            className="underline text-gray-600"
           >
             ← Retour
           </Link>
         </div>
       </div>
 
-      {/* TITRE */}
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Titre"
-        className="border p-2 w-full rounded"
-      />
+      {/* -------------------------------
+          SECTION A — CONTENU
+      -------------------------------- */}
+      <section className="space-y-6">
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Titre"
+          className="border p-2 w-full rounded"
+        />
 
-      {/* RESUME */}
-      <textarea
-        value={resume}
-        onChange={(e) => setResume(e.target.value)}
-        placeholder="Résumé"
-        className="border p-2 w-full h-24 rounded"
-      />
+        <textarea
+          value={excerpt}
+          onChange={(e) => setExcerpt(e.target.value)}
+          placeholder="Accroche / résumé (excerpt)"
+          className="border p-2 w-full h-24 rounded"
+        />
 
-      {/* CONTENU */}
-      <HtmlEditor value={contentHtml} onChange={setContentHtml} />
+        <HtmlEditor value={contentHtml} onChange={setContentHtml} />
 
-      {/* ENTITÉS */}
-      <CompanySelector values={companies} onChange={setCompanies} />
-      <PersonSelector values={persons} onChange={setPersons} />
-      <AxesEditor values={axes} onChange={setAxes} />
+        <textarea
+          value={intro}
+          onChange={(e) => setIntro(e.target.value)}
+          placeholder="Intro (idée forte)"
+          className="border p-2 w-full h-20 rounded"
+        />
 
-      {/* VISUEL ARTICLE */}
-      <ArticleVisualSection
-        articleId={null}          // création → pas encore d’ID
-        title={title}
-        axes={axes}
-        initialRectangleUrl={null}
-        initialSquareUrl={null}
-        onChange={({ rectangleId, squareId, previewUrl }) => {
-          setMediaRectangleId(rectangleId);
-          setMediaSquareId(squareId);
-          setPreviewRectUrl(previewUrl);
-        }}
-      />
+        <textarea
+          value={outro}
+          onChange={(e) => setOutro(e.target.value)}
+          placeholder="Outro (ce qu’il faut retenir)"
+          className="border p-2 w-full h-20 rounded"
+        />
+      </section>
 
-      {/* SAVE */}
+      {/* -------------------------------
+          SECTION B — ENTITÉS
+      -------------------------------- */}
+      <section className="space-y-6">
+        <TopicSelector values={topics} onChange={setTopics} />
+        <CompanySelector values={companies} onChange={setCompanies} />
+        <PersonSelector values={persons} onChange={setPersons} />
+      </section>
+
+      {/* -------------------------------
+          SECTION C — MÉTA
+      -------------------------------- */}
+      <section className="space-y-4">
+        <input
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+          placeholder="Auteur (optionnel)"
+          className="border p-2 w-full rounded"
+        />
+      </section>
+
+      {/* -------------------------------
+          ACTION SAVE
+      -------------------------------- */}
       <button
         onClick={save}
         disabled={saving}
@@ -212,6 +242,16 @@ export default function EditArticlePage({ params }) {
       >
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
+
+      {/* -------------------------------
+          SECTION D — VISUEL ARTICLE
+      -------------------------------- */}
+      <ArticleVisualSection
+        articleId={articleId}
+        title={title}
+        excerpt={excerpt}
+        topics={topics}
+      />
     </div>
   );
 }
