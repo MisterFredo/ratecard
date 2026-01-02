@@ -6,24 +6,14 @@ import { api } from "@/lib/api";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
-// ------------------------------------------------------------------
-// TYPE LOCAL POUR LA LISTE
-// (on étend ArticleLite avec les URLs visuelles reconstruites)
-// ------------------------------------------------------------------
 type ArticleLite = {
   ID_ARTICLE: string;
-  TITRE: string;
-  RESUME: string | null;
-  CREATED_AT: string | null;
-  IS_FEATURED: boolean;
-  FEATURED_ORDER: number | null;
-  IS_ARCHIVED: boolean;
+  TITLE: string;
+  EXCERPT?: string | null;
+  STATUS: string;
+  CREATED_AT?: string | null;
   MEDIA_RECTANGLE_ID?: string | null;
   MEDIA_SQUARE_ID?: string | null;
-
-  // 🔥 Champs dérivés — ajoutés ensuite côté front
-  rectUrl?: string | null;
-  squareUrl?: string | null;
 };
 
 export default function ArticleListPage() {
@@ -36,27 +26,32 @@ export default function ArticleListPage() {
   async function load() {
     setLoading(true);
 
-    const res = await api.get("/articles/list");
-    const list: ArticleLite[] = res.articles || [];
+    try {
+      const res = await api.get("/articles/list");
+      const list: ArticleLite[] = res.articles || [];
 
-    // 🔥 Construire dynamiquement les URLs GCS
-    const enriched = list.map((a) => {
-      const rectUrl = a.MEDIA_RECTANGLE_ID
-        ? `${GCS_BASE_URL}/articles/${a.MEDIA_RECTANGLE_ID}.jpg`
-        : null;
+      const enriched = list.map((a) => {
+        const rectUrl = a.MEDIA_RECTANGLE_ID
+          ? `${GCS_BASE_URL}/articles/${a.MEDIA_RECTANGLE_ID}`
+          : null;
 
-      const squareUrl = a.MEDIA_SQUARE_ID
-        ? `${GCS_BASE_URL}/articles/${a.MEDIA_SQUARE_ID}.jpg`
-        : null;
+        const squareUrl = a.MEDIA_SQUARE_ID
+          ? `${GCS_BASE_URL}/articles/${a.MEDIA_SQUARE_ID}`
+          : null;
 
-      return {
-        ...a,
-        rectUrl,
-        squareUrl,
-      };
-    });
+        return {
+          ...a,
+          rectUrl,
+          squareUrl,
+        };
+      });
 
-    setArticles(enriched);
+      setArticles(enriched);
+    } catch (e) {
+      console.error(e);
+      alert("Erreur chargement articles");
+    }
+
     setLoading(false);
   }
 
@@ -93,13 +88,14 @@ export default function ArticleListPage() {
             <th className="p-2">Visuel</th>
             <th className="p-2">Titre</th>
             <th className="p-2">Résumé</th>
+            <th className="p-2">Statut</th>
             <th className="p-2">Créé le</th>
             <th className="p-2 text-right">Actions</th>
           </tr>
         </thead>
 
         <tbody>
-          {articles.map((a) => (
+          {articles.map((a: any) => (
             <tr
               key={a.ID_ARTICLE}
               className="border-b hover:bg-gray-50 transition"
@@ -122,11 +118,26 @@ export default function ArticleListPage() {
               </td>
 
               {/* TITRE */}
-              <td className="p-2 font-medium">{a.TITRE}</td>
+              <td className="p-2 font-medium">{a.TITLE}</td>
 
               {/* RESUME */}
               <td className="p-2 text-gray-600">
-                {a.RESUME || "—"}
+                {a.EXCERPT || "—"}
+              </td>
+
+              {/* STATUS */}
+              <td className="p-2">
+                <span
+                  className={`px-2 py-1 rounded text-xs font-medium ${
+                    a.STATUS === "PUBLISHED"
+                      ? "bg-green-100 text-green-700"
+                      : a.STATUS === "DRAFT"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-gray-200 text-gray-600"
+                  }`}
+                >
+                  {a.STATUS}
+                </span>
               </td>
 
               {/* DATE */}
@@ -137,7 +148,7 @@ export default function ArticleListPage() {
               </td>
 
               {/* ACTIONS */}
-              <td className="p-2 text-right space-x-2">
+              <td className="p-2 text-right space-x-3">
                 <Link
                   href={`/admin/articles/preview/${a.ID_ARTICLE}`}
                   className="text-blue-600 hover:underline"
