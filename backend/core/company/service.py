@@ -1,17 +1,22 @@
 import uuid
 from datetime import datetime
+from typing import Optional
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client
-from api.company.models import CompanyCreate
+from api.company.models import CompanyCreate, CompanyUpdate
 
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 
 
 # ============================================================
-# CREATE COMPANY
+# CREATE COMPANY — DATA ONLY
 # ============================================================
 def create_company(data: CompanyCreate) -> str:
+    """
+    Crée une société.
+    Aucun champ média n'est autorisé ici.
+    """
     company_id = str(uuid.uuid4())
     now = datetime.utcnow()
 
@@ -20,8 +25,7 @@ def create_company(data: CompanyCreate) -> str:
         "NAME": data.name,
         "DESCRIPTION": data.description,
 
-        "MEDIA_LOGO_RECTANGLE_ID": data.media_logo_rectangle_id,
-        "MEDIA_LOGO_SQUARE_ID": data.media_logo_square_id,
+        # ⚠️ PAS DE MEDIA AU CREATE
 
         "LINKEDIN_URL": data.linkedin_url,
         "WEBSITE_URL": data.website_url,
@@ -63,28 +67,65 @@ def get_company(company_id: str):
 
 
 # ============================================================
-# UPDATE COMPANY
+# UPDATE COMPANY — DATA + MEDIA (POST-CREATION)
 # ============================================================
-def update_company(id_company: str, data: CompanyCreate):
-    now = datetime.utcnow()
+def update_company(id_company: str, data: CompanyUpdate) -> bool:
+    """
+    Met à jour une société existante.
 
-    row = [{
-        "ID_COMPANY": id_company,
-        "NAME": data.name,
-        "DESCRIPTION": data.description,
+    - update partiel
+    - champs média autorisés
+    - aucun overwrite involontaire
+    """
+    values = data.dict(exclude_unset=True)
 
-        "MEDIA_LOGO_RECTANGLE_ID": data.media_logo_rectangle_id,
-        "MEDIA_LOGO_SQUARE_ID": data.media_logo_square_id,
+    if not values:
+        return False
 
-        "LINKEDIN_URL": data.linkedin_url,
-        "WEBSITE_URL": data.website_url,
+    fields = []
+    params = {
+        "id": id_company,
+        "updated_at": datetime.utcnow(),
+    }
 
-        "UPDATED_AT": now,
-    }]
+    for field, value in values.items():
+        fields.append(f"{field.upper()} = @{field}")
+        params[field] = value
+
+    sql = f"""
+        UPDATE `{TABLE_COMPANY}`
+        SET
+            {", ".join(fields)},
+            UPDATED_AT = @updated_at
+        WHERE ID_COMPANY = @id
+    """
 
     client = get_bigquery_client()
-    errors = client.insert_rows_json(TABLE_COMPANY, row)
-    if errors:
-        raise RuntimeError(errors)
+    client.query(sql, job_config={
+        "query_parameters": [
+            # paramètres injectés dynamiquement ci-dessous
+        ]
+    })
+
+    # Exécution avec paramètres BigQuery explicites
+    client.query(
+        sql,
+        job_config={
+            "query_parameters": [
+                *[
+                    # paramètres champs
+                    # (type déduit automatiquement)
+                    {"name": k, "parameterType": {"type": "STRING"}, "parameterValue": {"value": v}}
+                    for k, v in params.items()
+                    if k not in ("updated_at",)
+                ],
+                {
+                    "name": "updated_at",
+                    "parameterType": {"type": "TIMESTAMP"},
+                    "parameterValue": {"value": params["updated_at"]},
+                },
+            ]
+        }
+    ).result()
 
     return True
