@@ -9,13 +9,11 @@ import {
   Building2,
   UserCircle,
   Tags,
-  ImageIcon,
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
 
-  // Helper pour détecter la page active
   function active(path: string) {
     return pathname?.startsWith(path);
   }
@@ -25,7 +23,6 @@ export default function AdminLayout({ children }) {
     { href: "/admin/company", label: "Sociétés", icon: Building2 },
     { href: "/admin/person", label: "Intervenants", icon: UserCircle },
     { href: "/admin/axes", label: "Axes éditoriaux", icon: Tags },
-    { href: "/admin/media", label: "Médias", icon: ImageIcon },
   ];
 
   return (
@@ -70,9 +67,9 @@ export default function AdminLayout({ children }) {
 
         </nav>
 
-        {/* FOOTER LIGHT */}
+        {/* FOOTER */}
         <div className="text-xs opacity-60">
-          © {new Date().getFullYear()} Ratecard  
+          © {new Date().getFullYear()} Ratecard
         </div>
       </aside>
 
@@ -83,4 +80,5 @@ export default function AdminLayout({ children }) {
     </div>
   );
 }
+
 
