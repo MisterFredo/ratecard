@@ -41,24 +41,23 @@ export default function ArticleContextBlock({
         Contexte éditorial
       </h2>
 
-      {/* TOPICS (OBLIGATOIRES) */}
+      {/* TOPICS */}
       <TopicSelector
         values={topics}
-        onChange={(values) => onChange({ topics: values })}
+        onChange={(values: Topic[]) => onChange({ topics: values })}
       />
 
-      {/* SOCIÉTÉS (OPTIONNEL) */}
+      {/* SOCIÉTÉS */}
       <CompanySelector
         values={companies}
-        onChange={(values) => onChange({ companies: values })}
+        onChange={(values: Company[]) => onChange({ companies: values })}
       />
 
-      {/* PERSONNES (OPTIONNEL) */}
+      {/* PERSONNES */}
       <PersonSelector
         values={persons}
-        onChange={(values) => onChange({ persons: values })}
+        onChange={(values: ArticlePerson[]) => onChange({ persons: values })}
       />
     </div>
   );
 }
-
