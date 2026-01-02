@@ -3,25 +3,25 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 
-export default function VisualSection({
-  entityType,     // "company" | "person" | "axe" | "article"
-  entityId,       // ID de l'entité
-  squareUrl,
-  rectUrl,
-  onUpdated,
-}: {
-  entityType: "company" | "person" | "axe" | "article";
+type Props = {
   entityId: string;
   squareUrl: string | null;
   rectUrl: string | null;
   onUpdated: (urls: { square: string | null; rectangle: string | null }) => void;
-}) {
+};
+
+export default function VisualSection({
+  entityId,
+  squareUrl,
+  rectUrl,
+  onUpdated,
+}: Props) {
   const [loading, setLoading] = useState(false);
 
   // ---------------------------------------------------------
-  // Convert file → base64
+  // Convert file → base64 (sans header)
   // ---------------------------------------------------------
-  async function toBase64(file: File): Promise<string> {
+  function fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onerror = reject;
@@ -34,84 +34,64 @@ export default function VisualSection({
   }
 
   // ---------------------------------------------------------
-  // UPLOAD
+  // UPLOAD (square ou rectangle)
   // ---------------------------------------------------------
-  async function upload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  async function upload(
+    file: File,
+    format: "square" | "rectangle"
+  ) {
     setLoading(true);
-    try {
-      const base64 = await toBase64(file);
 
-      const res = await api.post(`/visuals/${entityType}/upload`, {
-        [`id_${entityType}`]: entityId,  // id_company, id_person, id_axe, id_article
+    try {
+      const base64 = await fileToBase64(file);
+
+      const res = await api.post("/visuals/company/upload", {
+        id_company: entityId,
+        format,
         base64_image: base64,
       });
 
-      if (res.status !== "ok") throw new Error("Upload failed");
+      if (res.status !== "ok") {
+        throw new Error("Upload échoué");
+      }
 
       onUpdated({
-        square: res.urls.square,
-        rectangle: res.urls.rectangle,
+        square: format === "square" ? "updated" : squareUrl,
+        rectangle: format === "rectangle" ? "updated" : rectUrl,
       });
 
-      alert("Visuels mis à jour !");
-    } catch (err) {
-      console.error(err);
-      alert("❌ Erreur upload");
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur upload visuel");
     }
 
     setLoading(false);
   }
 
   // ---------------------------------------------------------
-  // APPLY EXISTING
+  // RESET VISUALS
   // ---------------------------------------------------------
-  async function applyExisting(square_url: string, rectangle_url: string) {
-    setLoading(true);
-    try {
-      const res = await api.post(`/visuals/${entityType}/apply-existing`, {
-        [`id_${entityType}`]: entityId,
-        square_url,
-        rectangle_url,
-      });
-
-      if (res.status !== "ok") throw new Error("Apply failed");
-
-      onUpdated({
-        square: res.urls.square,
-        rectangle: res.urls.rectangle,
-      });
-
-      alert("Visuel appliqué !");
-    } catch (err) {
-      console.error(err);
-      alert("❌ Erreur apply-existing");
-    }
-    setLoading(false);
-  }
-
-  // ---------------------------------------------------------
-  // RESET
-  // ---------------------------------------------------------
-  async function resetVisual() {
+  async function resetVisuals() {
     if (!confirm("Supprimer les visuels ?")) return;
 
     setLoading(true);
+
     try {
-      const res = await api.post(`/visuals/${entityType}/reset`, {
-        [`id_${entityType}`]: entityId,
+      const res = await api.post("/visuals/company/reset", {
+        id_company: entityId,
       });
 
-      if (res.status !== "ok") throw new Error("Reset failed");
+      if (res.status !== "ok") {
+        throw new Error("Reset échoué");
+      }
 
       onUpdated({ square: null, rectangle: null });
-      alert("Visuels réinitialisés !");
-    } catch (err) {
-      console.error(err);
-      alert("❌ Erreur reset");
+
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur reset visuels");
     }
+
     setLoading(false);
   }
 
@@ -121,7 +101,7 @@ export default function VisualSection({
   return (
     <div className="p-4 border rounded bg-white space-y-4">
       <h2 className="text-xl font-semibold text-ratecard-blue">
-        Visuels (carré + rectangle)
+        Visuels
       </h2>
 
       {loading && <p className="text-gray-500">Traitement…</p>}
@@ -132,49 +112,57 @@ export default function VisualSection({
         <div>
           <p className="text-sm text-gray-500">Carré</p>
           {squareUrl ? (
-            <img src={squareUrl} className="w-24 h-24 object-cover border rounded" />
+            <img
+              src={squareUrl}
+              className="w-24 h-24 object-cover border rounded"
+            />
           ) : (
             <div className="w-24 h-24 bg-gray-100 border rounded flex items-center justify-center text-xs text-gray-500">
               Aucun
             </div>
           )}
+          <input
+            type="file"
+            accept="image/*"
+            className="mt-2"
+            onChange={(e) =>
+              e.target.files &&
+              upload(e.target.files[0], "square")
+            }
+          />
         </div>
 
         {/* RECTANGLE */}
         <div>
           <p className="text-sm text-gray-500">Rectangle</p>
           {rectUrl ? (
-            <img src={rectUrl} className="w-48 border rounded" />
+            <img
+              src={rectUrl}
+              className="w-48 border rounded"
+            />
           ) : (
             <div className="w-48 h-24 bg-gray-100 border rounded flex items-center justify-center text-xs text-gray-500">
               Aucun
             </div>
           )}
+          <input
+            type="file"
+            accept="image/*"
+            className="mt-2"
+            onChange={(e) =>
+              e.target.files &&
+              upload(e.target.files[0], "rectangle")
+            }
+          />
         </div>
       </div>
 
-      {/* ACTIONS */}
-      <div className="space-y-3">
-        <label className="block">
-          <span className="text-sm font-medium">Uploader un visuel</span>
-          <input type="file" accept="image/*" onChange={upload} className="mt-1" />
-        </label>
-
-        {/* Apply existing (activé via parent) */}
-        <button
-          className="px-3 py-2 bg-blue-600 text-white rounded text-sm"
-          onClick={() => alert("À connecter dans EditPerson/EditAxe/EditCompany")}
-        >
-          Appliquer un visuel existant
-        </button>
-
-        <button
-          className="px-3 py-2 bg-red-600 text-white rounded text-sm"
-          onClick={resetVisual}
-        >
-          Réinitialiser
-        </button>
-      </div>
+      <button
+        className="px-3 py-2 bg-red-600 text-white rounded text-sm"
+        onClick={resetVisuals}
+      >
+        Réinitialiser les visuels
+      </button>
     </div>
   );
 }
