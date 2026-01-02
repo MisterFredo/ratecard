@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import VisualSection from "@/components/visuals/VisualSection";
 
-import VisualSection from "./VisualSection";
+const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 export default function EditPerson({ params }) {
   const { id } = params;
@@ -12,38 +13,46 @@ export default function EditPerson({ params }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // FIELDS
+  const [companies, setCompanies] = useState<any[]>([]);
+
   const [name, setName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [description, setDescription] = useState("");
   const [companyId, setCompanyId] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
 
-  // VISUALS (GCS URLs)
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
-     LOAD PERSON + VISUALS (used on init AND after visual update)
+     LOAD PERSON (appelable aussi après update visuels)
   --------------------------------------------------------- */
   async function loadPerson() {
     setLoading(true);
 
-    // 1️⃣ Load person core
+    const resCompanies = await api.get("/company/list");
+    setCompanies(resCompanies.companies || []);
+
     const res = await api.get(`/person/${id}`);
     const p = res.person;
 
-    setName(p.NAME || "");
-    setJobTitle(p.TITLE || "");
+    setName(p.NAME);
+    setJobTitle(p.TITLE);
     setDescription(p.DESCRIPTION || "");
     setCompanyId(p.ID_COMPANY || "");
     setLinkedinUrl(p.LINKEDIN_URL || "");
 
-    // 2️⃣ Load visuals
-    const v = await api.get(`/visuals/person/get?id=${id}`);
-    if (v.status === "ok") {
-      setSquareUrl(v.square_url || null);
-      setRectUrl(v.rectangle_url || null);
+    // VISUELS GCS
+    if (p.MEDIA_PICTURE_SQUARE_ID) {
+      setSquareUrl(`${GCS}/persons/PERSON_${id}_square.jpg`);
+    } else {
+      setSquareUrl(null);
+    }
+
+    if (p.MEDIA_PICTURE_RECTANGLE_ID) {
+      setRectUrl(`${GCS}/persons/PERSON_${id}_rect.jpg`);
+    } else {
+      setRectUrl(null);
     }
 
     setLoading(false);
@@ -60,121 +69,96 @@ export default function EditPerson({ params }) {
      UPDATE PERSON
   --------------------------------------------------------- */
   async function update() {
-    if (!name.trim()) return alert("Merci de renseigner un nom");
-
     setSaving(true);
 
-    const payload = {
+    await api.put(`/person/update/${id}`, {
       name,
-      title: jobTitle || null,
-      description: description || null,
+      title: jobTitle,
+      description,
       id_company: companyId || null,
       linkedin_url: linkedinUrl || null,
-    };
+    });
 
-    const res = await api.put(`/person/update/${id}`, payload);
-
-    if (res.status !== "ok") {
-      alert("Erreur mise à jour");
-    }
-
+    alert("Modifié !");
     setSaving(false);
-    alert("Intervenant mis à jour !");
   }
 
-  if (loading) return <div>Chargement…</div>;
+  if (loading) return <p>Chargement…</p>;
 
   /* ---------------------------------------------------------
-     RENDER
+     UI
   --------------------------------------------------------- */
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
 
       {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-semibold text-ratecard-blue">
-          Modifier l’intervenant
-        </h1>
-        <Link href="/admin/person" className="underline text-gray-600">
+      <div className="flex justify-between">
+        <h1 className="text-3xl font-semibold">Modifier l’intervenant</h1>
+        <Link href="/admin/person" className="underline">
           ← Retour
         </Link>
       </div>
 
-      {/* FORM */}
-      <div className="space-y-6">
+      {/* NAME */}
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="border p-2 w-full rounded"
+      />
 
-        {/* NAME */}
-        <div>
-          <label className="font-medium">Nom complet</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="border p-2 w-full rounded mt-1"
-          />
-        </div>
+      {/* JOB TITLE */}
+      <input
+        value={jobTitle}
+        onChange={(e) => setJobTitle(e.target.value)}
+        className="border p-2 w-full rounded"
+      />
 
-        {/* JOB TITLE */}
-        <div>
-          <label className="font-medium">Fonction</label>
-          <input
-            value={jobTitle}
-            onChange={(e) => setJobTitle(e.target.value)}
-            className="border p-2 w-full rounded mt-1"
-          />
-        </div>
+      {/* DESCRIPTION */}
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        className="border p-2 w-full rounded h-24"
+      />
 
-        {/* DESCRIPTION */}
-        <div>
-          <label className="font-medium">Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="border p-2 w-full rounded h-24 mt-1"
-          />
-        </div>
+      {/* COMPANY */}
+      <select
+        value={companyId}
+        onChange={(e) => setCompanyId(e.target.value)}
+        className="border p-2 w-full rounded"
+      >
+        <option value="">—</option>
+        {companies.map((c) => (
+          <option key={c.ID_COMPANY} value={c.ID_COMPANY}>
+            {c.NAME}
+          </option>
+        ))}
+      </select>
 
-        {/* COMPANY */}
-        <div>
-          <label className="font-medium">Société</label>
-          <select
-            value={companyId || ""}
-            onChange={(e) => setCompanyId(e.target.value)}
-            className="border p-2 w-full rounded mt-1"
-          >
-            <option value="">Aucune</option>
-            {/* ⚠️ Optionnel : charger companies ici si souhaité */}
-            {/* ou créer un CompanySelector mini pour Person */}
-          </select>
-        </div>
+      {/* LINKEDIN */}
+      <input
+        value={linkedinUrl}
+        onChange={(e) => setLinkedinUrl(e.target.value)}
+        className="border p-2 w-full rounded"
+      />
 
-        {/* LINKEDIN */}
-        <div>
-          <label className="font-medium">Profil LinkedIn</label>
-          <input
-            value={linkedinUrl}
-            onChange={(e) => setLinkedinUrl(e.target.value)}
-            className="border p-2 w-full rounded mt-1"
-          />
-        </div>
+      {/* SAVE BTN */}
+      <button
+        className="bg-ratecard-blue px-4 py-2 text-white rounded"
+        disabled={saving}
+        onClick={update}
+      >
+        Enregistrer
+      </button>
 
-        {/* ACTIONS */}
-        <button
-          onClick={update}
-          disabled={saving}
-          className="bg-ratecard-blue text-white px-6 py-2 rounded"
-        >
-          {saving ? "Enregistrement…" : "Enregistrer"}
-        </button>
+      {/* VISUEL SECTION */}
+      <VisualSection
+        entityType="person"
+        entityId={id}
+        squareUrl={squareUrl}
+        rectUrl={rectUrl}
+        onUpdated={loadPerson}  // recharge propre
+      />
 
-        {/* VISUALS */}
-        <VisualSection
-          entityType="person"
-          entityId={id}
-          squareUrl={squareUrl}
-          rectUrl={rectUrl}
-          onUpdated={loadPerson} // recharge propre
-        />
-      </div>
     </div>
   );
 }
