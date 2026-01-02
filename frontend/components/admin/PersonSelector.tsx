@@ -3,24 +3,41 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-type Person = {
+/* ---------------------------------------------------------
+   TYPES
+--------------------------------------------------------- */
+
+// Person référentiel (API /person/list)
+type PersonRef = {
   id_person: string;
   name: string;
   title?: string;
 };
 
+// Person associée à un article (avec rôle)
+export type ArticlePerson = {
+  id_person: string;
+  name: string;
+  title?: string;
+  role: string;
+};
+
 type Props = {
-  values: Person[];
-  onChange: (persons: Person[]) => void;
+  values: ArticlePerson[];
+  onChange: (persons: ArticlePerson[]) => void;
 };
 
 export default function PersonSelector({ values, onChange }: Props) {
-  const [persons, setPersons] = useState<Person[]>([]);
+  const [persons, setPersons] = useState<PersonRef[]>([]);
   const [loading, setLoading] = useState(true);
 
+  /* ---------------------------------------------------------
+     LOAD PERSONS
+  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
+
       const res = await api.get("/person/list");
       setPersons(
         (res.persons || []).map((p: any) => ({
@@ -29,21 +46,39 @@ export default function PersonSelector({ values, onChange }: Props) {
           title: p.TITLE || "",
         }))
       );
+
       setLoading(false);
     }
+
     load();
   }, []);
 
+  /* ---------------------------------------------------------
+     TOGGLE SELECTION
+  --------------------------------------------------------- */
   const selectedIds = values.map((v) => v.id_person);
 
-  function toggle(person: Person) {
-    if (selectedIds.includes(person.id_person)) {
+  function toggle(person: PersonRef) {
+    const already = selectedIds.includes(person.id_person);
+
+    if (already) {
       onChange(values.filter((v) => v.id_person !== person.id_person));
     } else {
-      onChange([...values, { ...person, role: "contributeur" }]);
+      onChange([
+        ...values,
+        {
+          id_person: person.id_person,
+          name: person.name,
+          title: person.title,
+          role: "contributeur", // valeur par défaut
+        },
+      ]);
     }
   }
 
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <div className="space-y-2">
       <label className="font-medium">Personnes</label>
