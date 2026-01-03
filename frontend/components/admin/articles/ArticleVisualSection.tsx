@@ -10,11 +10,30 @@ type Topic = {
   label: string;
 };
 
+type Company = {
+  id_company: string;
+  name: string;
+};
+
+type Person = {
+  id_person: string;
+  name: string;
+};
+
+type VisualSource =
+  | "TOPIC"
+  | "COMPANY"
+  | "PERSON"
+  | "ARTICLE_UPLOAD"
+  | "ARTICLE_AI";
+
 type Props = {
   articleId: string;
   title: string;
   excerpt: string;
   topics: Topic[];
+  companies?: Company[];
+  persons?: Person[];
 };
 
 export default function ArticleVisualSection({
@@ -22,8 +41,12 @@ export default function ArticleVisualSection({
   title,
   excerpt,
   topics,
+  companies = [],
+  persons = [],
 }: Props) {
   const [loading, setLoading] = useState(false);
+  const [visualSource, setVisualSource] = useState<VisualSource | null>(null);
+
   const [squareFilename, setSquareFilename] = useState<string | null>(null);
   const [rectFilename, setRectFilename] = useState<string | null>(null);
 
@@ -46,16 +69,48 @@ export default function ArticleVisualSection({
     return `${GCS_BASE_URL}/articles/${filename}`;
   }
 
-  function extractErrorMessage(e: any): string {
-    if (e?.message) return e.message;
-    if (e?.detail?.message) return e.detail.message;
-    return "Erreur inconnue";
+  function guardAI() {
+    if (!title.trim()) {
+      alert("Le titre est requis.");
+      return false;
+    }
+    if (!excerpt.trim()) {
+      alert("L’accroche (excerpt) est requise.");
+      return false;
+    }
+    if (!topics.length) {
+      alert("Au moins un topic est requis.");
+      return false;
+    }
+    return true;
   }
 
   /* ---------------------------------------------------------
-     UPLOAD MANUEL
+     ACTIONS
   --------------------------------------------------------- */
-  async function upload(file: File, format: "square" | "rectangle") {
+
+  async function useEntityVisual(
+    type: "TOPIC" | "COMPANY" | "PERSON",
+    id: string
+  ) {
+    setLoading(true);
+    try {
+      const res = await api.post("/visuals/article/use-entity", {
+        id_article: articleId,
+        source_type: type,
+        source_id: id,
+      });
+
+      setSquareFilename(res.filenames.square || null);
+      setRectFilename(res.filenames.rectangle || null);
+      setVisualSource(type);
+    } catch (e) {
+      alert("Erreur association visuel");
+    }
+    setLoading(false);
+  }
+
+  async function uploadArticleVisual(file: File, format: "square" | "rectangle") {
     setLoading(true);
     try {
       const base64 = await fileToBase64(file);
@@ -68,52 +123,16 @@ export default function ArticleVisualSection({
 
       if (format === "square") setSquareFilename(res.filename);
       if (format === "rectangle") setRectFilename(res.filename);
+
+      setVisualSource("ARTICLE_UPLOAD");
     } catch (e) {
-      console.error(e);
-      alert(extractErrorMessage(e));
+      alert("Erreur upload visuel");
     }
     setLoading(false);
   }
 
-  /* ---------------------------------------------------------
-     RESET VISUEL
-  --------------------------------------------------------- */
-  async function resetVisual() {
-    if (!confirm("Supprimer le visuel de l’article ?")) return;
-
-    setLoading(true);
-    try {
-      await api.post("/visuals/article/reset", {
-        id_article: articleId,
-      });
-      setSquareFilename(null);
-      setRectFilename(null);
-    } catch (e) {
-      console.error(e);
-      alert(extractErrorMessage(e));
-    }
-    setLoading(false);
-  }
-
-  /* ---------------------------------------------------------
-     GÉNÉRATION IA
-  --------------------------------------------------------- */
   async function generateAI() {
-    // Guards UX stricts
-    if (!title.trim()) {
-      alert("Le titre est requis pour générer un visuel IA.");
-      return;
-    }
-
-    if (!excerpt.trim()) {
-      alert("L’accroche (excerpt) est requise pour générer un visuel IA.");
-      return;
-    }
-
-    if (!topics || topics.length === 0) {
-      alert("Au moins un topic est requis pour générer un visuel IA.");
-      return;
-    }
+    if (!guardAI()) return;
 
     setLoading(true);
     try {
@@ -126,9 +145,9 @@ export default function ArticleVisualSection({
 
       setSquareFilename(res.filenames.square);
       setRectFilename(res.filenames.rectangle);
+      setVisualSource("ARTICLE_AI");
     } catch (e) {
-      console.error(e);
-      alert(extractErrorMessage(e));
+      alert("Erreur génération IA");
     }
     setLoading(false);
   }
@@ -138,7 +157,6 @@ export default function ArticleVisualSection({
   --------------------------------------------------------- */
   return (
     <div className="border rounded p-4 space-y-4 bg-white">
-
       <h3 className="text-lg font-semibold text-ratecard-blue">
         Visuel de l’article
       </h3>
@@ -162,58 +180,72 @@ export default function ArticleVisualSection({
               className="w-64 rounded border"
             />
           )}
+          <p className="text-xs text-gray-500">
+            Source du visuel : {visualSource}
+          </p>
         </div>
       )}
 
-      {/* ACTIONS */}
-      <div className="flex flex-wrap gap-3">
-        <label className="px-4 py-2 bg-gray-100 rounded cursor-pointer">
-          Importer un visuel (rectangle)
-          <input
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) =>
-              e.target.files && upload(e.target.files[0], "rectangle")
-            }
-          />
-        </label>
-
-        <label className="px-4 py-2 bg-gray-100 rounded cursor-pointer">
-          Importer version carrée
-          <input
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) =>
-              e.target.files && upload(e.target.files[0], "square")
-            }
-          />
-        </label>
-
-        <button
-          onClick={generateAI}
-          className="px-4 py-2 bg-ratecard-blue text-white rounded"
-        >
-          Générer via IA
-        </button>
-
-        {(squareFilename || rectFilename) && (
+      {/* OPTIONS */}
+      <div className="space-y-2">
+        {/* TOPIC */}
+        {topics.length > 0 && (
           <button
-            onClick={resetVisual}
-            className="px-4 py-2 bg-red-600 text-white rounded"
+            onClick={() =>
+              useEntityVisual("TOPIC", topics[0].id_topic)
+            }
+            className="px-4 py-2 border rounded w-full text-left"
           >
-            Supprimer le visuel
+            Utiliser le visuel du topic : {topics[0].label}
           </button>
         )}
-      </div>
 
-      {/* ETAT */}
-      <div className="text-sm text-gray-600 space-y-1">
-        <div>Carré : {squareFilename ?? "—"}</div>
-        <div>Rectangle : {rectFilename ?? "—"}</div>
-      </div>
+        {/* COMPANY */}
+        {companies.length > 0 && (
+          <button
+            onClick={() =>
+              useEntityVisual("COMPANY", companies[0].id_company)
+            }
+            className="px-4 py-2 border rounded w-full text-left"
+          >
+            Utiliser le visuel de la société : {companies[0].name}
+          </button>
+        )}
 
+        {/* PERSON */}
+        {persons.length > 0 && (
+          <button
+            onClick={() =>
+              useEntityVisual("PERSON", persons[0].id_person)
+            }
+            className="px-4 py-2 border rounded w-full text-left"
+          >
+            Utiliser le visuel de la personne : {persons[0].name}
+          </button>
+        )}
+
+        {/* ARTICLE UPLOAD */}
+        <label className="px-4 py-2 border rounded w-full block cursor-pointer">
+          Importer un visuel spécifique à l’article
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) =>
+              e.target.files &&
+              uploadArticleVisual(e.target.files[0], "rectangle")
+            }
+          />
+        </label>
+
+        {/* ARTICLE AI */}
+        <button
+          onClick={generateAI}
+          className="px-4 py-2 bg-ratecard-blue text-white rounded w-full"
+        >
+          Générer un visuel via l’assistant (IA)
+        </button>
+      </div>
     </div>
   );
 }
