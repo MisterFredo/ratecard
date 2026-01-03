@@ -76,63 +76,17 @@ def get_person(person_id: str):
 # ============================================================
 
 def update_person(id_person: str, data: PersonUpdate) -> bool:
-    """
-    Met à jour une personne existante.
-
-    - update partiel
-    - champs média autorisés
-    - aucun overwrite involontaire
-    """
     values = data.dict(exclude_unset=True)
 
     if not values:
         return False
 
-    fields = []
-    params = {
-        "id": id_person,
-        "updated_at": datetime.utcnow(),
-    }
+    # Champ technique
+    values["UPDATED_AT"] = datetime.utcnow()
 
-    for field, value in values.items():
-        fields.append(f"{field.upper()} = @{field}")
-        params[field] = value
-
-    sql = f"""
-        UPDATE `{TABLE_PERSON}`
-        SET
-            {", ".join(fields)},
-            UPDATED_AT = @updated_at
-        WHERE ID_PERSON = @id
-    """
-
-    client = get_bigquery_client()
-
-    # ⚠️ On reconstruit un QueryJobConfig EXACTEMENT
-    # comme dans query_bq / insert_bq
-    job_config = client.query(
-        "SELECT 1"
-    )._job_config.__class__(  # ← récupération propre de la classe
-        query_parameters=[
-            *[
-                {
-                    "name": k,
-                    "parameterType": {"type": "STRING"},
-                    "parameterValue": {"value": v},
-                }
-                for k, v in params.items()
-                if k != "updated_at"
-            ],
-            {
-                "name": "updated_at",
-                "parameterType": {"type": "TIMESTAMP"},
-                "parameterValue": {"value": params["updated_at"]},
-            },
-        ]
+    return update_bq(
+        table=TABLE_PERSON,
+        fields={k.upper(): v for k, v in values.items()},
+        where={"ID_PERSON": id_person},
     )
-
-    client.query(sql, job_config=job_config).result()
-
-    return True
-
 
