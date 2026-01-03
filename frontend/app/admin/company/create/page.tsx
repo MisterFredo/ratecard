@@ -44,13 +44,10 @@ export default function CreateCompany() {
       }
 
       setCompanyId(res.id_company);
-
-      // URLs construites par convention GCS
       setSquareUrl(null);
       setRectUrl(null);
 
       alert("Société créée. Vous pouvez maintenant ajouter des visuels.");
-
     } catch (e) {
       console.error(e);
       alert("❌ Erreur création société");
@@ -73,34 +70,56 @@ export default function CreateCompany() {
         </Link>
       </div>
 
-      {/* DATA */}
-      <input
-        className="border p-2 w-full rounded"
-        placeholder="Nom"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
+      {/* FORM */}
+      <div className="space-y-4 max-w-2xl">
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Nom *
+          </label>
+          <input
+            className="border p-2 w-full rounded"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ex : Google, Amazon, TF1"
+          />
+        </div>
 
-      <textarea
-        className="border p-2 w-full rounded h-28"
-        placeholder="Description"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Description
+          </label>
+          <textarea
+            className="border p-2 w-full rounded h-28"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description éditoriale de la société"
+          />
+        </div>
 
-      <input
-        className="border p-2 w-full rounded"
-        placeholder="LinkedIn"
-        value={linkedinUrl}
-        onChange={(e) => setLinkedinUrl(e.target.value)}
-      />
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            URL LinkedIn
+          </label>
+          <input
+            className="border p-2 w-full rounded"
+            value={linkedinUrl}
+            onChange={(e) => setLinkedinUrl(e.target.value)}
+            placeholder="https://www.linkedin.com/company/..."
+          />
+        </div>
 
-      <input
-        className="border p-2 w-full rounded"
-        placeholder="Site web"
-        value={websiteUrl}
-        onChange={(e) => setWebsiteUrl(e.target.value)}
-      />
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Site web
+          </label>
+          <input
+            className="border p-2 w-full rounded"
+            value={websiteUrl}
+            onChange={(e) => setWebsiteUrl(e.target.value)}
+            placeholder="https://www.exemple.com"
+          />
+        </div>
+      </div>
 
       <button
         onClick={save}
@@ -133,3 +152,4 @@ export default function CreateCompany() {
     </div>
   );
 }
+
