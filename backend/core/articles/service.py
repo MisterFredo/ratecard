@@ -300,3 +300,46 @@ def archive_article(id_article: str):
     ).result()
 
     return True
+
+# ============================================================
+# PUBLISH ARTICLE
+# ============================================================
+
+def publish_article(
+    id_article: str,
+    published_at: datetime | None = None,
+):
+    """
+    Publie un article immédiatement ou à une date donnée.
+
+    - published_at = None  → publication immédiate
+    - published_at != None → publication planifiée
+    """
+
+    now = datetime.utcnow()
+
+    # Publication immédiate
+    if not published_at or published_at <= now:
+        update_bq(
+            table=TABLE_ARTICLE,
+            fields={
+                "STATUS": "PUBLISHED",
+                "PUBLISHED_AT": now,
+                "UPDATED_AT": now,
+            },
+            where={"ID_ARTICLE": id_article},
+        )
+        return "PUBLISHED"
+
+    # Publication planifiée
+    update_bq(
+        table=TABLE_ARTICLE,
+        fields={
+            "STATUS": "SCHEDULED",
+            "PUBLISHED_AT": published_at,
+            "UPDATED_AT": now,
+        },
+        where={"ID_ARTICLE": id_article},
+    )
+    return "SCHEDULED"
+
