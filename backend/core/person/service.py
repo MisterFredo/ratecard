@@ -104,28 +104,31 @@ def update_person(id_person: str, data: PersonUpdate) -> bool:
 
     client = get_bigquery_client()
 
-    client.query(
-        sql,
-        job_config=bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ScalarQueryParameter("id", "STRING", params["id"]),
-                *[
-                    bigquery.ScalarQueryParameter(
-                        field,
-                        "STRING",
-                        value
-                    )
-                    for field, value in params.items()
-                    if field not in ("id", "updated_at")
-                ],
-                bigquery.ScalarQueryParameter(
-                    "updated_at",
-                    "TIMESTAMP",
-                    params["updated_at"]
-                ),
-            ]
-        )
-    ).result()
+    # ⚠️ On reconstruit un QueryJobConfig EXACTEMENT
+    # comme dans query_bq / insert_bq
+    job_config = client.query(
+        "SELECT 1"
+    )._job_config.__class__(  # ← récupération propre de la classe
+        query_parameters=[
+            *[
+                {
+                    "name": k,
+                    "parameterType": {"type": "STRING"},
+                    "parameterValue": {"value": v},
+                }
+                for k, v in params.items()
+                if k != "updated_at"
+            ],
+            {
+                "name": "updated_at",
+                "parameterType": {"type": "TIMESTAMP"},
+                "parameterValue": {"value": params["updated_at"]},
+            },
+        ]
+    )
+
+    client.query(sql, job_config=job_config).result()
 
     return True
+
 
