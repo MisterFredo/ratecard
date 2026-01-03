@@ -2,6 +2,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from datetime import datetime
 import base64
+from io import BytesIO
+
+from PIL import Image
 from google.cloud import bigquery
 
 from utils.bigquery_utils import get_bigquery_client
@@ -20,7 +23,7 @@ GCS_FOLDER = "topics"
 
 class TopicVisualUpload(BaseModel):
     id_topic: str
-    format: str              # "square" | "rectangle"
+    format: str              # conservé pour compat front (non bloquant)
     base64_image: str        # image encodée côté frontend
 
 
@@ -29,38 +32,73 @@ class TopicVisualReset(BaseModel):
 
 
 # ============================================================
-# UPLOAD VISUAL (POST-CREATION ONLY)
+# IMAGE UTILS
 # ============================================================
+
+def generate_square_and_rect(image_bytes: bytes):
+    img = Image.open(BytesIO(image_bytes)).convert("RGB")
+
+    # --- Square 512x512 (crop center)
+    min_side = min(img.size)
+    left = (img.width - min_side) // 2
+    top = (img.height - min_side) // 2
+    square = img.crop((left, top, left + min_side, top + min_side))
+    square = square.resize((512, 512), Image.LANCZOS)
+
+    square_buf = BytesIO()
+    square.save(square_buf, format="JPEG", quality=90)
+
+    # --- Rectangle 1200x630 (crop center)
+    target_ratio = 1200 / 630
+    img_ratio = img.width / img.height
+
+    if img_ratio > target_ratio:
+        new_width = int(img.height * target_ratio)
+        left = (img.width - new_width) // 2
+        rect = img.crop((left, 0, left + new_width, img.height))
+    else:
+        new_height = int(img.width / target_ratio)
+        top = (img.height - new_height) // 2
+        rect = img.crop((0, top, img.width, top + new_height))
+
+    rect = rect.resize((1200, 630), Image.LANCZOS)
+
+    rect_buf = BytesIO()
+    rect.save(rect_buf, format="JPEG", quality=90)
+
+    return square_buf.getvalue(), rect_buf.getvalue()
+
+
+# ============================================================
+# UPLOAD VISUAL
+# ============================================================
+
 @router.post("/upload")
 def upload_topic_visual(payload: TopicVisualUpload):
     try:
-        if payload.format not in ("square", "rectangle"):
-            raise HTTPException(400, "Format invalide (square | rectangle)")
-
         # Decode base64
         try:
             image_bytes = base64.b64decode(payload.base64_image)
         except Exception:
             raise HTTPException(400, "Base64 invalide")
 
-        # Filename & column
-        suffix = "square" if payload.format == "square" else "rect"
-        filename = f"TOPIC_{payload.id_topic}_{suffix}.jpg"
+        # Generate image variants
+        square_bytes, rect_bytes = generate_square_and_rect(image_bytes)
 
-        column = (
-            "MEDIA_SQUARE_ID"
-            if payload.format == "square"
-            else "MEDIA_RECTANGLE_ID"
-        )
+        square_filename = f"TOPIC_{payload.id_topic}_square.jpg"
+        rect_filename = f"TOPIC_{payload.id_topic}_rect.jpg"
 
-        # Upload GCS
-        upload_bytes(GCS_FOLDER, filename, image_bytes)
+        # Upload to GCS
+        upload_bytes(GCS_FOLDER, square_filename, square_bytes)
+        upload_bytes(GCS_FOLDER, rect_filename, rect_bytes)
 
         # Update BigQuery
         client = get_bigquery_client()
         sql = f"""
             UPDATE `{TABLE_TOPIC}`
-            SET {column} = @fname,
+            SET
+                MEDIA_SQUARE_ID = @square,
+                MEDIA_RECTANGLE_ID = @rect,
                 UPDATED_AT = @now
             WHERE ID_TOPIC = @id
         """
@@ -69,7 +107,8 @@ def upload_topic_visual(payload: TopicVisualUpload):
             sql,
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter("fname", "STRING", filename),
+                    bigquery.ScalarQueryParameter("square", "STRING", square_filename),
+                    bigquery.ScalarQueryParameter("rect", "STRING", rect_filename),
                     bigquery.ScalarQueryParameter("now", "TIMESTAMP", datetime.utcnow()),
                     bigquery.ScalarQueryParameter("id", "STRING", payload.id_topic),
                 ]
@@ -85,6 +124,7 @@ def upload_topic_visual(payload: TopicVisualUpload):
 # ============================================================
 # RESET VISUALS
 # ============================================================
+
 @router.post("/reset")
 def reset_topic_visual(payload: TopicVisualReset):
     try:
@@ -144,3 +184,4 @@ def reset_topic_visual(payload: TopicVisualReset):
 
     except Exception as e:
         raise HTTPException(400, f"Erreur reset visuels topic : {e}")
+
