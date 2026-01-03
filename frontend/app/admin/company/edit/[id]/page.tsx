@@ -83,7 +83,9 @@ export default function EditCompany({ params }: { params: { id: string } }) {
     setSaving(false);
   }
 
-  if (loading) return <p>Chargement…</p>;
+  if (loading) {
+    return <p>Chargement…</p>;
+  }
 
   // ---------------------------------------------------------
   // UI
@@ -110,4 +112,30 @@ export default function EditCompany({ params }: { params: { id: string } }) {
       />
 
       <button
-        className="bg-rateca
+        className="bg-ratecard-blue px-4 py-2 text-white rounded"
+        onClick={save}
+        disabled={saving}
+      >
+        {saving ? "Enregistrement…" : "Enregistrer"}
+      </button>
+
+      <VisualSection
+        entityId={id}
+        squareUrl={squareUrl}
+        rectUrl={rectUrl}
+        onUpdated={({ square, rectangle }) => {
+          setSquareUrl(
+            square
+              ? `${GCS}/companies/COMPANY_${id}_square.jpg`
+              : null
+          );
+          setRectUrl(
+            rectangle
+              ? `${GCS}/companies/COMPANY_${id}_rect.jpg`
+              : null
+          );
+        }}
+      />
+    </div>
+  );
+}
