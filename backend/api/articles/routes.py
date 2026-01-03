@@ -1,4 +1,6 @@
 from fastapi import APIRouter, HTTPException
+from datetime import datetime
+
 from api.articles.models import (
     ArticleCreate,
     ArticleUpdate,
@@ -10,7 +12,10 @@ from core.articles.service import (
     update_article,
     delete_article,
     archive_article,
+    publish_article,
 )
+
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -102,3 +107,32 @@ def archive_route(id_article: str):
         return {"status": "ok", "archived": id_article}
     except Exception as e:
         raise HTTPException(500, f"Erreur archivage article : {e}")
+
+
+# ============================================================
+# PUBLISH ARTICLE — NOW or SCHEDULE
+# ============================================================
+
+class PublishPayload(BaseModel):
+    published_at: datetime | None = None
+
+
+@router.put("/publish/{id_article}")
+def publish_route(id_article: str, payload: PublishPayload):
+    """
+    Publie un article immédiatement ou à une date donnée.
+
+    - published_at = None  → publication immédiate
+    - published_at != None → publication planifiée
+    """
+    try:
+        status = publish_article(
+            id_article=id_article,
+            published_at=payload.published_at,
+        )
+        return {"status": "ok", "article_status": status}
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Erreur publication article : {e}"
+        )
