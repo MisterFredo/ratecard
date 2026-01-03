@@ -24,22 +24,22 @@ class ArticleCreate(BaseModel):
     - contenu HTML obligatoire
     - au moins 1 topic obligatoire
     - visuel NON obligatoire à la création
+
+    L’article est la référence éditoriale unique.
+    Les exploitations (LinkedIn, newsletter, etc.)
+    sont gérées hors de ce modèle.
     """
 
-    # CONTENU PRINCIPAL
+    # CONTENU ÉDITORIAL
     title: str
     content_html: str
 
-    # VARIANTES ÉDITORIALES
+    # ACCROCHE & CONCLUSION
     excerpt: Optional[str] = None
-    intro: Optional[str] = None
     outro: Optional[str] = None
 
-    linkedin_post_text: Optional[str] = None
-    carousel_caption: Optional[str] = None
-
     # RELATIONS
-    topics: List[str] = Field(default_factory=list)     # ID_TOPIC (>= 1 requis côté service)
+    topics: List[str] = Field(default_factory=list)     # ID_TOPIC (>=1 requis côté service)
     companies: List[str] = Field(default_factory=list)  # ID_COMPANY
     persons: List[ArticlePerson] = Field(default_factory=list)
 
@@ -53,20 +53,16 @@ class ArticleCreate(BaseModel):
 class ArticleUpdate(BaseModel):
     """
     Mise à jour complète d’un Article existant.
-    (pas d’update partiel)
+    (remplacement total, pas d’update partiel)
     """
 
-    # CONTENU PRINCIPAL
+    # CONTENU ÉDITORIAL
     title: str
     content_html: str
 
-    # VARIANTES ÉDITORIALES
+    # ACCROCHE & CONCLUSION
     excerpt: Optional[str] = None
-    intro: Optional[str] = None
     outro: Optional[str] = None
-
-    linkedin_post_text: Optional[str] = None
-    carousel_caption: Optional[str] = None
 
     # VISUEL (propriété de l’article)
     media_rectangle_id: Optional[str] = None
@@ -86,27 +82,25 @@ class ArticleUpdate(BaseModel):
 # ============================================================
 class ArticleOut(BaseModel):
     """
-    Représentation complète d’un Article pour l’admin & le front.
+    Représentation complète d’un Article
+    pour l’admin, la preview et le front public.
     """
 
     id_article: str
 
+    # CONTENU ÉDITORIAL
     title: str
     content_html: str
-
     excerpt: Optional[str] = None
-    intro: Optional[str] = None
     outro: Optional[str] = None
 
-    linkedin_post_text: Optional[str] = None
-    carousel_caption: Optional[str] = None
-
+    # VISUELS
     media_rectangle_id: Optional[str] = None
     media_square_id: Optional[str] = None
 
+    # META
     author: Optional[str] = None
-
-    status: str                     # DRAFT | PUBLISHED
+    status: str                     # DRAFT | SCHEDULED | PUBLISHED | ARCHIVED
     published_at: Optional[datetime]
 
     created_at: Optional[datetime]
