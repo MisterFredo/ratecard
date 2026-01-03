@@ -4,20 +4,19 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 // Blocs
+import ArticleContextBlock from "@/components/admin/articles/ArticleContextBlock";
 import ArticleSourcePanel from "@/components/admin/articles/ArticleSourcePanel";
 import ArticleContentBlock from "@/components/admin/articles/ArticleContentBlock";
-import ArticleContextBlock from "@/components/admin/articles/ArticleContextBlock";
-import ArticleVariantsBlock from "@/components/admin/articles/ArticleVariantsBlock";
 import ArticleVisualSection from "@/components/admin/articles/ArticleVisualSection";
 
 type Mode = "create" | "edit";
 
 type Step =
   | "CONTEXT"
-  | "START_MODE"
+  | "START"
   | "CONTENT"
-  | "VARIANTS"
-  | "VISUAL";
+  | "VISUAL"
+  | "PUBLISH";
 
 type Props = {
   mode: Mode;
@@ -27,135 +26,107 @@ type Props = {
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 export default function ArticleStudio({ mode, articleId }: Props) {
-  /* =========================================================
-     ÉTAT — CONTEXTE D’INTENTION (FIGÉ APRÈS VALIDATION)
-  ========================================================= */
+  /* =========================
+     STATE — CONTEXTE
+  ========================= */
   const [topics, setTopics] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [persons, setPersons] = useState<any[]>([]);
   const [contextValidated, setContextValidated] = useState(false);
 
-  /* =========================================================
-     ÉTAT — MODE DE DÉMARRAGE
-  ========================================================= */
+  /* =========================
+     STATE — DÉMARRAGE
+  ========================= */
   const [startMode, setStartMode] = useState<"MANUAL" | "SOURCE" | null>(null);
 
-  /* =========================================================
-     ÉTAT — CONTENU ÉDITORIAL
-  ========================================================= */
+  /* =========================
+     STATE — CONTENU
+  ========================= */
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
-
-  /* =========================================================
-     ÉTAT — VARIANTES
-  ========================================================= */
   const [intro, setIntro] = useState("");
   const [outro, setOutro] = useState("");
-  const [linkedinPostText, setLinkedinPostText] = useState("");
-  const [carouselCaption, setCarouselCaption] = useState("");
 
-  /* =========================================================
-     ÉTAT — VISUELS
-  ========================================================= */
+  /* =========================
+     STATE — VISUELS
+  ========================= */
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  /* =========================================================
-     ÉTAT — MÉTA / PERSISTENCE
-  ========================================================= */
+  /* =========================
+     STATE — META
+  ========================= */
   const [author, setAuthor] = useState("");
-  const [saving, setSaving] = useState(false);
   const [internalArticleId, setInternalArticleId] = useState<string | null>(
     articleId || null
   );
+  const [saving, setSaving] = useState(false);
 
+  /* =========================
+     NAVIGATION
+  ========================= */
   const [step, setStep] = useState<Step>("CONTEXT");
 
-  /* =========================================================
-     LOAD ARTICLE (MODE EDIT)
-  ========================================================= */
+  /* =========================
+     LOAD (EDIT MODE)
+  ========================= */
   useEffect(() => {
     if (mode !== "edit" || !articleId) return;
 
     async function load() {
-      try {
-        const res = await api.get(`/articles/${articleId}`);
-        const a = res.article;
+      const res = await api.get(`/articles/${articleId}`);
+      const a = res.article;
 
-        setTitle(a.TITLE || "");
-        setExcerpt(a.EXCERPT || "");
-        setContentHtml(a.CONTENT_HTML || "");
-        setIntro(a.INTRO || "");
-        setOutro(a.OUTRO || "");
-        setLinkedinPostText(a.LINKEDIN_POST_TEXT || "");
-        setCarouselCaption(a.CAROUSEL_CAPTION || "");
-        setAuthor(a.AUTHOR || "");
+      setTitle(a.TITLE || "");
+      setExcerpt(a.EXCERPT || "");
+      setContentHtml(a.CONTENT_HTML || "");
+      setIntro(a.INTRO || "");
+      setOutro(a.OUTRO || "");
+      setAuthor(a.AUTHOR || "");
 
-        setTopics(
-          (a.topics || []).map((t: any) => ({
-            id_topic: t.ID_TOPIC,
-            label: t.LABEL,
-          }))
-        );
+      setTopics(
+        (a.topics || []).map((t: any) => ({
+          id_topic: t.ID_TOPIC,
+          label: t.LABEL,
+        }))
+      );
+      setCompanies(
+        (a.companies || []).map((c: any) => ({
+          id_company: c.ID_COMPANY,
+          name: c.NAME,
+        }))
+      );
+      setPersons(
+        (a.persons || []).map((p: any) => ({
+          id_person: p.ID_PERSON,
+          name: p.NAME,
+          role: p.ROLE || "contributeur",
+        }))
+      );
 
-        setCompanies(
-          (a.companies || []).map((c: any) => ({
-            id_company: c.ID_COMPANY,
-            name: c.NAME,
-          }))
-        );
+      setSquareUrl(
+        a.MEDIA_SQUARE_ID ? `${GCS}/articles/${a.MEDIA_SQUARE_ID}` : null
+      );
+      setRectUrl(
+        a.MEDIA_RECTANGLE_ID ? `${GCS}/articles/${a.MEDIA_RECTANGLE_ID}` : null
+      );
 
-        setPersons(
-          (a.persons || []).map((p: any) => ({
-            id_person: p.ID_PERSON,
-            name: p.NAME,
-            role: p.ROLE || "contributeur",
-          }))
-        );
-
-        setSquareUrl(
-          a.MEDIA_SQUARE_ID
-            ? `${GCS}/articles/${a.MEDIA_SQUARE_ID}`
-            : null
-        );
-
-        setRectUrl(
-          a.MEDIA_RECTANGLE_ID
-            ? `${GCS}/articles/${a.MEDIA_RECTANGLE_ID}`
-            : null
-        );
-
-        setContextValidated(true);
-        setStep("CONTENT");
-        setInternalArticleId(articleId);
-      } catch (e) {
-        console.error(e);
-        alert("Erreur chargement article");
-      }
+      setContextValidated(true);
+      setInternalArticleId(articleId);
+      setStep("CONTENT");
     }
 
     load();
   }, [mode, articleId]);
 
-  /* =========================================================
-     SAUVEGARDE ARTICLE (CREATE / UPDATE)
-  ========================================================= */
+  /* =========================
+     SAVE ARTICLE
+  ========================= */
   async function saveArticle() {
-    if (!title.trim()) {
-      alert("Le titre est obligatoire");
-      return;
-    }
-
-    if (!contentHtml.trim()) {
-      alert("Le contenu est obligatoire");
-      return;
-    }
-
-    if (!topics.length) {
-      alert("Au moins un topic est obligatoire");
-      return;
-    }
+    if (!title.trim()) return alert("Titre obligatoire");
+    if (!contentHtml.trim()) return alert("Contenu obligatoire");
+    if (!topics.length) return alert("Au moins un topic requis");
 
     setSaving(true);
 
@@ -165,8 +136,6 @@ export default function ArticleStudio({ mode, articleId }: Props) {
       excerpt: excerpt || null,
       intro: intro || null,
       outro: outro || null,
-      linkedin_post_text: linkedinPostText || null,
-      carousel_caption: carouselCaption || null,
       author: author || null,
       topics: topics.map((t) => t.id_topic),
       companies: companies.map((c) => c.id_company),
@@ -183,67 +152,63 @@ export default function ArticleStudio({ mode, articleId }: Props) {
       } else {
         await api.put(`/articles/update/${internalArticleId}`, payload);
       }
-
       setStep("VISUAL");
-    } catch (e: any) {
-      alert(e.message || "Erreur sauvegarde article");
+    } catch {
+      alert("Erreur sauvegarde article");
     }
 
     setSaving(false);
   }
 
-  /* =========================================================
-     UI — ÉTAPES
-  ========================================================= */
+  /* =========================
+     UI
+  ========================= */
   return (
     <div className="space-y-8">
 
       {/* =========================
-          ÉTAPE 1 — CONTEXTE
+          STEP 1 — CONTEXTE
       ========================= */}
-      {step === "CONTEXT" && (
-        <>
-          <h2 className="text-xl font-semibold text-ratecard-blue">
-            1. Contexte d’intention
-          </h2>
+      <details open={step === "CONTEXT"} className="border rounded p-4">
+        <summary className="text-lg font-semibold cursor-pointer">
+          1. Contexte d’intention
+        </summary>
 
-          <ArticleContextBlock
-            topics={topics}
-            companies={companies}
-            persons={persons}
-            onChange={(data) => {
-              if (data.topics) setTopics(data.topics);
-              if (data.companies) setCompanies(data.companies);
-              if (data.persons) setPersons(data.persons);
-            }}
-          />
+        <ArticleContextBlock
+          topics={topics}
+          companies={companies}
+          persons={persons}
+          onChange={(d) => {
+            if (d.topics) setTopics(d.topics);
+            if (d.companies) setCompanies(d.companies);
+            if (d.persons) setPersons(d.persons);
+          }}
+        />
 
+        {!contextValidated && (
           <button
             onClick={() => {
-              if (!topics.length) {
-                alert("Au moins un topic est requis");
-                return;
-              }
+              if (!topics.length) return alert("Topic requis");
               setContextValidated(true);
-              setStep("START_MODE");
+              setStep("START");
             }}
-            className="bg-ratecard-blue text-white px-6 py-2 rounded"
+            className="mt-4 bg-ratecard-blue text-white px-4 py-2 rounded"
           >
             Valider le contexte
           </button>
-        </>
-      )}
+        )}
+      </details>
 
       {/* =========================
-          ÉTAPE 2 — MODE DE DÉMARRAGE
+          STEP 2 — DÉMARRAGE
       ========================= */}
-      {step === "START_MODE" && contextValidated && (
-        <>
-          <h2 className="text-xl font-semibold text-ratecard-blue">
-            2. Comment souhaitez-vous commencer ?
-          </h2>
+      {contextValidated && (
+        <details open={step === "START"} className="border rounded p-4">
+          <summary className="text-lg font-semibold cursor-pointer">
+            2. Démarrage
+          </summary>
 
-          <div className="flex gap-4">
+          <div className="flex gap-4 mt-4">
             <button
               onClick={() => {
                 setStartMode("MANUAL");
@@ -263,95 +228,76 @@ export default function ArticleStudio({ mode, articleId }: Props) {
           </div>
 
           {startMode === "SOURCE" && (
-            <ArticleSourcePanel
-              onApplyDraft={(draft) => {
-                if (draft.title) setTitle(draft.title);
-                if (draft.excerpt) setExcerpt(draft.excerpt);
-                if (draft.content_html) setContentHtml(draft.content_html);
-                if (draft.intro) setIntro(draft.intro);
-                setStep("CONTENT");
-              }}
-            />
+            <div className="mt-4">
+              <ArticleSourcePanel
+                onApplyDraft={(draft) => {
+                  if (draft.title) setTitle(draft.title);
+                  if (draft.excerpt) setExcerpt(draft.excerpt);
+                  if (draft.content_html) setContentHtml(draft.content_html);
+                  if (draft.intro) setIntro(draft.intro);
+                  setStep("CONTENT");
+                }}
+              />
+            </div>
           )}
-        </>
+        </details>
       )}
 
       {/* =========================
-          ÉTAPE 3 — CONTENU
+          STEP 3 — CONTENU
       ========================= */}
-      {step === "CONTENT" && (
-        <>
-          <h2 className="text-xl font-semibold text-ratecard-blue">
+      {contextValidated && (
+        <details open={step === "CONTENT"} className="border rounded p-4">
+          <summary className="text-lg font-semibold cursor-pointer">
             3. Contenu éditorial
-          </h2>
-
-          <div className="text-sm text-gray-600">
-            Topics : {topics.map((t) => t.label).join(", ")}
-          </div>
+          </summary>
 
           <ArticleContentBlock
             title={title}
             excerpt={excerpt}
             contentHtml={contentHtml}
-            onChange={(data) => {
-              if (data.title !== undefined) setTitle(data.title);
-              if (data.excerpt !== undefined) setExcerpt(data.excerpt);
-              if (data.contentHtml !== undefined)
-                setContentHtml(data.contentHtml);
+            onChange={(d) => {
+              if (d.title !== undefined) setTitle(d.title);
+              if (d.excerpt !== undefined) setExcerpt(d.excerpt);
+              if (d.contentHtml !== undefined)
+                setContentHtml(d.contentHtml);
             }}
           />
 
-          <button
-            onClick={() => setStep("VARIANTS")}
-            className="bg-ratecard-blue text-white px-6 py-2 rounded"
-          >
-            Continuer
-          </button>
-        </>
-      )}
+          <div className="mt-4 space-y-2">
+            <label className="text-sm font-medium">Intro (idée forte)</label>
+            <textarea
+              className="border rounded p-2 w-full"
+              value={intro}
+              onChange={(e) => setIntro(e.target.value)}
+            />
 
-      {/* =========================
-          ÉTAPE 4 — VARIANTES
-      ========================= */}
-      {step === "VARIANTS" && (
-        <>
-          <h2 className="text-xl font-semibold text-ratecard-blue">
-            4. Variantes éditoriales
-          </h2>
-
-          <ArticleVariantsBlock
-            intro={intro}
-            outro={outro}
-            linkedinPostText={linkedinPostText}
-            carouselCaption={carouselCaption}
-            onChange={(data) => {
-              if (data.intro !== undefined) setIntro(data.intro);
-              if (data.outro !== undefined) setOutro(data.outro);
-              if (data.linkedinPostText !== undefined)
-                setLinkedinPostText(data.linkedinPostText);
-              if (data.carouselCaption !== undefined)
-                setCarouselCaption(data.carouselCaption);
-            }}
-          />
+            <label className="text-sm font-medium">Outro (à retenir)</label>
+            <textarea
+              className="border rounded p-2 w-full"
+              value={outro}
+              onChange={(e) => setOutro(e.target.value)}
+            />
+          </div>
 
           <button
             onClick={saveArticle}
             disabled={saving}
-            className="bg-ratecard-blue text-white px-6 py-2 rounded"
+            className="mt-4 bg-ratecard-blue text-white px-4 py-2 rounded"
           >
-            {saving ? "Enregistrement…" : "Valider l’article"}
+            {saving ? "Enregistrement…" : "Valider le contenu"}
           </button>
-        </>
+        </details>
       )}
 
       {/* =========================
-          ÉTAPE 5 — VISUEL
+          STEP 4 — VISUEL
       ========================= */}
-      {step === "VISUAL" && internalArticleId && (
-        <>
-          <h2 className="text-xl font-semibold text-ratecard-blue">
-            5. Visuel
-          </h2>
+      {internalArticleId && (
+        <details open={step === "VISUAL"} className="border rounded p-4">
+          <summary className="text-lg font-semibold cursor-pointer">
+            4. Visuel
+          </summary>
 
           <ArticleVisualSection
             articleId={internalArticleId}
@@ -370,7 +316,34 @@ export default function ArticleStudio({ mode, articleId }: Props) {
               );
             }}
           />
-        </>
+
+          <button
+            onClick={() => setStep("PUBLISH")}
+            className="mt-4 bg-ratecard-blue text-white px-4 py-2 rounded"
+          >
+            Continuer vers publication
+          </button>
+        </details>
+      )}
+
+      {/* =========================
+          STEP 5 — PUBLICATION
+      ========================= */}
+      {internalArticleId && (
+        <details open={step === "PUBLISH"} className="border rounded p-4">
+          <summary className="text-lg font-semibold cursor-pointer">
+            5. Publication
+          </summary>
+
+          <p className="text-sm text-gray-600">
+            L’article est prêt. Vous pourrez gérer la publication (maintenant ou
+            planifiée) à l’étape suivante.
+          </p>
+
+          <button className="mt-4 bg-green-600 text-white px-4 py-2 rounded">
+            Publier l’article
+          </button>
+        </details>
       )}
     </div>
   );
