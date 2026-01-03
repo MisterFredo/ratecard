@@ -1,10 +1,14 @@
 "use client";
 
+type PublishMode = "NOW" | "SCHEDULE";
+
 type Props = {
-  publishMode: "NOW" | "SCHEDULE";
+  publishMode: PublishMode;
   publishAt: string;
 
-  onChangeMode: (mode: "NOW" | "SCHEDULE") => void;
+  publishing?: boolean;
+
+  onChangeMode: (mode: PublishMode) => void;
   onChangeDate: (value: string) => void;
 
   onPublish: () => void;
@@ -13,42 +17,59 @@ type Props = {
 export default function StepPublish({
   publishMode,
   publishAt,
+  publishing = false,
   onChangeMode,
   onChangeDate,
   onPublish,
 }: Props) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+
+      {/* STATUS */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
+        <strong>Brouillon</strong> — cet article n’est pas encore publié.
+      </div>
 
       <p className="text-sm text-gray-600">
-        Choisissez quand publier l’article.
+        Choisissez quand publier l’article. Une fois publié, l’article sera
+        visible publiquement et utilisable dans les canaux de diffusion.
       </p>
 
       {/* MODE */}
-      <div className="space-y-2">
-        <label className="block">
+      <div className="space-y-3">
+        <label className="flex items-start gap-2 cursor-pointer">
           <input
             type="radio"
             checked={publishMode === "NOW"}
             onChange={() => onChangeMode("NOW")}
-          />{" "}
-          Publier maintenant
+          />
+          <span>
+            <strong>Publier maintenant</strong>
+            <div className="text-xs text-gray-500">
+              L’article sera publié immédiatement.
+            </div>
+          </span>
         </label>
 
-        <label className="block">
+        <label className="flex items-start gap-2 cursor-pointer">
           <input
             type="radio"
             checked={publishMode === "SCHEDULE"}
             onChange={() => onChangeMode("SCHEDULE")}
-          />{" "}
-          Planifier la publication
+          />
+          <span>
+            <strong>Planifier la publication</strong>
+            <div className="text-xs text-gray-500">
+              L’article sera publié automatiquement à la date choisie.
+            </div>
+          </span>
         </label>
       </div>
 
       {/* DATE */}
       {publishMode === "SCHEDULE" && (
-        <div>
-          <label className="text-sm font-medium block mb-1">
+        <div className="space-y-1">
+          <label className="text-sm font-medium">
             Date et heure de publication
           </label>
           <input
@@ -61,12 +82,19 @@ export default function StepPublish({
       )}
 
       {/* ACTION */}
-      <button
-        onClick={onPublish}
-        className="bg-green-600 text-white px-4 py-2 rounded"
-      >
-        Publier l’article
-      </button>
+      <div className="pt-2">
+        <button
+          onClick={onPublish}
+          disabled={publishing}
+          className={`px-5 py-2 rounded text-white ${
+            publishing
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-green-600 hover:bg-green-700"
+          }`}
+        >
+          {publishing ? "Publication en cours…" : "Publier l’article"}
+        </button>
+      </div>
     </div>
   );
 }
