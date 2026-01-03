@@ -5,61 +5,31 @@ import { api } from "@/lib/api";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
-type Topic = {
-  id_topic: string;
-  label: string;
-};
-
-type Company = {
-  id_company: string;
-  name: string;
-};
-
-type Person = {
-  id_person: string;
-  name: string;
-};
-
-type VisualSource =
-  | "TOPIC"
-  | "COMPANY"
-  | "PERSON"
-  | "ARTICLE_UPLOAD"
-  | "ARTICLE_AI";
-
 type Props = {
   articleId: string;
-  title: string;
-  excerpt: string;
-  topics: Topic[];
-  companies?: Company[];
-  persons?: Person[];
+  squareUrl: string | null;
+  rectUrl: string | null;
+  onUpdated: (urls: { square: string | null; rectangle: string | null }) => void;
 };
 
 export default function ArticleVisualSection({
   articleId,
-  title,
-  excerpt,
-  topics,
-  companies = [],
-  persons = [],
+  squareUrl,
+  rectUrl,
+  onUpdated,
 }: Props) {
   const [loading, setLoading] = useState(false);
-  const [visualSource, setVisualSource] = useState<VisualSource | null>(null);
-
-  const [squareFilename, setSquareFilename] = useState<string | null>(null);
-  const [rectFilename, setRectFilename] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
      UTILS
   --------------------------------------------------------- */
-  async function fileToBase64(file: File): Promise<string> {
+  function fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onerror = reject;
       reader.onload = () => {
-        const res = reader.result?.toString() || "";
-        resolve(res.replace(/^data:image\/\w+;base64,/, ""));
+        const result = reader.result?.toString() || "";
+        resolve(result.replace(/^data:image\/\w+;base64,/, ""));
       };
       reader.readAsDataURL(file);
     });
@@ -69,49 +39,12 @@ export default function ArticleVisualSection({
     return `${GCS_BASE_URL}/articles/${filename}`;
   }
 
-  function guardAI() {
-    if (!title.trim()) {
-      alert("Le titre est requis.");
-      return false;
-    }
-    if (!excerpt.trim()) {
-      alert("L’accroche (excerpt) est requise.");
-      return false;
-    }
-    if (!topics.length) {
-      alert("Au moins un topic est requis.");
-      return false;
-    }
-    return true;
-  }
-
   /* ---------------------------------------------------------
-     ACTIONS
+     UPLOAD
   --------------------------------------------------------- */
-
-  async function useEntityVisual(
-    type: "TOPIC" | "COMPANY" | "PERSON",
-    id: string
-  ) {
+  async function upload(file: File, format: "square" | "rectangle") {
     setLoading(true);
-    try {
-      const res = await api.post("/visuals/article/use-entity", {
-        id_article: articleId,
-        source_type: type,
-        source_id: id,
-      });
 
-      setSquareFilename(res.filenames.square || null);
-      setRectFilename(res.filenames.rectangle || null);
-      setVisualSource(type);
-    } catch (e) {
-      alert("Erreur association visuel");
-    }
-    setLoading(false);
-  }
-
-  async function uploadArticleVisual(file: File, format: "square" | "rectangle") {
-    setLoading(true);
     try {
       const base64 = await fileToBase64(file);
 
@@ -121,34 +54,45 @@ export default function ArticleVisualSection({
         base64_image: base64,
       });
 
-      if (format === "square") setSquareFilename(res.filename);
-      if (format === "rectangle") setRectFilename(res.filename);
+      if (res.status !== "ok") {
+        throw new Error("Upload failed");
+      }
 
-      setVisualSource("ARTICLE_UPLOAD");
+      onUpdated({
+        square: format === "square" ? "updated" : squareUrl,
+        rectangle: format === "rectangle" ? "updated" : rectUrl,
+      });
     } catch (e) {
-      alert("Erreur upload visuel");
+      console.error(e);
+      alert("❌ Erreur upload visuel article");
     }
+
     setLoading(false);
   }
 
-  async function generateAI() {
-    if (!guardAI()) return;
+  /* ---------------------------------------------------------
+     RESET
+  --------------------------------------------------------- */
+  async function resetVisuals() {
+    if (!confirm("Supprimer les visuels de l’article ?")) return;
 
     setLoading(true);
+
     try {
-      const res = await api.post("/visuals/article/generate-ai", {
+      const res = await api.post("/visuals/article/reset", {
         id_article: articleId,
-        title,
-        excerpt,
-        topics: topics.map((t) => t.label),
       });
 
-      setSquareFilename(res.filenames.square);
-      setRectFilename(res.filenames.rectangle);
-      setVisualSource("ARTICLE_AI");
+      if (res.status !== "ok") {
+        throw new Error("Reset failed");
+      }
+
+      onUpdated({ square: null, rectangle: null });
     } catch (e) {
-      alert("Erreur génération IA");
+      console.error(e);
+      alert("❌ Erreur reset visuels article");
     }
+
     setLoading(false);
   }
 
@@ -156,96 +100,62 @@ export default function ArticleVisualSection({
      UI
   --------------------------------------------------------- */
   return (
-    <div className="border rounded p-4 space-y-4 bg-white">
-      <h3 className="text-lg font-semibold text-ratecard-blue">
-        Visuel de l’article
-      </h3>
+    <div className="p-4 border rounded bg-white space-y-4">
+      <h2 className="text-xl font-semibold">Visuels de l’article</h2>
 
-      {loading && (
-        <p className="text-sm text-gray-500">Traitement en cours…</p>
-      )}
+      {loading && <p className="text-gray-500">Traitement…</p>}
 
-      {/* PREVIEW */}
-      {(rectFilename || squareFilename) && (
-        <div className="space-y-2">
-          {rectFilename && (
+      <div className="flex gap-6">
+        {/* SQUARE */}
+        <div>
+          <p className="text-sm text-gray-500">Carré</p>
+          {squareUrl ? (
             <img
-              src={gcsUrl(rectFilename)}
-              className="w-full max-w-xl rounded border"
+              src={squareUrl}
+              className="w-24 h-24 border rounded object-cover"
             />
+          ) : (
+            <div className="w-24 h-24 bg-gray-100 border rounded flex items-center justify-center text-xs text-gray-500">
+              Aucun
+            </div>
           )}
-          {!rectFilename && squareFilename && (
-            <img
-              src={gcsUrl(squareFilename)}
-              className="w-64 rounded border"
-            />
-          )}
-          <p className="text-xs text-gray-500">
-            Source du visuel : {visualSource}
-          </p>
-        </div>
-      )}
-
-      {/* OPTIONS */}
-      <div className="space-y-2">
-        {/* TOPIC */}
-        {topics.length > 0 && (
-          <button
-            onClick={() =>
-              useEntityVisual("TOPIC", topics[0].id_topic)
-            }
-            className="px-4 py-2 border rounded w-full text-left"
-          >
-            Utiliser le visuel du topic : {topics[0].label}
-          </button>
-        )}
-
-        {/* COMPANY */}
-        {companies.length > 0 && (
-          <button
-            onClick={() =>
-              useEntityVisual("COMPANY", companies[0].id_company)
-            }
-            className="px-4 py-2 border rounded w-full text-left"
-          >
-            Utiliser le visuel de la société : {companies[0].name}
-          </button>
-        )}
-
-        {/* PERSON */}
-        {persons.length > 0 && (
-          <button
-            onClick={() =>
-              useEntityVisual("PERSON", persons[0].id_person)
-            }
-            className="px-4 py-2 border rounded w-full text-left"
-          >
-            Utiliser le visuel de la personne : {persons[0].name}
-          </button>
-        )}
-
-        {/* ARTICLE UPLOAD */}
-        <label className="px-4 py-2 border rounded w-full block cursor-pointer">
-          Importer un visuel spécifique à l’article
           <input
             type="file"
             accept="image/*"
-            hidden
+            className="mt-2"
             onChange={(e) =>
-              e.target.files &&
-              uploadArticleVisual(e.target.files[0], "rectangle")
+              e.target.files && upload(e.target.files[0], "square")
             }
           />
-        </label>
+        </div>
 
-        {/* ARTICLE AI */}
-        <button
-          onClick={generateAI}
-          className="px-4 py-2 bg-ratecard-blue text-white rounded w-full"
-        >
-          Générer un visuel via l’assistant (IA)
-        </button>
+        {/* RECTANGLE */}
+        <div>
+          <p className="text-sm text-gray-500">Rectangle</p>
+          {rectUrl ? (
+            <img src={rectUrl} className="w-48 border rounded" />
+          ) : (
+            <div className="w-48 h-24 bg-gray-100 border rounded flex items-center justify-center text-xs text-gray-500">
+              Aucun
+            </div>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            className="mt-2"
+            onChange={(e) =>
+              e.target.files && upload(e.target.files[0], "rectangle")
+            }
+          />
+        </div>
       </div>
+
+      <button
+        className="px-3 py-2 bg-red-600 text-white rounded text-sm"
+        onClick={resetVisuals}
+      >
+        Réinitialiser les visuels
+      </button>
     </div>
   );
 }
