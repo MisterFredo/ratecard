@@ -45,10 +45,14 @@ def create_person(data: PersonCreate) -> str:
 # ============================================================
 def list_persons():
     sql = f"""
-        SELECT *
-        FROM `{TABLE_PERSON}`
-        WHERE IS_ACTIVE = TRUE
-        ORDER BY NAME ASC
+        SELECT
+            p.*,
+            c.NAME AS COMPANY_NAME
+        FROM `{TABLE_PERSON}` p
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+            ON p.ID_COMPANY = c.ID_COMPANY
+        WHERE p.IS_ACTIVE = TRUE
+        ORDER BY p.NAME ASC
     """
     return query_bq(sql)
 
