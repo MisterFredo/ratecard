@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client
+from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client, update_bq
 from api.person.models import PersonCreate, PersonUpdate
 
 TABLE_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_PERSON"
