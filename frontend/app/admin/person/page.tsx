@@ -9,6 +9,7 @@ const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 type PersonRow = {
   ID_PERSON: string;
   NAME: string;
+  COMPANY_NAME?: string | null;
   MEDIA_PICTURE_SQUARE_ID?: string | null;
   MEDIA_PICTURE_RECTANGLE_ID?: string | null;
 };
@@ -36,7 +37,10 @@ export default function PersonList() {
     <div className="space-y-8">
       <div className="flex justify-between">
         <h1 className="text-3xl font-semibold">Personnes</h1>
-        <Link href="/admin/person/create" className="bg-ratecard-green px-4 py-2 text-white rounded">
+        <Link
+          href="/admin/person/create"
+          className="bg-ratecard-green px-4 py-2 text-white rounded"
+        >
           + Ajouter une personne
         </Link>
       </div>
@@ -50,6 +54,7 @@ export default function PersonList() {
           <thead>
             <tr className="bg-gray-100 border-b text-left">
               <th className="p-2">Nom</th>
+              <th className="p-2">Société</th>
               <th className="p-2">Carré</th>
               <th className="p-2">Rectangle</th>
               <th className="p-2 text-right">Actions</th>
@@ -67,15 +72,39 @@ export default function PersonList() {
 
               return (
                 <tr key={p.ID_PERSON} className="border-b hover:bg-gray-50">
-                  <td className="p-2">{p.NAME}</td>
-                  <td className="p-2">
-                    {squareUrl ? <img src={squareUrl} className="w-12 h-12 border rounded object-cover" /> : "—"}
+                  <td className="p-2 font-medium">{p.NAME}</td>
+
+                  <td className="p-2 text-gray-700">
+                    {p.COMPANY_NAME || "—"}
                   </td>
+
                   <td className="p-2">
-                    {rectUrl ? <img src={rectUrl} className="h-10 border rounded" /> : "—"}
+                    {squareUrl ? (
+                      <img
+                        src={squareUrl}
+                        className="w-12 h-12 border rounded object-cover"
+                      />
+                    ) : (
+                      "—"
+                    )}
                   </td>
+
+                  <td className="p-2">
+                    {rectUrl ? (
+                      <img
+                        src={rectUrl}
+                        className="h-10 border rounded"
+                      />
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+
                   <td className="p-2 text-right">
-                    <Link href={`/admin/person/edit/${p.ID_PERSON}`} className="text-blue-600 hover:underline">
+                    <Link
+                      href={`/admin/person/edit/${p.ID_PERSON}`}
+                      className="text-blue-600 hover:underline"
+                    >
                       Modifier
                     </Link>
                   </td>
