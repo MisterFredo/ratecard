@@ -70,62 +70,15 @@ def get_company(company_id: str):
 # UPDATE COMPANY — DATA + MEDIA (POST-CREATION)
 # ============================================================
 def update_company(id_company: str, data: CompanyUpdate) -> bool:
-    """
-    Met à jour une société existante.
-
-    - update partiel
-    - champs média autorisés
-    - aucun overwrite involontaire
-    """
     values = data.dict(exclude_unset=True)
 
     if not values:
         return False
 
-    fields = []
-    params = {
-        "id": id_company,
-        "updated_at": datetime.utcnow(),
-    }
+    values["UPDATED_AT"] = datetime.utcnow()
 
-    for field, value in values.items():
-        fields.append(f"{field.upper()} = @{field}")
-        params[field] = value
-
-    sql = f"""
-        UPDATE `{TABLE_COMPANY}`
-        SET
-            {", ".join(fields)},
-            UPDATED_AT = @updated_at
-        WHERE ID_COMPANY = @id
-    """
-
-    client = get_bigquery_client()
-    client.query(sql, job_config={
-        "query_parameters": [
-            # paramètres injectés dynamiquement ci-dessous
-        ]
-    })
-
-    # Exécution avec paramètres BigQuery explicites
-    client.query(
-        sql,
-        job_config={
-            "query_parameters": [
-                *[
-                    # paramètres champs
-                    # (type déduit automatiquement)
-                    {"name": k, "parameterType": {"type": "STRING"}, "parameterValue": {"value": v}}
-                    for k, v in params.items()
-                    if k not in ("updated_at",)
-                ],
-                {
-                    "name": "updated_at",
-                    "parameterType": {"type": "TIMESTAMP"},
-                    "parameterValue": {"value": params["updated_at"]},
-                },
-            ]
-        }
-    ).result()
-
-    return True
+    return update_bq(
+        table=TABLE_COMPANY,
+        fields={k.upper(): v for k, v in values.items()},
+        where={"ID_COMPANY": id_company},
+    )
