@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import VisualSectionTopic from "@/components/visuals/VisualSectionTopic";
+import EntityBaseForm from "@/components/forms/EntityBaseForm";
 
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
@@ -22,7 +23,7 @@ export default function EditTopic({ params }: { params: { id: string } }) {
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   // ---------------------------------------------------------
-  // LOAD TOPIC
+  // LOAD
   // ---------------------------------------------------------
   useEffect(() => {
     async function load() {
@@ -60,7 +61,7 @@ export default function EditTopic({ params }: { params: { id: string } }) {
   }, [id]);
 
   // ---------------------------------------------------------
-  // SAVE (UPDATE)
+  // SAVE
   // ---------------------------------------------------------
   async function save() {
     setSaving(true);
@@ -90,35 +91,56 @@ export default function EditTopic({ params }: { params: { id: string } }) {
   return (
     <div className="space-y-8">
       <div className="flex justify-between">
-        <h1 className="text-3xl font-semibold">Modifier le topic</h1>
+        <h1 className="text-3xl font-semibold">
+          Modifier le topic
+        </h1>
         <Link href="/admin/topic" className="underline">
           ← Retour
         </Link>
       </div>
 
-      <input
-        className="border p-2 w-full rounded"
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
+      {/* FORM BASE (label + description) */}
+      <EntityBaseForm
+        values={{
+          name: label,
+          description,
+        }}
+        onChange={{
+          setName: setLabel,
+          setDescription,
+        }}
+        labels={{
+          name: "Label",
+          description: "Description éditoriale",
+        }}
       />
 
-      <textarea
-        className="border p-2 w-full rounded h-28"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
+      {/* SEO */}
+      <div className="space-y-4 max-w-2xl">
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            SEO title
+          </label>
+          <input
+            className="border p-2 w-full rounded"
+            value={seoTitle}
+            onChange={(e) => setSeoTitle(e.target.value)}
+            placeholder="Titre pour Google (optionnel)"
+          />
+        </div>
 
-      <input
-        className="border p-2 w-full rounded"
-        value={seoTitle}
-        onChange={(e) => setSeoTitle(e.target.value)}
-      />
-
-      <textarea
-        className="border p-2 w-full rounded h-20"
-        value={seoDescription}
-        onChange={(e) => setSeoDescription(e.target.value)}
-      />
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            SEO description
+          </label>
+          <textarea
+            className="border p-2 w-full rounded h-20"
+            value={seoDescription}
+            onChange={(e) => setSeoDescription(e.target.value)}
+            placeholder="Description meta (optionnelle)"
+          />
+        </div>
+      </div>
 
       <button
         className="bg-ratecard-blue px-4 py-2 text-white rounded"
@@ -128,20 +150,25 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
-      {/* VISUALS — POST CREATION */}
+      {/* VISUALS */}
       <VisualSectionTopic
         topicId={id}
         squareUrl={squareUrl}
         rectUrl={rectUrl}
         onUpdated={({ square, rectangle }) => {
           setSquareUrl(
-            square ? `${GCS}/topics/TOPIC_${id}_square.jpg` : null
+            square
+              ? `${GCS}/topics/TOPIC_${id}_square.jpg`
+              : null
           );
           setRectUrl(
-            rectangle ? `${GCS}/topics/TOPIC_${id}_rect.jpg` : null
+            rectangle
+              ? `${GCS}/topics/TOPIC_${id}_rect.jpg`
+              : null
           );
         }}
       />
     </div>
   );
 }
+
