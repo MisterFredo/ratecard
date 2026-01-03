@@ -4,84 +4,107 @@ import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import VisualSectionPerson from "@/components/visuals/VisualSectionPerson";
+import EntityBaseForm from "@/components/forms/EntityBaseForm";
+import CompanySelector, {
+  Company,
+} from "@/components/admin/CompanySelector";
 
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 export default function CreatePerson() {
   const [name, setName] = useState("");
-  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
-  const [idCompany, setIdCompany] = useState("");
+
+  // Champs spécifiques Person
+  const [title, setTitle] = useState("");
+  const [companies, setCompanies] = useState<Company[]>([]);
 
   const [personId, setPersonId] = useState<string | null>(null);
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
+  // ---------------------------------------------------------
+  // CREATE
+  // ---------------------------------------------------------
   async function save() {
     if (!name.trim()) {
       alert("Nom requis");
       return;
     }
 
-    const res = await api.post("/person/create", {
-      name,
-      id_company: idCompany || null,
-      title: title || null,
-      description: description || null,
-      linkedin_url: linkedinUrl || null,
-    });
+    try {
+      const res = await api.post("/person/create", {
+        name,
+        title: title || null,
+        description: description || null,
+        linkedin_url: linkedinUrl || null,
+        id_company: companies.length > 0 ? companies[0].id_company : null,
+      });
 
-    if (!res.id_person) {
-      alert("Erreur création personne");
-      return;
+      if (!res.id_person) {
+        alert("Erreur création personne");
+        return;
+      }
+
+      setPersonId(res.id_person);
+      alert("Personne créée. Vous pouvez ajouter des visuels.");
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur création personne");
     }
-
-    setPersonId(res.id_person);
-    alert("Personne créée. Vous pouvez ajouter des visuels.");
   }
 
+  // ---------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------
   return (
     <div className="space-y-8">
       <div className="flex justify-between">
-        <h1 className="text-2xl font-semibold">Ajouter une personne</h1>
-        <Link href="/admin/person" className="underline">← Retour</Link>
+        <h1 className="text-2xl font-semibold">
+          Ajouter une personne
+        </h1>
+        <Link href="/admin/person" className="underline">
+          ← Retour
+        </Link>
       </div>
 
-      <input
-        className="border p-2 w-full rounded"
-        placeholder="Nom"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+      {/* FORM BASE */}
+      <EntityBaseForm
+        values={{ name, description, linkedinUrl }}
+        onChange={{
+          setName,
+          setDescription,
+          setLinkedinUrl,
+        }}
+        labels={{
+          name: "Nom complet",
+        }}
       />
 
-      <input
-        className="border p-2 w-full rounded"
-        placeholder="Titre"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
+      {/* TITLE */}
+      <div className="max-w-2xl">
+        <label className="block text-sm font-medium mb-1">
+          Fonction / Titre
+        </label>
+        <input
+          className="border p-2 w-full rounded"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Ex : Head of Marketing, CEO, Directeur Data…"
+        />
+      </div>
 
-      <textarea
-        className="border p-2 w-full rounded h-28"
-        placeholder="Description"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
-
-      <input
-        className="border p-2 w-full rounded"
-        placeholder="LinkedIn"
-        value={linkedinUrl}
-        onChange={(e) => setLinkedinUrl(e.target.value)}
-      />
-
-      <input
-        className="border p-2 w-full rounded"
-        placeholder="ID Société (optionnel)"
-        value={idCompany}
-        onChange={(e) => setIdCompany(e.target.value)}
-      />
+      {/* COMPANY SELECTOR */}
+      <div className="max-w-2xl">
+        <CompanySelector
+          values={companies}
+          onChange={setCompanies}
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Une seule société sera associée (première sélectionnée).
+        </p>
+      </div>
 
       <button
         onClick={save}
@@ -90,6 +113,7 @@ export default function CreatePerson() {
         Créer
       </button>
 
+      {/* VISUALS — POST CREATION */}
       {personId && (
         <VisualSectionPerson
           personId={personId}
@@ -97,10 +121,14 @@ export default function CreatePerson() {
           rectUrl={rectUrl}
           onUpdated={({ square, rectangle }) => {
             setSquareUrl(
-              square ? `${GCS}/persons/PERSON_${personId}_square.jpg` : null
+              square
+                ? `${GCS}/persons/PERSON_${personId}_square.jpg`
+                : null
             );
             setRectUrl(
-              rectangle ? `${GCS}/persons/PERSON_${personId}_rect.jpg` : null
+              rectangle
+                ? `${GCS}/persons/PERSON_${personId}_rect.jpg`
+                : null
             );
           }}
         />
