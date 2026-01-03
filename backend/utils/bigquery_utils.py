@@ -1,5 +1,3 @@
-# backend/utils/bigquery_utils.py
-
 import os
 import json
 from datetime import datetime, date
@@ -31,17 +29,20 @@ def get_bigquery_client() -> bigquery.Client:
     return bigquery.Client(location="EU")
 
 
-
-
 # ---------------------------------------------------------
 # Helpers : inférer le type BigQuery standard
 # ---------------------------------------------------------
 def _infer_type(value):
-    if isinstance(value, bool): return "BOOL"
-    if isinstance(value, int): return "INT64"
-    if isinstance(value, float): return "FLOAT64"
-    if isinstance(value, datetime): return "TIMESTAMP"
-    if isinstance(value, date): return "DATE"
+    if isinstance(value, bool):
+        return "BOOL"
+    if isinstance(value, int):
+        return "INT64"
+    if isinstance(value, float):
+        return "FLOAT64"
+    if isinstance(value, datetime):
+        return "TIMESTAMP"
+    if isinstance(value, date):
+        return "DATE"
     return "STRING"
 
 
@@ -60,13 +61,18 @@ def query_bq(sql: str, params: dict = None) -> list[dict]:
     if params:
         job_config = bigquery.QueryJobConfig(
             query_parameters=[
-                bigquery.ScalarQueryParameter(name, _infer_type(value), value)
+                bigquery.ScalarQueryParameter(
+                    name,
+                    _infer_type(value),
+                    value
+                )
                 for name, value in params.items()
             ]
         )
 
     job = client.query(sql, job_config=job_config)
     return [dict(row) for row in job.result()]
+
 
 # ---------------------------------------------------------
 # Insertion BigQuery (INSERT SQL, PAS de streaming)
@@ -109,3 +115,59 @@ def insert_bq(table: str, rows: list[dict]):
         )
 
         client.query(sql, job_config=job_config).result()
+
+
+# ---------------------------------------------------------
+# Mise à jour BigQuery (UPDATE SQL CANONIQUE)
+# ---------------------------------------------------------
+def update_bq(table: str, fields: dict, where: dict) -> bool:
+    """
+    Exécute un UPDATE BigQuery sécurisé avec paramètres.
+
+    fields = {"COL": value}
+    where = {"ID": value}
+    """
+    if not fields:
+        return False
+
+    client = get_bigquery_client()
+
+    set_clause = []
+    where_clause = []
+    params = []
+
+    # SET
+    for k, v in fields.items():
+        set_clause.append(f"{k} = @{k}")
+        params.append(
+            bigquery.ScalarQueryParameter(
+                k,
+                _infer_type(v),
+                v
+            )
+        )
+
+    # WHERE
+    for k, v in where.items():
+        where_clause.append(f"{k} = @where_{k}")
+        params.append(
+            bigquery.ScalarQueryParameter(
+                f"where_{k}",
+                _infer_type(v),
+                v
+            )
+        )
+
+    sql = f"""
+        UPDATE `{table}`
+        SET {", ".join(set_clause)}
+        WHERE {" AND ".join(where_clause)}
+    """
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=params
+    )
+
+    client.query(sql, job_config=job_config).result()
+    return True
+
