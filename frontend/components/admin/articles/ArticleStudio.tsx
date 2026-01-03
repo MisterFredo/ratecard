@@ -37,11 +37,6 @@ export default function ArticleStudio({ mode, articleId }: Props) {
   const [contextValidated, setContextValidated] = useState(false);
 
   /* =========================================================
-     STATE — SOURCE
-  ========================================================= */
-  const [useSource, setUseSource] = useState<boolean | null>(null);
-
-  /* =========================================================
      STATE — CONTENU
   ========================================================= */
   const [title, setTitle] = useState("");
