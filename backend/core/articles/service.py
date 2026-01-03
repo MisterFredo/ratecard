@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client
+from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client, update_bq
 from api.articles.models import ArticleCreate, ArticleUpdate
 
 # ============================================================
@@ -193,6 +193,7 @@ def list_articles():
 # ============================================================
 # UPDATE ARTICLE — remplacement complet
 # ============================================================
+
 def update_article(id_article: str, data: ArticleUpdate):
     if not data.title.strip():
         raise ValueError("Le titre est obligatoire")
@@ -200,95 +201,64 @@ def update_article(id_article: str, data: ArticleUpdate):
     if not data.content_html.strip():
         raise ValueError("Le contenu HTML est obligatoire")
 
-    if not data.topics or len(data.topics) == 0:
+    if not data.topics:
         raise ValueError("Au moins un topic est obligatoire")
 
     now = datetime.utcnow()
+
+    # --- ARTICLE (champs éditoriaux)
+    fields = {
+        "TITLE": data.title,
+        "CONTENT_HTML": data.content_html,
+        "EXCERPT": data.excerpt,
+        "INTRO": data.intro,
+        "OUTRO": data.outro,
+        "LINKEDIN_POST_TEXT": data.linkedin_post_text,
+        "CAROUSEL_CAPTION": data.carousel_caption,
+        "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
+        "MEDIA_SQUARE_ID": data.media_square_id,
+        "AUTHOR": data.author,
+        "UPDATED_AT": now,
+    }
+
+    update_bq(
+        table=TABLE_ARTICLE,
+        fields={k: v for k, v in fields.items() if v is not None},
+        where={"ID_ARTICLE": id_article},
+    )
+
+    # --- RELATIONS (reset propre)
     client = get_bigquery_client()
-
-    # ---------------------------------------------------------
-    # UPDATE ARTICLE (SQL explicite)
-    # ---------------------------------------------------------
-    sql = f"""
-        UPDATE `{TABLE_ARTICLE}`
-        SET
-            TITLE = @title,
-            CONTENT_HTML = @content_html,
-            EXCERPT = @excerpt,
-            INTRO = @intro,
-            OUTRO = @outro,
-            LINKEDIN_POST_TEXT = @linkedin_post_text,
-            CAROUSEL_CAPTION = @carousel_caption,
-            MEDIA_RECTANGLE_ID = @media_rectangle_id,
-            MEDIA_SQUARE_ID = @media_square_id,
-            AUTHOR = @author,
-            UPDATED_AT = @updated_at
-        WHERE ID_ARTICLE = @id
-    """
-
-    client.query(
-        sql,
-        job_config={
-            "query_parameters": [
-                {"name": "id", "parameterType": {"type": "STRING"}, "parameterValue": {"value": id_article}},
-                {"name": "title", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.title}},
-                {"name": "content_html", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.content_html}},
-                {"name": "excerpt", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.excerpt}},
-                {"name": "intro", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.intro}},
-                {"name": "outro", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.outro}},
-                {"name": "linkedin_post_text", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.linkedin_post_text}},
-                {"name": "carousel_caption", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.carousel_caption}},
-                {"name": "media_rectangle_id", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.media_rectangle_id}},
-                {"name": "media_square_id", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.media_square_id}},
-                {"name": "author", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.author}},
-                {"name": "updated_at", "parameterType": {"type": "TIMESTAMP"}, "parameterValue": {"value": now}},
-            ]
-        }
-    ).result()
-
-    # ---------------------------------------------------------
-    # CLEAN RELATIONS
-    # ---------------------------------------------------------
-    for table in [
-        TABLE_ARTICLE_TOPIC,
-        TABLE_ARTICLE_COMPANY,
-        TABLE_ARTICLE_PERSON,
-    ]:
+    for table in (TABLE_ARTICLE_TOPIC, TABLE_ARTICLE_COMPANY, TABLE_ARTICLE_PERSON):
         client.query(
             f"DELETE FROM `{table}` WHERE ID_ARTICLE = @id",
-            job_config={
-                "query_parameters": [
-                    {"name": "id", "parameterType": {"type": "STRING"}, "parameterValue": {"value": id_article}},
-                ]
-            }
+            job_config=None
         ).result()
 
-    # ---------------------------------------------------------
-    # REINSERT RELATIONS
-    # ---------------------------------------------------------
-    insert_bq(TABLE_ARTICLE_TOPIC, [{
-        "ID_ARTICLE": id_article,
-        "ID_TOPIC": topic_id,
-        "CREATED_AT": now,
-    } for topic_id in data.topics])
+    # --- RELATIONS (reinsert)
+    insert_bq(TABLE_ARTICLE_TOPIC, [
+        {"ID_ARTICLE": id_article, "ID_TOPIC": tid, "CREATED_AT": now}
+        for tid in data.topics
+    ])
 
     if data.companies:
-        insert_bq(TABLE_ARTICLE_COMPANY, [{
-            "ID_ARTICLE": id_article,
-            "ID_COMPANY": cid,
-            "CREATED_AT": now,
-        } for cid in data.companies])
+        insert_bq(TABLE_ARTICLE_COMPANY, [
+            {"ID_ARTICLE": id_article, "ID_COMPANY": cid, "CREATED_AT": now}
+            for cid in data.companies
+        ])
 
     if data.persons:
-        insert_bq(TABLE_ARTICLE_PERSON, [{
-            "ID_ARTICLE": id_article,
-            "ID_PERSON": p.id_person,
-            "ROLE": p.role,
-            "CREATED_AT": now,
-        } for p in data.persons])
+        insert_bq(TABLE_ARTICLE_PERSON, [
+            {
+                "ID_ARTICLE": id_article,
+                "ID_PERSON": p.id_person,
+                "ROLE": p.role,
+                "CREATED_AT": now,
+            }
+            for p in data.persons
+        ])
 
     return True
-
 
 # ============================================================
 # DELETE ARTICLE — suppression définitive
