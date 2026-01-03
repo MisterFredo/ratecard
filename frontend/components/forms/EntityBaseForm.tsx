@@ -35,7 +35,7 @@ export default function EntityBaseForm({
           className="border p-2 w-full rounded"
           value={values.name}
           onChange={(e) => onChange.setName(e.target.value)}
-          placeholder="Ex : Google, Amazon, TF1"
+          placeholder="Ex : Google, Lawrence Taylor, CTV"
         />
       </div>
 
