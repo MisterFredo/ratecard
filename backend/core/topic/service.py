@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client
+from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client, update_bq
 from api.topic.models import TopicCreate, TopicUpdate
 
 TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
@@ -69,66 +69,15 @@ def get_topic(topic_id: str):
 # UPDATE TOPIC — DATA + MEDIA (POST-CREATION)
 # ============================================================
 def update_topic(id_topic: str, data: TopicUpdate) -> bool:
-    """
-    Met à jour un topic existant.
-
-    - update partiel
-    - champs média autorisés
-    - aucun overwrite involontaire
-    """
     values = data.dict(exclude_unset=True)
 
     if not values:
         return False
 
-    fields = []
-    params = {
-        "id": id_topic,
-        "updated_at": datetime.utcnow(),
-    }
+    values["UPDATED_AT"] = datetime.utcnow()
 
-    for field, value in values.items():
-        fields.append(f"{field.upper()} = @{field}")
-        params[field] = value
-
-    sql = f"""
-        UPDATE `{TABLE_TOPIC}`
-        SET
-            {", ".join(fields)},
-            UPDATED_AT = @updated_at
-        WHERE ID_TOPIC = @id
-    """
-
-    client = get_bigquery_client()
-    client.query(
-        sql,
-        job_config={
-            "query_parameters": [
-                # paramètres dynamiques injectés ci-dessous
-            ]
-        }
+    return update_bq(
+        table=TABLE_TOPIC,
+        fields={k.upper(): v for k, v in values.items()},
+        where={"ID_TOPIC": id_topic},
     )
-
-    client.query(
-        sql,
-        job_config={
-            "query_parameters": [
-                *[
-                    {
-                        "name": k,
-                        "parameterType": {"type": "STRING"},
-                        "parameterValue": {"value": v},
-                    }
-                    for k, v in params.items()
-                    if k not in ("updated_at",)
-                ],
-                {
-                    "name": "updated_at",
-                    "parameterType": {"type": "TIMESTAMP"},
-                    "parameterValue": {"value": params["updated_at"]},
-                },
-            ]
-        }
-    ).result()
-
-    return True
