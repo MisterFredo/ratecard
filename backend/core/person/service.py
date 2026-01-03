@@ -70,6 +70,7 @@ def get_person(person_id: str):
 # ============================================================
 # UPDATE PERSON — DATA + MEDIA (POST-CREATION)
 # ============================================================
+
 def update_person(id_person: str, data: PersonUpdate) -> bool:
     """
     Met à jour une personne existante.
@@ -102,26 +103,29 @@ def update_person(id_person: str, data: PersonUpdate) -> bool:
     """
 
     client = get_bigquery_client()
+
     client.query(
         sql,
-        job_config={
-            "query_parameters": [
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("id", "STRING", params["id"]),
                 *[
-                    {
-                        "name": k,
-                        "parameterType": {"type": "STRING"},
-                        "parameterValue": {"value": v},
-                    }
-                    for k, v in params.items()
-                    if k not in ("updated_at",)
+                    bigquery.ScalarQueryParameter(
+                        field,
+                        "STRING",
+                        value
+                    )
+                    for field, value in params.items()
+                    if field not in ("id", "updated_at")
                 ],
-                {
-                    "name": "updated_at",
-                    "parameterType": {"type": "TIMESTAMP"},
-                    "parameterValue": {"value": params["updated_at"]},
-                },
+                bigquery.ScalarQueryParameter(
+                    "updated_at",
+                    "TIMESTAMP",
+                    params["updated_at"]
+                ),
             ]
-        }
+        )
     ).result()
 
     return True
+
