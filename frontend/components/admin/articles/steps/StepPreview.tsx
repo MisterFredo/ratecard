@@ -1,178 +1,98 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
-
-const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+type PublishMode = "NOW" | "SCHEDULE";
 
 type Props = {
-  articleId: string;
-  onBack: () => void;
-  onNext: () => void;
+  publishMode: PublishMode;
+  publishAt: string;
+
+  publishing?: boolean;
+
+  onChangeMode: (mode: PublishMode) => void;
+  onChangeDate: (value: string) => void;
+
+  onPublish: () => void;
 };
 
-export default function StepPreview({
-  articleId,
-  onBack,
-  onNext,
+export default function StepPublish({
+  publishMode,
+  publishAt,
+  publishing = false,
+  onChangeMode,
+  onChangeDate,
+  onPublish,
 }: Props) {
-  const [loading, setLoading] = useState(true);
-  const [article, setArticle] = useState<any>(null);
-
-  /* ---------------------------------------------------------
-     LOAD ARTICLE
-  --------------------------------------------------------- */
-  async function load() {
-    setLoading(true);
-
-    try {
-      const res = await api.get(`/articles/${articleId}`);
-      const a = res.article;
-
-      const rectUrl = a.MEDIA_RECTANGLE_ID
-        ? `${GCS_BASE_URL}/articles/${a.MEDIA_RECTANGLE_ID}`
-        : null;
-
-      const squareUrl = a.MEDIA_SQUARE_ID
-        ? `${GCS_BASE_URL}/articles/${a.MEDIA_SQUARE_ID}`
-        : null;
-
-      setArticle({
-        ...a,
-        rectUrl,
-        squareUrl,
-      });
-    } catch (e) {
-      console.error(e);
-      alert("Article introuvable");
-    }
-
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    load();
-  }, [articleId]);
-
-  if (loading || !article) {
-    return <div>Chargement de l’aperçu…</div>;
-  }
-
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
 
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-ratecard-blue">
-          Aperçu de l’article
-        </h2>
-
-        <button
-          onClick={onBack}
-          className="underline text-gray-600"
-        >
-          ← Modifier
-        </button>
+      {/* STATUS */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
+        <strong>Brouillon</strong> — cet article n’est pas encore publié.
       </div>
 
-      {/* VISUEL */}
-      <div className="space-y-2">
-        <p className="text-xs text-gray-500">Visuel principal</p>
+      <p className="text-sm text-gray-600">
+        Choisissez quand publier l’article. Une fois publié, l’article sera
+        visible publiquement et utilisable dans les canaux de diffusion.
+      </p>
 
-        {article.rectUrl ? (
-          <img
-            src={article.rectUrl}
-            className="w-full max-w-3xl rounded border bg-white shadow"
+      {/* MODE */}
+      <div className="space-y-3">
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="radio"
+            checked={publishMode === "NOW"}
+            onChange={() => onChangeMode("NOW")}
           />
-        ) : article.squareUrl ? (
-          <img
-            src={article.squareUrl}
-            className="w-64 rounded border bg-white shadow"
+          <span>
+            <strong>Publier maintenant</strong>
+            <div className="text-xs text-gray-500">
+              L’article sera publié immédiatement.
+            </div>
+          </span>
+        </label>
+
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="radio"
+            checked={publishMode === "SCHEDULE"}
+            onChange={() => onChangeMode("SCHEDULE")}
           />
-        ) : (
-          <p className="text-gray-400 italic">Aucun visuel</p>
-        )}
+          <span>
+            <strong>Planifier la publication</strong>
+            <div className="text-xs text-gray-500">
+              L’article sera publié automatiquement à la date choisie.
+            </div>
+          </span>
+        </label>
       </div>
 
-      {/* META */}
-      <div className="bg-white border rounded p-4 space-y-3 shadow-sm max-w-3xl">
-        <h3 className="text-xl font-bold">{article.TITLE}</h3>
-
-        {article.EXCERPT && (
-          <p className="text-gray-600 italic">
-            {article.EXCERPT}
-          </p>
-        )}
-
-        <div className="text-sm text-gray-600 space-y-1">
-          <div>
-            <strong>Topics :</strong>{" "}
-            {article.topics?.length
-              ? article.topics.map((t: any) => t.LABEL).join(", ")
-              : "—"}
-          </div>
-
-          <div>
-            <strong>Sociétés :</strong>{" "}
-            {article.companies?.length
-              ? article.companies.map((c: any) => c.NAME).join(", ")
-              : "—"}
-          </div>
-
-          <div>
-            <strong>Personnes :</strong>{" "}
-            {article.persons?.length
-              ? article.persons
-                  .map((p: any) =>
-                    `${p.NAME}${p.ROLE ? " (" + p.ROLE + ")" : ""}`
-                  )
-                  .join(", ")
-              : "—"}
-          </div>
+      {/* DATE */}
+      {publishMode === "SCHEDULE" && (
+        <div className="space-y-1">
+          <label className="text-sm font-medium">
+            Date et heure de publication
+          </label>
+          <input
+            type="datetime-local"
+            className="border rounded p-2"
+            value={publishAt}
+            onChange={(e) => onChangeDate(e.target.value)}
+          />
         </div>
-      </div>
+      )}
 
-      {/* CONTENT */}
-      <div className="bg-white p-6 border rounded shadow-sm max-w-3xl space-y-6">
-
-        {/* TEXTE PRINCIPAL */}
-        <div
-          className="prose prose-gray max-w-none"
-          dangerouslySetInnerHTML={{
-            __html: article.CONTENT_HTML || "",
-          }}
-        />
-
-        {/* CONCLUSION */}
-        {article.OUTRO && (
-          <div className="border-t pt-4">
-            <h4 className="text-sm font-semibold text-gray-700 mb-1">
-              Ce qu’il faut retenir
-            </h4>
-            <p className="text-gray-700">
-              {article.OUTRO}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* ACTIONS */}
-      <div className="flex gap-4">
+      {/* ACTION */}
+      <div className="pt-2">
         <button
-          onClick={onBack}
-          className="px-4 py-2 border rounded"
+          onClick={onPublish}
+          disabled={publishing}
+          className={`px-5 py-2 rounded text-white ${
+            publishing
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-green-600 hover:bg-green-700"
+          }`}
         >
-          Retour à l’édition
-        </button>
-
-        <button
-          onClick={onNext}
-          className="px-4 py-2 bg-ratecard-blue text-white rounded"
-        >
-          Continuer vers publication
+          {publishing ? "Publication en cours…" : "Publier l’article"}
         </button>
       </div>
     </div>
