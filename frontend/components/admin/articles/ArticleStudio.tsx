@@ -17,49 +17,59 @@ type Step =
   | "START_MODE"
   | "CONTENT"
   | "VARIANTS"
-  | "VISUAL"
-  | "EXPLOIT";
+  | "VISUAL";
 
 type Props = {
   mode: Mode;
   articleId?: string;
 };
 
+const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
 export default function ArticleStudio({ mode, articleId }: Props) {
   /* =========================================================
-     ÉTAT GLOBAL ARTICLE
+     ÉTAT — CONTEXTE D’INTENTION (FIGÉ APRÈS VALIDATION)
   ========================================================= */
-
-  // --- CONTEXTE D’INTENTION (FIGÉ APRÈS VALIDATION)
-  const [contextValidated, setContextValidated] = useState(false);
   const [topics, setTopics] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [persons, setPersons] = useState<any[]>([]);
+  const [contextValidated, setContextValidated] = useState(false);
 
-  // --- MODE DE DÉMARRAGE
+  /* =========================================================
+     ÉTAT — MODE DE DÉMARRAGE
+  ========================================================= */
   const [startMode, setStartMode] = useState<"MANUAL" | "SOURCE" | null>(null);
 
-  // --- CONTENU ÉDITORIAL
+  /* =========================================================
+     ÉTAT — CONTENU ÉDITORIAL
+  ========================================================= */
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
 
-  // --- VARIANTES
+  /* =========================================================
+     ÉTAT — VARIANTES
+  ========================================================= */
   const [intro, setIntro] = useState("");
   const [outro, setOutro] = useState("");
   const [linkedinPostText, setLinkedinPostText] = useState("");
   const [carouselCaption, setCarouselCaption] = useState("");
 
-  // --- MÉTA
-  const [author, setAuthor] = useState("");
+  /* =========================================================
+     ÉTAT — VISUELS
+  ========================================================= */
+  const [squareUrl, setSquareUrl] = useState<string | null>(null);
+  const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  // --- PERSISTENCE
+  /* =========================================================
+     ÉTAT — MÉTA / PERSISTENCE
+  ========================================================= */
+  const [author, setAuthor] = useState("");
   const [saving, setSaving] = useState(false);
   const [internalArticleId, setInternalArticleId] = useState<string | null>(
     articleId || null
   );
 
-  // --- ÉTAPE COURANTE
   const [step, setStep] = useState<Step>("CONTEXT");
 
   /* =========================================================
@@ -69,58 +79,79 @@ export default function ArticleStudio({ mode, articleId }: Props) {
     if (mode !== "edit" || !articleId) return;
 
     async function load() {
-      const res = await api.get(`/articles/${articleId}`);
-      const a = res.article;
+      try {
+        const res = await api.get(`/articles/${articleId}`);
+        const a = res.article;
 
-      setTitle(a.TITLE || "");
-      setExcerpt(a.EXCERPT || "");
-      setContentHtml(a.CONTENT_HTML || "");
-      setIntro(a.INTRO || "");
-      setOutro(a.OUTRO || "");
-      setLinkedinPostText(a.LINKEDIN_POST_TEXT || "");
-      setCarouselCaption(a.CAROUSEL_CAPTION || "");
-      setAuthor(a.AUTHOR || "");
+        setTitle(a.TITLE || "");
+        setExcerpt(a.EXCERPT || "");
+        setContentHtml(a.CONTENT_HTML || "");
+        setIntro(a.INTRO || "");
+        setOutro(a.OUTRO || "");
+        setLinkedinPostText(a.LINKEDIN_POST_TEXT || "");
+        setCarouselCaption(a.CAROUSEL_CAPTION || "");
+        setAuthor(a.AUTHOR || "");
 
-      setTopics(
-        (a.topics || []).map((t: any) => ({
-          id_topic: t.ID_TOPIC,
-          label: t.LABEL,
-        }))
-      );
-      setCompanies(
-        (a.companies || []).map((c: any) => ({
-          id_company: c.ID_COMPANY,
-          name: c.NAME,
-        }))
-      );
-      setPersons(
-        (a.persons || []).map((p: any) => ({
-          id_person: p.ID_PERSON,
-          name: p.NAME,
-          role: p.ROLE || "contributeur",
-        }))
-      );
+        setTopics(
+          (a.topics || []).map((t: any) => ({
+            id_topic: t.ID_TOPIC,
+            label: t.LABEL,
+          }))
+        );
 
-      setContextValidated(true);
-      setStep("CONTENT");
-      setInternalArticleId(articleId);
+        setCompanies(
+          (a.companies || []).map((c: any) => ({
+            id_company: c.ID_COMPANY,
+            name: c.NAME,
+          }))
+        );
+
+        setPersons(
+          (a.persons || []).map((p: any) => ({
+            id_person: p.ID_PERSON,
+            name: p.NAME,
+            role: p.ROLE || "contributeur",
+          }))
+        );
+
+        setSquareUrl(
+          a.MEDIA_SQUARE_ID
+            ? `${GCS}/articles/${a.MEDIA_SQUARE_ID}`
+            : null
+        );
+
+        setRectUrl(
+          a.MEDIA_RECTANGLE_ID
+            ? `${GCS}/articles/${a.MEDIA_RECTANGLE_ID}`
+            : null
+        );
+
+        setContextValidated(true);
+        setStep("CONTENT");
+        setInternalArticleId(articleId);
+      } catch (e) {
+        console.error(e);
+        alert("Erreur chargement article");
+      }
     }
 
     load();
   }, [mode, articleId]);
 
   /* =========================================================
-     SAUVEGARDE ARTICLE
+     SAUVEGARDE ARTICLE (CREATE / UPDATE)
   ========================================================= */
   async function saveArticle() {
     if (!title.trim()) {
       alert("Le titre est obligatoire");
       return;
     }
+
     if (!contentHtml.trim()) {
       alert("Le contenu est obligatoire");
       return;
     }
+
     if (!topics.length) {
       alert("Au moins un topic est obligatoire");
       return;
@@ -152,6 +183,7 @@ export default function ArticleStudio({ mode, articleId }: Props) {
       } else {
         await api.put(`/articles/update/${internalArticleId}`, payload);
       }
+
       setStep("VISUAL");
     } catch (e: any) {
       alert(e.message || "Erreur sauvegarde article");
@@ -161,7 +193,7 @@ export default function ArticleStudio({ mode, articleId }: Props) {
   }
 
   /* =========================================================
-     UI — PAR ÉTAPES
+     UI — ÉTAPES
   ========================================================= */
   return (
     <div className="space-y-8">
@@ -223,9 +255,7 @@ export default function ArticleStudio({ mode, articleId }: Props) {
             </button>
 
             <button
-              onClick={() => {
-                setStartMode("SOURCE");
-              }}
+              onClick={() => setStartMode("SOURCE")}
               className="px-4 py-2 bg-ratecard-blue text-white rounded"
             >
               Transformer une source (assistant)
@@ -255,7 +285,6 @@ export default function ArticleStudio({ mode, articleId }: Props) {
             3. Contenu éditorial
           </h2>
 
-          {/* Rappel contexte (lecture seule) */}
           <div className="text-sm text-gray-600">
             Topics : {topics.map((t) => t.label).join(", ")}
           </div>
@@ -326,9 +355,20 @@ export default function ArticleStudio({ mode, articleId }: Props) {
 
           <ArticleVisualSection
             articleId={internalArticleId}
-            title={title}
-            excerpt={excerpt}
-            topics={topics}
+            squareUrl={squareUrl}
+            rectUrl={rectUrl}
+            onUpdated={({ square, rectangle }) => {
+              setSquareUrl(
+                square
+                  ? `${GCS}/articles/ARTICLE_${internalArticleId}_square.jpg`
+                  : null
+              );
+              setRectUrl(
+                rectangle
+                  ? `${GCS}/articles/ARTICLE_${internalArticleId}_rect.jpg`
+                  : null
+              );
+            }}
           />
         </>
       )}
