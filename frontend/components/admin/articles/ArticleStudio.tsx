@@ -203,18 +203,17 @@ export default function ArticleStudio({ mode, articleId }: Props) {
           </summary>
 
           <StepSource
-            useSource={useSource}
-            onChooseManual={() => {
-              setUseSource(false);
-              setStep("CONTENT");
-            }}
-            onChooseSource={() => setUseSource(true)}
+            topics={topics}
+            companies={companies}
+            persons={persons}
             onApplyDraft={(draft) => {
               if (draft.title) setTitle(draft.title);
               if (draft.excerpt) setExcerpt(draft.excerpt);
               if (draft.content_html) setContentHtml(draft.content_html);
+              if (draft.outro) setOutro(draft.outro);
               setStep("CONTENT");
             }}
+            onSkip={() => setStep("CONTENT")}
           />
         </details>
       )}
