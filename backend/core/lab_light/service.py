@@ -1,40 +1,41 @@
-# backend/core/lab_light/service.py
-
 import json
 import re
+from typing import Dict, Any
 from utils.llm import run_llm
 
 
-def safe_extract_json(text: str) -> dict:
+# ---------------------------------------------------------
+# JSON SAFE EXTRACTION
+# ---------------------------------------------------------
+def safe_extract_json(text: str) -> Dict[str, Any]:
     """
-    Tente d’extraire un JSON même si le modèle a ajouté du texte autour.
-    - Détecte la première accolade ouvrante et la dernière fermante
-    - Corrige des erreurs simples (guillemets, virgules finales)
-    - Retourne {} si impossible
+    Extrait un JSON valide depuis une réponse LLM bruitée.
+    Retourne {} si échec.
     """
     if not isinstance(text, str):
         return {}
 
-    # Cherche un bloc JSON dans le texte
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if not match:
         return {}
 
-    json_text = match.group(0).strip()
+    json_text = match.group(0)
 
-    # Tentative stricte
     try:
         return json.loads(json_text)
     except Exception:
         pass
 
-    # Correction de quotes potential
-    json_text = json_text.replace("“", '"').replace("”", '"')
-    json_text = json_text.replace("‘", "'").replace("’", "'")
-
-    # Virer virgules finales
+    # Nettoyages légers
+    json_text = (
+        json_text
+        .replace("“", '"')
+        .replace("”", '"')
+        .replace("‘", "'")
+        .replace("’", "'")
+    )
     json_text = re.sub(r",\s*}", "}", json_text)
-    json_text = re.sub(r",\s*\]", "]", json_text)
+    json_text = re.sub(r",\s*]", "]", json_text)
 
     try:
         return json.loads(json_text)
@@ -42,85 +43,84 @@ def safe_extract_json(text: str) -> dict:
         return {}
 
 
-def transform_source(source_type: str, source_text: str, author: str) -> dict:
+# ---------------------------------------------------------
+# IA CONTENU — SOURCE → ARTICLE
+# ---------------------------------------------------------
+def transform_source(
+    source_type: str,
+    source_text: str,
+    author: str,
+    context: Dict[str, Any],
+) -> Dict[str, Any]:
     """
-    Transforme une source brute en ARTICLE_DRAFT Ratecard.
-    Retourne TOUJOURS un objet propre (jamais une exception).
+    Transforme une source brute en brouillon d'article éditorial.
+
+    Retourne STRICTEMENT :
+    - title
+    - excerpt
+    - content_html
+    - outro
     """
+
+    topics = ", ".join(context.get("topics", []))
+    companies = ", ".join(context.get("companies", []))
+    persons = ", ".join(
+        [f"{p['name']} ({p.get('role','')})" for p in context.get("persons", [])]
+    )
 
     prompt = f"""
-Tu es un assistant éditorial professionnel chargé de transformer une SOURCE BRUTE 
-en un ARTICLE DRAFT clair, structuré et publiable sur Ratecard.fr.
+Tu es un assistant éditorial professionnel.
+Tu dois transformer une SOURCE BRUTE en ARTICLE ÉDITORIAL B2B.
 
-================== RÈGLES ÉDITORIALES (RÉSUMÉ) ==================
-- Style journalistique B2B, ton professionnel, clair.
-- Aucune invention, aucune extrapolation externe.
-- Pas de style LinkedIn, pas d'emoji.
-- Structure HTML strictement conforme.
+================= CONTEXTE =================
+Auteur : {author}
+Topics : {topics or "—"}
+Sociétés : {companies or "—"}
+Personnes citées : {persons or "—"}
 
-================== FORMAT JSON À RETOURNER ==================
+================= SOURCE =================
+Type : {source_type}
+Texte :
+{source_text}
+
+================= RÈGLES ABSOLUES =================
+- Ne jamais inventer d'information.
+- Ne jamais extrapoler hors de la source.
+- Ton professionnel, journalistique.
+- Langue : français.
+- HTML valide pour le contenu.
+- Pas de style LinkedIn.
+- Pas d'emojis.
+
+================= FORMAT DE SORTIE (JSON STRICT) =================
 {{
-  "title_proposal": "",
+  "title": "",
   "excerpt": "",
   "content_html": "",
-  "angle": "",
-  "suggested_topics": [],
-  "suggested_companies": [],
-  "suggested_products": [],
-  "notes": ""
+  "outro": ""
 }}
-
-================== SOURCE ==================
-TYPE : {source_type}
-AUTEUR : {author}
-
-TEXTE :
-{source_text}
 """
 
-    # ----------------------------------------------------
-    # APPEL LLM — AVEC CATCH D'ERREUR
-    # ----------------------------------------------------
     try:
         raw = run_llm(prompt)
     except Exception as e:
         return {
             "error": "llm_error",
-            "message": f"Erreur appel OpenAI: {e}",
-            "draft": None,
+            "message": str(e),
         }
 
-    if not raw or not isinstance(raw, str):
-        return {
-            "error": "empty_llm_response",
-            "raw": raw,
-            "message": "Le modèle n'a renvoyé aucun texte.",
-        }
-
-    # ----------------------------------------------------
-    # PARSING JSON ROBUSTE
-    # ----------------------------------------------------
     parsed = safe_extract_json(raw)
 
-    if parsed:
-        return parsed
-
-    # ----------------------------------------------------
-    # ÉCHEC TOTAL → retour safe
-    # ----------------------------------------------------
-    return {
-        "error": "invalid_json",
-        "raw": raw,
-        "message": "Impossible de parser un JSON valide.",
-        "fallback": {
-            "title_proposal": "",
-            "excerpt": "",
-            "content_html": "",
-            "angle": "",
-            "suggested_topics": [],
-            "suggested_companies": [],
-            "suggested_products": [],
-            "notes": ""
+    # Validation minimale du contrat
+    if not parsed:
+        return {
+            "error": "invalid_json",
+            "raw": raw,
         }
-    }
 
+    return {
+        "title": parsed.get("title", "").strip(),
+        "excerpt": parsed.get("excerpt", "").strip(),
+        "content_html": parsed.get("content_html", "").strip(),
+        "outro": parsed.get("outro", "").strip(),
+    }
