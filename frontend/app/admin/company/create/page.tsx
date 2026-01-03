@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import VisualSection from "@/components/visuals/VisualSection";
+import EntityBaseForm from "@/components/forms/EntityBaseForm";
 
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
@@ -13,15 +14,14 @@ export default function CreateCompany() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
 
-  // Visuels (post-création uniquement)
+  const [companyId, setCompanyId] = useState<string | null>(null);
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  const [companyId, setCompanyId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   // ---------------------------------------------------------
-  // CREATE COMPANY
+  // CREATE
   // ---------------------------------------------------------
   async function save() {
     if (!name.trim()) {
@@ -39,9 +39,7 @@ export default function CreateCompany() {
         website_url: websiteUrl || null,
       });
 
-      if (!res.id_company) {
-        throw new Error("ID société manquant");
-      }
+      if (!res.id_company) throw new Error("ID société manquant");
 
       setCompanyId(res.id_company);
       setSquareUrl(null);
@@ -70,56 +68,15 @@ export default function CreateCompany() {
         </Link>
       </div>
 
-      {/* FORM */}
-      <div className="space-y-4 max-w-2xl">
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Nom *
-          </label>
-          <input
-            className="border p-2 w-full rounded"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Ex : Google, Amazon, TF1"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Description
-          </label>
-          <textarea
-            className="border p-2 w-full rounded h-28"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Description éditoriale de la société"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            URL LinkedIn
-          </label>
-          <input
-            className="border p-2 w-full rounded"
-            value={linkedinUrl}
-            onChange={(e) => setLinkedinUrl(e.target.value)}
-            placeholder="https://www.linkedin.com/company/..."
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Site web
-          </label>
-          <input
-            className="border p-2 w-full rounded"
-            value={websiteUrl}
-            onChange={(e) => setWebsiteUrl(e.target.value)}
-            placeholder="https://www.exemple.com"
-          />
-        </div>
-      </div>
+      <EntityBaseForm
+        values={{ name, description, linkedinUrl, websiteUrl }}
+        onChange={{
+          setName,
+          setDescription,
+          setLinkedinUrl,
+          setWebsiteUrl,
+        }}
+      />
 
       <button
         onClick={save}
@@ -129,7 +86,7 @@ export default function CreateCompany() {
         {saving ? "Enregistrement…" : "Créer"}
       </button>
 
-      {/* VISUALS — POST CREATION ONLY */}
+      {/* VISUALS — POST CREATION */}
       {companyId && (
         <VisualSection
           entityId={companyId}
@@ -152,4 +109,3 @@ export default function CreateCompany() {
     </div>
   );
 }
-
