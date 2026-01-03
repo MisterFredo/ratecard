@@ -136,13 +136,27 @@ export default function StepPreview({
       </div>
 
       {/* CONTENT */}
-      <div className="bg-white p-6 border rounded shadow-sm max-w-3xl">
+      <div className="bg-white p-6 border rounded shadow-sm max-w-3xl space-y-6">
+
+        {/* TEXTE PRINCIPAL */}
         <div
           className="prose prose-gray max-w-none"
           dangerouslySetInnerHTML={{
             __html: article.CONTENT_HTML || "",
           }}
         />
+
+        {/* CONCLUSION */}
+        {article.OUTRO && (
+          <div className="border-t pt-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-1">
+              Ce qu’il faut retenir
+            </h4>
+            <p className="text-gray-700">
+              {article.OUTRO}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ACTIONS */}
