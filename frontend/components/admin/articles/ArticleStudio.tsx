@@ -3,14 +3,22 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-// Blocs
-import ArticleContextBlock from "@/components/admin/articles/ArticleContextBlock";
-import ArticleSourcePanel from "@/components/admin/articles/ArticleSourcePanel";
-import ArticleContentBlock from "@/components/admin/articles/ArticleContentBlock";
-import ArticleVisualSection from "@/components/admin/articles/ArticleVisualSection";
+// Steps
+import StepContext from "@/components/admin/articles/steps/StepContext";
+import StepSource from "@/components/admin/articles/steps/StepSource";
+import StepContent from "@/components/admin/articles/steps/StepContent";
+import StepVisual from "@/components/admin/articles/steps/StepVisual";
+import StepPreview from "@/components/admin/articles/steps/StepPreview";
+import StepPublish from "@/components/admin/articles/steps/StepPublish";
 
 type Mode = "create" | "edit";
-type Step = "CONTEXT" | "SOURCE" | "CONTENT" | "VISUAL" | "PUBLISH";
+type Step =
+  | "CONTEXT"
+  | "SOURCE"
+  | "CONTENT"
+  | "VISUAL"
+  | "PREVIEW"
+  | "PUBLISH";
 
 type Props = {
   mode: Mode;
@@ -20,30 +28,30 @@ type Props = {
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 export default function ArticleStudio({ mode, articleId }: Props) {
-  /* =========================
+  /* =========================================================
      STATE — CONTEXTE
-  ========================= */
+  ========================================================= */
   const [topics, setTopics] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [persons, setPersons] = useState<any[]>([]);
   const [contextValidated, setContextValidated] = useState(false);
 
-  /* =========================
+  /* =========================================================
      STATE — SOURCE
-  ========================= */
+  ========================================================= */
   const [useSource, setUseSource] = useState<boolean | null>(null);
 
-  /* =========================
+  /* =========================================================
      STATE — CONTENU
-  ========================= */
+  ========================================================= */
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [contentHtml, setContentHtml] = useState("");
   const [outro, setOutro] = useState("");
 
-  /* =========================
+  /* =========================================================
      STATE — VISUEL
-  ========================= */
+  ========================================================= */
   const [visualChoice, setVisualChoice] = useState<
     "TOPIC" | "COMPANY" | "PERSON" | "ARTICLE"
   >("ARTICLE");
@@ -51,15 +59,15 @@ export default function ArticleStudio({ mode, articleId }: Props) {
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  /* =========================
+  /* =========================================================
      STATE — PUBLICATION
-  ========================= */
+  ========================================================= */
   const [publishMode, setPublishMode] = useState<"NOW" | "SCHEDULE">("NOW");
   const [publishAt, setPublishAt] = useState<string>("");
 
-  /* =========================
+  /* =========================================================
      META
-  ========================= */
+  ========================================================= */
   const [author, setAuthor] = useState("");
   const [internalArticleId, setInternalArticleId] = useState<string | null>(
     articleId || null
@@ -67,9 +75,9 @@ export default function ArticleStudio({ mode, articleId }: Props) {
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<Step>("CONTEXT");
 
-  /* =========================
-     LOAD (EDIT)
-  ========================= */
+  /* =========================================================
+     LOAD (EDIT MODE)
+  ========================================================= */
   useEffect(() => {
     if (mode !== "edit" || !articleId) return;
 
@@ -83,19 +91,25 @@ export default function ArticleStudio({ mode, articleId }: Props) {
       setOutro(a.OUTRO || "");
       setAuthor(a.AUTHOR || "");
 
-      setTopics((a.topics || []).map((t: any) => ({
-        id_topic: t.ID_TOPIC,
-        label: t.LABEL,
-      })));
-      setCompanies((a.companies || []).map((c: any) => ({
-        id_company: c.ID_COMPANY,
-        name: c.NAME,
-      })));
-      setPersons((a.persons || []).map((p: any) => ({
-        id_person: p.ID_PERSON,
-        name: p.NAME,
-        role: p.ROLE || "contributeur",
-      })));
+      setTopics(
+        (a.topics || []).map((t: any) => ({
+          id_topic: t.ID_TOPIC,
+          label: t.LABEL,
+        }))
+      );
+      setCompanies(
+        (a.companies || []).map((c: any) => ({
+          id_company: c.ID_COMPANY,
+          name: c.NAME,
+        }))
+      );
+      setPersons(
+        (a.persons || []).map((p: any) => ({
+          id_person: p.ID_PERSON,
+          name: p.NAME,
+          role: p.ROLE || "contributeur",
+        }))
+      );
 
       setSquareUrl(
         a.MEDIA_SQUARE_ID ? `${GCS}/articles/${a.MEDIA_SQUARE_ID}` : null
@@ -112,9 +126,9 @@ export default function ArticleStudio({ mode, articleId }: Props) {
     load();
   }, [mode, articleId]);
 
-  /* =========================
+  /* =========================================================
      SAVE ARTICLE
-  ========================= */
+  ========================================================= */
   async function saveArticle() {
     if (!title.trim()) return alert("Titre obligatoire");
     if (!contentHtml.trim()) return alert("Contenu obligatoire");
@@ -151,9 +165,9 @@ export default function ArticleStudio({ mode, articleId }: Props) {
     setSaving(false);
   }
 
-  /* =========================
+  /* =========================================================
      UI
-  ========================= */
+  ========================================================= */
   return (
     <div className="space-y-6">
 
@@ -163,29 +177,22 @@ export default function ArticleStudio({ mode, articleId }: Props) {
           1. Contexte d’intention
         </summary>
 
-        <ArticleContextBlock
+        <StepContext
           topics={topics}
           companies={companies}
           persons={persons}
+          contextValidated={contextValidated}
           onChange={(d) => {
             if (d.topics) setTopics(d.topics);
             if (d.companies) setCompanies(d.companies);
             if (d.persons) setPersons(d.persons);
           }}
+          onValidate={() => {
+            if (!topics.length) return alert("Topic requis");
+            setContextValidated(true);
+            setStep("SOURCE");
+          }}
         />
-
-        {!contextValidated && (
-          <button
-            onClick={() => {
-              if (!topics.length) return alert("Topic requis");
-              setContextValidated(true);
-              setStep("SOURCE");
-            }}
-            className="mt-4 bg-ratecard-blue text-white px-4 py-2 rounded"
-          >
-            Valider le contexte
-          </button>
-        )}
       </details>
 
       {/* STEP 2 — SOURCE */}
@@ -195,41 +202,20 @@ export default function ArticleStudio({ mode, articleId }: Props) {
             2. Source
           </summary>
 
-          <p className="text-sm text-gray-600 mt-2">
-            Souhaitez-vous partir d’une source existante ?
-          </p>
-
-          <div className="flex gap-4 mt-4">
-            <button
-              onClick={() => {
-                setUseSource(false);
-                setStep("CONTENT");
-              }}
-              className="px-4 py-2 border rounded"
-            >
-              Non, écrire directement
-            </button>
-
-            <button
-              onClick={() => setUseSource(true)}
-              className="px-4 py-2 bg-ratecard-blue text-white rounded"
-            >
-              Transformer une source (assistant)
-            </button>
-          </div>
-
-          {useSource && (
-            <div className="mt-4">
-              <ArticleSourcePanel
-                onApplyDraft={(draft) => {
-                  if (draft.title) setTitle(draft.title);
-                  if (draft.excerpt) setExcerpt(draft.excerpt);
-                  if (draft.content_html) setContentHtml(draft.content_html);
-                  setStep("CONTENT");
-                }}
-              />
-            </div>
-          )}
+          <StepSource
+            useSource={useSource}
+            onChooseManual={() => {
+              setUseSource(false);
+              setStep("CONTENT");
+            }}
+            onChooseSource={() => setUseSource(true)}
+            onApplyDraft={(draft) => {
+              if (draft.title) setTitle(draft.title);
+              if (draft.excerpt) setExcerpt(draft.excerpt);
+              if (draft.content_html) setContentHtml(draft.content_html);
+              setStep("CONTENT");
+            }}
+          />
         </details>
       )}
 
@@ -240,34 +226,21 @@ export default function ArticleStudio({ mode, articleId }: Props) {
             3. Contenu éditorial
           </summary>
 
-          <ArticleContentBlock
+          <StepContent
             title={title}
             excerpt={excerpt}
             contentHtml={contentHtml}
+            outro={outro}
+            saving={saving}
             onChange={(d) => {
               if (d.title !== undefined) setTitle(d.title);
               if (d.excerpt !== undefined) setExcerpt(d.excerpt);
               if (d.contentHtml !== undefined)
                 setContentHtml(d.contentHtml);
+              if (d.outro !== undefined) setOutro(d.outro);
             }}
+            onValidate={saveArticle}
           />
-
-          <label className="text-sm font-medium mt-4 block">
-            Ce qu’il faut retenir
-          </label>
-          <textarea
-            className="border rounded p-2 w-full"
-            value={outro}
-            onChange={(e) => setOutro(e.target.value)}
-          />
-
-          <button
-            onClick={saveArticle}
-            disabled={saving}
-            className="mt-4 bg-ratecard-blue text-white px-4 py-2 rounded"
-          >
-            {saving ? "Enregistrement…" : "Valider le contenu"}
-          </button>
         </details>
       )}
 
@@ -278,119 +251,63 @@ export default function ArticleStudio({ mode, articleId }: Props) {
             4. Visuel
           </summary>
 
-          <p className="text-sm text-gray-600 mb-2">
-            Choisissez la source du visuel de l’article.
-          </p>
-
-          <div className="flex flex-wrap gap-3 mb-4">
-            {topics.length > 0 && (
-              <button
-                onClick={() => setVisualChoice("TOPIC")}
-                className={`px-3 py-2 border rounded ${
-                  visualChoice === "TOPIC" ? "bg-gray-100" : ""
-                }`}
-              >
-                Topic
-              </button>
-            )}
-            {companies.length > 0 && (
-              <button
-                onClick={() => setVisualChoice("COMPANY")}
-                className={`px-3 py-2 border rounded ${
-                  visualChoice === "COMPANY" ? "bg-gray-100" : ""
-                }`}
-              >
-                Société
-              </button>
-            )}
-            {persons.length > 0 && (
-              <button
-                onClick={() => setVisualChoice("PERSON")}
-                className={`px-3 py-2 border rounded ${
-                  visualChoice === "PERSON" ? "bg-gray-100" : ""
-                }`}
-              >
-                Personne
-              </button>
-            )}
-            <button
-              onClick={() => setVisualChoice("ARTICLE")}
-              className={`px-3 py-2 border rounded ${
-                visualChoice === "ARTICLE" ? "bg-gray-100" : ""
-              }`}
-            >
-              Visuel spécifique
-            </button>
-          </div>
-
-          {visualChoice === "ARTICLE" && (
-            <ArticleVisualSection
-              articleId={internalArticleId}
-              squareUrl={squareUrl}
-              rectUrl={rectUrl}
-              onUpdated={({ square, rectangle }) => {
-                setSquareUrl(
-                  square
-                    ? `${GCS}/articles/ARTICLE_${internalArticleId}_square.jpg`
-                    : null
-                );
-                setRectUrl(
-                  rectangle
-                    ? `${GCS}/articles/ARTICLE_${internalArticleId}_rect.jpg`
-                    : null
-                );
-              }}
-            />
-          )}
-
-          <button
-            onClick={() => setStep("PUBLISH")}
-            className="mt-4 bg-ratecard-blue text-white px-4 py-2 rounded"
-          >
-            Continuer vers publication
-          </button>
+          <StepVisual
+            visualChoice={visualChoice}
+            setVisualChoice={setVisualChoice}
+            topics={topics}
+            companies={companies}
+            persons={persons}
+            articleId={internalArticleId}
+            squareUrl={squareUrl}
+            rectUrl={rectUrl}
+            onUpdated={({ square, rectangle }) => {
+              setSquareUrl(
+                square
+                  ? `${GCS}/articles/ARTICLE_${internalArticleId}_square.jpg`
+                  : null
+              );
+              setRectUrl(
+                rectangle
+                  ? `${GCS}/articles/ARTICLE_${internalArticleId}_rect.jpg`
+                  : null
+              );
+            }}
+            onNext={() => setStep("PREVIEW")}
+          />
         </details>
       )}
 
-      {/* STEP 5 — PUBLICATION */}
+      {/* STEP 5 — PREVIEW */}
+      {internalArticleId && (
+        <details open={step === "PREVIEW"} className="border rounded p-4">
+          <summary className="font-semibold cursor-pointer">
+            5. Aperçu
+          </summary>
+
+          <StepPreview
+            articleId={internalArticleId}
+            onBack={() => setStep("CONTENT")}
+            onNext={() => setStep("PUBLISH")}
+          />
+        </details>
+      )}
+
+      {/* STEP 6 — PUBLICATION */}
       {internalArticleId && (
         <details open={step === "PUBLISH"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            5. Publication
+            6. Publication
           </summary>
 
-          <div className="mt-2 space-y-3">
-            <label className="block">
-              <input
-                type="radio"
-                checked={publishMode === "NOW"}
-                onChange={() => setPublishMode("NOW")}
-              />{" "}
-              Publier maintenant
-            </label>
-
-            <label className="block">
-              <input
-                type="radio"
-                checked={publishMode === "SCHEDULE"}
-                onChange={() => setPublishMode("SCHEDULE")}
-              />{" "}
-              Planifier
-            </label>
-
-            {publishMode === "SCHEDULE" && (
-              <input
-                type="datetime-local"
-                className="border rounded p-2"
-                value={publishAt}
-                onChange={(e) => setPublishAt(e.target.value)}
-              />
-            )}
-          </div>
-
-          <button className="mt-4 bg-green-600 text-white px-4 py-2 rounded">
-            Publier l’article
-          </button>
+          <StepPublish
+            publishMode={publishMode}
+            publishAt={publishAt}
+            onChangeMode={setPublishMode}
+            onChangeDate={setPublishAt}
+            onPublish={() => {
+              alert("Publication à brancher");
+            }}
+          />
         </details>
       )}
     </div>
