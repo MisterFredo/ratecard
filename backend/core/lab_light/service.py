@@ -86,8 +86,9 @@ Texte :
 
 ================= RÈGLES ABSOLUES =================
 - Tu dois STRICTEMENT t'appuyer sur la source fournie.
-- Tu ne dois JAMAIS inventer d'information.
-- Tu ne dois JAMAIS extrapoler au-delà de la source.
+- Tu as le DROIT de reformuler, résumer et structurer la source.
+- Tu ne dois JAMAIS ajouter de faits ou d'informations absents de la source.
+- Tu ne dois JAMAIS extrapoler au-delà de ce qui est explicitement exprimé.
 - Style journalistique B2B, clair et professionnel.
 - Langue : français.
 - HTML valide (<p>, <ul>, <li>, <strong>, <h2> si pertinent).
