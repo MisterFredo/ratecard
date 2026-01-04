@@ -13,18 +13,19 @@ type SourceType =
   | "INTERVIEW"
   | "OTHER";
 
+type Draft = {
+  title?: string;
+  excerpt?: string;
+  content_html?: string;
+  outro?: string;
+};
+
 type Props = {
   topics: { id_topic: string; label: string }[];
   companies: { id_company: string; name: string }[];
   persons: ArticlePerson[];
 
-  onApplyDraft: (draft: {
-    title?: string;
-    excerpt?: string;
-    content_html?: string;
-    outro?: string;
-  }) => void;
-
+  onApplyDraft: (draft: Draft) => void;
   onSkip: () => void;
 };
 
@@ -42,9 +43,6 @@ export default function StepSource({
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
 
-  /* ---------------------------------------------------------
-     TRANSFORM SOURCE → ARTICLE (IA)
-  --------------------------------------------------------- */
   async function transform() {
     if (!sourceText.trim()) {
       alert("Merci de fournir une source à transformer.");
@@ -73,19 +71,28 @@ export default function StepSource({
         },
       });
 
-      if (!res || res.status !== "ok" || !res.draft) {
-        console.error("IA error payload:", res);
-        alert("Erreur lors de la génération du brouillon.");
+      // 🔑 SUPPORT DES DEUX FORMATS POSSIBLES
+      const draft: Draft = res?.draft ?? res;
+
+      console.log("IA draft reçu :", draft);
+
+      if (
+        !draft ||
+        (!draft.title &&
+          !draft.excerpt &&
+          !draft.content_html &&
+          !draft.outro)
+      ) {
+        alert("Le brouillon généré est vide.");
         setLoading(false);
         return;
       }
 
-      // 🔑 CONTRAT IA → ARTICLE (ALIGNÉ)
       onApplyDraft({
-        title: res.draft.title || "",
-        excerpt: res.draft.excerpt || "",
-        content_html: res.draft.content_html || "",
-        outro: res.draft.outro || "",
+        title: draft.title || "",
+        excerpt: draft.excerpt || "",
+        content_html: draft.content_html || "",
+        outro: draft.outro || "",
       });
 
       setGenerated(true);
@@ -97,18 +104,13 @@ export default function StepSource({
     setLoading(false);
   }
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
     <div className="space-y-5">
-
       <p className="text-sm text-gray-600">
         Vous pouvez partir d’une source existante pour générer un brouillon
         d’article à l’aide de l’assistant.
       </p>
 
-      {/* TYPE DE SOURCE */}
       <div className="space-y-1">
         <label className="text-sm font-medium">Type de source</label>
         <select
@@ -126,28 +128,17 @@ export default function StepSource({
         </select>
       </div>
 
-      {/* AUTEUR */}
-      <div>
-        <PersonSelector
-          values={author}
-          onChange={setAuthor}
-        />
-      </div>
+      <PersonSelector values={author} onChange={setAuthor} />
 
-      {/* SOURCE */}
       <div className="space-y-1">
-        <label className="text-sm font-medium">
-          Source brute
-        </label>
+        <label className="text-sm font-medium">Source brute</label>
         <textarea
           value={sourceText}
           onChange={(e) => setSourceText(e.target.value)}
-          placeholder="Collez ici le texte source à transformer…"
           className="border rounded p-2 w-full h-40"
         />
       </div>
 
-      {/* ACTIONS */}
       <div className="flex gap-3">
         <button
           onClick={transform}
