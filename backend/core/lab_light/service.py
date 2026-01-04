@@ -69,8 +69,10 @@ def transform_source(
     )
 
     prompt = f"""
-Tu es un assistant éditorial professionnel.
-Tu dois transformer une SOURCE BRUTE en ARTICLE ÉDITORIAL B2B.
+Tu es un assistant éditorial professionnel spécialisé en contenus B2B.
+
+Ta mission est de transformer une SOURCE BRUTE en un ARTICLE ÉDITORIAL
+clair, structuré et publiable.
 
 ================= CONTEXTE =================
 Auteur : {author}
@@ -84,21 +86,30 @@ Texte :
 {source_text}
 
 ================= RÈGLES ABSOLUES =================
-- Ne jamais inventer d'information.
-- Ne jamais extrapoler hors de la source.
-- Ton professionnel, journalistique.
+- Tu dois STRICTEMENT t'appuyer sur la source fournie.
+- Tu ne dois JAMAIS inventer d'information.
+- Tu ne dois JAMAIS extrapoler au-delà de la source.
+- Style journalistique B2B, clair et professionnel.
 - Langue : français.
-- HTML valide pour le contenu.
-- Pas de style LinkedIn.
-- Pas d'emojis.
+- Le contenu principal doit être du HTML valide (<p>, <ul>, <li>, <strong>, <h2> si pertinent).
+- Aucun emoji.
+- Aucun ton LinkedIn.
+- Aucune phrase du type "cet article explore" ou "nous verrons que".
+
+================= CONTRAINTE CRITIQUE =================
+Tu DOIS remplir TOUS les champs ci-dessous avec du CONTENU RÉEL.
+AUCUN champ ne doit être vide.
+Si la source est courte, fais au mieux, mais remplis tous les champs.
 
 ================= FORMAT DE SORTIE (JSON STRICT) =================
-{{
-  "title": "",
-  "excerpt": "",
-  "content_html": "",
-  "outro": ""
-}}
+Retourne UNIQUEMENT un JSON valide, sans texte autour.
+
+{
+  "title": "Titre clair et informatif de l’article",
+  "excerpt": "Accroche courte résumant l’enjeu principal en 1 à 2 phrases.",
+  "content_html": "<p>Contenu HTML structuré avec plusieurs paragraphes.</p>",
+  "outro": "Synthèse finale : ce qu’il faut retenir."
+}
 """
 
     try:
@@ -109,9 +120,12 @@ Texte :
             "message": str(e),
         }
 
+    # 🔍 DEBUG TEMPORAIRE (à laisser le temps des tests)
+    # print("RAW LLM RESPONSE:", raw)
+
     parsed = safe_extract_json(raw)
 
-    # Validation minimale du contrat
+    # Validation stricte du contrat
     if not parsed:
         return {
             "error": "invalid_json",
@@ -124,3 +138,4 @@ Texte :
         "content_html": parsed.get("content_html", "").strip(),
         "outro": parsed.get("outro", "").strip(),
     }
+
