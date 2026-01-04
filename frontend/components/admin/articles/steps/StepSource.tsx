@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
-import ArticleSourcePanel from "@/components/admin/articles/ArticleSourcePanel";
 import PersonSelector, {
   ArticlePerson,
 } from "@/components/admin/PersonSelector";
@@ -63,7 +62,7 @@ export default function StepSource({
       const res = await api.post("/lab-light/transform", {
         source_type: sourceType,
         source_text: sourceText,
-        author: author[0].name, // autorité humaine claire
+        author: author[0].name,
         context: {
           topics: topics.map((t) => t.label),
           companies: companies.map((c) => c.name),
@@ -74,18 +73,19 @@ export default function StepSource({
         },
       });
 
-      if (!res || res.error) {
-        console.error(res);
+      if (!res || res.status !== "ok" || !res.draft) {
+        console.error("IA error payload:", res);
         alert("Erreur lors de la génération du brouillon.");
         setLoading(false);
         return;
       }
 
+      // 🔑 CONTRAT IA → ARTICLE (ALIGNÉ)
       onApplyDraft({
-        title: res.title_proposal || "",
-        excerpt: res.excerpt || "",
-        content_html: res.content_html || "",
-        outro: res.notes || "",
+        title: res.draft.title || "",
+        excerpt: res.draft.excerpt || "",
+        content_html: res.draft.content_html || "",
+        outro: res.draft.outro || "",
       });
 
       setGenerated(true);
