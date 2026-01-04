@@ -26,7 +26,6 @@ def safe_extract_json(text: str) -> Dict[str, Any]:
     except Exception:
         pass
 
-    # Nettoyages légers
     json_text = (
         json_text
         .replace("“", '"')
@@ -91,45 +90,43 @@ Texte :
 - Tu ne dois JAMAIS extrapoler au-delà de la source.
 - Style journalistique B2B, clair et professionnel.
 - Langue : français.
-- Le contenu principal doit être du HTML valide (<p>, <ul>, <li>, <strong>, <h2> si pertinent).
+- HTML valide (<p>, <ul>, <li>, <strong>, <h2> si pertinent).
 - Aucun emoji.
 - Aucun ton LinkedIn.
-- Aucune phrase du type "cet article explore" ou "nous verrons que".
 
 ================= CONTRAINTE CRITIQUE =================
 Tu DOIS remplir TOUS les champs ci-dessous avec du CONTENU RÉEL.
 AUCUN champ ne doit être vide.
-Si la source est courte, fais au mieux, mais remplis tous les champs.
 
 ================= FORMAT DE SORTIE (JSON STRICT) =================
 Retourne UNIQUEMENT un JSON valide, sans texte autour.
 
 {
   "title": "Titre clair et informatif de l’article",
-  "excerpt": "Accroche courte résumant l’enjeu principal en 1 à 2 phrases.",
+  "excerpt": "Accroche courte résumant l’enjeu principal.",
   "content_html": "<p>Contenu HTML structuré avec plusieurs paragraphes.</p>",
   "outro": "Synthèse finale : ce qu’il faut retenir."
 }
 """
 
-    try:
-        raw = run_llm(prompt)
-    except Exception as e:
-        return {
-            "error": "llm_error",
-            "message": str(e),
-        }
+    raw = run_llm(prompt)
 
-    # 🔍 DEBUG TEMPORAIRE (à laisser le temps des tests)
-    # print("RAW LLM RESPONSE:", raw)
+    # ⚠️ Si run_llm a renvoyé une erreur JSON
+    if raw.strip().startswith("{") and '"error"' in raw:
+        try:
+            return json.loads(raw)
+        except Exception:
+            return {
+                "error": "llm_error",
+                "raw": raw
+            }
 
     parsed = safe_extract_json(raw)
 
-    # Validation stricte du contrat
     if not parsed:
         return {
             "error": "invalid_json",
-            "raw": raw,
+            "raw": raw
         }
 
     return {
@@ -138,4 +135,3 @@ Retourne UNIQUEMENT un JSON valide, sans texte autour.
         "content_html": parsed.get("content_html", "").strip(),
         "outro": parsed.get("outro", "").strip(),
     }
-
