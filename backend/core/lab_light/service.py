@@ -101,25 +101,15 @@ AUCUN champ ne doit être vide.
 ================= FORMAT DE SORTIE (JSON STRICT) =================
 Retourne UNIQUEMENT un JSON valide, sans texte autour.
 
-{
+{{
   "title": "Titre clair et informatif de l’article",
   "excerpt": "Accroche courte résumant l’enjeu principal.",
   "content_html": "<p>Contenu HTML structuré avec plusieurs paragraphes.</p>",
   "outro": "Synthèse finale : ce qu’il faut retenir."
-}
+}}
 """
 
     raw = run_llm(prompt)
-
-    # ⚠️ Si run_llm a renvoyé une erreur JSON
-    if raw.strip().startswith("{") and '"error"' in raw:
-        try:
-            return json.loads(raw)
-        except Exception:
-            return {
-                "error": "llm_error",
-                "raw": raw
-            }
 
     parsed = safe_extract_json(raw)
 
