@@ -52,13 +52,16 @@ def transform_source(
     context: Dict[str, Any],
 ) -> Dict[str, Any]:
     """
-    Transforme une source brute en brouillon d'article éditorial.
+    Transforme une source brute en brouillon éditorial structuré.
 
-    Retourne STRICTEMENT :
-    - title
-    - excerpt
-    - content_html
-    - outro
+    CONTRAT ÉDITORIAL STRICT :
+    - title        : titre éditorial clair, non commercial, éclairant le contenu
+    - excerpt      : synthèse courte (1–2 phrases) reprenant l'idée principale
+    - content_html : structuration en 3 idées principales max
+                     (sous-titre + 2–4 phrases par idée)
+                     citations exactes autorisées si présentes dans la source
+    - outro        : conclusion courte reformulant l’idée centrale
+                     sans ajouter d’information nouvelle
     """
 
     topics = ", ".join(context.get("topics", []))
@@ -69,9 +72,10 @@ def transform_source(
 
     prompt = f"""
 Tu es un assistant éditorial professionnel spécialisé en contenus B2B.
+Tu n'es ni un marketeur, ni un rédacteur SEO, ni un copywriter.
 
-Ta mission est de transformer une SOURCE BRUTE en un ARTICLE ÉDITORIAL
-clair, structuré et publiable.
+Ta mission est de STRUCTURER une SOURCE BRUTE
+en un BROUILLON ÉDITORIAL clair et exploitable.
 
 ================= CONTEXTE =================
 Auteur : {author}
@@ -84,29 +88,55 @@ Type : {source_type}
 Texte :
 {source_text}
 
-================= RÈGLES ABSOLUES =================
+================= RÈGLES FONDAMENTALES =================
 - Tu dois STRICTEMENT t'appuyer sur la source fournie.
 - Tu as le DROIT de reformuler, résumer et structurer la source.
 - Tu ne dois JAMAIS ajouter de faits ou d'informations absents de la source.
 - Tu ne dois JAMAIS extrapoler au-delà de ce qui est explicitement exprimé.
-- Style journalistique B2B, clair et professionnel.
+- Si la source est courte ou abstraite, fais au mieux sans inventer.
+- Ton : journalistique B2B, clair, neutre, informatif.
 - Langue : français.
-- HTML valide (<p>, <ul>, <li>, <strong>, <h2> si pertinent).
 - Aucun emoji.
+- Aucun ton promotionnel ou commercial.
 - Aucun ton LinkedIn.
+- HTML simple et valide uniquement (<p>, <h3>, <ul>, <li>, <strong>).
 
-================= CONTRAINTE CRITIQUE =================
-Tu DOIS remplir TOUS les champs ci-dessous avec du CONTENU RÉEL.
-AUCUN champ ne doit être vide.
+================= CONTRAT ÉDITORIAL (OBLIGATOIRE) =================
+
+1. TITLE
+- Titre éditorial accrocheur mais non commercial.
+- Doit éclairer immédiatement le sujet traité.
+- Doit être cohérent avec le contenu réel.
+
+2. EXCERPT
+- Synthèse courte (1 à 2 phrases).
+- Reprend l’idée principale exprimée dans la source.
+- Sert de point d’entrée éditorial.
+
+3. CONTENT_HTML
+- Structurer le contenu autour de 2 à 3 idées principales maximum.
+- Pour chaque idée :
+  - Un sous-titre clair (<h3>)
+  - 2 à 4 phrases explicatives maximum.
+- Si des citations existent dans la source :
+  - Elles doivent être reprises MOT POUR MOT.
+  - Ne jamais paraphraser une citation.
+- Ne pas rallonger artificiellement le texte.
+
+4. OUTRO
+- Conclusion courte.
+- Reformule l’idée principale déjà évoquée dans l’excerpt.
+- Ne doit introduire AUCUNE information nouvelle.
 
 ================= FORMAT DE SORTIE (JSON STRICT) =================
 Retourne UNIQUEMENT un JSON valide, sans texte autour.
+Tous les champs DOIVENT être remplis (même brièvement).
 
 {{
-  "title": "Titre clair et informatif de l’article",
-  "excerpt": "Accroche courte résumant l’enjeu principal.",
-  "content_html": "<p>Contenu HTML structuré avec plusieurs paragraphes.</p>",
-  "outro": "Synthèse finale : ce qu’il faut retenir."
+  "title": "Titre éditorial clair",
+  "excerpt": "Synthèse courte de l’idée principale.",
+  "content_html": "<h3>Idée principale 1</h3><p>Explication...</p><h3>Idée principale 2</h3><p>Explication...</p>",
+  "outro": "Conclusion reformulant l’idée centrale."
 }}
 """
 
@@ -114,10 +144,20 @@ Retourne UNIQUEMENT un JSON valide, sans texte autour.
 
     parsed = safe_extract_json(raw)
 
-    if not parsed:
+    # ---------------------------------------------------------
+    # FALLBACK SI IA TROP PRUDENTE (SOURCE COURTE / ABSTRAITE)
+    # ---------------------------------------------------------
+    if not parsed or all(
+        not parsed.get(k, "").strip()
+        for k in ["title", "excerpt", "content_html", "outro"]
+    ):
+        source_clean = source_text.strip()
+
         return {
-            "error": "invalid_json",
-            "raw": raw
+            "title": source_clean.split("\n")[0][:120],
+            "excerpt": source_clean[:200],
+            "content_html": f"<p>{source_clean}</p>",
+            "outro": "Ce qu’il faut retenir : " + source_clean[:150],
         }
 
     return {
