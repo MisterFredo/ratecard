@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
 from core.lab_light.service import transform_source
 
@@ -23,22 +23,10 @@ class TransformContext(BaseModel):
 
 
 class TransformPayload(BaseModel):
-    source_type: str = Field(
-        ...,
-        description="Type : LINKEDIN_POST / PRESS_RELEASE / ARTICLE / INTERVIEW / OTHER"
-    )
-    source_text: str = Field(
-        ...,
-        description="Texte brut à transformer"
-    )
-    author: str = Field(
-        ...,
-        description="Nom de l'auteur (sélectionné)"
-    )
-    context: TransformContext = Field(
-        default_factory=TransformContext,
-        description="Contexte éditorial enrichi"
-    )
+    source_type: str
+    source_text: str
+    author: str
+    context: TransformContext
 
 
 # ============================================================
@@ -50,15 +38,11 @@ def api_transform_source(payload: TransformPayload):
     """
     Transforme une source brute en brouillon d'article éditorial.
 
-    Retourne STRICTEMENT :
-    - title
-    - excerpt
-    - content_html
-    - outro
+    ⚠️ CETTE ROUTE NE DOIT JAMAIS LEVER D'EXCEPTION.
     """
 
     try:
-        draft = transform_source(
+        result = transform_source(
             source_type=payload.source_type,
             source_text=payload.source_text,
             author=payload.author,
@@ -72,22 +56,34 @@ def api_transform_source(payload: TransformPayload):
             },
         )
 
-        if not draft or "error" in draft:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Erreur IA : {draft.get('error', 'unknown')}"
-            )
+        # 🔎 LOG TEMPORAIRE (ESSENTIEL)
+        print("LAB_LIGHT RESULT:", result)
+
+        if not isinstance(result, dict):
+            return {
+                "status": "error",
+                "error": "invalid_return_type",
+                "raw": str(result),
+            }
+
+        if "error" in result:
+            return {
+                "status": "error",
+                "error": result.get("error"),
+                "message": result.get("message"),
+                "raw": result.get("raw"),
+            }
 
         return {
             "status": "ok",
-            "draft": draft,
+            "draft": result,
         }
 
-    except HTTPException:
-        raise
-
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erreur LAB Light : {e}"
-        )
+        # 🔥 DERNIER FILET DE SÉCURITÉ
+        print("LAB_LIGHT FATAL ERROR:", str(e))
+        return {
+            "status": "error",
+            "error": "fatal_backend_error",
+            "message": str(e),
+        }
