@@ -17,15 +17,33 @@ def propose_angles(
     """
 
     prompt = f"""
-Tu es un agent éditorial ADEX spécialiste en marketing digital et plus spécifiquement sur les univers Adtech, Martech, Retail et IA appliquée au marketing.
+Tu es un agent éditorial ADEX.
 
-À partir de la source ci-dessous, propose entre 1 et 3 ANGLES mono-signal exploitables.
+À partir de la source ci-dessous, IDENTIFIE ENTRE 2 ET 3 ANGLES DISTINCTS.
+Chaque angle doit traiter UN SEUL SIGNAL.
 
-Pour chaque angle, fournis :
-- un titre
-- un signal résumé en une phrase
+⚠️ RÈGLE CRITIQUE :
+- Ne fusionne jamais plusieurs idées dans un même angle.
+- Si la source contient plusieurs enjeux, ils DOIVENT être séparés.
+- Il est préférable de proposer 3 angles simples plutôt qu’un seul angle global.
 
-Ne rédige aucun autre texte.
+Pour CHAQUE angle, fournis :
+- Titre : une accroche claire et spécifique
+- Signal : une phrase qui décrit précisément l’enjeu
+
+FORMAT ATTENDU (obligatoire) :
+
+ANGLE
+Titre : ...
+Signal : ...
+
+ANGLE
+Titre : ...
+Signal : ...
+
+SOURCE :
+{source_text}
+
 
 SOURCE :
 {source_text}
