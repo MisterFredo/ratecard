@@ -1,9 +1,9 @@
 "use client";
 
 import TopicSelector from "@/components/admin/TopicSelector";
+import EventSelector from "@/components/admin/EventSelector";
 import CompanySelector from "@/components/admin/CompanySelector";
 import PersonSelector from "@/components/admin/PersonSelector";
-import EventSelector from "@/components/admin/EventSelector";
 
 type Props = {
   topics: any[];
@@ -29,25 +29,25 @@ export default function ContentContextBlock({
     <div className="space-y-6">
       {/* TOPICS */}
       <TopicSelector
-        selected={topics}
+        values={topics}
         onChange={(items) => onChange({ topics: items })}
       />
 
       {/* EVENTS */}
       <EventSelector
-        selected={events}
+        values={events}
         onChange={(items) => onChange({ events: items })}
       />
 
       {/* COMPANIES */}
       <CompanySelector
-        selected={companies}
+        values={companies}
         onChange={(items) => onChange({ companies: items })}
       />
 
       {/* PERSONS */}
       <PersonSelector
-        selected={persons}
+        values={persons}
         onChange={(items) => onChange({ persons: items })}
       />
     </div>
