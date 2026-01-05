@@ -10,36 +10,19 @@ def propose_angles(
 ) -> List[Dict[str, str]]:
     """
     Propose 1 à 3 angles mono-signal exploitables.
-    Sortie TEXT, pas JSON.
+    Sortie texte, parsing tolérant.
     """
 
     prompt = f"""
-Tu es un agent éditorial ADEX.
+Tu es un agent éditorial ADEX spécialiste en marketing digital et notamment dans la AdTech, la MarTech, le Retail Média et l'IA appliquée au marketing.
 
 À partir de la source ci-dessous, propose entre 1 et 3 ANGLES mono-signal exploitables.
 
-RÈGLES :
-- Un angle = un seul sujet clair
-- Chaque angle contient :
-  - un Titre
-  - un Signal (1 phrase)
-- Aucun texte d’introduction ou de conclusion
-- Pas de commentaire
-- Français
+Pour chaque angle, fournis :
+- un titre
+- un signal résumé en une phrase
 
-FORMAT DE SORTIE ATTENDU :
-
-ANGLE 1
-Titre : ...
-Signal : ...
-
-ANGLE 2
-Titre : ...
-Signal : ...
-
-ANGLE 3
-Titre : ...
-Signal : ...
+Ne rédige aucun autre texte.
 
 SOURCE :
 {source_text}
@@ -52,18 +35,38 @@ SOURCE :
 
 def parse_angles_text(text: str) -> List[Dict[str, str]]:
     """
-    Parse une sortie texte IA en liste d'angles.
+    Parse une sortie IA réelle (tolérante aux variations).
     """
     if not isinstance(text, str):
         return []
 
     angles = []
 
-    blocks = re.split(r"\bANGLE\s+\d+\b", text, flags=re.IGNORECASE)
+    # Découpage large : puces, ANGLE, tirets
+    blocks = re.split(
+        r"(?:\n\s*ANGLE\s+\d+|\n\s*[•🔹\-])",
+        text,
+        flags=re.IGNORECASE,
+    )
 
     for block in blocks:
-        title_match = re.search(r"Titre\s*:\s*(.+)", block)
-        signal_match = re.search(r"Signal\s*:\s*(.+)", block)
+        block = block.strip()
+        if not block:
+            continue
+
+        # Titre (plusieurs variantes possibles)
+        title_match = re.search(
+            r"(?:Titre\s*(?:provisoire)?\s*:)(.+)",
+            block,
+            flags=re.IGNORECASE,
+        )
+
+        # Signal (plusieurs variantes possibles)
+        signal_match = re.search(
+            r"(?:Signal\s*(?:résumé)?\s*:)(.+)",
+            block,
+            flags=re.IGNORECASE,
+        )
 
         if title_match and signal_match:
             angles.append({
