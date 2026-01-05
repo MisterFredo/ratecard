@@ -5,18 +5,25 @@ import { api } from "@/lib/api";
 
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
-type VisualSource =
-  | "TOPIC"
-  | "EVENT"
-  | "COMPANY"
-  | "PERSON"
-  | "CONTENT"
-  | "AI_TOPIC";
+type Topic = {
+  id_topic: string;
+  label: string;
+};
 
-type Topic = { id_topic: string; label: string };
-type Event = { id_event: string; label: string };
-type Company = { id_company: string; name: string };
-type Person = { id_person: string; name: string };
+type Event = {
+  id_event: string;
+  label: string;
+};
+
+type Company = {
+  id_company: string;
+  name: string;
+};
+
+type Person = {
+  id_person: string;
+  name: string;
+};
 
 type Props = {
   contentId: string;
@@ -42,10 +49,9 @@ export default function StepVisual({
   onNext,
 }: Props) {
   const [loading, setLoading] = useState(false);
-  const [source, setSource] = useState<VisualSource | null>(null);
 
   /* ---------------------------------------------------------
-     Helpers GCS
+     Helpers GCS (réutilisation visuels entités)
   --------------------------------------------------------- */
   function topicRect(id: string) {
     return `${GCS}/topics/TOPIC_${id}_rect.jpg`;
@@ -64,14 +70,7 @@ export default function StepVisual({
   }
 
   /* ---------------------------------------------------------
-     Use existing visual
-  --------------------------------------------------------- */
-  function useExisting(url: string) {
-    onUpdated(url);
-  }
-
-  /* ---------------------------------------------------------
-     Upload manual visual
+     Upload manuel (Content)
   --------------------------------------------------------- */
   async function upload(file: File) {
     setLoading(true);
@@ -96,24 +95,26 @@ export default function StepVisual({
   }
 
   /* ---------------------------------------------------------
-     Generate via IA (topic only)
+     Génération IA (Topic uniquement)
   --------------------------------------------------------- */
-  async function generateFromTopic(topicId: string) {
+  async function generateFromTopic(topic: Topic) {
     setLoading(true);
     try {
       const res = await api.post("/visuals/content/generate-ai", {
         id_content: contentId,
-        id_topic: topicId,
+        id_topic: topic.id_topic,
+        angle_title: "", // déjà stocké côté content
+        excerpt: "",     // déjà stocké côté content
       });
 
       if (res.status !== "ok") {
         throw new Error("Generation failed");
       }
 
-      onUpdated(`${GCS}/content/CONTENT_${contentId}_rect.jpg`);
+      onUpdated(`${GCS}/content/CONTENT_${contentId}_AI_rect.jpg`);
     } catch (e) {
       console.error(e);
-      alert("❌ Erreur génération IA");
+      alert("❌ Erreur génération visuel IA");
     }
     setLoading(false);
   }
@@ -142,7 +143,7 @@ export default function StepVisual({
         Choisissez le visuel principal du contenu (format rectangulaire).
       </p>
 
-      {/* CURRENT */}
+      {/* VISUEL ACTUEL */}
       <div className="space-y-2">
         <p className="text-xs text-gray-500">Visuel actuel</p>
         {rectUrl ? (
@@ -155,14 +156,14 @@ export default function StepVisual({
         )}
       </div>
 
-      {/* 1️⃣ EXISTING VISUALS */}
-      <div className="space-y-4">
-        <h4 className="font-semibold">Visuels existants</h4>
+      {/* 1️⃣ VISUELS D’ENTITÉS */}
+      <div className="space-y-3">
+        <h4 className="font-semibold">Utiliser un visuel existant</h4>
 
         {topics.map((t) => (
           <button
             key={`topic-${t.id_topic}`}
-            onClick={() => useExisting(topicRect(t.id_topic))}
+            onClick={() => onUpdated(topicRect(t.id_topic))}
             className="px-3 py-2 border rounded"
           >
             Topic — {t.label}
@@ -172,7 +173,7 @@ export default function StepVisual({
         {events.map((e) => (
           <button
             key={`event-${e.id_event}`}
-            onClick={() => useExisting(eventRect(e.id_event))}
+            onClick={() => onUpdated(eventRect(e.id_event))}
             className="px-3 py-2 border rounded"
           >
             Événement — {e.label}
@@ -182,7 +183,7 @@ export default function StepVisual({
         {companies.map((c) => (
           <button
             key={`company-${c.id_company}`}
-            onClick={() => useExisting(companyRect(c.id_company))}
+            onClick={() => onUpdated(companyRect(c.id_company))}
             className="px-3 py-2 border rounded"
           >
             Société — {c.name}
@@ -192,7 +193,7 @@ export default function StepVisual({
         {persons.map((p) => (
           <button
             key={`person-${p.id_person}`}
-            onClick={() => useExisting(personRect(p.id_person))}
+            onClick={() => onUpdated(personRect(p.id_person))}
             className="px-3 py-2 border rounded"
           >
             Personne — {p.name}
@@ -200,9 +201,9 @@ export default function StepVisual({
         ))}
       </div>
 
-      {/* 2️⃣ MANUAL UPLOAD */}
+      {/* 2️⃣ UPLOAD MANUEL */}
       <div className="space-y-2">
-        <h4 className="font-semibold">Visuel spécifique</h4>
+        <h4 className="font-semibold">Uploader un visuel spécifique</h4>
         <input
           type="file"
           accept="image/*"
@@ -212,20 +213,20 @@ export default function StepVisual({
         />
       </div>
 
-      {/* 3️⃣ IA GENERATION */}
+      {/* 3️⃣ GÉNÉRATION IA (TOPIC UNIQUEMENT) */}
       {topics.length > 0 && (
         <div className="space-y-2">
           <h4 className="font-semibold">Génération IA</h4>
           <button
-            onClick={() => generateFromTopic(topics[0].id_topic)}
+            onClick={() => generateFromTopic(topics[0])}
             className="px-4 py-2 border rounded"
           >
-            Générer à partir du topic "{topics[0].label}"
+            Générer à partir du topic « {topics[0].label} »
           </button>
         </div>
       )}
 
-      {/* CONTINUE */}
+      {/* CONTINUER */}
       <button
         onClick={onNext}
         disabled={loading}
