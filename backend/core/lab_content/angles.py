@@ -1,6 +1,5 @@
-import json
 import re
-from typing import List, Dict, Any
+from typing import List, Dict
 from utils.llm import run_llm
 
 
@@ -11,96 +10,65 @@ def propose_angles(
 ) -> List[Dict[str, str]]:
     """
     Propose 1 à 3 angles mono-signal exploitables.
+    Sortie TEXT, pas JSON.
     """
 
     prompt = f"""
-Tu es un agent éditorial Ratecard.
+Tu es un agent éditorial ADEX.
 
-À partir de la source ci-dessous, propose entre 1 et 3 ANGLES mono-signal.
+À partir de la source ci-dessous, propose entre 1 et 3 ANGLES mono-signal exploitables.
 
-================= SOURCE =================
-Type : {source_type}
-Texte :
+RÈGLES :
+- Un angle = un seul sujet clair
+- Chaque angle contient :
+  - un Titre
+  - un Signal (1 phrase)
+- Aucun texte d’introduction ou de conclusion
+- Pas de commentaire
+- Français
+
+FORMAT DE SORTIE ATTENDU :
+
+ANGLE 1
+Titre : ...
+Signal : ...
+
+ANGLE 2
+Titre : ...
+Signal : ...
+
+ANGLE 3
+Titre : ...
+Signal : ...
+
+SOURCE :
 {source_text}
-
-================= RÈGLES =================
-- Aucun texte rédigé.
-- Aucun commentaire.
-- Angles distincts.
-- Français.
-
-================= FORMAT =================
-{{
-  "angles": [
-    {{
-      "angle_title": "...",
-      "angle_signal": "..."
-    }}
-  ]
-}}
 """
 
     raw = run_llm(prompt)
-    parsed = safe_extract_json(raw)
 
-    # ---------------------------------------------------------
-    # NORMALISATION ROBUSTE DE LA SORTIE LLM
-    # ---------------------------------------------------------
-
-    # Cas 1 — format attendu
-    if isinstance(parsed, dict) and isinstance(parsed.get("angles"), list):
-        return parsed["angles"]
-
-    # Cas 2 — le LLM renvoie directement une liste
-    if isinstance(parsed, list):
-        return parsed
-
-    # Cas 3 — autres clés fréquentes
-    if isinstance(parsed, dict):
-        for key in ["items", "results", "data"]:
-            if isinstance(parsed.get(key), list):
-                return parsed[key]
-
-    # Fallback — aucun angle exploitable
-    return []
+    return parse_angles_text(raw)
 
 
-# ---------------------------------------------------------
-# JSON SAFE EXTRACTION
-# ---------------------------------------------------------
-def safe_extract_json(text: str) -> Dict[str, Any]:
+def parse_angles_text(text: str) -> List[Dict[str, str]]:
     """
-    Extrait un JSON valide depuis une réponse LLM bruitée.
-    Retourne {} si échec.
+    Parse une sortie texte IA en liste d'angles.
     """
     if not isinstance(text, str):
-        return {}
+        return []
 
-    # Extraction brute du premier bloc JSON
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if not match:
-        return {}
+    angles = []
 
-    json_text = match.group(0)
+    blocks = re.split(r"\bANGLE\s+\d+\b", text, flags=re.IGNORECASE)
 
-    # Tentative directe
-    try:
-        return json.loads(json_text)
-    except Exception:
-        pass
+    for block in blocks:
+        title_match = re.search(r"Titre\s*:\s*(.+)", block)
+        signal_match = re.search(r"Signal\s*:\s*(.+)", block)
 
-    # Nettoyage des guillemets et virgules traînantes
-    json_text = (
-        json_text
-        .replace("“", '"')
-        .replace("”", '"')
-        .replace("‘", "'")
-        .replace("’", "'")
-    )
-    json_text = re.sub(r",\s*}", "}", json_text)
-    json_text = re.sub(r",\s*]", "]", json_text)
+        if title_match and signal_match:
+            angles.append({
+                "angle_title": title_match.group(1).strip(),
+                "angle_signal": signal_match.group(1).strip(),
+            })
 
-    try:
-        return json.loads(json_text)
-    except Exception:
-        return {}
+    return angles
