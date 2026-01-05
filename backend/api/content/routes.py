@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from api.content.models import ContentCreate, ContentUpdate
+from api.content.models import ContentCreate, ContentUpdate, ContentAnglesRequest
 from core.content.service import (
     create_content,
     list_contents,
@@ -14,7 +14,6 @@ from core.content.orchestration import (
 )
 
 router = APIRouter()
-
 
 # ============================================================
 # CREATE CONTENT
@@ -91,24 +90,16 @@ def publish_route(id_content: str, published_at: str | None = None):
 # IA — STEP 1 : PROPOSE ANGLES
 # ============================================================
 @router.post("/ai/angles")
-def ai_angles(
-    source_type: str,
-    source_text: str,
-    context: dict,
-):
-    """
-    Propose 1 à 3 angles mono-signal à partir d’une source.
-    """
+def ai_angles(payload: ContentAnglesRequest):
     try:
         angles = generate_angles(
-            source_type=source_type,
-            source_text=source_text,
-            context=context,
+            source_type=payload.source_type,
+            source_text=payload.source_text,
+            context=payload.context,
         )
         return {"status": "ok", "angles": angles}
     except Exception as e:
         raise HTTPException(400, f"Erreur génération angles : {e}")
-
 
 # ============================================================
 # IA — STEP 2 : GENERATE CONTENT
