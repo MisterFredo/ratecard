@@ -105,4 +105,3 @@ class ContentOut(BaseModel):
     events: list = []
     companies: list = []
     persons: list = []
-``
