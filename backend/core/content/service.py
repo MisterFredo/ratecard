@@ -1,9 +1,13 @@
 import uuid
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, date
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client, update_bq
+from utils.bigquery_utils import (
+    query_bq,
+    insert_bq,
+    get_bigquery_client,
+    update_bq,
+)
 
 from api.content.models import ContentCreate, ContentUpdate
 
@@ -25,17 +29,19 @@ TABLE_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_PERSON"
 
 
 # ============================================================
-# CREATE CONTENT — validation d’un contenu
+# CREATE CONTENT — validation humaine
 # ============================================================
 def create_content(data: ContentCreate) -> str:
     """
-    Crée un contenu Ratecard.
+    Crée un contenu Ratecard VALIDÉ HUMAINEMENT.
 
     Règles métier :
     - angle_title obligatoire
     - angle_signal obligatoire
-    - au moins UNE entité associée (topic / event / company / person)
+    - au moins UNE entité associée
+    - les citations / chiffres / acteurs sont déjà validés
     """
+
     if not data.angle_title.strip():
         raise ValueError("ANGLE_TITLE obligatoire")
 
@@ -54,46 +60,49 @@ def create_content(data: ContentCreate) -> str:
         )
 
     content_id = str(uuid.uuid4())
-    now = datetime.utcnow()
+    today = date.today()
 
-    # ---------------------------------------------------------
-    # INSERT CONTENT (DRAFT)
-    # ---------------------------------------------------------
-    insert_bq(TABLE_CONTENT, [{
+    row = [{
         "ID_CONTENT": content_id,
         "STATUS": "DRAFT",
-        "CREATED_AT": now,
-        "UPDATED_AT": now,
-        "PUBLISHED_AT": None,
-        "AUTHOR": data.author,
         "IS_ACTIVE": True,
+        "AUTHOR": data.author,
 
         # SOURCE
         "SOURCE_TYPE": data.source_type,
         "SOURCE_TEXT": data.source_text,
         "SOURCE_URL": data.source_url,
         "SOURCE_AUTHOR": data.source_author,
-        "SOURCE_DATE": data.source_date,
 
         # ANGLE
         "ANGLE_TITLE": data.angle_title,
         "ANGLE_SIGNAL": data.angle_signal,
 
-        # CONTENT
+        # CONTENU VALIDÉ
         "EXCERPT": data.excerpt,
         "CONCEPT": data.concept,
         "CONTENT_BODY": data.content_body,
 
-        # VISUALS
-        "MEDIA_RECTANGLE_ID": None,
-        "MEDIA_SQUARE_ID": None,
-        "VISUAL_SOURCE_TYPE": None,
-        "VISUAL_SOURCE_ID": None,
+        # AIDES ÉDITORIALES VALIDÉES
+        "CITATIONS": data.citations or [],
+        "CHIFFRES": data.chiffres or [],
+        "ACTEURS_CITES": data.acteurs_cites or [],
 
         # SEO
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
-    }])
+
+        # DATES
+        "DATE_CREATION": data.date_creation or today,
+        "DATE_IMPORT": data.date_import or today,
+
+        # PUBLICATION
+        "PUBLISHED_AT": None,
+    }]
+
+    insert_bq(TABLE_CONTENT, row)
+
+    now = datetime.utcnow()
 
     # ---------------------------------------------------------
     # RELATIONS — TOPICS
@@ -138,6 +147,10 @@ def create_content(data: ContentCreate) -> str:
 
     return content_id
 
+
+# ============================================================
+# GET ONE CONTENT (enrichi)
+# ============================================================
 def get_content(id_content: str):
     rows = query_bq(
         f"""
@@ -208,6 +221,10 @@ def get_content(id_content: str):
 
     return content
 
+
+# ============================================================
+# LIST CONTENTS (ADMIN)
+# ============================================================
 def list_contents():
     return query_bq(
         f"""
@@ -216,14 +233,18 @@ def list_contents():
             ANGLE_TITLE,
             EXCERPT,
             STATUS,
-            CREATED_AT,
-            UPDATED_AT
+            DATE_CREATION,
+            PUBLISHED_AT
         FROM `{TABLE_CONTENT}`
         WHERE IS_ACTIVE = TRUE
-        ORDER BY CREATED_AT DESC
+        ORDER BY DATE_CREATION DESC
         """
     )
 
+
+# ============================================================
+# UPDATE CONTENT — nouvelle validation humaine
+# ============================================================
 def update_content(id_content: str, data: ContentUpdate):
     if not data.angle_title.strip():
         raise ValueError("ANGLE_TITLE obligatoire")
@@ -241,30 +262,26 @@ def update_content(id_content: str, data: ContentUpdate):
             "Un contenu doit être associé à au moins une entité"
         )
 
-    now = datetime.utcnow()
-
-    # ----------------------------
-    # UPDATE CONTENT
-    # ----------------------------
     fields = {
         "ANGLE_TITLE": data.angle_title,
         "ANGLE_SIGNAL": data.angle_signal,
         "EXCERPT": data.excerpt,
         "CONCEPT": data.concept,
         "CONTENT_BODY": data.content_body,
+
+        "CITATIONS": data.citations or [],
+        "CHIFFRES": data.chiffres or [],
+        "ACTEURS_CITES": data.acteurs_cites or [],
+
         "SOURCE_TYPE": data.source_type,
         "SOURCE_TEXT": data.source_text,
         "SOURCE_URL": data.source_url,
         "SOURCE_AUTHOR": data.source_author,
-        "SOURCE_DATE": data.source_date,
-        "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
-        "MEDIA_SQUARE_ID": data.media_square_id,
-        "VISUAL_SOURCE_TYPE": data.visual_source_type,
-        "VISUAL_SOURCE_ID": data.visual_source_id,
+
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
         "AUTHOR": data.author,
-        "UPDATED_AT": now,
+        "DATE_CREATION": data.date_creation,
     }
 
     update_bq(
@@ -273,10 +290,11 @@ def update_content(id_content: str, data: ContentUpdate):
         where={"ID_CONTENT": id_content},
     )
 
+    client = get_bigquery_client()
+
     # ----------------------------
     # RESET RELATIONS
     # ----------------------------
-    client = get_bigquery_client()
     for table in (
         TABLE_CONTENT_TOPIC,
         TABLE_CONTENT_EVENT,
@@ -287,6 +305,8 @@ def update_content(id_content: str, data: ContentUpdate):
             f"DELETE FROM `{table}` WHERE ID_CONTENT = @id",
             job_config=None
         ).result()
+
+    now = datetime.utcnow()
 
     # ----------------------------
     # REINSERT RELATIONS
@@ -322,23 +342,18 @@ def update_content(id_content: str, data: ContentUpdate):
 
     return True
 
-def archive_content(id_content: str):
-    """
-    Archive un content (soft delete).
 
-    - Ne supprime pas la donnée
-    - Change le statut
-    - Conserve l’historique
-    """
+# ============================================================
+# ARCHIVE CONTENT (soft delete)
+# ============================================================
+def archive_content(id_content: str):
     client = get_bigquery_client()
-    now = datetime.utcnow()
 
     client.query(
         f"""
         UPDATE `{TABLE_CONTENT}`
         SET
-            STATUS = "ARCHIVED",
-            UPDATED_AT = @now
+            STATUS = "ARCHIVED"
         WHERE ID_CONTENT = @id
         """,
         job_config={
@@ -347,58 +362,43 @@ def archive_content(id_content: str):
                     "name": "id",
                     "parameterType": {"type": "STRING"},
                     "parameterValue": {"value": id_content},
-                },
-                {
-                    "name": "now",
-                    "parameterType": {"type": "TIMESTAMP"},
-                    "parameterValue": {"value": now},
-                },
+                }
             ]
         }
     ).result()
 
     return True
 
+
+# ============================================================
+# PUBLISH CONTENT
+# ============================================================
 def publish_content(
     id_content: str,
-    published_at: datetime | None = None,
+    published_at: Optional[datetime] = None,
 ):
-    """
-    Publie un content immédiatement ou à une date donnée.
-
-    - published_at = None  → publication immédiate
-    - published_at != None → publication planifiée
-    """
-
     now = datetime.utcnow()
 
-    # ---------------------------------------------------------
-    # PUBLICATION IMMÉDIATE
-    # ---------------------------------------------------------
     if not published_at or published_at <= now:
         update_bq(
             table=TABLE_CONTENT,
             fields={
                 "STATUS": "PUBLISHED",
                 "PUBLISHED_AT": now,
-                "UPDATED_AT": now,
             },
             where={"ID_CONTENT": id_content},
         )
         return "PUBLISHED"
 
-    # ---------------------------------------------------------
-    # PUBLICATION PLANIFIÉE
-    # ---------------------------------------------------------
     update_bq(
         table=TABLE_CONTENT,
         fields={
             "STATUS": "SCHEDULED",
             "PUBLISHED_AT": published_at,
-            "UPDATED_AT": now,
         },
         where={"ID_CONTENT": id_content},
     )
     return "SCHEDULED"
+
 
 
