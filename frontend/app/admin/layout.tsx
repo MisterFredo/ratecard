@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import "../globals.css";
 
 import {
-  Newspaper,
   Building2,
   UserCircle,
   Tags,
   CalendarDays,
+  Layers,
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
@@ -21,9 +21,9 @@ export default function AdminLayout({ children }) {
 
   const navItems = [
     {
-      href: "/admin/articles",
-      label: "Articles",
-      icon: Newspaper,
+      href: "/admin/content",
+      label: "Contenus",
+      icon: Layers,
     },
     {
       href: "/admin/company",
