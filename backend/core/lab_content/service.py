@@ -5,7 +5,7 @@ from utils.llm import run_llm
 
 
 # ============================================================
-# JSON SAFE EXTRACTION (copié depuis lab_light)
+# JSON SAFE EXTRACTION
 # ============================================================
 def safe_extract_json(text: str) -> Dict[str, Any]:
     """
@@ -43,6 +43,59 @@ def safe_extract_json(text: str) -> Dict[str, Any]:
 
 
 # ============================================================
+# NORMALISATION SORTIE IA CONTENT
+# ============================================================
+def normalize_content_output(parsed: Dict[str, Any]) -> Dict[str, str]:
+    """
+    Normalise les différentes formes possibles de sortie LLM
+    vers le contrat Content attendu.
+    """
+
+    # Cas 1 — format strict attendu
+    if all(k in parsed for k in ["excerpt", "concept", "content_body"]):
+        return {
+            "excerpt": parsed.get("excerpt", ""),
+            "concept": parsed.get("concept", ""),
+            "content_body": parsed.get("content_body", ""),
+        }
+
+    # Cas 2 — contenu imbriqué
+    for key in ["content", "result", "data"]:
+        if isinstance(parsed.get(key), dict):
+            inner = parsed[key]
+            if all(k in inner for k in ["excerpt", "concept", "content_body"]):
+                return {
+                    "excerpt": inner.get("excerpt", ""),
+                    "concept": inner.get("concept", ""),
+                    "content_body": inner.get("content_body", ""),
+                }
+
+    # Cas 3 — noms alternatifs (rare mais réel)
+    excerpt = parsed.get("excerpt") or parsed.get("summary")
+    concept = parsed.get("concept") or parsed.get("idea")
+    body = (
+        parsed.get("content_body")
+        or parsed.get("body")
+        or parsed.get("content")
+        or ""
+    )
+
+    if excerpt or concept or body:
+        return {
+            "excerpt": excerpt or "",
+            "concept": concept or "",
+            "content_body": body or "",
+        }
+
+    # Fallback vide
+    return {
+        "excerpt": "",
+        "concept": "",
+        "content_body": "",
+    }
+
+
+# ============================================================
 # IA CONTENT — SOURCE → CONTENT
 # ============================================================
 def transform_source_to_content(
@@ -55,7 +108,7 @@ def transform_source_to_content(
     """
     Transforme une source en CONTENT Ratecard structuré.
 
-    CONTRAT :
+    CONTRAT FINAL :
     - excerpt
     - concept
     - content_body
@@ -106,14 +159,12 @@ Texte :
 
     raw = run_llm(prompt)
     parsed = safe_extract_json(raw)
+    normalized = normalize_content_output(parsed)
 
     # ---------------------------------------------------------
-    # FALLBACK (SOURCE COURTE / ABSTRAITE)
+    # FALLBACK MÉTIER (source courte / réponse vide)
     # ---------------------------------------------------------
-    if not parsed or all(
-        not parsed.get(k, "").strip()
-        for k in ["excerpt", "concept", "content_body"]
-    ):
+    if not any(normalized.values()):
         clean = source_text.strip()
         return {
             "excerpt": angle_signal,
@@ -122,8 +173,7 @@ Texte :
         }
 
     return {
-        "excerpt": parsed.get("excerpt", "").strip(),
-        "concept": parsed.get("concept", "").strip(),
-        "content_body": parsed.get("content_body", "").strip(),
+        "excerpt": normalized["excerpt"].strip(),
+        "concept": normalized["concept"].strip(),
+        "content_body": normalized["content_body"].strip(),
     }
-
