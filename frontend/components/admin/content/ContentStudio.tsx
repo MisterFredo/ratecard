@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-// Steps (nouveau dossier content)
+// STEPS
 import StepContext from "@/components/admin/content/steps/StepContext";
 import StepSource from "@/components/admin/content/steps/StepSource";
 import StepAngles from "@/components/admin/content/steps/StepAngles";
@@ -28,6 +28,8 @@ type Props = {
   contentId?: string;
 };
 
+const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
 export default function ContentStudio({ mode, contentId }: Props) {
   /* =========================================================
      STATE — CONTEXTE
@@ -42,7 +44,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
      STATE — SOURCE
   ========================================================= */
   const [sourceType, setSourceType] = useState<string | null>(null);
-  const [sourceText, setSourceText] = useState<string>("");
+  const [sourceText, setSourceText] = useState("");
 
   /* =========================================================
      STATE — ANGLES
@@ -58,18 +60,182 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [contentBody, setContentBody] = useState("");
 
   /* =========================================================
+     STATE — VISUEL
+  ========================================================= */
+  const [rectUrl, setRectUrl] = useState<string | null>(null);
+
+  /* =========================================================
+     STATE — PUBLICATION
+  ========================================================= */
+  const [publishMode, setPublishMode] =
+    useState<"NOW" | "SCHEDULE">("NOW");
+  const [publishAt, setPublishAt] = useState<string>("");
+
+  /* =========================================================
      META
   ========================================================= */
   const [internalContentId, setInternalContentId] = useState<string | null>(
     contentId || null
   );
+  const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [step, setStep] = useState<Step>("CONTEXT");
+
+  /* =========================================================
+     LOAD CONTENT (EDIT MODE)
+  ========================================================= */
+  useEffect(() => {
+    if (mode !== "edit" || !contentId) return;
+
+    async function load() {
+      try {
+        const res = await api.get(`/content/${contentId}`);
+        const c = res.content;
+
+        setExcerpt(c.EXCERPT || "");
+        setConcept(c.CONCEPT || "");
+        setContentBody(c.CONTENT_BODY || "");
+
+        setTopics(
+          (c.topics || []).map((t: any) => ({
+            id_topic: t.ID_TOPIC,
+            label: t.LABEL,
+          }))
+        );
+
+        setEvents(
+          (c.events || []).map((e: any) => ({
+            id_event: e.ID_EVENT,
+            label: e.LABEL,
+          }))
+        );
+
+        setCompanies(
+          (c.companies || []).map((co: any) => ({
+            id_company: co.ID_COMPANY,
+            name: co.NAME,
+          }))
+        );
+
+        setPersons(
+          (c.persons || []).map((p: any) => ({
+            id_person: p.ID_PERSON,
+            name: p.NAME,
+            role: p.ROLE || "contributeur",
+          }))
+        );
+
+        setSelectedAngle({
+          angle_title: c.ANGLE_TITLE,
+          angle_signal: c.ANGLE_SIGNAL,
+        });
+
+        setRectUrl(
+          c.MEDIA_RECTANGLE_ID
+            ? `${GCS}/content/${c.MEDIA_RECTANGLE_ID}`
+            : null
+        );
+
+        setContextValidated(true);
+        setStep("CONTENT");
+      } catch (e) {
+        console.error(e);
+        alert("Erreur chargement contenu");
+      }
+    }
+
+    load();
+  }, [mode, contentId]);
+
+  /* =========================================================
+     SAVE CONTENT (CREATE / UPDATE)
+  ========================================================= */
+  async function saveContent() {
+    if (!selectedAngle) {
+      alert("Angle requis");
+      return;
+    }
+
+    if (!excerpt.trim() || !contentBody.trim()) {
+      alert("Contenu incomplet");
+      return;
+    }
+
+    if (
+      !topics.length &&
+      !events.length &&
+      !companies.length &&
+      !persons.length
+    ) {
+      alert("Au moins une entité est requise");
+      return;
+    }
+
+    setSaving(true);
+
+    const payload = {
+      angle_title: selectedAngle.angle_title,
+      angle_signal: selectedAngle.angle_signal,
+      excerpt,
+      concept,
+      content_body: contentBody,
+
+      topics: topics.map((t) => t.id_topic),
+      events: events.map((e) => e.id_event),
+      companies: companies.map((c) => c.id_company),
+      persons: persons.map((p) => ({
+        id_person: p.id_person,
+        role: p.role || "contributeur",
+      })),
+    };
+
+    try {
+      if (!internalContentId) {
+        const res = await api.post("/content/create", payload);
+        setInternalContentId(res.id_content);
+      } else {
+        await api.put(`/content/update/${internalContentId}`, payload);
+      }
+
+      setStep("VISUAL");
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur sauvegarde contenu");
+    }
+
+    setSaving(false);
+  }
+
+  /* =========================================================
+     PUBLISH CONTENT
+  ========================================================= */
+  async function publishContent() {
+    if (!internalContentId) return;
+
+    setPublishing(true);
+
+    try {
+      await api.post(`/content/publish/${internalContentId}`, {
+        mode: publishMode,
+        publish_at:
+          publishMode === "SCHEDULE" ? publishAt : null,
+      });
+
+      alert("Contenu publié");
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur publication contenu");
+    }
+
+    setPublishing(false);
+  }
 
   /* =========================================================
      UI
   ========================================================= */
   return (
     <div className="space-y-6">
+
       {/* STEP 1 — CONTEXTE */}
       <details open={step === "CONTEXT"} className="border rounded p-4">
         <summary className="font-semibold cursor-pointer">
@@ -94,7 +260,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
               !companies.length &&
               !persons.length
             ) {
-              return alert("Au moins une entité est requise");
+              alert("Au moins une entité est requise");
+              return;
             }
             setContextValidated(true);
             setStep("SOURCE");
@@ -110,9 +277,9 @@ export default function ContentStudio({ mode, contentId }: Props) {
           </summary>
 
           <StepSource
-            onSubmit={(s) => {
-              setSourceType(s.type);
-              setSourceText(s.text);
+            onSubmit={({ type, text }) => {
+              setSourceType(type);
+              setSourceText(text);
               setStep("ANGLES");
             }}
           />
@@ -153,17 +320,15 @@ export default function ContentStudio({ mode, contentId }: Props) {
             onChange={(d) => {
               if (d.excerpt !== undefined) setExcerpt(d.excerpt);
               if (d.concept !== undefined) setConcept(d.concept);
-              if (d.contentBody !== undefined) setContentBody(d.contentBody);
+              if (d.contentBody !== undefined)
+                setContentBody(d.contentBody);
             }}
-            onValidate={() => {
-              // create / update content viendra ici
-              setStep("VISUAL");
-            }}
+            onValidate={saveContent}
           />
         </details>
       )}
 
-      {/* STEP 5 — VISUAL */}
+      {/* STEP 5 — VISUEL */}
       {internalContentId && (
         <details open={step === "VISUAL"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
@@ -172,6 +337,12 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
           <StepVisual
             contentId={internalContentId}
+            topics={topics}
+            events={events}
+            companies={companies}
+            persons={persons}
+            rectUrl={rectUrl}
+            onUpdated={(url) => setRectUrl(url)}
             onNext={() => setStep("PREVIEW")}
           />
         </details>
@@ -186,6 +357,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
           <StepPreview
             contentId={internalContentId}
+            onBack={() => setStep("CONTENT")}
             onNext={() => setStep("PUBLISH")}
           />
         </details>
@@ -198,7 +370,14 @@ export default function ContentStudio({ mode, contentId }: Props) {
             7. Publication
           </summary>
 
-          <StepPublish contentId={internalContentId} />
+          <StepPublish
+            publishMode={publishMode}
+            publishAt={publishAt}
+            publishing={publishing}
+            onChangeMode={setPublishMode}
+            onChangeDate={setPublishAt}
+            onPublish={publishContent}
+          />
         </details>
       )}
     </div>
