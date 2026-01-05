@@ -1,5 +1,4 @@
 import os
-import json
 from openai import OpenAI
 
 DEFAULT_LLM_MODEL = "gpt-4o"
@@ -12,39 +11,29 @@ def get_llm(model: str = None, temperature: float = 0.2):
     api_key = os.getenv("OPENAI_API_KEY")
 
     if not api_key:
-        # ⚠️ NE JAMAIS LEVER UNE EXCEPTION ICI
-        return {
-            "error": "missing_api_key",
-            "message": "OPENAI_API_KEY manquant dans les variables d’environnement"
-        }
+        return None, "OPENAI_API_KEY manquant"
 
     try:
         client = OpenAI(api_key=api_key)
     except Exception as e:
-        return {
-            "error": "openai_client_error",
-            "message": str(e)
-        }
+        return None, str(e)
 
     return {
         "client": client,
         "model": model or DEFAULT_LLM_MODEL,
         "temperature": temperature
-    }
+    }, None
 
 
 # ---------------------------------------------------------
-# RUN LLM — VERSION ULTRA ROBUSTE
+# RUN LLM — CONTRAT ÉDITORIAL STRICT
 # ---------------------------------------------------------
 def run_llm(prompt: str, model: str = None, temperature: float = 0.2) -> str:
-    cfg = get_llm(model=model, temperature=temperature)
+    cfg, error = get_llm(model=model, temperature=temperature)
 
-    # ⚠️ Cas erreur infra / config → toujours une STRING JSON
-    if isinstance(cfg, dict) and cfg.get("error"):
-        return json.dumps({
-            "error": cfg["error"],
-            "message": cfg["message"]
-        })
+    if error:
+        # ⚠️ Toujours une string exploitable
+        return ""
 
     try:
         completion = cfg["client"].chat.completions.create(
@@ -56,19 +45,19 @@ def run_llm(prompt: str, model: str = None, temperature: float = 0.2) -> str:
             temperature=cfg["temperature"]
         )
 
-        content = completion.choices[0].message.get("content")
+        message = completion.choices[0].message
 
-        if not isinstance(content, str):
-            return json.dumps({
-                "error": "invalid_llm_response",
-                "message": "La réponse du modèle n’est pas une chaîne de caractères"
-            })
+        # 🔑 ACCÈS CORRECT
+        content = message.content
 
-        return content
+        if isinstance(content, str):
+            return content
+
+        return ""
 
     except Exception as e:
-        # ⚠️ JAMAIS d’exception remontée
-        return json.dumps({
-            "error": "llm_exception",
-            "message": str(e)
-        })
+        # ⚠️ JAMAIS de JSON ici
+        # ⚠️ JAMAIS d'objet
+        # ⚠️ Toujours du texte vide en cas d’échec
+        return ""
+
