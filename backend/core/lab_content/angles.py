@@ -1,7 +1,8 @@
+import json
+import re
 from typing import List, Dict
 from utils.llm import run_llm
 from core.lab_content.utils import safe_extract_json
-
 
 def propose_angles(
     source_type: str,
@@ -43,3 +44,35 @@ Texte :
     parsed = safe_extract_json(raw)
 
     return parsed.get("angles", [])
+
+
+def safe_extract_json(text: str) -> Dict:
+    if not isinstance(text, str):
+        return {}
+
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        return {}
+
+    json_text = match.group(0)
+
+    try:
+        return json.loads(json_text)
+    except Exception:
+        pass
+
+    json_text = (
+        json_text
+        .replace("“", '"')
+        .replace("”", '"')
+        .replace("‘", "'")
+        .replace("’", "'")
+    )
+    json_text = re.sub(r",\s*}", "}", json_text)
+    json_text = re.sub(r",\s*]", "]", json_text)
+
+    try:
+        return json.loads(json_text)
+    except Exception:
+        return {}
+
