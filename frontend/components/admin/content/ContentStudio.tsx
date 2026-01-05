@@ -47,17 +47,32 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [sourceText, setSourceText] = useState("");
 
   /* =========================================================
-     STATE — ANGLES
+     STATE — ANGLE
   ========================================================= */
-  const [angles, setAngles] = useState<any[]>([]);
   const [selectedAngle, setSelectedAngle] = useState<any | null>(null);
 
   /* =========================================================
-     STATE — CONTENT
+     STATE — CONTENT (EDITABLE & VALIDATED)
   ========================================================= */
   const [excerpt, setExcerpt] = useState("");
   const [concept, setConcept] = useState("");
   const [contentBody, setContentBody] = useState("");
+
+  const [citations, setCitations] = useState<string[]>([]);
+  const [chiffres, setChiffres] = useState<string[]>([]);
+  const [acteurs, setActeurs] = useState<string[]>([]);
+
+  /* =========================================================
+     STATE — DATES
+  ========================================================= */
+  // Date éditoriale réelle (tri site)
+  const [dateCreation, setDateCreation] = useState<string>("");
+
+  // Date système (import Ratecard)
+  const [dateImport, setDateImport] = useState<string>(() => {
+    const d = new Date();
+    return d.toISOString().slice(0, 10); // YYYY-MM-DD
+  });
 
   /* =========================================================
      STATE — VISUEL
@@ -96,27 +111,30 @@ export default function ContentStudio({ mode, contentId }: Props) {
         setConcept(c.CONCEPT || "");
         setContentBody(c.CONTENT_BODY || "");
 
+        setCitations(c.CITATIONS || []);
+        setChiffres(c.CHIFFRES || []);
+        setActeurs(c.ACTEURS_CITES || []);
+
+        setDateCreation(c.DATE_CREATION || "");
+
         setTopics(
           (c.topics || []).map((t: any) => ({
             id_topic: t.ID_TOPIC,
             label: t.LABEL,
           }))
         );
-
         setEvents(
           (c.events || []).map((e: any) => ({
             id_event: e.ID_EVENT,
             label: e.LABEL,
           }))
         );
-
         setCompanies(
           (c.companies || []).map((co: any) => ({
             id_company: co.ID_COMPANY,
             name: co.NAME,
           }))
         );
-
         setPersons(
           (c.persons || []).map((p: any) => ({
             id_person: p.ID_PERSON,
@@ -176,9 +194,14 @@ export default function ContentStudio({ mode, contentId }: Props) {
     const payload = {
       angle_title: selectedAngle.angle_title,
       angle_signal: selectedAngle.angle_signal,
+
       excerpt,
       concept,
       content_body: contentBody,
+
+      citations,
+      chiffres,
+      acteurs_cites: acteurs,
 
       topics: topics.map((t) => t.id_topic),
       events: events.map((e) => e.id_event),
@@ -187,6 +210,9 @@ export default function ContentStudio({ mode, contentId }: Props) {
         id_person: p.id_person,
         role: p.role || "contributeur",
       })),
+
+      date_creation: dateCreation || null,
+      date_import: dateImport,
     };
 
     try {
@@ -317,11 +343,20 @@ export default function ContentStudio({ mode, contentId }: Props) {
             excerpt={excerpt}
             concept={concept}
             contentBody={contentBody}
+            citations={citations}
+            chiffres={chiffres}
+            acteurs={acteurs}
             onChange={(d) => {
               if (d.excerpt !== undefined) setExcerpt(d.excerpt);
               if (d.concept !== undefined) setConcept(d.concept);
               if (d.contentBody !== undefined)
                 setContentBody(d.contentBody);
+              if (d.citations !== undefined)
+                setCitations(d.citations);
+              if (d.chiffres !== undefined)
+                setChiffres(d.chiffres);
+              if (d.acteurs !== undefined)
+                setActeurs(d.acteurs);
             }}
             onValidate={saveContent}
           />
@@ -335,7 +370,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
             5. Visuel
           </summary>
 
-          <StepVisual
+        <StepVisual
             contentId={internalContentId}
             topics={topics}
             events={events}
