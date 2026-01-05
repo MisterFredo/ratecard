@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List, Dict
-from datetime import datetime
+from datetime import date, datetime
 
 
 # ============================================================
@@ -29,16 +29,20 @@ class ContentCreate(BaseModel):
     source_text: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
-    source_date: Optional[str] = None
 
     # ANGLE (OBLIGATOIRE)
     angle_title: str
     angle_signal: str
 
-    # CONTENU
+    # CONTENU VALIDÉ
     excerpt: Optional[str] = None
     concept: Optional[str] = None
     content_body: Optional[str] = None
+
+    # AIDES ÉDITORIALES VALIDÉES
+    citations: Optional[List[str]] = []
+    chiffres: Optional[List[str]] = []
+    acteurs_cites: Optional[List[str]] = []
 
     # ENTITÉS (AU MOINS UNE)
     topics: Optional[List[str]] = []
@@ -46,10 +50,15 @@ class ContentCreate(BaseModel):
     companies: Optional[List[str]] = []
     persons: Optional[List[ContentPerson]] = []
 
-    # META
+    # SEO
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
 
+    # DATES
+    date_creation: Optional[date] = None   # date éditoriale réelle
+    date_import: Optional[date] = None     # date système
+
+    # META
     author: Optional[str] = None
 
 
@@ -62,21 +71,20 @@ class ContentUpdate(BaseModel):
     source_text: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
-    source_date: Optional[str] = None
 
     # ANGLE
     angle_title: str
     angle_signal: str
 
-    # CONTENU
+    # CONTENU VALIDÉ
     excerpt: Optional[str] = None
     concept: Optional[str] = None
     content_body: Optional[str] = None
 
-    # VISUELS
-    media_rectangle_id: Optional[str] = None
-    visual_source_type: Optional[str] = None
-    visual_source_id: Optional[str] = None
+    # AIDES ÉDITORIALES VALIDÉES
+    citations: Optional[List[str]] = []
+    chiffres: Optional[List[str]] = []
+    acteurs_cites: Optional[List[str]] = []
 
     # ENTITÉS
     topics: Optional[List[str]] = []
@@ -84,10 +92,14 @@ class ContentUpdate(BaseModel):
     companies: Optional[List[str]] = []
     persons: Optional[List[ContentPerson]] = []
 
-    # META
+    # SEO
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
 
+    # DATES
+    date_creation: Optional[date] = None
+
+    # META
     author: Optional[str] = None
 
 
@@ -105,8 +117,12 @@ class ContentOut(BaseModel):
     concept: Optional[str]
     content_body: Optional[str]
 
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
+    citations: List[str] = []
+    chiffres: List[str] = []
+    acteurs_cites: List[str] = []
+
+    date_creation: Optional[date]
+    date_import: Optional[date]
     published_at: Optional[datetime]
 
     topics: list = []
