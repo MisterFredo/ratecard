@@ -322,3 +322,83 @@ def update_content(id_content: str, data: ContentUpdate):
 
     return True
 
+def archive_content(id_content: str):
+    """
+    Archive un content (soft delete).
+
+    - Ne supprime pas la donnée
+    - Change le statut
+    - Conserve l’historique
+    """
+    client = get_bigquery_client()
+    now = datetime.utcnow()
+
+    client.query(
+        f"""
+        UPDATE `{TABLE_CONTENT}`
+        SET
+            STATUS = "ARCHIVED",
+            UPDATED_AT = @now
+        WHERE ID_CONTENT = @id
+        """,
+        job_config={
+            "query_parameters": [
+                {
+                    "name": "id",
+                    "parameterType": {"type": "STRING"},
+                    "parameterValue": {"value": id_content},
+                },
+                {
+                    "name": "now",
+                    "parameterType": {"type": "TIMESTAMP"},
+                    "parameterValue": {"value": now},
+                },
+            ]
+        }
+    ).result()
+
+    return True
+
+def publish_content(
+    id_content: str,
+    published_at: datetime | None = None,
+):
+    """
+    Publie un content immédiatement ou à une date donnée.
+
+    - published_at = None  → publication immédiate
+    - published_at != None → publication planifiée
+    """
+
+    now = datetime.utcnow()
+
+    # ---------------------------------------------------------
+    # PUBLICATION IMMÉDIATE
+    # ---------------------------------------------------------
+    if not published_at or published_at <= now:
+        update_bq(
+            table=TABLE_CONTENT,
+            fields={
+                "STATUS": "PUBLISHED",
+                "PUBLISHED_AT": now,
+                "UPDATED_AT": now,
+            },
+            where={"ID_CONTENT": id_content},
+        )
+        return "PUBLISHED"
+
+    # ---------------------------------------------------------
+    # PUBLICATION PLANIFIÉE
+    # ---------------------------------------------------------
+    update_bq(
+        table=TABLE_CONTENT,
+        fields={
+            "STATUS": "SCHEDULED",
+            "PUBLISHED_AT": published_at,
+            "UPDATED_AT": now,
+        },
+        where={"ID_CONTENT": id_content},
+    )
+    return "SCHEDULED"
+
+
