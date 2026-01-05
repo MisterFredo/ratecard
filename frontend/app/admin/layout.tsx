@@ -9,6 +9,7 @@ import {
   Building2,
   UserCircle,
   Tags,
+  CalendarDays,
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
@@ -39,14 +40,17 @@ export default function AdminLayout({ children }) {
       label: "Topics",
       icon: Tags,
     },
+    {
+      href: "/admin/event",
+      label: "Événements",
+      icon: CalendarDays,
+    },
   ];
 
   return (
     <div className="min-h-screen flex">
-
       {/* SIDEBAR */}
       <aside className="w-64 bg-ratecard-blue text-white p-6 space-y-10 shadow-xl flex flex-col">
-
         {/* HEADER */}
         <div>
           <h1 className="text-xl font-semibold tracking-wide">
@@ -59,7 +63,6 @@ export default function AdminLayout({ children }) {
 
         {/* NAVIGATION */}
         <nav className="space-y-2 text-sm flex-1">
-
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = active(item.href);
@@ -82,7 +85,6 @@ export default function AdminLayout({ children }) {
               </Link>
             );
           })}
-
         </nav>
 
         {/* FOOTER */}
@@ -98,6 +100,3 @@ export default function AdminLayout({ children }) {
     </div>
   );
 }
-
-
-
