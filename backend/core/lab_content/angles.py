@@ -2,7 +2,7 @@ import json
 import re
 from typing import List, Dict
 from utils.llm import run_llm
-from core.lab_content.utils import safe_extract_json
+
 
 def propose_angles(
     source_type: str,
@@ -75,4 +75,3 @@ def safe_extract_json(text: str) -> Dict:
         return json.loads(json_text)
     except Exception:
         return {}
-
