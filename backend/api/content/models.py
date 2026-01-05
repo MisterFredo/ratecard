@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict
 from datetime import datetime
 
 
@@ -9,6 +9,15 @@ from datetime import datetime
 class ContentPerson(BaseModel):
     id_person: str
     role: Optional[str] = None
+
+
+# ============================================================
+# IA — ANGLES (REQUÊTE)
+# ============================================================
+class ContentAnglesRequest(BaseModel):
+    source_type: Optional[str] = None
+    source_text: str
+    context: Dict[str, List[str]]
 
 
 # ============================================================
@@ -66,7 +75,6 @@ class ContentUpdate(BaseModel):
 
     # VISUELS
     media_rectangle_id: Optional[str] = None
-    media_square_id: Optional[str] = None
     visual_source_type: Optional[str] = None
     visual_source_id: Optional[str] = None
 
