@@ -8,12 +8,16 @@ from core.content.service import (
     archive_content,
     publish_content,
 )
+from core.content.orchestration import (
+    generate_angles,
+    generate_content,
+)
 
 router = APIRouter()
 
 
 # ============================================================
-# CREATE
+# CREATE CONTENT
 # ============================================================
 @router.post("/create")
 def create_route(data: ContentCreate):
@@ -25,7 +29,7 @@ def create_route(data: ContentCreate):
 
 
 # ============================================================
-# LIST (ADMIN)
+# LIST CONTENTS (ADMIN)
 # ============================================================
 @router.get("/list")
 def list_route():
@@ -37,7 +41,7 @@ def list_route():
 
 
 # ============================================================
-# GET ONE
+# GET ONE CONTENT
 # ============================================================
 @router.get("/{id_content}")
 def get_route(id_content: str):
@@ -48,7 +52,7 @@ def get_route(id_content: str):
 
 
 # ============================================================
-# UPDATE
+# UPDATE CONTENT
 # ============================================================
 @router.put("/update/{id_content}")
 def update_route(id_content: str, data: ContentUpdate):
@@ -60,7 +64,7 @@ def update_route(id_content: str, data: ContentUpdate):
 
 
 # ============================================================
-# ARCHIVE
+# ARCHIVE CONTENT
 # ============================================================
 @router.post("/archive/{id_content}")
 def archive_route(id_content: str):
@@ -72,7 +76,7 @@ def archive_route(id_content: str):
 
 
 # ============================================================
-# PUBLISH
+# PUBLISH CONTENT
 # ============================================================
 @router.post("/publish/{id_content}")
 def publish_route(id_content: str, published_at: str | None = None):
@@ -81,3 +85,54 @@ def publish_route(id_content: str, published_at: str | None = None):
         return {"status": "ok", "published_status": status}
     except Exception as e:
         raise HTTPException(400, f"Erreur publication content : {e}")
+
+
+# ============================================================
+# IA — STEP 1 : PROPOSE ANGLES
+# ============================================================
+@router.post("/ai/angles")
+def ai_angles(
+    source_type: str,
+    source_text: str,
+    context: dict,
+):
+    """
+    Propose 1 à 3 angles mono-signal à partir d’une source.
+    """
+    try:
+        angles = generate_angles(
+            source_type=source_type,
+            source_text=source_text,
+            context=context,
+        )
+        return {"status": "ok", "angles": angles}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur génération angles : {e}")
+
+
+# ============================================================
+# IA — STEP 2 : GENERATE CONTENT
+# ============================================================
+@router.post("/ai/generate")
+def ai_generate(
+    source_type: str,
+    source_text: str,
+    angle_title: str,
+    angle_signal: str,
+    context: dict,
+):
+    """
+    Génère excerpt + concept + content_body
+    à partir d’une source et d’un angle validé.
+    """
+    try:
+        content = generate_content(
+            source_type=source_type,
+            source_text=source_text,
+            angle_title=angle_title,
+            angle_signal=angle_signal,
+            context=context,
+        )
+        return {"status": "ok", "content": content}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur génération content : {e}")
