@@ -8,13 +8,14 @@ import { api } from "@/lib/api";
 --------------------------------------------------------- */
 
 // Person référentiel (API /person/list)
-type PersonRef = {
+export type PersonRef = {
   id_person: string;
   name: string;
   title?: string;
+  id_company?: string; // 🔑 lien société (clé pour le filtrage)
 };
 
-// Person associée à un article (avec rôle)
+// Person associée à un contenu (avec rôle)
 export type ArticlePerson = {
   id_person: string;
   name: string;
@@ -23,27 +24,39 @@ export type ArticlePerson = {
 };
 
 type Props = {
+  /** Personnes actuellement sélectionnées */
   values: ArticlePerson[];
+
+  /** Personnes disponibles à afficher (déjà filtrées par le parent) */
+  availablePersons: PersonRef[];
+
+  /** Callback de modification */
   onChange: (persons: ArticlePerson[]) => void;
 };
 
-export default function PersonSelector({ values, onChange }: Props) {
-  const [persons, setPersons] = useState<PersonRef[]>([]);
+export default function PersonSelector({
+  values,
+  availablePersons,
+  onChange,
+}: Props) {
+  const [allPersons, setAllPersons] = useState<PersonRef[]>([]);
   const [loading, setLoading] = useState(true);
 
   /* ---------------------------------------------------------
-     LOAD PERSONS
+     LOAD ALL PERSONS (UNE FOIS)
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
 
       const res = await api.get("/person/list");
-      setPersons(
+
+      setAllPersons(
         (res.persons || []).map((p: any) => ({
           id_person: p.ID_PERSON,
           name: p.NAME,
           title: p.TITLE || "",
+          id_company: p.ID_COMPANY || null,
         }))
       );
 
@@ -54,14 +67,14 @@ export default function PersonSelector({ values, onChange }: Props) {
   }, []);
 
   /* ---------------------------------------------------------
-     TOGGLE SELECTION
+     TOGGLE SELECTION (IMMÉDIAT)
   --------------------------------------------------------- */
   const selectedIds = values.map((v) => v.id_person);
 
   function toggle(person: PersonRef) {
-    const already = selectedIds.includes(person.id_person);
+    const alreadySelected = selectedIds.includes(person.id_person);
 
-    if (already) {
+    if (alreadySelected) {
       onChange(values.filter((v) => v.id_person !== person.id_person));
     } else {
       onChange([
@@ -77,6 +90,16 @@ export default function PersonSelector({ values, onChange }: Props) {
   }
 
   /* ---------------------------------------------------------
+     PERSONNES À AFFICHER
+     - si le parent fournit un filtrage → on l’utilise
+     - sinon → fallback sur toutes
+  --------------------------------------------------------- */
+  const personsToDisplay =
+    availablePersons && availablePersons.length > 0
+      ? availablePersons
+      : allPersons;
+
+  /* ---------------------------------------------------------
      UI
   --------------------------------------------------------- */
   return (
@@ -85,16 +108,20 @@ export default function PersonSelector({ values, onChange }: Props) {
 
       {loading ? (
         <div className="text-sm text-gray-500">Chargement…</div>
+      ) : personsToDisplay.length === 0 ? (
+        <div className="text-sm text-gray-400 italic">
+          Aucune personne disponible pour les sociétés sélectionnées
+        </div>
       ) : (
         <div className="border rounded p-3 space-y-2 bg-white max-h-64 overflow-auto">
-          {persons.map((p) => {
+          {personsToDisplay.map((p) => {
             const selected = selectedIds.includes(p.id_person);
 
             return (
               <div
                 key={p.id_person}
                 onClick={() => toggle(p)}
-                className={`p-2 rounded cursor-pointer ${
+                className={`p-2 rounded cursor-pointer transition ${
                   selected
                     ? "bg-blue-50 border border-blue-300"
                     : "hover:bg-gray-50"
@@ -117,3 +144,4 @@ export default function PersonSelector({ values, onChange }: Props) {
     </div>
   );
 }
+
