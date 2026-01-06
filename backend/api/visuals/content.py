@@ -33,12 +33,33 @@ class ContentVisualReset(BaseModel):
 # ============================================================
 
 def to_rectangle(img_bytes: bytes) -> bytes:
+    """
+    Génère un visuel rectangulaire 1200x630
+    avec crop centré intelligent (même logique que Topic).
+    """
     img = Image.open(BytesIO(img_bytes)).convert("RGB")
-    img = img.resize((1200, 630), Image.LANCZOS)
+
+    target_ratio = 1200 / 630
+    img_ratio = img.width / img.height
+
+    if img_ratio > target_ratio:
+        # Image trop large → crop horizontal
+        new_width = int(img.height * target_ratio)
+        left = (img.width - new_width) // 2
+        rect = img.crop((left, 0, left + new_width, img.height))
+    else:
+        # Image trop haute → crop vertical
+        new_height = int(img.width / target_ratio)
+        top = (img.height - new_height) // 2
+        rect = img.crop((0, top, img.width, top + new_height))
+
+    rect = rect.resize((1200, 630), Image.LANCZOS)
 
     buf = BytesIO()
-    img.save(buf, format="JPEG", quality=90)
+    rect.save(buf, format="JPEG", quality=90)
+
     return buf.getvalue()
+
 
 
 # ============================================================
