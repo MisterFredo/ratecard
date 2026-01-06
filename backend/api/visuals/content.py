@@ -177,20 +177,28 @@ class ContentAIGenerate(BaseModel):
 def generate_ai_content_visual(payload: ContentAIGenerate):
     """
     Génère un visuel Content à partir :
-    - du visuel rectangulaire d’un Topic
+    - du visuel rectangulaire d’un Topic (logique éditoriale)
     - de l’angle
     - de l’excerpt
+
+    ⚠️ Pour l’instant : génération TEXT → IMAGE
+    (pas encore image → image, voir note plus bas)
     """
     try:
-        if not payload.angle_title.strip():
+        # --------------------------------------------------
+        # VALIDATIONS
+        # --------------------------------------------------
+        if not payload.angle_title or not payload.angle_title.strip():
             raise HTTPException(400, "Angle requis")
 
-        if not payload.excerpt.strip():
+        if not payload.excerpt or not payload.excerpt.strip():
             raise HTTPException(400, "Excerpt requis")
 
         client = get_bigquery_client()
 
-        # --- récupérer le visuel du topic
+        # --------------------------------------------------
+        # RÉCUPÉRER LE VISUEL DU TOPIC (LOGIQUE ÉDITORIALE)
+        # --------------------------------------------------
         rows = client.query(
             f"""
             SELECT MEDIA_RECTANGLE_ID
@@ -211,26 +219,68 @@ def generate_ai_content_visual(payload: ContentAIGenerate):
         if not topic_image:
             raise HTTPException(400, "Le topic n’a pas de visuel")
 
-        # --- génération IA
-        client_ai = OpenAI()
-
+        # --------------------------------------------------
+        # PROMPT DE DIRECTION ARTISTIQUE (TRÈS CONTRAINT)
+        # --------------------------------------------------
         prompt = f"""
-Tu es l’illustrateur officiel Ratecard.
+Tu es l’illustrateur officiel de Ratecard.
 
-Crée une image moderne et professionnelle à partir du contexte suivant.
+IMPORTANT :
+Tu dois produire une illustration STRICTEMENT DANS LE STYLE GRAPHIQUE SUIVANT :
 
+STYLE GRAPHIQUE OBLIGATOIRE
+- illustration dessinée à la main / cartoon
+- traits noirs épais et continus
+- formes simples et expressives
+- style flat, vectoriel
+- PAS de photoréalisme
+- PAS de 3D
+- PAS de style corporate ou stock image
+- PAS de gradients complexes
+- fond très clair ou texture papier
+- palette limitée : bleu foncé, bleu clair, gris, blanc, noir
+
+PERSONNAGE CENTRAL (OBLIGATOIRE)
+- un personnage unique et reconnaissable
+- visage simple et expressif
+- cheveux stylisés
+- tenue bleue avec cape ou tunique
+- posture dynamique (action, mouvement, interaction)
+- le personnage DOIT être présent et central dans l’image
+
+UNIVERS VISUEL
+- métaphores visuelles simples
+- icônes schématiques
+- graphiques simplifiés
+- éléments flottants autour du personnage
+- style pédagogique / explicatif
+
+SUJET DE L’ILLUSTRATION
 Angle :
 "{payload.angle_title}"
 
 Accroche :
 "{payload.excerpt}"
 
-Contraintes graphiques :
-- fond clair
-- ligne sobre
-- bleu Ratecard (#10323d)
-- aucun texte lisible
+Le visuel doit illustrer le concept de manière métaphorique,
+pas littérale, en restant cohérent avec l’univers graphique Ratecard.
+
+CONTRAINTES STRICTES
+- aucun texte lisible dans l’image
+- aucune marque réelle
+- aucune photo
+- aucune typographie
+- style homogène avec les visuels existants Ratecard (Retail Media / IA)
+
+OBJECTIF
+Créer un visuel éditorial reconnaissable immédiatement
+comme appartenant à l’univers Ratecard.
 """
+
+        # --------------------------------------------------
+        # GÉNÉRATION IA (TEXT → IMAGE)
+        # --------------------------------------------------
+        client_ai = OpenAI()
 
         result = client_ai.images.generate(
             model="gpt-image-1",
@@ -239,12 +289,18 @@ Contraintes graphiques :
         )
 
         base = base64.b64decode(result.data[0].b64_json)
+
+        # --------------------------------------------------
+        # NORMALISATION RECTANGLE (1200x630, crop centré)
+        # --------------------------------------------------
         rect_bytes = to_rectangle(base)
 
         filename = f"CONTENT_{payload.id_content}_AI_rect.jpg"
         upload_bytes(GCS_FOLDER, filename, rect_bytes)
 
-        # --- update content
+        # --------------------------------------------------
+        # UPDATE CONTENT
+        # --------------------------------------------------
         client.query(
             f"""
             UPDATE `{TABLE_CONTENT}`
@@ -280,5 +336,6 @@ Contraintes graphiques :
                 "message": repr(e),
             }
         )
+
 
 
