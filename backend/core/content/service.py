@@ -74,7 +74,7 @@ def create_content(data: ContentCreate) -> str:
 
     content_id = str(uuid.uuid4())
 
-    # 🔑 Normalisation DATE pour BigQuery (YYYY-MM-DD)
+    # 🔑 Dates
     today_iso = date.today().isoformat()
 
     date_creation = (
@@ -89,6 +89,12 @@ def create_content(data: ContentCreate) -> str:
         else today_iso
     )
 
+    # 🔑 Timestamp technique pour les tables de liaison
+    now = datetime.utcnow()
+
+    # ---------------------------------------------------------
+    # INSERT CONTENT (TABLE PRINCIPALE)
+    # ---------------------------------------------------------
     row = [{
         "ID_CONTENT": content_id,
         "STATUS": "DRAFT",
@@ -119,7 +125,7 @@ def create_content(data: ContentCreate) -> str:
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
 
-        # DATES (alignées BQ)
+        # DATES
         "DATE_CREATION": date_creation,
         "DATE_IMPORT": date_import,
 
@@ -131,11 +137,8 @@ def create_content(data: ContentCreate) -> str:
     table = client.get_table(TABLE_CONTENT)
 
     errors = client.insert_rows_json(table, row)
-
     if errors:
         raise RuntimeError(f"BigQuery insert error: {errors}")
-
-        now = datetime.utcnow()
 
     # ---------------------------------------------------------
     # RELATIONS — TOPICS
@@ -203,8 +206,6 @@ def create_content(data: ContentCreate) -> str:
         )
 
     return content_id
-
-
 
 # ============================================================
 # GET ONE CONTENT (enrichi)
