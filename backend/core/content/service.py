@@ -186,6 +186,15 @@ def create_content(data: ContentCreate) -> str:
 
     return content_id
 
+def normalize_array(value):
+    if not value:
+        return []
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        return []
+    return []
+
 
 # ============================================================
 # GET ONE CONTENT (enrichi)
