@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from api.content.models import ContentCreate, ContentUpdate, ContentAnglesRequest
+from api.content.models import ContentCreate, ContentUpdate, ContentAnglesRequest, ContentGenerateRequest
 from core.content.service import (
     create_content,
     list_contents,
@@ -108,12 +108,15 @@ def ai_angles(payload: ContentAnglesRequest):
 def ai_generate(payload: ContentGenerateRequest):
     """
     Génère excerpt + concept + content_body + citations + chiffres + acteurs
-    à partir d’un angle validé.
+    à partir d’une source et d’un angle validé.
     """
     try:
         content = generate_content(
+            source_type=payload.source_type,
+            source_text=payload.source_text,
             angle_title=payload.angle_title,
             angle_signal=payload.angle_signal,
+            context=payload.context,
         )
         return {"status": "ok", "content": content}
     except Exception as e:
