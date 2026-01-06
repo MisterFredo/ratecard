@@ -12,10 +12,10 @@ export type PersonRef = {
   id_person: string;
   name: string;
   title?: string;
-  id_company?: string; // 🔑 lien société (clé pour le filtrage)
+  id_company?: string | null; // lien société (pour filtrage éventuel)
 };
 
-// Person associée à un contenu (avec rôle)
+// Person associée à un contenu / article (avec rôle)
 export type ArticlePerson = {
   id_person: string;
   name: string;
@@ -27,8 +27,12 @@ type Props = {
   /** Personnes actuellement sélectionnées */
   values: ArticlePerson[];
 
-  /** Personnes disponibles à afficher (déjà filtrées par le parent) */
-  availablePersons: PersonRef[];
+  /**
+   * Personnes disponibles à afficher (optionnel).
+   * - si fourni → utilisé tel quel (ex: filtrage par société)
+   * - sinon → fallback sur toutes les personnes chargées
+   */
+  availablePersons?: PersonRef[];
 
   /** Callback de modification */
   onChange: (persons: ArticlePerson[]) => void;
@@ -49,16 +53,21 @@ export default function PersonSelector({
     async function load() {
       setLoading(true);
 
-      const res = await api.get("/person/list");
+      try {
+        const res = await api.get("/person/list");
 
-      setAllPersons(
-        (res.persons || []).map((p: any) => ({
-          id_person: p.ID_PERSON,
-          name: p.NAME,
-          title: p.TITLE || "",
-          id_company: p.ID_COMPANY || null,
-        }))
-      );
+        setAllPersons(
+          (res.persons || []).map((p: any) => ({
+            id_person: p.ID_PERSON,
+            name: p.NAME,
+            title: p.TITLE || "",
+            id_company: p.ID_COMPANY || null,
+          }))
+        );
+      } catch (e) {
+        console.error("Erreur chargement personnes", e);
+        setAllPersons([]);
+      }
 
       setLoading(false);
     }
@@ -83,7 +92,7 @@ export default function PersonSelector({
           id_person: person.id_person,
           name: person.name,
           title: person.title,
-          role: "contributeur", // valeur par défaut
+          role: "contributeur", // rôle par défaut
         },
       ]);
     }
@@ -91,8 +100,8 @@ export default function PersonSelector({
 
   /* ---------------------------------------------------------
      PERSONNES À AFFICHER
-     - si le parent fournit un filtrage → on l’utilise
-     - sinon → fallback sur toutes
+     - priorité à availablePersons si fourni
+     - sinon toutes les personnes
   --------------------------------------------------------- */
   const personsToDisplay =
     availablePersons && availablePersons.length > 0
@@ -110,7 +119,7 @@ export default function PersonSelector({
         <div className="text-sm text-gray-500">Chargement…</div>
       ) : personsToDisplay.length === 0 ? (
         <div className="text-sm text-gray-400 italic">
-          Aucune personne disponible pour les sociétés sélectionnées
+          Aucune personne disponible
         </div>
       ) : (
         <div className="border rounded p-3 space-y-2 bg-white max-h-64 overflow-auto">
@@ -128,9 +137,11 @@ export default function PersonSelector({
                 }`}
               >
                 <div className="font-medium">{p.name}</div>
+
                 {p.title && (
                   <div className="text-xs text-gray-500">{p.title}</div>
                 )}
+
                 {selected && (
                   <div className="text-xs text-blue-600 font-semibold">
                     Sélectionnée
@@ -144,4 +155,3 @@ export default function PersonSelector({
     </div>
   );
 }
-
