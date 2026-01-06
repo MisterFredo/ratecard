@@ -105,24 +105,15 @@ def ai_angles(payload: ContentAnglesRequest):
 # IA — STEP 2 : GENERATE CONTENT
 # ============================================================
 @router.post("/ai/generate")
-def ai_generate(
-    source_type: str,
-    source_text: str,
-    angle_title: str,
-    angle_signal: str,
-    context: dict,
-):
+def ai_generate(payload: ContentGenerateRequest):
     """
-    Génère excerpt + concept + content_body
-    à partir d’une source et d’un angle validé.
+    Génère excerpt + concept + content_body + citations + chiffres + acteurs
+    à partir d’un angle validé.
     """
     try:
         content = generate_content(
-            source_type=source_type,
-            source_text=source_text,
-            angle_title=angle_title,
-            angle_signal=angle_signal,
-            context=context,
+            angle_title=payload.angle_title,
+            angle_signal=payload.angle_signal,
         )
         return {"status": "ok", "content": content}
     except Exception as e:
