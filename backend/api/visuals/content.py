@@ -9,13 +9,13 @@ from openai import OpenAI
 from google.cloud import bigquery
 
 from utils.bigquery_utils import get_bigquery_client
-from utils.gcs import upload_bytes
+from utils.gcs import upload_bytes, delete_file
 from config import BQ_PROJECT, BQ_DATASET
 
 router = APIRouter()
 
 TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
-GCS_FOLDER = "content"
+GCS_FOLDER = "contents"
 
 
 # ============================================================
@@ -35,15 +35,16 @@ class ContentAIGenerate(BaseModel):
 
 
 # ============================================================
-# HELPERS
+# IMAGE UTILS
 # ============================================================
 
 def to_rectangle(img_bytes: bytes) -> bytes:
     """
-    Normalise l’image en format rectangulaire standard.
+    Normalise l’image en format rectangulaire éditorial.
     """
     img = Image.open(BytesIO(img_bytes)).convert("RGB")
-    img = img.resize((1200, 630))
+    img = img.resize((1200, 630), Image.LANCZOS)
+
     out = BytesIO()
     img.save(out, format="JPEG", quality=90)
     return out.getvalue()
@@ -52,14 +53,18 @@ def to_rectangle(img_bytes: bytes) -> bytes:
 # ============================================================
 # 1️⃣ UPLOAD MANUEL VISUEL CONTENT
 # ============================================================
+
 @router.post("/upload")
 def upload_content_visual(payload: ContentVisualUpload):
     try:
-        img_bytes = base64.b64decode(payload.base64_image)
+        try:
+            img_bytes = base64.b64decode(payload.base64_image)
+        except Exception:
+            raise HTTPException(400, "Base64 invalide")
+
         rect_bytes = to_rectangle(img_bytes)
 
         filename = f"CONTENT_{payload.id_content}_rect.jpg"
-
         upload_bytes(GCS_FOLDER, filename, rect_bytes)
 
         client = get_bigquery_client()
@@ -69,20 +74,21 @@ def upload_content_visual(payload: ContentVisualUpload):
             SET
                 MEDIA_RECTANGLE_ID = @fname,
                 VISUAL_SOURCE_TYPE = "CONTENT",
-                VISUAL_SOURCE_ID = @id,
-                UPDATED_AT = @now
+                VISUAL_SOURCE_ID = @id
             WHERE ID_CONTENT = @id
             """,
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
                     bigquery.ScalarQueryParameter("fname", "STRING", filename),
                     bigquery.ScalarQueryParameter("id", "STRING", payload.id_content),
-                    bigquery.ScalarQueryParameter("now", "TIMESTAMP", datetime.utcnow()),
                 ]
             )
         ).result()
 
         return {"status": "ok", "filename": filename}
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         raise HTTPException(
@@ -95,13 +101,14 @@ def upload_content_visual(payload: ContentVisualUpload):
 
 
 # ============================================================
-# 2️⃣ GÉNÉRATION IA VISUEL CONTENT (TOPIC UNIQUEMENT)
+# 2️⃣ GÉNÉRATION IA VISUEL CONTENT (TOPIC → CONTENT)
 # ============================================================
+
 @router.post("/generate-ai")
 def generate_ai_content_visual(payload: ContentAIGenerate):
     """
     Génère un visuel Content à partir :
-    - du visuel d’un Topic
+    - du visuel rectangulaire d’un Topic
     - de l’angle
     - de l’excerpt
     """
@@ -114,8 +121,8 @@ def generate_ai_content_visual(payload: ContentAIGenerate):
 
         client = get_bigquery_client()
 
-        # Récupérer le visuel du topic
-        topic_row = client.query(
+        # --- Récupérer le visuel du topic
+        rows = client.query(
             f"""
             SELECT MEDIA_RECTANGLE_ID
             FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC`
@@ -129,13 +136,13 @@ def generate_ai_content_visual(payload: ContentAIGenerate):
         ).result()
 
         topic_image = None
-        for r in topic_row:
+        for r in rows:
             topic_image = r["MEDIA_RECTANGLE_ID"]
 
         if not topic_image:
             raise HTTPException(400, "Le topic n’a pas de visuel")
 
-        # IA
+        # --- Génération IA
         client_ai = OpenAI()
 
         prompt = f"""
@@ -169,15 +176,14 @@ Contraintes graphiques :
         filename = f"CONTENT_{payload.id_content}_AI_rect.jpg"
         upload_bytes(GCS_FOLDER, filename, rect_bytes)
 
-        # Update Content
+        # --- Update Content
         client.query(
             f"""
             UPDATE `{TABLE_CONTENT}`
             SET
                 MEDIA_RECTANGLE_ID = @fname,
                 VISUAL_SOURCE_TYPE = "AI_TOPIC",
-                VISUAL_SOURCE_ID = @topic,
-                UPDATED_AT = @now
+                VISUAL_SOURCE_ID = @topic
             WHERE ID_CONTENT = @id
             """,
             job_config=bigquery.QueryJobConfig(
@@ -185,7 +191,6 @@ Contraintes graphiques :
                     bigquery.ScalarQueryParameter("fname", "STRING", filename),
                     bigquery.ScalarQueryParameter("topic", "STRING", payload.id_topic),
                     bigquery.ScalarQueryParameter("id", "STRING", payload.id_content),
-                    bigquery.ScalarQueryParameter("now", "TIMESTAMP", datetime.utcnow()),
                 ]
             )
         ).result()
