@@ -266,15 +266,20 @@ Contraintes graphiques :
 
         return {"status": "ok", "filename": filename}
 
-    except HTTPException:
+    except HTTPException as e:
+        print("❌ HTTPException generate-ai:", e.detail)
         raise
 
     except Exception as e:
+        import traceback
+        print("❌ generate-ai UNCAUGHT EXCEPTION")
+        traceback.print_exc()
         raise HTTPException(
-            status_code=400,
+            status_code=500,
             detail={
                 "error": "content_visual_ai_failed",
-                "message": str(e),
+                "message": repr(e),
             }
         )
+
 
