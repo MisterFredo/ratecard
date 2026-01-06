@@ -4,7 +4,17 @@ from utils.llm import run_llm
 
 
 # ============================================================
-# ANGLES — IA → STUDIO (ROBUSTE)
+# ANGLE LENSES — points de vue éditoriaux
+# ============================================================
+ANGLE_LENSES = [
+    "interface et expérience utilisateur",
+    "attribution et mesure de la performance",
+    "donnée produit et compétitivité des marques",
+]
+
+
+# ============================================================
+# PROPOSE ANGLES — MULTI PASS
 # ============================================================
 def propose_angles(
     source_type: str,
@@ -12,58 +22,84 @@ def propose_angles(
     context: Dict[str, List[str]],
 ) -> List[Dict[str, str]]:
     """
-    Propose 1 à 3 angles mono-signal exploitables.
-    Jamais de retour vide si l'IA a répondu.
+    Propose plusieurs angles mono-signal via appels IA successifs.
+    Jamais de retour vide si la source est non vide.
     """
 
-    prompt = f"""
-Tu es un agent éditorial ADEX.
+    if not isinstance(source_text, str) or not source_text.strip():
+        return []
 
-À partir de la source ci-dessous, IDENTIFIE ENTRE 2 ET 3 ANGLES DISTINCTS.
-Chaque angle doit traiter UN SEUL SIGNAL.
+    angles: List[Dict[str, str]] = []
 
-⚠️ RÈGLE CRITIQUE :
-- Ne fusionne jamais plusieurs idées dans un même angle.
-- Si la source contient plusieurs enjeux, ils DOIVENT être séparés.
-- Il est préférable de proposer 3 angles simples plutôt qu’un seul angle global.
+    for lens in ANGLE_LENSES:
+        prompt = f"""
+Tu es un analyste éditorial spécialisé en contenus liés au marketing digital et plus spécifiquement la Adtech, le Martech et le Retail Média.
 
-Pour CHAQUE angle, fournis :
-- Titre : une accroche claire et spécifique
-- Signal : une phrase qui décrit précisément l’enjeu
+À partir de la source ci-dessous, identifie UN SEUL angle éditorial,
+mono-signal, en te concentrant UNIQUEMENT sur le point de vue suivant :
 
-FORMAT ATTENDU (obligatoire) :
+👉 {lens}
 
-ANGLE
+Contraintes :
+- Un seul angle.
+- Ne fusionne pas plusieurs idées.
+- Ne reformule pas la source.
+- Ne produis aucun commentaire.
+
+FORMAT ATTENDU :
+
 Titre : ...
 Signal : ...
-
-ANGLE
-Titre : ...
-Signal : ...
-
-SOURCE :
-{source_text}
-
 
 SOURCE :
 {source_text}
 """
 
-    raw = run_llm(prompt)
+        raw = run_llm(prompt)
+        angle = parse_single_angle(raw)
 
-    # Log temporaire si besoin
-    # print("RAW ANGLES OUTPUT:", raw)
+        if angle:
+            angles.append(angle)
 
-    angles = parse_angles_text(raw)
-
-    # 🔑 FALLBACK CRITIQUE (hérité de lab_light)
-    if not angles and isinstance(raw, str) and raw.strip():
+    # ---------------------------------------------------------
+    # FALLBACK FINAL — continuité UX garantie
+    # ---------------------------------------------------------
+    if not angles and source_text.strip():
         return [{
-            "angle_title": raw.strip().split("\n")[0][:120],
-            "angle_signal": raw.strip()[:300],
+            "angle_title": source_text.strip().split("\n")[0][:120],
+            "angle_signal": source_text.strip()[:300],
         }]
 
     return angles
+
+
+# ============================================================
+# PARSE UN ANGLE UNIQUE (robuste)
+# ============================================================
+def parse_single_angle(text: str):
+    if not isinstance(text, str):
+        return None
+
+    title_match = re.search(
+        r"Titre\s*:\s*(.+)",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    signal_match = re.search(
+        r"Signal\s*:\s*(.+)",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    if title_match and signal_match:
+        return {
+            "angle_title": title_match.group(1).strip(),
+            "angle_signal": signal_match.group(1).strip(),
+        }
+
+    return None
+
 
 
 def parse_angles_text(text: str) -> List[Dict[str, str]]:
