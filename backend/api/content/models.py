@@ -22,11 +22,15 @@ class ContentAnglesRequest(BaseModel):
 
 # ============================================================
 # IA — GENERATE CONTENT (REQUÊTE)
-# 👉 NOUVEAU — indispensable pour éviter les 422
 # ============================================================
 class ContentGenerateRequest(BaseModel):
+    source_type: Optional[str] = None
+    source_text: str
+    context: Dict[str, List[str]]
+
     angle_title: str
     angle_signal: str
+
 
 
 # ============================================================
