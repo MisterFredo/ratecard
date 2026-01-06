@@ -10,6 +10,17 @@ type Props = {
     angle_signal: string;
   };
 
+  // 🔑 SOURCE & CONTEXTE (OBLIGATOIRES)
+  sourceType: string | null;
+  sourceText: string;
+  context: {
+    topics: any[];
+    events: any[];
+    companies: any[];
+    persons: any[];
+  };
+
+  // CONTENU
   excerpt: string;
   concept: string;
   contentBody: string;
@@ -32,6 +43,9 @@ type Props = {
 
 export default function StepContent({
   angle,
+  sourceType,
+  sourceText,
+  context,
   excerpt,
   concept,
   contentBody,
@@ -78,7 +92,6 @@ export default function StepContent({
     setLoading(false);
   }
 
-
   function updateList(
     key: "citations" | "chiffres" | "acteurs",
     index: number,
@@ -124,12 +137,9 @@ export default function StepContent({
 
       {/* AIDES ÉDITORIALES */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
         {/* CITATIONS */}
         <div className="space-y-2">
-          <h4 className="font-semibold text-sm">
-            Citations proposées
-          </h4>
+          <h4 className="font-semibold text-sm">Citations proposées</h4>
           {citations.length === 0 && (
             <p className="text-xs text-gray-400 italic">Aucune</p>
           )}
@@ -154,9 +164,7 @@ export default function StepContent({
 
         {/* CHIFFRES */}
         <div className="space-y-2">
-          <h4 className="font-semibold text-sm">
-            Chiffres clés
-          </h4>
+          <h4 className="font-semibold text-sm">Chiffres clés</h4>
           {chiffres.length === 0 && (
             <p className="text-xs text-gray-400 italic">Aucun</p>
           )}
@@ -181,9 +189,7 @@ export default function StepContent({
 
         {/* ACTEURS */}
         <div className="space-y-2">
-          <h4 className="font-semibold text-sm">
-            Acteurs cités
-          </h4>
+          <h4 className="font-semibold text-sm">Acteurs cités</h4>
           {acteurs.length === 0 && (
             <p className="text-xs text-gray-400 italic">Aucun</p>
           )}
@@ -205,7 +211,6 @@ export default function StepContent({
             </div>
           ))}
         </div>
-
       </div>
 
       {/* ACTIONS */}
@@ -228,3 +233,4 @@ export default function StepContent({
     </div>
   );
 }
+
