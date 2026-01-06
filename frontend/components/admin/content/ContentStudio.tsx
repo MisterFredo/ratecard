@@ -388,15 +388,22 @@ export default function ContentStudio({ mode, contentId }: Props) {
           </summary>
 
         <StepVisual
-            contentId={internalContentId}
-            topics={topics}
-            events={events}
-            companies={companies}
-            persons={persons}
-            rectUrl={rectUrl}
-            onUpdated={(url) => setRectUrl(url)}
-            onNext={() => setStep("PREVIEW")}
-          />
+          contentId={internalContentId}
+
+          // 🔑 CONTEXTE VISUEL
+          angleTitle={selectedAngle?.angle_title || ""}
+          excerpt={excerpt}
+
+          topics={topics}
+          events={events}
+          companies={companies}
+          persons={persons}
+
+          rectUrl={rectUrl}
+          onUpdated={(url) => setRectUrl(url)}
+          onNext={() => setStep("PREVIEW")}
+        />
+
         </details>
       )}
 
