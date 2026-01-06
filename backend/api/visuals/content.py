@@ -236,7 +236,6 @@ Contraintes graphiques :
             model="gpt-image-1",
             prompt=prompt,
             size="1024x1024",
-            response_format="b64_json",
         )
 
         base = base64.b64decode(result.data[0].b64_json)
