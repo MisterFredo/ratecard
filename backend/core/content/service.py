@@ -28,6 +28,18 @@ TABLE_EVENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_EVENT"
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_PERSON"
 
+def normalize_array(value):
+    """
+    Force une valeur à être compatible avec ARRAY<STRING> BigQuery.
+    """
+    if value is None:
+        return []
+    if isinstance(value, list):
+        # on garde uniquement des strings
+        return [str(v) for v in value if isinstance(v, str) and v.strip()]
+    # tout le reste (STRING, int, etc.) → liste vide
+    return []
+
 
 # ============================================================
 # CREATE CONTENT — validation humaine
@@ -186,14 +198,6 @@ def create_content(data: ContentCreate) -> str:
 
     return content_id
 
-def normalize_array(value):
-    if not value:
-        return []
-    if isinstance(value, list):
-        return value
-    if isinstance(value, str):
-        return []
-    return []
 
 
 # ============================================================
