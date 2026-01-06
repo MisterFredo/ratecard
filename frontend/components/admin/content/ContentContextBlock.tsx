@@ -10,6 +10,7 @@ type Props = {
   events: any[];
   companies: any[];
   persons: any[];
+
   onChange: (data: {
     topics?: any[];
     events?: any[];
@@ -25,8 +26,26 @@ export default function ContentContextBlock({
   persons,
   onChange,
 }: Props) {
+
+  /**
+   * 🔑 Règle UX :
+   * - si une société est sélectionnée → on filtre les personnes
+   * - sinon → toutes les personnes sont disponibles
+   */
+  const filteredPersons =
+    companies.length === 0
+      ? persons
+      : persons.filter((p) =>
+          companies.some(
+            (c) =>
+              p.id_company === c.id_company ||
+              p.company_id === c.id_company
+          )
+        );
+
   return (
     <div className="space-y-6">
+
       {/* TOPICS */}
       <TopicSelector
         values={topics}
@@ -42,12 +61,28 @@ export default function ContentContextBlock({
       {/* COMPANIES */}
       <CompanySelector
         values={companies}
-        onChange={(items) => onChange({ companies: items })}
+        onChange={(items) => {
+          onChange({ companies: items });
+
+          /**
+           * 🧠 Important :
+           * si on change les sociétés, on nettoie les personnes incohérentes
+           */
+          onChange({
+            persons: filteredPersons.filter((p) =>
+              items.some(
+                (c) =>
+                  p.id_company === c.id_company ||
+                  p.company_id === c.id_company
+              )
+            ),
+          });
+        }}
       />
 
-      {/* PERSONS */}
+      {/* PERSONS (FILTRÉES) */}
       <PersonSelector
-        values={persons}
+        values={filteredPersons}
         onChange={(items) => onChange({ persons: items })}
       />
     </div>
