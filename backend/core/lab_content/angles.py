@@ -14,7 +14,7 @@ ANGLE_LENSES = [
 
 
 # ============================================================
-# PROPOSE ANGLES — MULTI PASS
+# PROPOSE ANGLES — MULTI PASS IA
 # ============================================================
 def propose_angles(
     source_type: str,
@@ -33,7 +33,8 @@ def propose_angles(
 
     for lens in ANGLE_LENSES:
         prompt = f"""
-Tu es un analyste éditorial spécialisé en contenus liés au marketing digital et plus spécifiquement la Adtech, le Martech et le Retail Média.
+Tu es un analyste éditorial spécialisé en contenus liés
+au marketing digital, à l’Adtech, au Martech et au Retail Media.
 
 À partir de la source ci-dessous, identifie UN SEUL angle éditorial,
 mono-signal, en te concentrant UNIQUEMENT sur le point de vue suivant :
@@ -62,9 +63,9 @@ SOURCE :
             angles.append(angle)
 
     # ---------------------------------------------------------
-    # FALLBACK FINAL — continuité UX garantie
+    # FALLBACK FINAL — continuité UX
     # ---------------------------------------------------------
-    if not angles and source_text.strip():
+    if not angles:
         return [{
             "angle_title": source_text.strip().split("\n")[0][:120],
             "angle_signal": source_text.strip()[:300],
@@ -99,47 +100,3 @@ def parse_single_angle(text: str):
         }
 
     return None
-
-
-
-def parse_angles_text(text: str) -> List[Dict[str, str]]:
-    """
-    Parse tolérant des sorties LLM réelles.
-    Accepte puces, variations lexicales, formats libres.
-    """
-    if not isinstance(text, str):
-        return []
-
-    angles = []
-
-    # Découpage large (ANGLE, puces, tirets)
-    blocks = re.split(
-        r"(?:\n\s*ANGLE\s+\d+|\n\s*[•🔹\-])",
-        text,
-        flags=re.IGNORECASE,
-    )
-
-    for block in blocks:
-        block = block.strip()
-        if not block:
-            continue
-
-        title_match = re.search(
-            r"(?:Titre\s*(?:provisoire)?\s*:)(.+)",
-            block,
-            flags=re.IGNORECASE,
-        )
-
-        signal_match = re.search(
-            r"(?:Signal\s*(?:résumé)?\s*:)(.+)",
-            block,
-            flags=re.IGNORECASE,
-        )
-
-        if title_match and signal_match:
-            angles.append({
-                "angle_title": title_match.group(1).strip(),
-                "angle_signal": signal_match.group(1).strip(),
-            })
-
-    return angles
