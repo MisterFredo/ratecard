@@ -127,9 +127,15 @@ def create_content(data: ContentCreate) -> str:
         "PUBLISHED_AT": None,
     }]
 
-    insert_bq(TABLE_CONTENT, row)
+    client = get_bigquery_client()
+    table = client.get_table(TABLE_CONTENT)
 
-    now = datetime.utcnow()
+    errors = client.insert_rows_json(table, row)
+
+    if errors:
+        raise RuntimeError(f"BigQuery insert error: {errors}")
+
+        now = datetime.utcnow()
 
     # ---------------------------------------------------------
     # RELATIONS — TOPICS
