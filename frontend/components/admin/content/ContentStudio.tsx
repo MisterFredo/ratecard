@@ -273,6 +273,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
           events={events}
           companies={companies}
           persons={persons}
+          dateCreation={dateCreation}
+          onChangeDateCreation={setDateCreation}
           onChange={(d) => {
             if (d.topics) setTopics(d.topics);
             if (d.events) setEvents(d.events);
