@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import base64
 from io import BytesIO
+from openai import OpenAI
 from PIL import Image
 
 from google.cloud import bigquery
