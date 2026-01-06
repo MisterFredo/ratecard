@@ -321,9 +321,9 @@ def update_content(id_content: str, data: ContentUpdate):
         "CONCEPT": data.concept,
         "CONTENT_BODY": data.content_body,
 
-        "CITATIONS": data.citations or [],
-        "CHIFFRES": data.chiffres or [],
-        "ACTEURS_CITES": data.acteurs_cites or [],
+        "CITATIONS": normalize_array(data.citations),
+        "CHIFFRES": normalize_array(data.chiffres),
+        "ACTEURS_CITES": normalize_array(data.acteurs_cites),
 
         "SOURCE_TYPE": data.source_type,
         "SOURCE_TEXT": data.source_text,
