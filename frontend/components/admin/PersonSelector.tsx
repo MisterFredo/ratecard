@@ -1,21 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
-
 /* ---------------------------------------------------------
    TYPES
 --------------------------------------------------------- */
 
-// Person référentiel (API /person/list)
 export type PersonRef = {
   id_person: string;
   name: string;
   title?: string;
-  id_company?: string | null; // lien société (pour filtrage éventuel)
 };
 
-// Person associée à un contenu / article (avec rôle)
 export type ArticlePerson = {
   id_person: string;
   name: string;
@@ -27,60 +21,34 @@ type Props = {
   /** Personnes actuellement sélectionnées */
   values: ArticlePerson[];
 
-  /**
-   * Personnes disponibles à afficher (optionnel).
-   * - si fourni → utilisé tel quel (ex: filtrage par société)
-   * - sinon → fallback sur toutes les personnes chargées
-   */
-  availablePersons?: PersonRef[];
+  /** Personnes disponibles (déjà filtrées par société) */
+  availablePersons: PersonRef[];
 
-  /** Callback de modification */
+  /** Désactive le selector (ex: aucune société sélectionnée) */
+  disabled?: boolean;
+
+  /** Chargement en cours */
+  loading?: boolean;
+
+  /** Callback */
   onChange: (persons: ArticlePerson[]) => void;
 };
 
 export default function PersonSelector({
   values,
   availablePersons,
+  disabled = false,
+  loading = false,
   onChange,
 }: Props) {
-  const [allPersons, setAllPersons] = useState<PersonRef[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  /* ---------------------------------------------------------
-     LOAD ALL PERSONS (UNE FOIS)
-  --------------------------------------------------------- */
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-
-      try {
-        const res = await api.get("/person/list");
-
-        setAllPersons(
-          (res.persons || []).map((p: any) => ({
-            id_person: p.ID_PERSON,
-            name: p.NAME,
-            title: p.TITLE || "",
-            id_company: p.ID_COMPANY || null,
-          }))
-        );
-      } catch (e) {
-        console.error("Erreur chargement personnes", e);
-        setAllPersons([]);
-      }
-
-      setLoading(false);
-    }
-
-    load();
-  }, []);
+  const selectedIds = values.map((v) => v.id_person);
 
   /* ---------------------------------------------------------
      TOGGLE SELECTION (IMMÉDIAT)
   --------------------------------------------------------- */
-  const selectedIds = values.map((v) => v.id_person);
-
   function toggle(person: PersonRef) {
+    if (disabled) return;
+
     const alreadySelected = selectedIds.includes(person.id_person);
 
     if (alreadySelected) {
@@ -92,21 +60,11 @@ export default function PersonSelector({
           id_person: person.id_person,
           name: person.name,
           title: person.title,
-          role: "contributeur", // rôle par défaut
+          role: "contributeur",
         },
       ]);
     }
   }
-
-  /* ---------------------------------------------------------
-     PERSONNES À AFFICHER
-     - priorité à availablePersons si fourni
-     - sinon toutes les personnes
-  --------------------------------------------------------- */
-  const personsToDisplay =
-    availablePersons && availablePersons.length > 0
-      ? availablePersons
-      : allPersons;
 
   /* ---------------------------------------------------------
      UI
@@ -115,15 +73,21 @@ export default function PersonSelector({
     <div className="space-y-2">
       <label className="font-medium">Personnes</label>
 
-      {loading ? (
-        <div className="text-sm text-gray-500">Chargement…</div>
-      ) : personsToDisplay.length === 0 ? (
+      {disabled ? (
         <div className="text-sm text-gray-400 italic">
-          Aucune personne disponible
+          Sélectionnez d’abord une société
+        </div>
+      ) : loading ? (
+        <div className="text-sm text-gray-500">
+          Chargement des personnes…
+        </div>
+      ) : availablePersons.length === 0 ? (
+        <div className="text-sm text-gray-400 italic">
+          Aucune personne associée à cette société
         </div>
       ) : (
         <div className="border rounded p-3 space-y-2 bg-white max-h-64 overflow-auto">
-          {personsToDisplay.map((p) => {
+          {availablePersons.map((p) => {
             const selected = selectedIds.includes(p.id_person);
 
             return (
@@ -139,7 +103,9 @@ export default function PersonSelector({
                 <div className="font-medium">{p.name}</div>
 
                 {p.title && (
-                  <div className="text-xs text-gray-500">{p.title}</div>
+                  <div className="text-xs text-gray-500">
+                    {p.title}
+                  </div>
                 )}
 
                 {selected && (
@@ -155,3 +121,4 @@ export default function PersonSelector({
     </div>
   );
 }
+
