@@ -21,6 +21,15 @@ class ContentAnglesRequest(BaseModel):
 
 
 # ============================================================
+# IA — GENERATE CONTENT (REQUÊTE)
+# 👉 NOUVEAU — indispensable pour éviter les 422
+# ============================================================
+class ContentGenerateRequest(BaseModel):
+    angle_title: str
+    angle_signal: str
+
+
+# ============================================================
 # CREATE
 # ============================================================
 class ContentCreate(BaseModel):
@@ -129,3 +138,4 @@ class ContentOut(BaseModel):
     events: list = []
     companies: list = []
     persons: list = []
+
