@@ -23,6 +23,9 @@ export default function CompanySelector({ values, onChange }: Props) {
   const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
 
+  /* ---------------------------------------------------------
+     LOAD COMPANIES
+  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -35,7 +38,7 @@ export default function CompanySelector({ values, onChange }: Props) {
           }))
         );
       } catch (e) {
-        console.error(e);
+        console.error("Erreur chargement sociétés", e);
       }
       setLoading(false);
     }
@@ -43,13 +46,25 @@ export default function CompanySelector({ values, onChange }: Props) {
     load();
   }, []);
 
+  /* ---------------------------------------------------------
+     HANDLE CHANGE
+     ⚠️ Règle métier : UNE seule société autorisée
+  --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
-    onChange(
-      selected.map((s) => ({
-        id_company: s.id,
-        name: s.label,
-      }))
-    );
+    if (selected.length === 0) {
+      onChange([]);
+      return;
+    }
+
+    // On garde UNIQUEMENT la dernière société sélectionnée
+    const last = selected[selected.length - 1];
+
+    onChange([
+      {
+        id_company: last.id,
+        name: last.label,
+      },
+    ]);
   }
 
   if (loading) {
@@ -62,7 +77,7 @@ export default function CompanySelector({ values, onChange }: Props) {
 
   return (
     <SearchableMultiSelect
-      label="Sociétés"
+      label="Société"
       placeholder="Rechercher une société…"
       options={options}
       values={values.map((v) => ({
