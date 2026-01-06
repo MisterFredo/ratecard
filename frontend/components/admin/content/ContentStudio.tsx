@@ -340,12 +340,25 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
           <StepContent
             angle={selectedAngle}
+
+            // 🔑 SOURCE & CONTEXTE (NOUVEAU)
+            sourceType={sourceType}
+            sourceText={sourceText}
+            context={{
+              topics,
+              events,
+              companies,
+              persons,
+            }}
+
             excerpt={excerpt}
             concept={concept}
             contentBody={contentBody}
+
             citations={citations}
             chiffres={chiffres}
             acteurs={acteurs}
+
             onChange={(d) => {
               if (d.excerpt !== undefined) setExcerpt(d.excerpt);
               if (d.concept !== undefined) setConcept(d.concept);
@@ -358,8 +371,10 @@ export default function ContentStudio({ mode, contentId }: Props) {
               if (d.acteurs !== undefined)
                 setActeurs(d.acteurs);
             }}
+
             onValidate={saveContent}
           />
+
         </details>
       )}
 
