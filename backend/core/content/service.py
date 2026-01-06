@@ -99,9 +99,9 @@ def create_content(data: ContentCreate) -> str:
         "CONTENT_BODY": data.content_body,
 
         # AIDES ÉDITORIALES VALIDÉES
-        "CITATIONS": data.citations or [],
-        "CHIFFRES": data.chiffres or [],
-        "ACTEURS_CITES": data.acteurs_cites or [],
+        "CITATIONS": normalize_array(data.citations),
+        "CHIFFRES": normalize_array(data.chiffres),
+        "ACTEURS_CITES": normalize_array(data.acteurs_cites),
 
         # SEO
         "SEO_TITLE": data.seo_title,
