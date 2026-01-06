@@ -45,11 +45,19 @@ export default function StepContent({
 
   async function generateViaIA() {
     setLoading(true);
+
     try {
       const res = await api.post("/content/ai/generate", {
+        source_type: sourceType,
+        source_text: sourceText,
+        context: {
+          topics: context.topics.map((t) => t.label),
+          events: context.events.map((e) => e.label),
+          companies: context.companies.map((c) => c.name),
+          persons: context.persons.map((p) => p.name),
+        },
         angle_title: angle.angle_title,
         angle_signal: angle.angle_signal,
-        // source + context sont déjà connus côté Studio
       });
 
       if (res?.content) {
@@ -66,8 +74,10 @@ export default function StepContent({
       console.error(e);
       alert("❌ Erreur génération IA");
     }
+
     setLoading(false);
   }
+
 
   function updateList(
     key: "citations" | "chiffres" | "acteurs",
