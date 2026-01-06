@@ -43,10 +43,10 @@ def create_content(data: ContentCreate) -> str:
     - les citations / chiffres / acteurs sont déjà validés
     """
 
-    if not data.angle_title.strip():
+    if not data.angle_title or not data.angle_title.strip():
         raise ValueError("ANGLE_TITLE obligatoire")
 
-    if not data.angle_signal.strip():
+    if not data.angle_signal or not data.angle_signal.strip():
         raise ValueError("ANGLE_SIGNAL obligatoire")
 
     if not (
@@ -61,7 +61,21 @@ def create_content(data: ContentCreate) -> str:
         )
 
     content_id = str(uuid.uuid4())
-    today = date.today()
+
+    # 🔑 Normalisation DATE pour BigQuery (YYYY-MM-DD)
+    today_iso = date.today().isoformat()
+
+    date_creation = (
+        data.date_creation.isoformat()
+        if data.date_creation
+        else today_iso
+    )
+
+    date_import = (
+        data.date_import.isoformat()
+        if data.date_import
+        else today_iso
+    )
 
     row = [{
         "ID_CONTENT": content_id,
@@ -93,9 +107,9 @@ def create_content(data: ContentCreate) -> str:
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
 
-        # DATES
-        "DATE_CREATION": data.date_creation or today,
-        "DATE_IMPORT": data.date_import or today,
+        # DATES (alignées BQ)
+        "DATE_CREATION": date_creation,
+        "DATE_IMPORT": date_import,
 
         # PUBLICATION
         "PUBLISHED_AT": None,
@@ -109,42 +123,66 @@ def create_content(data: ContentCreate) -> str:
     # RELATIONS — TOPICS
     # ---------------------------------------------------------
     if data.topics:
-        insert_bq(TABLE_CONTENT_TOPIC, [
-            {"ID_CONTENT": content_id, "ID_TOPIC": tid, "CREATED_AT": now}
-            for tid in data.topics
-        ])
+        insert_bq(
+            TABLE_CONTENT_TOPIC,
+            [
+                {
+                    "ID_CONTENT": content_id,
+                    "ID_TOPIC": tid,
+                    "CREATED_AT": now,
+                }
+                for tid in data.topics
+            ],
+        )
 
     # ---------------------------------------------------------
     # RELATIONS — EVENTS
     # ---------------------------------------------------------
     if data.events:
-        insert_bq(TABLE_CONTENT_EVENT, [
-            {"ID_CONTENT": content_id, "ID_EVENT": eid, "CREATED_AT": now}
-            for eid in data.events
-        ])
+        insert_bq(
+            TABLE_CONTENT_EVENT,
+            [
+                {
+                    "ID_CONTENT": content_id,
+                    "ID_EVENT": eid,
+                    "CREATED_AT": now,
+                }
+                for eid in data.events
+            ],
+        )
 
     # ---------------------------------------------------------
     # RELATIONS — COMPANIES
     # ---------------------------------------------------------
     if data.companies:
-        insert_bq(TABLE_CONTENT_COMPANY, [
-            {"ID_CONTENT": content_id, "ID_COMPANY": cid, "CREATED_AT": now}
-            for cid in data.companies
-        ])
+        insert_bq(
+            TABLE_CONTENT_COMPANY,
+            [
+                {
+                    "ID_CONTENT": content_id,
+                    "ID_COMPANY": cid,
+                    "CREATED_AT": now,
+                }
+                for cid in data.companies
+            ],
+        )
 
     # ---------------------------------------------------------
     # RELATIONS — PERSONS (avec rôle)
     # ---------------------------------------------------------
     if data.persons:
-        insert_bq(TABLE_CONTENT_PERSON, [
-            {
-                "ID_CONTENT": content_id,
-                "ID_PERSON": p.id_person,
-                "ROLE": p.role,
-                "CREATED_AT": now,
-            }
-            for p in data.persons
-        ])
+        insert_bq(
+            TABLE_CONTENT_PERSON,
+            [
+                {
+                    "ID_CONTENT": content_id,
+                    "ID_PERSON": p.id_person,
+                    "ROLE": p.role,
+                    "CREATED_AT": now,
+                }
+                for p in data.persons
+            ],
+        )
 
     return content_id
 
