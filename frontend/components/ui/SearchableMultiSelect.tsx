@@ -52,7 +52,9 @@ export default function SearchableMultiSelect({
     onChange(values.filter((v) => v.id !== optionId));
   }
 
-  // Close on outside click
+  /* ---------------------------------------------------------
+     Close dropdown on outside click
+  --------------------------------------------------------- */
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
       if (
@@ -62,10 +64,14 @@ export default function SearchableMultiSelect({
         setOpen(false);
       }
     }
+
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <div className="space-y-2" ref={containerRef}>
       <label className="text-sm font-medium">
@@ -82,6 +88,7 @@ export default function SearchableMultiSelect({
             >
               {v.label}
               <button
+                type="button"
                 onClick={() => remove(v.id)}
                 className="text-blue-700 hover:text-blue-900"
                 title="Retirer"
@@ -134,8 +141,12 @@ export default function SearchableMultiSelect({
                 return (
                   <div
                     key={o.id}
-                    onClick={() => toggle(o)}
-                    className={`px-3 py-2 cursor-pointer text-sm ${
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggle(o);
+                    }}
+                    className={`px-3 py-2 cursor-pointer text-sm select-none ${
                       selected
                         ? "bg-blue-50 text-blue-700"
                         : "hover:bg-gray-50"
@@ -152,3 +163,4 @@ export default function SearchableMultiSelect({
     </div>
   );
 }
+
