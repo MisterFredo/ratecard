@@ -39,13 +39,8 @@ def include_router(module_path: str, prefix: str, tag: str):
 # -------------------------------------------------------
 include_router("api.health", "/api/health", "HEALTH")
 
-# --- LEGACY (en cours de sortie)
-include_router("api.articles", "/api/articles", "ARTICLES")
-
 # --- NOUVEAU CŒUR
 include_router("api.content", "/api/content", "CONTENT")
-
-# --- ENTITÉS
 include_router("api.company", "/api/company", "COMPANY")
 include_router("api.person", "/api/person", "PERSON")
 include_router("api.topic", "/api/topic", "TOPIC")
@@ -53,9 +48,6 @@ include_router("api.event", "/api/event", "EVENT")
 
 # --- SUPPORT
 include_router("api.visuals", "/api/visuals", "VISUALS")
-
-# --- IA
-include_router("api.lab_light", "/api/lab-light", "LAB-LIGHT")
 
 # -------------------------------------------------------
 # ROOT
@@ -72,8 +64,6 @@ def root():
             "company",
             "person",
             "visuals",
-            "lab-light",
-            "articles (legacy)"
         ]
     }
 
