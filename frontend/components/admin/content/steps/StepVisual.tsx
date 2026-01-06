@@ -28,10 +28,15 @@ type Person = {
 type Props = {
   contentId: string;
 
+  // contexte éditorial
   topics: Topic[];
   events: Event[];
   companies: Company[];
   persons: Person[];
+
+  // données nécessaires à l’IA
+  angleTitle: string;
+  excerpt: string;
 
   rectUrl: string | null;
   onUpdated: (url: string | null) => void;
@@ -44,6 +49,8 @@ export default function StepVisual({
   events,
   companies,
   persons,
+  angleTitle,
+  excerpt,
   rectUrl,
   onUpdated,
   onNext,
@@ -51,7 +58,7 @@ export default function StepVisual({
   const [loading, setLoading] = useState(false);
 
   /* ---------------------------------------------------------
-     Helpers GCS (réutilisation visuels entités)
+     Helpers GCS (visuels d’entités — UI only)
   --------------------------------------------------------- */
   function topicRect(id: string) {
     return `${GCS}/topics/TOPIC_${id}_rect.jpg`;
@@ -69,54 +76,8 @@ export default function StepVisual({
     return `${GCS}/persons/PERSON_${id}_rect.jpg`;
   }
 
-  /* ---------------------------------------------------------
-     Upload manuel (Content)
-  --------------------------------------------------------- */
-  async function upload(file: File) {
-    setLoading(true);
-    try {
-      const base64 = await fileToBase64(file);
-
-      const res = await api.post("/visuals/content/upload", {
-        id_content: contentId,
-        base64_image: base64,
-      });
-
-      if (res.status !== "ok") {
-        throw new Error("Upload failed");
-      }
-
-      onUpdated(`${GCS}/content/CONTENT_${contentId}_rect.jpg`);
-    } catch (e) {
-      console.error(e);
-      alert("❌ Erreur upload visuel");
-    }
-    setLoading(false);
-  }
-
-  /* ---------------------------------------------------------
-     Génération IA (Topic uniquement)
-  --------------------------------------------------------- */
-  async function generateFromTopic(topic: Topic) {
-    setLoading(true);
-    try {
-      const res = await api.post("/visuals/content/generate-ai", {
-        id_content: contentId,
-        id_topic: topic.id_topic,
-        angle_title: "", // déjà stocké côté content
-        excerpt: "",     // déjà stocké côté content
-      });
-
-      if (res.status !== "ok") {
-        throw new Error("Generation failed");
-      }
-
-      onUpdated(`${GCS}/content/CONTENT_${contentId}_AI_rect.jpg`);
-    } catch (e) {
-      console.error(e);
-      alert("❌ Erreur génération visuel IA");
-    }
-    setLoading(false);
+  function contentRect(filename: string) {
+    return `${GCS}/contents/${filename}`;
   }
 
   /* ---------------------------------------------------------
@@ -132,6 +93,69 @@ export default function StepVisual({
       };
       reader.readAsDataURL(file);
     });
+  }
+
+  /* ---------------------------------------------------------
+     1️⃣ UPLOAD MANUEL (persisté en base)
+  --------------------------------------------------------- */
+  async function upload(file: File) {
+    setLoading(true);
+
+    try {
+      const base64 = await fileToBase64(file);
+
+      const res = await api.post("/visuals/content/upload", {
+        id_content: contentId,
+        base64_image: base64,
+      });
+
+      if (res.status !== "ok") {
+        throw new Error("Upload failed");
+      }
+
+      if (res.filename) {
+        onUpdated(contentRect(res.filename));
+      }
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur upload visuel");
+    }
+
+    setLoading(false);
+  }
+
+  /* ---------------------------------------------------------
+     2️⃣ GÉNÉRATION IA (TOPIC UNIQUEMENT)
+  --------------------------------------------------------- */
+  async function generateFromTopic(topic: Topic) {
+    if (!angleTitle || !excerpt) {
+      alert("Angle et accroche requis pour la génération IA");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await api.post("/visuals/content/generate-ai", {
+        id_content: contentId,
+        id_topic: topic.id_topic,
+        angle_title: angleTitle,
+        excerpt: excerpt,
+      });
+
+      if (res.status !== "ok") {
+        throw new Error("Generation failed");
+      }
+
+      if (res.filename) {
+        onUpdated(contentRect(res.filename));
+      }
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur génération visuel IA");
+    }
+
+    setLoading(false);
   }
 
   /* ---------------------------------------------------------
@@ -156,7 +180,7 @@ export default function StepVisual({
         )}
       </div>
 
-      {/* 1️⃣ VISUELS D’ENTITÉS */}
+      {/* 1️⃣ VISUELS D’ENTITÉS (UI only) */}
       <div className="space-y-3">
         <h4 className="font-semibold">Utiliser un visuel existant</h4>
 
@@ -213,7 +237,7 @@ export default function StepVisual({
         />
       </div>
 
-      {/* 3️⃣ GÉNÉRATION IA (TOPIC UNIQUEMENT) */}
+      {/* 3️⃣ GÉNÉRATION IA */}
       {topics.length > 0 && (
         <div className="space-y-2">
           <h4 className="font-semibold">Génération IA</h4>
@@ -237,3 +261,4 @@ export default function StepVisual({
     </div>
   );
 }
+
