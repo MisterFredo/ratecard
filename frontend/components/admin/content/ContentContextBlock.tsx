@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import TopicSelector from "@/components/admin/TopicSelector";
 import EventSelector from "@/components/admin/EventSelector";
 import CompanySelector from "@/components/admin/CompanySelector";
 import PersonSelector from "@/components/admin/PersonSelector";
+import { api } from "@/lib/api";
 
 type Props = {
   topics: any[];
@@ -26,26 +28,42 @@ export default function ContentContextBlock({
   persons,
   onChange,
 }: Props) {
+  const [availablePersons, setAvailablePersons] = useState<any[]>([]);
+  const [loadingPersons, setLoadingPersons] = useState(false);
 
-  /**
-   * 🔑 Règle UX :
-   * - si une société est sélectionnée → on filtre les personnes
-   * - sinon → toutes les personnes sont disponibles
-   */
-  const filteredPersons =
-    companies.length === 0
-      ? persons
-      : persons.filter((p) =>
-          companies.some(
-            (c) =>
-              p.id_company === c.id_company ||
-              p.company_id === c.id_company
-          )
-        );
+  /* ---------------------------------------------------------
+     Chargement des personnes UNIQUEMENT si société sélectionnée
+  --------------------------------------------------------- */
+  useEffect(() => {
+    // Aucune société → aucune personne
+    if (companies.length === 0) {
+      setAvailablePersons([]);
+      onChange({ persons: [] });
+      return;
+    }
+
+    // ⚠️ Règle simple : une seule société active
+    const companyId = companies[0].id_company;
+
+    setLoadingPersons(true);
+
+    api
+      .get(`/person/list?company_id=${companyId}`)
+      .then((res) => {
+        setAvailablePersons(res.persons || []);
+        // reset sélection personnes
+        onChange({ persons: [] });
+      })
+      .catch(() => {
+        setAvailablePersons([]);
+      })
+      .finally(() => {
+        setLoadingPersons(false);
+      });
+  }, [companies]);
 
   return (
     <div className="space-y-6">
-
       {/* TOPICS */}
       <TopicSelector
         values={topics}
@@ -61,30 +79,18 @@ export default function ContentContextBlock({
       {/* COMPANIES */}
       <CompanySelector
         values={companies}
-        onChange={(items) => {
-          onChange({ companies: items });
-
-          /**
-           * 🧠 Important :
-           * si on change les sociétés, on nettoie les personnes incohérentes
-           */
-          onChange({
-            persons: filteredPersons.filter((p) =>
-              items.some(
-                (c) =>
-                  p.id_company === c.id_company ||
-                  p.company_id === c.id_company
-              )
-            ),
-          });
-        }}
+        onChange={(items) => onChange({ companies: items })}
       />
 
-      {/* PERSONS (FILTRÉES) */}
+      {/* PERSONS */}
       <PersonSelector
-        values={filteredPersons}
+        values={persons}
+        availablePersons={availablePersons}
+        disabled={companies.length === 0}
+        loading={loadingPersons}
         onChange={(items) => onChange({ persons: items })}
       />
     </div>
   );
 }
+
