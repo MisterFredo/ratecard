@@ -42,7 +42,7 @@ def normalize_array(value):
 
 
 # ============================================================
-# CREATE CONTENT — validation humaine
+# CREATE CONTENT — validation humaine (SANS STREAMING)
 # ============================================================
 def create_content(data: ContentCreate) -> str:
     """
@@ -53,6 +53,10 @@ def create_content(data: ContentCreate) -> str:
     - angle_signal obligatoire
     - au moins UNE entité associée
     - les citations / chiffres / acteurs sont déjà validés
+
+    ⚠️ IMPORTANT :
+    - insertion via LOAD JOB (PAS de streaming)
+    - permet UPDATE / PUBLISH immédiat
     """
 
     if not data.angle_title or not data.angle_title.strip():
@@ -74,26 +78,18 @@ def create_content(data: ContentCreate) -> str:
 
     content_id = str(uuid.uuid4())
 
-    # 🔑 Dates
-    today_iso = date.today().isoformat()
+    # ---------------------------------------------------------
+    # DATES
+    # ---------------------------------------------------------
+    today = date.today()
 
-    date_creation = (
-        data.date_creation.isoformat()
-        if data.date_creation
-        else today_iso
-    )
+    date_creation = data.date_creation or today
+    date_import = data.date_import or today
 
-    date_import = (
-        data.date_import.isoformat()
-        if data.date_import
-        else today_iso
-    )
-
-    # 🔑 Timestamp technique pour les tables de liaison
     now = datetime.utcnow()
 
     # ---------------------------------------------------------
-    # INSERT CONTENT (TABLE PRINCIPALE)
+    # ROW PRINCIPALE
     # ---------------------------------------------------------
     row = [{
         "ID_CONTENT": content_id,
@@ -116,7 +112,7 @@ def create_content(data: ContentCreate) -> str:
         "CONCEPT": data.concept,
         "CONTENT_BODY": data.content_body,
 
-        # AIDES ÉDITORIALES VALIDÉES
+        # AIDES ÉDITORIALES VALIDÉES (ARRAY<STRING>)
         "CITATIONS": normalize_array(data.citations),
         "CHIFFRES": normalize_array(data.chiffres),
         "ACTEURS_CITES": normalize_array(data.acteurs_cites),
@@ -126,19 +122,26 @@ def create_content(data: ContentCreate) -> str:
         "SEO_DESCRIPTION": data.seo_description,
 
         # DATES
-        "DATE_CREATION": date_creation,
-        "DATE_IMPORT": date_import,
+        "DATE_CREATION": date_creation.isoformat(),
+        "DATE_IMPORT": date_import.isoformat(),
 
         # PUBLICATION
         "PUBLISHED_AT": None,
     }]
 
     client = get_bigquery_client()
-    table = client.get_table(TABLE_CONTENT)
 
-    errors = client.insert_rows_json(table, row)
-    if errors:
-        raise RuntimeError(f"BigQuery insert error: {errors}")
+    # ---------------------------------------------------------
+    # INSERT VIA LOAD JOB (ANTI-STREAMING BUFFER)
+    # ---------------------------------------------------------
+    job = client.load_table_from_json(
+        row,
+        TABLE_CONTENT,
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
+    )
+    job.result()  # ⬅️ BLOQUANT = ligne immédiatement updatable
 
     # ---------------------------------------------------------
     # RELATIONS — TOPICS
@@ -206,6 +209,7 @@ def create_content(data: ContentCreate) -> str:
         )
 
     return content_id
+
 
 # ============================================================
 # GET ONE CONTENT (enrichi)
