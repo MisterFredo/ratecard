@@ -63,7 +63,7 @@ def create_news(data: NewsCreate) -> str:
         raise ValueError("TITLE obligatoire")
 
     news_id = str(uuid.uuid4())
-    now = datetime.utcnow()
+    now = datetime.utcnow().isoformat()
 
     row = [{
         "ID_NEWS": news_id,
