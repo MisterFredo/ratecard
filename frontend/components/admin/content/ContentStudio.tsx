@@ -8,7 +8,6 @@ import StepContext from "@/components/admin/content/steps/StepContext";
 import StepSource from "@/components/admin/content/steps/StepSource";
 import StepAngles from "@/components/admin/content/steps/StepAngles";
 import StepContent from "@/components/admin/content/steps/StepContent";
-import StepVisual from "@/components/admin/content/steps/StepVisual";
 import StepPreview from "@/components/admin/content/steps/StepPreview";
 import StepPublish from "@/components/admin/content/steps/StepPublish";
 
@@ -19,7 +18,6 @@ type Step =
   | "SOURCE"
   | "ANGLES"
   | "CONTENT"
-  | "VISUAL"
   | "PREVIEW"
   | "PUBLISH";
 
@@ -27,8 +25,6 @@ type Props = {
   mode: Mode;
   contentId?: string;
 };
-
-const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 export default function ContentStudio({ mode, contentId }: Props) {
   /* =========================================================
@@ -52,7 +48,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [selectedAngle, setSelectedAngle] = useState<any | null>(null);
 
   /* =========================================================
-     STATE — CONTENT (EDITABLE & VALIDATED)
+     STATE — CONTENT
   ========================================================= */
   const [excerpt, setExcerpt] = useState("");
   const [concept, setConcept] = useState("");
@@ -65,22 +61,15 @@ export default function ContentStudio({ mode, contentId }: Props) {
   /* =========================================================
      STATE — DATES
   ========================================================= */
-  // Date éditoriale réelle (tri site)
   const [dateCreation, setDateCreation] = useState<string>("");
 
-  // Date système (import Ratecard)
-  const [dateImport, setDateImport] = useState<string>(() => {
+  const [dateImport] = useState<string>(() => {
     const d = new Date();
-    return d.toISOString().slice(0, 10); // YYYY-MM-DD
+    return d.toISOString().slice(0, 10);
   });
 
   /* =========================================================
-     STATE — VISUEL
-  ========================================================= */
-  const [rectUrl, setRectUrl] = useState<string | null>(null);
-
-  /* =========================================================
-     STATE — PUBLICATION
+     PUBLICATION
   ========================================================= */
   const [publishMode, setPublishMode] =
     useState<"NOW" | "SCHEDULE">("NOW");
@@ -148,12 +137,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
           angle_signal: c.ANGLE_SIGNAL,
         });
 
-        setRectUrl(
-          c.MEDIA_RECTANGLE_ID
-            ? `${GCS}/content/${c.MEDIA_RECTANGLE_ID}`
-            : null
-        );
-
         setContextValidated(true);
         setStep("CONTENT");
       } catch (e) {
@@ -166,7 +149,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   }, [mode, contentId]);
 
   /* =========================================================
-     SAVE CONTENT (CREATE / UPDATE)
+     SAVE CONTENT
   ========================================================= */
   async function saveContent() {
     if (!selectedAngle) {
@@ -223,7 +206,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
         await api.put(`/content/update/${internalContentId}`, payload);
       }
 
-      setStep("VISUAL");
+      setStep("PREVIEW");
     } catch (e) {
       console.error(e);
       alert("❌ Erreur sauvegarde contenu");
@@ -261,7 +244,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
   ========================================================= */
   return (
     <div className="space-y-6">
-
       {/* STEP 1 — CONTEXTE */}
       <details open={step === "CONTEXT"} className="border rounded p-4">
         <summary className="font-semibold cursor-pointer">
@@ -342,16 +324,9 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
           <StepContent
             angle={selectedAngle}
-
-            // 🔑 SOURCE & CONTEXTE (NOUVEAU)
             sourceType={sourceType}
             sourceText={sourceText}
-            context={{
-              topics,
-              events,
-              companies,
-              persons,
-            }}
+            context={{ topics, events, companies, persons }}
 
             excerpt={excerpt}
             concept={concept}
@@ -376,42 +351,14 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
             onValidate={saveContent}
           />
-
         </details>
       )}
 
-      {/* STEP 5 — VISUEL */}
-      {internalContentId && (
-        <details open={step === "VISUAL"} className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            5. Visuel
-          </summary>
-
-        <StepVisual
-          contentId={internalContentId}
-
-          // 🔑 CONTEXTE VISUEL
-          angleTitle={selectedAngle?.angle_title || ""}
-          excerpt={excerpt}
-
-          topics={topics}
-          events={events}
-          companies={companies}
-          persons={persons}
-
-          rectUrl={rectUrl}
-          onUpdated={(url) => setRectUrl(url)}
-          onNext={() => setStep("PREVIEW")}
-        />
-
-        </details>
-      )}
-
-      {/* STEP 6 — PREVIEW */}
+      {/* STEP 5 — PREVIEW */}
       {internalContentId && (
         <details open={step === "PREVIEW"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            6. Aperçu
+            5. Aperçu
           </summary>
 
           <StepPreview
@@ -422,11 +369,11 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </details>
       )}
 
-      {/* STEP 7 — PUBLICATION */}
+      {/* STEP 6 — PUBLICATION */}
       {internalContentId && (
         <details open={step === "PUBLISH"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            7. Publication
+            6. Publication
           </summary>
 
           <StepPublish
