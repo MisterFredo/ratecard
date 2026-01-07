@@ -4,20 +4,23 @@ import { useEffect, useState } from "react";
 import TopicSelector from "@/components/admin/TopicSelector";
 import EventSelector from "@/components/admin/EventSelector";
 import CompanySelector from "@/components/admin/CompanySelector";
-import PersonSelector from "@/components/admin/PersonSelector";
+import PersonSelector, {
+  PersonRef,
+  ArticlePerson,
+} from "@/components/admin/PersonSelector";
 import { api } from "@/lib/api";
 
 type Props = {
   topics: any[];
   events: any[];
   companies: any[];
-  persons: any[];
+  persons: ArticlePerson[];
 
   onChange: (data: {
     topics?: any[];
     events?: any[];
     companies?: any[];
-    persons?: any[];
+    persons?: ArticlePerson[];
   }) => void;
 };
 
@@ -28,39 +31,34 @@ export default function ContentContextBlock({
   persons,
   onChange,
 }: Props) {
-  const [availablePersons, setAvailablePersons] = useState<any[]>([]);
-  const [loadingPersons, setLoadingPersons] = useState(false);
-
   /* ---------------------------------------------------------
-     Chargement des personnes UNIQUEMENT si société sélectionnée
+     PERSONNES — chargées UNE FOIS
   --------------------------------------------------------- */
+  const [allPersons, setAllPersons] = useState<PersonRef[]>([]);
+  const [loadingPersons, setLoadingPersons] = useState(true);
+
   useEffect(() => {
-    // Aucune société → aucune personne
-    if (companies.length === 0) {
-      setAvailablePersons([]);
-      onChange({ persons: [] });
-      return;
+    async function loadPersons() {
+      try {
+        const res = await api.get("/person/list");
+        setAllPersons(
+          (res.persons || []).map((p: any) => ({
+            id_person: p.ID_PERSON,
+            name: p.NAME,
+            title: p.TITLE || "",
+            id_company: p.ID_COMPANY || null,
+          }))
+        );
+      } catch (e) {
+        console.error("Erreur chargement personnes", e);
+        setAllPersons([]);
+      } finally {
+        setLoadingPersons(false);
+      }
     }
 
-    // ⚠️ Règle simple : une seule société active
-    const companyId = companies[0].id_company;
-
-    setLoadingPersons(true);
-
-    api
-      .get(`/person/list?company_id=${companyId}`)
-      .then((res) => {
-        setAvailablePersons(res.persons || []);
-        // reset sélection personnes
-        onChange({ persons: [] });
-      })
-      .catch(() => {
-        setAvailablePersons([]);
-      })
-      .finally(() => {
-        setLoadingPersons(false);
-      });
-  }, [companies]);
+    loadPersons();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -76,13 +74,17 @@ export default function ContentContextBlock({
         onChange={(items) => onChange({ events: items })}
       />
 
-      {/* COMPANIES */}
+      {/* COMPANIES (1 seule société max) */}
       <CompanySelector
         values={companies}
-        onChange={(items) => onChange({ companies: items })}
+        onChange={(items) => {
+          onChange({ companies: items });
+          // reset des personnes quand la société change
+          onChange({ persons: [] });
+        }}
       />
 
-      {/* PERSONS */}
+      {/* PERSONS — filtrées côté selector */}
       <PersonSelector
         values={persons}
         persons={allPersons}
@@ -92,4 +94,3 @@ export default function ContentContextBlock({
     </div>
   );
 }
-
