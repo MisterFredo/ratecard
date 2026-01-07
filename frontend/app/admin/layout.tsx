@@ -10,6 +10,7 @@ import {
   Tags,
   CalendarDays,
   Layers,
+  Newspaper,
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
@@ -22,8 +23,13 @@ export default function AdminLayout({ children }) {
   const navItems = [
     {
       href: "/admin/content",
-      label: "Contenus",
+      label: "Analyses",
       icon: Layers,
+    },
+    {
+      href: "/admin/news",
+      label: "News",
+      icon: Newspaper,
     },
     {
       href: "/admin/company",
