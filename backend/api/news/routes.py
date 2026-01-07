@@ -10,19 +10,26 @@ from core.news.service import (
 )
 from utils.llm import run_llm
 
+import logging
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
 # ============================================================
 # CREATE NEWS
 # ============================================================
+
+
 @router.post("/create")
 def create_route(data: NewsCreate):
     try:
         news_id = create_news(data)
         return {"status": "ok", "id_news": news_id}
-    except Exception:
-        raise HTTPException(400, "Erreur création news")
+    except Exception as e:
+        logger.exception("Erreur création news")
+        # ⚠️ temporaire : on renvoie le détail pour comprendre
+        raise HTTPException(400, str(e))
 
 
 # ============================================================
