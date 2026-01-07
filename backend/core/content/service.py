@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, date
 from typing import Optional
-from google.cloud import bigquery 
+from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import (
@@ -29,6 +29,10 @@ TABLE_EVENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_EVENT"
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_PERSON"
 
+
+# ============================================================
+# UTILS
+# ============================================================
 def normalize_array(value):
     """
     Force une valeur à être compatible avec ARRAY<STRING> BigQuery.
@@ -36,28 +40,22 @@ def normalize_array(value):
     if value is None:
         return []
     if isinstance(value, list):
-        # on garde uniquement des strings
         return [str(v) for v in value if isinstance(v, str) and v.strip()]
-    # tout le reste (STRING, int, etc.) → liste vide
     return []
 
 
 # ============================================================
-# CREATE CONTENT — validation humaine (SANS STREAMING)
+# CREATE CONTENT — ANALYSE RATECARD
 # ============================================================
 def create_content(data: ContentCreate) -> str:
     """
-    Crée un contenu Ratecard VALIDÉ HUMAINEMENT.
+    Crée un contenu ANALYTIQUE Ratecard (validation humaine).
 
     Règles métier :
     - angle_title obligatoire
     - angle_signal obligatoire
     - au moins UNE entité associée
-    - les citations / chiffres / acteurs sont déjà validés
-
-    ⚠️ IMPORTANT :
-    - insertion via LOAD JOB (PAS de streaming)
-    - permet UPDATE / PUBLISH immédiat
+    - PAS de logique de visuel au niveau contenu
     """
 
     if not data.angle_title or not data.angle_title.strip():
@@ -73,7 +71,7 @@ def create_content(data: ContentCreate) -> str:
         or data.persons
     ):
         raise ValueError(
-            "Un contenu doit être associé à au moins une entité "
+            "Un contenu analytique doit être associé à au moins une entité "
             "(topic, event, company ou person)"
         )
 
@@ -83,14 +81,12 @@ def create_content(data: ContentCreate) -> str:
     # DATES
     # ---------------------------------------------------------
     today = date.today()
-
     date_creation = data.date_creation or today
     date_import = data.date_import or today
-
     now = datetime.utcnow()
 
     # ---------------------------------------------------------
-    # ROW PRINCIPALE
+    # ROW PRINCIPALE (SANS VISUEL)
     # ---------------------------------------------------------
     row = [{
         "ID_CONTENT": content_id,
@@ -108,12 +104,12 @@ def create_content(data: ContentCreate) -> str:
         "ANGLE_TITLE": data.angle_title,
         "ANGLE_SIGNAL": data.angle_signal,
 
-        # CONTENU VALIDÉ
+        # CONTENU
         "EXCERPT": data.excerpt,
         "CONCEPT": data.concept,
         "CONTENT_BODY": data.content_body,
 
-        # AIDES ÉDITORIALES VALIDÉES (ARRAY<STRING>)
+        # AIDES ÉDITORIALES
         "CITATIONS": normalize_array(data.citations),
         "CHIFFRES": normalize_array(data.chiffres),
         "ACTEURS_CITES": normalize_array(data.acteurs_cites),
@@ -133,68 +129,46 @@ def create_content(data: ContentCreate) -> str:
     client = get_bigquery_client()
 
     # ---------------------------------------------------------
-    # INSERT VIA LOAD JOB (ANTI-STREAMING BUFFER)
+    # INSERT VIA LOAD JOB (ANTI STREAMING BUFFER)
     # ---------------------------------------------------------
-    job = client.load_table_from_json(
+    client.load_table_from_json(
         row,
         TABLE_CONTENT,
         job_config=bigquery.LoadJobConfig(
             write_disposition="WRITE_APPEND"
         ),
-    )
-    job.result()  # ⬅️ BLOQUANT = ligne immédiatement updatable
+    ).result()
 
     # ---------------------------------------------------------
-    # RELATIONS — TOPICS
+    # RELATIONS
     # ---------------------------------------------------------
     if data.topics:
         insert_bq(
             TABLE_CONTENT_TOPIC,
             [
-                {
-                    "ID_CONTENT": content_id,
-                    "ID_TOPIC": tid,
-                    "CREATED_AT": now,
-                }
+                {"ID_CONTENT": content_id, "ID_TOPIC": tid, "CREATED_AT": now}
                 for tid in data.topics
             ],
         )
 
-    # ---------------------------------------------------------
-    # RELATIONS — EVENTS
-    # ---------------------------------------------------------
     if data.events:
         insert_bq(
             TABLE_CONTENT_EVENT,
             [
-                {
-                    "ID_CONTENT": content_id,
-                    "ID_EVENT": eid,
-                    "CREATED_AT": now,
-                }
+                {"ID_CONTENT": content_id, "ID_EVENT": eid, "CREATED_AT": now}
                 for eid in data.events
             ],
         )
 
-    # ---------------------------------------------------------
-    # RELATIONS — COMPANIES
-    # ---------------------------------------------------------
     if data.companies:
         insert_bq(
             TABLE_CONTENT_COMPANY,
             [
-                {
-                    "ID_CONTENT": content_id,
-                    "ID_COMPANY": cid,
-                    "CREATED_AT": now,
-                }
+                {"ID_CONTENT": content_id, "ID_COMPANY": cid, "CREATED_AT": now}
                 for cid in data.companies
             ],
         )
 
-    # ---------------------------------------------------------
-    # RELATIONS — PERSONS (avec rôle)
-    # ---------------------------------------------------------
     if data.persons:
         insert_bq(
             TABLE_CONTENT_PERSON,
@@ -213,7 +187,7 @@ def create_content(data: ContentCreate) -> str:
 
 
 # ============================================================
-# GET ONE CONTENT (enrichi)
+# GET ONE CONTENT (ENRICHI)
 # ============================================================
 def get_content(id_content: str):
     rows = query_bq(
@@ -231,9 +205,6 @@ def get_content(id_content: str):
 
     content = rows[0]
 
-    # ----------------------------
-    # TOPICS
-    # ----------------------------
     content["topics"] = query_bq(
         f"""
         SELECT T.ID_TOPIC, T.LABEL
@@ -244,9 +215,6 @@ def get_content(id_content: str):
         {"id": id_content}
     )
 
-    # ----------------------------
-    # EVENTS
-    # ----------------------------
     content["events"] = query_bq(
         f"""
         SELECT E.ID_EVENT, E.LABEL
@@ -257,9 +225,6 @@ def get_content(id_content: str):
         {"id": id_content}
     )
 
-    # ----------------------------
-    # COMPANIES
-    # ----------------------------
     content["companies"] = query_bq(
         f"""
         SELECT C.ID_COMPANY, C.NAME
@@ -270,9 +235,6 @@ def get_content(id_content: str):
         {"id": id_content}
     )
 
-    # ----------------------------
-    # PERSONS
-    # ----------------------------
     content["persons"] = query_bq(
         f"""
         SELECT P.ID_PERSON, P.NAME, CP.ROLE
@@ -307,7 +269,7 @@ def list_contents():
 
 
 # ============================================================
-# UPDATE CONTENT — nouvelle validation humaine
+# UPDATE CONTENT
 # ============================================================
 def update_content(id_content: str, data: ContentUpdate):
     if not data.angle_title.strip():
@@ -322,9 +284,7 @@ def update_content(id_content: str, data: ContentUpdate):
         or data.companies
         or data.persons
     ):
-        raise ValueError(
-            "Un contenu doit être associé à au moins une entité"
-        )
+        raise ValueError("Un contenu doit rester associé à au moins une entité")
 
     fields = {
         "ANGLE_TITLE": data.angle_title,
@@ -355,10 +315,9 @@ def update_content(id_content: str, data: ContentUpdate):
     )
 
     client = get_bigquery_client()
+    now = datetime.utcnow()
 
-    # ----------------------------
     # RESET RELATIONS
-    # ----------------------------
     for table in (
         TABLE_CONTENT_TOPIC,
         TABLE_CONTENT_EVENT,
@@ -370,11 +329,7 @@ def update_content(id_content: str, data: ContentUpdate):
             job_config=None
         ).result()
 
-    now = datetime.utcnow()
-
-    # ----------------------------
-    # REINSERT RELATIONS
-    # ----------------------------
+    # REINSERT
     if data.topics:
         insert_bq(TABLE_CONTENT_TOPIC, [
             {"ID_CONTENT": id_content, "ID_TOPIC": tid, "CREATED_AT": now}
@@ -408,29 +363,14 @@ def update_content(id_content: str, data: ContentUpdate):
 
 
 # ============================================================
-# ARCHIVE CONTENT (soft delete)
+# ARCHIVE CONTENT
 # ============================================================
 def archive_content(id_content: str):
-    client = get_bigquery_client()
-
-    client.query(
-        f"""
-        UPDATE `{TABLE_CONTENT}`
-        SET
-            STATUS = "ARCHIVED"
-        WHERE ID_CONTENT = @id
-        """,
-        job_config={
-            "query_parameters": [
-                {
-                    "name": "id",
-                    "parameterType": {"type": "STRING"},
-                    "parameterValue": {"value": id_content},
-                }
-            ]
-        }
-    ).result()
-
+    update_bq(
+        table=TABLE_CONTENT,
+        fields={"STATUS": "ARCHIVED"},
+        where={"ID_CONTENT": id_content},
+    )
     return True
 
 
@@ -463,6 +403,3 @@ def publish_content(
         where={"ID_CONTENT": id_content},
     )
     return "SCHEDULED"
-
-
-
