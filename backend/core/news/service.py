@@ -32,20 +32,16 @@ TABLE_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_PERSON"
 # ============================================================
 def create_news(data: NewsCreate) -> str:
     """
-    Crée une NEWS partenaire.
+    Crée une NEWS partenaire (sans visuel à ce stade).
 
     Règles métier :
     - société obligatoire
-    - visuel obligatoire
-    - pas d'event
-    - pas d'angle
+    - titre obligatoire
+    - visuel NON requis à la création
     """
 
     if not data.id_company:
         raise ValueError("ID_COMPANY obligatoire")
-
-    if not data.media_rectangle_id:
-        raise ValueError("MEDIA_RECTANGLE_ID obligatoire")
 
     if not data.title or not data.title.strip():
         raise ValueError("TITLE obligatoire")
@@ -62,7 +58,8 @@ def create_news(data: NewsCreate) -> str:
         "TITLE": data.title,
         "BODY": data.body,
 
-        "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
+        # VISUEL (optionnel à la création)
+        "MEDIA_RECTANGLE_ID": None,
 
         "SOURCE_URL": data.source_url,
         "AUTHOR": data.author,
@@ -255,6 +252,26 @@ def publish_news(
     id_news: str,
     published_at: Optional[datetime] = None,
 ):
+    """
+    Publie une news.
+    ⚠️ Le visuel est requis UNIQUEMENT à cette étape.
+    """
+
+    # ---------------------------------------------------------
+    # CHECK VISUEL
+    # ---------------------------------------------------------
+    rows = query_bq(
+        f"""
+        SELECT MEDIA_RECTANGLE_ID
+        FROM `{TABLE_NEWS}`
+        WHERE ID_NEWS = @id
+        """,
+        {"id": id_news},
+    )
+
+    if not rows or not rows[0]["MEDIA_RECTANGLE_ID"]:
+        raise ValueError("Un visuel est requis pour publier la news")
+
     now = datetime.utcnow()
 
     if not published_at or published_at <= now:
