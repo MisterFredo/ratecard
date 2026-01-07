@@ -20,9 +20,6 @@ export default function NewsStepVisual({
 }: Props) {
   const [loading, setLoading] = useState(false);
 
-  /* ---------------------------------------------------------
-     UTILS
-  --------------------------------------------------------- */
   function fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -36,20 +33,17 @@ export default function NewsStepVisual({
   }
 
   function gcsUrl(filename: string) {
-    return `${GCS_BASE_URL}/contents/${filename}`;
+    return `${GCS_BASE_URL}/news/${filename}`;
   }
 
-  /* ---------------------------------------------------------
-     UPLOAD
-  --------------------------------------------------------- */
   async function upload(file: File) {
     setLoading(true);
 
     try {
       const base64 = await fileToBase64(file);
 
-      const res = await api.post("/visuals/content/upload", {
-        id_content: newsId,
+      const res = await api.post("/visuals/news/upload", {
+        id_news: newsId,
         base64_image: base64,
       });
 
@@ -66,13 +60,10 @@ export default function NewsStepVisual({
     setLoading(false);
   }
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
     <div className="space-y-4">
       <p className="text-sm text-gray-600">
-        Un visuel est <strong>obligatoire</strong> pour publier une News.
+        Un visuel <strong>16:9</strong> est requis pour publier la news.
       </p>
 
       {loading && <p className="text-gray-500">Traitement…</p>}
