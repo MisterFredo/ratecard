@@ -26,6 +26,19 @@ TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
 TABLE_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_PERSON"
 
+def serialize_row(row: dict) -> dict:
+    """
+    Prépare une ligne BigQuery pour un retour API (JSON-safe).
+    """
+    clean = {}
+    for k, v in row.items():
+        if hasattr(v, "isoformat"):
+            clean[k] = v.isoformat()
+        else:
+            clean[k] = v
+    return clean
+
+
 
 # ============================================================
 # CREATE NEWS
@@ -105,13 +118,6 @@ def create_news(data: NewsCreate) -> str:
         )
 
     return news_id
-
-def serialize_row(row: dict) -> dict:
-    for k, v in row.items():
-        if hasattr(v, "isoformat"):
-            row[k] = v.isoformat()
-    return row
-
 
 
 # ============================================================
