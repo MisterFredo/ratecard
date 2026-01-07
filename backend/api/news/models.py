@@ -15,7 +15,7 @@ class NewsCreate(BaseModel):
     body: Optional[str] = None
 
     # VISUEL (OBLIGATOIRE)
-    media_rectangle_id: str
+    media_rectangle_id: Optional[str] = None
 
     # META
     source_url: Optional[str] = None
