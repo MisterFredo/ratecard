@@ -1,21 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+
+import TopicSelector from "@/components/admin/TopicSelector";
+import CompanySelector from "@/components/admin/CompanySelector";
+import PersonSelector, {
+  PersonRef,
+  ArticlePerson,
+} from "@/components/admin/PersonSelector";
 
 type Props = {
   title: string;
   body: string;
+
   company: any | null;
   topics: any[];
-  persons: any[];
+  persons: ArticlePerson[];
 
   onChange: (d: {
     title?: string;
     body?: string;
     company?: any | null;
     topics?: any[];
-    persons?: any[];
+    persons?: ArticlePerson[];
   }) => void;
 
   onValidate: () => void;
@@ -32,11 +40,40 @@ export default function NewsStepContent({
   onValidate,
   saving,
 }: Props) {
-  const [aiLoading, setAiLoading] = useState(false);
+  /* ---------------------------------------------------------
+     PERSONNES — chargées UNE FOIS (comme ContentContextBlock)
+  --------------------------------------------------------- */
+  const [allPersons, setAllPersons] = useState<PersonRef[]>([]);
+  const [loadingPersons, setLoadingPersons] = useState(true);
+
+  useEffect(() => {
+    async function loadPersons() {
+      try {
+        const res = await api.get("/person/list");
+        setAllPersons(
+          (res.persons || []).map((p: any) => ({
+            id_person: p.ID_PERSON,
+            name: p.NAME,
+            title: p.TITLE || "",
+            id_company: p.ID_COMPANY || null,
+          }))
+        );
+      } catch (e) {
+        console.error("Erreur chargement personnes", e);
+        setAllPersons([]);
+      } finally {
+        setLoadingPersons(false);
+      }
+    }
+
+    loadPersons();
+  }, []);
 
   /* ---------------------------------------------------------
      IA — AIDE À L'ÉCRITURE (LÉGÈRE)
   --------------------------------------------------------- */
+  const [aiLoading, setAiLoading] = useState(false);
+
   async function aiHelp() {
     if (!title && !body) {
       alert("Renseigne au moins un titre ou un texte");
@@ -49,7 +86,7 @@ export default function NewsStepContent({
       const res = await api.post("/news/ai/help", {
         title,
         body,
-        company: company?.NAME || null,
+        company: company?.name || company?.NAME || null,
       });
 
       if (res.title) onChange({ title: res.title });
@@ -67,14 +104,15 @@ export default function NewsStepContent({
   --------------------------------------------------------- */
   return (
     <div className="space-y-6">
-      {/* SOCIÉTÉ */}
-      <div>
-        <label className="block font-medium mb-1">Société *</label>
-        <CompanySelect
-          value={company}
-          onChange={(c) => onChange({ company: c })}
-        />
-      </div>
+      {/* SOCIÉTÉ (OBLIGATOIRE) */}
+      <CompanySelector
+        values={company ? [company] : []}
+        onChange={(items) => {
+          onChange({ company: items[0] || null });
+          // reset persons si société change
+          onChange({ persons: [] });
+        }}
+      />
 
       {/* TITRE */}
       <div>
@@ -98,34 +136,29 @@ export default function NewsStepContent({
       </div>
 
       {/* IA */}
-      <div>
-        <button
-          type="button"
-          className="px-3 py-2 bg-gray-100 border rounded text-sm"
-          onClick={aiHelp}
-          disabled={aiLoading}
-        >
-          {aiLoading ? "IA en cours…" : "Aide IA à l’écriture"}
-        </button>
-      </div>
+      <button
+        type="button"
+        className="px-3 py-2 bg-gray-100 border rounded text-sm"
+        onClick={aiHelp}
+        disabled={aiLoading}
+      >
+        {aiLoading ? "IA en cours…" : "Aide IA à l’écriture"}
+      </button>
 
-      {/* TOPICS */}
-      <div>
-        <label className="block font-medium mb-1">Topics (badges)</label>
-        <TopicMultiSelect
-          values={topics}
-          onChange={(t) => onChange({ topics: t })}
-        />
-      </div>
+      {/* TOPICS (BADGES) */}
+      <TopicSelector
+        values={topics}
+        onChange={(items) => onChange({ topics: items })}
+      />
 
-      {/* PERSONS */}
-      <div>
-        <label className="block font-medium mb-1">Personnes</label>
-        <PersonMultiSelect
-          values={persons}
-          onChange={(p) => onChange({ persons: p })}
-        />
-      </div>
+      {/* PERSONNES */}
+      <PersonSelector
+        values={persons}
+        persons={allPersons}
+        companyId={company?.id_company || company?.ID_COMPANY || null}
+        onChange={(items) => onChange({ persons: items })}
+        disabled={loadingPersons || !company}
+      />
 
       {/* ACTION */}
       <div className="pt-4">
@@ -137,34 +170,6 @@ export default function NewsStepContent({
           {saving ? "Sauvegarde…" : "Enregistrer"}
         </button>
       </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   PLACEHOLDERS (à remplacer par tes composants existants)
-============================================================ */
-
-function CompanySelect({ value, onChange }: any) {
-  return (
-    <div className="border rounded p-2 text-sm text-gray-500">
-      Sélecteur société (existant)
-    </div>
-  );
-}
-
-function TopicMultiSelect({ values, onChange }: any) {
-  return (
-    <div className="border rounded p-2 text-sm text-gray-500">
-      Sélecteur topics (existant)
-    </div>
-  );
-}
-
-function PersonMultiSelect({ values, onChange }: any) {
-  return (
-    <div className="border rounded p-2 text-sm text-gray-500">
-      Sélecteur persons (existant)
     </div>
   );
 }
