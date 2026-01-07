@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from api.news.models import NewsCreate, NewsUpdate
+from utils.llm import run_llm
 from core.news.service import (
     create_news,
     list_news,
@@ -47,23 +48,78 @@ def get_route(id_news: str):
     return {"status": "ok", "news": news}
 
 # ============================================================
-# AIDE IA
+# IA — GENERATE NEWS (SOURCE → NEWS)
 # ============================================================
-@router.post("/ai/from-source")
-def ai_from_source(payload: dict):
+@router.post("/ai/generate")
+def ai_generate_news(payload: dict):
     """
-    Transforme une source (texte ou URL) en brouillon de News.
+    Génère un brouillon de NEWS à partir d’une source brute.
     """
-    try:
-        return {
-            "status": "ok",
-            "news": generate_news_from_source(
-                source_type=payload.get("source_type"),
-                source_text=payload.get("source_text"),
-            )
-        }
-    except Exception as e:
-        raise HTTPException(400, f"Erreur IA News : {e}")
+    source_text = payload.get("source_text")
+    source_type = payload.get("source_type")
+
+    if not source_text or not source_text.strip():
+        raise HTTPException(400, "Source manquante")
+
+    prompt = f"""
+Tu es l’assistant éditorial de Ratecard.
+
+OBJECTIF
+Transformer une source brute en NEWS PARTENAIRE.
+
+RÈGLES STRICTES
+- Ton neutre, factuel, professionnel
+- PAS d’analyse
+- PAS d’opinion
+- PAS de jargon marketing
+- PAS de promesses
+- PAS de superlatifs
+
+FORMAT DE SORTIE STRICT (TEXTE)
+TITRE:
+<un titre court et informatif>
+
+TEXTE:
+<un paragraphe clair, 3 à 6 lignes max>
+
+SOURCE ({source_type or "texte libre"}):
+{source_text}
+"""
+
+    raw = run_llm(prompt)
+
+    title = ""
+    body = ""
+
+    if raw:
+        lines = raw.splitlines()
+        current = None
+        buffer = []
+
+        for line in lines:
+            line = line.strip()
+            if line.upper().startswith("TITRE"):
+                current = "title"
+                buffer = []
+            elif line.upper().startswith("TEXTE"):
+                if current == "title":
+                    title = " ".join(buffer).strip()
+                current = "body"
+                buffer = []
+            else:
+                buffer.append(line)
+
+        if current == "body":
+            body = " ".join(buffer).strip()
+
+    return {
+        "status": "ok",
+        "news": {
+            "title": title,
+            "body": body,
+        },
+    }
+
 
 
 
