@@ -9,7 +9,7 @@ from core.news.service import (
     publish_news,
 )
 
-router = APIRouter(prefix="/news")
+router = APIRouter()
 
 
 # ============================================================
