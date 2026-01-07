@@ -158,91 +158,102 @@ export default function NewsStudio({ mode, newsId }: Props) {
   }
 
   /* =========================================================
-     UI
+     UI — ACCORDÉON (COMPORTEMENT IDENTIQUE À CONTENT)
   ========================================================= */
   return (
     <div className="space-y-6">
       {/* STEP 1 — SOURCE */}
-      {step === "SOURCE" && (
-        <details open className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            1. Source
-          </summary>
+      <details open={step === "SOURCE"} className="border rounded p-4">
+        <summary
+          className="font-semibold cursor-pointer"
+          onClick={() => setStep("SOURCE")}
+        >
+          1. Source
+        </summary>
 
-          <NewsStepSource
-            onGenerated={({ title, body }) => {
-              setTitle(title);
-              setBody(body);
-              setStep("CONTENT");
-            }}
-            onSkip={() => setStep("CONTENT")}
-          />
-        </details>
-      )}
+        <NewsStepSource
+          onGenerated={({ title, body }) => {
+            setTitle(title);
+            setBody(body);
+            setStep("CONTENT");
+          }}
+          onSkip={() => setStep("CONTENT")}
+        />
+      </details>
 
       {/* STEP 2 — CONTENT */}
-      {step === "CONTENT" && (
-        <details open className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            2. Contenu
-          </summary>
+      <details open={step === "CONTENT"} className="border rounded p-4">
+        <summary
+          className="font-semibold cursor-pointer"
+          onClick={() => setStep("CONTENT")}
+        >
+          2. Contenu
+        </summary>
 
-          <NewsStepContent
-            title={title}
-            body={body}
-            company={company}
-            topics={topics}
-            persons={persons}
-            onChange={(d) => {
-              if (d.title !== undefined) setTitle(d.title);
-              if (d.body !== undefined) setBody(d.body);
-              if (d.company !== undefined) setCompany(d.company);
-              if (d.topics !== undefined) setTopics(d.topics);
-              if (d.persons !== undefined) setPersons(d.persons);
-            }}
-            onValidate={saveNews}
-            saving={saving}
-          />
-        </details>
-      )}
+        <NewsStepContent
+          title={title}
+          body={body}
+          company={company}
+          topics={topics}
+          persons={persons}
+          onChange={(d) => {
+            if (d.title !== undefined) setTitle(d.title);
+            if (d.body !== undefined) setBody(d.body);
+            if (d.company !== undefined) setCompany(d.company);
+            if (d.topics !== undefined) setTopics(d.topics);
+            if (d.persons !== undefined) setPersons(d.persons);
+          }}
+          onValidate={saveNews}
+          saving={saving}
+        />
+      </details>
 
-      {/* STEP 3 — VISUAL */}
-      {internalNewsId && step === "VISUAL" && (
-        <details open className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            3. Visuel
-          </summary>
+      {/* STEP 3 — VISUEL */}
+      <details open={step === "VISUAL"} className="border rounded p-4">
+        <summary
+          className="font-semibold cursor-pointer"
+          onClick={() => setStep("VISUAL")}
+        >
+          3. Visuel
+        </summary>
 
+        {internalNewsId && (
           <NewsStepVisual
             newsId={internalNewsId}
             mediaId={mediaId}
             onUpdated={setMediaId}
             onNext={() => setStep("PREVIEW")}
           />
-        </details>
-      )}
+        )}
+      </details>
 
       {/* STEP 4 — PREVIEW */}
-      {internalNewsId && step === "PREVIEW" && (
-        <details open className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            4. Aperçu
-          </summary>
+      <details open={step === "PREVIEW"} className="border rounded p-4">
+        <summary
+          className="font-semibold cursor-pointer"
+          onClick={() => setStep("PREVIEW")}
+        >
+          4. Aperçu
+        </summary>
 
+        {internalNewsId && (
           <NewsStepPreview
             newsId={internalNewsId}
             onNext={() => setStep("PUBLISH")}
           />
-        </details>
-      )}
+        )}
+      </details>
 
       {/* STEP 5 — PUBLISH */}
-      {internalNewsId && step === "PUBLISH" && (
-        <details open className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            5. Publication
-          </summary>
+      <details open={step === "PUBLISH"} className="border rounded p-4">
+        <summary
+          className="font-semibold cursor-pointer"
+          onClick={() => setStep("PUBLISH")}
+        >
+          5. Publication
+        </summary>
 
+        {internalNewsId && (
           <NewsStepPublish
             publishMode={publishMode}
             publishAt={publishAt}
@@ -251,8 +262,8 @@ export default function NewsStudio({ mode, newsId }: Props) {
             onChangeDate={setPublishAt}
             onPublish={publishNews}
           />
-        </details>
-      )}
+        )}
+      </details>
     </div>
   );
 }
