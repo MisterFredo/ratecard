@@ -46,6 +46,8 @@ export default function SearchableMultiSelect({
     } else {
       onChange([...values, option]);
     }
+    setOpen(false);
+    setQuery("");
   }
 
   function remove(optionId: string) {
