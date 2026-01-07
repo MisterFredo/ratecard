@@ -44,7 +44,7 @@ export default function PersonSelector({
   const selectedIds = values.map((v) => v.id_person);
 
   /* ---------------------------------------------------------
-     TOGGLE SELECTION (IMMÉDIAT)
+     TOGGLE SELECTION (IMMÉDIAT, SANS EFFET DE BORD)
   --------------------------------------------------------- */
   function toggle(person: PersonRef) {
     if (disabled) return;
@@ -73,18 +73,25 @@ export default function PersonSelector({
     <div className="space-y-2">
       <label className="font-medium">Personnes</label>
 
+      {/* Aucune société sélectionnée */}
       {disabled ? (
         <div className="text-sm text-gray-400 italic">
           Sélectionnez d’abord une société
         </div>
+
+      /* Chargement */}
       ) : loading ? (
         <div className="text-sm text-gray-500">
           Chargement des personnes…
         </div>
+
+      /* Société sans personnes */}
       ) : availablePersons.length === 0 ? (
         <div className="text-sm text-gray-400 italic">
           Aucune personne associée à cette société
         </div>
+
+      /* Liste valide */}
       ) : (
         <div className="border rounded p-3 space-y-2 bg-white max-h-64 overflow-auto">
           {availablePersons.map((p) => {
@@ -121,4 +128,5 @@ export default function PersonSelector({
     </div>
   );
 }
+
 
