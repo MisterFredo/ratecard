@@ -26,6 +26,10 @@ TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
 TABLE_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_PERSON"
 
+
+# ============================================================
+# SERIALIZATION (JSON-SAFE)
+# ============================================================
 def serialize_row(row: dict) -> dict:
     """
     Prépare une ligne BigQuery pour un retour API (JSON-safe).
@@ -37,7 +41,6 @@ def serialize_row(row: dict) -> dict:
         else:
             clean[k] = v
     return clean
-
 
 
 # ============================================================
@@ -121,7 +124,7 @@ def create_news(data: NewsCreate) -> str:
 
 
 # ============================================================
-# GET ONE NEWS (ENRICHI)
+# GET ONE NEWS (ENRICHI, JSON-SAFE)
 # ============================================================
 def get_news(id_news: str):
     rows = query_bq(
@@ -137,7 +140,7 @@ def get_news(id_news: str):
     if not rows:
         return None
 
-    news = rows[0]
+    news = serialize_row(rows[0])
 
     # ----------------------------
     # COMPANY
@@ -151,7 +154,7 @@ def get_news(id_news: str):
         {"id": news["ID_COMPANY"]},
     )
 
-    news["company"] = company[0] if company else None
+    news["company"] = serialize_row(company[0]) if company else None
 
     # ----------------------------
     # TOPICS (BADGES)
@@ -183,10 +186,10 @@ def get_news(id_news: str):
 
 
 # ============================================================
-# LIST NEWS (ADMIN)
+# LIST NEWS (ADMIN, JSON-SAFE)
 # ============================================================
 def list_news():
-    return query_bq(
+    rows = query_bq(
         f"""
         SELECT
             N.ID_NEWS,
@@ -200,6 +203,8 @@ def list_news():
         ORDER BY N.CREATED_AT DESC
         """
     )
+
+    return [serialize_row(r) for r in rows]
 
 
 # ============================================================
