@@ -46,6 +46,26 @@ def get_route(id_news: str):
         raise HTTPException(404, "News introuvable")
     return {"status": "ok", "news": news}
 
+# ============================================================
+# AIDE IA
+# ============================================================
+@router.post("/ai/from-source")
+def ai_from_source(payload: dict):
+    """
+    Transforme une source (texte ou URL) en brouillon de News.
+    """
+    try:
+        return {
+            "status": "ok",
+            "news": generate_news_from_source(
+                source_type=payload.get("source_type"),
+                source_text=payload.get("source_text"),
+            )
+        }
+    except Exception as e:
+        raise HTTPException(400, f"Erreur IA News : {e}")
+
+
 
 # ============================================================
 # UPDATE NEWS
