@@ -12,6 +12,9 @@ from core.news.service import (
 router = APIRouter(prefix="/news")
 
 
+# ============================================================
+# CREATE NEWS
+# ============================================================
 @router.post("/create")
 def create_route(data: NewsCreate):
     try:
@@ -21,14 +24,21 @@ def create_route(data: NewsCreate):
         raise HTTPException(400, f"Erreur création news : {e}")
 
 
+# ============================================================
+# LIST NEWS (ADMIN)
+# ============================================================
 @router.get("/list")
 def list_route():
     try:
-        return {"status": "ok", "news": list_news()}
+        news = list_news()
+        return {"status": "ok", "news": news}
     except Exception as e:
         raise HTTPException(400, f"Erreur liste news : {e}")
 
 
+# ============================================================
+# GET ONE NEWS
+# ============================================================
 @router.get("/{id_news}")
 def get_route(id_news: str):
     news = get_news(id_news)
@@ -37,6 +47,9 @@ def get_route(id_news: str):
     return {"status": "ok", "news": news}
 
 
+# ============================================================
+# UPDATE NEWS
+# ============================================================
 @router.put("/update/{id_news}")
 def update_route(id_news: str, data: NewsUpdate):
     try:
@@ -46,13 +59,25 @@ def update_route(id_news: str, data: NewsUpdate):
         raise HTTPException(400, f"Erreur mise à jour news : {e}")
 
 
+# ============================================================
+# ARCHIVE NEWS
+# ============================================================
 @router.post("/archive/{id_news}")
 def archive_route(id_news: str):
-    archive_news(id_news)
-    return {"status": "ok", "archived": True}
+    try:
+        archive_news(id_news)
+        return {"status": "ok", "archived": True}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur archivage news : {e}")
 
 
+# ============================================================
+# PUBLISH NEWS
+# ============================================================
 @router.post("/publish/{id_news}")
 def publish_route(id_news: str, published_at: str | None = None):
-    status = publish_news(id_news, published_at)
-    return {"status": "ok", "published_status": status}
+    try:
+        status = publish_news(id_news, published_at)
+        return {"status": "ok", "published_status": status}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur publication news : {e}")
