@@ -8,7 +8,7 @@ from utils.gcs import upload_bytes, delete_file
 from utils.image import to_rectangle_16_9
 from config import BQ_PROJECT, BQ_DATASET
 
-router = APIRouter(prefix="/news")
+router = APIRouter()
 
 TABLE_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS"
 GCS_FOLDER = "news"
