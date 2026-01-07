@@ -290,7 +290,7 @@ def publish_news(
     if not rows or not rows[0]["MEDIA_RECTANGLE_ID"]:
         raise ValueError("Un visuel est requis pour publier la news")
 
-    now = datetime.utcnow()
+    now = datetime.utcnow().isoformat()
 
     if not published_at or published_at <= now:
         update_bq(
