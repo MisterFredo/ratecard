@@ -70,36 +70,6 @@ export default function NewsStepContent({
   }, []);
 
   /* ---------------------------------------------------------
-     IA — AIDE À L'ÉCRITURE (LÉGÈRE)
-  --------------------------------------------------------- */
-  const [aiLoading, setAiLoading] = useState(false);
-
-  async function aiHelp() {
-    if (!title && !body) {
-      alert("Renseigne au moins un titre ou un texte");
-      return;
-    }
-
-    setAiLoading(true);
-
-    try {
-      const res = await api.post("/news/ai/help", {
-        title,
-        body,
-        company: company?.name || company?.NAME || null,
-      });
-
-      if (res.title) onChange({ title: res.title });
-      if (res.body) onChange({ body: res.body });
-    } catch (e) {
-      console.error(e);
-      alert("❌ Erreur IA");
-    }
-
-    setAiLoading(false);
-  }
-
-  /* ---------------------------------------------------------
      UI
   --------------------------------------------------------- */
   return (
@@ -109,7 +79,7 @@ export default function NewsStepContent({
         values={company ? [company] : []}
         onChange={(items) => {
           onChange({ company: items[0] || null });
-          // reset persons si société change
+          // reset des personnes si la société change
           onChange({ persons: [] });
         }}
       />
@@ -134,16 +104,6 @@ export default function NewsStepContent({
           onChange={(e) => onChange({ body: e.target.value })}
         />
       </div>
-
-      {/* IA */}
-      <button
-        type="button"
-        className="px-3 py-2 bg-gray-100 border rounded text-sm"
-        onClick={aiHelp}
-        disabled={aiLoading}
-      >
-        {aiLoading ? "IA en cours…" : "Aide IA à l’écriture"}
-      </button>
 
       {/* TOPICS (BADGES) */}
       <TopicSelector
