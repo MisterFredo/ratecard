@@ -85,9 +85,8 @@ export default function ContentContextBlock({
       {/* PERSONS */}
       <PersonSelector
         values={persons}
-        availablePersons={availablePersons}
-        disabled={companies.length === 0}
-        loading={loadingPersons}
+        persons={allPersons}
+        companyId={companies[0]?.id_company || null}
         onChange={(items) => onChange({ persons: items })}
       />
     </div>
