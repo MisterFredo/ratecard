@@ -5,6 +5,9 @@ import { api } from "@/lib/api";
 
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
+/* ---------------------------------------------------------
+   TYPES
+--------------------------------------------------------- */
 type Topic = {
   id_topic: string;
   label: string;
@@ -58,27 +61,22 @@ export default function StepVisual({
   const [loading, setLoading] = useState(false);
 
   /* ---------------------------------------------------------
-     Helpers GCS (visuels d’entités — UI only)
+     Helpers GCS (UI uniquement)
   --------------------------------------------------------- */
-  function topicRect(id: string) {
-    return `${GCS}/topics/TOPIC_${id}_rect.jpg`;
-  }
+  const topicRect = (id: string) =>
+    `${GCS}/topics/TOPIC_${id}_rect.jpg`;
 
-  function eventRect(id: string) {
-    return `${GCS}/events/EVENT_${id}_rect.jpg`;
-  }
+  const eventRect = (id: string) =>
+    `${GCS}/events/EVENT_${id}_rect.jpg`;
 
-  function companyRect(id: string) {
-    return `${GCS}/companies/COMPANY_${id}_rect.jpg`;
-  }
+  const companyRect = (id: string) =>
+    `${GCS}/companies/COMPANY_${id}_rect.jpg`;
 
-  function personRect(id: string) {
-    return `${GCS}/persons/PERSON_${id}_rect.jpg`;
-  }
+  const personRect = (id: string) =>
+    `${GCS}/persons/PERSON_${id}_rect.jpg`;
 
-  function contentRect(filename: string) {
-    return `${GCS}/contents/${filename}`;
-  }
+  const contentRect = (filename: string) =>
+    `${GCS}/content/${filename}`;
 
   /* ---------------------------------------------------------
      Utils
@@ -96,9 +94,14 @@ export default function StepVisual({
   }
 
   /* ---------------------------------------------------------
-     1️⃣ UPLOAD MANUEL (persisté en base)
+     1️⃣ UPLOAD MANUEL (persisté)
   --------------------------------------------------------- */
   async function upload(file: File) {
+    if (!(file instanceof File)) {
+      alert("Fichier invalide");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -180,7 +183,7 @@ export default function StepVisual({
         )}
       </div>
 
-      {/* 1️⃣ VISUELS D’ENTITÉS (UI only) */}
+      {/* 1️⃣ VISUELS D’ENTITÉS (UI uniquement) */}
       <div className="space-y-3">
         <h4 className="font-semibold">Utiliser un visuel existant</h4>
 
@@ -231,9 +234,11 @@ export default function StepVisual({
         <input
           type="file"
           accept="image/*"
-          onChange={(e) =>
-            e.target.files && upload(e.target.files[0])
-          }
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            upload(file);
+          }}
         />
       </div>
 
@@ -261,4 +266,5 @@ export default function StepVisual({
     </div>
   );
 }
+
 
