@@ -21,8 +21,9 @@ def create_route(data: NewsCreate):
     try:
         news_id = create_news(data)
         return {"status": "ok", "id_news": news_id}
-    except Exception as e:
-        raise HTTPException(400, f"Erreur création news : {e}")
+    except Exception:
+        # ⚠️ message contrôlé, PAS d'objet Python exposé
+        raise HTTPException(400, "Erreur création news")
 
 
 # ============================================================
