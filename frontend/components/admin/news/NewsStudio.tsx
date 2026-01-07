@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-// steps
+// STEPS
+import NewsStepSource from "@/components/admin/news/steps/NewsStepSource";
 import NewsStepContent from "@/components/admin/news/steps/NewsStepContent";
 import NewsStepVisual from "@/components/admin/news/steps/NewsStepVisual";
 import NewsStepPreview from "@/components/admin/news/steps/NewsStepPreview";
@@ -11,7 +12,12 @@ import NewsStepPublish from "@/components/admin/news/steps/NewsStepPublish";
 
 type Mode = "create" | "edit";
 
-type Step = "CONTENT" | "VISUAL" | "PREVIEW" | "PUBLISH";
+type Step =
+  | "SOURCE"
+  | "CONTENT"
+  | "VISUAL"
+  | "PREVIEW"
+  | "PUBLISH";
 
 type Props = {
   mode: Mode;
@@ -29,6 +35,9 @@ export default function NewsStudio({ mode, newsId }: Props) {
   const [topics, setTopics] = useState<any[]>([]);
   const [persons, setPersons] = useState<any[]>([]);
 
+  /* =========================================================
+     STATE — VISUEL
+  ========================================================= */
   const [mediaId, setMediaId] = useState<string | null>(null);
 
   /* =========================================================
@@ -46,10 +55,10 @@ export default function NewsStudio({ mode, newsId }: Props) {
   );
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [step, setStep] = useState<Step>("CONTENT");
+  const [step, setStep] = useState<Step>("SOURCE");
 
   /* =========================================================
-     LOAD NEWS (EDIT)
+     LOAD NEWS (EDIT MODE)
   ========================================================= */
   useEffect(() => {
     if (mode !== "edit" || !newsId) return;
@@ -61,9 +70,11 @@ export default function NewsStudio({ mode, newsId }: Props) {
 
         setTitle(n.TITLE || "");
         setBody(n.BODY || "");
+
         setCompany(n.company || null);
         setTopics(n.topics || []);
         setPersons(n.persons || []);
+
         setMediaId(n.MEDIA_RECTANGLE_ID || null);
 
         setStep("CONTENT");
@@ -77,7 +88,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   }, [mode, newsId]);
 
   /* =========================================================
-     SAVE NEWS
+     SAVE NEWS (CREATE / UPDATE)
   ========================================================= */
   async function saveNews() {
     if (!title.trim()) {
@@ -93,11 +104,11 @@ export default function NewsStudio({ mode, newsId }: Props) {
     setSaving(true);
 
     const payload = {
-      id_company: company.ID_COMPANY,
+      id_company: company.id_company || company.ID_COMPANY,
       title,
       body,
-      topics: topics.map((t) => t.ID_TOPIC),
-      persons: persons.map((p) => p.ID_PERSON),
+      topics: topics.map((t) => t.id_topic || t.ID_TOPIC),
+      persons: persons.map((p) => p.id_person || p.ID_PERSON),
     };
 
     try {
@@ -118,10 +129,11 @@ export default function NewsStudio({ mode, newsId }: Props) {
   }
 
   /* =========================================================
-     PUBLISH
+     PUBLISH NEWS
   ========================================================= */
   async function publishNews() {
     if (!internalNewsId) return;
+
     if (!mediaId) {
       alert("Un visuel est obligatoire");
       return;
@@ -150,35 +162,55 @@ export default function NewsStudio({ mode, newsId }: Props) {
   ========================================================= */
   return (
     <div className="space-y-6">
-      {/* STEP 1 — CONTENT */}
-      <details open={step === "CONTENT"} className="border rounded p-4">
-        <summary className="font-semibold cursor-pointer">
-          1. Contenu
-        </summary>
-
-        <NewsStepContent
-          title={title}
-          body={body}
-          company={company}
-          topics={topics}
-          persons={persons}
-          onChange={(d) => {
-            if (d.title !== undefined) setTitle(d.title);
-            if (d.body !== undefined) setBody(d.body);
-            if (d.company !== undefined) setCompany(d.company);
-            if (d.topics !== undefined) setTopics(d.topics);
-            if (d.persons !== undefined) setPersons(d.persons);
-          }}
-          onValidate={saveNews}
-          saving={saving}
-        />
-      </details>
-
-      {/* STEP 2 — VISUAL */}
-      {internalNewsId && (
-        <details open={step === "VISUAL"} className="border rounded p-4">
+      {/* STEP 1 — SOURCE */}
+      {step === "SOURCE" && (
+        <details open className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            2. Visuel
+            1. Source
+          </summary>
+
+          <NewsStepSource
+            onGenerated={({ title, body }) => {
+              setTitle(title);
+              setBody(body);
+              setStep("CONTENT");
+            }}
+            onSkip={() => setStep("CONTENT")}
+          />
+        </details>
+      )}
+
+      {/* STEP 2 — CONTENT */}
+      {step === "CONTENT" && (
+        <details open className="border rounded p-4">
+          <summary className="font-semibold cursor-pointer">
+            2. Contenu
+          </summary>
+
+          <NewsStepContent
+            title={title}
+            body={body}
+            company={company}
+            topics={topics}
+            persons={persons}
+            onChange={(d) => {
+              if (d.title !== undefined) setTitle(d.title);
+              if (d.body !== undefined) setBody(d.body);
+              if (d.company !== undefined) setCompany(d.company);
+              if (d.topics !== undefined) setTopics(d.topics);
+              if (d.persons !== undefined) setPersons(d.persons);
+            }}
+            onValidate={saveNews}
+            saving={saving}
+          />
+        </details>
+      )}
+
+      {/* STEP 3 — VISUAL */}
+      {internalNewsId && step === "VISUAL" && (
+        <details open className="border rounded p-4">
+          <summary className="font-semibold cursor-pointer">
+            3. Visuel
           </summary>
 
           <NewsStepVisual
@@ -190,11 +222,11 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </details>
       )}
 
-      {/* STEP 3 — PREVIEW */}
-      {internalNewsId && (
-        <details open={step === "PREVIEW"} className="border rounded p-4">
+      {/* STEP 4 — PREVIEW */}
+      {internalNewsId && step === "PREVIEW" && (
+        <details open className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            3. Aperçu
+            4. Aperçu
           </summary>
 
           <NewsStepPreview
@@ -204,11 +236,11 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </details>
       )}
 
-      {/* STEP 4 — PUBLISH */}
-      {internalNewsId && (
-        <details open={step === "PUBLISH"} className="border rounded p-4">
+      {/* STEP 5 — PUBLISH */}
+      {internalNewsId && step === "PUBLISH" && (
+        <details open className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            4. Publication
+            5. Publication
           </summary>
 
           <NewsStepPublish
