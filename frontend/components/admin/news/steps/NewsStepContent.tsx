@@ -157,7 +157,6 @@ export default function NewsStepContent({
         persons={allPersons}
         companyId={company?.id_company || company?.ID_COMPANY || null}
         onChange={(items) => onChange({ persons: items })}
-        disabled={loadingPersons || !company}
       />
 
       {/* ACTION */}
