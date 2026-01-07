@@ -8,6 +8,7 @@ export type PersonRef = {
   id_person: string;
   name: string;
   title?: string;
+  id_company?: string | null;
 };
 
 export type ArticlePerson = {
@@ -18,17 +19,14 @@ export type ArticlePerson = {
 };
 
 type Props = {
-  /** Personnes actuellement sélectionnées */
+  /** Personnes sélectionnées */
   values: ArticlePerson[];
 
-  /** Personnes disponibles (déjà filtrées par société) */
-  availablePersons: PersonRef[];
+  /** Toutes les personnes disponibles */
+  persons: PersonRef[];
 
-  /** Désactive le selector (ex: aucune société sélectionnée) */
-  disabled?: boolean;
-
-  /** Chargement en cours */
-  loading?: boolean;
+  /** Société sélectionnée (optionnelle) */
+  companyId?: string | null;
 
   /** Callback */
   onChange: (persons: ArticlePerson[]) => void;
@@ -36,19 +34,18 @@ type Props = {
 
 export default function PersonSelector({
   values,
-  availablePersons,
-  disabled = false,
-  loading = false,
+  persons,
+  companyId,
   onChange,
 }: Props) {
   const selectedIds = values.map((v) => v.id_person);
 
-  /* ---------------------------------------------------------
-     TOGGLE SELECTION (IMMÉDIAT)
-  --------------------------------------------------------- */
-  function toggle(person: PersonRef) {
-    if (disabled) return;
+  // 🔑 Filtrage SIMPLE
+  const filteredPersons = companyId
+    ? persons.filter((p) => p.id_company === companyId)
+    : [];
 
+  function toggle(person: PersonRef) {
     const alreadySelected = selectedIds.includes(person.id_person);
 
     if (alreadySelected) {
@@ -66,35 +63,28 @@ export default function PersonSelector({
     }
   }
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
     <div className="space-y-2">
       <label className="font-medium">Personnes</label>
 
-      {disabled ? (
+      {!companyId ? (
         <div className="text-sm text-gray-400 italic">
           Sélectionnez d’abord une société
         </div>
-      ) : loading ? (
-        <div className="text-sm text-gray-500">
-          Chargement des personnes…
-        </div>
-      ) : availablePersons.length === 0 ? (
+      ) : filteredPersons.length === 0 ? (
         <div className="text-sm text-gray-400 italic">
           Aucune personne associée à cette société
         </div>
       ) : (
         <div className="border rounded p-3 space-y-2 bg-white max-h-64 overflow-auto">
-          {availablePersons.map((p) => {
+          {filteredPersons.map((p) => {
             const selected = selectedIds.includes(p.id_person);
 
             return (
               <div
                 key={p.id_person}
                 onClick={() => toggle(p)}
-                className={`p-2 rounded cursor-pointer transition ${
+                className={`p-2 rounded cursor-pointer ${
                   selected
                     ? "bg-blue-50 border border-blue-300"
                     : "hover:bg-gray-50"
