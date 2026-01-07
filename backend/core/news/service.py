@@ -106,6 +106,13 @@ def create_news(data: NewsCreate) -> str:
 
     return news_id
 
+def serialize_row(row: dict) -> dict:
+    for k, v in row.items():
+        if hasattr(v, "isoformat"):
+            row[k] = v.isoformat()
+    return row
+
+
 
 # ============================================================
 # GET ONE NEWS (ENRICHI)
