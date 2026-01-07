@@ -41,6 +41,7 @@ include_router("api.health", "/api/health", "HEALTH")
 
 # --- NOUVEAU CŒUR
 include_router("api.content", "/api/content", "CONTENT")
+include_router("api.news", "/api/content", "NEWS")
 include_router("api.company", "/api/company", "COMPANY")
 include_router("api.person", "/api/person", "PERSON")
 include_router("api.topic", "/api/topic", "TOPIC")
@@ -59,6 +60,7 @@ def root():
         "status": "ok",
         "modules": [
             "content",
+            "news",
             "event",
             "topic",
             "company",
