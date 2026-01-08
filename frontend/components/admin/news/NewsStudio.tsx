@@ -29,6 +29,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
      STATE — CORE
   ========================================================= */
   const [title, setTitle] = useState("");
+  const [excerpt, setExcerpt] = useState("");
   const [body, setBody] = useState("");
 
   const [company, setCompany] = useState<any | null>(null);
@@ -58,7 +59,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   const [step, setStep] = useState<Step>("SOURCE");
 
   /* =========================================================
-     UTILS — STEP ORDER (POUR RÉVÉLATION PROGRESSIVE)
+     UTILS — STEP ORDER
   ========================================================= */
   const stepOrder: Step[] = [
     "SOURCE",
@@ -69,9 +70,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   ];
 
   function isStepReached(target: Step) {
-    return (
-      stepOrder.indexOf(step) >= stepOrder.indexOf(target)
-    );
+    return stepOrder.indexOf(step) >= stepOrder.indexOf(target);
   }
 
   /* =========================================================
@@ -86,6 +85,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
         const n = res.news;
 
         setTitle(n.TITLE || "");
+        setExcerpt(n.EXCERPT || "");
         setBody(n.BODY || "");
 
         setCompany(n.company || null);
@@ -123,6 +123,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
     const payload = {
       id_company: company.id_company || company.ID_COMPANY,
       title,
+      excerpt,
       body,
       topics: topics.map((t) => t.id_topic || t.ID_TOPIC),
       persons: persons.map((p) => p.id_person || p.ID_PERSON),
@@ -175,11 +176,11 @@ export default function NewsStudio({ mode, newsId }: Props) {
   }
 
   /* =========================================================
-     UI — STUDIO AVEC RÉVÉLATION PROGRESSIVE
+     UI — STUDIO
   ========================================================= */
   return (
     <div className="space-y-6">
-      {/* STEP 1 — SOURCE (toujours visible) */}
+      {/* STEP 1 — SOURCE */}
       <details open={step === "SOURCE"} className="border rounded p-4">
         <summary
           className="font-semibold cursor-pointer"
@@ -189,8 +190,9 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </summary>
 
         <NewsStepSource
-          onGenerated={({ title, body }) => {
+          onGenerated={({ title, excerpt, body }) => {
             setTitle(title);
+            setExcerpt(excerpt);
             setBody(body);
             setStep("CONTENT");
           }}
@@ -210,12 +212,14 @@ export default function NewsStudio({ mode, newsId }: Props) {
 
           <NewsStepContent
             title={title}
+            excerpt={excerpt}
             body={body}
             company={company}
             topics={topics}
             persons={persons}
             onChange={(d) => {
               if (d.title !== undefined) setTitle(d.title);
+              if (d.excerpt !== undefined) setExcerpt(d.excerpt);
               if (d.body !== undefined) setBody(d.body);
               if (d.company !== undefined) setCompany(d.company);
               if (d.topics !== undefined) setTopics(d.topics);
@@ -292,3 +296,4 @@ export default function NewsStudio({ mode, newsId }: Props) {
     </div>
   );
 }
+
