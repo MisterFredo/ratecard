@@ -1,23 +1,31 @@
 import uuid
 from datetime import datetime
+from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client, update_bq
+from utils.bigquery_utils import (
+    query_bq,
+    update_bq,
+    get_bigquery_client,
+)
 from api.person.models import PersonCreate, PersonUpdate
 
 TABLE_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_PERSON"
 
 
 # ============================================================
-# CREATE PERSON — DATA ONLY
+# CREATE PERSON — DATA ONLY (LOAD JOB, NO STREAMING)
 # ============================================================
 def create_person(data: PersonCreate) -> str:
     """
     Crée une personne.
-    Aucun champ média n'est autorisé ici.
+
+    Règles :
+    - aucun champ média au create
+    - insertion via LOAD JOB (pas de streaming)
     """
     person_id = str(uuid.uuid4())
-    now = datetime.utcnow()
+    now = datetime.utcnow().isoformat()
 
     row = [{
         "ID_PERSON": person_id,
@@ -28,6 +36,7 @@ def create_person(data: PersonCreate) -> str:
         "DESCRIPTION": data.description,
 
         # ⚠️ PAS DE MEDIA AU CREATE
+        "MEDIA_PORTRAIT_ID": None,
 
         "LINKEDIN_URL": data.linkedin_url,
 
@@ -36,7 +45,16 @@ def create_person(data: PersonCreate) -> str:
         "IS_ACTIVE": True,
     }]
 
-    insert_bq(TABLE_PERSON, row)
+    client = get_bigquery_client()
+    job = client.load_table_from_json(
+        row,
+        TABLE_PERSON,
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
+    )
+    job.result()  # ⬅️ bloquant = ligne immédiatement stable
+
     return person_id
 
 
@@ -44,6 +62,9 @@ def create_person(data: PersonCreate) -> str:
 # LIST PERSONS
 # ============================================================
 def list_persons():
+    """
+    Liste les personnes actives (admin).
+    """
     sql = f"""
         SELECT
             p.*,
@@ -61,6 +82,9 @@ def list_persons():
 # GET ONE PERSON
 # ============================================================
 def get_person(person_id: str):
+    """
+    Récupère une personne par ID.
+    """
     sql = f"""
         SELECT *
         FROM `{TABLE_PERSON}`
@@ -74,19 +98,23 @@ def get_person(person_id: str):
 # ============================================================
 # UPDATE PERSON — DATA + MEDIA (POST-CREATION)
 # ============================================================
-
 def update_person(id_person: str, data: PersonUpdate) -> bool:
+    """
+    Met à jour une personne existante.
+
+    Utilise UPDATE (pas de load job).
+    """
     values = data.dict(exclude_unset=True)
 
     if not values:
         return False
 
-    # Champ technique
-    values["UPDATED_AT"] = datetime.utcnow()
+    values["updated_at"] = datetime.utcnow().isoformat()
 
     return update_bq(
         table=TABLE_PERSON,
         fields={k.upper(): v for k, v in values.items()},
         where={"ID_PERSON": id_person},
     )
+
 
