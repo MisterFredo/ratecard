@@ -310,3 +310,47 @@ def publish_news(
     )
     return "SCHEDULED"
 
+# ============================================================
+# LIST NEWS (ADMIN / PUBLIC)
+# ============================================================
+def list_news():
+    rows = query_bq(
+        f"""
+        SELECT
+            N.ID_NEWS,
+            N.TITLE,
+            N.EXCERPT,
+            N.STATUS,
+            N.PUBLISHED_AT,
+            N.MEDIA_RECTANGLE_ID,
+            C.ID_COMPANY,
+            C.NAME AS COMPANY_NAME
+        FROM `{TABLE_NEWS}` N
+        JOIN `{TABLE_COMPANY}` C
+          ON N.ID_COMPANY = C.ID_COMPANY
+        WHERE
+            N.IS_ACTIVE = TRUE
+            AND N.STATUS = 'PUBLISHED'
+            AND N.MEDIA_RECTANGLE_ID IS NOT NULL
+        ORDER BY N.PUBLISHED_AT DESC
+        """
+    )
+
+    results = []
+
+    for r in rows:
+        item = serialize_row(r)
+
+        # ----------------------------------------------------
+        # VISUAL — GCS PUBLIC URL
+        # ----------------------------------------------------
+        item["VISUAL_RECT_URL"] = get_public_url(
+            "news",
+            r.get("MEDIA_RECTANGLE_ID"),
+        )
+
+        results.append(item)
+
+    return results
+
+
