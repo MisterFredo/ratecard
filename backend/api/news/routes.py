@@ -105,7 +105,7 @@ def ai_generate(payload: dict):
 Tu es l’assistant éditorial de Ratecard.
 
 OBJECTIF
-Transformer une source brute en NEWS PARTENAIRE d'environ 200 mots.
+Transformer une source brute en NEWS PARTENAIRE.
 
 RÈGLES
 - Ton neutre, factuel, professionnel
@@ -118,8 +118,11 @@ FORMAT STRICT
 TITRE:
 ...
 
+EXCERPT:
+Synthèse courte (2–3 phrases max, ~300 caractères) résumant l’essentiel.
+
 TEXTE:
-...
+Corps de la news (~200 mots).
 
 SOURCE ({source_type or "texte libre"}):
 {source_text}
@@ -128,6 +131,7 @@ SOURCE ({source_type or "texte libre"}):
     raw = run_llm(prompt)
 
     title = ""
+    excerpt = ""
     body = ""
 
     if raw:
@@ -135,26 +139,36 @@ SOURCE ({source_type or "texte libre"}):
         current = None
         buffer = []
 
+        def flush():
+            return " ".join(buffer).strip()
+
         for line in lines:
             line = line.strip()
+
             if line.upper().startswith("TITRE"):
                 current = "title"
                 buffer = []
-            elif line.upper().startswith("TEXTE"):
+            elif line.upper().startswith("EXCERPT"):
                 if current == "title":
-                    title = " ".join(buffer).strip()
+                    title = flush()
+                current = "excerpt"
+                buffer = []
+            elif line.upper().startswith("TEXTE"):
+                if current == "excerpt":
+                    excerpt = flush()
                 current = "body"
                 buffer = []
             else:
                 buffer.append(line)
 
         if current == "body":
-            body = " ".join(buffer).strip()
+            body = flush()
 
     return {
         "status": "ok",
         "news": {
             "title": title,
+            "excerpt": excerpt,
             "body": body,
         },
     }
