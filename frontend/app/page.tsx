@@ -103,9 +103,7 @@ export default async function Home() {
   return (
     <div className="space-y-16">
 
-      {/* =====================================================
-          EN CONTINU — SIGNAL DE FRAÎCHEUR
-      ===================================================== */}
+      {/* EN CONTINU */}
       <section>
         <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
           En continu
@@ -125,9 +123,7 @@ export default async function Home() {
         )}
       </section>
 
-      {/* =====================================================
-          UNE — DERNIÈRE NEWS PUBLIÉE
-      ===================================================== */}
+      {/* UNE */}
       {une && (
         <section className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
           <img
@@ -154,9 +150,7 @@ export default async function Home() {
         </section>
       )}
 
-      {/* =====================================================
-          AUTRES NEWS (2–3 MAX)
-      ===================================================== */}
+      {/* AUTRES NEWS */}
       {otherNews.length > 0 && (
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {otherNews.map((n) => (
@@ -179,14 +173,10 @@ export default async function Home() {
         </section>
       )}
 
-      {/* =====================================================
-          RUBRIQUES — EVENTS
-      ===================================================== */}
+      {/* RUBRIQUES EVENTS */}
       <section className="space-y-16">
         {events.map((block) => (
           <div key={block.event.id} className="space-y-6">
-
-            {/* EN-TÊTE RUBRIQUE */}
             <div className="flex items-center gap-4">
               <img
                 src={block.event.visual_rect_url}
@@ -198,7 +188,6 @@ export default async function Home() {
               </h2>
             </div>
 
-            {/* LISTE CONTENUS */}
             {block.contents.length > 0 ? (
               <ul className="space-y-4">
                 {block.contents.map((c) => (
@@ -221,7 +210,41 @@ export default async function Home() {
         ))}
       </section>
 
+      {/* =====================================================
+          CTA ÉDITORIAUX — SILENCIEUX
+      ===================================================== */}
+      <section className="border-t border-gray-200 pt-10 text-sm text-gray-700 space-y-4">
+        <p>
+          Recevez chaque semaine les analyses et signaux issus
+          des événements Ratecard.
+        </p>
+
+        <div className="flex flex-col md:flex-row gap-4">
+          <a
+            href="/newsletter"
+            className="text-ratecard-green font-medium hover:underline"
+          >
+            S’inscrire à la newsletter Ratecard
+          </a>
+
+          <a
+            href="https://www.linkedin.com/company/ratecard"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline"
+          >
+            Suivre Ratecard sur LinkedIn
+          </a>
+
+          <a
+            href="/events"
+            className="hover:underline"
+          >
+            Découvrir les prochains événements
+          </a>
+        </div>
+      </section>
+
     </div>
   );
 }
-
