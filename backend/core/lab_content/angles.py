@@ -37,7 +37,7 @@ Tu es un analyste éditorial spécialisé en contenus liés
 au marketing digital, à l’Adtech, au Martech et au Retail Media.
 
 À partir de la source ci-dessous, identifie UN SEUL angle éditorial,
-mono-signal, en te concentrant UNIQUEMENT sur le point de vue suivant :
+mono-signal, en te concentrant UNIQUEMENT sur le point de vue suivant. Ne propose pas systématiquement un angle qui commence par l'impact de ou l'importance de. :
 
 👉 {lens}
 
