@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException
+import logging
+
 from utils.bigquery_utils import get_bigquery_client
 from utils.gcs import get_public_url
+
 from api.public.models import (
     HomeContinuousResponse,
     HomeContinuousItem,
@@ -12,9 +15,17 @@ from api.public.models import (
     HomeEventContentItem,
 )
 
-import logging
-logger = logging.getLogger(__name__)
+# CORE SERVICES
+from core.event.service import (
+    get_event_by_slug,
+    list_home_events,
+    list_event_contents,
+)
 
+from core.news.service import list_news
+from core.content.service import list_contents
+
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 DATASET = "adex-5555.RATECARD"
@@ -25,6 +36,9 @@ DATASET = "adex-5555.RATECARD"
 # ============================================================
 @router.get("/home/continuous", response_model=HomeContinuousResponse)
 def get_home_continuous():
+    """
+    5 derniers contenus publiés (News + Analyses)
+    """
     client = get_bigquery_client()
 
     query = f"""
@@ -34,9 +48,7 @@ def get_home_continuous():
       TITLE AS title,
       PUBLISHED_AT AS published_at
     FROM `{DATASET}.RATECARD_NEWS`
-    WHERE
-      STATUS = 'PUBLISHED'
-      AND IS_ACTIVE = true
+    WHERE STATUS = 'PUBLISHED' AND IS_ACTIVE = true
 
     UNION ALL
 
@@ -46,9 +58,7 @@ def get_home_continuous():
       ANGLE_TITLE AS title,
       PUBLISHED_AT AS published_at
     FROM `{DATASET}.RATECARD_CONTENT`
-    WHERE
-      STATUS = 'PUBLISHED'
-      AND IS_ACTIVE = true
+    WHERE STATUS = 'PUBLISHED' AND IS_ACTIVE = true
 
     ORDER BY published_at DESC
     LIMIT 5
@@ -76,40 +86,30 @@ def get_home_continuous():
 # ============================================================
 @router.get("/home/news", response_model=HomeNewsResponse)
 def get_home_news():
-    client = get_bigquery_client()
-
-    query = f"""
-    SELECT
-      ID_NEWS AS id,
-      TITLE AS title,
-      EXCERPT AS excerpt,
-      PUBLISHED_AT AS published_at,
-      MEDIA_RECTANGLE_ID
-    FROM `{DATASET}.RATECARD_NEWS`
-    WHERE
-      STATUS = 'PUBLISHED'
-      AND IS_ACTIVE = true
-      AND MEDIA_RECTANGLE_ID IS NOT NULL
-    ORDER BY PUBLISHED_AT DESC
-    LIMIT 4
     """
-
+    Dernières News (utilise le core News)
+    """
     try:
-        rows = client.query(query).result()
-        items = [
-            HomeNewsItem(
-                id=row["id"],
-                title=row["title"],
-                excerpt=row["excerpt"] or "",
-                published_at=row["published_at"],
-                visual_rect_url=get_public_url(
-                    "news",
-                    row["MEDIA_RECTANGLE_ID"],
-                ),
-            )
-            for row in rows
-        ]
-        return HomeNewsResponse(items=items)
+        news = list_news()
+
+        items = []
+        for n in news:
+            if (
+                n["STATUS"] == "PUBLISHED"
+                and n.get("VISUAL_RECT_URL")
+            ):
+                items.append(
+                    HomeNewsItem(
+                        id=n["ID_NEWS"],
+                        title=n["TITLE"],
+                        excerpt=n.get("EXCERPT") or "",
+                        published_at=n["PUBLISHED_AT"],
+                        visual_rect_url=n["VISUAL_RECT_URL"],
+                    )
+                )
+
+        return HomeNewsResponse(items=items[:4])
+
     except Exception:
         logger.exception("Erreur home news")
         raise HTTPException(500, "Erreur récupération home news")
@@ -120,87 +120,32 @@ def get_home_news():
 # ============================================================
 @router.get("/home/events", response_model=HomeEventsResponse)
 def get_home_events():
-    client = get_bigquery_client()
-
+    """
+    Rubriques Events pour la Home
+    """
     try:
-        # ----------------------------------------------------
-        # 1) EVENTS ACTIFS HOME (VISUEL OBLIGATOIRE)
-        # ----------------------------------------------------
-        events_query = f"""
-        SELECT
-          ID_EVENT AS id,
-          LABEL AS label,
-          HOME_LABEL AS home_label,
-          MEDIA_RECTANGLE_ID
-        FROM `{DATASET}.RATECARD_EVENT`
-        WHERE
-          IS_ACTIVE_HOME = true
-          AND IS_ACTIVE = true
-          AND MEDIA_RECTANGLE_ID IS NOT NULL
-        ORDER BY HOME_ORDER
-        """
-
-        event_rows = list(client.query(events_query).result())
-        events = [dict(row) for row in event_rows]
-
-        if not events:
-            return HomeEventsResponse(events=[])
-
-        # ----------------------------------------------------
-        # 2) CONTENTS LIÉS AUX EVENTS
-        # ----------------------------------------------------
-        event_ids_sql = ",".join([f"'{e['id']}'" for e in events])
-
-        contents_query = f"""
-        SELECT
-          ce.ID_EVENT AS event_id,
-          c.ID_CONTENT AS id,
-          c.ANGLE_TITLE AS title,
-          c.EXCERPT AS excerpt,
-          c.PUBLISHED_AT AS published_at
-        FROM `{DATASET}.RATECARD_CONTENT_EVENT` ce
-        JOIN `{DATASET}.RATECARD_CONTENT` c
-          ON c.ID_CONTENT = ce.ID_CONTENT
-        WHERE
-          c.STATUS = 'PUBLISHED'
-          AND c.IS_ACTIVE = true
-          AND ce.ID_EVENT IN ({event_ids_sql})
-        ORDER BY c.PUBLISHED_AT DESC
-        """
-
-        content_rows = client.query(contents_query).result()
-
-        contents_by_event = {}
-        for row in content_rows:
-            contents_by_event.setdefault(row["event_id"], []).append(row)
-
-        # ----------------------------------------------------
-        # 3) BUILD RESPONSE
-        # ----------------------------------------------------
+        events = list_home_events()
         blocks = []
 
-        for event in events:
-            rows = contents_by_event.get(event["id"], [])[:4]
+        for e in events:
+            contents = list_event_contents(e["id"])
 
             blocks.append(
                 HomeEventBlock(
                     event=HomeEventInfo(
-                        id=event["id"],
-                        label=event["label"],
-                        home_label=event["home_label"],
-                        visual_rect_url=get_public_url(
-                            "events",
-                            event["MEDIA_RECTANGLE_ID"],
-                        ),
+                        id=e["id"],
+                        label=e["label"],
+                        home_label=e["home_label"],
+                        visual_rect_url=e["visual_rect_url"],
                     ),
                     contents=[
                         HomeEventContentItem(
-                            id=row["id"],
-                            title=row["title"],
-                            excerpt=row["excerpt"] or "",
-                            published_at=row["published_at"],
+                            id=c["id"],
+                            title=c["title"],
+                            excerpt=c.get("excerpt") or "",
+                            published_at=c["published_at"],
                         )
-                        for row in rows
+                        for c in contents[:4]
                     ],
                 )
             )
@@ -211,73 +156,22 @@ def get_home_events():
         logger.exception("Erreur home events")
         raise HTTPException(500, "Erreur récupération home events")
 
+
 # ============================================================
 # PUBLIC — READ NEWS (DRAWER)
 # ============================================================
 @router.get("/news/{id_news}")
 def read_news(id_news: str):
-    client = get_bigquery_client()
-
+    """
+    Lecture d'une News (drawer)
+    """
     try:
-        # ----------------------------
-        # NEWS
-        # ----------------------------
-        rows = query_bq(
-            f"""
-            SELECT *
-            FROM `{DATASET}.RATECARD_NEWS`
-            WHERE ID_NEWS = @id
-              AND STATUS = 'PUBLISHED'
-              AND IS_ACTIVE = true
-            LIMIT 1
-            """,
-            {"id": id_news},
-        )
+        # on réutilise le core existant
+        rows = list_news()
+        n = next((x for x in rows if x["ID_NEWS"] == id_news), None)
 
-        if not rows:
+        if not n or n["STATUS"] != "PUBLISHED":
             raise HTTPException(404, "News introuvable")
-
-        n = rows[0]
-
-        # ----------------------------
-        # COMPANY
-        # ----------------------------
-        company = query_bq(
-            f"""
-            SELECT ID_COMPANY, NAME, MEDIA_LOGO_RECTANGLE_ID
-            FROM `{DATASET}.RATECARD_COMPANY`
-            WHERE ID_COMPANY = @id
-            """,
-            {"id": n["ID_COMPANY"]},
-        )
-
-        # ----------------------------
-        # TOPICS
-        # ----------------------------
-        topics = query_bq(
-            f"""
-            SELECT T.ID_TOPIC, T.LABEL
-            FROM `{DATASET}.RATECARD_NEWS_TOPIC` NT
-            JOIN `{DATASET}.RATECARD_TOPIC` T
-              ON NT.ID_TOPIC = T.ID_TOPIC
-            WHERE NT.ID_NEWS = @id
-            """,
-            {"id": id_news},
-        )
-
-        # ----------------------------
-        # PERSONS
-        # ----------------------------
-        persons = query_bq(
-            f"""
-            SELECT P.ID_PERSON, P.NAME, P.TITLE
-            FROM `{DATASET}.RATECARD_NEWS_PERSON` NP
-            JOIN `{DATASET}.RATECARD_PERSON` P
-              ON NP.ID_PERSON = P.ID_PERSON
-            WHERE NP.ID_NEWS = @id
-            """,
-            {"id": id_news},
-        )
 
         return {
             "type": "news",
@@ -287,14 +181,11 @@ def read_news(id_news: str):
             "body": n.get("BODY"),
             "status": n["STATUS"],
             "published_at": n["PUBLISHED_AT"],
-            "author": n.get("AUTHOR"),
-            "source_url": n.get("SOURCE_URL"),
-            "visual_rect_url": get_public_url(
-                "news", n.get("MEDIA_RECTANGLE_ID")
-            ),
-            "company": company[0] if company else None,
-            "topics": topics,
-            "persons": persons,
+            "visual_rect_url": n["VISUAL_RECT_URL"],
+            "company": {
+                "id_company": n["ID_COMPANY"],
+                "name": n["COMPANY_NAME"],
+            },
         }
 
     except HTTPException:
@@ -303,63 +194,30 @@ def read_news(id_news: str):
         logger.exception("Erreur read_news")
         raise HTTPException(500, "Erreur lecture news")
 
+
 # ============================================================
 # PUBLIC — READ CONTENT (DRAWER)
 # ============================================================
 @router.get("/content/{id_content}")
 def read_content(id_content: str):
-    client = get_bigquery_client()
-
+    """
+    Lecture d'une Analyse (drawer)
+    """
     try:
-        # ----------------------------
-        # CONTENT
-        # ----------------------------
-        rows = query_bq(
-            f"""
-            SELECT *
-            FROM `{DATASET}.RATECARD_CONTENT`
-            WHERE ID_CONTENT = @id
-              AND STATUS = 'PUBLISHED'
-              AND IS_ACTIVE = true
-            LIMIT 1
-            """,
-            {"id": id_content},
-        )
+        contents = list_contents()
+        c = next((x for x in contents if x["ID_CONTENT"] == id_content), None)
 
-        if not rows:
+        if not c or c["STATUS"] != "PUBLISHED":
             raise HTTPException(404, "Contenu introuvable")
-
-        c = rows[0]
-
-        # ----------------------------
-        # EVENTS
-        # ----------------------------
-        events = query_bq(
-            f"""
-            SELECT E.ID_EVENT, E.LABEL
-            FROM `{DATASET}.RATECARD_CONTENT_EVENT` CE
-            JOIN `{DATASET}.RATECARD_EVENT` E
-              ON CE.ID_EVENT = E.ID_EVENT
-            WHERE CE.ID_CONTENT = @id
-            """,
-            {"id": id_content},
-        )
 
         return {
             "type": "content",
             "id_content": c["ID_CONTENT"],
-            "title": c["ANGLE_TITLE"],
+            "title": c["TITLE"],
             "excerpt": c.get("EXCERPT"),
-            "concept": c.get("CONCEPT"),
             "content_body": c.get("CONTENT_BODY"),
             "status": c["STATUS"],
             "published_at": c["PUBLISHED_AT"],
-            "seo_title": c.get("SEO_TITLE"),
-            "seo_description": c.get("SEO_DESCRIPTION"),
-            "citations": c.get("CITATIONS"),
-            "chiffres": c.get("CHIFFRES"),
-            "acteurs_cites": c.get("ACTEURS_CITES"),
-            "events": events,
         }
 
     except HTTPException:
@@ -368,85 +226,32 @@ def read_content(id_content: str):
         logger.exception("Erreur read_content")
         raise HTTPException(500, "Erreur lecture contenu")
 
+
 # ============================================================
 # PUBLIC — READ EVENT (BY SLUG)
 # ============================================================
 @router.get("/event/{slug}")
 def read_event(slug: str):
-    try:
-        rows = query_bq(
-            f"""
-            SELECT
-              ID_EVENT,
-              LABEL,
-              HOME_LABEL,
-              DESCRIPTION,
-              MEDIA_RECTANGLE_ID
-            FROM `{DATASET}.RATECARD_EVENT`
-            WHERE
-              IS_ACTIVE = true
-              AND LOWER(REPLACE(HOME_LABEL, ' ', '-')) = @slug
-            LIMIT 1
-            """,
-            {"slug": slug},
-        )
+    """
+    Lecture d'un Event par slug
+    """
+    event = get_event_by_slug(slug)
+    if not event:
+        raise HTTPException(404, "Événement introuvable")
+    return event
 
-        if not rows:
-            raise HTTPException(404, "Événement introuvable")
-
-        e = rows[0]
-
-        return {
-            "id_event": e["ID_EVENT"],
-            "label": e["LABEL"],
-            "home_label": e["HOME_LABEL"],
-            "description": e.get("DESCRIPTION"),
-            "visual_rect_url": get_public_url(
-                "events",
-                e.get("MEDIA_RECTANGLE_ID"),
-            ),
-        }
-
-    except HTTPException:
-        raise
-    except Exception:
-        logger.exception("Erreur read_event")
-        raise HTTPException(500, "Erreur lecture événement")
 
 # ============================================================
 # PUBLIC — READ EVENT CONTENTS
 # ============================================================
 @router.get("/event/{slug}/contents")
 def read_event_contents(slug: str):
-    try:
-        rows = query_bq(
-            f"""
-            SELECT
-              C.ID_CONTENT AS id,
-              C.ANGLE_TITLE AS title,
-              C.EXCERPT AS excerpt,
-              C.PUBLISHED_AT
-            FROM `{DATASET}.RATECARD_CONTENT_EVENT` CE
-            JOIN `{DATASET}.RATECARD_CONTENT` C
-              ON CE.ID_CONTENT = C.ID_CONTENT
-            JOIN `{DATASET}.RATECARD_EVENT` E
-              ON CE.ID_EVENT = E.ID_EVENT
-            WHERE
-              C.STATUS = 'PUBLISHED'
-              AND C.IS_ACTIVE = true
-              AND E.IS_ACTIVE = true
-              AND LOWER(REPLACE(E.HOME_LABEL, ' ', '-')) = @slug
-            ORDER BY C.PUBLISHED_AT DESC
-            """,
-            {"slug": slug},
-        )
+    """
+    Analyses liées à un Event
+    """
+    event = get_event_by_slug(slug)
+    if not event:
+        raise HTTPException(404, "Événement introuvable")
 
-        return {
-            "items": rows
-        }
-
-    except Exception:
-        logger.exception("Erreur read_event_contents")
-        raise HTTPException(500, "Erreur lecture contenus événement")
-
-
+    contents = list_event_contents(event["id_event"])
+    return {"items": contents}
