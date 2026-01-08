@@ -187,9 +187,11 @@ def list_news():
             N.EXCERPT,
             N.STATUS,
             N.PUBLISHED_AT,
+            C.ID_COMPANY,
             C.NAME AS COMPANY_NAME
         FROM `{TABLE_NEWS}` N
-        JOIN `{TABLE_COMPANY}` C ON N.ID_COMPANY = C.ID_COMPANY
+        JOIN `{TABLE_COMPANY}` C
+          ON N.ID_COMPANY = C.ID_COMPANY
         WHERE N.IS_ACTIVE = TRUE
         ORDER BY N.CREATED_AT DESC
         """
