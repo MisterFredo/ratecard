@@ -255,15 +255,21 @@ def list_contents():
     return query_bq(
         f"""
         SELECT
-            ID_CONTENT,
-            ANGLE_TITLE,
-            EXCERPT,
-            STATUS,
-            DATE_CREATION,
-            PUBLISHED_AT
-        FROM `{TABLE_CONTENT}`
-        WHERE IS_ACTIVE = TRUE
-        ORDER BY DATE_CREATION DESC
+            C.ID_CONTENT,
+            C.ANGLE_TITLE AS TITLE,
+            E.LABEL AS EVENT_LABEL,
+            C.STATUS,
+            C.PUBLISHED_AT
+        FROM `{TABLE_CONTENT}` C
+
+        -- rattachement contenu → event
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_EVENT` CE
+            ON CE.ID_CONTENT = C.ID_CONTENT
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_EVENT` E
+            ON E.ID_EVENT = CE.ID_EVENT
+
+        WHERE C.IS_ACTIVE = TRUE
+        ORDER BY C.DATE_CREATION DESC
         """
     )
 
