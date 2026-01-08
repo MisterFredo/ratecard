@@ -12,6 +12,7 @@ import PersonSelector, {
 
 type Props = {
   title: string;
+  excerpt: string;
   body: string;
 
   company: any | null;
@@ -20,6 +21,7 @@ type Props = {
 
   onChange: (d: {
     title?: string;
+    excerpt?: string;
     body?: string;
     company?: any | null;
     topics?: any[];
@@ -32,6 +34,7 @@ type Props = {
 
 export default function NewsStepContent({
   title,
+  excerpt,
   body,
   company,
   topics,
@@ -41,7 +44,7 @@ export default function NewsStepContent({
   saving,
 }: Props) {
   /* ---------------------------------------------------------
-     PERSONNES — chargées UNE FOIS (comme ContentContextBlock)
+     PERSONNES — chargées UNE FOIS
   --------------------------------------------------------- */
   const [allPersons, setAllPersons] = useState<PersonRef[]>([]);
   const [loadingPersons, setLoadingPersons] = useState(true);
@@ -95,6 +98,19 @@ export default function NewsStepContent({
         />
       </div>
 
+      {/* EXCERPT */}
+      <div>
+        <label className="block font-medium mb-1">
+          Excerpt <span className="text-sm text-gray-500">(2–3 phrases)</span>
+        </label>
+        <textarea
+          className="w-full border rounded p-2 h-20"
+          value={excerpt}
+          onChange={(e) => onChange({ excerpt: e.target.value })}
+          placeholder="Résumé court qui apparaîtra sur la Home et les listes"
+        />
+      </div>
+
       {/* TEXTE */}
       <div>
         <label className="block font-medium mb-1">Texte</label>
@@ -132,3 +148,4 @@ export default function NewsStepContent({
     </div>
   );
 }
+
