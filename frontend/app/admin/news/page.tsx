@@ -8,8 +8,10 @@ import { Pencil } from "lucide-react";
 type NewsLite = {
   ID_NEWS: string;
   TITLE: string;
+  EXCERPT?: string | null;
   STATUS: string;
   PUBLISHED_AT?: string | null;
+  ID_COMPANY: string;
   COMPANY_NAME: string;
 };
 
@@ -69,14 +71,17 @@ export default function NewsListPage() {
               key={n.ID_NEWS}
               className="border-b hover:bg-gray-50 transition"
             >
+              {/* TITRE */}
               <td className="p-2 font-medium">
                 {n.TITLE}
               </td>
 
+              {/* SOCIÉTÉ */}
               <td className="p-2 text-gray-600">
                 {n.COMPANY_NAME}
               </td>
 
+              {/* STATUT */}
               <td className="p-2">
                 <span
                   className={`px-2 py-1 rounded text-xs font-medium ${
@@ -91,12 +96,14 @@ export default function NewsListPage() {
                 </span>
               </td>
 
+              {/* DATE DE PUBLICATION */}
               <td className="p-2">
                 {n.PUBLISHED_AT
                   ? new Date(n.PUBLISHED_AT).toLocaleDateString("fr-FR")
                   : "—"}
               </td>
 
+              {/* ACTIONS */}
               <td className="p-2 text-right">
                 <Link
                   href={`/admin/news/edit/${n.ID_NEWS}`}
@@ -113,3 +120,4 @@ export default function NewsListPage() {
     </div>
   );
 }
+
