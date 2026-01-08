@@ -1,20 +1,29 @@
 import uuid
 from datetime import datetime
+from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq, insert_bq, update_bq
+from utils.bigquery_utils import (
+    query_bq,
+    update_bq,
+    get_bigquery_client,
+)
 from api.event.models import EventCreate, EventUpdate
 
 TABLE_EVENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_EVENT"
 
 
 # ============================================================
-# CREATE EVENT — DATA ONLY
+# CREATE EVENT — DATA ONLY (LOAD JOB, NO STREAMING)
 # ============================================================
 def create_event(data: EventCreate) -> str:
     """
     Crée un event.
-    Aucun champ média n'est autorisé ici.
+
+    Règles :
+    - aucun champ média au create
+    - valeurs Home / Nav par défaut
+    - insertion via LOAD JOB (pas de streaming)
     """
     event_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
@@ -42,7 +51,16 @@ def create_event(data: EventCreate) -> str:
         "IS_ACTIVE": True,
     }]
 
-    insert_bq(TABLE_EVENT, row)
+    client = get_bigquery_client()
+    job = client.load_table_from_json(
+        row,
+        TABLE_EVENT,
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
+    )
+    job.result()  # ⬅️ bloquant = ligne immédiatement stable
+
     return event_id
 
 
@@ -50,6 +68,9 @@ def create_event(data: EventCreate) -> str:
 # LIST EVENTS
 # ============================================================
 def list_events():
+    """
+    Liste les events actifs (admin).
+    """
     sql = f"""
         SELECT *
         FROM `{TABLE_EVENT}`
@@ -63,6 +84,9 @@ def list_events():
 # GET ONE EVENT
 # ============================================================
 def get_event(event_id: str):
+    """
+    Récupère un event par ID.
+    """
     sql = f"""
         SELECT *
         FROM `{TABLE_EVENT}`
@@ -77,6 +101,11 @@ def get_event(event_id: str):
 # UPDATE EVENT — DATA + MEDIA + HOME/NAV
 # ============================================================
 def update_event(id_event: str, data: EventUpdate) -> bool:
+    """
+    Met à jour un event existant.
+
+    Utilise UPDATE (pas de load job).
+    """
     values = data.dict(exclude_unset=True)
 
     if not values:
@@ -89,3 +118,4 @@ def update_event(id_event: str, data: EventUpdate) -> bool:
         fields={k.upper(): v for k, v in values.items()},
         where={"ID_EVENT": id_event},
     )
+
