@@ -14,7 +14,7 @@ export default function CreateEvent() {
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
 
-  // 🔑 Home / Nav
+  // 🔑 Home / Navigation (visibles dès le départ)
   const [homeLabel, setHomeLabel] = useState("");
   const [homeOrder, setHomeOrder] = useState<number | null>(null);
   const [isActiveHome, setIsActiveHome] = useState(false);
@@ -25,11 +25,11 @@ export default function CreateEvent() {
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   // ---------------------------------------------------------
-  // CREATE
+  // CREATE (DATA ONLY)
   // ---------------------------------------------------------
   async function save() {
     if (!label.trim()) {
-      alert("Label requis");
+      alert("Nom de l’événement requis");
       return;
     }
 
@@ -47,31 +47,21 @@ export default function CreateEvent() {
       }
 
       setEventId(res.id_event);
-      alert("Event créé. Vous pouvez compléter les paramètres Home et les visuels.");
-    } catch (e) {
-      console.error(e);
-      alert("❌ Erreur création event");
-    }
-  }
 
-  // ---------------------------------------------------------
-  // UPDATE HOME / NAV (POST CREATE)
-  // ---------------------------------------------------------
-  async function saveHomeSettings() {
-    if (!eventId) return;
-
-    try {
-      await api.put(`/event/update/${eventId}`, {
+      // 🔁 persist Home / Nav juste après création
+      await api.put(`/event/update/${res.id_event}`, {
         home_label: homeLabel || null,
         home_order: homeOrder,
         is_active_home: isActiveHome,
         is_active_nav: isActiveNav,
       });
 
-      alert("Paramètres Home / Navigation enregistrés");
+      alert(
+        "Événement créé. Vous pouvez maintenant ajouter les visuels."
+      );
     } catch (e) {
       console.error(e);
-      alert("❌ Erreur mise à jour Home / Nav");
+      alert("❌ Erreur création événement");
     }
   }
 
@@ -89,7 +79,7 @@ export default function CreateEvent() {
         </Link>
       </div>
 
-      {/* FORM BASE */}
+      {/* DONNÉES DE BASE */}
       <EntityBaseForm
         values={{
           name: label,
@@ -132,6 +122,62 @@ export default function CreateEvent() {
         </div>
       </div>
 
+      {/* HOME / NAV — visibles dès la création */}
+      <div className="space-y-6 border-t pt-6">
+        <h2 className="text-lg font-semibold">
+          Affichage sur la Home et la navigation
+        </h2>
+
+        <div className="max-w-md space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Label Home (court)
+            </label>
+            <input
+              className="border p-2 w-full rounded"
+              value={homeLabel}
+              onChange={(e) => setHomeLabel(e.target.value)}
+              placeholder="Ex : Paris, Le Touquet, Miami"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Ordre d’affichage sur la Home
+            </label>
+            <input
+              type="number"
+              className="border p-2 w-full rounded"
+              value={homeOrder ?? ""}
+              onChange={(e) =>
+                setHomeOrder(
+                  e.target.value ? Number(e.target.value) : null
+                )
+              }
+              placeholder="Ex : 1, 2, 3"
+            />
+          </div>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isActiveHome}
+              onChange={(e) => setIsActiveHome(e.target.checked)}
+            />
+            Afficher sur la Home
+          </label>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isActiveNav}
+              onChange={(e) => setIsActiveNav(e.target.checked)}
+            />
+            Afficher dans la navigation
+          </label>
+        </div>
+      </div>
+
       <button
         onClick={save}
         className="bg-ratecard-blue px-4 py-2 text-white rounded"
@@ -139,72 +185,7 @@ export default function CreateEvent() {
         Créer l’événement
       </button>
 
-      {/* HOME / NAV — POST CREATION */}
-      {eventId && (
-        <div className="space-y-6 border-t pt-6">
-          <h2 className="text-lg font-semibold">
-            Affichage sur la Home et la navigation
-          </h2>
-
-          <div className="max-w-md space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Label Home (court)
-              </label>
-              <input
-                className="border p-2 w-full rounded"
-                value={homeLabel}
-                onChange={(e) => setHomeLabel(e.target.value)}
-                placeholder="Ex : Paris, Le Touquet, Miami"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Ordre d’affichage sur la Home
-              </label>
-              <input
-                type="number"
-                className="border p-2 w-full rounded"
-                value={homeOrder ?? ""}
-                onChange={(e) =>
-                  setHomeOrder(
-                    e.target.value ? Number(e.target.value) : null
-                  )
-                }
-                placeholder="Ex : 1, 2, 3"
-              />
-            </div>
-
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={isActiveHome}
-                onChange={(e) => setIsActiveHome(e.target.checked)}
-              />
-              Afficher sur la Home
-            </label>
-
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={isActiveNav}
-                onChange={(e) => setIsActiveNav(e.target.checked)}
-              />
-              Afficher dans la navigation
-            </label>
-
-            <button
-              onClick={saveHomeSettings}
-              className="bg-ratecard-green px-4 py-2 text-white rounded"
-            >
-              Enregistrer paramètres Home / Nav
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* VISUALS — POST CREATION */}
+      {/* VISUELS — POST CRÉATION */}
       {eventId && (
         <VisualSectionEvent
           eventId={eventId}
@@ -227,4 +208,3 @@ export default function CreateEvent() {
     </div>
   );
 }
-
