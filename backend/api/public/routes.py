@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from utils.bigquery_utils import get_bigquery_client
+from utils.gcs import get_public_url
 from api.public.models import (
     HomeContinuousResponse,
     HomeContinuousItem,
@@ -17,7 +18,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 DATASET = "adex-5555.RATECARD"
-MEDIA_BASE_URL = "/media/"  # 🔑 point unique de mapping
 
 
 # ============================================================
@@ -34,7 +34,9 @@ def get_home_continuous():
       TITLE AS title,
       PUBLISHED_AT AS published_at
     FROM `{DATASET}.RATECARD_NEWS`
-    WHERE STATUS = 'PUBLISHED' AND IS_ACTIVE = true
+    WHERE
+      STATUS = 'PUBLISHED'
+      AND IS_ACTIVE = true
 
     UNION ALL
 
@@ -44,7 +46,9 @@ def get_home_continuous():
       ANGLE_TITLE AS title,
       PUBLISHED_AT AS published_at
     FROM `{DATASET}.RATECARD_CONTENT`
-    WHERE STATUS = 'PUBLISHED' AND IS_ACTIVE = true
+    WHERE
+      STATUS = 'PUBLISHED'
+      AND IS_ACTIVE = true
 
     ORDER BY published_at DESC
     LIMIT 5
@@ -52,17 +56,16 @@ def get_home_continuous():
 
     try:
         rows = client.query(query).result()
-        return HomeContinuousResponse(
-            items=[
-                HomeContinuousItem(
-                    type=row["type"],
-                    id=row["id"],
-                    title=row["title"],
-                    published_at=row["published_at"],
-                )
-                for row in rows
-            ]
-        )
+        items = [
+            HomeContinuousItem(
+                type=row["type"],
+                id=row["id"],
+                title=row["title"],
+                published_at=row["published_at"],
+            )
+            for row in rows
+        ]
+        return HomeContinuousResponse(items=items)
     except Exception:
         logger.exception("Erreur home continuous")
         raise HTTPException(500, "Erreur récupération home continuous")
@@ -79,7 +82,7 @@ def get_home_news():
     SELECT
       ID_NEWS AS id,
       TITLE AS title,
-      BODY AS excerpt,
+      EXCERPT AS excerpt,
       PUBLISHED_AT AS published_at,
       MEDIA_RECTANGLE_ID
     FROM `{DATASET}.RATECARD_NEWS`
@@ -93,18 +96,20 @@ def get_home_news():
 
     try:
         rows = client.query(query).result()
-        return HomeNewsResponse(
-            items=[
-                HomeNewsItem(
-                    id=row["id"],
-                    title=row["title"],
-                    excerpt=row["excerpt"],
-                    published_at=row["published_at"],
-                    visual_rect_url=f"{MEDIA_BASE_URL}{row['MEDIA_RECTANGLE_ID']}",
-                )
-                for row in rows
-            ]
-        )
+        items = [
+            HomeNewsItem(
+                id=row["id"],
+                title=row["title"],
+                excerpt=row["excerpt"] or "",
+                published_at=row["published_at"],
+                visual_rect_url=get_public_url(
+                    "news",
+                    row["MEDIA_RECTANGLE_ID"],
+                ),
+            )
+            for row in rows
+        ]
+        return HomeNewsResponse(items=items)
     except Exception:
         logger.exception("Erreur home news")
         raise HTTPException(500, "Erreur récupération home news")
@@ -128,18 +133,22 @@ def get_home_events():
           HOME_LABEL AS home_label,
           MEDIA_RECTANGLE_ID
         FROM `{DATASET}.RATECARD_EVENT`
-        WHERE IS_ACTIVE_HOME = true AND IS_ACTIVE = true
+        WHERE
+          IS_ACTIVE_HOME = true
+          AND IS_ACTIVE = true
         ORDER BY HOME_ORDER
         """
 
-        events = [dict(row) for row in client.query(events_query).result()]
+        event_rows = list(client.query(events_query).result())
+        events = [dict(row) for row in event_rows]
+
         if not events:
             return HomeEventsResponse(events=[])
 
         # ----------------------------------------------------
         # 2) CONTENTS LIÉS AUX EVENTS
         # ----------------------------------------------------
-        event_ids = ",".join([f"'{e['id']}'" for e in events])
+        event_ids_sql = ",".join([f"'{e['id']}'" for e in events])
 
         contents_query = f"""
         SELECT
@@ -154,13 +163,13 @@ def get_home_events():
         WHERE
           c.STATUS = 'PUBLISHED'
           AND c.IS_ACTIVE = true
-          AND ce.ID_EVENT IN ({event_ids})
+          AND ce.ID_EVENT IN ({event_ids_sql})
         ORDER BY c.PUBLISHED_AT DESC
         """
 
         content_rows = client.query(contents_query).result()
 
-        contents_by_event = {}
+        contents_by_event: dict[str, list] = {}
         for row in content_rows:
             contents_by_event.setdefault(row["event_id"], []).append(row)
 
@@ -168,6 +177,7 @@ def get_home_events():
         # 3) BUILD RESPONSE
         # ----------------------------------------------------
         blocks = []
+
         for event in events:
             rows = contents_by_event.get(event["id"], [])[:4]
 
@@ -177,13 +187,16 @@ def get_home_events():
                         id=event["id"],
                         label=event["label"],
                         home_label=event["home_label"],
-                        visual_rect_url=f"{MEDIA_BASE_URL}{event['MEDIA_RECTANGLE_ID']}",
+                        visual_rect_url=get_public_url(
+                            "event",
+                            event["MEDIA_RECTANGLE_ID"],
+                        ),
                     ),
                     contents=[
                         HomeEventContentItem(
                             id=row["id"],
                             title=row["title"],
-                            excerpt=row["excerpt"],
+                            excerpt=row["excerpt"] or "",
                             published_at=row["published_at"],
                         )
                         for row in rows
