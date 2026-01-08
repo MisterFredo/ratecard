@@ -7,8 +7,8 @@ import { Pencil } from "lucide-react";
 
 type ContentLite = {
   ID_CONTENT: string;
-  ANGLE_TITLE: string;
-  EXCERPT?: string | null;
+  TITLE: string;
+  EVENT_LABEL?: string | null;
   STATUS: string;
   PUBLISHED_AT?: string | null;
 };
@@ -63,8 +63,8 @@ export default function ContentListPage() {
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="bg-gray-100 border-b text-left text-gray-700">
-            <th className="p-2">Angle</th>
-            <th className="p-2">Accroche</th>
+            <th className="p-2">Titre</th>
+            <th className="p-2">Événement</th>
             <th className="p-2">Statut</th>
             <th className="p-2">Publié le</th>
             <th className="p-2 text-right">Actions</th>
@@ -77,14 +77,14 @@ export default function ContentListPage() {
               key={c.ID_CONTENT}
               className="border-b hover:bg-gray-50 transition"
             >
-              {/* ANGLE */}
+              {/* TITRE */}
               <td className="p-2 font-medium">
-                {c.ANGLE_TITLE}
+                {c.TITLE}
               </td>
 
-              {/* EXCERPT */}
+              {/* EVENT */}
               <td className="p-2 text-gray-600">
-                {c.EXCERPT || "—"}
+                {c.EVENT_LABEL || "—"}
               </td>
 
               {/* STATUS */}
@@ -126,4 +126,5 @@ export default function ContentListPage() {
     </div>
   );
 }
+
 
