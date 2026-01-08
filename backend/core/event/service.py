@@ -17,14 +17,22 @@ def create_event(data: EventCreate) -> str:
     Aucun champ média n'est autorisé ici.
     """
     event_id = str(uuid.uuid4())
-    now = datetime.utcnow()
+    now = datetime.utcnow().isoformat()
 
     row = [{
         "ID_EVENT": event_id,
         "LABEL": data.label,
         "DESCRIPTION": data.description,
 
+        # Pilotage front (valeurs par défaut)
+        "HOME_LABEL": None,
+        "HOME_ORDER": None,
+        "IS_ACTIVE_HOME": False,
+        "IS_ACTIVE_NAV": False,
+
         # ⚠️ PAS DE MEDIA AU CREATE
+        "MEDIA_SQUARE_ID": None,
+        "MEDIA_RECTANGLE_ID": None,
 
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
@@ -66,7 +74,7 @@ def get_event(event_id: str):
 
 
 # ============================================================
-# UPDATE EVENT — DATA + MEDIA (POST-CREATION)
+# UPDATE EVENT — DATA + MEDIA + HOME/NAV
 # ============================================================
 def update_event(id_event: str, data: EventUpdate) -> bool:
     values = data.dict(exclude_unset=True)
@@ -74,7 +82,7 @@ def update_event(id_event: str, data: EventUpdate) -> bool:
     if not values:
         return False
 
-    values["UPDATED_AT"] = datetime.utcnow()
+    values["updated_at"] = datetime.utcnow().isoformat()
 
     return update_bq(
         table=TABLE_EVENT,
