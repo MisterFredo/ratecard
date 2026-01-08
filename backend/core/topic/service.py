@@ -1,23 +1,31 @@
 import uuid
 from datetime import datetime
+from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client, update_bq
+from utils.bigquery_utils import (
+    query_bq,
+    update_bq,
+    get_bigquery_client,
+)
 from api.topic.models import TopicCreate, TopicUpdate
 
 TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
 
 
 # ============================================================
-# CREATE TOPIC — DATA ONLY
+# CREATE TOPIC — DATA ONLY (LOAD JOB, NO STREAMING)
 # ============================================================
 def create_topic(data: TopicCreate) -> str:
     """
     Crée un topic.
-    Aucun champ média n'est autorisé ici.
+
+    Règles :
+    - aucun champ média au create
+    - insertion via LOAD JOB (pas de streaming)
     """
     topic_id = str(uuid.uuid4())
-    now = datetime.utcnow()
+    now = datetime.utcnow().isoformat()
 
     row = [{
         "ID_TOPIC": topic_id,
@@ -25,6 +33,8 @@ def create_topic(data: TopicCreate) -> str:
         "DESCRIPTION": data.description,
 
         # ⚠️ PAS DE MEDIA AU CREATE
+        "MEDIA_SQUARE_ID": None,
+        "MEDIA_RECTANGLE_ID": None,
 
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
@@ -34,7 +44,16 @@ def create_topic(data: TopicCreate) -> str:
         "IS_ACTIVE": True,
     }]
 
-    insert_bq(TABLE_TOPIC, row)
+    client = get_bigquery_client()
+    job = client.load_table_from_json(
+        row,
+        TABLE_TOPIC,
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
+    )
+    job.result()  # ⬅️ bloquant = ligne immédiatement stable
+
     return topic_id
 
 
@@ -42,6 +61,9 @@ def create_topic(data: TopicCreate) -> str:
 # LIST TOPICS
 # ============================================================
 def list_topics():
+    """
+    Liste les topics actifs (admin).
+    """
     sql = f"""
         SELECT *
         FROM `{TABLE_TOPIC}`
@@ -55,6 +77,9 @@ def list_topics():
 # GET ONE TOPIC
 # ============================================================
 def get_topic(topic_id: str):
+    """
+    Récupère un topic par ID.
+    """
     sql = f"""
         SELECT *
         FROM `{TABLE_TOPIC}`
@@ -69,12 +94,17 @@ def get_topic(topic_id: str):
 # UPDATE TOPIC — DATA + MEDIA (POST-CREATION)
 # ============================================================
 def update_topic(id_topic: str, data: TopicUpdate) -> bool:
+    """
+    Met à jour un topic existant.
+
+    Utilise UPDATE (pas de load job).
+    """
     values = data.dict(exclude_unset=True)
 
     if not values:
         return False
 
-    values["UPDATED_AT"] = datetime.utcnow()
+    values["updated_at"] = datetime.utcnow().isoformat()
 
     return update_bq(
         table=TABLE_TOPIC,
