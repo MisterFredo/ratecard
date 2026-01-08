@@ -1,9 +1,11 @@
 export const dynamic = "force-dynamic";
 
-import { useState } from "react";
-import DrawerContent from "@/components/DrawerContent";
+import { useDrawer } from "@/contexts/DrawerContext";
 
-/* TYPES */
+/* =========================================================
+   TYPES
+========================================================= */
+
 type ContinuousItem = {
   type: "news" | "content";
   id: string;
@@ -36,11 +38,17 @@ type EventBlock = {
   contents: EventContentItem[];
 };
 
-/* API */
+/* =========================================================
+   API
+========================================================= */
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-/* SAFE FETCH */
+/* =========================================================
+   SAFE FETCH
+========================================================= */
+
 async function safeFetch<T>(
   url: string,
   selector: (json: any) => T
@@ -55,7 +63,10 @@ async function safeFetch<T>(
   }
 }
 
-/* LOADERS */
+/* =========================================================
+   LOADERS
+========================================================= */
+
 async function getContinuous(): Promise<ContinuousItem[]> {
   return safeFetch(
     `${API_BASE}/public/home/continuous`,
@@ -77,159 +88,155 @@ async function getHomeEvents(): Promise<EventBlock[]> {
   );
 }
 
-/* PAGE */
+/* =========================================================
+   PAGE
+========================================================= */
+
 export default async function Home() {
+  const { openDrawer } = useDrawer();
+
   const [continuous, news, events] = await Promise.all([
     getContinuous(),
     getHomeNews(),
     getHomeEvents(),
   ]);
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerType, setDrawerType] =
-    useState<"news" | "content" | null>(null);
-  const [drawerId, setDrawerId] = useState<string | null>(null);
-
-  function openDrawer(type: "news" | "content", id: string) {
-    setDrawerType(type);
-    setDrawerId(id);
-    setDrawerOpen(true);
-  }
-
   const une = news[0] || null;
   const otherNews = news.slice(1, 4);
 
   return (
-    <>
-      <div className="space-y-16">
+    <div className="space-y-16">
 
-        {/* EN CONTINU */}
-        <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
-            En continu
-          </h2>
+      {/* =====================================================
+          EN CONTINU — SIGNAL ÉDITORIAL (LE MONDE)
+      ===================================================== */}
+      {continuous.length > 0 && (
+        <section className="border-b border-gray-200 pb-3">
+          <div className="flex items-start gap-6">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 shrink-0">
+              En continu
+            </span>
 
-          <ul className="space-y-1 text-sm text-gray-700">
-            {continuous.map((item) => (
-              <li
-                key={`${item.type}-${item.id}`}
-                className="cursor-pointer hover:underline"
-                onClick={() =>
-                  openDrawer(item.type, item.id)
-                }
-              >
-                <span className="text-gray-400 mr-2">
-                  [{item.type}]
-                </span>
-                {item.title}
-              </li>
-            ))}
-          </ul>
+            <ul className="flex flex-col gap-1 text-[13px] leading-snug text-gray-700">
+              {continuous.map((item) => (
+                <li
+                  key={`${item.type}-${item.id}`}
+                  className="cursor-pointer hover:underline"
+                  onClick={() =>
+                    openDrawer(item.type, item.id)
+                  }
+                >
+                  <span className="text-gray-400 mr-2">
+                    [{item.type}]
+                  </span>
+                  {item.title}
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
+      )}
 
-        {/* UNE */}
-        {une && (
-          <section
-            className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start cursor-pointer"
-            onClick={() => openDrawer("news", une.id)}
-          >
-            <img
-              src={une.visual_rect_url}
-              alt={une.title}
-              className="w-full h-72 object-cover"
-            />
+      {/* =====================================================
+          UNE — DERNIÈRE NEWS PUBLIÉE
+      ===================================================== */}
+      {une && (
+        <section
+          className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start cursor-pointer"
+          onClick={() => openDrawer("news", une.id)}
+        >
+          <img
+            src={une.visual_rect_url}
+            alt={une.title}
+            className="w-full h-72 object-cover"
+          />
 
-            <div className="space-y-4">
-              <span className="text-xs uppercase tracking-wide text-gray-500">
-                News
-              </span>
+          <div className="space-y-4">
+            <span className="text-xs uppercase tracking-wide text-gray-500">
+              News
+            </span>
 
-              <h1 className="text-3xl font-bold leading-tight">
-                {une.title}
-              </h1>
+            <h1 className="text-3xl font-bold leading-tight">
+              {une.title}
+            </h1>
 
-              {une.excerpt && (
-                <p className="text-gray-700 text-base">
-                  {une.excerpt}
+            {une.excerpt && (
+              <p className="text-gray-700 text-base">
+                {une.excerpt}
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* =====================================================
+          AUTRES NEWS (2–3)
+      ===================================================== */}
+      {otherNews.length > 0 && (
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {otherNews.map((n) => (
+            <article
+              key={n.id}
+              className="space-y-3 cursor-pointer"
+              onClick={() => openDrawer("news", n.id)}
+            >
+              <img
+                src={n.visual_rect_url}
+                alt={n.title}
+                className="w-full h-40 object-cover"
+              />
+              <h3 className="font-semibold leading-snug">
+                {n.title}
+              </h3>
+              {n.excerpt && (
+                <p className="text-sm text-gray-600">
+                  {n.excerpt}
                 </p>
               )}
-            </div>
-          </section>
-        )}
-
-        {/* AUTRES NEWS */}
-        {otherNews.length > 0 && (
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {otherNews.map((n) => (
-              <article
-                key={n.id}
-                className="space-y-3 cursor-pointer"
-                onClick={() => openDrawer("news", n.id)}
-              >
-                <img
-                  src={n.visual_rect_url}
-                  alt={n.title}
-                  className="w-full h-40 object-cover"
-                />
-                <h3 className="font-semibold leading-snug">
-                  {n.title}
-                </h3>
-                {n.excerpt && (
-                  <p className="text-sm text-gray-600">
-                    {n.excerpt}
-                  </p>
-                )}
-              </article>
-            ))}
-          </section>
-        )}
-
-        {/* EVENTS */}
-        <section className="space-y-16">
-          {events.map((block) => (
-            <div key={block.event.id} className="space-y-6">
-              <div className="flex items-center gap-4">
-                <img
-                  src={block.event.visual_rect_url}
-                  alt={block.event.label}
-                  className="w-32 h-20 object-cover"
-                />
-                <h2 className="text-2xl font-semibold">
-                  {block.event.home_label}
-                </h2>
-              </div>
-
-              <ul className="space-y-4">
-                {block.contents.map((c) => (
-                  <li
-                    key={c.id}
-                    className="cursor-pointer"
-                    onClick={() =>
-                      openDrawer("content", c.id)
-                    }
-                  >
-                    <h3 className="font-medium hover:underline">
-                      {c.title}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {c.excerpt}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            </article>
           ))}
         </section>
+      )}
 
-      </div>
+      {/* =====================================================
+          RUBRIQUES — EVENTS
+      ===================================================== */}
+      <section className="space-y-16">
+        {events.map((block) => (
+          <div key={block.event.id} className="space-y-6">
+            <div className="flex items-center gap-4">
+              <img
+                src={block.event.visual_rect_url}
+                alt={block.event.label}
+                className="w-32 h-20 object-cover"
+              />
+              <h2 className="text-2xl font-semibold">
+                {block.event.home_label}
+              </h2>
+            </div>
 
-      {/* DRAWER */}
-      <DrawerContent
-        open={drawerOpen}
-        type={drawerType}
-        id={drawerId}
-        onClose={() => setDrawerOpen(false)}
-      />
-    </>
+            <ul className="space-y-4">
+              {block.contents.map((c) => (
+                <li
+                  key={c.id}
+                  className="cursor-pointer"
+                  onClick={() =>
+                    openDrawer("content", c.id)
+                  }
+                >
+                  <h3 className="font-medium hover:underline">
+                    {c.title}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {c.excerpt}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+
+    </div>
   );
 }
