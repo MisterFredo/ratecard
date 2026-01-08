@@ -1,5 +1,9 @@
 export const dynamic = "force-dynamic";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 type ContinuousItem = {
   type: "news" | "content";
   id: string;
@@ -32,12 +36,16 @@ type EventBlock = {
   contents: EventContentItem[];
 };
 
+/* =========================================================
+   API
+========================================================= */
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-/* -------------------------------------------------------
-   SAFE FETCH HELPERS
-------------------------------------------------------- */
+/* =========================================================
+   SAFE FETCH
+========================================================= */
 
 async function safeFetch<T>(
   url: string,
@@ -45,23 +53,17 @@ async function safeFetch<T>(
 ): Promise<T> {
   try {
     const res = await fetch(url, { cache: "no-store" });
-
-    if (!res.ok) {
-      console.error("Fetch failed:", url, res.status);
-      return selector({});
-    }
-
+    if (!res.ok) return selector({});
     const json = await res.json();
     return selector(json);
-  } catch (e) {
-    console.error("Fetch error:", url, e);
+  } catch {
     return selector({});
   }
 }
 
-/* -------------------------------------------------------
-   DATA LOADERS
-------------------------------------------------------- */
+/* =========================================================
+   LOADERS
+========================================================= */
 
 async function getContinuous(): Promise<ContinuousItem[]> {
   return safeFetch(
@@ -84,9 +86,9 @@ async function getHomeEvents(): Promise<EventBlock[]> {
   );
 }
 
-/* -------------------------------------------------------
+/* =========================================================
    PAGE
-------------------------------------------------------- */
+========================================================= */
 
 export default async function Home() {
   const [continuous, news, events] = await Promise.all([
@@ -95,26 +97,25 @@ export default async function Home() {
     getHomeEvents(),
   ]);
 
+  const une = news[0] || null;
+  const otherNews = news.slice(1, 4);
+
   return (
-    <main className="max-w-6xl mx-auto p-8 space-y-12">
-      {/* -------------------------------- */}
-      {/* CONTINUOUS BAND */}
-      {/* -------------------------------- */}
+    <div className="space-y-16">
+
+      {/* =====================================================
+          EN CONTINU — SIGNAL DE FRAÎCHEUR
+      ===================================================== */}
       <section>
-        <h2 className="text-sm font-semibold uppercase mb-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
           En continu
         </h2>
 
-        {continuous.length === 0 ? (
-          <p className="text-sm opacity-50">Aucun contenu</p>
-        ) : (
-          <ul className="space-y-1">
+        {continuous.length > 0 && (
+          <ul className="space-y-1 text-sm text-gray-700">
             {continuous.map((item) => (
-              <li
-                key={`${item.type}-${item.id}`}
-                className="text-sm"
-              >
-                <span className="opacity-50 mr-2">
+              <li key={`${item.type}-${item.id}`}>
+                <span className="text-gray-400 mr-2">
                   [{item.type}]
                 </span>
                 {item.title}
@@ -124,80 +125,103 @@ export default async function Home() {
         )}
       </section>
 
-      {/* -------------------------------- */}
-      {/* NEWS BLOCK */}
-      {/* -------------------------------- */}
-      <section>
-        <h2 className="text-lg font-semibold mb-4">News</h2>
+      {/* =====================================================
+          UNE — DERNIÈRE NEWS PUBLIÉE
+      ===================================================== */}
+      {une && (
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+          <img
+            src={une.visual_rect_url}
+            alt={une.title}
+            className="w-full h-72 object-cover"
+          />
 
-        {news.length === 0 ? (
-          <p className="text-sm opacity-50">Aucune news</p>
-        ) : (
-          <div className="grid grid-cols-2 gap-6">
-            {news.map((n) => (
-              <article
-                key={n.id}
-                className="border p-4 space-y-2"
-              >
-                <img
-                  src={n.visual_rect_url}
-                  alt={n.title}
-                  className="w-full h-40 object-cover"
-                />
-                <h3 className="font-medium">{n.title}</h3>
-                {n.excerpt && (
-                  <p className="text-sm opacity-70">
-                    {n.excerpt}
-                  </p>
-                )}
-              </article>
-            ))}
+          <div className="space-y-4">
+            <span className="text-xs uppercase tracking-wide text-gray-500">
+              News
+            </span>
+
+            <h1 className="text-3xl font-bold leading-tight">
+              {une.title}
+            </h1>
+
+            {une.excerpt && (
+              <p className="text-gray-700 text-base">
+                {une.excerpt}
+              </p>
+            )}
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* -------------------------------- */}
-      {/* EVENTS BLOCKS */}
-      {/* -------------------------------- */}
-      <section className="space-y-10">
-        {events.length === 0 ? (
-          <p className="text-sm opacity-50">
-            Aucun événement actif
-          </p>
-        ) : (
-          events.map((block) => (
-            <div key={block.event.id}>
-              <div className="flex items-center gap-4 mb-4">
-                <img
-                  src={block.event.visual_rect_url}
-                  alt={block.event.label}
-                  className="w-32 h-20 object-cover"
-                />
-                <h2 className="text-xl font-semibold">
-                  {block.event.home_label}
-                </h2>
-              </div>
-
-              {block.contents.length === 0 ? (
-                <p className="text-sm opacity-50">
-                  Aucun contenu
+      {/* =====================================================
+          AUTRES NEWS (2–3 MAX)
+      ===================================================== */}
+      {otherNews.length > 0 && (
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {otherNews.map((n) => (
+            <article key={n.id} className="space-y-3">
+              <img
+                src={n.visual_rect_url}
+                alt={n.title}
+                className="w-full h-40 object-cover"
+              />
+              <h3 className="font-semibold leading-snug">
+                {n.title}
+              </h3>
+              {n.excerpt && (
+                <p className="text-sm text-gray-600">
+                  {n.excerpt}
                 </p>
-              ) : (
-                <ul className="space-y-2">
-                  {block.contents.map((c) => (
-                    <li key={c.id}>
-                      <strong>{c.title}</strong>
-                      <div className="text-sm opacity-70">
-                        {c.excerpt}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
               )}
+            </article>
+          ))}
+        </section>
+      )}
+
+      {/* =====================================================
+          RUBRIQUES — EVENTS
+      ===================================================== */}
+      <section className="space-y-16">
+        {events.map((block) => (
+          <div key={block.event.id} className="space-y-6">
+
+            {/* EN-TÊTE RUBRIQUE */}
+            <div className="flex items-center gap-4">
+              <img
+                src={block.event.visual_rect_url}
+                alt={block.event.label}
+                className="w-32 h-20 object-cover"
+              />
+              <h2 className="text-2xl font-semibold">
+                {block.event.home_label}
+              </h2>
             </div>
-          ))
-        )}
+
+            {/* LISTE CONTENUS */}
+            {block.contents.length > 0 ? (
+              <ul className="space-y-4">
+                {block.contents.map((c) => (
+                  <li key={c.id}>
+                    <h3 className="font-medium">
+                      {c.title}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {c.excerpt}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-400">
+                Aucun contenu pour cet événement
+              </p>
+            )}
+          </div>
+        ))}
       </section>
-    </main>
+
+    </div>
   );
 }
+
