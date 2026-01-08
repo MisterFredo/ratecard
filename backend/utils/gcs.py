@@ -52,6 +52,16 @@ def upload_bytes(folder: str, filename: str, data: bytes) -> str:
     # L'accès public dépend des permissions du bucket (déjà configurées)
     return f"{BASE_URL}/{path}"
 
+def get_public_url(folder: str, filename: str | None) -> str | None:
+    """
+    Construit l’URL publique d’un fichier GCS à partir de son nom.
+    Retourne None si filename est vide.
+    """
+    if not filename:
+        return None
+    return f"{BASE_URL}/{folder}/{filename}"
+
+
 
 # ==================================================================
 # DELETE — compatible UBLA
