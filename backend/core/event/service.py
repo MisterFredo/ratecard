@@ -8,23 +8,18 @@ from utils.bigquery_utils import (
     update_bq,
     get_bigquery_client,
 )
+from utils.gcs import get_public_url
 from api.event.models import EventCreate, EventUpdate
 
 TABLE_EVENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_EVENT"
+TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
+TABLE_CONTENT_EVENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_EVENT"
 
 
 # ============================================================
-# CREATE EVENT — DATA ONLY (LOAD JOB, NO STREAMING)
+# CREATE EVENT — ADMIN
 # ============================================================
 def create_event(data: EventCreate) -> str:
-    """
-    Crée un event.
-
-    Règles :
-    - aucun champ média au create
-    - valeurs Home / Nav par défaut
-    - insertion via LOAD JOB (pas de streaming)
-    """
     event_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
 
@@ -33,13 +28,13 @@ def create_event(data: EventCreate) -> str:
         "LABEL": data.label,
         "DESCRIPTION": data.description,
 
-        # Pilotage front (valeurs par défaut)
+        # Pilotage front
         "HOME_LABEL": None,
         "HOME_ORDER": None,
         "IS_ACTIVE_HOME": False,
         "IS_ACTIVE_NAV": False,
 
-        # ⚠️ PAS DE MEDIA AU CREATE
+        # Médias
         "MEDIA_SQUARE_ID": None,
         "MEDIA_RECTANGLE_ID": None,
 
@@ -59,18 +54,15 @@ def create_event(data: EventCreate) -> str:
             write_disposition="WRITE_APPEND"
         ),
     )
-    job.result()  # ⬅️ bloquant = ligne immédiatement stable
+    job.result()
 
     return event_id
 
 
 # ============================================================
-# LIST EVENTS
+# LIST EVENTS — ADMIN
 # ============================================================
 def list_events():
-    """
-    Liste les events actifs (admin).
-    """
     sql = f"""
         SELECT *
         FROM `{TABLE_EVENT}`
@@ -81,12 +73,9 @@ def list_events():
 
 
 # ============================================================
-# GET ONE EVENT
+# GET EVENT BY ID — ADMIN
 # ============================================================
 def get_event(event_id: str):
-    """
-    Récupère un event par ID.
-    """
     sql = f"""
         SELECT *
         FROM `{TABLE_EVENT}`
@@ -98,16 +87,10 @@ def get_event(event_id: str):
 
 
 # ============================================================
-# UPDATE EVENT — DATA + MEDIA + HOME/NAV
+# UPDATE EVENT — ADMIN
 # ============================================================
 def update_event(id_event: str, data: EventUpdate) -> bool:
-    """
-    Met à jour un event existant.
-
-    Utilise UPDATE (pas de load job).
-    """
     values = data.dict(exclude_unset=True)
-
     if not values:
         return False
 
@@ -119,3 +102,117 @@ def update_event(id_event: str, data: EventUpdate) -> bool:
         where={"ID_EVENT": id_event},
     )
 
+
+# ============================================================
+# ============================================================
+# ======================  PUBLIC  ===========================
+# ============================================================
+# ============================================================
+
+
+# ============================================================
+# GET EVENT BY SLUG — PUBLIC
+# ============================================================
+def get_event_by_slug(slug: str):
+    rows = query_bq(
+        f"""
+        SELECT
+          ID_EVENT,
+          LABEL,
+          HOME_LABEL,
+          DESCRIPTION,
+          MEDIA_RECTANGLE_ID
+        FROM `{TABLE_EVENT}`
+        WHERE
+          IS_ACTIVE = TRUE
+          AND LOWER(REPLACE(HOME_LABEL, ' ', '-')) = @slug
+        LIMIT 1
+        """,
+        {"slug": slug},
+    )
+
+    if not rows:
+        return None
+
+    e = rows[0]
+
+    return {
+        "id_event": e["ID_EVENT"],
+        "label": e["LABEL"],
+        "home_label": e["HOME_LABEL"],
+        "description": e.get("DESCRIPTION"),
+        "visual_rect_url": get_public_url(
+            "events",
+            e.get("MEDIA_RECTANGLE_ID"),
+        ),
+    }
+
+
+# ============================================================
+# LIST HOME EVENTS — PUBLIC (HOME + NAV)
+# ============================================================
+def list_home_events():
+    rows = query_bq(
+        f"""
+        SELECT
+          ID_EVENT,
+          LABEL,
+          HOME_LABEL,
+          HOME_ORDER,
+          MEDIA_RECTANGLE_ID
+        FROM `{TABLE_EVENT}`
+        WHERE
+          IS_ACTIVE = TRUE
+          AND IS_ACTIVE_HOME = TRUE
+          AND MEDIA_RECTANGLE_ID IS NOT NULL
+        ORDER BY HOME_ORDER ASC
+        """
+    )
+
+    events = []
+    for r in rows:
+        events.append({
+            "id": r["ID_EVENT"],
+            "label": r["LABEL"],
+            "home_label": r["HOME_LABEL"],
+            "visual_rect_url": get_public_url(
+                "events",
+                r.get("MEDIA_RECTANGLE_ID"),
+            ),
+        })
+
+    return events
+
+
+# ============================================================
+# LIST EVENT CONTENTS — PUBLIC
+# ============================================================
+def list_event_contents(event_id: str):
+    rows = query_bq(
+        f"""
+        SELECT
+          C.ID_CONTENT,
+          C.ANGLE_TITLE,
+          C.EXCERPT,
+          C.PUBLISHED_AT
+        FROM `{TABLE_CONTENT_EVENT}` CE
+        JOIN `{TABLE_CONTENT}` C
+          ON CE.ID_CONTENT = C.ID_CONTENT
+        WHERE
+          CE.ID_EVENT = @id
+          AND C.STATUS = 'PUBLISHED'
+          AND C.IS_ACTIVE = TRUE
+        ORDER BY C.PUBLISHED_AT DESC
+        """,
+        {"id": event_id},
+    )
+
+    return [
+        {
+            "id": r["ID_CONTENT"],
+            "title": r["ANGLE_TITLE"],
+            "excerpt": r.get("EXCERPT"),
+            "published_at": r["PUBLISHED_AT"],
+        }
+        for r in rows
+    ]
