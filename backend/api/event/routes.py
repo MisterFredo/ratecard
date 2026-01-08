@@ -26,8 +26,8 @@ def create_route(data: EventCreate):
     try:
         event_id = create_event(data)
         return {"status": "ok", "id_event": event_id}
-    except Exception as e:
-        raise HTTPException(400, f"Erreur création event : {e}")
+    except Exception:
+        raise HTTPException(400, "Erreur création event")
 
 
 # ============================================================
@@ -41,8 +41,8 @@ def list_route():
     try:
         events = list_events()
         return {"status": "ok", "events": events}
-    except Exception as e:
-        raise HTTPException(400, f"Erreur liste events : {e}")
+    except Exception:
+        raise HTTPException(400, "Erreur liste events")
 
 
 # ============================================================
@@ -71,10 +71,11 @@ def update_route(id_event: str, data: EventUpdate):
     Peut inclure :
     - données éditoriales
     - SEO
-    - champs média (post-création)
+    - champs média
+    - pilotage Home / Nav
     """
     try:
         updated = update_event(id_event, data)
         return {"status": "ok", "updated": updated}
-    except Exception as e:
-        raise HTTPException(400, f"Erreur mise à jour event : {e}")
+    except Exception:
+        raise HTTPException(400, "Erreur mise à jour event")
