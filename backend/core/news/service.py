@@ -48,12 +48,7 @@ def serialize_row(row: dict) -> dict:
 # ============================================================
 def create_news(data: NewsCreate) -> str:
     """
-    Crée une NEWS partenaire (sans visuel à ce stade).
-
-    Règles métier :
-    - société obligatoire
-    - titre obligatoire
-    - visuel NON requis à la création
+    Crée une NEWS partenaire (sans publication).
     """
 
     if not data.id_company:
@@ -73,9 +68,10 @@ def create_news(data: NewsCreate) -> str:
         "ID_COMPANY": data.id_company,
         "TITLE": data.title,
         "BODY": data.body,
+        "EXCERPT": data.excerpt,
 
         # VISUEL (optionnel à la création)
-        "MEDIA_RECTANGLE_ID": None,
+        "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
 
         "SOURCE_URL": data.source_url,
         "AUTHOR": data.author,
@@ -97,15 +93,12 @@ def create_news(data: NewsCreate) -> str:
     ).result()
 
     # ----------------------------
-    # RELATIONS — TOPICS (BADGES)
+    # RELATIONS — TOPICS
     # ----------------------------
     if data.topics:
         insert_bq(
             TABLE_NEWS_TOPIC,
-            [
-                {"ID_NEWS": news_id, "ID_TOPIC": tid}
-                for tid in data.topics
-            ],
+            [{"ID_NEWS": news_id, "ID_TOPIC": tid} for tid in data.topics],
         )
 
     # ----------------------------
@@ -114,10 +107,7 @@ def create_news(data: NewsCreate) -> str:
     if data.persons:
         insert_bq(
             TABLE_NEWS_PERSON,
-            [
-                {"ID_NEWS": news_id, "ID_PERSON": pid}
-                for pid in data.persons
-            ],
+            [{"ID_NEWS": news_id, "ID_PERSON": pid} for pid in data.persons],
         )
 
     return news_id
@@ -157,7 +147,7 @@ def get_news(id_news: str):
     news["company"] = serialize_row(company[0]) if company else None
 
     # ----------------------------
-    # TOPICS (BADGES)
+    # TOPICS
     # ----------------------------
     news["topics"] = query_bq(
         f"""
@@ -186,7 +176,7 @@ def get_news(id_news: str):
 
 
 # ============================================================
-# LIST NEWS (ADMIN, JSON-SAFE)
+# LIST NEWS (ADMIN)
 # ============================================================
 def list_news():
     rows = query_bq(
@@ -194,6 +184,7 @@ def list_news():
         SELECT
             N.ID_NEWS,
             N.TITLE,
+            N.EXCERPT,
             N.STATUS,
             N.PUBLISHED_AT,
             C.NAME AS COMPANY_NAME
@@ -214,6 +205,7 @@ def update_news(id_news: str, data: NewsUpdate):
     fields = {
         "TITLE": data.title,
         "BODY": data.body,
+        "EXCERPT": data.excerpt,
         "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
         "SOURCE_URL": data.source_url,
         "AUTHOR": data.author,
@@ -272,23 +264,26 @@ def publish_news(
 ):
     """
     Publie une news.
-    ⚠️ Le visuel est requis UNIQUEMENT à cette étape.
+    ⚠️ Le visuel ET l'excerpt sont requis à cette étape.
     """
 
-    # ---------------------------------------------------------
-    # CHECK VISUEL
-    # ---------------------------------------------------------
     rows = query_bq(
         f"""
-        SELECT MEDIA_RECTANGLE_ID
+        SELECT MEDIA_RECTANGLE_ID, EXCERPT
         FROM `{TABLE_NEWS}`
         WHERE ID_NEWS = @id
         """,
         {"id": id_news},
     )
 
-    if not rows or not rows[0]["MEDIA_RECTANGLE_ID"]:
+    if not rows:
+        raise ValueError("News introuvable")
+
+    if not rows[0]["MEDIA_RECTANGLE_ID"]:
         raise ValueError("Un visuel est requis pour publier la news")
+
+    if not rows[0]["EXCERPT"]:
+        raise ValueError("Un excerpt est requis pour publier la news")
 
     now = datetime.utcnow().isoformat()
 
@@ -312,3 +307,4 @@ def publish_news(
         where={"ID_NEWS": id_news},
     )
     return "SCHEDULED"
+
