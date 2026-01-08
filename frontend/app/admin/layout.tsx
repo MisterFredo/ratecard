@@ -20,43 +20,18 @@ export default function AdminLayout({ children }) {
   }
 
   const navItems = [
-    {
-      href: "/admin/content",
-      label: "Analyses",
-      icon: Layers,
-    },
-    {
-      href: "/admin/news",
-      label: "News",
-      icon: Newspaper,
-    },
-    {
-      href: "/admin/company",
-      label: "Sociétés",
-      icon: Building2,
-    },
-    {
-      href: "/admin/person",
-      label: "Personnes",
-      icon: UserCircle,
-    },
-    {
-      href: "/admin/topic",
-      label: "Topics",
-      icon: Tags,
-    },
-    {
-      href: "/admin/event",
-      label: "Événements",
-      icon: CalendarDays,
-    },
+    { href: "/admin/content", label: "Analyses", icon: Layers },
+    { href: "/admin/news", label: "News", icon: Newspaper },
+    { href: "/admin/company", label: "Sociétés", icon: Building2 },
+    { href: "/admin/person", label: "Personnes", icon: UserCircle },
+    { href: "/admin/topic", label: "Topics", icon: Tags },
+    { href: "/admin/event", label: "Événements", icon: CalendarDays },
   ];
 
   return (
     <div className="min-h-screen flex">
       {/* SIDEBAR */}
       <aside className="w-64 bg-ratecard-blue text-white p-6 space-y-10 shadow-xl flex flex-col">
-        {/* HEADER */}
         <div>
           <h1 className="text-xl font-semibold tracking-wide">
             Ratecard Admin
@@ -66,7 +41,6 @@ export default function AdminLayout({ children }) {
           </p>
         </div>
 
-        {/* NAVIGATION */}
         <nav className="space-y-2 text-sm flex-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -92,13 +66,12 @@ export default function AdminLayout({ children }) {
           })}
         </nav>
 
-        {/* FOOTER */}
         <div className="text-xs opacity-60">
           © {new Date().getFullYear()} Ratecard
         </div>
       </aside>
 
-      {/* MAIN CONTENT */}
+      {/* MAIN */}
       <main className="flex-1 p-10 bg-gray-50 min-h-screen">
         {children}
       </main>
