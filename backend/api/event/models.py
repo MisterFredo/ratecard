@@ -28,7 +28,7 @@ class EventUpdate(BaseModel):
     Modèle utilisé pour la mise à jour d'un event existant.
 
     - Tous les champs sont optionnels
-    - Les champs média sont autorisés ici (post-création)
+    - Les champs média et Home/Nav sont autorisés ici
     """
     label: Optional[str] = None
     description: Optional[str] = None
@@ -38,6 +38,14 @@ class EventUpdate(BaseModel):
 
     media_square_id: Optional[str] = None
     media_rectangle_id: Optional[str] = None
+
+    # 🔑 Pilotage front public
+    home_label: Optional[str] = None
+    home_order: Optional[int] = None
+    is_active_home: Optional[bool] = None
+    is_active_nav: Optional[bool] = None
+
+    is_active: Optional[bool] = None
 
 
 # ============================================================
@@ -51,6 +59,11 @@ class EventOut(BaseModel):
     id_event: str
     label: str
     description: Optional[str] = None
+
+    home_label: Optional[str] = None
+    home_order: Optional[int] = None
+    is_active_home: Optional[bool] = None
+    is_active_nav: Optional[bool] = None
 
     media_square_id: Optional[str] = None
     media_rectangle_id: Optional[str] = None
