@@ -58,6 +58,23 @@ export default function NewsStudio({ mode, newsId }: Props) {
   const [step, setStep] = useState<Step>("SOURCE");
 
   /* =========================================================
+     UTILS — STEP ORDER (POUR RÉVÉLATION PROGRESSIVE)
+  ========================================================= */
+  const stepOrder: Step[] = [
+    "SOURCE",
+    "CONTENT",
+    "VISUAL",
+    "PREVIEW",
+    "PUBLISH",
+  ];
+
+  function isStepReached(target: Step) {
+    return (
+      stepOrder.indexOf(step) >= stepOrder.indexOf(target)
+    );
+  }
+
+  /* =========================================================
      LOAD NEWS (EDIT MODE)
   ========================================================= */
   useEffect(() => {
@@ -158,11 +175,11 @@ export default function NewsStudio({ mode, newsId }: Props) {
   }
 
   /* =========================================================
-     UI — ACCORDÉON (COMPORTEMENT IDENTIQUE À CONTENT)
+     UI — STUDIO AVEC RÉVÉLATION PROGRESSIVE
   ========================================================= */
   return (
     <div className="space-y-6">
-      {/* STEP 1 — SOURCE */}
+      {/* STEP 1 — SOURCE (toujours visible) */}
       <details open={step === "SOURCE"} className="border rounded p-4">
         <summary
           className="font-semibold cursor-pointer"
@@ -177,93 +194,101 @@ export default function NewsStudio({ mode, newsId }: Props) {
             setBody(body);
             setStep("CONTENT");
           }}
-          onSkip={() => setStep("CONTENT")}
+          onContinue={() => setStep("CONTENT")}
         />
       </details>
 
       {/* STEP 2 — CONTENT */}
-      <details open={step === "CONTENT"} className="border rounded p-4">
-        <summary
-          className="font-semibold cursor-pointer"
-          onClick={() => setStep("CONTENT")}
-        >
-          2. Contenu
-        </summary>
+      {isStepReached("CONTENT") && (
+        <details open={step === "CONTENT"} className="border rounded p-4">
+          <summary
+            className="font-semibold cursor-pointer"
+            onClick={() => setStep("CONTENT")}
+          >
+            2. Contenu
+          </summary>
 
-        <NewsStepContent
-          title={title}
-          body={body}
-          company={company}
-          topics={topics}
-          persons={persons}
-          onChange={(d) => {
-            if (d.title !== undefined) setTitle(d.title);
-            if (d.body !== undefined) setBody(d.body);
-            if (d.company !== undefined) setCompany(d.company);
-            if (d.topics !== undefined) setTopics(d.topics);
-            if (d.persons !== undefined) setPersons(d.persons);
-          }}
-          onValidate={saveNews}
-          saving={saving}
-        />
-      </details>
+          <NewsStepContent
+            title={title}
+            body={body}
+            company={company}
+            topics={topics}
+            persons={persons}
+            onChange={(d) => {
+              if (d.title !== undefined) setTitle(d.title);
+              if (d.body !== undefined) setBody(d.body);
+              if (d.company !== undefined) setCompany(d.company);
+              if (d.topics !== undefined) setTopics(d.topics);
+              if (d.persons !== undefined) setPersons(d.persons);
+            }}
+            onValidate={saveNews}
+            saving={saving}
+          />
+        </details>
+      )}
 
       {/* STEP 3 — VISUEL */}
-      <details open={step === "VISUAL"} className="border rounded p-4">
-        <summary
-          className="font-semibold cursor-pointer"
-          onClick={() => setStep("VISUAL")}
-        >
-          3. Visuel
-        </summary>
+      {isStepReached("VISUAL") && (
+        <details open={step === "VISUAL"} className="border rounded p-4">
+          <summary
+            className="font-semibold cursor-pointer"
+            onClick={() => setStep("VISUAL")}
+          >
+            3. Visuel
+          </summary>
 
-        {internalNewsId && (
-          <NewsStepVisual
-            newsId={internalNewsId}
-            mediaId={mediaId}
-            onUpdated={setMediaId}
-            onNext={() => setStep("PREVIEW")}
-          />
-        )}
-      </details>
+          {internalNewsId && (
+            <NewsStepVisual
+              newsId={internalNewsId}
+              mediaId={mediaId}
+              onUpdated={setMediaId}
+              onNext={() => setStep("PREVIEW")}
+            />
+          )}
+        </details>
+      )}
 
       {/* STEP 4 — PREVIEW */}
-      <details open={step === "PREVIEW"} className="border rounded p-4">
-        <summary
-          className="font-semibold cursor-pointer"
-          onClick={() => setStep("PREVIEW")}
-        >
-          4. Aperçu
-        </summary>
+      {isStepReached("PREVIEW") && (
+        <details open={step === "PREVIEW"} className="border rounded p-4">
+          <summary
+            className="font-semibold cursor-pointer"
+            onClick={() => setStep("PREVIEW")}
+          >
+            4. Aperçu
+          </summary>
 
-        {internalNewsId && (
-          <NewsStepPreview
-            newsId={internalNewsId}
-            onNext={() => setStep("PUBLISH")}
-          />
-        )}
-      </details>
+          {internalNewsId && (
+            <NewsStepPreview
+              newsId={internalNewsId}
+              onNext={() => setStep("PUBLISH")}
+            />
+          )}
+        </details>
+      )}
 
       {/* STEP 5 — PUBLISH */}
-      <details open={step === "PUBLISH"} className="border rounded p-4">
-        <summary
-          className="font-semibold cursor-pointer"
-          onClick={() => setStep("PUBLISH")}
-        >
-          5. Publication
-        </summary>
+      {isStepReached("PUBLISH") && (
+        <details open={step === "PUBLISH"} className="border rounded p-4">
+          <summary
+            className="font-semibold cursor-pointer"
+            onClick={() => setStep("PUBLISH")}
+          >
+            5. Publication
+          </summary>
 
-        {internalNewsId && (
-          <NewsStepPublish
-            publishMode={publishMode}
-            publishAt={publishAt}
-            publishing={publishing}
-            onChangeMode={setPublishMode}
-            onChangeDate={setPublishAt}
-            onPublish={publishNews}
-          />
-        )}
-      </details>
+          {internalNewsId && (
+            <NewsStepPublish
+              publishMode={publishMode}
+              publishAt={publishAt}
+              publishing={publishing}
+              onChangeMode={setPublishMode}
+              onChangeDate={setPublishAt}
+              onPublish={publishNews}
+            />
+          )}
+        </details>
+      )}
     </div>
   );
 }
