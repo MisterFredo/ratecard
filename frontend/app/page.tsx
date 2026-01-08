@@ -32,11 +32,12 @@ type EventBlock = {
   contents: EventContentItem[];
 };
 
+// ✅ ALIGNÉ AVEC RENDER
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 async function getContinuous(): Promise<ContinuousItem[]> {
-  const res = await fetch(`${API_BASE}/api/public/home/continuous`, {
+  const res = await fetch(`${API_BASE}/public/home/continuous`, {
     cache: "no-store",
   });
   const json = await res.json();
@@ -44,7 +45,7 @@ async function getContinuous(): Promise<ContinuousItem[]> {
 }
 
 async function getHomeNews(): Promise<NewsItem[]> {
-  const res = await fetch(`${API_BASE}/api/public/home/news`, {
+  const res = await fetch(`${API_BASE}/public/home/news`, {
     cache: "no-store",
   });
   const json = await res.json();
@@ -52,7 +53,7 @@ async function getHomeNews(): Promise<NewsItem[]> {
 }
 
 async function getHomeEvents(): Promise<EventBlock[]> {
-  const res = await fetch(`${API_BASE}/api/public/home/events`, {
+  const res = await fetch(`${API_BASE}/public/home/events`, {
     cache: "no-store",
   });
   const json = await res.json();
