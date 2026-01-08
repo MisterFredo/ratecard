@@ -9,6 +9,12 @@ const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 type EventRow = {
   ID_EVENT: string;
   LABEL: string;
+
+  HOME_LABEL?: string | null;
+  HOME_ORDER?: number | null;
+  IS_ACTIVE_HOME?: boolean | null;
+  IS_ACTIVE_NAV?: boolean | null;
+
   MEDIA_SQUARE_ID?: string | null;
   MEDIA_RECTANGLE_ID?: string | null;
 };
@@ -37,7 +43,7 @@ export default function EventList() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold">Événements</h1>
 
         <Link
@@ -57,6 +63,9 @@ export default function EventList() {
           <thead>
             <tr className="bg-gray-100 border-b text-left">
               <th className="p-2">Label</th>
+              <th className="p-2">Home</th>
+              <th className="p-2">Nav</th>
+              <th className="p-2">Ordre</th>
               <th className="p-2">Carré</th>
               <th className="p-2">Rectangle</th>
               <th className="p-2 text-right">Actions</th>
@@ -77,8 +86,32 @@ export default function EventList() {
                   key={e.ID_EVENT}
                   className="border-b hover:bg-gray-50"
                 >
-                  <td className="p-2">{e.LABEL}</td>
+                  {/* LABEL */}
+                  <td className="p-2">
+                    <div className="font-medium">{e.LABEL}</div>
+                    {e.HOME_LABEL && (
+                      <div className="text-xs text-gray-500">
+                        Home : {e.HOME_LABEL}
+                      </div>
+                    )}
+                  </td>
 
+                  {/* HOME */}
+                  <td className="p-2">
+                    {e.IS_ACTIVE_HOME ? "✅" : "—"}
+                  </td>
+
+                  {/* NAV */}
+                  <td className="p-2">
+                    {e.IS_ACTIVE_NAV ? "✅" : "—"}
+                  </td>
+
+                  {/* ORDER */}
+                  <td className="p-2">
+                    {e.HOME_ORDER ?? "—"}
+                  </td>
+
+                  {/* SQUARE */}
                   <td className="p-2">
                     {squareUrl ? (
                       <img
@@ -90,6 +123,7 @@ export default function EventList() {
                     )}
                   </td>
 
+                  {/* RECTANGLE */}
                   <td className="p-2">
                     {rectUrl ? (
                       <img
@@ -101,6 +135,7 @@ export default function EventList() {
                     )}
                   </td>
 
+                  {/* ACTIONS */}
                   <td className="p-2 text-right">
                     <Link
                       href={`/admin/event/edit/${e.ID_EVENT}`}
@@ -118,3 +153,4 @@ export default function EventList() {
     </div>
   );
 }
+
