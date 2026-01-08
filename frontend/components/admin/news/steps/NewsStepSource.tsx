@@ -16,12 +16,12 @@ type Props = {
     body: string;
   }) => void;
 
-  onSkip: () => void;
+  onContinue: () => void;
 };
 
 export default function NewsStepSource({
   onGenerated,
-  onSkip,
+  onContinue,
 }: Props) {
   const [sourceType, setSourceType] =
     useState<SourceType>("LINKEDIN_POST");
@@ -29,12 +29,14 @@ export default function NewsStepSource({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function generate() {
+  async function handleContinue() {
+    // Cas 1 — aucune source → on continue directement
     if (!sourceText.trim()) {
-      setError("Merci de coller une source.");
+      onContinue();
       return;
     }
 
+    // Cas 2 — source fournie → IA
     setError(null);
     setLoading(true);
 
@@ -50,9 +52,11 @@ export default function NewsStepSource({
           body: res.news.body || "",
         });
       }
+
+      onContinue();
     } catch (e) {
       console.error(e);
-      setError("Erreur lors de la génération IA");
+      setError("Erreur lors de la génération à partir de la source.");
     }
 
     setLoading(false);
@@ -62,13 +66,14 @@ export default function NewsStepSource({
     <div className="space-y-5">
       <p className="text-sm text-gray-600">
         Vous pouvez partir d’une source existante (post, communiqué,
-        article…) pour générer rapidement une news partenaire.
+        article…) pour préremplir une news, ou passer directement
+        à l’étape suivante pour écrire manuellement.
       </p>
 
       {/* TYPE SOURCE */}
       <div className="space-y-1">
         <label className="text-sm font-medium">
-          Type de source
+          Type de source (optionnel)
         </label>
         <select
           value={sourceType}
@@ -88,13 +93,13 @@ export default function NewsStepSource({
       {/* SOURCE TEXT */}
       <div className="space-y-1">
         <label className="text-sm font-medium">
-          Source brute
+          Source brute (optionnelle)
         </label>
         <textarea
           value={sourceText}
           onChange={(e) => setSourceText(e.target.value)}
           className="border rounded p-2 w-full h-40"
-          placeholder="Collez ici le texte source à transformer en news…"
+          placeholder="Collez ici le texte source si vous souhaitez préremplir la news…"
         />
       </div>
 
@@ -102,22 +107,14 @@ export default function NewsStepSource({
         <p className="text-sm text-red-600">{error}</p>
       )}
 
-      {/* ACTIONS */}
+      {/* ACTION */}
       <div className="flex gap-3">
         <button
-          onClick={generate}
+          onClick={handleContinue}
           disabled={loading}
           className="bg-ratecard-blue text-white px-4 py-2 rounded"
         >
-          {loading ? "Génération…" : "Générer la news"}
-        </button>
-
-        <button
-          onClick={onSkip}
-          type="button"
-          className="px-4 py-2 rounded border"
-        >
-          Écrire manuellement
+          {loading ? "Traitement…" : "Continuer"}
         </button>
       </div>
     </div>
