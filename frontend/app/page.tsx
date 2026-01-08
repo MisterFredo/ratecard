@@ -1,9 +1,9 @@
 export const dynamic = "force-dynamic";
 
-/* =========================================================
-   TYPES
-========================================================= */
+import { useState } from "react";
+import DrawerContent from "@/components/DrawerContent";
 
+/* TYPES */
 type ContinuousItem = {
   type: "news" | "content";
   id: string;
@@ -36,17 +36,11 @@ type EventBlock = {
   contents: EventContentItem[];
 };
 
-/* =========================================================
-   API
-========================================================= */
-
+/* API */
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-/* =========================================================
-   SAFE FETCH
-========================================================= */
-
+/* SAFE FETCH */
 async function safeFetch<T>(
   url: string,
   selector: (json: any) => T
@@ -61,10 +55,7 @@ async function safeFetch<T>(
   }
 }
 
-/* =========================================================
-   LOADERS
-========================================================= */
-
+/* LOADERS */
 async function getContinuous(): Promise<ContinuousItem[]> {
   return safeFetch(
     `${API_BASE}/public/home/continuous`,
@@ -86,10 +77,7 @@ async function getHomeEvents(): Promise<EventBlock[]> {
   );
 }
 
-/* =========================================================
-   PAGE
-========================================================= */
-
+/* PAGE */
 export default async function Home() {
   const [continuous, news, events] = await Promise.all([
     getContinuous(),
@@ -97,22 +85,39 @@ export default async function Home() {
     getHomeEvents(),
   ]);
 
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerType, setDrawerType] =
+    useState<"news" | "content" | null>(null);
+  const [drawerId, setDrawerId] = useState<string | null>(null);
+
+  function openDrawer(type: "news" | "content", id: string) {
+    setDrawerType(type);
+    setDrawerId(id);
+    setDrawerOpen(true);
+  }
+
   const une = news[0] || null;
   const otherNews = news.slice(1, 4);
 
   return (
-    <div className="space-y-16">
+    <>
+      <div className="space-y-16">
 
-      {/* EN CONTINU */}
-      <section>
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
-          En continu
-        </h2>
+        {/* EN CONTINU */}
+        <section>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
+            En continu
+          </h2>
 
-        {continuous.length > 0 && (
           <ul className="space-y-1 text-sm text-gray-700">
             {continuous.map((item) => (
-              <li key={`${item.type}-${item.id}`}>
+              <li
+                key={`${item.type}-${item.id}`}
+                className="cursor-pointer hover:underline"
+                onClick={() =>
+                  openDrawer(item.type, item.id)
+                }
+              >
                 <span className="text-gray-400 mr-2">
                   [{item.type}]
                 </span>
@@ -120,79 +125,90 @@ export default async function Home() {
               </li>
             ))}
           </ul>
-        )}
-      </section>
-
-      {/* UNE */}
-      {une && (
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
-          <img
-            src={une.visual_rect_url}
-            alt={une.title}
-            className="w-full h-72 object-cover"
-          />
-
-          <div className="space-y-4">
-            <span className="text-xs uppercase tracking-wide text-gray-500">
-              News
-            </span>
-
-            <h1 className="text-3xl font-bold leading-tight">
-              {une.title}
-            </h1>
-
-            {une.excerpt && (
-              <p className="text-gray-700 text-base">
-                {une.excerpt}
-              </p>
-            )}
-          </div>
         </section>
-      )}
 
-      {/* AUTRES NEWS */}
-      {otherNews.length > 0 && (
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {otherNews.map((n) => (
-            <article key={n.id} className="space-y-3">
-              <img
-                src={n.visual_rect_url}
-                alt={n.title}
-                className="w-full h-40 object-cover"
-              />
-              <h3 className="font-semibold leading-snug">
-                {n.title}
-              </h3>
-              {n.excerpt && (
-                <p className="text-sm text-gray-600">
-                  {n.excerpt}
+        {/* UNE */}
+        {une && (
+          <section
+            className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start cursor-pointer"
+            onClick={() => openDrawer("news", une.id)}
+          >
+            <img
+              src={une.visual_rect_url}
+              alt={une.title}
+              className="w-full h-72 object-cover"
+            />
+
+            <div className="space-y-4">
+              <span className="text-xs uppercase tracking-wide text-gray-500">
+                News
+              </span>
+
+              <h1 className="text-3xl font-bold leading-tight">
+                {une.title}
+              </h1>
+
+              {une.excerpt && (
+                <p className="text-gray-700 text-base">
+                  {une.excerpt}
                 </p>
               )}
-            </article>
-          ))}
-        </section>
-      )}
-
-      {/* RUBRIQUES EVENTS */}
-      <section className="space-y-16">
-        {events.map((block) => (
-          <div key={block.event.id} className="space-y-6">
-            <div className="flex items-center gap-4">
-              <img
-                src={block.event.visual_rect_url}
-                alt={block.event.label}
-                className="w-32 h-20 object-cover"
-              />
-              <h2 className="text-2xl font-semibold">
-                {block.event.home_label}
-              </h2>
             </div>
+          </section>
+        )}
 
-            {block.contents.length > 0 ? (
+        {/* AUTRES NEWS */}
+        {otherNews.length > 0 && (
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {otherNews.map((n) => (
+              <article
+                key={n.id}
+                className="space-y-3 cursor-pointer"
+                onClick={() => openDrawer("news", n.id)}
+              >
+                <img
+                  src={n.visual_rect_url}
+                  alt={n.title}
+                  className="w-full h-40 object-cover"
+                />
+                <h3 className="font-semibold leading-snug">
+                  {n.title}
+                </h3>
+                {n.excerpt && (
+                  <p className="text-sm text-gray-600">
+                    {n.excerpt}
+                  </p>
+                )}
+              </article>
+            ))}
+          </section>
+        )}
+
+        {/* EVENTS */}
+        <section className="space-y-16">
+          {events.map((block) => (
+            <div key={block.event.id} className="space-y-6">
+              <div className="flex items-center gap-4">
+                <img
+                  src={block.event.visual_rect_url}
+                  alt={block.event.label}
+                  className="w-32 h-20 object-cover"
+                />
+                <h2 className="text-2xl font-semibold">
+                  {block.event.home_label}
+                </h2>
+              </div>
+
               <ul className="space-y-4">
                 {block.contents.map((c) => (
-                  <li key={c.id}>
-                    <h3 className="font-medium">
+                  <li
+                    key={c.id}
+                    className="cursor-pointer"
+                    onClick={() =>
+                      openDrawer("content", c.id)
+                    }
+                  >
+                    <h3 className="font-medium hover:underline">
                       {c.title}
                     </h3>
                     <p className="text-sm text-gray-600">
@@ -201,50 +217,19 @@ export default async function Home() {
                   </li>
                 ))}
               </ul>
-            ) : (
-              <p className="text-sm text-gray-400">
-                Aucun contenu pour cet événement
-              </p>
-            )}
-          </div>
-        ))}
-      </section>
+            </div>
+          ))}
+        </section>
 
-      {/* =====================================================
-          CTA ÉDITORIAUX — SILENCIEUX
-      ===================================================== */}
-      <section className="border-t border-gray-200 pt-10 text-sm text-gray-700 space-y-4">
-        <p>
-          Recevez chaque semaine les analyses et signaux issus
-          des événements Ratecard.
-        </p>
+      </div>
 
-        <div className="flex flex-col md:flex-row gap-4">
-          <a
-            href="/newsletter"
-            className="text-ratecard-green font-medium hover:underline"
-          >
-            S’inscrire à la newsletter Ratecard
-          </a>
-
-          <a
-            href="https://www.linkedin.com/company/ratecard"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:underline"
-          >
-            Suivre Ratecard sur LinkedIn
-          </a>
-
-          <a
-            href="/events"
-            className="hover:underline"
-          >
-            Découvrir les prochains événements
-          </a>
-        </div>
-      </section>
-
-    </div>
+      {/* DRAWER */}
+      <DrawerContent
+        open={drawerOpen}
+        type={drawerType}
+        id={drawerId}
+        onClose={() => setDrawerOpen(false)}
+      />
+    </>
   );
 }
