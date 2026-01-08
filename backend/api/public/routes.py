@@ -210,3 +210,161 @@ def get_home_events():
     except Exception:
         logger.exception("Erreur home events")
         raise HTTPException(500, "Erreur récupération home events")
+
+# ============================================================
+# PUBLIC — READ NEWS (DRAWER)
+# ============================================================
+@router.get("/news/{id_news}")
+def read_news(id_news: str):
+    client = get_bigquery_client()
+
+    try:
+        # ----------------------------
+        # NEWS
+        # ----------------------------
+        rows = query_bq(
+            f"""
+            SELECT *
+            FROM `{DATASET}.RATECARD_NEWS`
+            WHERE ID_NEWS = @id
+              AND STATUS = 'PUBLISHED'
+              AND IS_ACTIVE = true
+            LIMIT 1
+            """,
+            {"id": id_news},
+        )
+
+        if not rows:
+            raise HTTPException(404, "News introuvable")
+
+        n = rows[0]
+
+        # ----------------------------
+        # COMPANY
+        # ----------------------------
+        company = query_bq(
+            f"""
+            SELECT ID_COMPANY, NAME, MEDIA_LOGO_RECTANGLE_ID
+            FROM `{DATASET}.RATECARD_COMPANY`
+            WHERE ID_COMPANY = @id
+            """,
+            {"id": n["ID_COMPANY"]},
+        )
+
+        # ----------------------------
+        # TOPICS
+        # ----------------------------
+        topics = query_bq(
+            f"""
+            SELECT T.ID_TOPIC, T.LABEL
+            FROM `{DATASET}.RATECARD_NEWS_TOPIC` NT
+            JOIN `{DATASET}.RATECARD_TOPIC` T
+              ON NT.ID_TOPIC = T.ID_TOPIC
+            WHERE NT.ID_NEWS = @id
+            """,
+            {"id": id_news},
+        )
+
+        # ----------------------------
+        # PERSONS
+        # ----------------------------
+        persons = query_bq(
+            f"""
+            SELECT P.ID_PERSON, P.NAME, P.TITLE
+            FROM `{DATASET}.RATECARD_NEWS_PERSON` NP
+            JOIN `{DATASET}.RATECARD_PERSON` P
+              ON NP.ID_PERSON = P.ID_PERSON
+            WHERE NP.ID_NEWS = @id
+            """,
+            {"id": id_news},
+        )
+
+        return {
+            "type": "news",
+            "id_news": n["ID_NEWS"],
+            "title": n["TITLE"],
+            "excerpt": n.get("EXCERPT"),
+            "body": n.get("BODY"),
+            "status": n["STATUS"],
+            "published_at": n["PUBLISHED_AT"],
+            "author": n.get("AUTHOR"),
+            "source_url": n.get("SOURCE_URL"),
+            "visual_rect_url": get_public_url(
+                "news", n.get("MEDIA_RECTANGLE_ID")
+            ),
+            "company": company[0] if company else None,
+            "topics": topics,
+            "persons": persons,
+        }
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Erreur read_news")
+        raise HTTPException(500, "Erreur lecture news")
+
+# ============================================================
+# PUBLIC — READ CONTENT (DRAWER)
+# ============================================================
+@router.get("/content/{id_content}")
+def read_content(id_content: str):
+    client = get_bigquery_client()
+
+    try:
+        # ----------------------------
+        # CONTENT
+        # ----------------------------
+        rows = query_bq(
+            f"""
+            SELECT *
+            FROM `{DATASET}.RATECARD_CONTENT`
+            WHERE ID_CONTENT = @id
+              AND STATUS = 'PUBLISHED'
+              AND IS_ACTIVE = true
+            LIMIT 1
+            """,
+            {"id": id_content},
+        )
+
+        if not rows:
+            raise HTTPException(404, "Contenu introuvable")
+
+        c = rows[0]
+
+        # ----------------------------
+        # EVENTS
+        # ----------------------------
+        events = query_bq(
+            f"""
+            SELECT E.ID_EVENT, E.LABEL
+            FROM `{DATASET}.RATECARD_CONTENT_EVENT` CE
+            JOIN `{DATASET}.RATECARD_EVENT` E
+              ON CE.ID_EVENT = E.ID_EVENT
+            WHERE CE.ID_CONTENT = @id
+            """,
+            {"id": id_content},
+        )
+
+        return {
+            "type": "content",
+            "id_content": c["ID_CONTENT"],
+            "title": c["ANGLE_TITLE"],
+            "excerpt": c.get("EXCERPT"),
+            "concept": c.get("CONCEPT"),
+            "content_body": c.get("CONTENT_BODY"),
+            "status": c["STATUS"],
+            "published_at": c["PUBLISHED_AT"],
+            "seo_title": c.get("SEO_TITLE"),
+            "seo_description": c.get("SEO_DESCRIPTION"),
+            "citations": c.get("CITATIONS"),
+            "chiffres": c.get("CHIFFRES"),
+            "acteurs_cites": c.get("ACTEURS_CITES"),
+            "events": events,
+        }
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Erreur read_content")
+        raise HTTPException(500, "Erreur lecture contenu")
+
