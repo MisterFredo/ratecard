@@ -194,7 +194,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
             setBody(body);
             setStep("CONTENT");
           }}
-          onContinue={() => setStep("CONTENT")}
+          onSkip={() => setStep("CONTENT")}
         />
       </details>
 
