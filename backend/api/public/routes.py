@@ -368,3 +368,85 @@ def read_content(id_content: str):
         logger.exception("Erreur read_content")
         raise HTTPException(500, "Erreur lecture contenu")
 
+# ============================================================
+# PUBLIC — READ EVENT (BY SLUG)
+# ============================================================
+@router.get("/event/{slug}")
+def read_event(slug: str):
+    try:
+        rows = query_bq(
+            f"""
+            SELECT
+              ID_EVENT,
+              LABEL,
+              HOME_LABEL,
+              DESCRIPTION,
+              MEDIA_RECTANGLE_ID
+            FROM `{DATASET}.RATECARD_EVENT`
+            WHERE
+              IS_ACTIVE = true
+              AND LOWER(REPLACE(HOME_LABEL, ' ', '-')) = @slug
+            LIMIT 1
+            """,
+            {"slug": slug},
+        )
+
+        if not rows:
+            raise HTTPException(404, "Événement introuvable")
+
+        e = rows[0]
+
+        return {
+            "id_event": e["ID_EVENT"],
+            "label": e["LABEL"],
+            "home_label": e["HOME_LABEL"],
+            "description": e.get("DESCRIPTION"),
+            "visual_rect_url": get_public_url(
+                "events",
+                e.get("MEDIA_RECTANGLE_ID"),
+            ),
+        }
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Erreur read_event")
+        raise HTTPException(500, "Erreur lecture événement")
+
+# ============================================================
+# PUBLIC — READ EVENT CONTENTS
+# ============================================================
+@router.get("/event/{slug}/contents")
+def read_event_contents(slug: str):
+    try:
+        rows = query_bq(
+            f"""
+            SELECT
+              C.ID_CONTENT AS id,
+              C.ANGLE_TITLE AS title,
+              C.EXCERPT AS excerpt,
+              C.PUBLISHED_AT
+            FROM `{DATASET}.RATECARD_CONTENT_EVENT` CE
+            JOIN `{DATASET}.RATECARD_CONTENT` C
+              ON CE.ID_CONTENT = C.ID_CONTENT
+            JOIN `{DATASET}.RATECARD_EVENT` E
+              ON CE.ID_EVENT = E.ID_EVENT
+            WHERE
+              C.STATUS = 'PUBLISHED'
+              AND C.IS_ACTIVE = true
+              AND E.IS_ACTIVE = true
+              AND LOWER(REPLACE(E.HOME_LABEL, ' ', '-')) = @slug
+            ORDER BY C.PUBLISHED_AT DESC
+            """,
+            {"slug": slug},
+        )
+
+        return {
+            "items": rows
+        }
+
+    except Exception:
+        logger.exception("Erreur read_event_contents")
+        raise HTTPException(500, "Erreur lecture contenus événement")
+
+
