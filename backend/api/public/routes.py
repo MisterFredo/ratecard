@@ -189,7 +189,7 @@ def get_home_events():
                         label=event["label"],
                         home_label=event["home_label"],
                         visual_rect_url=get_public_url(
-                            "event",
+                            "events",
                             event["MEDIA_RECTANGLE_ID"],
                         ),
                     ),
