@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 type ContinuousItem = {
   type: "news" | "content";
   id: string;
@@ -30,7 +32,8 @@ type EventBlock = {
   contents: EventContentItem[];
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 async function getContinuous(): Promise<ContinuousItem[]> {
   const res = await fetch(`${API_BASE}/api/public/home/continuous`, {
@@ -65,9 +68,7 @@ export default async function Home() {
 
   return (
     <main className="max-w-6xl mx-auto p-8 space-y-12">
-      {/* -------------------------------- */}
       {/* CONTINUOUS BAND */}
-      {/* -------------------------------- */}
       <section>
         <h2 className="text-sm font-semibold uppercase mb-3">
           En continu
@@ -84,9 +85,7 @@ export default async function Home() {
         </ul>
       </section>
 
-      {/* -------------------------------- */}
       {/* NEWS BLOCK */}
-      {/* -------------------------------- */}
       <section>
         <h2 className="text-lg font-semibold mb-4">News</h2>
         <div className="grid grid-cols-2 gap-6">
@@ -106,9 +105,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* -------------------------------- */}
       {/* EVENTS BLOCKS */}
-      {/* -------------------------------- */}
       <section className="space-y-10">
         {events.map((block) => (
           <div key={block.event.id}>
