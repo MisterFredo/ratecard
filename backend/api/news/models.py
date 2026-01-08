@@ -13,6 +13,7 @@ class NewsCreate(BaseModel):
     # CONTENU
     title: str
     body: Optional[str] = None
+    excerpt: Optional[str] = None
 
     # VISUEL (OBLIGATOIRE)
     media_rectangle_id: Optional[str] = None
@@ -32,6 +33,7 @@ class NewsCreate(BaseModel):
 class NewsUpdate(BaseModel):
     title: str
     body: Optional[str] = None
+    excerpt: Optional[str] = None
 
     media_rectangle_id: Optional[str] = None
 
@@ -51,6 +53,7 @@ class NewsOut(BaseModel):
 
     title: str
     body: Optional[str]
+    excerpt: Optional[str]
 
     published_at: Optional[datetime]
 
