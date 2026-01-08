@@ -13,6 +13,7 @@ type SourceType =
 type Props = {
   onGenerated: (data: {
     title: string;
+    excerpt: string;
     body: string;
   }) => void;
 
@@ -47,6 +48,7 @@ export default function NewsStepSource({
       if (res?.news) {
         onGenerated({
           title: res.news.title || "",
+          excerpt: res.news.excerpt || "",
           body: res.news.body || "",
         });
       }
@@ -123,3 +125,4 @@ export default function NewsStepSource({
     </div>
   );
 }
+
