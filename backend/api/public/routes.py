@@ -124,7 +124,7 @@ def get_home_events():
 
     try:
         # ----------------------------------------------------
-        # 1) EVENTS ACTIFS HOME
+        # 1) EVENTS ACTIFS HOME (VISUEL OBLIGATOIRE)
         # ----------------------------------------------------
         events_query = f"""
         SELECT
@@ -136,6 +136,7 @@ def get_home_events():
         WHERE
           IS_ACTIVE_HOME = true
           AND IS_ACTIVE = true
+          AND MEDIA_RECTANGLE_ID IS NOT NULL
         ORDER BY HOME_ORDER
         """
 
@@ -169,7 +170,7 @@ def get_home_events():
 
         content_rows = client.query(contents_query).result()
 
-        contents_by_event: dict[str, list] = {}
+        contents_by_event = {}
         for row in content_rows:
             contents_by_event.setdefault(row["event_id"], []).append(row)
 
