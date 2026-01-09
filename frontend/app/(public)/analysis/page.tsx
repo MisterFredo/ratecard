@@ -1,6 +1,9 @@
-export const dynamic = "force-dynamic";
+"use client";
 
+import { useState, useMemo } from "react";
 import Link from "next/link";
+
+export const dynamic = "force-dynamic";
 
 /* =========================================================
    TYPES
@@ -49,9 +52,44 @@ async function getAnalyses(): Promise<AnalysisItem[]> {
    PAGE
 ========================================================= */
 
-export default async function AnalysisPage() {
-  const analyses = await getAnalyses();
+export default function AnalysisPage() {
+  const [analyses, setAnalyses] = useState<AnalysisItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeEvent, setActiveEvent] = useState<string | null>(null);
 
+  // ---------------------------------------------------------
+  // LOAD DATA
+  // ---------------------------------------------------------
+  useState(() => {
+    getAnalyses().then((items) => {
+      setAnalyses(items);
+      setLoading(false);
+    });
+  });
+
+  // ---------------------------------------------------------
+  // DERIVED DATA
+  // ---------------------------------------------------------
+  const events = useMemo(() => {
+    const map = new Map<string, NonNullable<AnalysisItem["event"]>>();
+    analyses.forEach((a) => {
+      if (a.event) {
+        map.set(a.event.id, a.event);
+      }
+    });
+    return Array.from(map.values());
+  }, [analyses]);
+
+  const filteredAnalyses = useMemo(() => {
+    if (!activeEvent) return analyses;
+    return analyses.filter(
+      (a) => a.event && a.event.id === activeEvent
+    );
+  }, [analyses, activeEvent]);
+
+  // ---------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------
   return (
     <div className="space-y-14 md:space-y-16">
 
@@ -68,15 +106,59 @@ export default async function AnalysisPage() {
       </section>
 
       {/* =====================================================
-          LISTE EXHAUSTIVE
+          EVENT FILTER
       ===================================================== */}
-      {analyses.length === 0 ? (
+      {!loading && events.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setActiveEvent(null)}
+            className={`px-3 py-1 text-sm rounded-full border ${
+              activeEvent === null
+                ? "bg-ratecard-blue text-white border-ratecard-blue"
+                : "border-ratecard-border text-gray-600"
+            }`}
+          >
+            Toutes
+          </button>
+
+          {events.map((e) => (
+            <button
+              key={e.id}
+              onClick={() => setActiveEvent(e.id)}
+              className={`px-3 py-1 text-sm rounded-full border ${
+                activeEvent === e.id
+                  ? "text-white"
+                  : "text-gray-600"
+              }`}
+              style={{
+                backgroundColor:
+                  activeEvent === e.id
+                    ? e.event_color || "#9CA3AF"
+                    : "transparent",
+                borderColor:
+                  e.event_color || "#E5E7EB",
+              }}
+            >
+              {e.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* =====================================================
+          LIST
+      ===================================================== */}
+      {loading ? (
         <p className="text-sm text-gray-400">
-          Aucune analyse publiée pour le moment.
+          Chargement des analyses…
+        </p>
+      ) : filteredAnalyses.length === 0 ? (
+        <p className="text-sm text-gray-400">
+          Aucune analyse pour cet événement.
         </p>
       ) : (
         <ul className="space-y-6">
-          {analyses.map((a) => (
+          {filteredAnalyses.map((a) => (
             <li
               key={a.id}
               className="
@@ -88,7 +170,7 @@ export default async function AnalysisPage() {
                 href={`/analysis/${a.id}`}
                 className="block space-y-2"
               >
-                {/* EVENT CONTEXT */}
+                {/* EVENT */}
                 {a.event && (
                   <div className="flex items-center gap-2">
                     {a.event.event_color && (
@@ -123,10 +205,7 @@ export default async function AnalysisPage() {
                   ))}
 
                   {a.key_metrics?.map((m, i) => (
-                    <span
-                      key={i}
-                      className="text-gray-500"
-                    >
+                    <span key={i} className="text-gray-500">
                       • {m}
                     </span>
                   ))}
