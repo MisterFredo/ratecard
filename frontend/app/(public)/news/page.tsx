@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import NewsCard from "@/components/news/NewsCard";
+import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 
 /* =========================================================
    TYPES
@@ -9,6 +9,7 @@ import NewsCard from "@/components/news/NewsCard";
 type NewsItem = {
   ID_NEWS: string;
   TITLE: string;
+  EXCERPT?: string | null;
   VISUAL_RECT_URL: string;
   PUBLISHED_AT?: string | null;
 };
@@ -61,7 +62,7 @@ export default async function NewsPage() {
       </section>
 
       {/* =====================================================
-          LISTE DES NEWS
+          LISTE DES NEWS — PARTNER SIGNAL CARDS
       ===================================================== */}
       {news.length === 0 ? (
         <p className="text-sm text-gray-400">
@@ -70,10 +71,11 @@ export default async function NewsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {news.map((n) => (
-            <NewsCard
+            <PartnerSignalCard
               key={n.ID_NEWS}
               id={n.ID_NEWS}
               title={n.TITLE}
+              excerpt={n.EXCERPT}
               visualRectUrl={n.VISUAL_RECT_URL}
               publishedAt={n.PUBLISHED_AT || ""}
             />
