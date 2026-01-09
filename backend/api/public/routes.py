@@ -162,42 +162,36 @@ def read_content(id_content: str):
         logger.exception("Erreur read_content")
         raise HTTPException(500, "Erreur lecture analyse")
 
-
 # ============================================================
-# PUBLIC — LIST ANALYSES (EXHAUSTIVE, PAGE /analysis)
+# PUBLIC — LIST ANALYSES (EXACTEMENT COMME HOME, SANS LIMITE)
 # ============================================================
 @router.get("/analysis/list")
 def list_public_analyses():
     try:
-        contents = list_contents()
-
+        events = list_home_events()
         items = []
 
-        for c in contents:
-            if c["STATUS"] != "PUBLISHED" or not c.get("IS_ACTIVE"):
-                continue
+        for e in events:
+            contents = list_event_contents(e["id"])  # PAS de limite
 
-            items.append(
-                {
-                    "id": c["ID_CONTENT"],
-                    "title": c["ANGLE_TITLE"],
-                    "excerpt": c.get("EXCERPT"),
-                    "published_at": c["PUBLISHED_AT"],
-                    "topics": (c.get("TOPICS") or [])[:2],
-                    "key_metrics": (c.get("CHIFFRES") or [])[:2],
-                    "event": (
-                        {
-                            "id": c.get("EVENT_ID"),
-                            "label": c.get("EVENT_LABEL"),
-                            "event_color": c.get("EVENT_COLOR"),
-                        }
-                        if c.get("EVENT_ID")
-                        else None
-                    ),
-                }
-            )
+            for c in contents:
+                items.append(
+                    {
+                        "id": c["id"],
+                        "title": c["title"],
+                        "excerpt": c.get("excerpt"),
+                        "published_at": c["published_at"],
+                        "topics": c.get("topics") or [],
+                        "key_metrics": c.get("chiffres") or [],
+                        "event": {
+                            "id": e["id"],
+                            "label": e["label"],
+                            "event_color": e.get("event_color"),
+                        },
+                    }
+                )
 
-        # tri décroissant par date
+        # tri global décroissant
         items.sort(
             key=lambda x: x["published_at"], reverse=True
         )
@@ -207,3 +201,4 @@ def list_public_analyses():
     except Exception:
         logger.exception("Erreur list_public_analyses")
         raise HTTPException(500, "Erreur récupération analyses")
+
