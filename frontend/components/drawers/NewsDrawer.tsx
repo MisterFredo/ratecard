@@ -18,11 +18,7 @@ type NewsData = {
   };
 };
 
-export default function NewsDrawer({
-  id,
-}: {
-  id: string;
-}) {
+export default function NewsDrawer({ id }: { id: string }) {
   const router = useRouter();
   const [data, setData] = useState<NewsData | null>(null);
 
@@ -55,7 +51,10 @@ export default function NewsDrawer({
           <div className="text-sm text-gray-500">
             {data.company.name}
           </div>
-          <button onClick={() => router.back()}>
+          <button
+            onClick={() => router.back()}
+            aria-label="Fermer"
+          >
             <X size={18} />
           </button>
         </div>
@@ -79,10 +78,12 @@ export default function NewsDrawer({
             </p>
           )}
 
+          {/* BODY — rendu HTML */}
           {data.body && (
-            <div className="prose prose-sm max-w-none">
-              {data.body}
-            </div>
+            <div
+              className="prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: data.body }}
+            />
           )}
 
           <p className="text-xs text-gray-400">
@@ -94,3 +95,4 @@ export default function NewsDrawer({
     </div>
   );
 }
+
