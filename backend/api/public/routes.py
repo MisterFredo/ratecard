@@ -48,7 +48,7 @@ def get_home_news():
 
 
 # ============================================================
-# HOME — ANALYSES PAR EVENT (LIGNES)
+# HOME — ANALYSES PAR EVENT (LIGNES + ENRICHISSEMENTS)
 # ============================================================
 @router.get("/home/events", response_model=HomeEventsResponse)
 def get_home_events():
@@ -64,6 +64,8 @@ def get_home_events():
                     id=c["id"],
                     title=c["title"],
                     published_at=c["published_at"],
+                    topics=(c.get("topics") or [])[:2],
+                    key_metrics=(c.get("chiffres") or [])[:2],
                 )
                 for c in contents[:4]
             ]
@@ -194,5 +196,3 @@ def list_public_analyses():
     except Exception:
         logger.exception("Erreur list_public_analyses")
         raise HTTPException(500, "Erreur récupération analyses")
-
-
