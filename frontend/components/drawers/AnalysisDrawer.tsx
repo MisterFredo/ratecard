@@ -22,11 +22,7 @@ type AnalysisData = {
   } | null;
 };
 
-export default function AnalysisDrawer({
-  id,
-}: {
-  id: string;
-}) {
+export default function AnalysisDrawer({ id }: { id: string }) {
   const router = useRouter();
   const [data, setData] = useState<AnalysisData | null>(null);
 
@@ -53,101 +49,135 @@ export default function AnalysisDrawer({
       />
 
       {/* DRAWER */}
-      <aside className="relative ml-auto w-full md:w-[720px] bg-white shadow-xl overflow-y-auto">
+      <aside className="relative ml-auto w-full md:w-[760px] bg-white shadow-xl overflow-y-auto">
         {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-start">
-          <div className="space-y-1">
+          <div className="space-y-2 max-w-xl">
             {data.event && (
               <span className="text-xs uppercase tracking-wide text-gray-500">
                 {data.event.label}
               </span>
             )}
-            <h1 className="text-2xl font-semibold leading-tight">
+
+            <h1 className="text-2xl font-semibold leading-tight text-gray-900">
               {data.angle_title}
             </h1>
+
             <p className="text-sm text-gray-600">
               {data.angle_signal}
             </p>
           </div>
 
-          <button onClick={() => router.back()}>
+          <button
+            onClick={() => router.back()}
+            aria-label="Fermer"
+          >
             <X size={18} />
           </button>
         </div>
 
         {/* CONTENT */}
-        <div className="p-6 space-y-10">
+        <div className="p-6 space-y-12">
+
+          {/* EXCERPT */}
           {data.excerpt && (
-            <p className="text-base font-medium text-gray-800">
+            <div className="text-base font-medium text-gray-800 max-w-2xl">
               {data.excerpt}
-            </p>
+            </div>
           )}
 
+          {/* CONCEPT */}
           {data.concept && (
-            <div className="border-l-4 border-ratecard-blue pl-4">
-              <h2 className="text-sm font-semibold uppercase text-gray-500 mb-1">
+            <section className="border-l-4 border-ratecard-blue pl-4 max-w-2xl">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
                 Concept clé
               </h2>
-              <p>{data.concept}</p>
-            </div>
+              <p className="text-sm text-gray-700">
+                {data.concept}
+              </p>
+            </section>
           )}
 
+          {/* ANALYSE DÉTAILLÉE */}
           {data.content_body && (
-            <div className="prose prose-sm max-w-none">
-              {data.content_body}
-            </div>
+            <section className="prose prose-sm max-w-none">
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: data.content_body,
+                }}
+              />
+            </section>
           )}
 
+          {/* CHIFFRES CLÉS */}
           {data.chiffres?.length > 0 && (
-            <div>
-              <h2 className="text-sm font-semibold uppercase text-gray-500 mb-2">
+            <section>
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
                 Chiffres clés
               </h2>
-              <ul className="list-disc list-inside text-sm text-gray-700">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {data.chiffres.map((c, i) => (
-                  <li key={i}>{c}</li>
+                  <li
+                    key={i}
+                    className="rounded-lg border border-ratecard-border p-3 text-sm text-gray-700 bg-ratecard-light"
+                  >
+                    {c}
+                  </li>
                 ))}
               </ul>
-            </div>
+            </section>
           )}
 
+          {/* CITATIONS */}
           {data.citations?.length > 0 && (
-            <div>
-              <h2 className="text-sm font-semibold uppercase text-gray-500 mb-2">
+            <section>
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
                 Citations
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {data.citations.map((c, i) => (
                   <blockquote
                     key={i}
-                    className="border-l-2 pl-4 italic text-gray-700"
+                    className="border-l-2 border-gray-300 pl-4 italic text-sm text-gray-700 max-w-2xl"
                   >
                     {c}
                   </blockquote>
                 ))}
               </div>
-            </div>
+            </section>
           )}
 
+          {/* ACTEURS CITÉS */}
           {data.acteurs_cites?.length > 0 && (
-            <div>
-              <h2 className="text-sm font-semibold uppercase text-gray-500 mb-2">
+            <section>
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
                 Acteurs cités
               </h2>
-              <ul className="text-sm text-gray-600">
+              <ul className="flex flex-wrap gap-2">
                 {data.acteurs_cites.map((a, i) => (
-                  <li key={i}>• {a}</li>
+                  <span
+                    key={i}
+                    className="px-2 py-1 text-xs rounded bg-ratecard-light text-gray-600"
+                  >
+                    {a}
+                  </span>
                 ))}
               </ul>
-            </div>
+            </section>
           )}
 
-          <p className="text-xs text-gray-400 pt-4">
-            Publié le{" "}
-            {new Date(data.published_at).toLocaleDateString("fr-FR")}
-          </p>
+          {/* FOOTER */}
+          <div className="pt-6 border-t border-gray-200">
+            <p className="text-xs text-gray-400">
+              Publié le{" "}
+              {new Date(
+                data.published_at
+              ).toLocaleDateString("fr-FR")}
+            </p>
+          </div>
         </div>
       </aside>
     </div>
   );
 }
+
