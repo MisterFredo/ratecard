@@ -14,11 +14,14 @@ export default function CreateEvent() {
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
 
-  // 🔑 Home / Navigation (visibles dès le départ)
+  // 🔑 Home / Navigation
   const [homeLabel, setHomeLabel] = useState("");
   const [homeOrder, setHomeOrder] = useState<number | null>(null);
   const [isActiveHome, setIsActiveHome] = useState(false);
   const [isActiveNav, setIsActiveNav] = useState(false);
+
+  // 🎨 Event color
+  const [eventColor, setEventColor] = useState<string>("");
 
   const [eventId, setEventId] = useState<string | null>(null);
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
@@ -48,12 +51,12 @@ export default function CreateEvent() {
 
       setEventId(res.id_event);
 
-      // 🔁 persist Home / Nav juste après création
       await api.put(`/event/update/${res.id_event}`, {
         home_label: homeLabel || null,
         home_order: homeOrder,
         is_active_home: isActiveHome,
         is_active_nav: isActiveNav,
+        event_color: eventColor || null,
       });
 
       alert(
@@ -122,7 +125,7 @@ export default function CreateEvent() {
         </div>
       </div>
 
-      {/* HOME / NAV — visibles dès la création */}
+      {/* HOME / NAV */}
       <div className="space-y-6 border-t pt-6">
         <h2 className="text-lg font-semibold">
           Affichage sur la Home et la navigation
@@ -155,6 +158,18 @@ export default function CreateEvent() {
                 )
               }
               placeholder="Ex : 1, 2, 3"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Couleur de l’événement
+            </label>
+            <input
+              type="color"
+              className="border p-1 w-16 h-10 rounded"
+              value={eventColor}
+              onChange={(e) => setEventColor(e.target.value)}
             />
           </div>
 
@@ -208,3 +223,4 @@ export default function CreateEvent() {
     </div>
   );
 }
+
