@@ -18,11 +18,6 @@ router = APIRouter()
 # ============================================================
 @router.post("/create")
 def create_route(data: EventCreate):
-    """
-    Crée un event (sans aucun visuel).
-
-    Les visuels sont associés UNIQUEMENT après création.
-    """
     try:
         event_id = create_event(data)
         return {"status": "ok", "id_event": event_id}
@@ -35,9 +30,6 @@ def create_route(data: EventCreate):
 # ============================================================
 @router.get("/list")
 def list_route():
-    """
-    Retourne la liste des events actifs.
-    """
     try:
         events = list_events()
         return {"status": "ok", "events": events}
@@ -50,9 +42,6 @@ def list_route():
 # ============================================================
 @router.get("/{id_event}")
 def get_route(id_event: str):
-    """
-    Récupère un event par son ID.
-    """
     event = get_event(id_event)
     if not event:
         raise HTTPException(404, "Event introuvable")
@@ -65,17 +54,9 @@ def get_route(id_event: str):
 # ============================================================
 @router.put("/update/{id_event}")
 def update_route(id_event: str, data: EventUpdate):
-    """
-    Met à jour un event existant.
-
-    Peut inclure :
-    - données éditoriales
-    - SEO
-    - champs média
-    - pilotage Home / Nav
-    """
     try:
         updated = update_event(id_event, data)
         return {"status": "ok", "updated": updated}
     except Exception:
         raise HTTPException(400, "Erreur mise à jour event")
+
