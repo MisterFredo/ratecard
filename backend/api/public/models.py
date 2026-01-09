@@ -1,29 +1,15 @@
 from pydantic import BaseModel
-from typing import List, Literal
+from typing import List, Optional
 from datetime import datetime
 
 
-# -------------------------------------------------------
-# HOME — CONTINUOUS BAND
-# -------------------------------------------------------
-class HomeContinuousItem(BaseModel):
-    type: Literal["news", "content"]
-    id: str
-    title: str
-    published_at: datetime
-
-
-class HomeContinuousResponse(BaseModel):
-    items: List[HomeContinuousItem]
-
-
-# -------------------------------------------------------
-# HOME — NEWS BLOCK
-# -------------------------------------------------------
+# =======================================================
+# HOME — NEWS (CARTES)
+# =======================================================
 class HomeNewsItem(BaseModel):
     id: str
     title: str
-    excerpt: str | None
+    excerpt: Optional[str]
     published_at: datetime
     visual_rect_url: str
 
@@ -32,27 +18,56 @@ class HomeNewsResponse(BaseModel):
     items: List[HomeNewsItem]
 
 
-# -------------------------------------------------------
-# HOME — EVENTS BLOCKS
-# -------------------------------------------------------
+# =======================================================
+# HOME — ANALYSES (LIGNES PAR EVENT)
+# =======================================================
 class HomeEventInfo(BaseModel):
     id: str
     label: str
     home_label: str
-    visual_rect_url: str
+    color: Optional[str] = None
 
 
-class HomeEventContentItem(BaseModel):
+class HomeAnalysisLine(BaseModel):
     id: str
     title: str
-    excerpt: str
     published_at: datetime
 
 
 class HomeEventBlock(BaseModel):
     event: HomeEventInfo
-    contents: List[HomeEventContentItem]
+    analyses: List[HomeAnalysisLine]
 
 
 class HomeEventsResponse(BaseModel):
     events: List[HomeEventBlock]
+
+
+# =======================================================
+# DRAWER — NEWS
+# =======================================================
+class DrawerNewsResponse(BaseModel):
+    id_news: str
+    title: str
+    excerpt: Optional[str]
+    body: Optional[str]
+    published_at: datetime
+    visual_rect_url: str
+    company: dict
+
+
+# =======================================================
+# DRAWER — ANALYSE
+# =======================================================
+class DrawerAnalysisResponse(BaseModel):
+    id_content: str
+    angle_title: str
+    angle_signal: str
+    excerpt: Optional[str]
+    concept: Optional[str]
+    content_body: Optional[str]
+    chiffres: List[str]
+    citations: List[str]
+    acteurs_cites: List[str]
+    published_at: datetime
+    event: Optional[dict]
