@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
+
 /* =========================================================
    TYPES
 ========================================================= */
@@ -13,7 +15,7 @@ type AnalysisItem = {
     id: string;
     label: string;
     event_color?: string | null;
-  };
+  } | null;
 };
 
 /* =========================================================
@@ -45,62 +47,77 @@ async function getAnalyses(): Promise<AnalysisItem[]> {
    PAGE
 ========================================================= */
 
-import Link from "next/link";
-
 export default async function AnalysisPage() {
   const analyses = await getAnalyses();
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-20">
 
-      {/* HEADER */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
       <section className="space-y-2">
-        <h1 className="text-3xl font-bold">Analyses</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-gray-900">
+          Analyses
+        </h1>
+        <p className="text-gray-600 max-w-2xl">
           Lectures Ratecard issues des événements et signaux du marché.
         </p>
       </section>
 
-      {/* LISTE */}
+      {/* =====================================================
+          LISTE DES ANALYSES
+      ===================================================== */}
       {analyses.length === 0 ? (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-400">
           Aucune analyse publiée pour le moment.
         </p>
       ) : (
-        <ul className="space-y-6">
+        <ul className="space-y-8">
           {analyses.map((a) => (
-            <li key={a.id}>
+            <li
+              key={a.id}
+              className="
+                rounded-2xl border border-ratecard-border
+                bg-white p-6
+              "
+            >
               <Link
                 href={`/analysis/${a.id}`}
-                className="block pl-4 border-l border-gray-200 hover:border-gray-400 transition-colors"
+                className="block space-y-3"
               >
-                <div className="flex items-center gap-2 mb-1">
-                  {a.event?.event_color && (
-                    <span
-                      className="inline-block w-2 h-2 rounded-full"
-                      style={{
-                        backgroundColor: a.event.event_color,
-                      }}
-                    />
-                  )}
-                  {a.event && (
+                {/* EVENT CONTEXT */}
+                {a.event && (
+                  <div className="flex items-center gap-2">
+                    {a.event.event_color && (
+                      <span
+                        className="inline-block w-2 h-2 rounded-full"
+                        style={{
+                          backgroundColor:
+                            a.event.event_color,
+                        }}
+                      />
+                    )}
                     <span className="text-xs text-gray-500">
                       {a.event.label}
                     </span>
-                  )}
-                </div>
+                  </div>
+                )}
 
-                <h2 className="font-medium hover:underline">
+                {/* TITLE */}
+                <h2 className="text-lg font-semibold text-gray-900 hover:underline">
                   {a.title}
                 </h2>
 
+                {/* EXCERPT */}
                 {a.excerpt && (
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 max-w-3xl">
                     {a.excerpt}
                   </p>
                 )}
 
-                <p className="text-xs text-gray-400 mt-1">
+                {/* META */}
+                <p className="text-xs text-gray-400">
                   {new Date(
                     a.published_at
                   ).toLocaleDateString("fr-FR")}
@@ -110,6 +127,7 @@ export default async function AnalysisPage() {
           ))}
         </ul>
       )}
+
     </div>
   );
 }
