@@ -6,7 +6,7 @@ export default function AnalysisPage({
   params: { id: string };
 }) {
   return (
-    <div className="max-w-4xl mx-auto py-12">
+    <div className="max-w-3xl mx-auto py-12">
       <AnalysisDrawer id={params.id} />
     </div>
   );
