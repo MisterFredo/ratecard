@@ -18,10 +18,8 @@ type AnalysisLine = {
   id: string;
   title: string;
   published_at: string;
-
-  // 🔹 enrichissements légers (optionnels)
   topics?: string[];
-  key_signal?: string;
+  key_metrics?: string[];
 };
 
 type EventBlock = {
@@ -49,7 +47,7 @@ export default function HomeClient({
     <div className="space-y-14 md:space-y-16">
 
       {/* =====================================================
-          NEWS — ANNONCES PARTENAIRES
+          NEWS — PARTENAIRES
       ===================================================== */}
       <section className="space-y-4">
         <header className="space-y-1">
@@ -61,27 +59,21 @@ export default function HomeClient({
           </p>
         </header>
 
-        {news.length === 0 ? (
-          <p className="text-sm text-gray-400">
-            Aucune news publiée pour le moment.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {news.map((n) => (
-              <NewsCard
-                key={n.id}
-                id={n.id}
-                title={n.title}
-                visualRectUrl={n.visual_rect_url}
-                publishedAt={n.published_at}
-              />
-            ))}
-          </div>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          {news.map((n) => (
+            <NewsCard
+              key={n.id}
+              id={n.id}
+              title={n.title}
+              visualRectUrl={n.visual_rect_url}
+              publishedAt={n.published_at}
+            />
+          ))}
+        </div>
       </section>
 
       {/* =====================================================
-          ANALYSES — ESPACES PAR ÉVÉNEMENT
+          ANALYSES — PAR ÉVÉNEMENT
       ===================================================== */}
       <section className="space-y-6">
         <header className="space-y-1">
@@ -93,23 +85,20 @@ export default function HomeClient({
           </p>
         </header>
 
-        {events.length === 0 ? (
-          <p className="text-sm text-gray-400">
-            Aucun événement actif pour le moment.
-          </p>
-        ) : (
-          <div className="space-y-6">
-            {events.map((block) => (
-              <div
-                key={block.event.id}
-                className="
-                  relative rounded-2xl border border-ratecard-border
-                  bg-white p-4 md:p-5
-                "
-              >
-                {/* BARRE ÉVÉNEMENT */}
+        <div className="space-y-8">
+          {events.map((block) => (
+            <div
+              key={block.event.id}
+              className="
+                grid grid-cols-1 lg:grid-cols-3 gap-6
+                rounded-2xl border border-ratecard-border
+                bg-white p-4 md:p-5
+              "
+            >
+              {/* COLONNE GAUCHE — ANALYSES */}
+              <div className="lg:col-span-2 relative">
                 <span
-                  className="absolute left-0 top-5 bottom-5 w-1 rounded-full"
+                  className="absolute left-0 top-4 bottom-4 w-1 rounded-full"
                   style={{
                     backgroundColor:
                       block.event.event_color || "#9CA3AF",
@@ -117,7 +106,6 @@ export default function HomeClient({
                 />
 
                 <div className="pl-4 max-w-3xl">
-                  {/* HEADER EVENT */}
                   <div className="flex items-center gap-3 mb-4">
                     <span
                       className="inline-block w-2.5 h-2.5 rounded-full"
@@ -131,68 +119,59 @@ export default function HomeClient({
                     </h3>
                   </div>
 
-                  {/* ANALYSES */}
-                  {block.analyses.length === 0 ? (
-                    <p className="text-sm text-gray-400 pl-1">
-                      Aucune analyse publiée pour le moment.
-                    </p>
-                  ) : (
-                    <ul className="space-y-3">
-                      {block.analyses.map((a) => (
-                        <li key={a.id}>
-                          <Link
-                            href={`/analysis/${a.id}`}
-                            className="
-                              block pl-4 border-l border-ratecard-border
-                              hover:border-gray-400 transition-colors
-                            "
-                          >
-                            {/* TITRE */}
-                            <p className="text-sm font-medium text-gray-900 hover:underline">
-                              {a.title}
-                            </p>
+                  <ul className="space-y-3">
+                    {block.analyses.map((a) => (
+                      <li key={a.id}>
+                        <Link
+                          href={`/analysis/${a.id}`}
+                          className="
+                            block pl-4 border-l border-ratecard-border
+                            hover:border-gray-400 transition-colors
+                          "
+                        >
+                          <p className="text-sm font-medium text-gray-900 hover:underline">
+                            {a.title}
+                          </p>
 
-                            {/* META LIGNE */}
-                            <div className="flex flex-wrap items-center gap-2 mt-1">
-
-                              {/* TOPICS (1–2 max) */}
-                              {a.topics &&
-                                a.topics.slice(0, 2).map((t) => (
-                                  <span
-                                    key={t}
-                                    className="
-                                      text-xs px-2 py-0.5 rounded
-                                      bg-ratecard-light text-gray-600
-                                    "
-                                  >
-                                    {t}
-                                  </span>
-                                ))}
-
-                              {/* SIGNAL CLÉ */}
-                              {a.key_signal && (
-                                <span className="text-xs text-gray-500">
-                                  • {a.key_signal}
-                                </span>
-                              )}
-
-                              {/* DATE */}
-                              <span className="text-xs text-gray-400">
-                                {new Date(
-                                  a.published_at
-                                ).toLocaleDateString("fr-FR")}
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            {a.topics?.map((t) => (
+                              <span
+                                key={t}
+                                className="text-xs px-2 py-0.5 rounded bg-ratecard-light text-gray-600"
+                              >
+                                {t}
                               </span>
-                            </div>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                            ))}
+
+                            {a.key_metrics?.map((m, i) => (
+                              <span
+                                key={i}
+                                className="text-xs text-gray-500"
+                              >
+                                • {m}
+                              </span>
+                            ))}
+
+                            <span className="text-xs text-gray-400">
+                              {new Date(
+                                a.published_at
+                              ).toLocaleDateString("fr-FR")}
+                            </span>
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+
+              {/* COLONNE DROITE — CONTEXTE (VIDE POUR L’INSTANT) */}
+              <aside className="hidden lg:block text-sm text-gray-400">
+                {/* réservé pour évolutions futures */}
+              </aside>
+            </div>
+          ))}
+        </div>
       </section>
 
     </div>
