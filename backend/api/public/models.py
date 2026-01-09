@@ -32,7 +32,8 @@ class HomeAnalysisLine(BaseModel):
     id: str
     title: str
     published_at: datetime
-
+    topics: List[str] = []
+    key_metrics: List[str] = []
 
 class HomeEventBlock(BaseModel):
     event: HomeEventInfo
