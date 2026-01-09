@@ -7,7 +7,7 @@ export default function NewsPage({
 }) {
   return (
     <div className="max-w-3xl mx-auto py-12">
-      <NewsDrawer id={params.id} onClose={() => {}} />
+      <NewsDrawer id={params.id} />
     </div>
   );
 }
