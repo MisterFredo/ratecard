@@ -8,13 +8,19 @@ import {
   Newspaper,
   Linkedin,
   Mail,
-  CalendarDays,
 } from "lucide-react";
+
+type EventNavItem = {
+  slug: string;
+  label: string;
+};
 
 export default function PublicShell({
   children,
+  events = [],
 }: {
   children: React.ReactNode;
+  events?: EventNavItem[];
 }) {
   const pathname = usePathname();
 
@@ -22,7 +28,7 @@ export default function PublicShell({
     return pathname === path || pathname?.startsWith(path);
   }
 
-  const navItems = [
+  const mainNav = [
     { href: "/", label: "Flux", icon: LayoutList },
     { href: "/analysis", label: "Analyses", icon: FileText },
     { href: "/news", label: "News", icon: Newspaper },
@@ -38,8 +44,9 @@ export default function PublicShell({
           </p>
         </div>
 
-        <nav className="space-y-2 text-sm flex-1">
-          {navItems.map((item) => {
+        {/* ===== NAV PRINCIPALE ===== */}
+        <nav className="space-y-2 text-sm">
+          {mainNav.map((item) => {
             const Icon = item.icon;
             const isActive = active(item.href);
 
@@ -60,8 +67,35 @@ export default function PublicShell({
           })}
         </nav>
 
-        {/* ACTIONS */}
-        <div className="space-y-3 text-sm pt-6 border-t border-white/20">
+        {/* ===== SÉPARATEUR ===== */}
+        <div className="my-6 border-t border-white/20" />
+
+        {/* ===== ÉVÉNEMENTS ===== */}
+        <nav className="space-y-1 text-sm">
+          {events.map((e) => {
+            const isActive = active(`/event/${e.slug}`);
+
+            return (
+              <Link
+                key={e.slug}
+                href={`/event/${e.slug}`}
+                className={`block px-3 py-2 rounded ${
+                  isActive
+                    ? "bg-white/90 text-ratecard-blue font-medium"
+                    : "hover:bg-ratecard-green/20"
+                }`}
+              >
+                {e.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* ===== SÉPARATEUR ===== */}
+        <div className="my-6 border-t border-white/20" />
+
+        {/* ===== ACTIONS ===== */}
+        <div className="space-y-2 text-sm">
           <a
             href="https://www.linkedin.com/company/ratecard"
             target="_blank"
@@ -77,15 +111,6 @@ export default function PublicShell({
           >
             <Mail size={16} />
             Newsletter
-          </a>
-
-          <a
-            href="https://events.ratecard.fr"
-            target="_blank"
-            className="flex items-center gap-2 opacity-90 hover:opacity-100"
-          >
-            <CalendarDays size={16} />
-            Événements
           </a>
         </div>
 
