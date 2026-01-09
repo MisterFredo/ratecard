@@ -34,6 +34,9 @@ def create_event(data: EventCreate) -> str:
         "IS_ACTIVE_HOME": False,
         "IS_ACTIVE_NAV": False,
 
+        # 🎨 Signature visuelle
+        "EVENT_COLOR": None,
+
         # Médias
         "MEDIA_SQUARE_ID": None,
         "MEDIA_RECTANGLE_ID": None,
@@ -104,9 +107,7 @@ def update_event(id_event: str, data: EventUpdate) -> bool:
 
 
 # ============================================================
-# ============================================================
 # ======================  PUBLIC  ===========================
-# ============================================================
 # ============================================================
 
 
@@ -121,7 +122,8 @@ def get_event_by_slug(slug: str):
           LABEL,
           HOME_LABEL,
           DESCRIPTION,
-          MEDIA_RECTANGLE_ID
+          MEDIA_RECTANGLE_ID,
+          EVENT_COLOR
         FROM `{TABLE_EVENT}`
         WHERE
           IS_ACTIVE = TRUE
@@ -141,6 +143,7 @@ def get_event_by_slug(slug: str):
         "label": e["LABEL"],
         "home_label": e["HOME_LABEL"],
         "description": e.get("DESCRIPTION"),
+        "event_color": e.get("EVENT_COLOR"),
         "visual_rect_url": get_public_url(
             "events",
             e.get("MEDIA_RECTANGLE_ID"),
@@ -159,7 +162,8 @@ def list_home_events():
           LABEL,
           HOME_LABEL,
           HOME_ORDER,
-          MEDIA_RECTANGLE_ID
+          MEDIA_RECTANGLE_ID,
+          EVENT_COLOR
         FROM `{TABLE_EVENT}`
         WHERE
           IS_ACTIVE = TRUE
@@ -175,6 +179,7 @@ def list_home_events():
             "id": r["ID_EVENT"],
             "label": r["LABEL"],
             "home_label": r["HOME_LABEL"],
+            "event_color": r.get("EVENT_COLOR"),
             "visual_rect_url": get_public_url(
                 "events",
                 r.get("MEDIA_RECTANGLE_ID"),
@@ -216,3 +221,4 @@ def list_event_contents(event_id: str):
         }
         for r in rows
     ]
+
