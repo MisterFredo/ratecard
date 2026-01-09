@@ -198,3 +198,44 @@ def read_event_contents(slug: str):
             for c in contents
         ]
     }
+
+# ============================================================
+# PUBLIC — LIST ANALYSES (PAGE /analysis)
+# ============================================================
+@router.get("/analysis/list")
+def list_public_analyses():
+    """
+    Liste complète des analyses publiées (projection légère).
+    """
+    try:
+        contents = list_contents()
+
+        items = []
+        for c in contents:
+            if c["STATUS"] != "PUBLISHED" or not c.get("IS_ACTIVE"):
+                continue
+
+            event = None
+            if c.get("EVENT_ID"):
+                event = {
+                    "id": c.get("EVENT_ID"),
+                    "label": c.get("EVENT_LABEL"),
+                    "event_color": c.get("EVENT_COLOR"),
+                }
+
+            items.append(
+                {
+                    "id": c["ID_CONTENT"],
+                    "title": c["ANGLE_TITLE"],
+                    "excerpt": c.get("EXCERPT"),
+                    "published_at": c["PUBLISHED_AT"],
+                    "event": event,
+                }
+            )
+
+        return {"items": items}
+
+    except Exception:
+        logger.exception("Erreur list_public_analyses")
+        raise HTTPException(500, "Erreur récupération analyses")
+
