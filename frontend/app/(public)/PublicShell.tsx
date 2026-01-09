@@ -29,7 +29,10 @@ export default function PublicShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   function active(path: string) {
-    return pathname === path || pathname?.startsWith(path);
+    if (path === "/") {
+      return pathname === "/";
+    }
+    return pathname === path || pathname.startsWith(`${path}/`);
   }
 
   const mainNav = [
@@ -47,7 +50,7 @@ export default function PublicShell({
         </p>
       </div>
 
-      {/* NAV PRINCIPALE */}
+      {/* ===== NAV PRINCIPALE ===== */}
       <nav className="space-y-2 text-sm">
         {mainNav.map((item) => {
           const Icon = item.icon;
@@ -71,29 +74,25 @@ export default function PublicShell({
         })}
       </nav>
 
+      {/* ===== SÉPARATEUR ===== */}
       <div className="my-6 border-t border-white/20" />
 
-      {/* ÉVÉNEMENTS */}
+      {/* ===== ÉVÉNEMENTS (LABELS UNIQUEMENT, PAS DE NAV) ===== */}
       <nav className="space-y-1 text-sm">
         {events.map((e) => (
-          <Link
+          <span
             key={e.slug}
-            href={`/event/${e.slug}`}
-            onClick={() => setMobileOpen(false)}
-            className={`block px-3 py-2 rounded ${
-              active(`/event/${e.slug}`)
-                ? "bg-white/90 text-ratecard-blue font-medium"
-                : "hover:bg-ratecard-green/20"
-            }`}
+            className="block px-3 py-2 text-white/70 cursor-default"
           >
             {e.label}
-          </Link>
+          </span>
         ))}
       </nav>
 
+      {/* ===== SÉPARATEUR ===== */}
       <div className="my-6 border-t border-white/20" />
 
-      {/* ACTIONS */}
+      {/* ===== ACTIONS ===== */}
       <div className="space-y-2 text-sm">
         <a
           href="https://www.linkedin.com/company/ratecard"
