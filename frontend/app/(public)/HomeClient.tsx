@@ -1,7 +1,7 @@
 "use client";
 
 import NewsCard from "@/components/news/NewsCard";
-import { useDrawer } from "@/contexts/DrawerContext";
+import Link from "next/link";
 
 /* =========================================================
    TYPES
@@ -25,7 +25,7 @@ type EventBlock = {
     id: string;
     label: string;
     home_label: string;
-    color?: string;
+    event_color?: string | null;
   };
   analyses: AnalysisLine[];
 };
@@ -41,13 +41,11 @@ export default function HomeClient({
   news: NewsItem[];
   events: EventBlock[];
 }) {
-  const { openDrawer } = useDrawer();
-
   return (
     <div className="space-y-20">
 
       {/* =====================================================
-          NEWS — CARTES (CAISSE DE RÉSONANCE)
+          NEWS — CARTES
       ===================================================== */}
       <section className="space-y-6">
         <h2 className="text-lg font-semibold">
@@ -98,7 +96,7 @@ export default function HomeClient({
                     className="inline-block w-3 h-3 rounded-full"
                     style={{
                       backgroundColor:
-                        block.event.color || "#9ca3af",
+                        block.event.event_color || "#9ca3af",
                     }}
                   />
                   <h3 className="font-medium">
@@ -114,21 +112,20 @@ export default function HomeClient({
                 ) : (
                   <ul className="space-y-3">
                     {block.analyses.map((a) => (
-                      <li
-                        key={a.id}
-                        className="pl-6 border-l border-gray-200 cursor-pointer hover:border-gray-400 transition-colors"
-                        onClick={() =>
-                          openDrawer("content", a.id)
-                        }
-                      >
-                        <p className="text-sm font-medium hover:underline">
-                          {a.title}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {new Date(
-                            a.published_at
-                          ).toLocaleDateString("fr-FR")}
-                        </p>
+                      <li key={a.id}>
+                        <Link
+                          href={`/analysis/${a.id}`}
+                          className="block pl-6 border-l border-gray-200 hover:border-gray-400 transition-colors"
+                        >
+                          <p className="text-sm font-medium hover:underline">
+                            {a.title}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(
+                              a.published_at
+                            ).toLocaleDateString("fr-FR")}
+                          </p>
+                        </Link>
                       </li>
                     ))}
                   </ul>
