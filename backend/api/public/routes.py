@@ -1,108 +1,45 @@
 from fastapi import APIRouter, HTTPException
 import logging
 
-from utils.bigquery_utils import get_bigquery_client
-from utils.gcs import get_public_url
-
 from api.public.models import (
-    HomeContinuousResponse,
-    HomeContinuousItem,
     HomeNewsResponse,
     HomeNewsItem,
     HomeEventsResponse,
     HomeEventBlock,
     HomeEventInfo,
-    HomeEventContentItem,
-)
-
-# CORE SERVICES
-from core.event.service import (
-    get_event_by_slug,
-    list_home_events,
-    list_event_contents,
+    HomeAnalysisLine,
+    DrawerNewsResponse,
+    DrawerAnalysisResponse,
 )
 
 from core.news.service import list_news
 from core.content.service import list_contents
+from core.event.service import (
+    list_home_events,
+    list_event_contents,
+    get_event_by_slug,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-DATASET = "adex-5555.RATECARD"
-
 
 # ============================================================
-# HOME — CONTINUOUS BAND
-# ============================================================
-@router.get("/home/continuous", response_model=HomeContinuousResponse)
-def get_home_continuous():
-    """
-    5 derniers contenus publiés (News + Analyses)
-    """
-    client = get_bigquery_client()
-
-    query = f"""
-    SELECT
-      'news' AS type,
-      ID_NEWS AS id,
-      TITLE AS title,
-      PUBLISHED_AT AS published_at
-    FROM `{DATASET}.RATECARD_NEWS`
-    WHERE STATUS = 'PUBLISHED' AND IS_ACTIVE = true
-
-    UNION ALL
-
-    SELECT
-      'content' AS type,
-      ID_CONTENT AS id,
-      ANGLE_TITLE AS title,
-      PUBLISHED_AT AS published_at
-    FROM `{DATASET}.RATECARD_CONTENT`
-    WHERE STATUS = 'PUBLISHED' AND IS_ACTIVE = true
-
-    ORDER BY published_at DESC
-    LIMIT 5
-    """
-
-    try:
-        rows = client.query(query).result()
-        items = [
-            HomeContinuousItem(
-                type=row["type"],
-                id=row["id"],
-                title=row["title"],
-                published_at=row["published_at"],
-            )
-            for row in rows
-        ]
-        return HomeContinuousResponse(items=items)
-    except Exception:
-        logger.exception("Erreur home continuous")
-        raise HTTPException(500, "Erreur récupération home continuous")
-
-
-# ============================================================
-# HOME — NEWS BLOCK
+# HOME — NEWS (CARTES)
 # ============================================================
 @router.get("/home/news", response_model=HomeNewsResponse)
 def get_home_news():
-    """
-    Dernières News (utilise le core News)
-    """
     try:
         news = list_news()
-
         items = []
+
         for n in news:
-            if (
-                n["STATUS"] == "PUBLISHED"
-                and n.get("VISUAL_RECT_URL")
-            ):
+            if n["STATUS"] == "PUBLISHED" and n.get("VISUAL_RECT_URL"):
                 items.append(
                     HomeNewsItem(
                         id=n["ID_NEWS"],
                         title=n["TITLE"],
-                        excerpt=n.get("EXCERPT") or "",
+                        excerpt=n.get("EXCERPT"),
                         published_at=n["PUBLISHED_AT"],
                         visual_rect_url=n["VISUAL_RECT_URL"],
                     )
@@ -116,13 +53,10 @@ def get_home_news():
 
 
 # ============================================================
-# HOME — EVENTS BLOCKS
+# HOME — ANALYSES PAR EVENT (LIGNES)
 # ============================================================
 @router.get("/home/events", response_model=HomeEventsResponse)
 def get_home_events():
-    """
-    Rubriques Events pour la Home
-    """
     try:
         events = list_home_events()
         blocks = []
@@ -130,23 +64,24 @@ def get_home_events():
         for e in events:
             contents = list_event_contents(e["id"])
 
+            analyses = [
+                HomeAnalysisLine(
+                    id=c["id"],
+                    title=c["title"],
+                    published_at=c["published_at"],
+                )
+                for c in contents[:4]
+            ]
+
             blocks.append(
                 HomeEventBlock(
                     event=HomeEventInfo(
                         id=e["id"],
                         label=e["label"],
                         home_label=e["home_label"],
-                        visual_rect_url=e["visual_rect_url"],
+                        color=e.get("color"),
                     ),
-                    contents=[
-                        HomeEventContentItem(
-                            id=c["id"],
-                            title=c["title"],
-                            excerpt=c.get("excerpt") or "",
-                            published_at=c["published_at"],
-                        )
-                        for c in contents[:4]
-                    ],
+                    analyses=analyses,
                 )
             )
 
@@ -158,35 +93,29 @@ def get_home_events():
 
 
 # ============================================================
-# PUBLIC — READ NEWS (DRAWER)
+# DRAWER — NEWS
 # ============================================================
-@router.get("/news/{id_news}")
+@router.get("/news/{id_news}", response_model=DrawerNewsResponse)
 def read_news(id_news: str):
-    """
-    Lecture d'une News (drawer)
-    """
     try:
-        # on réutilise le core existant
         rows = list_news()
         n = next((x for x in rows if x["ID_NEWS"] == id_news), None)
 
         if not n or n["STATUS"] != "PUBLISHED":
             raise HTTPException(404, "News introuvable")
 
-        return {
-            "type": "news",
-            "id_news": n["ID_NEWS"],
-            "title": n["TITLE"],
-            "excerpt": n.get("EXCERPT"),
-            "body": n.get("BODY"),
-            "status": n["STATUS"],
-            "published_at": n["PUBLISHED_AT"],
-            "visual_rect_url": n["VISUAL_RECT_URL"],
-            "company": {
+        return DrawerNewsResponse(
+            id_news=n["ID_NEWS"],
+            title=n["TITLE"],
+            excerpt=n.get("EXCERPT"),
+            body=n.get("BODY"),
+            published_at=n["PUBLISHED_AT"],
+            visual_rect_url=n["VISUAL_RECT_URL"],
+            company={
                 "id_company": n["ID_COMPANY"],
                 "name": n["COMPANY_NAME"],
             },
-        }
+        )
 
     except HTTPException:
         raise
@@ -196,45 +125,50 @@ def read_news(id_news: str):
 
 
 # ============================================================
-# PUBLIC — READ CONTENT (DRAWER)
+# DRAWER — ANALYSE
 # ============================================================
-@router.get("/content/{id_content}")
+@router.get("/content/{id_content}", response_model=DrawerAnalysisResponse)
 def read_content(id_content: str):
-    """
-    Lecture d'une Analyse (drawer)
-    """
     try:
         contents = list_contents()
         c = next((x for x in contents if x["ID_CONTENT"] == id_content), None)
 
         if not c or c["STATUS"] != "PUBLISHED":
-            raise HTTPException(404, "Contenu introuvable")
+            raise HTTPException(404, "Analyse introuvable")
 
-        return {
-            "type": "content",
-            "id_content": c["ID_CONTENT"],
-            "title": c["TITLE"],
-            "excerpt": c.get("EXCERPT"),
-            "content_body": c.get("CONTENT_BODY"),
-            "status": c["STATUS"],
-            "published_at": c["PUBLISHED_AT"],
-        }
+        event = None
+        if c.get("EVENT_ID"):
+            event = {
+                "id": c["EVENT_ID"],
+                "label": c.get("EVENT_LABEL"),
+            }
+
+        return DrawerAnalysisResponse(
+            id_content=c["ID_CONTENT"],
+            angle_title=c["ANGLE_TITLE"],
+            angle_signal=c["ANGLE_SIGNAL"],
+            excerpt=c.get("EXCERPT"),
+            concept=c.get("CONCEPT"),
+            content_body=c.get("CONTENT_BODY"),
+            chiffres=c.get("CHIFFRES") or [],
+            citations=c.get("CITATIONS") or [],
+            acteurs_cites=c.get("ACTEURS_CITES") or [],
+            published_at=c["PUBLISHED_AT"],
+            event=event,
+        )
 
     except HTTPException:
         raise
     except Exception:
         logger.exception("Erreur read_content")
-        raise HTTPException(500, "Erreur lecture contenu")
+        raise HTTPException(500, "Erreur lecture analyse")
 
 
 # ============================================================
-# PUBLIC — READ EVENT (BY SLUG)
+# PAGE EVENT — META
 # ============================================================
 @router.get("/event/{slug}")
 def read_event(slug: str):
-    """
-    Lecture d'un Event par slug
-    """
     event = get_event_by_slug(slug)
     if not event:
         raise HTTPException(404, "Événement introuvable")
@@ -242,16 +176,25 @@ def read_event(slug: str):
 
 
 # ============================================================
-# PUBLIC — READ EVENT CONTENTS
+# PAGE EVENT — ANALYSES (PROJECTION LEGERE)
 # ============================================================
 @router.get("/event/{slug}/contents")
 def read_event_contents(slug: str):
-    """
-    Analyses liées à un Event
-    """
     event = get_event_by_slug(slug)
     if not event:
         raise HTTPException(404, "Événement introuvable")
 
     contents = list_event_contents(event["id_event"])
-    return {"items": contents}
+
+    return {
+        "items": [
+            {
+                "id": c["id"],
+                "title": c["title"],
+                "excerpt": c.get("excerpt"),
+                "published_at": c["published_at"],
+                "topics": c.get("topics", []),
+            }
+            for c in contents
+        ]
+    }
