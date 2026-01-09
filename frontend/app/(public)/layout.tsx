@@ -12,12 +12,11 @@ async function getEventsNav() {
     if (!res.ok) return [];
     const json = await res.json();
 
-    // On transforme en items de menu
     return (json.events || []).map((e: any) => ({
       slug: e.event.home_label
         .toLowerCase()
         .replace(/\s+/g, "-"),
-      label: e.event.home_label,
+      label: e.event.label, // ⬅️ on utilise LABEL, pas HOME_LABEL
     }));
   } catch {
     return [];
