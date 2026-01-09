@@ -18,6 +18,10 @@ type AnalysisLine = {
   id: string;
   title: string;
   published_at: string;
+
+  // 🔹 enrichissements légers (optionnels)
+  topics?: string[];
+  key_signal?: string;
 };
 
 type EventBlock = {
@@ -143,14 +147,42 @@ export default function HomeClient({
                               hover:border-gray-400 transition-colors
                             "
                           >
+                            {/* TITRE */}
                             <p className="text-sm font-medium text-gray-900 hover:underline">
                               {a.title}
                             </p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              {new Date(
-                                a.published_at
-                              ).toLocaleDateString("fr-FR")}
-                            </p>
+
+                            {/* META LIGNE */}
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+
+                              {/* TOPICS (1–2 max) */}
+                              {a.topics &&
+                                a.topics.slice(0, 2).map((t) => (
+                                  <span
+                                    key={t}
+                                    className="
+                                      text-xs px-2 py-0.5 rounded
+                                      bg-ratecard-light text-gray-600
+                                    "
+                                  >
+                                    {t}
+                                  </span>
+                                ))}
+
+                              {/* SIGNAL CLÉ */}
+                              {a.key_signal && (
+                                <span className="text-xs text-gray-500">
+                                  • {a.key_signal}
+                                </span>
+                              )}
+
+                              {/* DATE */}
+                              <span className="text-xs text-gray-400">
+                                {new Date(
+                                  a.published_at
+                                ).toLocaleDateString("fr-FR")}
+                              </span>
+                            </div>
                           </Link>
                         </li>
                       ))}
