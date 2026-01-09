@@ -11,6 +11,8 @@ type AnalysisItem = {
   title: string;
   excerpt?: string | null;
   published_at: string;
+  topics?: string[];
+  key_metrics?: string[];
   event?: {
     id: string;
     label: string;
@@ -51,7 +53,7 @@ export default async function AnalysisPage() {
   const analyses = await getAnalyses();
 
   return (
-    <div className="space-y-20">
+    <div className="space-y-14 md:space-y-16">
 
       {/* =====================================================
           HEADER
@@ -66,25 +68,25 @@ export default async function AnalysisPage() {
       </section>
 
       {/* =====================================================
-          LISTE DES ANALYSES
+          LISTE EXHAUSTIVE
       ===================================================== */}
       {analyses.length === 0 ? (
         <p className="text-sm text-gray-400">
           Aucune analyse publiée pour le moment.
         </p>
       ) : (
-        <ul className="space-y-8">
+        <ul className="space-y-6">
           {analyses.map((a) => (
             <li
               key={a.id}
               className="
                 rounded-2xl border border-ratecard-border
-                bg-white p-6
+                bg-white p-4 md:p-5
               "
             >
               <Link
                 href={`/analysis/${a.id}`}
-                className="block space-y-3"
+                className="block space-y-2"
               >
                 {/* EVENT CONTEXT */}
                 {a.event && (
@@ -105,9 +107,36 @@ export default async function AnalysisPage() {
                 )}
 
                 {/* TITLE */}
-                <h2 className="text-lg font-semibold text-gray-900 hover:underline">
+                <h2 className="font-semibold text-gray-900 hover:underline">
                   {a.title}
                 </h2>
+
+                {/* META */}
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  {a.topics?.map((t) => (
+                    <span
+                      key={t}
+                      className="px-2 py-0.5 rounded bg-ratecard-light text-gray-600"
+                    >
+                      {t}
+                    </span>
+                  ))}
+
+                  {a.key_metrics?.map((m, i) => (
+                    <span
+                      key={i}
+                      className="text-gray-500"
+                    >
+                      • {m}
+                    </span>
+                  ))}
+
+                  <span className="text-gray-400">
+                    {new Date(
+                      a.published_at
+                    ).toLocaleDateString("fr-FR")}
+                  </span>
+                </div>
 
                 {/* EXCERPT */}
                 {a.excerpt && (
@@ -115,13 +144,6 @@ export default async function AnalysisPage() {
                     {a.excerpt}
                   </p>
                 )}
-
-                {/* META */}
-                <p className="text-xs text-gray-400">
-                  {new Date(
-                    a.published_at
-                  ).toLocaleDateString("fr-FR")}
-                </p>
               </Link>
             </li>
           ))}
