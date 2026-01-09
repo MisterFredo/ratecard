@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
-import { useDrawer } from "@/contexts/DrawerContext";
+import Link from "next/link";
 
 /* =========================================================
    TYPES
@@ -69,8 +69,6 @@ export default async function EventPage({
 }: {
   params: { slug: string };
 }) {
-  const { openDrawer } = useDrawer();
-
   const event = await getEvent(params.slug);
   if (!event) notFound();
 
@@ -80,7 +78,7 @@ export default async function EventPage({
     <div className="space-y-16">
 
       {/* =====================================================
-          HEADER EVENT (RUBRIQUE)
+          HEADER EVENT
       ===================================================== */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
         <img
@@ -104,7 +102,6 @@ export default async function EventPage({
             </p>
           )}
 
-          {/* CTA EVENT */}
           <a
             href={`/events/${params.slug}/register`}
             className="inline-block text-ratecard-green font-medium hover:underline"
@@ -129,19 +126,18 @@ export default async function EventPage({
         ) : (
           <ul className="space-y-6">
             {contents.map((c) => (
-              <li
-                key={c.id}
-                className="cursor-pointer"
-                onClick={() =>
-                  openDrawer("content", c.id)
-                }
-              >
-                <h3 className="font-medium hover:underline">
-                  {c.title}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {c.excerpt}
-                </p>
+              <li key={c.id}>
+                <Link
+                  href={`/analysis/${c.id}`}
+                  className="block"
+                >
+                  <h3 className="font-medium hover:underline">
+                    {c.title}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {c.excerpt}
+                  </p>
+                </Link>
               </li>
             ))}
           </ul>
@@ -151,3 +147,4 @@ export default async function EventPage({
     </div>
   );
 }
+
