@@ -164,32 +164,43 @@ def read_content(id_content: str):
 
 
 # ============================================================
-# PUBLIC — LIST ANALYSES (PAGE /analysis)
+# PUBLIC — LIST ANALYSES (EXHAUSTIVE, PAGE /analysis)
 # ============================================================
 @router.get("/analysis/list")
 def list_public_analyses():
     try:
         contents = list_contents()
 
-        items = [
-            {
-                "id": c["ID_CONTENT"],
-                "title": c["ANGLE_TITLE"],
-                "excerpt": c.get("EXCERPT"),
-                "published_at": c["PUBLISHED_AT"],
-                "event": (
-                    {
-                        "id": c.get("EVENT_ID"),
-                        "label": c.get("EVENT_LABEL"),
-                        "event_color": c.get("EVENT_COLOR"),
-                    }
-                    if c.get("EVENT_ID")
-                    else None
-                ),
-            }
-            for c in contents
-            if c["STATUS"] == "PUBLISHED" and c.get("IS_ACTIVE")
-        ]
+        items = []
+
+        for c in contents:
+            if c["STATUS"] != "PUBLISHED" or not c.get("IS_ACTIVE"):
+                continue
+
+            items.append(
+                {
+                    "id": c["ID_CONTENT"],
+                    "title": c["ANGLE_TITLE"],
+                    "excerpt": c.get("EXCERPT"),
+                    "published_at": c["PUBLISHED_AT"],
+                    "topics": (c.get("TOPICS") or [])[:2],
+                    "key_metrics": (c.get("CHIFFRES") or [])[:2],
+                    "event": (
+                        {
+                            "id": c.get("EVENT_ID"),
+                            "label": c.get("EVENT_LABEL"),
+                            "event_color": c.get("EVENT_COLOR"),
+                        }
+                        if c.get("EVENT_ID")
+                        else None
+                    ),
+                }
+            )
+
+        # tri décroissant par date
+        items.sort(
+            key=lambda x: x["published_at"], reverse=True
+        )
 
         return {"items": items}
 
