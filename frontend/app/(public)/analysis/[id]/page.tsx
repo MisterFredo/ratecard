@@ -7,7 +7,7 @@ export default function AnalysisPage({
 }) {
   return (
     <div className="max-w-4xl mx-auto py-12">
-      <AnalysisDrawer id={params.id} onClose={() => {}} />
+      <AnalysisDrawer id={params.id} />
     </div>
   );
 }
