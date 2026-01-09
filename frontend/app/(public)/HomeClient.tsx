@@ -42,12 +42,12 @@ export default function HomeClient({
   events: EventBlock[];
 }) {
   return (
-    <div className="space-y-24">
+    <div className="space-y-14 md:space-y-16">
 
       {/* =====================================================
           NEWS — ANNONCES PARTENAIRES
       ===================================================== */}
-      <section className="space-y-8">
+      <section className="space-y-4">
         <header className="space-y-1">
           <h2 className="text-lg font-semibold text-gray-900">
             Dernières annonces du marché
@@ -62,7 +62,7 @@ export default function HomeClient({
             Aucune news publiée pour le moment.
           </p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {news.map((n) => (
               <NewsCard
                 key={n.id}
@@ -79,7 +79,7 @@ export default function HomeClient({
       {/* =====================================================
           ANALYSES — ESPACES PAR ÉVÉNEMENT
       ===================================================== */}
-      <section className="space-y-12">
+      <section className="space-y-6">
         <header className="space-y-1">
           <h2 className="text-lg font-semibold text-gray-900">
             Lectures Ratecard par événement
@@ -94,27 +94,27 @@ export default function HomeClient({
             Aucun événement actif pour le moment.
           </p>
         ) : (
-          <div className="space-y-10">
+          <div className="space-y-6">
             {events.map((block) => (
               <div
                 key={block.event.id}
                 className="
                   relative rounded-2xl border border-ratecard-border
-                  bg-white p-6
+                  bg-white p-4 md:p-5
                 "
               >
                 {/* BARRE ÉVÉNEMENT */}
                 <span
-                  className="absolute left-0 top-6 bottom-6 w-1 rounded-full"
+                  className="absolute left-0 top-5 bottom-5 w-1 rounded-full"
                   style={{
                     backgroundColor:
                       block.event.event_color || "#9CA3AF",
                   }}
                 />
 
-                <div className="pl-4">
+                <div className="pl-4 max-w-3xl">
                   {/* HEADER EVENT */}
-                  <div className="flex items-center gap-3 mb-6">
+                  <div className="flex items-center gap-3 mb-4">
                     <span
                       className="inline-block w-2.5 h-2.5 rounded-full"
                       style={{
@@ -133,7 +133,7 @@ export default function HomeClient({
                       Aucune analyse publiée pour le moment.
                     </p>
                   ) : (
-                    <ul className="space-y-4">
+                    <ul className="space-y-3">
                       {block.analyses.map((a) => (
                         <li key={a.id}>
                           <Link
@@ -146,7 +146,7 @@ export default function HomeClient({
                             <p className="text-sm font-medium text-gray-900 hover:underline">
                               {a.title}
                             </p>
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className="text-xs text-gray-400 mt-0.5">
                               {new Date(
                                 a.published_at
                               ).toLocaleDateString("fr-FR")}
