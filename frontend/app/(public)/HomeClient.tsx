@@ -42,18 +42,23 @@ export default function HomeClient({
   events: EventBlock[];
 }) {
   return (
-    <div className="space-y-20">
+    <div className="space-y-24">
 
       {/* =====================================================
-          NEWS — CARTES
+          NEWS — ANNONCES PARTENAIRES
       ===================================================== */}
-      <section className="space-y-6">
-        <h2 className="text-lg font-semibold">
-          Dernières annonces du marché
-        </h2>
+      <section className="space-y-8">
+        <header className="space-y-1">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Dernières annonces du marché
+          </h2>
+          <p className="text-sm text-gray-500">
+            Annonces et prises de parole des partenaires de l’écosystème.
+          </p>
+        </header>
 
         {news.length === 0 ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-400">
             Aucune news publiée pour le moment.
           </p>
         ) : (
@@ -72,55 +77,66 @@ export default function HomeClient({
       </section>
 
       {/* =====================================================
-          ANALYSES — WORKFLOW PAR ÉVÉNEMENT
+          ANALYSES — ESPACES PAR ÉVÉNEMENT
       ===================================================== */}
-      <section className="space-y-10">
-        <h2 className="text-lg font-semibold">
-          Lectures Ratecard par événement
-        </h2>
+      <section className="space-y-12">
+        <header className="space-y-1">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Lectures Ratecard par événement
+          </h2>
+          <p className="text-sm text-gray-500">
+            Analyses produites à partir des événements Ratecard.
+          </p>
+        </header>
 
         {events.length === 0 ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-400">
             Aucun événement actif pour le moment.
           </p>
         ) : (
-          <div className="space-y-12">
+          <div className="space-y-10">
             {events.map((block) => (
               <div
                 key={block.event.id}
-                className="space-y-4"
+                className="
+                  rounded-2xl border border-ratecard-border
+                  bg-white p-6
+                "
               >
                 {/* HEADER EVENT */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 mb-6">
                   <span
-                    className="inline-block w-3 h-3 rounded-full"
+                    className="inline-block w-1.5 h-8 rounded-full"
                     style={{
                       backgroundColor:
-                        block.event.event_color || "#9ca3af",
+                        block.event.event_color || "#9CA3AF",
                     }}
                   />
-                  <h3 className="font-medium">
+                  <h3 className="font-semibold text-gray-900">
                     {block.event.home_label}
                   </h3>
                 </div>
 
                 {/* ANALYSES */}
                 {block.analyses.length === 0 ? (
-                  <p className="text-sm text-gray-400 pl-6">
+                  <p className="text-sm text-gray-400 pl-4">
                     Aucune analyse publiée pour le moment.
                   </p>
                 ) : (
-                  <ul className="space-y-3">
+                  <ul className="space-y-4">
                     {block.analyses.map((a) => (
                       <li key={a.id}>
                         <Link
                           href={`/analysis/${a.id}`}
-                          className="block pl-6 border-l border-gray-200 hover:border-gray-400 transition-colors"
+                          className="
+                            block pl-4 border-l border-ratecard-border
+                            hover:border-gray-400 transition-colors
+                          "
                         >
-                          <p className="text-sm font-medium hover:underline">
+                          <p className="text-sm font-medium text-gray-900 hover:underline">
                             {a.title}
                           </p>
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-gray-400 mt-1">
                             {new Date(
                               a.published_at
                             ).toLocaleDateString("fr-FR")}
