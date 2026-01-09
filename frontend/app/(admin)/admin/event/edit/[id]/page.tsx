@@ -25,6 +25,9 @@ export default function EditEvent({ params }: { params: { id: string } }) {
   const [isActiveHome, setIsActiveHome] = useState(false);
   const [isActiveNav, setIsActiveNav] = useState(false);
 
+  // 🎨 Event color
+  const [eventColor, setEventColor] = useState<string>("");
+
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
@@ -52,6 +55,8 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         );
         setIsActiveHome(!!e.IS_ACTIVE_HOME);
         setIsActiveNav(!!e.IS_ACTIVE_NAV);
+
+        setEventColor(e.EVENT_COLOR || "");
 
         setSquareUrl(
           e.MEDIA_SQUARE_ID
@@ -92,6 +97,8 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         home_order: homeOrder,
         is_active_home: isActiveHome,
         is_active_nav: isActiveNav,
+
+        event_color: eventColor || null,
       });
 
       alert("Événement modifié");
@@ -198,6 +205,18 @@ export default function EditEvent({ params }: { params: { id: string } }) {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Couleur de l’événement
+            </label>
+            <input
+              type="color"
+              className="border p-1 w-16 h-10 rounded"
+              value={eventColor}
+              onChange={(e) => setEventColor(e.target.value)}
+            />
+          </div>
+
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
@@ -247,4 +266,5 @@ export default function EditEvent({ params }: { params: { id: string } }) {
     </div>
   );
 }
+
 
