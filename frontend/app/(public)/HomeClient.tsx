@@ -99,53 +99,64 @@ export default function HomeClient({
               <div
                 key={block.event.id}
                 className="
-                  rounded-2xl border border-ratecard-border
+                  relative rounded-2xl border border-ratecard-border
                   bg-white p-6
                 "
               >
-                {/* HEADER EVENT */}
-                <div className="flex items-center gap-3 mb-6">
-                  <span
-                    className="inline-block w-1.5 h-8 rounded-full"
-                    style={{
-                      backgroundColor:
-                        block.event.event_color || "#9CA3AF",
-                    }}
-                  />
-                  <h3 className="font-semibold text-gray-900">
-                    {block.event.home_label}
-                  </h3>
-                </div>
+                {/* BARRE ÉVÉNEMENT */}
+                <span
+                  className="absolute left-0 top-6 bottom-6 w-1 rounded-full"
+                  style={{
+                    backgroundColor:
+                      block.event.event_color || "#9CA3AF",
+                  }}
+                />
 
-                {/* ANALYSES */}
-                {block.analyses.length === 0 ? (
-                  <p className="text-sm text-gray-400 pl-4">
-                    Aucune analyse publiée pour le moment.
-                  </p>
-                ) : (
-                  <ul className="space-y-4">
-                    {block.analyses.map((a) => (
-                      <li key={a.id}>
-                        <Link
-                          href={`/analysis/${a.id}`}
-                          className="
-                            block pl-4 border-l border-ratecard-border
-                            hover:border-gray-400 transition-colors
-                          "
-                        >
-                          <p className="text-sm font-medium text-gray-900 hover:underline">
-                            {a.title}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {new Date(
-                              a.published_at
-                            ).toLocaleDateString("fr-FR")}
-                          </p>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <div className="pl-4">
+                  {/* HEADER EVENT */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <span
+                      className="inline-block w-2.5 h-2.5 rounded-full"
+                      style={{
+                        backgroundColor:
+                          block.event.event_color || "#9CA3AF",
+                      }}
+                    />
+                    <h3 className="font-semibold text-gray-900">
+                      {block.event.home_label}
+                    </h3>
+                  </div>
+
+                  {/* ANALYSES */}
+                  {block.analyses.length === 0 ? (
+                    <p className="text-sm text-gray-400 pl-1">
+                      Aucune analyse publiée pour le moment.
+                    </p>
+                  ) : (
+                    <ul className="space-y-4">
+                      {block.analyses.map((a) => (
+                        <li key={a.id}>
+                          <Link
+                            href={`/analysis/${a.id}`}
+                            className="
+                              block pl-4 border-l border-ratecard-border
+                              hover:border-gray-400 transition-colors
+                            "
+                          >
+                            <p className="text-sm font-medium text-gray-900 hover:underline">
+                              {a.title}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {new Date(
+                                a.published_at
+                              ).toLocaleDateString("fr-FR")}
+                            </p>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             ))}
           </div>
