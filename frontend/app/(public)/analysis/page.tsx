@@ -60,12 +60,12 @@ export default function AnalysisPage() {
   // ---------------------------------------------------------
   // LOAD DATA
   // ---------------------------------------------------------
-  useState(() => {
+  useEffect(() => {
     getAnalyses().then((items) => {
       setAnalyses(items);
       setLoading(false);
     });
-  });
+  }, []);
 
   // ---------------------------------------------------------
   // DERIVED DATA
