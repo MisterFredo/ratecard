@@ -1,6 +1,7 @@
 "use client";
 
 import NewsCard from "@/components/news/NewsCard";
+import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 import Link from "next/link";
 
 /* =========================================================
