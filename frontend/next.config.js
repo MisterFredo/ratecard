@@ -2,14 +2,13 @@
 
 const nextConfig = {
   reactStrictMode: true,
-  output: "standalone",
 
   async rewrites() {
     return [
       {
         source: "/media/:folder/:file",
         destination: "/api/media/raw/:folder/:file",
-      }
+      },
     ];
   },
 
@@ -18,9 +17,10 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "**",
-      }
-    ]
+      },
+    ],
   },
 };
 
 module.exports = nextConfig;
+
