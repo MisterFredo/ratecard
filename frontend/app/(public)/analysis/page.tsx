@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -31,21 +31,17 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 /* =========================================================
-   LOADER
+   FETCH
 ========================================================= */
 
-async function getAnalyses(): Promise<AnalysisItem[]> {
-  try {
-    const res = await fetch(
-      `${API_BASE}/public/analysis/list`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json.items || [];
-  } catch {
-    return [];
-  }
+async function fetchAnalyses(): Promise<AnalysisItem[]> {
+  const res = await fetch(
+    `${API_BASE}/public/analysis/list`,
+    { cache: "no-store" }
+  );
+  if (!res.ok) return [];
+  const json = await res.json();
+  return json.items || [];
 }
 
 /* =========================================================
@@ -58,17 +54,17 @@ export default function AnalysisPage() {
   const [activeEvent, setActiveEvent] = useState<string | null>(null);
 
   // ---------------------------------------------------------
-  // LOAD DATA
+  // LOAD (ONCE)
   // ---------------------------------------------------------
   useEffect(() => {
-    getAnalyses().then((items) => {
+    fetchAnalyses().then((items) => {
       setAnalyses(items);
       setLoading(false);
     });
   }, []);
 
   // ---------------------------------------------------------
-  // DERIVED DATA
+  // EVENTS (DERIVED)
   // ---------------------------------------------------------
   const events = useMemo(() => {
     const map = new Map<string, NonNullable<AnalysisItem["event"]>>();
@@ -80,6 +76,9 @@ export default function AnalysisPage() {
     return Array.from(map.values());
   }, [analyses]);
 
+  // ---------------------------------------------------------
+  // FILTERED LIST (DERIVED)
+  // ---------------------------------------------------------
   const filteredAnalyses = useMemo(() => {
     if (!activeEvent) return analyses;
     return analyses.filter(
@@ -106,7 +105,7 @@ export default function AnalysisPage() {
       </section>
 
       {/* =====================================================
-          EVENT FILTER
+          FILTER
       ===================================================== */}
       {!loading && events.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -146,7 +145,7 @@ export default function AnalysisPage() {
       )}
 
       {/* =====================================================
-          LIST
+          CONTENT
       ===================================================== */}
       {loading ? (
         <p className="text-sm text-gray-400">
@@ -154,7 +153,7 @@ export default function AnalysisPage() {
         </p>
       ) : filteredAnalyses.length === 0 ? (
         <p className="text-sm text-gray-400">
-          Aucune analyse pour cet événement.
+          Aucune analyse à afficher.
         </p>
       ) : (
         <ul className="space-y-6">
