@@ -36,6 +36,7 @@ export default function PublicShell({
 
   return (
     <div className="min-h-screen flex">
+      {/* ===== SIDEBAR ===== */}
       <aside className="w-64 bg-ratecard-blue text-white p-6 flex flex-col">
         <div className="mb-10">
           <h1 className="text-xl font-semibold">Ratecard</h1>
@@ -119,8 +120,11 @@ export default function PublicShell({
         </div>
       </aside>
 
-      <main className="flex-1 p-10 bg-gray-50">
-        {children}
+      {/* ===== MAIN CONTENT (WIDTH CONSTRAINED) ===== */}
+      <main className="flex-1 bg-gray-50">
+        <div className="p-6 md:p-10 max-w-6xl mx-auto">
+          {children}
+        </div>
       </main>
     </div>
   );
