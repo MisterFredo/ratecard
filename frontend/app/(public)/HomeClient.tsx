@@ -62,13 +62,13 @@ export default function HomeClient({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {news.map((n) => (
-            <NewsCard
-              key={n.id}
+            <PartnerSignalCard
               id={n.id}
               title={n.title}
+              excerpt={n.excerpt}
               visualRectUrl={n.visual_rect_url}
               publishedAt={n.published_at}
-            />
+            /
           ))}
         </div>
       </section>
