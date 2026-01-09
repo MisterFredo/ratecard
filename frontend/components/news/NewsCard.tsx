@@ -18,21 +18,33 @@ export default function NewsCard({
   return (
     <Link
       href={`/news/${id}`}
-      className="group cursor-pointer block"
+      className="
+        group block rounded-2xl border border-ratecard-border
+        bg-white p-4 shadow-card transition
+        hover:shadow-cardHover
+      "
     >
-      <div className="overflow-hidden rounded">
-        <img
-          src={visualRectUrl}
-          alt={title}
-          className="w-full h-36 object-cover transition-transform duration-200 group-hover:scale-105"
-        />
+      {/* VISUEL — REPÈRE, PAS HERO */}
+      <div className="mb-3">
+        <div className="h-24 rounded-xl bg-ratecard-light flex items-center justify-center overflow-hidden">
+          <img
+            src={visualRectUrl}
+            alt={title}
+            className="max-h-full max-w-full object-contain"
+          />
+        </div>
       </div>
 
-      <h3 className="mt-2 text-sm font-medium leading-snug group-hover:underline">
+      {/* TITRE — ÉLÉMENT PRINCIPAL */}
+      <h3 className="
+        text-sm font-semibold leading-snug text-gray-900
+        group-hover:underline
+      ">
         {title}
       </h3>
 
-      <p className="text-xs text-gray-400 mt-1">
+      {/* META */}
+      <p className="mt-2 text-xs text-gray-400">
         {new Date(publishedAt).toLocaleDateString("fr-FR")}
       </p>
     </Link>
