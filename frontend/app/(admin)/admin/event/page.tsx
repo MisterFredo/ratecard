@@ -15,6 +15,8 @@ type EventRow = {
   IS_ACTIVE_HOME?: boolean | null;
   IS_ACTIVE_NAV?: boolean | null;
 
+  EVENT_COLOR?: string | null;
+
   MEDIA_SQUARE_ID?: string | null;
   MEDIA_RECTANGLE_ID?: string | null;
 };
@@ -66,6 +68,7 @@ export default function EventList() {
               <th className="p-2">Home</th>
               <th className="p-2">Nav</th>
               <th className="p-2">Ordre</th>
+              <th className="p-2">Couleur</th>
               <th className="p-2">Carré</th>
               <th className="p-2">Rectangle</th>
               <th className="p-2 text-right">Actions</th>
@@ -111,6 +114,20 @@ export default function EventList() {
                     {e.HOME_ORDER ?? "—"}
                   </td>
 
+                  {/* COLOR */}
+                  <td className="p-2">
+                    {e.EVENT_COLOR ? (
+                      <span
+                        className="inline-block w-4 h-4 rounded"
+                        style={{
+                          backgroundColor: e.EVENT_COLOR,
+                        }}
+                      />
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+
                   {/* SQUARE */}
                   <td className="p-2">
                     {squareUrl ? (
@@ -153,4 +170,3 @@ export default function EventList() {
     </div>
   );
 }
-
