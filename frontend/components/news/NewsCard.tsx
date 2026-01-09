@@ -1,8 +1,8 @@
 "use client";
 
-import { useDrawer } from "@/contexts/DrawerContext";
+import Link from "next/link";
 
-type NewsCardProps = {
+type Props = {
   id: string;
   title: string;
   visualRectUrl: string;
@@ -14,13 +14,11 @@ export default function NewsCard({
   title,
   visualRectUrl,
   publishedAt,
-}: NewsCardProps) {
-  const { openDrawer } = useDrawer();
-
+}: Props) {
   return (
-    <article
-      className="cursor-pointer group"
-      onClick={() => openDrawer("news", id)}
+    <Link
+      href={`/news/${id}`}
+      className="group cursor-pointer block"
     >
       <div className="overflow-hidden rounded">
         <img
@@ -37,6 +35,6 @@ export default function NewsCard({
       <p className="text-xs text-gray-400 mt-1">
         {new Date(publishedAt).toLocaleDateString("fr-FR")}
       </p>
-    </article>
+    </Link>
   );
 }
