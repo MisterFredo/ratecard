@@ -33,15 +33,10 @@ export default function AdminShell({
 
   return (
     <div className="min-h-screen flex">
-      {/* SIDEBAR */}
-      <aside className="w-64 bg-ratecard-blue text-white p-6 space-y-10 shadow-xl flex flex-col">
+      <aside className="w-64 bg-ratecard-blue text-white p-6 space-y-10 flex flex-col">
         <div>
-          <h1 className="text-xl font-semibold tracking-wide">
-            Ratecard Admin
-          </h1>
-          <p className="text-xs opacity-80 mt-1">
-            Gestion éditoriale
-          </p>
+          <h1 className="text-xl font-semibold">Ratecard Admin</h1>
+          <p className="text-xs opacity-80 mt-1">Gestion éditoriale</p>
         </div>
 
         <nav className="space-y-2 text-sm flex-1">
@@ -53,14 +48,11 @@ export default function AdminShell({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`
-                  flex items-center gap-2 px-3 py-2 rounded transition
-                  ${
-                    isActive
-                      ? "bg-white text-ratecard-blue font-semibold shadow-sm"
-                      : "hover:bg-ratecard-green/20"
-                  }
-                `}
+                className={`flex items-center gap-2 px-3 py-2 rounded ${
+                  isActive
+                    ? "bg-white text-ratecard-blue font-semibold"
+                    : "hover:bg-ratecard-green/20"
+                }`}
               >
                 <Icon size={18} />
                 <span>{item.label}</span>
@@ -74,8 +66,7 @@ export default function AdminShell({
         </div>
       </aside>
 
-      {/* MAIN */}
-      <main className="flex-1 p-10 bg-gray-50 min-h-screen">
+      <main className="flex-1 p-10 bg-gray-50">
         {children}
       </main>
     </div>
