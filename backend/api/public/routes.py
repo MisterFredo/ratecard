@@ -14,11 +14,7 @@ from api.public.models import (
 
 from core.news.service import list_news
 from core.content.service import list_contents
-from core.event.service import (
-    list_home_events,
-    list_event_contents,
-    get_event_by_slug,
-)
+from core.event.service import list_home_events, list_event_contents
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -31,19 +27,18 @@ router = APIRouter()
 def get_home_news():
     try:
         news = list_news()
-        items = []
 
-        for n in news:
-            if n["STATUS"] == "PUBLISHED" and n.get("VISUAL_RECT_URL"):
-                items.append(
-                    HomeNewsItem(
-                        id=n["ID_NEWS"],
-                        title=n["TITLE"],
-                        excerpt=n.get("EXCERPT"),
-                        published_at=n["PUBLISHED_AT"],
-                        visual_rect_url=n["VISUAL_RECT_URL"],
-                    )
-                )
+        items = [
+            HomeNewsItem(
+                id=n["ID_NEWS"],
+                title=n["TITLE"],
+                excerpt=n.get("EXCERPT"),
+                published_at=n["PUBLISHED_AT"],
+                visual_rect_url=n["VISUAL_RECT_URL"],
+            )
+            for n in news
+            if n["STATUS"] == "PUBLISHED" and n.get("VISUAL_RECT_URL")
+        ]
 
         return HomeNewsResponse(items=items[:4])
 
@@ -79,7 +74,7 @@ def get_home_events():
                         id=e["id"],
                         label=e["label"],
                         home_label=e["home_label"],
-                        color=e.get("color"),
+                        event_color=e.get("event_color"),
                     ),
                     analyses=analyses,
                 )
@@ -136,12 +131,14 @@ def read_content(id_content: str):
         if not c or c["STATUS"] != "PUBLISHED":
             raise HTTPException(404, "Analyse introuvable")
 
-        event = None
-        if c.get("EVENT_ID"):
-            event = {
-                "id": c["EVENT_ID"],
+        event = (
+            {
+                "id": c.get("EVENT_ID"),
                 "label": c.get("EVENT_LABEL"),
             }
+            if c.get("EVENT_ID")
+            else None
+        )
 
         return DrawerAnalysisResponse(
             id_content=c["ID_CONTENT"],
@@ -165,77 +162,37 @@ def read_content(id_content: str):
 
 
 # ============================================================
-# PAGE EVENT — META
-# ============================================================
-@router.get("/event/{slug}")
-def read_event(slug: str):
-    event = get_event_by_slug(slug)
-    if not event:
-        raise HTTPException(404, "Événement introuvable")
-    return event
-
-
-# ============================================================
-# PAGE EVENT — ANALYSES (PROJECTION LEGERE)
-# ============================================================
-@router.get("/event/{slug}/contents")
-def read_event_contents(slug: str):
-    event = get_event_by_slug(slug)
-    if not event:
-        raise HTTPException(404, "Événement introuvable")
-
-    contents = list_event_contents(event["id_event"])
-
-    return {
-        "items": [
-            {
-                "id": c["id"],
-                "title": c["title"],
-                "excerpt": c.get("excerpt"),
-                "published_at": c["published_at"],
-                "topics": c.get("topics", []),
-            }
-            for c in contents
-        ]
-    }
-
-# ============================================================
 # PUBLIC — LIST ANALYSES (PAGE /analysis)
 # ============================================================
 @router.get("/analysis/list")
 def list_public_analyses():
-    """
-    Liste complète des analyses publiées (projection légère).
-    """
     try:
         contents = list_contents()
 
-        items = []
-        for c in contents:
-            if c["STATUS"] != "PUBLISHED" or not c.get("IS_ACTIVE"):
-                continue
-
-            event = None
-            if c.get("EVENT_ID"):
-                event = {
-                    "id": c.get("EVENT_ID"),
-                    "label": c.get("EVENT_LABEL"),
-                    "event_color": c.get("EVENT_COLOR"),
-                }
-
-            items.append(
-                {
-                    "id": c["ID_CONTENT"],
-                    "title": c["ANGLE_TITLE"],
-                    "excerpt": c.get("EXCERPT"),
-                    "published_at": c["PUBLISHED_AT"],
-                    "event": event,
-                }
-            )
+        items = [
+            {
+                "id": c["ID_CONTENT"],
+                "title": c["ANGLE_TITLE"],
+                "excerpt": c.get("EXCERPT"),
+                "published_at": c["PUBLISHED_AT"],
+                "event": (
+                    {
+                        "id": c.get("EVENT_ID"),
+                        "label": c.get("EVENT_LABEL"),
+                        "event_color": c.get("EVENT_COLOR"),
+                    }
+                    if c.get("EVENT_ID")
+                    else None
+                ),
+            }
+            for c in contents
+            if c["STATUS"] == "PUBLISHED" and c.get("IS_ACTIVE")
+        ]
 
         return {"items": items}
 
     except Exception:
         logger.exception("Erreur list_public_analyses")
         raise HTTPException(500, "Erreur récupération analyses")
+
 
