@@ -190,7 +190,7 @@ def list_home_events():
 
 
 # ============================================================
-# LIST EVENT CONTENTS — PUBLIC
+# LIST EVENT CONTENTS — PUBLIC (ENRICHED FOR HOME)
 # ============================================================
 def list_event_contents(event_id: str):
     rows = query_bq(
@@ -199,10 +199,26 @@ def list_event_contents(event_id: str):
           C.ID_CONTENT,
           C.ANGLE_TITLE,
           C.EXCERPT,
-          C.PUBLISHED_AT
+          C.PUBLISHED_AT,
+          C.CHIFFRES,
+
+          -- Topics (max 2 later in projection)
+          T.TOPICS
         FROM `{TABLE_CONTENT_EVENT}` CE
         JOIN `{TABLE_CONTENT}` C
           ON CE.ID_CONTENT = C.ID_CONTENT
+
+        LEFT JOIN (
+          SELECT
+            CT.ID_CONTENT,
+            ARRAY_AGG(T.LABEL) AS TOPICS
+          FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC` CT
+          JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC` T
+            ON CT.ID_TOPIC = T.ID_TOPIC
+          GROUP BY CT.ID_CONTENT
+        ) T
+          ON C.ID_CONTENT = T.ID_CONTENT
+
         WHERE
           CE.ID_EVENT = @id
           AND C.STATUS = 'PUBLISHED'
@@ -218,7 +234,10 @@ def list_event_contents(event_id: str):
             "title": r["ANGLE_TITLE"],
             "excerpt": r.get("EXCERPT"),
             "published_at": r["PUBLISHED_AT"],
+            "topics": (r.get("TOPICS") or [])[:2],
+            "chiffres": (r.get("CHIFFRES") or [])[:2],
         }
         for r in rows
     ]
+
 
