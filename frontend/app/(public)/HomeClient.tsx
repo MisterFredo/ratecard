@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useDrawer } from "@/contexts/DrawerContext";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 
@@ -24,14 +25,15 @@ type AnalysisItem = {
   key_metrics?: string[];
   event: {
     id: string;
-    home_label: string;
+    label: string;
+    home_label?: string;
     event_color?: string;
   };
 };
 
 type Props = {
   news: NewsItem[];
-  analyses: AnalysisItem[]; // 👈 analyses déjà plates côté API
+  analyses: AnalysisItem[];
 };
 
 /* =========================================================
@@ -41,9 +43,6 @@ type Props = {
 export default function HomeClient({ news, analyses }: Props) {
   const { openDrawer } = useDrawer();
 
-  // -------------------------------------------------------
-  // 12 DERNIÈRES ANALYSES (TRI CHRONO)
-  // -------------------------------------------------------
   const latestAnalyses = analyses
     .slice()
     .sort(
@@ -57,9 +56,21 @@ export default function HomeClient({ news, analyses }: Props) {
     <div className="space-y-16">
 
       {/* =====================================================
-          NEWS — PARTNER SIGNALS (INCHANGÉ)
+          NEWS
       ===================================================== */}
-      <section className="space-y-4">
+      <section className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+            Toutes les actualités de nos partenaires
+          </h2>
+          <Link
+            href="/news"
+            className="text-sm text-gray-500 hover:underline"
+          >
+            Voir toutes les news
+          </Link>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {news.map((n) => (
             <PartnerSignalCard
@@ -76,9 +87,21 @@ export default function HomeClient({ news, analyses }: Props) {
       </section>
 
       {/* =====================================================
-          ANALYSES — CARTES MÉLANGÉES
+          ANALYSES
       ===================================================== */}
       <section className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+            Toutes les analyses AdTech, Agentique, Retail Media & Internationales
+          </h2>
+          <Link
+            href="/analysis"
+            className="text-sm text-gray-500 hover:underline"
+          >
+            Voir toutes les analyses
+          </Link>
+        </div>
+
         <div
           className="
             grid grid-cols-1
@@ -108,7 +131,7 @@ export default function HomeClient({ news, analyses }: Props) {
                   }}
                 />
                 <span className="font-medium">
-                  {a.event.home_label}
+                  {a.event.home_label || a.event.label}
                 </span>
               </div>
 
@@ -150,4 +173,3 @@ export default function HomeClient({ news, analyses }: Props) {
     </div>
   );
 }
-
