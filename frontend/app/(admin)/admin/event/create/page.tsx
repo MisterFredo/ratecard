@@ -14,7 +14,7 @@ export default function CreateEvent() {
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
 
-  // 🔗 External URL
+  // 🔗 URL externe
   const [externalUrl, setExternalUrl] = useState("");
 
   // 🔑 Home / Navigation
@@ -23,7 +23,7 @@ export default function CreateEvent() {
   const [isActiveHome, setIsActiveHome] = useState(false);
   const [isActiveNav, setIsActiveNav] = useState(false);
 
-  // 🎨 Event color
+  // 🎨 Couleur événement
   const [eventColor, setEventColor] = useState<string>("");
 
   const [eventId, setEventId] = useState<string | null>(null);
@@ -55,6 +55,7 @@ export default function CreateEvent() {
 
       setEventId(res.id_event);
 
+      // Mise à jour des paramètres Home / Nav / Couleur
       await api.put(`/event/update/${res.id_event}`, {
         home_label: homeLabel || null,
         home_order: homeOrder,
@@ -65,7 +66,7 @@ export default function CreateEvent() {
       });
 
       alert(
-        "Événement créé. Vous pouvez maintenant ajouter les visuels."
+        "Événement créé. Vous pouvez maintenant ajouter les visuels et le contexte."
       );
     } catch (e) {
       console.error(e);
@@ -78,7 +79,7 @@ export default function CreateEvent() {
   // ---------------------------------------------------------
   return (
     <div className="space-y-8">
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">
           Ajouter un événement
         </h1>
@@ -130,7 +131,7 @@ export default function CreateEvent() {
         </div>
       </div>
 
-      {/* EXTERNAL URL */}
+      {/* URL EXTERNE */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium mb-1">
           URL externe de l’événement
@@ -242,5 +243,6 @@ export default function CreateEvent() {
     </div>
   );
 }
+
 
 
