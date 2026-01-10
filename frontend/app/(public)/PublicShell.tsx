@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutList,
   FileText,
   Newspaper,
   Linkedin,
@@ -14,8 +13,8 @@ import {
 } from "lucide-react";
 
 type EventNavItem = {
-  slug: string;
   label: string;
+  url: string;
 };
 
 export default function PublicShell({
@@ -29,26 +28,28 @@ export default function PublicShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   function active(path: string) {
-    if (path === "/") {
-      return pathname === "/";
-    }
     return pathname === path || pathname.startsWith(`${path}/`);
   }
 
   const mainNav = [
-    { href: "/", label: "Flux", icon: LayoutList },
     { href: "/analysis", label: "Analyses", icon: FileText },
     { href: "/news", label: "News", icon: Newspaper },
   ];
 
   const SidebarContent = (
     <>
-      <div className="mb-10">
-        <h1 className="text-xl font-semibold">Ratecard</h1>
-        <p className="text-xs opacity-80 mt-1">
-          Lectures du marché
-        </p>
-      </div>
+      {/* ===== LOGO ===== */}
+      <Link
+        href="/"
+        onClick={() => setMobileOpen(false)}
+        className="mb-10 block"
+      >
+        <img
+          src="/assets/brand/ratecard-logo.png"
+          alt="Ratecard"
+          className="max-w-[160px]"
+        />
+      </Link>
 
       {/* ===== NAV PRINCIPALE ===== */}
       <nav className="space-y-2 text-sm">
@@ -77,15 +78,18 @@ export default function PublicShell({
       {/* ===== SÉPARATEUR ===== */}
       <div className="my-6 border-t border-white/20" />
 
-      {/* ===== ÉVÉNEMENTS (LABELS UNIQUEMENT, PAS DE NAV) ===== */}
+      {/* ===== ÉVÉNEMENTS ===== */}
       <nav className="space-y-1 text-sm">
         {events.map((e) => (
-          <span
-            key={e.slug}
-            className="block px-3 py-2 text-white/70 cursor-default"
+          <a
+            key={e.label}
+            href={e.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block px-3 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded"
           >
             {e.label}
-          </span>
+          </a>
         ))}
       </nav>
 
@@ -93,14 +97,14 @@ export default function PublicShell({
       <div className="my-6 border-t border-white/20" />
 
       {/* ===== ACTIONS ===== */}
-      <div className="space-y-2 text-sm">
+      <div className="space-y-3 text-sm">
         <a
-          href="https://www.linkedin.com/company/ratecard"
+          href="https://www.linkedin.com/company/1907665/admin/dashboard/"
           target="_blank"
           className="flex items-center gap-2 opacity-90 hover:opacity-100"
         >
           <Linkedin size={16} />
-          LinkedIn
+          Rejoindre nos 6 000+ followers
         </a>
 
         <a
@@ -108,7 +112,7 @@ export default function PublicShell({
           className="flex items-center gap-2 opacity-90 hover:opacity-100"
         >
           <Mail size={16} />
-          Newsletter
+          Rejoindre nos 25 000+ abonnés
         </a>
       </div>
 
@@ -125,7 +129,7 @@ export default function PublicShell({
         {SidebarContent}
       </aside>
 
-      {/* ===== MOBILE SIDEBAR (DRAWER) ===== */}
+      {/* ===== MOBILE SIDEBAR ===== */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div
@@ -151,7 +155,9 @@ export default function PublicShell({
           <button onClick={() => setMobileOpen(true)}>
             <Menu />
           </button>
-          <span className="font-semibold">Ratecard</span>
+          <Link href="/" className="font-semibold">
+            Ratecard
+          </Link>
         </div>
 
         <div className="p-4 md:p-10 max-w-6xl mx-auto">
