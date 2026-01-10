@@ -91,7 +91,7 @@ def get_home_events():
 # ============================================================
 # NAV — EVENTS (SIDEBAR)
 # ============================================================
-@router.get("/public/nav/events")
+@router.get("/nav/events")
 def get_nav_events():
     """
     Événements pour la navigation (sidebar).
