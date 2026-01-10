@@ -99,7 +99,7 @@ export default function PublicShell({
       {/* ===== ACTIONS ===== */}
       <div className="space-y-3 text-sm">
         <a
-          href="https://www.linkedin.com/company/1907665/admin/dashboard/"
+          href="https://www.linkedin.com/company/ratecard-adnovia/"
           target="_blank"
           className="flex items-center gap-2 opacity-90 hover:opacity-100"
         >
