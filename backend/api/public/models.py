@@ -27,13 +27,12 @@ class HomeEventInfo(BaseModel):
     home_label: str
     event_color: Optional[str] = None
 
-
 class HomeAnalysisLine(BaseModel):
     id: str
     title: str
     published_at: datetime
-    topics: List[str] = []
-    key_metrics: List[str] = []
+    topics: list[str] | None = None
+    key_metrics: list[str] | None = None
 
 class HomeEventBlock(BaseModel):
     event: HomeEventInfo
