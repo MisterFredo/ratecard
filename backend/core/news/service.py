@@ -186,6 +186,7 @@ def list_news():
             N.ID_NEWS,
             N.TITLE,
             N.EXCERPT,
+            N.BODY,                 -- ⬅️ AJOUT CRITIQUE
             N.STATUS,
             N.PUBLISHED_AT,
             N.MEDIA_RECTANGLE_ID,
