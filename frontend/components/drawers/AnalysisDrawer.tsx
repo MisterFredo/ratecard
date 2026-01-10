@@ -22,9 +22,22 @@ type AnalysisData = {
   } | null;
 };
 
-export default function AnalysisDrawer({ id }: { id: string }) {
+type Props = {
+  id: string;
+  onClose?: () => void;
+};
+
+export default function AnalysisDrawer({ id, onClose }: Props) {
   const router = useRouter();
   const [data, setData] = useState<AnalysisData | null>(null);
+
+  function close() {
+    if (onClose) {
+      onClose();
+    } else {
+      router.back();
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -45,7 +58,7 @@ export default function AnalysisDrawer({ id }: { id: string }) {
       {/* OVERLAY */}
       <div
         className="absolute inset-0 bg-black/40"
-        onClick={() => router.back()}
+        onClick={close}
       />
 
       {/* DRAWER */}
@@ -68,10 +81,7 @@ export default function AnalysisDrawer({ id }: { id: string }) {
             </p>
           </div>
 
-          <button
-            onClick={() => router.back()}
-            aria-label="Fermer"
-          >
+          <button onClick={close} aria-label="Fermer">
             <X size={18} />
           </button>
         </div>
@@ -180,4 +190,3 @@ export default function AnalysisDrawer({ id }: { id: string }) {
     </div>
   );
 }
-
