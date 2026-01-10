@@ -104,7 +104,7 @@ export default function PublicShell({
           className="flex items-center gap-2 opacity-90 hover:opacity-100"
         >
           <Linkedin size={16} />
-          Rejoindre nos 6 000+ followers
+          6 000+ followers
         </a>
 
         <a
@@ -112,7 +112,7 @@ export default function PublicShell({
           className="flex items-center gap-2 opacity-90 hover:opacity-100"
         >
           <Mail size={16} />
-          Rejoindre nos 25 000+ abonnés
+          25 000+ abonnés
         </a>
       </div>
 
