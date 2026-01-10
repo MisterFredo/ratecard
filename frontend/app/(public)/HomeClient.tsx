@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useDrawer } from "@/contexts/DrawerContext";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 
 /* =========================================================
@@ -44,11 +44,13 @@ type Props = {
 ========================================================= */
 
 export default function HomeClient({ news, events }: Props) {
+  const { openDrawer } = useDrawer();
+
   return (
     <div className="space-y-14 md:space-y-16">
 
       {/* =====================================================
-          NEWS — PARTNER SIGNALS
+          NEWS — PARTNER SIGNALS (DRAWER)
       ===================================================== */}
       <section className="space-y-4">
         <header className="space-y-1">
@@ -74,6 +76,7 @@ export default function HomeClient({ news, events }: Props) {
                 excerpt={n.excerpt}
                 visualRectUrl={n.visual_rect_url}
                 publishedAt={n.published_at}
+                openInDrawer   // ⬅️ ADEX-LIKE
               />
             ))}
           </div>
@@ -81,7 +84,7 @@ export default function HomeClient({ news, events }: Props) {
       </section>
 
       {/* =====================================================
-          ANALYSES — PAR ÉVÉNEMENT
+          ANALYSES — PAR ÉVÉNEMENT (DRAWER)
       ===================================================== */}
       <section className="space-y-6">
         <header className="space-y-1">
@@ -139,53 +142,54 @@ export default function HomeClient({ news, events }: Props) {
                   ) : (
                     <ul className="space-y-3">
                       {block.analyses.map((a) => (
-                        <li key={a.id}>
-                          <Link
-                            href={`/analysis/${a.id}`}
-                            className="
-                              block pl-4 border-l border-ratecard-border
-                              hover:border-gray-400 transition-colors
-                            "
-                          >
-                            {/* TITLE */}
-                            <p className="text-sm font-medium text-gray-900 hover:underline">
-                              {a.title}
-                            </p>
+                        <li
+                          key={a.id}
+                          onClick={() =>
+                            openDrawer("analysis", a.id)
+                          }
+                          className="
+                            cursor-pointer pl-4 border-l border-ratecard-border
+                            hover:border-gray-400 transition-colors
+                          "
+                        >
+                          {/* TITLE */}
+                          <p className="text-sm font-medium text-gray-900 hover:underline">
+                            {a.title}
+                          </p>
 
-                            {/* META */}
-                            <div className="flex flex-wrap items-center gap-2 mt-1">
-                              {a.topics?.slice(0, 2).map((t) => (
-                                <span
-                                  key={t}
-                                  className="text-xs px-2 py-0.5 rounded bg-ratecard-light text-gray-600"
-                                >
-                                  {t}
-                                </span>
-                              ))}
-
-                              {a.key_metrics?.slice(0, 2).map((m, i) => (
-                                <span
-                                  key={i}
-                                  className="text-xs text-gray-500"
-                                >
-                                  • {m}
-                                </span>
-                              ))}
-
-                              <span className="text-xs text-gray-400">
-                                {new Date(
-                                  a.published_at
-                                ).toLocaleDateString("fr-FR")}
+                          {/* META */}
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            {a.topics?.slice(0, 2).map((t) => (
+                              <span
+                                key={t}
+                                className="text-xs px-2 py-0.5 rounded bg-ratecard-light text-gray-600"
+                              >
+                                {t}
                               </span>
-                            </div>
+                            ))}
 
-                            {/* EXCERPT */}
-                            {a.excerpt && (
-                              <p className="text-sm text-gray-600 mt-1 max-w-3xl">
-                                {a.excerpt}
-                              </p>
-                            )}
-                          </Link>
+                            {a.key_metrics?.slice(0, 2).map((m, i) => (
+                              <span
+                                key={i}
+                                className="text-xs text-gray-500"
+                              >
+                                • {m}
+                              </span>
+                            ))}
+
+                            <span className="text-xs text-gray-400">
+                              {new Date(
+                                a.published_at
+                              ).toLocaleDateString("fr-FR")}
+                            </span>
+                          </div>
+
+                          {/* EXCERPT */}
+                          {a.excerpt && (
+                            <p className="text-sm text-gray-600 mt-1 max-w-3xl">
+                              {a.excerpt}
+                            </p>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -200,3 +204,4 @@ export default function HomeClient({ news, events }: Props) {
     </div>
   );
 }
+
