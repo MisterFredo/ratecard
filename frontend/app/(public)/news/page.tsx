@@ -62,7 +62,7 @@ export default async function NewsPage() {
       </section>
 
       {/* =====================================================
-          LISTE DES NEWS — PARTNER SIGNAL CARDS
+          LISTE DES NEWS — PAGE PLEINE UNIQUEMENT
       ===================================================== */}
       {news.length === 0 ? (
         <p className="text-sm text-gray-400">
@@ -71,14 +71,19 @@ export default async function NewsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {news.map((n) => (
-            <PartnerSignalCard
+            <a
               key={n.ID_NEWS}
-              id={n.ID_NEWS}
-              title={n.TITLE}
-              excerpt={n.EXCERPT}
-              visualRectUrl={n.VISUAL_RECT_URL}
-              publishedAt={n.PUBLISHED_AT || ""}
-            />
+              href={`/news/${n.ID_NEWS}`}
+              className="block"
+            >
+              <PartnerSignalCard
+                id={n.ID_NEWS}
+                title={n.TITLE}
+                excerpt={n.EXCERPT}
+                visualRectUrl={n.VISUAL_RECT_URL}
+                publishedAt={n.PUBLISHED_AT || ""}
+              />
+            </a>
           ))}
         </div>
       )}
