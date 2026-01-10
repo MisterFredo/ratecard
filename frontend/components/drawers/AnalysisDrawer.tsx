@@ -45,7 +45,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
       try {
         const res = await api.get(`/public/content/${id}`);
         setData(res);
-        // Déclenche l’animation après montage
         requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
         console.error(e);
@@ -60,10 +59,7 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
     <div className="fixed inset-0 z-[100] flex">
       {/* OVERLAY */}
       <div
-        className="
-          absolute inset-0 bg-black/40
-          transition-opacity duration-300
-        "
+        className="absolute inset-0 bg-black/40 transition-opacity"
         onClick={close}
       />
 
@@ -77,15 +73,15 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
         `}
       >
         {/* HEADER */}
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-start">
-          <div className="space-y-2 max-w-xl">
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 flex items-start justify-between">
+          <div className="space-y-1 max-w-xl">
             {data.event && (
-              <span className="text-xs uppercase tracking-wide text-gray-500">
+              <span className="text-xs uppercase tracking-wide text-gray-400">
                 {data.event.label}
               </span>
             )}
 
-            <h1 className="text-2xl font-semibold leading-tight text-gray-900">
+            <h1 className="text-xl font-semibold leading-tight text-gray-900">
               {data.angle_title}
             </h1>
 
@@ -94,42 +90,55 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
             </p>
           </div>
 
-          <button onClick={close} aria-label="Fermer">
+          <button
+            onClick={close}
+            aria-label="Fermer"
+            className="mt-1"
+          >
             <X size={18} />
           </button>
         </div>
 
         {/* CONTENT */}
-        <div className="p-6 space-y-12">
+        <div className="px-5 py-6 space-y-8">
 
           {/* EXCERPT */}
           {data.excerpt && (
-            <div className="text-base font-medium text-gray-800 max-w-2xl">
+            <p className="text-base font-medium text-gray-800">
               {data.excerpt}
-            </div>
+            </p>
           )}
 
           {/* CONCEPT */}
           {data.concept && (
-            <section className="border-l-4 border-ratecard-blue pl-4 max-w-2xl">
+            <div className="border-l-4 border-ratecard-blue pl-4">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
                 Concept clé
               </h2>
               <p className="text-sm text-gray-700">
                 {data.concept}
               </p>
-            </section>
+            </div>
           )}
 
-          {/* ANALYSE DÉTAILLÉE */}
+          {/* BODY — HTML RENDER */}
           {data.content_body && (
-            <section className="prose prose-sm max-w-none">
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: data.content_body,
-                }}
-              />
-            </section>
+            <div
+              className="
+                prose prose-sm max-w-none
+                prose-p:my-4
+                prose-ul:my-4
+                prose-ol:my-4
+                prose-li:my-1
+                prose-strong:font-semibold
+                prose-a:text-ratecard-blue
+                prose-a:no-underline
+                hover:prose-a:underline
+              "
+              dangerouslySetInnerHTML={{
+                __html: data.content_body,
+              }}
+            />
           )}
 
           {/* CHIFFRES CLÉS */}
@@ -142,7 +151,7 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
                 {data.chiffres.map((c, i) => (
                   <li
                     key={i}
-                    className="rounded-lg border border-ratecard-border p-3 text-sm text-gray-700 bg-ratecard-light"
+                    className="rounded-lg border border-ratecard-border bg-ratecard-light p-3 text-sm text-gray-700"
                   >
                     {c}
                   </li>
@@ -161,7 +170,7 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
                 {data.citations.map((c, i) => (
                   <blockquote
                     key={i}
-                    className="border-l-2 border-gray-300 pl-4 italic text-sm text-gray-700 max-w-2xl"
+                    className="border-l-2 border-gray-300 pl-4 italic text-sm text-gray-700"
                   >
                     {c}
                   </blockquote>
@@ -190,7 +199,7 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
           )}
 
           {/* FOOTER */}
-          <div className="pt-6 border-t border-gray-200">
+          <div className="pt-4 border-t border-gray-200">
             <p className="text-xs text-gray-400">
               Publié le{" "}
               {new Date(
