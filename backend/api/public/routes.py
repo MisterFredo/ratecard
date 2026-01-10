@@ -79,7 +79,6 @@ def get_home_events():
                         label=e["label"],
                         home_label=e["home_label"],
                         event_color=e.get("event_color"),
-                        # ✅ CONTEXTE ÉVÉNEMENTIEL (AJOUT CRUCIAL)
                         context_html=e.get("context_html"),
                     ),
                     analyses=analyses,
@@ -91,6 +90,7 @@ def get_home_events():
     except Exception:
         logger.exception("Erreur home events")
         raise HTTPException(500, "Erreur récupération home events")
+
 
 # ============================================================
 # NAV — EVENTS (SIDEBAR)
@@ -197,7 +197,7 @@ def read_content(id_content: str):
 
 
 # ============================================================
-# PUBLIC — LIST ANALYSES (COMME HOME, SANS LIMITE)
+# PUBLIC — LIST ANALYSES (FLUX CHRONOLOGIQUE)
 # ============================================================
 @router.get("/analysis/list")
 def list_public_analyses():
@@ -206,7 +206,7 @@ def list_public_analyses():
         items = []
 
         for e in events:
-            contents = list_event_contents(e["id"])  # PAS de limite
+            contents = list_event_contents(e["id"])
 
             for c in contents:
                 items.append(
@@ -220,6 +220,8 @@ def list_public_analyses():
                         "event": {
                             "id": e["id"],
                             "label": e["label"],
+                            # ✅ AJOUT CRUCIAL
+                            "home_label": e.get("home_label"),
                             "event_color": e.get("event_color"),
                         },
                     }
@@ -231,3 +233,4 @@ def list_public_analyses():
     except Exception:
         logger.exception("Erreur list_public_analyses")
         raise HTTPException(500, "Erreur récupération analyses")
+
