@@ -27,12 +27,14 @@ class HomeEventInfo(BaseModel):
     home_label: str
     event_color: Optional[str] = None
 
+
 class HomeAnalysisLine(BaseModel):
     id: str
     title: str
     published_at: datetime
-    topics: list[str] | None = None
-    key_metrics: list[str] | None = None
+    topics: Optional[List[str]] = None
+    key_metrics: Optional[List[str]] = None
+
 
 class HomeEventBlock(BaseModel):
     event: HomeEventInfo
@@ -71,4 +73,5 @@ class DrawerAnalysisResponse(BaseModel):
     acteurs_cites: List[str]
     published_at: datetime
     event: Optional[dict]
+
 
