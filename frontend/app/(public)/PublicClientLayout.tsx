@@ -8,19 +8,13 @@ const API_BASE =
 async function getEventsNav() {
   try {
     const res = await fetch(
-      `${API_BASE}/public/home/events`,
+      `${API_BASE}/public/nav/events`,
       { cache: "no-store" }
     );
     if (!res.ok) return [];
 
     const json = await res.json();
-
-    return (json.events || [])
-      .filter((e: any) => e.external_url)
-      .map((e: any) => ({
-        label: e.label,
-        url: e.external_url,
-      }));
+    return json.events || [];
   } catch {
     return [];
   }
@@ -39,7 +33,6 @@ export default async function PublicClientLayout({
         {children}
       </PublicShell>
 
-      {/* 🔑 DRAWERS */}
       <GlobalDrawer />
     </DrawerProvider>
   );
