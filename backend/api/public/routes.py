@@ -136,7 +136,7 @@ def read_content(id_content: str):
         return {
             "id_content": c["id"],
             "angle_title": c["title"],
-            "angle_signal": c.get("signal"),
+            "angle_signal": c["signal"],
             "excerpt": c.get("excerpt"),
             "concept": c.get("concept"),
             "content_body": c.get("content_body"),
@@ -144,14 +144,7 @@ def read_content(id_content: str):
             "citations": c.get("citations") or [],
             "acteurs_cites": c.get("acteurs_cites") or [],
             "published_at": c["published_at"],
-            "event": (
-                {
-                    "id": c["event"]["id"],
-                    "label": c["event"]["label"],
-                }
-                if c.get("event")
-                else None
-            ),
+            "event": c.get("event"),
         }
 
     except HTTPException:
@@ -159,6 +152,7 @@ def read_content(id_content: str):
     except Exception:
         logger.exception("Erreur read_content")
         raise HTTPException(500, "Erreur lecture analyse")
+
 
 
 # ============================================================
