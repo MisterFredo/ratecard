@@ -67,7 +67,6 @@ export default function HomeClient({ news, events }: Props) {
                 excerpt={n.excerpt}
                 visualRectUrl={n.visual_rect_url}
                 publishedAt={n.published_at}
-                openInDrawer
               />
             ))}
           </div>
