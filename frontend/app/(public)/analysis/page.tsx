@@ -53,91 +53,75 @@ export default function AnalysisPage() {
   }, []);
 
   return (
-    <div className="space-y-14 md:space-y-16">
+    <div className="space-y-12">
 
       {/* =====================================================
-          HEADER
+          ANALYSES — GRILLE
       ===================================================== */}
-      <section className="space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Analyses
-        </h1>
-        <p className="text-gray-600 max-w-2xl">
-          Lectures Ratecard issues des événements et signaux du marché.
-        </p>
-      </section>
-
-      {/* =====================================================
-          ANALYSES — FLUX CHRONOLOGIQUE
-      ===================================================== */}
-      <div className="space-y-6">
+      <div
+        className="
+          grid grid-cols-1
+          md:grid-cols-2
+          xl:grid-cols-3
+          gap-6
+        "
+      >
         {analyses.map((a) => (
-          <div
+          <article
             key={a.id}
             onClick={() => openDrawer("analysis", a.id)}
             className="
-              cursor-pointer relative rounded-2xl
+              cursor-pointer rounded-2xl
               border border-ratecard-border bg-white
               p-5 hover:border-gray-400 transition-colors
+              flex flex-col
             "
           >
-            {/* EVENT COLOR BAR */}
-            <span
-              className="absolute left-0 top-5 bottom-5 w-1 rounded-full"
-              style={{
-                backgroundColor:
-                  a.event.event_color || "#9CA3AF",
-              }}
-            />
+            {/* EVENT BADGE */}
+            <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
+              <span
+                className="inline-block w-2 h-2 rounded-full"
+                style={{
+                  backgroundColor:
+                    a.event.event_color || "#9CA3AF",
+                }}
+              />
+              <span className="font-medium">
+                {a.event.label}
+              </span>
+            </div>
 
-            <div className="pl-4 max-w-4xl">
-              {/* TITLE */}
-              <h3 className="text-lg font-semibold text-gray-900 leading-snug">
-                {a.title}
-              </h3>
+            {/* TITLE */}
+            <h3 className="text-base font-semibold text-gray-900 leading-snug">
+              {a.title}
+            </h3>
 
-              {/* EXCERPT */}
-              {a.excerpt && (
-                <p className="text-sm text-gray-600 mt-2">
-                  {a.excerpt}
-                </p>
+            {/* EXCERPT */}
+            {a.excerpt && (
+              <p className="text-sm text-gray-600 mt-2">
+                {a.excerpt}
+              </p>
+            )}
+
+            {/* META */}
+            <div className="mt-auto pt-4 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+              {a.topics?.[0] && (
+                <span className="px-2 py-0.5 rounded bg-ratecard-light text-gray-600">
+                  {a.topics[0]}
+                </span>
               )}
 
-              {/* META */}
-              <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-500">
-                {/* EVENT */}
-                <span className="flex items-center gap-1">
-                  <span
-                    className="inline-block w-2 h-2 rounded-full"
-                    style={{
-                      backgroundColor:
-                        a.event.event_color || "#9CA3AF",
-                    }}
-                  />
-                  {a.event.label}
-                </span>
+              {a.key_metrics?.[0] && (
+                <span>• {a.key_metrics[0]}</span>
+              )}
 
-                {/* TOPIC */}
-                {a.topics?.[0] && (
-                  <span className="px-2 py-0.5 rounded bg-ratecard-light text-gray-600">
-                    {a.topics[0]}
-                  </span>
-                )}
-
-                {/* KEY METRIC */}
-                {a.key_metrics?.[0] && (
-                  <span>• {a.key_metrics[0]}</span>
-                )}
-
-                {/* DATE */}
-                <span className="text-gray-400">
-                  {new Date(
-                    a.published_at
-                  ).toLocaleDateString("fr-FR")}
-                </span>
-              </div>
+              <span className="text-gray-400">
+                {new Date(
+                  a.published_at
+                ).toLocaleDateString("fr-FR")}
+              </span>
             </div>
-          </div>
+          </article>
         ))}
       </div>
 
