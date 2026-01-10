@@ -223,6 +223,9 @@ def list_news():
 # UPDATE NEWS
 # ============================================================
 def update_news(id_news: str, data: NewsUpdate):
+    # ---------------------------------------------------------
+    # UPDATE TABLE PRINCIPALE
+    # ---------------------------------------------------------
     fields = {
         "TITLE": data.title,
         "BODY": data.body,
@@ -241,24 +244,42 @@ def update_news(id_news: str, data: NewsUpdate):
 
     client = get_bigquery_client()
 
-    # RESET RELATIONS
+    # ---------------------------------------------------------
+    # RESET RELATIONS (AVEC PARAMÈTRE)
+    # ---------------------------------------------------------
     for table in (TABLE_NEWS_TOPIC, TABLE_NEWS_PERSON):
         client.query(
             f"DELETE FROM `{table}` WHERE ID_NEWS = @id",
-            job_config=None,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter(
+                        "id",
+                        "STRING",
+                        id_news,
+                    )
+                ]
+            ),
         ).result()
 
+    # ---------------------------------------------------------
     # REINSERT RELATIONS
+    # ---------------------------------------------------------
     if data.topics:
         insert_bq(
             TABLE_NEWS_TOPIC,
-            [{"ID_NEWS": id_news, "ID_TOPIC": tid} for tid in data.topics],
+            [
+                {"ID_NEWS": id_news, "ID_TOPIC": tid}
+                for tid in data.topics
+            ],
         )
 
     if data.persons:
         insert_bq(
             TABLE_NEWS_PERSON,
-            [{"ID_NEWS": id_news, "ID_PERSON": pid} for pid in data.persons],
+            [
+                {"ID_NEWS": id_news, "ID_PERSON": pid}
+                for pid in data.persons
+            ],
         )
 
     return True
