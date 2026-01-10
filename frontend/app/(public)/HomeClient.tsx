@@ -72,7 +72,7 @@ export default function HomeClient({ news, events }: Props) {
       {/* =====================================================
           HOME — ÉVÉNEMENTS (MIROIR ANALYSES / CONTEXTE)
       ===================================================== */}
-      <section className="space-y-14">
+      <section className="space-y-16">
         {events.map((block) => (
           <div
             key={block.event.id}
@@ -95,7 +95,7 @@ export default function HomeClient({ news, events }: Props) {
             )}
 
             {/* ================= LEFT — ANALYSES ================= */}
-            <div className="lg:col-span-8">
+            <div className="lg:col-span-9">
               <div
                 className="
                   relative rounded-2xl border border-ratecard-border
@@ -140,7 +140,7 @@ export default function HomeClient({ news, events }: Props) {
                           hover:border-gray-400 transition-colors
                         "
                       >
-                        <p className="text-lg font-semibold text-gray-900 leading-snug max-w-3xl">
+                        <p className="text-lg font-semibold text-gray-900 leading-snug max-w-4xl">
                           {a.title}
                         </p>
 
@@ -166,7 +166,7 @@ export default function HomeClient({ news, events }: Props) {
                         </div>
 
                         {a.excerpt && (
-                          <p className="text-sm text-gray-600 mt-3 max-w-2xl">
+                          <p className="text-sm text-gray-600 mt-3 max-w-3xl">
                             {a.excerpt}
                           </p>
                         )}
@@ -179,7 +179,7 @@ export default function HomeClient({ news, events }: Props) {
 
             {/* ================= RIGHT — CONTEXTE (DESKTOP) ================= */}
             {block.event.context_html && (
-              <aside className="hidden lg:block lg:col-span-4">
+              <aside className="hidden lg:block lg:col-span-3">
                 <div className="rounded-xl border border-ratecard-border bg-white p-5 sticky top-6">
                   <h4 className="text-sm font-semibold text-gray-900 mb-3">
                     À propos de l’événement
@@ -201,4 +201,3 @@ export default function HomeClient({ news, events }: Props) {
     </div>
   );
 }
-
