@@ -252,26 +252,73 @@ def get_content(id_content: str):
 # LIST CONTENTS (ADMIN)
 # ============================================================
 def list_contents():
-    return query_bq(
+    rows = query_bq(
         f"""
         SELECT
-            C.ID_CONTENT,
-            C.ANGLE_TITLE AS TITLE,
-            E.LABEL AS EVENT_LABEL,
-            C.STATUS,
-            C.PUBLISHED_AT
+          C.ID_CONTENT,
+          C.ANGLE_TITLE,
+          C.ANGLE_SIGNAL,
+          C.EXCERPT,
+          C.CONCEPT,
+          C.CONTENT_BODY,
+          C.CHIFFRES,
+          C.CITATIONS,
+          C.ACTEURS_CITES,
+          C.PUBLISHED_AT,
+
+          E.ID_EVENT,
+          E.LABEL AS EVENT_LABEL,
+
+          T.TOPICS
         FROM `{TABLE_CONTENT}` C
 
-        -- rattachement contenu → event
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_EVENT` CE
-            ON CE.ID_CONTENT = C.ID_CONTENT
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_EVENT` E
-            ON E.ID_EVENT = CE.ID_EVENT
+        LEFT JOIN `{TABLE_CONTENT_EVENT}` CE
+          ON C.ID_CONTENT = CE.ID_CONTENT
+        LEFT JOIN `{TABLE_EVENT}` E
+          ON CE.ID_EVENT = E.ID_EVENT
 
-        WHERE C.IS_ACTIVE = TRUE
-        ORDER BY C.DATE_CREATION DESC
+        LEFT JOIN (
+          SELECT
+            CT.ID_CONTENT,
+            ARRAY_AGG(T.LABEL) AS TOPICS
+          FROM `{TABLE_CONTENT_TOPIC}` CT
+          JOIN `{TABLE_TOPIC}` T
+            ON CT.ID_TOPIC = T.ID_TOPIC
+          GROUP BY CT.ID_CONTENT
+        ) T
+          ON C.ID_CONTENT = T.ID_CONTENT
+
+        WHERE
+          C.STATUS = 'PUBLISHED'
+          AND C.IS_ACTIVE = TRUE
+        ORDER BY C.PUBLISHED_AT DESC
         """
     )
+
+    return [
+        {
+            "id": r["ID_CONTENT"],                # ⬅️ CLÉ CRITIQUE
+            "title": r["ANGLE_TITLE"],
+            "signal": r["ANGLE_SIGNAL"],
+            "excerpt": r.get("EXCERPT"),
+            "concept": r.get("CONCEPT"),
+            "content_body": r.get("CONTENT_BODY"),
+            "chiffres": r.get("CHIFFRES") or [],
+            "citations": r.get("CITATIONS") or [],
+            "acteurs_cites": r.get("ACTEURS_CITES") or [],
+            "topics": (r.get("TOPICS") or [])[:2],
+            "published_at": r["PUBLISHED_AT"],
+            "event": (
+                {
+                    "id": r["ID_EVENT"],
+                    "label": r["EVENT_LABEL"],
+                }
+                if r.get("ID_EVENT")
+                else None
+            ),
+        }
+        for r in rows
+    ]
 
 
 # ============================================================
