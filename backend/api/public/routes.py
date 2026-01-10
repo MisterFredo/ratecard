@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 import logging
+from utils.bigquery_utils import query_bq
 
 from api.public.models import (
     HomeNewsResponse,
