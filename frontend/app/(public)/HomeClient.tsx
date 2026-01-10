@@ -47,12 +47,12 @@ export default function HomeClient({ news, events }: Props) {
   const { openDrawer } = useDrawer();
 
   return (
-    <div className="space-y-12 md:space-y-14">
+    <div className="space-y-14 md:space-y-16">
 
       {/* =====================================================
           NEWS — PARTNER SIGNALS (DRAWER)
       ===================================================== */}
-      <section>
+      <section className="space-y-4">
         {news.length === 0 ? (
           <p className="text-sm text-gray-400">
             Aucune annonce publiée pour le moment.
@@ -67,6 +67,7 @@ export default function HomeClient({ news, events }: Props) {
                 excerpt={n.excerpt}
                 visualRectUrl={n.visual_rect_url}
                 publishedAt={n.published_at}
+                openInDrawer   // ⬅️ ON GARDE
               />
             ))}
           </div>
@@ -76,7 +77,7 @@ export default function HomeClient({ news, events }: Props) {
       {/* =====================================================
           ANALYSES — PAR ÉVÉNEMENT (DRAWER)
       ===================================================== */}
-      <section>
+      <section className="space-y-6">
         {events.length === 0 ? (
           <p className="text-sm text-gray-400">
             Aucun événement actif pour le moment.
@@ -133,12 +134,10 @@ export default function HomeClient({ news, events }: Props) {
                             hover:border-gray-400 transition-colors
                           "
                         >
-                          {/* TITLE */}
                           <p className="text-sm font-medium text-gray-900 hover:underline">
                             {a.title}
                           </p>
 
-                          {/* META */}
                           <div className="flex flex-wrap items-center gap-2 mt-1">
                             {a.topics?.slice(0, 2).map((t) => (
                               <span
@@ -165,7 +164,6 @@ export default function HomeClient({ news, events }: Props) {
                             </span>
                           </div>
 
-                          {/* EXCERPT */}
                           {a.excerpt && (
                             <p className="text-sm text-gray-600 mt-1 max-w-3xl">
                               {a.excerpt}
@@ -185,5 +183,3 @@ export default function HomeClient({ news, events }: Props) {
     </div>
   );
 }
-
-
