@@ -12,15 +12,16 @@ async function safeFetch<T>(url: string): Promise<T> {
 }
 
 export default async function HomePage() {
-  const [news, events] = await Promise.all([
+  const [news, analyses] = await Promise.all([
     safeFetch<{ items: any[] }>(`${API_BASE}/public/home/news`),
-    safeFetch<{ events: any[] }>(`${API_BASE}/public/home/events`),
+    safeFetch<{ items: any[] }>(`${API_BASE}/public/analysis/list`),
   ]);
 
   return (
     <HomeClient
       news={news.items}
-      events={events.events}
+      analyses={analyses.items}
     />
   );
 }
+
