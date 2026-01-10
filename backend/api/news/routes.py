@@ -91,10 +91,12 @@ def publish_route(id_news: str, published_at: str | None = None):
 
 
 # ============================================================
-# IA — GENERATE NEWS (SOURCE → NEWS)
+# IA — GENERATE NEWS (SOURCE → NEWS) — HTML ORIENTÉ
 # ============================================================
 @router.post("/ai/generate")
 def ai_generate(payload: dict):
+    import json
+
     source_text = payload.get("source_text")
     source_type = payload.get("source_type")
 
@@ -107,22 +109,31 @@ Tu es l’assistant éditorial de Ratecard.
 OBJECTIF
 Transformer une source brute en NEWS PARTENAIRE.
 
-RÈGLES
+RÈGLES ÉDITORIALES
 - Ton neutre, factuel, professionnel
 - PAS d’analyse
 - PAS d’opinion
 - PAS de jargon marketing
 - PAS de superlatifs
+- Style journalistique sobre
 
-FORMAT STRICT
-TITRE:
-...
+FORMAT DE SORTIE (OBLIGATOIRE — JSON VALIDE)
+Retourne STRICTEMENT un objet JSON avec les clés suivantes :
 
-EXCERPT:
-Synthèse courte (2–3 phrases max, ~300 caractères) résumant l’essentiel.
+{{
+  "title": "Titre factuel et informatif",
+  "excerpt": "Synthèse courte (2–3 phrases, ~300 caractères)",
+  "body_html": "<p>Corps de la news en HTML.</p>"
+}}
 
-TEXTE:
-Corps de la news (~200 mots).
+RÈGLES HTML POUR body_html
+- Utilise <p> pour chaque paragraphe
+- Utilise <ul><li> si une liste est pertinente
+- Utilise <strong> avec parcimonie
+- Utilise <h2> uniquement si vraiment utile (max 1)
+- PAS de styles inline
+- PAS de <h1>
+- HTML simple et propre uniquement
 
 SOURCE ({source_type or "texte libre"}):
 {source_text}
@@ -135,34 +146,16 @@ SOURCE ({source_type or "texte libre"}):
     body = ""
 
     if raw:
-        lines = raw.splitlines()
-        current = None
-        buffer = []
-
-        def flush():
-            return " ".join(buffer).strip()
-
-        for line in lines:
-            line = line.strip()
-
-            if line.upper().startswith("TITRE"):
-                current = "title"
-                buffer = []
-            elif line.upper().startswith("EXCERPT"):
-                if current == "title":
-                    title = flush()
-                current = "excerpt"
-                buffer = []
-            elif line.upper().startswith("TEXTE"):
-                if current == "excerpt":
-                    excerpt = flush()
-                current = "body"
-                buffer = []
-            else:
-                buffer.append(line)
-
-        if current == "body":
-            body = flush()
+        try:
+            data = json.loads(raw)
+            title = data.get("title", "").strip()
+            excerpt = data.get("excerpt", "").strip()
+            body = data.get("body_html", "").strip()
+        except Exception:
+            raise HTTPException(
+                500,
+                "Erreur parsing IA (JSON invalide)"
+            )
 
     return {
         "status": "ok",
@@ -172,3 +165,4 @@ SOURCE ({source_type or "texte libre"}):
             "body": body,
         },
     }
+
