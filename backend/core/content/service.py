@@ -331,6 +331,8 @@ def list_contents_admin():
           C.ANGLE_TITLE,
           C.STATUS,
           C.PUBLISHED_AT,
+          C.DATE_CREATION,
+
           E.HOME_LABEL AS EVENT_LABEL_FRIENDLY,
           E.LABEL AS EVENT_LABEL_FALLBACK
         FROM `{TABLE_CONTENT}` C
@@ -342,9 +344,10 @@ def list_contents_admin():
 
         WHERE
           C.IS_ACTIVE = TRUE
+
         ORDER BY
           C.PUBLISHED_AT DESC,
-          C.CREATED_AT DESC
+          C.DATE_CREATION DESC
         """
     )
 
@@ -358,8 +361,6 @@ def list_contents_admin():
         }
         for r in rows
     ]
-
-
 
 # ============================================================
 # UPDATE CONTENT
