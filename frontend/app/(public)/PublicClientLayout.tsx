@@ -1,5 +1,8 @@
+"use client";
+
 import PublicShell from "./PublicShell";
 import { DrawerProvider } from "@/contexts/DrawerContext";
+import GlobalDrawer from "@/components/drawers/GlobalDrawer";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -14,26 +17,10 @@ async function getEventsNav() {
 
     const json = await res.json();
 
-    return (json.events || []).map((e: any) => {
-      const label = e.event.label;
-
-      // URLs temporaires (en attendant le back)
-      let url = "#";
-      if (label.includes("Touquet")) {
-        url =
-          "https://events.ratecard.fr/ratecard-meetings-touquet-2026";
-      } else if (label.includes("Paris")) {
-        url =
-          "https://events.ratecard.fr/ratecard-meetings-paris-2026";
-      } else if (label.includes("Miami")) {
-        url = "https://possibleevent.com/";
-      }
-
-      return {
-        label,
-        url,
-      };
-    });
+    return (json.events || []).map((e: any) => ({
+      label: e.event.label,
+      url: e.event.external_url,
+    }));
   } catch {
     return [];
   }
@@ -51,6 +38,9 @@ export default async function PublicClientLayout({
       <PublicShell events={events}>
         {children}
       </PublicShell>
+
+      {/* 🔑 RENDER GLOBAL DES DRAWERS */}
+      <GlobalDrawer />
     </DrawerProvider>
   );
 }
