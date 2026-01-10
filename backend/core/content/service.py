@@ -320,6 +320,46 @@ def list_contents():
         for r in rows
     ]
 
+# ============================================================
+# LIST CONTENTS (ADMIN)
+# ============================================================
+def list_contents_admin():
+    rows = query_bq(
+        f"""
+        SELECT
+          C.ID_CONTENT,
+          C.ANGLE_TITLE,
+          C.STATUS,
+          C.PUBLISHED_AT,
+          E.HOME_LABEL AS EVENT_LABEL_FRIENDLY,
+          E.LABEL AS EVENT_LABEL_FALLBACK
+        FROM `{TABLE_CONTENT}` C
+
+        LEFT JOIN `{TABLE_CONTENT_EVENT}` CE
+          ON C.ID_CONTENT = CE.ID_CONTENT
+        LEFT JOIN `{TABLE_EVENT}` E
+          ON CE.ID_EVENT = E.ID_EVENT
+
+        WHERE
+          C.IS_ACTIVE = TRUE
+        ORDER BY
+          C.PUBLISHED_AT DESC,
+          C.CREATED_AT DESC
+        """
+    )
+
+    return [
+        {
+            "ID_CONTENT": r["ID_CONTENT"],
+            "TITLE": r["ANGLE_TITLE"],
+            "EVENT_LABEL": r["EVENT_LABEL_FRIENDLY"] or r["EVENT_LABEL_FALLBACK"],
+            "STATUS": r["STATUS"],
+            "PUBLISHED_AT": r["PUBLISHED_AT"],
+        }
+        for r in rows
+    ]
+
+
 
 # ============================================================
 # UPDATE CONTENT
