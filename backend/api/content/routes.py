@@ -1,13 +1,21 @@
 from fastapi import APIRouter, HTTPException
-from api.content.models import ContentCreate, ContentUpdate, ContentAnglesRequest, ContentGenerateRequest
+from api.content.models import (
+    ContentCreate,
+    ContentUpdate,
+    ContentAnglesRequest,
+    ContentGenerateRequest,
+)
+
 from core.content.service import (
     create_content,
-    list_contents,
+    list_contents,          # ⬅️ version publique (lecture / analyses)
+    list_contents_admin,    # ⬅️ version admin (liste stable)
     get_content,
     update_content,
     archive_content,
     publish_content,
 )
+
 from core.content.orchestration import (
     generate_angles,
     generate_content,
@@ -32,15 +40,22 @@ def create_route(data: ContentCreate):
 # ============================================================
 @router.get("/list")
 def list_route():
+    """
+    Liste des contenus pour l’ADMIN.
+
+    ⚠️ IMPORTANT :
+    - Utilise list_contents_admin()
+    - Ne doit JAMAIS dépendre du modèle public
+    """
     try:
-        contents = list_contents()
+        contents = list_contents_admin()
         return {"status": "ok", "contents": contents}
     except Exception as e:
         raise HTTPException(400, f"Erreur liste contents : {e}")
 
 
 # ============================================================
-# GET ONE CONTENT
+# GET ONE CONTENT (ADMIN)
 # ============================================================
 @router.get("/{id_content}")
 def get_route(id_content: str):
@@ -100,6 +115,7 @@ def ai_angles(payload: ContentAnglesRequest):
         return {"status": "ok", "angles": angles}
     except Exception as e:
         raise HTTPException(400, f"Erreur génération angles : {e}")
+
 
 # ============================================================
 # IA — STEP 2 : GENERATE CONTENT
