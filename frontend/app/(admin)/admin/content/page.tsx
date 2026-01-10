@@ -18,7 +18,7 @@ export default function ContentListPage() {
   const [loading, setLoading] = useState(true);
 
   /* ---------------------------------------------------------
-     LOAD CONTENTS
+     LOAD CONTENTS (ADMIN)
   --------------------------------------------------------- */
   async function load() {
     setLoading(true);
@@ -126,5 +126,3 @@ export default function ContentListPage() {
     </div>
   );
 }
-
-
