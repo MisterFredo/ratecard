@@ -19,6 +19,7 @@ type AnalysisItem = {
   event: {
     id: string;
     label: string;
+    home_label?: string;
     event_color?: string;
   };
 };
@@ -77,17 +78,25 @@ export default function AnalysisPage() {
               flex flex-col
             "
           >
-            {/* EVENT BADGE */}
-            <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
-              <span
-                className="inline-block w-2 h-2 rounded-full"
-                style={{
-                  backgroundColor:
-                    a.event.event_color || "#9CA3AF",
-                }}
-              />
-              <span className="font-medium">
-                {a.event.label}
+            {/* EVENT + DATE */}
+            <div className="flex items-center justify-between mb-3 text-xs text-gray-500">
+              <div className="flex items-center gap-2">
+                <span
+                  className="inline-block w-2 h-2 rounded-full"
+                  style={{
+                    backgroundColor:
+                      a.event.event_color || "#9CA3AF",
+                  }}
+                />
+                <span className="font-medium">
+                  {a.event.home_label || a.event.label}
+                </span>
+              </div>
+
+              <span className="text-gray-400">
+                {new Date(
+                  a.published_at
+                ).toLocaleDateString("fr-FR")}
               </span>
             </div>
 
@@ -105,21 +114,17 @@ export default function AnalysisPage() {
 
             {/* META */}
             <div className="mt-auto pt-4 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+              {/* KEY METRIC FIRST */}
+              {a.key_metrics?.[0] && (
+                <span>• {a.key_metrics[0]}</span>
+              )}
+
+              {/* TOPIC LAST */}
               {a.topics?.[0] && (
                 <span className="px-2 py-0.5 rounded bg-ratecard-light text-gray-600">
                   {a.topics[0]}
                 </span>
               )}
-
-              {a.key_metrics?.[0] && (
-                <span>• {a.key_metrics[0]}</span>
-              )}
-
-              <span className="text-gray-400">
-                {new Date(
-                  a.published_at
-                ).toLocaleDateString("fr-FR")}
-              </span>
             </div>
           </article>
         ))}
@@ -128,3 +133,4 @@ export default function AnalysisPage() {
     </div>
   );
 }
+
