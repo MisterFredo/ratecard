@@ -19,6 +19,9 @@ class EventCreate(BaseModel):
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
 
+    # 🔗 URL externe (site événement)
+    external_url: Optional[str] = None
+
 
 # ============================================================
 # UPDATE — mise à jour d'un event existant
@@ -52,6 +55,9 @@ class EventUpdate(BaseModel):
     # 🎨 Signature visuelle (HOME / WORKFLOW)
     event_color: Optional[str] = None
 
+    # 🔗 URL externe (site événement)
+    external_url: Optional[str] = None
+
     # Statut
     is_active: Optional[bool] = None
 
@@ -82,6 +88,9 @@ class EventOut(BaseModel):
     # 🎨 Couleur d'événement
     event_color: Optional[str] = None
 
+    # 🔗 URL externe
+    external_url: Optional[str] = None
+
     # SEO
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
@@ -90,4 +99,3 @@ class EventOut(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     is_active: Optional[bool] = True
-
