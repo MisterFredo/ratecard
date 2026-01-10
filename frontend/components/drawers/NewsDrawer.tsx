@@ -26,6 +26,7 @@ type Props = {
 export default function NewsDrawer({ id, onClose }: Props) {
   const router = useRouter();
   const [data, setData] = useState<NewsData | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   function close() {
     if (onClose) {
@@ -40,6 +41,8 @@ export default function NewsDrawer({ id, onClose }: Props) {
       try {
         const res = await api.get(`/public/news/${id}`);
         setData(res);
+        // ⬇️ déclenche l’animation après mount
+        requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
         console.error(e);
       }
@@ -53,12 +56,18 @@ export default function NewsDrawer({ id, onClose }: Props) {
     <div className="fixed inset-0 z-[100] flex">
       {/* OVERLAY */}
       <div
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/40 transition-opacity"
         onClick={close}
       />
 
       {/* DRAWER */}
-      <aside className="relative ml-auto w-full md:w-[640px] bg-white shadow-xl overflow-y-auto">
+      <aside
+        className={`
+          relative ml-auto w-full md:w-[640px] bg-white shadow-xl overflow-y-auto
+          transform transition-transform duration-300 ease-out
+          ${isOpen ? "translate-x-0" : "translate-x-full"}
+        `}
+      >
         {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 h-14 flex items-center justify-between">
           <div className="text-sm text-gray-500">
