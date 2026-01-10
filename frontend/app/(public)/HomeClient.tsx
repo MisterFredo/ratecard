@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useDrawer } from "@/contexts/DrawerContext";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
+import AnalysisCard from "@/components/analysis/AnalysisCard";
 
 /* =========================================================
    TYPES
@@ -43,6 +44,9 @@ type Props = {
 export default function HomeClient({ news, analyses }: Props) {
   const { openDrawer } = useDrawer();
 
+  // ---------------------------------------------------------
+  // 12 DERNIÈRES ANALYSES (TRI CHRONO)
+  // ---------------------------------------------------------
   const latestAnalyses = analyses
     .slice()
     .sort(
@@ -111,69 +115,20 @@ export default function HomeClient({ news, analyses }: Props) {
           "
         >
           {latestAnalyses.map((a) => (
-            <article
+            <AnalysisCard
               key={a.id}
-              onClick={() => openDrawer("analysis", a.id)}
-              className="
-                cursor-pointer rounded-2xl
-                border border-ratecard-border bg-white
-                p-5 hover:border-gray-400 transition-colors
-                flex flex-col
-              "
-            >
-              {/* EVENT + DATE (MÊME LIGNE) */}
-              <div className="flex items-center justify-between mb-3 text-xs text-gray-500">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="inline-block w-2 h-2 rounded-full"
-                    style={{
-                      backgroundColor:
-                        a.event.event_color || "#9CA3AF",
-                    }}
-                  />
-                  <span className="font-medium">
-                    {a.event.home_label || a.event.label}
-                  </span>
-                </div>
-
-                <span className="text-gray-400">
-                  {new Date(
-                    a.published_at
-                  ).toLocaleDateString("fr-FR")}
-                </span>
-              </div>
-
-              {/* TITLE */}
-              <h3 className="text-base font-semibold text-gray-900 leading-snug">
-                {a.title}
-              </h3>
-
-              {/* EXCERPT */}
-              {a.excerpt && (
-                <p className="text-sm text-gray-600 mt-2">
-                  {a.excerpt}
-                </p>
-              )}
-
-              {/* META — ALIGNÉ AVEC PAGE ANALYSES */}
-              <div className="mt-auto pt-4 text-xs text-gray-500 space-y-2">
-                {/* CHIFFRE (LIGNE 1) */}
-                {a.key_metrics?.[0] && (
-                  <div>
-                    • {a.key_metrics[0]}
-                  </div>
-                )}
-
-                {/* TOPIC (LIGNE DÉDIÉE) */}
-                {a.topics?.[0] && (
-                  <div>
-                    <span className="inline-block px-2 py-0.5 rounded bg-ratecard-light text-gray-600">
-                      {a.topics[0]}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </article>
+              id={a.id}
+              title={a.title}
+              excerpt={a.excerpt}
+              publishedAt={a.published_at}
+              event={{
+                label: a.event.label,
+                homeLabel: a.event.home_label,
+                color: a.event.event_color,
+              }}
+              keyMetric={a.key_metrics?.[0]}
+              topic={a.topics?.[0]}
+            />
           ))}
         </div>
       </section>
@@ -181,4 +136,3 @@ export default function HomeClient({ news, analyses }: Props) {
     </div>
   );
 }
-
