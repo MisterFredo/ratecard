@@ -18,9 +18,22 @@ type NewsData = {
   };
 };
 
-export default function NewsDrawer({ id }: { id: string }) {
+type Props = {
+  id: string;
+  onClose?: () => void;
+};
+
+export default function NewsDrawer({ id, onClose }: Props) {
   const router = useRouter();
   const [data, setData] = useState<NewsData | null>(null);
+
+  function close() {
+    if (onClose) {
+      onClose();
+    } else {
+      router.back();
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -41,7 +54,7 @@ export default function NewsDrawer({ id }: { id: string }) {
       {/* OVERLAY */}
       <div
         className="absolute inset-0 bg-black/40"
-        onClick={() => router.back()}
+        onClick={close}
       />
 
       {/* DRAWER */}
@@ -51,10 +64,7 @@ export default function NewsDrawer({ id }: { id: string }) {
           <div className="text-sm text-gray-500">
             {data.company.name}
           </div>
-          <button
-            onClick={() => router.back()}
-            aria-label="Fermer"
-          >
+          <button onClick={close} aria-label="Fermer">
             <X size={18} />
           </button>
         </div>
@@ -78,11 +88,12 @@ export default function NewsDrawer({ id }: { id: string }) {
             </p>
           )}
 
-          {/* BODY — rendu HTML */}
           {data.body && (
             <div
               className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: data.body }}
+              dangerouslySetInnerHTML={{
+                __html: data.body,
+              }}
             />
           )}
 
@@ -95,4 +106,3 @@ export default function NewsDrawer({ id }: { id: string }) {
     </div>
   );
 }
-
