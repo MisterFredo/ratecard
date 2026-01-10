@@ -50,7 +50,7 @@ export default function HomeClient({ news, events }: Props) {
     <div className="space-y-14 md:space-y-16">
 
       {/* =====================================================
-          NEWS — PARTNER SIGNALS (DRAWER)
+          NEWS — PARTNER SIGNALS (INCHANGÉ)
       ===================================================== */}
       <section className="space-y-4">
         {news.length === 0 ? (
@@ -67,7 +67,7 @@ export default function HomeClient({ news, events }: Props) {
                 excerpt={n.excerpt}
                 visualRectUrl={n.visual_rect_url}
                 publishedAt={n.published_at}
-                openInDrawer   // ⬅️ ON GARDE
+                openInDrawer
               />
             ))}
           </div>
@@ -75,7 +75,7 @@ export default function HomeClient({ news, events }: Props) {
       </section>
 
       {/* =====================================================
-          ANALYSES — PAR ÉVÉNEMENT (DRAWER)
+          ANALYSES — PAR ÉVÉNEMENT (VERSION POLISHÉE)
       ===================================================== */}
       <section className="space-y-6">
         {events.length === 0 ? (
@@ -83,27 +83,28 @@ export default function HomeClient({ news, events }: Props) {
             Aucun événement actif pour le moment.
           </p>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-10">
             {events.map((block) => (
               <div
                 key={block.event.id}
                 className="
                   relative rounded-2xl border border-ratecard-border
-                  bg-white p-4 md:p-5
+                  bg-white p-5 md:p-6
                 "
               >
                 {/* BARRE ÉVÉNEMENT */}
                 <span
-                  className="absolute left-0 top-5 bottom-5 w-1 rounded-full"
+                  className="absolute left-0 top-6 bottom-6 w-1 rounded-full"
                   style={{
                     backgroundColor:
                       block.event.event_color || "#9CA3AF",
                   }}
                 />
 
-                <div className="pl-4 max-w-3xl">
+                <div className="pl-5 max-w-3xl">
+
                   {/* HEADER EVENT */}
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-3 mb-6">
                     <span
                       className="inline-block w-2.5 h-2.5 rounded-full"
                       style={{
@@ -122,7 +123,7 @@ export default function HomeClient({ news, events }: Props) {
                       Aucune analyse publiée pour le moment.
                     </p>
                   ) : (
-                    <ul className="space-y-3">
+                    <ul className="space-y-5">
                       {block.analyses.map((a) => (
                         <li
                           key={a.id}
@@ -134,38 +135,38 @@ export default function HomeClient({ news, events }: Props) {
                             hover:border-gray-400 transition-colors
                           "
                         >
-                          <p className="text-sm font-medium text-gray-900 hover:underline">
+                          {/* TITRE */}
+                          <p className="text-base font-semibold text-gray-900 leading-snug">
                             {a.title}
                           </p>
 
-                          <div className="flex flex-wrap items-center gap-2 mt-1">
-                            {a.topics?.slice(0, 2).map((t) => (
+                          {/* META */}
+                          <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-500">
+                            {a.topics?.slice(0, 1).map((t) => (
                               <span
                                 key={t}
-                                className="text-xs px-2 py-0.5 rounded bg-ratecard-light text-gray-600"
+                                className="px-2 py-0.5 rounded bg-ratecard-light text-gray-600"
                               >
                                 {t}
                               </span>
                             ))}
 
-                            {a.key_metrics?.slice(0, 2).map((m, i) => (
-                              <span
-                                key={i}
-                                className="text-xs text-gray-500"
-                              >
-                                • {m}
+                            {a.key_metrics?.[0] && (
+                              <span>
+                                • {a.key_metrics[0]}
                               </span>
-                            ))}
+                            )}
 
-                            <span className="text-xs text-gray-400">
+                            <span className="text-gray-400">
                               {new Date(
                                 a.published_at
                               ).toLocaleDateString("fr-FR")}
                             </span>
                           </div>
 
+                          {/* EXCERPT (1 PHRASE MAX) */}
                           {a.excerpt && (
-                            <p className="text-sm text-gray-600 mt-1 max-w-3xl">
+                            <p className="text-sm text-gray-600 mt-2 max-w-2xl">
                               {a.excerpt}
                             </p>
                           )}
@@ -183,3 +184,4 @@ export default function HomeClient({ news, events }: Props) {
     </div>
   );
 }
+
