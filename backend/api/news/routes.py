@@ -91,11 +91,12 @@ def publish_route(id_news: str, published_at: str | None = None):
 
 
 # ============================================================
-# IA — GENERATE NEWS (SOURCE → NEWS) — HTML ORIENTÉ
+# IA — GENERATE NEWS (SOURCE → NEWS) — HTML ORIENTÉ (ROBUSTE)
 # ============================================================
 @router.post("/ai/generate")
 def ai_generate(payload: dict):
     import json
+    import re
 
     source_text = payload.get("source_text")
     source_type = payload.get("source_type")
@@ -117,8 +118,8 @@ RÈGLES ÉDITORIALES
 - PAS de superlatifs
 - Style journalistique sobre
 
-FORMAT DE SORTIE (OBLIGATOIRE — JSON VALIDE)
-Retourne STRICTEMENT un objet JSON avec les clés suivantes :
+FORMAT DE SORTIE (OBLIGATOIRE)
+Retourne un objet JSON avec EXACTEMENT les clés suivantes :
 
 {{
   "title": "Titre factuel et informatif",
@@ -147,14 +148,27 @@ SOURCE ({source_type or "texte libre"}):
 
     if raw:
         try:
-            data = json.loads(raw)
+            # ------------------------------------------------
+            # EXTRACTION DU JSON (ROBUSTE)
+            # ------------------------------------------------
+            match = re.search(r"\{[\s\S]*\}", raw)
+            if not match:
+                raise ValueError("JSON introuvable dans la réponse IA")
+
+            json_str = match.group(0)
+
+            data = json.loads(json_str)
+
             title = data.get("title", "").strip()
             excerpt = data.get("excerpt", "").strip()
             body = data.get("body_html", "").strip()
-        except Exception:
+
+        except Exception as e:
+            # Log utile pour debug
+            logger.exception("Erreur parsing IA")
             raise HTTPException(
                 500,
-                "Erreur parsing IA (JSON invalide)"
+                "Erreur parsing IA (format JSON invalide)"
             )
 
     return {
@@ -165,4 +179,3 @@ SOURCE ({source_type or "texte libre"}):
             "body": body,
         },
     }
-
