@@ -112,18 +112,22 @@ export default function AnalysisPage() {
               </p>
             )}
 
-            {/* META */}
-            <div className="mt-auto pt-4 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-              {/* KEY METRIC FIRST */}
+            {/* META — SIGNALS */}
+            <div className="mt-auto pt-4 text-xs text-gray-500 space-y-2">
+              {/* KEY METRIC */}
               {a.key_metrics?.[0] && (
-                <span>• {a.key_metrics[0]}</span>
+                <div>
+                  • {a.key_metrics[0]}
+                </div>
               )}
 
-              {/* TOPIC LAST */}
+              {/* TOPIC (LIGNE DÉDIÉE) */}
               {a.topics?.[0] && (
-                <span className="px-2 py-0.5 rounded bg-ratecard-light text-gray-600">
-                  {a.topics[0]}
-                </span>
+                <div>
+                  <span className="inline-block px-2 py-0.5 rounded bg-ratecard-light text-gray-600">
+                    {a.topics[0]}
+                  </span>
+                </div>
               )}
             </div>
           </article>
@@ -133,4 +137,3 @@ export default function AnalysisPage() {
     </div>
   );
 }
-
