@@ -67,7 +67,7 @@ def get_home_events():
                     title=c["title"],
                     published_at=c["published_at"],
                     topics=(c.get("topics") or [])[:2],
-                    key_metrics=(c.get("chiffres") or [])[:2],
+                    key_metrics=(c.get("key_metrics") or [])[:2],
                 )
                 for c in contents[:4]
             ]
@@ -89,6 +89,7 @@ def get_home_events():
     except Exception:
         logger.exception("Erreur home events")
         raise HTTPException(500, "Erreur récupération home events")
+
 
 # ============================================================
 # NAV — EVENTS (SIDEBAR)
@@ -127,7 +128,6 @@ def get_nav_events():
     except Exception:
         logger.exception("Erreur nav events")
         raise HTTPException(500, "Erreur récupération nav events")
-
 
 
 # ============================================================
@@ -195,9 +195,8 @@ def read_content(id_content: str):
         raise HTTPException(500, "Erreur lecture analyse")
 
 
-
 # ============================================================
-# PUBLIC — LIST ANALYSES (EXACTEMENT COMME HOME, SANS LIMITE)
+# PUBLIC — LIST ANALYSES (COMME HOME, SANS LIMITE)
 # ============================================================
 @router.get("/analysis/list")
 def list_public_analyses():
@@ -216,7 +215,7 @@ def list_public_analyses():
                         "excerpt": c.get("excerpt"),
                         "published_at": c["published_at"],
                         "topics": c.get("topics") or [],
-                        "key_metrics": c.get("chiffres") or [],
+                        "key_metrics": c.get("key_metrics") or [],
                         "event": {
                             "id": e["id"],
                             "label": e["label"],
@@ -225,14 +224,9 @@ def list_public_analyses():
                     }
                 )
 
-        # tri global décroissant
-        items.sort(
-            key=lambda x: x["published_at"], reverse=True
-        )
-
+        items.sort(key=lambda x: x["published_at"], reverse=True)
         return {"items": items}
 
     except Exception:
         logger.exception("Erreur list_public_analyses")
         raise HTTPException(500, "Erreur récupération analyses")
-
