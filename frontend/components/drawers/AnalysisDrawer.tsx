@@ -30,6 +30,7 @@ type Props = {
 export default function AnalysisDrawer({ id, onClose }: Props) {
   const router = useRouter();
   const [data, setData] = useState<AnalysisData | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   function close() {
     if (onClose) {
@@ -44,6 +45,8 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
       try {
         const res = await api.get(`/public/content/${id}`);
         setData(res);
+        // Déclenche l’animation après montage
+        requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
         console.error(e);
       }
@@ -57,12 +60,22 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
     <div className="fixed inset-0 z-[100] flex">
       {/* OVERLAY */}
       <div
-        className="absolute inset-0 bg-black/40"
+        className="
+          absolute inset-0 bg-black/40
+          transition-opacity duration-300
+        "
         onClick={close}
       />
 
       {/* DRAWER */}
-      <aside className="relative ml-auto w-full md:w-[760px] bg-white shadow-xl overflow-y-auto">
+      <aside
+        className={`
+          relative ml-auto w-full md:w-[760px]
+          bg-white shadow-xl overflow-y-auto
+          transform transition-transform duration-300 ease-out
+          ${isOpen ? "translate-x-0" : "translate-x-full"}
+        `}
+      >
         {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-start">
           <div className="space-y-2 max-w-xl">
