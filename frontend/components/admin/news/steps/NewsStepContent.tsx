@@ -10,6 +10,8 @@ import PersonSelector, {
   ArticlePerson,
 } from "@/components/admin/PersonSelector";
 
+import HtmlEditor from "@/components/admin/HtmlEditor";
+
 type Props = {
   title: string;
   excerpt: string;
@@ -101,7 +103,10 @@ export default function NewsStepContent({
       {/* EXCERPT */}
       <div>
         <label className="block font-medium mb-1">
-          Excerpt <span className="text-sm text-gray-500">(2–3 phrases)</span>
+          Excerpt{" "}
+          <span className="text-sm text-gray-500">
+            (2–3 phrases)
+          </span>
         </label>
         <textarea
           className="w-full border rounded p-2 h-20"
@@ -111,13 +116,16 @@ export default function NewsStepContent({
         />
       </div>
 
-      {/* TEXTE */}
+      {/* TEXTE — HTML EDITOR */}
       <div>
-        <label className="block font-medium mb-1">Texte</label>
-        <textarea
-          className="w-full border rounded p-2 h-32"
+        <label className="block font-medium mb-1">
+          Texte
+        </label>
+        <HtmlEditor
           value={body}
-          onChange={(e) => onChange({ body: e.target.value })}
+          onChange={(html) =>
+            onChange({ body: html })
+          }
         />
       </div>
 
@@ -131,8 +139,14 @@ export default function NewsStepContent({
       <PersonSelector
         values={persons}
         persons={allPersons}
-        companyId={company?.id_company || company?.ID_COMPANY || null}
-        onChange={(items) => onChange({ persons: items })}
+        companyId={
+          company?.id_company ||
+          company?.ID_COMPANY ||
+          null
+        }
+        onChange={(items) =>
+          onChange({ persons: items })
+        }
       />
 
       {/* ACTION */}
@@ -148,4 +162,5 @@ export default function NewsStepContent({
     </div>
   );
 }
+
 
