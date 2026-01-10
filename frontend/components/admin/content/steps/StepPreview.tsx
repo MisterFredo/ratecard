@@ -62,7 +62,7 @@ export default function StepPreview({
      UI
   --------------------------------------------------------- */
   return (
-    <div className="space-y-8">
+    <div className="space-y-10 max-w-3xl">
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
@@ -80,12 +80,14 @@ export default function StepPreview({
 
       {/* VISUEL */}
       <div className="space-y-2">
-        <p className="text-xs text-gray-500">Visuel principal</p>
+        <p className="text-xs text-gray-500">
+          Visuel principal
+        </p>
 
         {content.rectUrl ? (
           <img
             src={content.rectUrl}
-            className="w-full max-w-3xl rounded border bg-white shadow"
+            className="w-full max-h-[260px] object-cover rounded border bg-white shadow"
           />
         ) : content.squareUrl ? (
           <img
@@ -93,13 +95,16 @@ export default function StepPreview({
             className="w-64 rounded border bg-white shadow"
           />
         ) : (
-          <p className="text-gray-400 italic">Aucun visuel</p>
+          <p className="text-gray-400 italic">
+            Aucun visuel
+          </p>
         )}
       </div>
 
-      {/* META / ANGLE */}
-      <div className="bg-white border rounded p-4 space-y-3 shadow-sm max-w-3xl">
-        <h3 className="text-lg font-bold">
+      {/* HEADER ANALYTIQUE */}
+      <div className="bg-white border rounded p-5 shadow-sm space-y-4">
+
+        <h3 className="text-xl font-semibold text-gray-900">
           {content.ANGLE_TITLE}
         </h3>
 
@@ -108,12 +113,13 @@ export default function StepPreview({
         </p>
 
         {content.EXCERPT && (
-          <p className="italic text-gray-700">
+          <p className="text-base font-medium text-gray-800">
             {content.EXCERPT}
           </p>
         )}
 
-        <div className="text-sm text-gray-600 space-y-1">
+        {/* META */}
+        <div className="text-sm text-gray-600 space-y-1 pt-2">
           <div>
             <strong>Topics :</strong>{" "}
             {content.topics?.length
@@ -148,30 +154,38 @@ export default function StepPreview({
         </div>
       </div>
 
+      {/* CONCEPT */}
+      {content.CONCEPT && (
+        <div className="border-l-4 border-ratecard-blue pl-4">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+            Concept clé
+          </h4>
+          <p className="text-sm text-gray-700">
+            {content.CONCEPT}
+          </p>
+        </div>
+      )}
+
       {/* CONTENT BODY */}
-      <div className="bg-white p-6 border rounded shadow-sm max-w-3xl space-y-4">
-
-        {content.CONCEPT && (
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-1">
-              Concept central
-            </h4>
-            <p className="text-gray-800">
-              {content.CONCEPT}
-            </p>
-          </div>
-        )}
-
-        <div
-          className="prose prose-gray max-w-none"
-          dangerouslySetInnerHTML={{
-            __html: content.CONTENT_BODY || "",
-          }}
-        />
-      </div>
+      <div
+        className="
+          prose prose-sm max-w-none
+          prose-p:my-4
+          prose-ul:my-4
+          prose-ol:my-4
+          prose-li:my-1
+          prose-strong:font-semibold
+          prose-a:text-ratecard-blue
+          prose-a:no-underline
+          hover:prose-a:underline
+        "
+        dangerouslySetInnerHTML={{
+          __html: content.CONTENT_BODY || "",
+        }}
+      />
 
       {/* ACTIONS */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 pt-6">
         <button
           onClick={onBack}
           className="px-4 py-2 border rounded"
@@ -189,3 +203,4 @@ export default function StepPreview({
     </div>
   );
 }
+
