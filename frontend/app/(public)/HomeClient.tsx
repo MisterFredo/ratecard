@@ -121,17 +121,25 @@ export default function HomeClient({ news, analyses }: Props) {
                 flex flex-col
               "
             >
-              {/* EVENT LABEL */}
-              <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
-                <span
-                  className="inline-block w-2 h-2 rounded-full"
-                  style={{
-                    backgroundColor:
-                      a.event.event_color || "#9CA3AF",
-                  }}
-                />
-                <span className="font-medium">
-                  {a.event.home_label || a.event.label}
+              {/* EVENT + DATE (MÊME LIGNE) */}
+              <div className="flex items-center justify-between mb-3 text-xs text-gray-500">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-block w-2 h-2 rounded-full"
+                    style={{
+                      backgroundColor:
+                        a.event.event_color || "#9CA3AF",
+                    }}
+                  />
+                  <span className="font-medium">
+                    {a.event.home_label || a.event.label}
+                  </span>
+                </div>
+
+                <span className="text-gray-400">
+                  {new Date(
+                    a.published_at
+                  ).toLocaleDateString("fr-FR")}
                 </span>
               </div>
 
@@ -147,23 +155,23 @@ export default function HomeClient({ news, analyses }: Props) {
                 </p>
               )}
 
-              {/* META */}
-              <div className="mt-auto pt-4 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                {a.topics?.[0] && (
-                  <span className="px-2 py-0.5 rounded bg-ratecard-light text-gray-600">
-                    {a.topics[0]}
-                  </span>
-                )}
-
+              {/* META — ALIGNÉ AVEC PAGE ANALYSES */}
+              <div className="mt-auto pt-4 text-xs text-gray-500 space-y-2">
+                {/* CHIFFRE (LIGNE 1) */}
                 {a.key_metrics?.[0] && (
-                  <span>• {a.key_metrics[0]}</span>
+                  <div>
+                    • {a.key_metrics[0]}
+                  </div>
                 )}
 
-                <span className="text-gray-400">
-                  {new Date(
-                    a.published_at
-                  ).toLocaleDateString("fr-FR")}
-                </span>
+                {/* TOPIC (LIGNE DÉDIÉE) */}
+                {a.topics?.[0] && (
+                  <div>
+                    <span className="inline-block px-2 py-0.5 rounded bg-ratecard-light text-gray-600">
+                      {a.topics[0]}
+                    </span>
+                  </div>
+                )}
               </div>
             </article>
           ))}
@@ -173,3 +181,4 @@ export default function HomeClient({ news, analyses }: Props) {
     </div>
   );
 }
+
