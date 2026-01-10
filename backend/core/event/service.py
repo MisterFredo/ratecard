@@ -44,9 +44,16 @@ def create_event(data: EventCreate) -> str:
         "MEDIA_SQUARE_ID": None,
         "MEDIA_RECTANGLE_ID": None,
 
+        # 🧭 CONTEXTE ÉVÉNEMENTIEL
+        "CONTEXT_HTML": None,
+        "CONTEXT_UPDATED_AT": None,
+        "CONTEXT_AUTHOR": None,
+
+        # SEO
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
 
+        # Meta
         "CREATED_AT": now,
         "UPDATED_AT": now,
         "IS_ACTIVE": True,
@@ -100,7 +107,15 @@ def update_event(id_event: str, data: EventUpdate) -> bool:
     if not values:
         return False
 
-    values["updated_at"] = datetime.utcnow().isoformat()
+    now = datetime.utcnow().isoformat()
+
+    # 🧭 Gestion spécifique du contexte événementiel
+    if "context_html" in values:
+        values["context_updated_at"] = now
+        # context_author peut être injecté plus tard
+        # via auth / session admin si nécessaire
+
+    values["updated_at"] = now
 
     return update_bq(
         table=TABLE_EVENT,
@@ -169,7 +184,8 @@ def list_home_events():
           HOME_ORDER,
           MEDIA_RECTANGLE_ID,
           EVENT_COLOR,
-          EXTERNAL_URL
+          EXTERNAL_URL,
+          CONTEXT_HTML
         FROM `{TABLE_EVENT}`
         WHERE
           IS_ACTIVE = TRUE
@@ -186,6 +202,7 @@ def list_home_events():
             "home_label": r["HOME_LABEL"],
             "event_color": r.get("EVENT_COLOR"),
             "external_url": r.get("EXTERNAL_URL"),
+            "context_html": r.get("CONTEXT_HTML"),
             "visual_rect_url": get_public_url(
                 "events",
                 r.get("MEDIA_RECTANGLE_ID"),
@@ -244,6 +261,7 @@ def list_event_contents(event_id: str):
         }
         for r in rows
     ]
+
 
 
 
