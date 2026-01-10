@@ -1,6 +1,10 @@
-export const dynamic = "force-dynamic";
+"use client";
 
+import { useEffect, useState } from "react";
+import { useDrawer } from "@/contexts/DrawerContext";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
+
+export const dynamic = "force-dynamic";
 
 /* =========================================================
    TYPES
@@ -14,37 +18,34 @@ type NewsItem = {
   PUBLISHED_AT?: string | null;
 };
 
-/* =========================================================
-   API
-========================================================= */
-
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 /* =========================================================
-   LOADER
+   FETCH
 ========================================================= */
 
-async function getNews(): Promise<NewsItem[]> {
-  try {
-    const res = await fetch(
-      `${API_BASE}/news/list`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json.news || [];
-  } catch {
-    return [];
-  }
+async function fetchNews(): Promise<NewsItem[]> {
+  const res = await fetch(
+    `${API_BASE}/news/list`,
+    { cache: "no-store" }
+  );
+  if (!res.ok) return [];
+  const json = await res.json();
+  return json.news || [];
 }
 
 /* =========================================================
    PAGE
 ========================================================= */
 
-export default async function NewsPage() {
-  const news = await getNews();
+export default function NewsPage() {
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const { openDrawer } = useDrawer();
+
+  useEffect(() => {
+    fetchNews().then(setNews);
+  }, []);
 
   return (
     <div className="space-y-20">
@@ -62,7 +63,7 @@ export default async function NewsPage() {
       </section>
 
       {/* =====================================================
-          LISTE DES NEWS — PAGE PLEINE UNIQUEMENT
+          LISTE DES NEWS — DRAWER ADEX-LIKE
       ===================================================== */}
       {news.length === 0 ? (
         <p className="text-sm text-gray-400">
@@ -71,19 +72,15 @@ export default async function NewsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {news.map((n) => (
-            <a
+            <PartnerSignalCard
               key={n.ID_NEWS}
-              href={`/news/${n.ID_NEWS}`}
-              className="block"
-            >
-              <PartnerSignalCard
-                id={n.ID_NEWS}
-                title={n.TITLE}
-                excerpt={n.EXCERPT}
-                visualRectUrl={n.VISUAL_RECT_URL}
-                publishedAt={n.PUBLISHED_AT || ""}
-              />
-            </a>
+              id={n.ID_NEWS}
+              title={n.TITLE}
+              excerpt={n.EXCERPT}
+              visualRectUrl={n.VISUAL_RECT_URL}
+              publishedAt={n.PUBLISHED_AT || ""}
+              openInDrawer   // ⬅️ COMPORTEMENT ADEX
+            />
           ))}
         </div>
       )}
