@@ -19,6 +19,9 @@ export default function EditEvent({ params }: { params: { id: string } }) {
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
 
+  // 🔗 External URL
+  const [externalUrl, setExternalUrl] = useState("");
+
   // 🔑 Home / Nav
   const [homeLabel, setHomeLabel] = useState("");
   const [homeOrder, setHomeOrder] = useState<number | null>(null);
@@ -46,6 +49,8 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         setDescription(e.DESCRIPTION || "");
         setSeoTitle(e.SEO_TITLE || "");
         setSeoDescription(e.SEO_DESCRIPTION || "");
+
+        setExternalUrl(e.EXTERNAL_URL || "");
 
         setHomeLabel(e.HOME_LABEL || "");
         setHomeOrder(
@@ -92,6 +97,8 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         description: description || null,
         seo_title: seoTitle || null,
         seo_description: seoDescription || null,
+
+        external_url: externalUrl || null,
 
         home_label: homeLabel || null,
         home_order: homeOrder,
@@ -167,6 +174,20 @@ export default function EditEvent({ params }: { params: { id: string } }) {
             placeholder="Description meta (optionnelle)"
           />
         </div>
+      </div>
+
+      {/* EXTERNAL URL */}
+      <div className="space-y-2 max-w-2xl">
+        <label className="block text-sm font-medium mb-1">
+          URL externe de l’événement
+        </label>
+        <input
+          type="url"
+          className="border p-2 w-full rounded"
+          value={externalUrl}
+          onChange={(e) => setExternalUrl(e.target.value)}
+          placeholder="https://events.ratecard.fr/..."
+        />
       </div>
 
       {/* HOME / NAV */}
@@ -266,5 +287,6 @@ export default function EditEvent({ params }: { params: { id: string } }) {
     </div>
   );
 }
+
 
 
