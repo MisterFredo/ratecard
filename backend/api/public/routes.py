@@ -104,12 +104,12 @@ def get_nav_events():
             f"""
             SELECT
               LABEL,
-              EVENT_URL
+              EXTERNAL_URL
             FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_EVENT`
             WHERE
               IS_ACTIVE = TRUE
               AND IS_ACTIVE_NAV = TRUE
-              AND EVENT_URL IS NOT NULL
+              AND EXTERNAL_URL IS NOT NULL
             ORDER BY HOME_ORDER ASC
             """
         )
@@ -118,7 +118,7 @@ def get_nav_events():
             "events": [
                 {
                     "label": r["LABEL"],
-                    "url": r["EVENT_URL"],
+                    "url": r["EXTERNAL_URL"],
                 }
                 for r in rows
             ]
