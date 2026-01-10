@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import Link from "next/link";
+import { useDrawer } from "@/contexts/DrawerContext";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +47,7 @@ async function fetchAnalyses(): Promise<AnalysisItem[]> {
 export default function AnalysisPage() {
   const [analyses, setAnalyses] = useState<AnalysisItem[]>([]);
   const [activeEvent, setActiveEvent] = useState<string | null>(null);
+  const { openDrawer } = useDrawer();
 
   useEffect(() => {
     fetchAnalyses().then(setAnalyses);
@@ -62,10 +63,7 @@ export default function AnalysisPage() {
     >();
 
     analyses.forEach((a) => {
-      if (
-        activeEvent &&
-        a.event.id !== activeEvent
-      ) {
+      if (activeEvent && a.event.id !== activeEvent) {
         return;
       }
 
@@ -144,7 +142,7 @@ export default function AnalysisPage() {
       </div>
 
       {/* =====================================================
-          ANALYSES — SAME PATTERN AS HOME
+          ANALYSES — DRAWER ADEX-LIKE
       ===================================================== */}
       <div className="space-y-8">
         {events.map(({ event, analyses }) => (
@@ -182,53 +180,54 @@ export default function AnalysisPage() {
               {/* ANALYSES LIST */}
               <ul className="space-y-3">
                 {analyses.map((a) => (
-                  <li key={a.id}>
-                    <Link
-                      href={`/analysis/${a.id}`}
-                      className="
-                        block pl-4 border-l border-ratecard-border
-                        hover:border-gray-400 transition-colors
-                      "
-                    >
-                      {/* TITLE */}
-                      <p className="text-sm font-medium text-gray-900 hover:underline">
-                        {a.title}
-                      </p>
+                  <li
+                    key={a.id}
+                    onClick={() =>
+                      openDrawer("analysis", a.id)
+                    }
+                    className="
+                      cursor-pointer pl-4 border-l border-ratecard-border
+                      hover:border-gray-400 transition-colors
+                    "
+                  >
+                    {/* TITLE */}
+                    <p className="text-sm font-medium text-gray-900 hover:underline">
+                      {a.title}
+                    </p>
 
-                      {/* META */}
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        {a.topics?.slice(0, 2).map((t) => (
-                          <span
-                            key={t}
-                            className="text-xs px-2 py-0.5 rounded bg-ratecard-light text-gray-600"
-                          >
-                            {t}
-                          </span>
-                        ))}
-
-                        {a.key_metrics?.slice(0, 2).map((m, i) => (
-                          <span
-                            key={i}
-                            className="text-xs text-gray-500"
-                          >
-                            • {m}
-                          </span>
-                        ))}
-
-                        <span className="text-xs text-gray-400">
-                          {new Date(
-                            a.published_at
-                          ).toLocaleDateString("fr-FR")}
+                    {/* META */}
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      {a.topics?.slice(0, 2).map((t) => (
+                        <span
+                          key={t}
+                          className="text-xs px-2 py-0.5 rounded bg-ratecard-light text-gray-600"
+                        >
+                          {t}
                         </span>
-                      </div>
+                      ))}
 
-                      {/* EXCERPT */}
-                      {a.excerpt && (
-                        <p className="text-sm text-gray-600 mt-1 max-w-3xl">
-                          {a.excerpt}
-                        </p>
-                      )}
-                    </Link>
+                      {a.key_metrics?.slice(0, 2).map((m, i) => (
+                        <span
+                          key={i}
+                          className="text-xs text-gray-500"
+                        >
+                          • {m}
+                        </span>
+                      ))}
+
+                      <span className="text-xs text-gray-400">
+                        {new Date(
+                          a.published_at
+                        ).toLocaleDateString("fr-FR")}
+                      </span>
+                    </div>
+
+                    {/* EXCERPT */}
+                    {a.excerpt && (
+                      <p className="text-sm text-gray-600 mt-1 max-w-3xl">
+                        {a.excerpt}
+                      </p>
+                    )}
                   </li>
                 ))}
               </ul>
