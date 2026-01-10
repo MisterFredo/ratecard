@@ -62,7 +62,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
       {/* DRAWER */}
       <aside
         className={`
-          relative ml-auto w-full md:w-[680px]
+          relative ml-auto w-full md:w-[760px]
           bg-white shadow-xl overflow-y-auto
           transform transition-transform duration-300 ease-out
           ${isOpen ? "translate-x-0" : "translate-x-full"}
@@ -70,10 +70,11 @@ export default function NewsDrawer({ id, onClose }: Props) {
       >
         {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 flex items-start justify-between">
-          <div className="space-y-1">
+          <div className="space-y-1 max-w-xl">
             <span className="text-xs uppercase tracking-wide text-gray-400">
               {data.company.name}
             </span>
+
             <h1 className="text-xl font-semibold leading-tight text-gray-900">
               {data.title}
             </h1>
@@ -88,33 +89,31 @@ export default function NewsDrawer({ id, onClose }: Props) {
           </button>
         </div>
 
-        {/* VISUAL */}
+        {/* VISUAL — HERO PARTENAIRE (INCHANGÉ) */}
         {data.visual_rect_url && (
-          <div className="px-5 pt-5">
-            <img
-              src={data.visual_rect_url}
-              alt={data.title}
-              className="
-                w-full
-                h-auto
-                max-h-[260px]
-                object-cover
-                rounded-lg
-              "
-            />
-          </div>
+          <img
+            src={data.visual_rect_url}
+            alt={data.title}
+            className="
+              w-full
+              h-auto
+              max-h-[340px]
+              object-cover
+            "
+          />
         )}
 
         {/* CONTENT */}
-        <div className="px-5 py-6 space-y-6">
-          {/* EXCERPT */}
+        <div className="px-5 py-6 space-y-8">
+
+          {/* EXCERPT — MISE EN AVANT */}
           {data.excerpt && (
-            <p className="text-base font-medium text-gray-800">
+            <p className="text-base font-medium text-gray-800 max-w-2xl">
               {data.excerpt}
             </p>
           )}
 
-          {/* BODY — HTML RENDER */}
+          {/* BODY — HTML RENDER PREMIUM (ALIGNÉ ANALYSE) */}
           {data.body && (
             <div
               className="
