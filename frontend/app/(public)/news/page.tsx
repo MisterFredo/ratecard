@@ -48,19 +48,7 @@ export default function NewsPage() {
   }, []);
 
   return (
-    <div className="space-y-20">
-
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
-      <section className="space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">
-          News
-        </h1>
-        <p className="text-gray-600 max-w-2xl">
-          Annonces et prises de parole des partenaires de l’écosystème Ratecard.
-        </p>
-      </section>
+    <div className="space-y-12 md:space-y-14">
 
       {/* =====================================================
           LISTE DES NEWS — DRAWER ADEX-LIKE
@@ -79,7 +67,7 @@ export default function NewsPage() {
               excerpt={n.EXCERPT}
               visualRectUrl={n.VISUAL_RECT_URL}
               publishedAt={n.PUBLISHED_AT || ""}
-              openInDrawer   // ⬅️ COMPORTEMENT ADEX
+              openInDrawer
             />
           ))}
         </div>
@@ -88,3 +76,4 @@ export default function NewsPage() {
     </div>
   );
 }
+
