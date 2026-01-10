@@ -50,7 +50,7 @@ def get_home_news():
 
 
 # ============================================================
-# HOME — ANALYSES PAR EVENT (LIGNES + ENRICHISSEMENTS)
+# HOME — ANALYSES PAR EVENT (LIGNES + CONTEXTE)
 # ============================================================
 @router.get("/home/events", response_model=HomeEventsResponse)
 def get_home_events():
@@ -79,6 +79,8 @@ def get_home_events():
                         label=e["label"],
                         home_label=e["home_label"],
                         event_color=e.get("event_color"),
+                        # ✅ CONTEXTE ÉVÉNEMENTIEL (AJOUT CRUCIAL)
+                        context_html=e.get("context_html"),
                     ),
                     analyses=analyses,
                 )
@@ -89,7 +91,6 @@ def get_home_events():
     except Exception:
         logger.exception("Erreur home events")
         raise HTTPException(500, "Erreur récupération home events")
-
 
 # ============================================================
 # NAV — EVENTS (SIDEBAR)
