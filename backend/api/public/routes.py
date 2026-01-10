@@ -122,45 +122,44 @@ def read_news(id_news: str):
 
 
 # ============================================================
-# DRAWER — ANALYSE
+# PUBLIC — READ ANALYSIS (DRAWER)
 # ============================================================
-@router.get("/content/{id_content}", response_model=DrawerAnalysisResponse)
+@router.get("/content/{id_content}")
 def read_content(id_content: str):
     try:
         contents = list_contents()
-        c = next((x for x in contents if x["ID_CONTENT"] == id_content), None)
+        c = next((x for x in contents if x["id"] == id_content), None)
 
-        if not c or c["STATUS"] != "PUBLISHED":
+        if not c:
             raise HTTPException(404, "Analyse introuvable")
 
-        event = (
-            {
-                "id": c.get("EVENT_ID"),
-                "label": c.get("EVENT_LABEL"),
-            }
-            if c.get("EVENT_ID")
-            else None
-        )
-
-        return DrawerAnalysisResponse(
-            id_content=c["ID_CONTENT"],
-            angle_title=c["ANGLE_TITLE"],
-            angle_signal=c["ANGLE_SIGNAL"],
-            excerpt=c.get("EXCERPT"),
-            concept=c.get("CONCEPT"),
-            content_body=c.get("CONTENT_BODY"),
-            chiffres=c.get("CHIFFRES") or [],
-            citations=c.get("CITATIONS") or [],
-            acteurs_cites=c.get("ACTEURS_CITES") or [],
-            published_at=c["PUBLISHED_AT"],
-            event=event,
-        )
+        return {
+            "id_content": c["id"],
+            "angle_title": c["title"],
+            "angle_signal": c.get("signal"),
+            "excerpt": c.get("excerpt"),
+            "concept": c.get("concept"),
+            "content_body": c.get("content_body"),
+            "chiffres": c.get("chiffres") or [],
+            "citations": c.get("citations") or [],
+            "acteurs_cites": c.get("acteurs_cites") or [],
+            "published_at": c["published_at"],
+            "event": (
+                {
+                    "id": c["event"]["id"],
+                    "label": c["event"]["label"],
+                }
+                if c.get("event")
+                else None
+            ),
+        }
 
     except HTTPException:
         raise
     except Exception:
         logger.exception("Erreur read_content")
         raise HTTPException(500, "Erreur lecture analyse")
+
 
 # ============================================================
 # PUBLIC — LIST ANALYSES (EXACTEMENT COMME HOME, SANS LIMITE)
