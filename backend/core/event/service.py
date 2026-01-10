@@ -37,6 +37,9 @@ def create_event(data: EventCreate) -> str:
         # 🎨 Signature visuelle
         "EVENT_COLOR": None,
 
+        # 🔗 URL externe
+        "EXTERNAL_URL": data.external_url,
+
         # Médias
         "MEDIA_SQUARE_ID": None,
         "MEDIA_RECTANGLE_ID": None,
@@ -123,7 +126,8 @@ def get_event_by_slug(slug: str):
           HOME_LABEL,
           DESCRIPTION,
           MEDIA_RECTANGLE_ID,
-          EVENT_COLOR
+          EVENT_COLOR,
+          EXTERNAL_URL
         FROM `{TABLE_EVENT}`
         WHERE
           IS_ACTIVE = TRUE
@@ -144,6 +148,7 @@ def get_event_by_slug(slug: str):
         "home_label": e["HOME_LABEL"],
         "description": e.get("DESCRIPTION"),
         "event_color": e.get("EVENT_COLOR"),
+        "external_url": e.get("EXTERNAL_URL"),
         "visual_rect_url": get_public_url(
             "events",
             e.get("MEDIA_RECTANGLE_ID"),
@@ -163,12 +168,12 @@ def list_home_events():
           HOME_LABEL,
           HOME_ORDER,
           MEDIA_RECTANGLE_ID,
-          EVENT_COLOR
+          EVENT_COLOR,
+          EXTERNAL_URL
         FROM `{TABLE_EVENT}`
         WHERE
           IS_ACTIVE = TRUE
           AND IS_ACTIVE_HOME = TRUE
-          AND MEDIA_RECTANGLE_ID IS NOT NULL
         ORDER BY HOME_ORDER ASC
         """
     )
@@ -180,6 +185,7 @@ def list_home_events():
             "label": r["LABEL"],
             "home_label": r["HOME_LABEL"],
             "event_color": r.get("EVENT_COLOR"),
+            "external_url": r.get("EXTERNAL_URL"),
             "visual_rect_url": get_public_url(
                 "events",
                 r.get("MEDIA_RECTANGLE_ID"),
@@ -202,7 +208,6 @@ def list_event_contents(event_id: str):
           C.PUBLISHED_AT,
           C.CHIFFRES,
 
-          -- Topics (max 2 later in projection)
           T.TOPICS
         FROM `{TABLE_CONTENT_EVENT}` CE
         JOIN `{TABLE_CONTENT}` C
@@ -235,9 +240,10 @@ def list_event_contents(event_id: str):
             "excerpt": r.get("EXCERPT"),
             "published_at": r["PUBLISHED_AT"],
             "topics": (r.get("TOPICS") or [])[:2],
-            "chiffres": (r.get("CHIFFRES") or [])[:2],
+            "key_metrics": (r.get("CHIFFRES") or [])[:2],
         }
         for r in rows
     ]
+
 
 
