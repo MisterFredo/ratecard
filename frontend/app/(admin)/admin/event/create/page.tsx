@@ -14,6 +14,9 @@ export default function CreateEvent() {
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
 
+  // 🔗 External URL
+  const [externalUrl, setExternalUrl] = useState("");
+
   // 🔑 Home / Navigation
   const [homeLabel, setHomeLabel] = useState("");
   const [homeOrder, setHomeOrder] = useState<number | null>(null);
@@ -42,6 +45,7 @@ export default function CreateEvent() {
         description: description || null,
         seo_title: seoTitle || null,
         seo_description: seoDescription || null,
+        external_url: externalUrl || null,
       });
 
       if (!res.id_event) {
@@ -57,6 +61,7 @@ export default function CreateEvent() {
         is_active_home: isActiveHome,
         is_active_nav: isActiveNav,
         event_color: eventColor || null,
+        external_url: externalUrl || null,
       });
 
       alert(
@@ -123,6 +128,20 @@ export default function CreateEvent() {
             placeholder="Description meta (optionnelle)"
           />
         </div>
+      </div>
+
+      {/* EXTERNAL URL */}
+      <div className="space-y-2 max-w-2xl">
+        <label className="block text-sm font-medium mb-1">
+          URL externe de l’événement
+        </label>
+        <input
+          type="url"
+          className="border p-2 w-full rounded"
+          value={externalUrl}
+          onChange={(e) => setExternalUrl(e.target.value)}
+          placeholder="https://events.ratecard.fr/..."
+        />
       </div>
 
       {/* HOME / NAV */}
@@ -223,4 +242,5 @@ export default function CreateEvent() {
     </div>
   );
 }
+
 
