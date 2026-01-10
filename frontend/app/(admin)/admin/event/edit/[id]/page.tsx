@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import VisualSectionEvent from "@/components/visuals/VisualSectionEvent";
 import EntityBaseForm from "@/components/forms/EntityBaseForm";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
@@ -30,6 +31,9 @@ export default function EditEvent({ params }: { params: { id: string } }) {
 
   // 🎨 Event color
   const [eventColor, setEventColor] = useState<string>("");
+
+  // 🧭 CONTEXTE ÉVÉNEMENTIEL
+  const [contextHtml, setContextHtml] = useState("");
 
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
@@ -62,6 +66,9 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         setIsActiveNav(!!e.IS_ACTIVE_NAV);
 
         setEventColor(e.EVENT_COLOR || "");
+
+        // 🧭 CONTEXTE
+        setContextHtml(e.CONTEXT_HTML || "");
 
         setSquareUrl(
           e.MEDIA_SQUARE_ID
@@ -106,6 +113,9 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         is_active_nav: isActiveNav,
 
         event_color: eventColor || null,
+
+        // 🧭 CONTEXTE ÉVÉNEMENTIEL
+        context_html: contextHtml || null,
       });
 
       alert("Événement modifié");
@@ -123,8 +133,8 @@ export default function EditEvent({ params }: { params: { id: string } }) {
   // UI
   // ---------------------------------------------------------
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between">
+    <div className="space-y-10">
+      <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold">
           Modifier l’événement
         </h1>
@@ -133,7 +143,7 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         </Link>
       </div>
 
-      {/* FORM BASE */}
+      {/* ===================== BASE ===================== */}
       <EntityBaseForm
         values={{
           name: label,
@@ -149,7 +159,7 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         }}
       />
 
-      {/* SEO */}
+      {/* ===================== SEO ===================== */}
       <div className="space-y-4 max-w-2xl">
         <div>
           <label className="block text-sm font-medium mb-1">
@@ -176,7 +186,7 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* EXTERNAL URL */}
+      {/* ===================== URL ===================== */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium mb-1">
           URL externe de l’événement
@@ -190,7 +200,25 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         />
       </div>
 
-      {/* HOME / NAV */}
+      {/* ===================== CONTEXTE ÉVÉNEMENTIEL ===================== */}
+      <div className="space-y-3 max-w-3xl border-t pt-6">
+        <h2 className="text-lg font-semibold">
+          Contexte événementiel (Home)
+        </h2>
+
+        <p className="text-sm text-gray-500">
+          Texte court lié à l’événement (avant / pendant / après).
+          <br />
+          Pas d’analyse marché, pas de reprise des analyses Ratecard.
+        </p>
+
+        <HtmlEditor
+          value={contextHtml}
+          onChange={setContextHtml}
+        />
+      </div>
+
+      {/* ===================== HOME / NAV ===================== */}
       <div className="space-y-6 border-t pt-6">
         <h2 className="text-lg font-semibold">
           Affichage sur la Home et la navigation
@@ -258,6 +286,7 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         </div>
       </div>
 
+      {/* ===================== ACTIONS ===================== */}
       <button
         className="bg-ratecard-blue px-4 py-2 text-white rounded"
         onClick={save}
@@ -266,7 +295,7 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
-      {/* VISUALS */}
+      {/* ===================== VISUELS ===================== */}
       <VisualSectionEvent
         eventId={id}
         squareUrl={squareUrl}
@@ -287,6 +316,3 @@ export default function EditEvent({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
-
-
