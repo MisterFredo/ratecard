@@ -14,7 +14,7 @@ import {
 
 type EventNavItem = {
   label: string;
-  url: string;
+  url: string | null;
 };
 
 export default function PublicShell({
@@ -38,17 +38,23 @@ export default function PublicShell({
 
   const SidebarContent = (
     <>
-      {/* ===== LOGO ===== */}
+      {/* ===== LOGO / MARQUE ===== */}
       <Link
         href="/"
         onClick={() => setMobileOpen(false)}
-        className="mb-10 block"
+        className="mb-10 block text-white"
       >
+        <span className="text-xl font-semibold tracking-wide">
+          Ratecard
+        </span>
+
+        {/*
         <img
           src="/assets/brand/ratecard-logo.png"
           alt="Ratecard"
           className="max-w-[160px]"
         />
+        */}
       </Link>
 
       {/* ===== NAV PRINCIPALE ===== */}
@@ -78,12 +84,12 @@ export default function PublicShell({
       {/* ===== SÉPARATEUR ===== */}
       <div className="my-6 border-t border-white/20" />
 
-      {/* ===== ÉVÉNEMENTS ===== */}
+      {/* ===== ÉVÉNEMENTS (LIENS EXTERNES) ===== */}
       <nav className="space-y-1 text-sm">
         {events.map((e) => (
           <a
             key={e.label}
-            href={e.url}
+            href={e.url || "#"}
             target="_blank"
             rel="noopener noreferrer"
             className="block px-3 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded"
@@ -104,7 +110,7 @@ export default function PublicShell({
           className="flex items-center gap-2 opacity-90 hover:opacity-100"
         >
           <Linkedin size={16} />
-          6 000+ followers
+          Rejoindre nos 6&nbsp;000+ followers
         </a>
 
         <a
@@ -112,7 +118,7 @@ export default function PublicShell({
           className="flex items-center gap-2 opacity-90 hover:opacity-100"
         >
           <Mail size={16} />
-          25 000+ abonnés
+          Rejoindre nos 25&nbsp;000+ abonnés
         </a>
       </div>
 
@@ -167,4 +173,5 @@ export default function PublicShell({
     </div>
   );
 }
+
 
