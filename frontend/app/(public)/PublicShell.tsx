@@ -125,7 +125,7 @@ export default function PublicShell({
   return (
     <div className="min-h-screen flex">
       {/* ===== DESKTOP SIDEBAR ===== */}
-      <aside className="hidden md:flex w-64 bg-ratecard-blue text-white p-6 flex-col">
+      <aside className="hidden md:flex w-56 bg-ratecard-blue text-white p-6 flex-col">
         {SidebarContent}
       </aside>
 
