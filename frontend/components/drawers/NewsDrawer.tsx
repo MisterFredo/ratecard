@@ -41,7 +41,6 @@ export default function NewsDrawer({ id, onClose }: Props) {
       try {
         const res = await api.get(`/public/news/${id}`);
         setData(res);
-        // ⬇️ déclenche l’animation après mount
         requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
         console.error(e);
@@ -63,53 +62,87 @@ export default function NewsDrawer({ id, onClose }: Props) {
       {/* DRAWER */}
       <aside
         className={`
-          relative ml-auto w-full md:w-[640px] bg-white shadow-xl overflow-y-auto
+          relative ml-auto w-full md:w-[680px]
+          bg-white shadow-xl overflow-y-auto
           transform transition-transform duration-300 ease-out
           ${isOpen ? "translate-x-0" : "translate-x-full"}
         `}
       >
         {/* HEADER */}
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 h-14 flex items-center justify-between">
-          <div className="text-sm text-gray-500">
-            {data.company.name}
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 flex items-start justify-between">
+          <div className="space-y-1">
+            <span className="text-xs uppercase tracking-wide text-gray-400">
+              {data.company.name}
+            </span>
+            <h1 className="text-xl font-semibold leading-tight text-gray-900">
+              {data.title}
+            </h1>
           </div>
-          <button onClick={close} aria-label="Fermer">
+
+          <button
+            onClick={close}
+            aria-label="Fermer"
+            className="mt-1"
+          >
             <X size={18} />
           </button>
         </div>
 
         {/* VISUAL */}
-        <img
-          src={data.visual_rect_url}
-          alt={data.title}
-          className="w-full h-64 object-cover"
-        />
+        {data.visual_rect_url && (
+          <div className="px-5 pt-5">
+            <img
+              src={data.visual_rect_url}
+              alt={data.title}
+              className="
+                w-full
+                h-auto
+                max-h-[260px]
+                object-cover
+                rounded-lg
+              "
+            />
+          </div>
+        )}
 
         {/* CONTENT */}
-        <div className="p-6 space-y-6">
-          <h1 className="text-xl font-semibold leading-tight">
-            {data.title}
-          </h1>
-
+        <div className="px-5 py-6 space-y-6">
+          {/* EXCERPT */}
           {data.excerpt && (
-            <p className="text-gray-700 font-medium">
+            <p className="text-base font-medium text-gray-800">
               {data.excerpt}
             </p>
           )}
 
+          {/* BODY — HTML RENDER */}
           {data.body && (
             <div
-              className="prose prose-sm max-w-none"
+              className="
+                prose prose-sm max-w-none
+                prose-p:my-4
+                prose-ul:my-4
+                prose-ol:my-4
+                prose-li:my-1
+                prose-strong:font-semibold
+                prose-a:text-ratecard-blue
+                prose-a:no-underline
+                hover:prose-a:underline
+              "
               dangerouslySetInnerHTML={{
                 __html: data.body,
               }}
             />
           )}
 
-          <p className="text-xs text-gray-400">
-            Publié le{" "}
-            {new Date(data.published_at).toLocaleDateString("fr-FR")}
-          </p>
+          {/* FOOTER */}
+          <div className="pt-4 border-t border-gray-200">
+            <p className="text-xs text-gray-400">
+              Publié le{" "}
+              {new Date(
+                data.published_at
+              ).toLocaleDateString("fr-FR")}
+            </p>
+          </div>
         </div>
       </aside>
     </div>
