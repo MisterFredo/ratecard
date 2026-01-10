@@ -88,6 +88,45 @@ def get_home_events():
         logger.exception("Erreur home events")
         raise HTTPException(500, "Erreur récupération home events")
 
+# ============================================================
+# NAV — EVENTS (SIDEBAR)
+# ============================================================
+@router.get("/public/nav/events")
+def get_nav_events():
+    """
+    Événements pour la navigation (sidebar).
+    Uniquement des liens externes cliquables.
+    """
+    try:
+        rows = query_bq(
+            f"""
+            SELECT
+              LABEL,
+              EVENT_URL
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_EVENT`
+            WHERE
+              IS_ACTIVE = TRUE
+              AND IS_ACTIVE_NAV = TRUE
+              AND EVENT_URL IS NOT NULL
+            ORDER BY HOME_ORDER ASC
+            """
+        )
+
+        return {
+            "events": [
+                {
+                    "label": r["LABEL"],
+                    "url": r["EVENT_URL"],
+                }
+                for r in rows
+            ]
+        }
+
+    except Exception:
+        logger.exception("Erreur nav events")
+        raise HTTPException(500, "Erreur récupération nav events")
+
+
 
 # ============================================================
 # DRAWER — NEWS
