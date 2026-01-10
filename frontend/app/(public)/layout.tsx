@@ -1,4 +1,4 @@
-import PublicShell from "./PublicShell";
+import PublicClientLayout from "./PublicClientLayout";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -16,7 +16,7 @@ async function getEventsNav() {
       slug: e.event.home_label
         .toLowerCase()
         .replace(/\s+/g, "-"),
-      label: e.event.label, // ⬅️ on utilise LABEL, pas HOME_LABEL
+      label: e.event.label,
     }));
   } catch {
     return [];
@@ -31,8 +31,8 @@ export default async function PublicLayout({
   const events = await getEventsNav();
 
   return (
-    <PublicShell events={events}>
+    <PublicClientLayout events={events}>
       {children}
-    </PublicShell>
+    </PublicClientLayout>
   );
 }
