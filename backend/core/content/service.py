@@ -366,6 +366,9 @@ def list_contents_admin():
 # UPDATE CONTENT
 # ============================================================
 def update_content(id_content: str, data: ContentUpdate):
+    # ---------------------------------------------------------
+    # VALIDATIONS MÉTIER
+    # ---------------------------------------------------------
     if not data.angle_title.strip():
         raise ValueError("ANGLE_TITLE obligatoire")
 
@@ -380,6 +383,9 @@ def update_content(id_content: str, data: ContentUpdate):
     ):
         raise ValueError("Un contenu doit rester associé à au moins une entité")
 
+    # ---------------------------------------------------------
+    # CHAMPS À METTRE À JOUR
+    # ---------------------------------------------------------
     fields = {
         "ANGLE_TITLE": data.angle_title,
         "ANGLE_SIGNAL": data.angle_signal,
@@ -387,31 +393,51 @@ def update_content(id_content: str, data: ContentUpdate):
         "CONCEPT": data.concept,
         "CONTENT_BODY": data.content_body,
 
+        # AIDES ÉDITORIALES (ARRAY<STRING>)
         "CITATIONS": normalize_array(data.citations),
         "CHIFFRES": normalize_array(data.chiffres),
         "ACTEURS_CITES": normalize_array(data.acteurs_cites),
 
+        # SOURCE
         "SOURCE_TYPE": data.source_type,
         "SOURCE_TEXT": data.source_text,
         "SOURCE_URL": data.source_url,
         "SOURCE_AUTHOR": data.source_author,
 
+        # SEO
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
+
+        # META
         "AUTHOR": data.author,
         "DATE_CREATION": data.date_creation,
     }
 
+    # ---------------------------------------------------------
+    # 🔒 SÉCURISATION BIGQUERY — ARRAY<STRING>
+    # ---------------------------------------------------------
+    # normalize_array retourne toujours une liste,
+    # mais on sécurise ici pour éviter toute dérive
+    # (string injectée, sérialisation incorrecte, etc.)
+    for key in ("CITATIONS", "CHIFFRES", "ACTEURS_CITES"):
+        if key in fields and not isinstance(fields[key], list):
+            fields[key] = None
+
+    # ---------------------------------------------------------
+    # UPDATE TABLE PRINCIPALE
+    # ---------------------------------------------------------
     update_bq(
         table=TABLE_CONTENT,
         fields={k: v for k, v in fields.items() if v is not None},
         where={"ID_CONTENT": id_content},
     )
 
+    # ---------------------------------------------------------
+    # RESET RELATIONS
+    # ---------------------------------------------------------
     client = get_bigquery_client()
     now = datetime.utcnow()
 
-    # RESET RELATIONS
     for table in (
         TABLE_CONTENT_TOPIC,
         TABLE_CONTENT_EVENT,
@@ -423,35 +449,49 @@ def update_content(id_content: str, data: ContentUpdate):
             job_config=None
         ).result()
 
-    # REINSERT
+    # ---------------------------------------------------------
+    # REINSERT RELATIONS
+    # ---------------------------------------------------------
     if data.topics:
-        insert_bq(TABLE_CONTENT_TOPIC, [
-            {"ID_CONTENT": id_content, "ID_TOPIC": tid, "CREATED_AT": now}
-            for tid in data.topics
-        ])
+        insert_bq(
+            TABLE_CONTENT_TOPIC,
+            [
+                {"ID_CONTENT": id_content, "ID_TOPIC": tid, "CREATED_AT": now}
+                for tid in data.topics
+            ],
+        )
 
     if data.events:
-        insert_bq(TABLE_CONTENT_EVENT, [
-            {"ID_CONTENT": id_content, "ID_EVENT": eid, "CREATED_AT": now}
-            for eid in data.events
-        ])
+        insert_bq(
+            TABLE_CONTENT_EVENT,
+            [
+                {"ID_CONTENT": id_content, "ID_EVENT": eid, "CREATED_AT": now}
+                for eid in data.events
+            ],
+        )
 
     if data.companies:
-        insert_bq(TABLE_CONTENT_COMPANY, [
-            {"ID_CONTENT": id_content, "ID_COMPANY": cid, "CREATED_AT": now}
-            for cid in data.companies
-        ])
+        insert_bq(
+            TABLE_CONTENT_COMPANY,
+            [
+                {"ID_CONTENT": id_content, "ID_COMPANY": cid, "CREATED_AT": now}
+                for cid in data.companies
+            ],
+        )
 
     if data.persons:
-        insert_bq(TABLE_CONTENT_PERSON, [
-            {
-                "ID_CONTENT": id_content,
-                "ID_PERSON": p.id_person,
-                "ROLE": p.role,
-                "CREATED_AT": now,
-            }
-            for p in data.persons
-        ])
+        insert_bq(
+            TABLE_CONTENT_PERSON,
+            [
+                {
+                    "ID_CONTENT": id_content,
+                    "ID_PERSON": p.id_person,
+                    "ROLE": p.role,
+                    "CREATED_AT": now,
+                }
+                for p in data.persons
+            ],
+        )
 
     return True
 
