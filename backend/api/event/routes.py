@@ -59,4 +59,3 @@ def update_route(id_event: str, data: EventUpdate):
         return {"status": "ok", "updated": updated}
     except Exception:
         raise HTTPException(400, "Erreur mise à jour event")
-
