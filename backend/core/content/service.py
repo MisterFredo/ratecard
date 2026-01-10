@@ -369,10 +369,10 @@ def update_content(id_content: str, data: ContentUpdate):
     # ---------------------------------------------------------
     # VALIDATIONS MÉTIER
     # ---------------------------------------------------------
-    if not data.angle_title.strip():
+    if not data.angle_title or not data.angle_title.strip():
         raise ValueError("ANGLE_TITLE obligatoire")
 
-    if not data.angle_signal.strip():
+    if not data.angle_signal or not data.angle_signal.strip():
         raise ValueError("ANGLE_SIGNAL obligatoire")
 
     if not (
@@ -414,14 +414,16 @@ def update_content(id_content: str, data: ContentUpdate):
     }
 
     # ---------------------------------------------------------
-    # 🔒 SÉCURISATION BIGQUERY — ARRAY<STRING>
+    # 🔒 CORRECTION DÉFINITIVE BIGQUERY (ARRAY<STRING>)
     # ---------------------------------------------------------
-    # normalize_array retourne toujours une liste,
-    # mais on sécurise ici pour éviter toute dérive
-    # (string injectée, sérialisation incorrecte, etc.)
+    # BigQuery REFUSE les arrays vides sur UPDATE via paramètres.
+    # Règle :
+    #   []  -> None
+    #   ["x"] -> ["x"]
     for key in ("CITATIONS", "CHIFFRES", "ACTEURS_CITES"):
-        if key in fields and not isinstance(fields[key], list):
-            fields[key] = None
+        if key in fields:
+            if isinstance(fields[key], list) and len(fields[key]) == 0:
+                fields[key] = None
 
     # ---------------------------------------------------------
     # UPDATE TABLE PRINCIPALE
@@ -494,6 +496,7 @@ def update_content(id_content: str, data: ContentUpdate):
         )
 
     return True
+
 
 
 # ============================================================
