@@ -383,8 +383,11 @@ def update_content(id_content: str, data: ContentUpdate):
     ):
         raise ValueError("Un contenu doit rester associé à au moins une entité")
 
+    client = get_bigquery_client()
+    now = datetime.utcnow()
+
     # ---------------------------------------------------------
-    # CHAMPS À METTRE À JOUR
+    # 1) UPDATE TABLE_CONTENT (SANS ARRAY)
     # ---------------------------------------------------------
     fields = {
         "ANGLE_TITLE": data.angle_title,
@@ -392,11 +395,6 @@ def update_content(id_content: str, data: ContentUpdate):
         "EXCERPT": data.excerpt,
         "CONCEPT": data.concept,
         "CONTENT_BODY": data.content_body,
-
-        # AIDES ÉDITORIALES (ARRAY<STRING>)
-        "CITATIONS": normalize_array(data.citations),
-        "CHIFFRES": normalize_array(data.chiffres),
-        "ACTEURS_CITES": normalize_array(data.acteurs_cites),
 
         # SOURCE
         "SOURCE_TYPE": data.source_type,
@@ -413,21 +411,6 @@ def update_content(id_content: str, data: ContentUpdate):
         "DATE_CREATION": data.date_creation,
     }
 
-    # ---------------------------------------------------------
-    # 🔒 CORRECTION DÉFINITIVE BIGQUERY (ARRAY<STRING>)
-    # ---------------------------------------------------------
-    # BigQuery REFUSE les arrays vides sur UPDATE via paramètres.
-    # Règle :
-    #   []  -> None
-    #   ["x"] -> ["x"]
-    for key in ("CITATIONS", "CHIFFRES", "ACTEURS_CITES"):
-        if key in fields:
-            if isinstance(fields[key], list) and len(fields[key]) == 0:
-                fields[key] = None
-
-    # ---------------------------------------------------------
-    # UPDATE TABLE PRINCIPALE
-    # ---------------------------------------------------------
     update_bq(
         table=TABLE_CONTENT,
         fields={k: v for k, v in fields.items() if v is not None},
@@ -435,11 +418,43 @@ def update_content(id_content: str, data: ContentUpdate):
     )
 
     # ---------------------------------------------------------
+    # 2) UPDATE DES COLONNES ARRAY (REQUÊTES DÉDIÉES)
+    # ---------------------------------------------------------
+    array_updates = {
+        "CITATIONS": normalize_array(data.citations),
+        "CHIFFRES": normalize_array(data.chiffres),
+        "ACTEURS_CITES": normalize_array(data.acteurs_cites),
+    }
+
+    for column, values in array_updates.items():
+        if values is None:
+            continue
+
+        client.query(
+            f"""
+            UPDATE `{TABLE_CONTENT}`
+            SET {column} = @values
+            WHERE ID_CONTENT = @id
+            """,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ArrayQueryParameter(
+                        "values",
+                        "STRING",
+                        values,
+                    ),
+                    bigquery.ScalarQueryParameter(
+                        "id",
+                        "STRING",
+                        id_content,
+                    ),
+                ]
+            ),
+        ).result()
+
+    # ---------------------------------------------------------
     # RESET RELATIONS
     # ---------------------------------------------------------
-    client = get_bigquery_client()
-    now = datetime.utcnow()
-
     for table in (
         TABLE_CONTENT_TOPIC,
         TABLE_CONTENT_EVENT,
@@ -448,7 +463,15 @@ def update_content(id_content: str, data: ContentUpdate):
     ):
         client.query(
             f"DELETE FROM `{table}` WHERE ID_CONTENT = @id",
-            job_config=None
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter(
+                        "id",
+                        "STRING",
+                        id_content,
+                    )
+                ]
+            ),
         ).result()
 
     # ---------------------------------------------------------
@@ -496,7 +519,6 @@ def update_content(id_content: str, data: ContentUpdate):
         )
 
     return True
-
 
 
 # ============================================================
