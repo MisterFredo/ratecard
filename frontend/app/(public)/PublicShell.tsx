@@ -38,17 +38,23 @@ export default function PublicShell({
 
   const SidebarContent = (
     <>
-      {/* ===== LOGO ===== */}
+      {/* ===== LOGO / MARQUE ===== */}
       <Link
         href="/"
         onClick={() => setMobileOpen(false)}
         className="mb-10 block"
       >
+        <span className="text-xl font-semibold text-white tracking-wide">
+          Ratecard
+        </span>
+
+        {/*
         <img
           src="/assets/brand/ratecard-logo.png"
           alt="Ratecard"
           className="max-w-[160px]"
         />
+        */}
       </Link>
 
       {/* ===== NAV PRINCIPALE ===== */}
