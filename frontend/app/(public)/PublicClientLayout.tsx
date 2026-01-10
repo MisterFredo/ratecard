@@ -1,5 +1,3 @@
-"use client";
-
 import PublicShell from "./PublicShell";
 import { DrawerProvider } from "@/contexts/DrawerContext";
 import GlobalDrawer from "@/components/drawers/GlobalDrawer";
@@ -17,10 +15,12 @@ async function getEventsNav() {
 
     const json = await res.json();
 
-    return (json.events || []).map((e: any) => ({
-      label: e.event.label,
-      url: e.event.external_url,
-    }));
+    return (json.events || [])
+      .filter((e: any) => e.external_url)
+      .map((e: any) => ({
+        label: e.label,
+        url: e.external_url,
+      }));
   } catch {
     return [];
   }
@@ -39,7 +39,7 @@ export default async function PublicClientLayout({
         {children}
       </PublicShell>
 
-      {/* 🔑 RENDER GLOBAL DES DRAWERS */}
+      {/* 🔑 DRAWERS */}
       <GlobalDrawer />
     </DrawerProvider>
   );
