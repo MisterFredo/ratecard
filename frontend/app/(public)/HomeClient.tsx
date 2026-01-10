@@ -47,21 +47,12 @@ export default function HomeClient({ news, events }: Props) {
   const { openDrawer } = useDrawer();
 
   return (
-    <div className="space-y-14 md:space-y-16">
+    <div className="space-y-12 md:space-y-14">
 
       {/* =====================================================
           NEWS — PARTNER SIGNALS (DRAWER)
       ===================================================== */}
-      <section className="space-y-4">
-        <header className="space-y-1">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Dernières annonces du marché
-          </h2>
-          <p className="text-sm text-gray-500">
-            Prises de parole des partenaires, mises en perspective par Ratecard.
-          </p>
-        </header>
-
+      <section>
         {news.length === 0 ? (
           <p className="text-sm text-gray-400">
             Aucune annonce publiée pour le moment.
@@ -76,7 +67,7 @@ export default function HomeClient({ news, events }: Props) {
                 excerpt={n.excerpt}
                 visualRectUrl={n.visual_rect_url}
                 publishedAt={n.published_at}
-                openInDrawer   // ⬅️ ADEX-LIKE
+                openInDrawer
               />
             ))}
           </div>
@@ -86,16 +77,7 @@ export default function HomeClient({ news, events }: Props) {
       {/* =====================================================
           ANALYSES — PAR ÉVÉNEMENT (DRAWER)
       ===================================================== */}
-      <section className="space-y-6">
-        <header className="space-y-1">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Lectures Ratecard par événement
-          </h2>
-          <p className="text-sm text-gray-500">
-            Analyses produites à partir des événements Ratecard.
-          </p>
-        </header>
-
+      <section>
         {events.length === 0 ? (
           <p className="text-sm text-gray-400">
             Aucun événement actif pour le moment.
@@ -204,4 +186,5 @@ export default function HomeClient({ news, events }: Props) {
     </div>
   );
 }
+
 
