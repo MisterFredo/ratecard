@@ -10,12 +10,17 @@ class EventCreate(BaseModel):
     """
     Modèle utilisé UNIQUEMENT à la création d'un event.
 
-    ⚠️ AUCUN champ média ici :
-    les visuels et paramètres front sont associés après création.
+    ⚠️ AUCUN champ média ou contexte ici :
+    - les visuels
+    - le contexte événementiel
+    sont associés après création.
     """
+
+    # Contenu de base
     label: str
     description: Optional[str] = None
 
+    # SEO
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
 
@@ -31,7 +36,7 @@ class EventUpdate(BaseModel):
     Modèle utilisé pour la mise à jour d'un event existant.
 
     - Tous les champs sont optionnels
-    - Les champs média et Home/Nav sont autorisés ici
+    - Inclut les champs Home / Nav / Visuels / Contexte
     """
 
     # Contenu
@@ -58,7 +63,10 @@ class EventUpdate(BaseModel):
     # 🔗 URL externe (site événement)
     external_url: Optional[str] = None
 
-    # Statut
+    # 🧭 CONTEXTE ÉVÉNEMENTIEL (HOME)
+    context_html: Optional[str] = None
+
+    # Statut global
     is_active: Optional[bool] = None
 
 
@@ -68,9 +76,11 @@ class EventUpdate(BaseModel):
 class EventOut(BaseModel):
     """
     Modèle de sortie représentant l'état d'un event.
+
     Aligné 1:1 avec la table RATECARD_EVENT.
     """
 
+    # Identité
     id_event: str
     label: str
     description: Optional[str] = None
@@ -91,6 +101,11 @@ class EventOut(BaseModel):
     # 🔗 URL externe
     external_url: Optional[str] = None
 
+    # 🧭 CONTEXTE ÉVÉNEMENTIEL (HOME)
+    context_html: Optional[str] = None
+    context_updated_at: Optional[datetime] = None
+    context_author: Optional[str] = None
+
     # SEO
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
@@ -99,3 +114,4 @@ class EventOut(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     is_active: Optional[bool] = True
+
