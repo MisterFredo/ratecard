@@ -126,6 +126,7 @@ def create_synthesis(
 
     row = [{
         "ID_SYNTHESIS": id_synthesis,
+        "TITLE": title,
         "ID_MODEL": id_model,
         "TYPE": synthesis_type,
         "DATE_FROM": date_from,
