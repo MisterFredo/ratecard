@@ -22,33 +22,50 @@ TABLE_SYNTHESIS_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SYNTHESIS_CONTENT
 
 
 # ============================================================
-# 1. LIST CANDIDATE CONTENTS (ADMIN) — DEBUG
+# 1. LIST CANDIDATE CONTENTS (ADMIN) — FINAL
 # ============================================================
 def list_candidate_contents(
     topic_ids: List[str],
     company_ids: List[str],
-    date_from: str,   # format attendu : "YYYY-MM-DD"
-    date_to: str,     # format attendu : "YYYY-MM-DD"
+    date_from: str,
+    date_to: str,
 ) -> List[Dict]:
-    """
-    Liste des analyses candidates pour une synthèse (ADMIN).
-
-    VERSION DEBUG :
-    - logs explicites pour comprendre ce que l'API interroge réellement
-    """
-
-    print("=== LIST_CANDIDATE_CONTENTS CALLED ===")
-    print("BQ_PROJECT:", BQ_PROJECT)
-    print("BQ_DATASET:", BQ_DATASET)
-    print("TABLE_CONTENT:", TABLE_CONTENT)
-    print("TABLE_CONTENT_TOPIC:", TABLE_CONTENT_TOPIC)
-    print("TABLE_CONTENT_COMPANY:", TABLE_CONTENT_COMPANY)
-    print("TOPIC_IDS:", topic_ids)
-    print("COMPANY_IDS:", company_ids)
-    print("DATE_FROM:", date_from)
-    print("DATE_TO:", date_to)
 
     client = get_bigquery_client()
+
+    where_clauses = [
+        "C.IS_ACTIVE = TRUE",
+        "C.STATUS != 'ARCHIVED'",
+        "C.DATE_CREATION BETWEEN DATE(@date_from) AND DATE(@date_to)",
+    ]
+
+    # Filtre topics (SI fournis)
+    if topic_ids:
+        where_clauses.append(
+            f"""
+            EXISTS (
+              SELECT 1
+              FROM `{TABLE_CONTENT_TOPIC}` CT
+              WHERE CT.ID_CONTENT = C.ID_CONTENT
+                AND CT.ID_TOPIC IN UNNEST(@topic_ids)
+            )
+            """
+        )
+
+    # Filtre sociétés (SI fournies)
+    if company_ids:
+        where_clauses.append(
+            f"""
+            EXISTS (
+              SELECT 1
+              FROM `{TABLE_CONTENT_COMPANY}` CC
+              WHERE CC.ID_CONTENT = C.ID_CONTENT
+                AND CC.ID_COMPANY IN UNNEST(@company_ids)
+            )
+            """
+        )
+
+    where_sql = " AND ".join(where_clauses)
 
     sql = f"""
     SELECT
@@ -60,31 +77,7 @@ def list_candidate_contents(
       C.DATE_CREATION,
       C.PUBLISHED_AT
     FROM `{TABLE_CONTENT}` C
-    WHERE
-      C.IS_ACTIVE = TRUE
-      AND C.STATUS != 'ARCHIVED'
-      AND C.DATE_CREATION BETWEEN DATE(@date_from) AND DATE(@date_to)
-
-      AND (
-        ARRAY_LENGTH(@topic_ids) = 0
-        OR EXISTS (
-          SELECT 1
-          FROM `{TABLE_CONTENT_TOPIC}` CT
-          WHERE CT.ID_CONTENT = C.ID_CONTENT
-            AND CT.ID_TOPIC IN UNNEST(@topic_ids)
-        )
-      )
-
-      AND (
-        ARRAY_LENGTH(@company_ids) = 0
-        OR EXISTS (
-          SELECT 1
-          FROM `{TABLE_CONTENT_COMPANY}` CC
-          WHERE CC.ID_CONTENT = C.ID_CONTENT
-            AND CC.ID_COMPANY IN UNNEST(@company_ids)
-        )
-      )
-
+    WHERE {where_sql}
     ORDER BY
       COALESCE(
         C.PUBLISHED_AT,
@@ -94,45 +87,25 @@ def list_candidate_contents(
 
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
-            bigquery.ArrayQueryParameter(
-                "topic_ids", "STRING", topic_ids or []
-            ),
-            bigquery.ArrayQueryParameter(
-                "company_ids", "STRING", company_ids or []
-            ),
-            bigquery.ScalarQueryParameter(
-                "date_from", "STRING", date_from
-            ),
-            bigquery.ScalarQueryParameter(
-                "date_to", "STRING", date_to
-            ),
+            bigquery.ScalarQueryParameter("date_from", "STRING", date_from),
+            bigquery.ScalarQueryParameter("date_to", "STRING", date_to),
+            bigquery.ArrayQueryParameter("topic_ids", "STRING", topic_ids),
+            bigquery.ArrayQueryParameter("company_ids", "STRING", company_ids),
         ]
     )
 
     rows = list(client.query(sql, job_config=job_config).result())
 
-    print("NB ROWS FROM QUERY:", len(rows))
-
-    # ---------------------------------------------------------
-    # SERIALIZATION JSON-SAFE
-    # ---------------------------------------------------------
-    def serialize_row(row: Dict) -> Dict:
+    def serialize_row(row):
         out = dict(row)
-
         if isinstance(out.get("DATE_CREATION"), (date, datetime)):
             out["DATE_CREATION"] = out["DATE_CREATION"].isoformat()
-
         if isinstance(out.get("PUBLISHED_AT"), datetime):
             out["PUBLISHED_AT"] = out["PUBLISHED_AT"].isoformat()
-
         return out
 
-    serialized = [serialize_row(dict(row)) for row in rows]
+    return [serialize_row(row) for row in rows]
 
-    print("NB ROWS AFTER SERIALIZATION:", len(serialized))
-    print("=== END LIST_CANDIDATE_CONTENTS ===")
-
-    return serialized
 
 # ============================================================
 # 2. CREATE SYNTHESIS (META ONLY — FINAL)
