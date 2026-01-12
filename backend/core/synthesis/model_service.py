@@ -44,7 +44,7 @@ def list_models():
 
 
 # ============================================================
-# CREATE MODEL
+# CREATE MODEL — ARRAY SAFE
 # ============================================================
 def create_model(
     name: str,
@@ -57,25 +57,31 @@ def create_model(
     now = datetime.utcnow()
     id_model = str(uuid.uuid4())
 
-    insert_bq(
+    row = [
+        {
+            "ID_MODEL": id_model,
+            "NAME": name.strip(),
+            "TOPIC_IDS": topic_ids or [],
+            "COMPANY_IDS": company_ids or [],
+            "CREATED_AT": now,
+            "UPDATED_AT": now,
+        }
+    ]
+
+    client = get_bigquery_client()
+
+    client.load_table_from_json(
+        row,
         TABLE_SYNTHESIS_MODEL,
-        [
-            {
-                "ID_MODEL": id_model,
-                "NAME": name.strip(),
-                "TOPIC_IDS": topic_ids or [],
-                "COMPANY_IDS": company_ids or [],
-                "CREATED_AT": now,
-                "UPDATED_AT": now,
-            }
-        ],
-    )
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
+    ).result()
 
     return id_model
 
-
 # ============================================================
-# UPDATE MODEL
+# UPDATE MODEL — NAME ONLY (V1 SAFE)
 # ============================================================
 def update_model(
     id_model: str,
@@ -84,12 +90,9 @@ def update_model(
     company_ids: Optional[List[str]] = None,
 ):
     fields = {}
+
     if name is not None:
         fields["NAME"] = name.strip()
-    if topic_ids is not None:
-        fields["TOPIC_IDS"] = topic_ids
-    if company_ids is not None:
-        fields["COMPANY_IDS"] = company_ids
 
     if not fields:
         return False
