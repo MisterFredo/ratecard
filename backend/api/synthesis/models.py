@@ -30,3 +30,24 @@ class SynthesisCandidatesQuery(BaseModel):
     company_ids: Optional[List[str]] = []
     date_from: date
     date_to: date
+
+from pydantic import BaseModel
+from typing import List, Optional
+
+
+# ============================================================
+# CREATE MODEL
+# ============================================================
+class SynthesisModelCreate(BaseModel):
+    name: str
+    topic_ids: Optional[List[str]] = []
+    company_ids: Optional[List[str]] = []
+
+
+# ============================================================
+# UPDATE MODEL
+# ============================================================
+class SynthesisModelUpdate(BaseModel):
+    name: Optional[str] = None
+    topic_ids: Optional[List[str]] = None
+    company_ids: Optional[List[str]] = None
