@@ -13,6 +13,7 @@ from core.synthesis.service import (
     create_synthesis,
     attach_contents_to_synthesis,
     get_synthesis_preview,
+    list_syntheses,
 )
 
 from core.synthesis.model_service import (
