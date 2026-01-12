@@ -94,7 +94,7 @@ export default function SynthesisStudio({
     }
 
     try {
-      // 1️⃣ Création de la synthèse
+      // 1) Création de la synthèse
       const createRes = await api.post("/synthesis/create", {
         id_model: model.id_model,
         synthesis_type: synthesisType,
@@ -105,7 +105,7 @@ export default function SynthesisStudio({
       const newId = createRes.id_synthesis;
       setInternalSynthesisId(newId);
 
-      // 2️⃣ Chargement des analyses candidates
+      // 2) Chargement des analyses candidates
       const candidatesRes = await api.post("/synthesis/candidates", {
         topic_ids: model.topic_ids || [],
         company_ids: model.company_ids || [],
@@ -120,6 +120,16 @@ export default function SynthesisStudio({
       alert("❌ Erreur création synthèse");
     }
   }
+
+  /* =========================================================
+     TRIGGER CREATION WHEN STEP === CANDIDATES
+  ========================================================= */
+  useEffect(() => {
+    if (step === "CANDIDATES") {
+      createSynthesisAndLoadCandidates();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   /* =========================================================
      ATTACH CONTENTS
@@ -204,19 +214,16 @@ export default function SynthesisStudio({
         </details>
       )}
 
-      {/* STEP 4 — CANDIDATES (TRIGGER CREATION) */}
+      {/* STEP 4 — CANDIDATES (LOADING STATE) */}
       {step === "CANDIDATES" && (
         <details open className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
             4. Analyses candidates
           </summary>
 
-          <StepCandidates
-            candidates={candidates}
-            onLoad={createSynthesisAndLoadCandidates}
-            onValidate={() => setStep("SELECTION")}
-            onOpenAnalysis={(id) => setOpenAnalysisId(id)}
-          />
+          <p className="text-sm text-gray-500">
+            Chargement des analyses…
+          </p>
         </details>
       )}
 
@@ -261,4 +268,3 @@ export default function SynthesisStudio({
     </div>
   );
 }
-
