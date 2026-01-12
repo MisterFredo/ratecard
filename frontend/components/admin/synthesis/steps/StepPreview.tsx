@@ -58,7 +58,9 @@ export default function StepPreview({
         </button>
       </div>
 
-      {/* PREVIEW — CHIFFRES */}
+      {/* ======================================================
+         PREVIEW — CHIFFRES
+      ====================================================== */}
       {preview.type === "CHIFFRES" && (
         <div className="space-y-4">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
@@ -84,26 +86,57 @@ export default function StepPreview({
         </div>
       )}
 
-      {/* PREVIEW — ANALYTIQUE */}
+      {/* ======================================================
+         PREVIEW — ANALYTIQUE (ENRICHI)
+      ====================================================== */}
       {preview.type === "ANALYTIQUE" && (
         <div className="space-y-4">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
             Angles retenus
           </h3>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {preview.items.map((a: any, i: number) => (
               <div
                 key={i}
-                className="border rounded p-3 bg-gray-50"
+                className="border rounded p-4 bg-gray-50 space-y-3"
               >
+                {/* ANGLE */}
                 <h4 className="font-semibold text-gray-900">
                   {a.angle_title}
                 </h4>
+
+                {/* EXCERPT */}
                 {a.excerpt && (
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-gray-600">
                     {a.excerpt}
                   </p>
+                )}
+
+                {/* CONCEPT */}
+                {a.concept && (
+                  <div className="border-l-4 border-ratecard-blue pl-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+                      Concept clé
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      {a.concept}
+                    </p>
+                  </div>
+                )}
+
+                {/* CHIFFRES ASSOCIÉS (MAX 2) */}
+                {a.chiffres && a.chiffres.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+                      Faits associés
+                    </p>
+                    <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                      {a.chiffres.map((ch: string, j: number) => (
+                        <li key={j}>{ch}</li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
               </div>
             ))}
@@ -111,7 +144,9 @@ export default function StepPreview({
         </div>
       )}
 
-      {/* PREVIEW — CARTOGRAPHIE */}
+      {/* ======================================================
+         PREVIEW — CARTOGRAPHIE
+      ====================================================== */}
       {preview.type === "CARTOGRAPHIE" && (
         <div className="space-y-4">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
@@ -129,3 +164,4 @@ export default function StepPreview({
     </div>
   );
 }
+
