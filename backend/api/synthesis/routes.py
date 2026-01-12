@@ -5,6 +5,8 @@ from api.synthesis.models import (
     SynthesisCreate,
     SynthesisAttachContents,
     SynthesisCandidatesQuery,
+    SynthesisModelCreate,
+    SynthesisModelUpdate,
 )
 
 from core.synthesis.service import (
@@ -12,9 +14,67 @@ from core.synthesis.service import (
     create_synthesis,
     attach_contents_to_synthesis,
     get_synthesis_preview,
+    list_models,
+    create_model,
+    update_model,
 )
 
 router = APIRouter()
+
+
+# ============================================================
+# LIST MODELS (ADMIN)
+# ============================================================
+@router.get("/models")
+def list_synthesis_models():
+    try:
+        models = list_models()
+        return {"status": "ok", "models": models}
+    except Exception as e:
+        raise HTTPException(
+            400, f"Erreur chargement modèles : {e}"
+        )
+
+
+# ============================================================
+# CREATE MODEL (ADMIN)
+# ============================================================
+@router.post("/models")
+def create_synthesis_model(payload: SynthesisModelCreate):
+    try:
+        id_model = create_model(
+            name=payload.name,
+            topic_ids=payload.topic_ids,
+            company_ids=payload.company_ids,
+        )
+        return {"status": "ok", "id_model": id_model}
+    except Exception as e:
+        raise HTTPException(
+            400, f"Erreur création modèle : {e}"
+        )
+
+
+# ============================================================
+# UPDATE MODEL (ADMIN)
+# ============================================================
+@router.put("/models/{id_model}")
+def update_synthesis_model(
+    id_model: str,
+    payload: SynthesisModelUpdate,
+):
+    try:
+        update_model(
+            id_model=id_model,
+            name=payload.name,
+            topic_ids=payload.topic_ids,
+            company_ids=payload.company_ids,
+        )
+        return {"status": "ok", "updated": True}
+    except Exception as e:
+        raise HTTPException(
+            400, f"Erreur mise à jour modèle : {e}"
+        )
+
 
 
 # ============================================================
