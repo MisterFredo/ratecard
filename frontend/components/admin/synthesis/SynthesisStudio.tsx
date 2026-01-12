@@ -13,8 +13,6 @@ import StepPreview from "@/components/admin/synthesis/steps/StepPreview";
 // DRAWER ADMIN
 import AnalysisDrawerAdmin from "@/components/drawers/AnalysisDrawerAdmin";
 
-type Mode = "create" | "edit";
-
 type Step =
   | "MODEL"
   | "PERIOD"
@@ -22,23 +20,12 @@ type Step =
   | "SELECTION"
   | "PREVIEW";
 
-type Props = {
-  mode?: Mode;
-  synthesisId?: string;
-};
-
-export default function SynthesisStudio({
-  mode = "create",
-  synthesisId,
-}: Props) {
+export default function SynthesisStudio() {
   /* =========================================================
-     STATE — STEP
+     STATE — CONFIG
   ========================================================= */
   const [step, setStep] = useState<Step>("MODEL");
 
-  /* =========================================================
-     STATE — MODEL / PERIOD / TYPE
-  ========================================================= */
   const [model, setModel] = useState<any | null>(null);
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
@@ -50,11 +37,10 @@ export default function SynthesisStudio({
   /* =========================================================
      STATE — DATA
   ========================================================= */
-  const [internalSynthesisId, setInternalSynthesisId] =
-    useState<string | null>(synthesisId || null);
-
   const [candidates, setCandidates] = useState<any[]>([]);
   const [selectedContentIds, setSelectedContentIds] = useState<string[]>([]);
+  const [internalSynthesisId, setInternalSynthesisId] =
+    useState<string | null>(null);
 
   /* =========================================================
      STATE — DRAWER
@@ -63,87 +49,66 @@ export default function SynthesisStudio({
     useState<string | null>(null);
 
   /* =========================================================
-     LOAD SYNTHESIS (EDIT MODE)
+     LOAD CANDIDATES (READ ONLY)
   ========================================================= */
-  useEffect(() => {
-    if (mode !== "edit" || !synthesisId) return;
-    setInternalSynthesisId(synthesisId);
-    setStep("PREVIEW");
-  }, [mode, synthesisId]);
+  async function loadCandidates() {
+    if (!model || !dateFrom || !dateTo) {
+      alert("Informations manquantes pour charger les analyses");
+      return;
+    }
+
+    try {
+      const res = await api.post("/synthesis/candidates", {
+        topic_ids: model.topic_ids || [],
+        company_ids: model.company_ids || [],
+        date_from: String(dateFrom),
+        date_to: String(dateTo),
+      });
+
+      setCandidates(res.contents || []);
+      setStep("SELECTION");
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur chargement analyses candidates");
+    }
+  }
 
   /* =========================================================
-     CREATE SYNTHESIS + LOAD ANALYSES
+     CREATE SYNTHESIS (FINAL)
   ========================================================= */
-  async function createSynthesisAndLoad() {
-    if (!model || !synthesisType || !dateFrom || !dateTo) {
+  async function createSynthesis() {
+    if (
+      !model ||
+      !synthesisType ||
+      !dateFrom ||
+      !dateTo ||
+      selectedContentIds.length === 0
+    ) {
       alert("Informations manquantes pour créer la synthèse");
       return;
     }
 
     try {
-      // 1️⃣ Création de la synthèse
+      // 1️⃣ Création synthèse
       const createRes = await api.post("/synthesis/create", {
         id_model: model.id_model,
         synthesis_type: synthesisType,
-        date_from: dateFrom,
-        date_to: dateTo,
+        date_from: String(dateFrom),
+        date_to: String(dateTo),
       });
 
       const newId = createRes.id_synthesis;
       setInternalSynthesisId(newId);
 
-      // 2️⃣ Chargement des analyses candidates
-      const candidatesRes = await api.post("/synthesis/candidates", {
-        topic_ids: model.topic_ids || [],
-        company_ids: model.company_ids || [],
-        date_from: dateFrom,
-        date_to: dateTo,
+      // 2️⃣ Association contenus
+      await api.post(`/synthesis/${newId}/contents`, {
+        content_ids: selectedContentIds,
       });
 
-      setCandidates(candidatesRes.contents || []);
-      setStep("SELECTION");
-    } catch (e) {
-      console.error(e);
-      alert("❌ Erreur création synthèse");
-    }
-  }
-
-  /* =========================================================
-     TRIGGER SAFE AFTER TYPE SELECTION
-  ========================================================= */
-  useEffect(() => {
-    if (
-      step === "TYPE" &&
-      synthesisType &&
-      model &&
-      dateFrom &&
-      dateTo
-    ) {
-      createSynthesisAndLoad();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [synthesisType]);
-
-  /* =========================================================
-     ATTACH CONTENTS
-  ========================================================= */
-  async function attachContents() {
-    if (!internalSynthesisId) return;
-
-    if (selectedContentIds.length === 0) {
-      alert("Sélectionnez au moins une analyse");
-      return;
-    }
-
-    try {
-      await api.post(
-        `/synthesis/${internalSynthesisId}/contents`,
-        { content_ids: selectedContentIds }
-      );
       setStep("PREVIEW");
     } catch (e) {
       console.error(e);
-      alert("❌ Erreur association contenus");
+      alert("❌ Erreur création synthèse");
     }
   }
 
@@ -196,7 +161,7 @@ export default function SynthesisStudio({
             type={synthesisType}
             onSelect={(t) => {
               setSynthesisType(t);
-              // ⚠️ Aucune action métier ici
+              loadCandidates(); // 🔥 lecture uniquement
             }}
           />
         </details>
@@ -212,7 +177,7 @@ export default function SynthesisStudio({
             candidates={candidates}
             selectedIds={selectedContentIds}
             onChange={setSelectedContentIds}
-            onValidate={attachContents}
+            onValidate={createSynthesis}
             onOpenAnalysis={(id) => setOpenAnalysisId(id)}
           />
         </details>
@@ -231,7 +196,7 @@ export default function SynthesisStudio({
         </details>
       )}
 
-      {/* DRAWER ADMIN */}
+      {/* DRAWER */}
       {openAnalysisId && (
         <AnalysisDrawerAdmin
           contentId={openAnalysisId}
