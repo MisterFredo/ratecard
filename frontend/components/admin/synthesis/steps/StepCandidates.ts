@@ -14,7 +14,7 @@ type Props = {
   candidates: Candidate[];
   onLoad: () => void;
   onValidate: () => void;
-  onOpenAnalysis: (id: string) => void;
+  onOpenAnalysis: (contentId: string) => void;
 };
 
 export default function StepCandidates({
@@ -35,7 +35,7 @@ export default function StepCandidates({
         sélectionnés.
         <br />
         <span className="italic">
-          Vérifiez la liste avant de passer à la sélection.
+          Vérifiez rapidement avant de passer à la sélection.
         </span>
       </p>
 
