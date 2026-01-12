@@ -55,33 +55,23 @@ export default function SynthesisStudio() {
      LOAD CANDIDATES (LECTURE PURE)
   ========================================================= */
   async function loadCandidates() {
-    if (!model || !dateFrom || !dateTo) {
-      alert("Informations manquantes pour charger les analyses");
-      return;
-    }
-
     const payload = {
-      topic_ids: model.topic_ids || [],
-      company_ids: model.company_ids || [],
+      topic_ids: model?.topic_ids || [],
+      company_ids: model?.company_ids || [],
       date_from: dateFrom,
       date_to: dateTo,
     };
 
-    console.log("CANDIDATES PAYLOAD", payload);
+    const res = await api.post("/synthesis/candidates", payload);
 
-    try {
-      const res = await api.post("/synthesis/candidates", payload);
+    console.log("==== RAW API RESPONSE ====");
+    console.log(res);
+    console.log("TYPE:", typeof res);
+    console.log("KEYS:", res ? Object.keys(res) : null);
 
-      console.log("RAW API RESPONSE", res);
-
-      // 🔑 Le wrapper api retourne déjà data
-      setCandidates(res.contents);
-      setStep("SELECTION");
-    } catch (e) {
-      console.error(e);
-      alert("❌ Erreur chargement analyses candidates");
-    }
+    // STOP ICI — pas de setCandidates
   }
+
 
   /* =========================================================
      CREATE SYNTHESIS (FINAL)
