@@ -22,14 +22,23 @@ TABLE_SYNTHESIS_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SYNTHESIS_CONTENT
 
 
 # ============================================================
-# 1. LIST CANDIDATE CONTENTS
+# 1. LIST CANDIDATE CONTENTS (ADMIN)
 # ============================================================
 def list_candidate_contents(
     topic_ids: List[str],
     company_ids: List[str],
-    date_from: str,   # 👈 string assumé
-    date_to: str,     # 👈 string assumé
+    date_from: str,   # format attendu : "YYYY-MM-DD"
+    date_to: str,     # format attendu : "YYYY-MM-DD"
 ) -> List[Dict]:
+    """
+    Liste des analyses candidates pour une synthèse (ADMIN).
+
+    Règles métier :
+    - inclut DRAFT + PUBLISHED
+    - exclut ARCHIVED
+    - filtre par topics / sociétés si fournis
+    - filtre par DATE_CREATION (DATE)
+    """
 
     client = get_bigquery_client()
 
@@ -48,6 +57,7 @@ def list_candidate_contents(
       AND C.STATUS != 'ARCHIVED'
       AND C.DATE_CREATION BETWEEN DATE(@date_from) AND DATE(@date_to)
 
+      -- Filtre Topics (si fournis)
       AND (
         ARRAY_LENGTH(@topic_ids) = 0
         OR EXISTS (
@@ -58,6 +68,7 @@ def list_candidate_contents(
         )
       )
 
+      -- Filtre Sociétés (si fournies)
       AND (
         ARRAY_LENGTH(@company_ids) = 0
         OR EXISTS (
@@ -69,29 +80,40 @@ def list_candidate_contents(
       )
 
     ORDER BY
-      COALESCE(C.PUBLISHED_AT, TIMESTAMP(C.DATE_CREATION)) DESC
+      COALESCE(
+        C.PUBLISHED_AT,
+        TIMESTAMP(C.DATE_CREATION)
+      ) DESC
     """
 
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
             bigquery.ArrayQueryParameter(
-                "topic_ids", "STRING", topic_ids or []
+                "topic_ids",
+                "STRING",
+                topic_ids or []
             ),
             bigquery.ArrayQueryParameter(
-                "company_ids", "STRING", company_ids or []
+                "company_ids",
+                "STRING",
+                company_ids or []
             ),
-            # 👇 DATE PASSÉE EN STRING
+            # Dates transmises en STRING, cast explicite en SQL
             bigquery.ScalarQueryParameter(
-                "date_from", "STRING", date_from
+                "date_from",
+                "STRING",
+                date_from
             ),
             bigquery.ScalarQueryParameter(
-                "date_to", "STRING", date_to
+                "date_to",
+                "STRING",
+                date_to
             ),
         ]
     )
 
     rows = client.query(sql, job_config=job_config).result()
-    return [dict(r) for r in rows]
+    return [dict(row) for row in rows]
 
 
 # ============================================================
