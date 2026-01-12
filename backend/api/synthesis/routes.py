@@ -79,3 +79,41 @@ def preview_synthesis_route(id_synthesis: str):
         return {"status": "ok", "synthesis": preview}
     except Exception as e:
         raise HTTPException(400, f"Erreur preview synthèse : {e}")
+
+# ============================================================
+# LIST SYNTHESIS MODELS (ADMIN)
+# ============================================================
+@router.get("/models")
+def list_synthesis_models():
+    try:
+        rows = query_bq(
+            f"""
+            SELECT
+              ID_MODEL,
+              NAME,
+              TOPIC_IDS,
+              COMPANY_IDS
+            FROM `{TABLE_SYNTHESIS_MODEL}`
+            ORDER BY NAME
+            """
+        )
+
+        return {
+            "status": "ok",
+            "models": [
+                {
+                    "id_model": r["ID_MODEL"],
+                    "name": r["NAME"],
+                    "topic_ids": r.get("TOPIC_IDS") or [],
+                    "company_ids": r.get("COMPANY_IDS") or [],
+                }
+                for r in rows
+            ],
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur chargement modèles de synthèse : {e}",
+        )
+
