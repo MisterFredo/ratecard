@@ -220,6 +220,7 @@ def extract_synthesis_data(
           C.ID_CONTENT,
           C.ANGLE_TITLE,
           C.EXCERPT,
+          C.CONCEPT,        -- 👈 AJOUT
           C.CHIFFRES,
           C.CITATIONS
         FROM `{TABLE_SYNTHESIS_CONTENT}` SC
@@ -250,21 +251,23 @@ def extract_synthesis_data(
         }
 
     # ========================================================
-    # TYPE : ANALYTIQUE DESCRIPTIF
+    # TYPE : ANALYTIQUE DESCRIPTIF (ENRICHI)
     # ========================================================
     if synthesis_type == "ANALYTIQUE":
-        angles = [
-            {
+        items = []
+
+        for c in contents:
+            items.append({
                 "id_content": c["ID_CONTENT"],
                 "angle_title": c["ANGLE_TITLE"],
                 "excerpt": c.get("EXCERPT"),
-            }
-            for c in contents
-        ]
+                "concept": c.get("CONCEPT"),                 # 👈 AJOUT
+                "chiffres": (c.get("CHIFFRES") or [])[:2],   # 👈 MAX 2
+            })
 
         return {
             "type": "ANALYTIQUE",
-            "items": angles,
+            "items": items,
         }
 
     # ========================================================
