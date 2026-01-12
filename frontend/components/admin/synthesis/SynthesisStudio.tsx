@@ -34,7 +34,7 @@ export default function SynthesisStudio({
   synthesisId,
 }: Props) {
   /* =========================================================
-     STATE — MODE & STEP
+     STATE — STEP
   ========================================================= */
   const [step, setStep] = useState<Step>("MODEL");
 
@@ -80,63 +80,44 @@ export default function SynthesisStudio({
   useEffect(() => {
     if (mode !== "edit" || !synthesisId) return;
 
-    async function load() {
-      try {
-        setInternalSynthesisId(synthesisId);
-        setStep("PREVIEW");
-      } catch (e) {
-        console.error(e);
-        alert("Erreur chargement synthèse");
-      }
-    }
-
-    load();
+    setInternalSynthesisId(synthesisId);
+    setStep("PREVIEW");
   }, [mode, synthesisId]);
 
   /* =========================================================
-     CREATE SYNTHESIS
+     CREATE SYNTHESIS + LOAD CANDIDATES (ATOMIC)
   ========================================================= */
-  async function createSynthesis() {
+  async function createSynthesisAndLoadCandidates() {
     if (!model || !synthesisType || !dateFrom || !dateTo) {
       alert("Informations manquantes pour créer la synthèse");
       return;
     }
 
     try {
-      const res = await api.post("/synthesis/create", {
+      // 1️⃣ Création de la synthèse
+      const createRes = await api.post("/synthesis/create", {
         id_model: model.id_model,
         synthesis_type: synthesisType,
         date_from: dateFrom,
         date_to: dateTo,
       });
 
-      setInternalSynthesisId(res.id_synthesis);
-      setStep("CANDIDATES");
-    } catch (e) {
-      console.error(e);
-      alert("❌ Erreur création synthèse");
-    }
-  }
+      const newId = createRes.id_synthesis;
+      setInternalSynthesisId(newId);
 
-  /* =========================================================
-     LOAD CANDIDATES
-  ========================================================= */
-  async function loadCandidates() {
-    if (!model || !dateFrom || !dateTo) return;
-
-    try {
-      const res = await api.post("/synthesis/candidates", {
+      // 2️⃣ Chargement des analyses candidates
+      const candidatesRes = await api.post("/synthesis/candidates", {
         topic_ids: model.topic_ids || [],
         company_ids: model.company_ids || [],
         date_from: dateFrom,
         date_to: dateTo,
       });
 
-      setCandidates(res.contents || []);
+      setCandidates(candidatesRes.contents || []);
       setStep("SELECTION");
     } catch (e) {
       console.error(e);
-      alert("❌ Erreur chargement analyses candidates");
+      alert("❌ Erreur création synthèse");
     }
   }
 
@@ -217,25 +198,22 @@ export default function SynthesisStudio({
             type={synthesisType}
             onSelect={(t) => {
               setSynthesisType(t);
-              createSynthesis();
+              setStep("CANDIDATES");
             }}
           />
         </details>
       )}
 
-      {/* STEP 4 — CANDIDATES */}
-      {internalSynthesisId && (
-        <details
-          open={step === "CANDIDATES"}
-          className="border rounded p-4"
-        >
+      {/* STEP 4 — CANDIDATES (TRIGGER CREATION) */}
+      {step === "CANDIDATES" && (
+        <details open className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
             4. Analyses candidates
           </summary>
 
           <StepCandidates
             candidates={candidates}
-            onLoad={loadCandidates}
+            onLoad={createSynthesisAndLoadCandidates}
             onValidate={() => setStep("SELECTION")}
             onOpenAnalysis={(id) => setOpenAnalysisId(id)}
           />
@@ -243,11 +221,8 @@ export default function SynthesisStudio({
       )}
 
       {/* STEP 5 — SELECTION */}
-      {candidates.length > 0 && (
-        <details
-          open={step === "SELECTION"}
-          className="border rounded p-4"
-        >
+      {step === "SELECTION" && (
+        <details open className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
             5. Sélection
           </summary>
@@ -263,11 +238,8 @@ export default function SynthesisStudio({
       )}
 
       {/* STEP 6 — PREVIEW */}
-      {internalSynthesisId && (
-        <details
-          open={step === "PREVIEW"}
-          className="border rounded p-4"
-        >
+      {step === "PREVIEW" && internalSynthesisId && (
+        <details open className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
             6. Aperçu
           </summary>
@@ -289,3 +261,4 @@ export default function SynthesisStudio({
     </div>
   );
 }
+
