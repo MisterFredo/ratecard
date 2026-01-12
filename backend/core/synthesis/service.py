@@ -33,8 +33,11 @@ def list_candidate_contents(
     """
     Liste des analyses candidates pour une synthèse (ADMIN).
 
+    Règles :
     - inclut DRAFT + PUBLISHED
     - exclut ARCHIVED
+    - filtre par topics / sociétés si fournis
+    - filtre par DATE_CREATION (DATE)
     """
 
     client = get_bigquery_client()
@@ -66,22 +69,34 @@ def list_candidate_contents(
         ARRAY_LENGTH(@company_ids) = 0
         OR CC.ID_COMPANY IN UNNEST(@company_ids)
       )
-      AND C.DATE_CREATION BETWEEN @date_from AND @date_to
+      AND C.DATE_CREATION BETWEEN DATE(@date_from) AND DATE(@date_to)
 
     ORDER BY
-      COALESCE(C.PUBLISHED_AT, TIMESTAMP(C.DATE_CREATION)) DESC
+      COALESCE(
+        C.PUBLISHED_AT,
+        TIMESTAMP(C.DATE_CREATION)
+      ) DESC
     """
 
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
-            bigquery.ArrayQueryParameter("topic_ids", "STRING", topic_ids or []),
-            bigquery.ArrayQueryParameter("company_ids", "STRING", company_ids or []),
-            bigquery.ScalarQueryParameter("date_from", "DATE", date_from),
-            bigquery.ScalarQueryParameter("date_to", "DATE", date_to),
+            bigquery.ArrayQueryParameter(
+                "topic_ids", "STRING", topic_ids or []
+            ),
+            bigquery.ArrayQueryParameter(
+                "company_ids", "STRING", company_ids or []
+            ),
+            bigquery.ScalarQueryParameter(
+                "date_from", "DATE", date_from
+            ),
+            bigquery.ScalarQueryParameter(
+                "date_to", "DATE", date_to
+            ),
         ]
     )
 
     rows = client.query(sql, job_config=job_config).result()
+
     return [dict(r) for r in rows]
 
 
