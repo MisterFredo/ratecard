@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "@/lib/api";
 
 // STEPS
@@ -27,7 +27,7 @@ export default function SynthesisStudio() {
   const [step, setStep] = useState<Step>("MODEL");
 
   /* =========================================================
-     STATE — CONFIG (STRING ONLY)
+     STATE — CONFIG
   ========================================================= */
   const [model, setModel] = useState<any | null>(null);
   const [dateFrom, setDateFrom] = useState<string>("");
@@ -60,27 +60,22 @@ export default function SynthesisStudio() {
       return;
     }
 
+    const payload = {
+      topic_ids: model.topic_ids || [],
+      company_ids: model.company_ids || [],
+      date_from: dateFrom,
+      date_to: dateTo,
+    };
+
+    console.log("CANDIDATES PAYLOAD", payload);
+
     try {
-      const payload = {
-        topic_ids: model.topic_ids || [],
-        company_ids: model.company_ids || [],
-        date_from: dateFrom,
-        date_to: dateTo,
-      };
-
-      console.log("CANDIDATES PAYLOAD", payload);
-
       const res = await api.post("/synthesis/candidates", payload);
 
-      // 🔑 FIX CLÉ : lecture robuste du wrapper api
-      const contents =
-        res?.contents ??
-        res?.data?.contents ??
-        [];
+      console.log("RAW API RESPONSE", res);
 
-      console.log("CANDIDATES RESPONSE", contents);
-
-      setCandidates(contents);
+      // 🔑 Le wrapper api retourne déjà data
+      setCandidates(res.contents);
       setStep("SELECTION");
     } catch (e) {
       console.error(e);
@@ -104,24 +99,17 @@ export default function SynthesisStudio() {
     }
 
     try {
-      const createRes = await api.post("/synthesis/create", {
+      const res = await api.post("/synthesis/create", {
         id_model: model.id_model,
         synthesis_type: synthesisType,
         date_from: dateFrom,
         date_to: dateTo,
       });
 
-      const newId =
-        createRes?.id_synthesis ??
-        createRes?.data?.id_synthesis;
+      const id = res.id_synthesis;
+      setInternalSynthesisId(id);
 
-      if (!newId) {
-        throw new Error("ID synthèse introuvable");
-      }
-
-      setInternalSynthesisId(newId);
-
-      await api.post(`/synthesis/${newId}/contents`, {
+      await api.post(`/synthesis/${id}/contents`, {
         content_ids: selectedContentIds,
       });
 
@@ -162,9 +150,9 @@ export default function SynthesisStudio() {
             dateTo={dateTo}
             onChange={(d) => {
               if (d.dateFrom !== undefined)
-                setDateFrom(String(d.dateFrom));
+                setDateFrom(d.dateFrom);
               if (d.dateTo !== undefined)
-                setDateTo(String(d.dateTo));
+                setDateTo(d.dateTo);
             }}
             onValidate={() => setStep("TYPE")}
           />
@@ -181,7 +169,7 @@ export default function SynthesisStudio() {
             type={synthesisType}
             onSelect={(t) => {
               setSynthesisType(t);
-              loadCandidates(); // 🔥 lecture uniquement
+              loadCandidates(); // 🔥 unique déclencheur
             }}
           />
         </details>
