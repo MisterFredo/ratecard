@@ -306,23 +306,26 @@ def get_synthesis_preview(
 # ============================================================
 # LIST SYNTHESIS (ADMIN)
 # ============================================================
+# ============================================================
+# LIST SYNTHESIS (ADMIN)
+# ============================================================
 def list_syntheses():
     """
     Liste des synthèses pour l’ADMIN.
+    Le titre opérationnel est l’identifiant principal.
     """
+
     rows = query_bq(
         f"""
         SELECT
           S.ID_SYNTHESIS,
-          M.NAME AS MODEL_NAME,
+          S.TITLE,           -- 👈 TITRE OPÉRATIONNEL
           S.TYPE,
           S.DATE_FROM,
           S.DATE_TO,
           S.STATUS,
           S.CREATED_AT
         FROM `{TABLE_SYNTHESIS}` S
-        LEFT JOIN `{TABLE_SYNTHESIS_MODEL}` M
-          ON S.ID_MODEL = M.ID_MODEL
         ORDER BY
           S.CREATED_AT DESC
         """
@@ -331,7 +334,7 @@ def list_syntheses():
     return [
         {
             "ID_SYNTHESIS": r["ID_SYNTHESIS"],
-            "NAME": r["MODEL_NAME"],
+            "TITLE": r.get("TITLE"),        # 👈 RENVOYÉ AU FRONT
             "TYPE": r["TYPE"],
             "DATE_FROM": r.get("DATE_FROM"),
             "DATE_TO": r.get("DATE_TO"),
