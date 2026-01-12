@@ -55,23 +55,29 @@ export default function SynthesisStudio() {
      LOAD CANDIDATES (LECTURE PURE)
   ========================================================= */
   async function loadCandidates() {
-    const payload = {
-      topic_ids: model?.topic_ids || [],
-      company_ids: model?.company_ids || [],
-      date_from: dateFrom,
-      date_to: dateTo,
-    };
+    if (!model || !dateFrom || !dateTo) {
+      alert("Informations manquantes pour charger les analyses");
+      return;
+    }
 
-    const res = await api.post("/synthesis/candidates", payload);
+    try {
+      const payload = {
+        topic_ids: model.topic_ids || [],
+        company_ids: model.company_ids || [],
+        date_from: dateFrom,
+        date_to: dateTo,
+      };
 
-    console.log("==== RAW API RESPONSE ====");
-    console.log(res);
-    console.log("TYPE:", typeof res);
-    console.log("KEYS:", res ? Object.keys(res) : null);
+      const res = await api.post("/synthesis/candidates", payload);
 
-    // STOP ICI — pas de setCandidates
+      // 🔑 backend renvoie { status, contents }
+      setCandidates(res.contents || []);
+      setStep("SELECTION");
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur chargement analyses candidates");
+    }
   }
-
 
   /* =========================================================
      CREATE SYNTHESIS (FINAL)
@@ -159,7 +165,7 @@ export default function SynthesisStudio() {
             type={synthesisType}
             onSelect={(t) => {
               setSynthesisType(t);
-              loadCandidates(); // 🔥 unique déclencheur
+              loadCandidates(); // 👈 déclenchement volontaire
             }}
           />
         </details>
@@ -194,7 +200,7 @@ export default function SynthesisStudio() {
         </details>
       )}
 
-      {/* DRAWER */}
+      {/* DRAWER ANALYSE */}
       {openAnalysisId && (
         <AnalysisDrawerAdmin
           contentId={openAnalysisId}
