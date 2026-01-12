@@ -6,10 +6,12 @@ from typing import List, Optional
 # CREATE SYNTHESIS (META)
 # ============================================================
 class SynthesisCreate(BaseModel):
+    title: str                 # 👈 NOUVEAU
     id_model: str
-    synthesis_type: str  # CHIFFRES | ANALYTIQUE | CARTOGRAPHIE
-    date_from: str       # "YYYY-MM-DD"
-    date_to: str         # "YYYY-MM-DD"
+    synthesis_type: str        # CHIFFRES | ANALYTIQUE | CARTOGRAPHIE
+    date_from: str             # YYYY-MM-DD
+    date_to: str               # YYYY-MM-DD
+
 
 
 # ============================================================
