@@ -46,6 +46,7 @@ include_router("api.company", "/api/company", "COMPANY")
 include_router("api.person", "/api/person", "PERSON")
 include_router("api.topic", "/api/topic", "TOPIC")
 include_router("api.event", "/api/event", "EVENT")
+include_router("api.synthesis", "/api/synthesis", "SYNTHESIS")
 
 # --- FRONT PUBLIC
 include_router("api.public", "/api/public", "PUBLIC")
@@ -69,6 +70,7 @@ def root():
             "company",
             "person",
             "visuals",
+            "synthesis",
             "public",
         ]
     }
