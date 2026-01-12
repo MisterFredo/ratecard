@@ -6,7 +6,7 @@ from typing import List, Dict
 from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import get_bigquery_client, insert_bq, query_bq,
+from utils.bigquery_utils import get_bigquery_client, insert_bq, query_bq
 
 
 # ============================================================
