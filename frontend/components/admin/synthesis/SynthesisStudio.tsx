@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 // STEPS
@@ -27,7 +27,7 @@ export default function SynthesisStudio() {
   const [step, setStep] = useState<Step>("MODEL");
 
   /* =========================================================
-     STATE — CONFIG (STRICT STRING)
+     STATE — CONFIG (STRING ONLY)
   ========================================================= */
   const [model, setModel] = useState<any | null>(null);
   const [dateFrom, setDateFrom] = useState<string>("");
@@ -55,26 +55,52 @@ export default function SynthesisStudio() {
      LOAD CANDIDATES (LECTURE PURE)
   ========================================================= */
   async function loadCandidates() {
+    console.log("LOAD CANDIDATES CALLED", {
+      model,
+      dateFrom,
+      dateTo,
+      synthesisType,
+    });
+
     if (!model || !dateFrom || !dateTo) {
       alert("Informations manquantes pour charger les analyses");
       return;
     }
 
     try {
-      const res = await api.post("/synthesis/candidates", {
+      const payload = {
         topic_ids: model.topic_ids || [],
         company_ids: model.company_ids || [],
         date_from: dateFrom,
         date_to: dateTo,
-      });
+      };
+
+      console.log("CANDIDATES PAYLOAD", payload);
+
+      const res = await api.post("/synthesis/candidates", payload);
 
       setCandidates(res.contents || []);
-      setStep("SELECTION");
     } catch (e) {
       console.error(e);
       alert("❌ Erreur chargement analyses candidates");
     }
   }
+
+  /* =========================================================
+     TRIGGER LOAD WHEN STEP === SELECTION
+  ========================================================= */
+  useEffect(() => {
+    if (
+      step === "SELECTION" &&
+      synthesisType &&
+      model &&
+      dateFrom &&
+      dateTo
+    ) {
+      loadCandidates();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   /* =========================================================
      CREATE SYNTHESIS (FINAL)
@@ -162,7 +188,7 @@ export default function SynthesisStudio() {
             type={synthesisType}
             onSelect={(t) => {
               setSynthesisType(t);
-              loadCandidates(); // 👈 LECTURE SEULE
+              setStep("SELECTION"); // 🔑 déclencheur réel
             }}
           />
         </details>
