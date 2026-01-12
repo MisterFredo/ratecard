@@ -73,24 +73,16 @@ def update_synthesis_model(id_model: str, payload: SynthesisModelUpdate):
 
 @router.post("/candidates")
 def list_candidates(payload: SynthesisCandidatesQuery):
-    """
-    Liste des analyses candidates pour une synthèse.
-
-    ⚠️ Lecture pure :
-    - aucune écriture
-    - aucune création de synthèse ici
-    """
     try:
         contents = list_candidate_contents(
             topic_ids=payload.topic_ids or [],
             company_ids=payload.company_ids or [],
-            date_from=payload.date_from,
-            date_to=payload.date_to,
+            date_from=payload.date_from.isoformat(),  # 👈 FIX
+            date_to=payload.date_to.isoformat(),      # 👈 FIX
         )
         return {"status": "ok", "contents": contents}
     except Exception as e:
         raise HTTPException(400, f"Erreur candidates synthèse : {e}")
-
 
 @router.get("/list")
 def list_syntheses_route():
