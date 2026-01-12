@@ -5,6 +5,9 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { Eye } from "lucide-react";
 
+// DRAWER
+import SynthesisDrawerAdmin from "@/components/drawers/SynthesisDrawerAdmin";
+
 type SynthesisLite = {
   ID_SYNTHESIS: string;
   NAME: string;
@@ -18,6 +21,9 @@ type SynthesisLite = {
 export default function SynthesisListPage() {
   const [syntheses, setSyntheses] = useState<SynthesisLite[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [openSynthesisId, setOpenSynthesisId] =
+    useState<string | null>(null);
 
   /* ---------------------------------------------------------
      LOAD SYNTHESES (ADMIN)
@@ -69,7 +75,7 @@ export default function SynthesisListPage() {
             <th className="p-2">Type</th>
             <th className="p-2">Période couverte</th>
             <th className="p-2">Statut</th>
-            <th className="p-2 text-right">Actions</th>
+            <th className="p-2 text-right">Action</th>
           </tr>
         </thead>
 
@@ -120,20 +126,30 @@ export default function SynthesisListPage() {
                 </span>
               </td>
 
-              {/* ACTIONS */}
+              {/* ACTION */}
               <td className="p-2 text-right">
-                <Link
-                  href={`/admin/synthesis/${s.ID_SYNTHESIS}`}
+                <button
+                  onClick={() =>
+                    setOpenSynthesisId(s.ID_SYNTHESIS)
+                  }
                   className="inline-flex items-center gap-1 text-ratecard-blue hover:text-ratecard-blue/80"
                   title="Voir la synthèse"
                 >
                   <Eye size={16} />
-                </Link>
+                </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {/* DRAWER SYNTHESIS */}
+      {openSynthesisId && (
+        <SynthesisDrawerAdmin
+          synthesisId={openSynthesisId}
+          onClose={() => setOpenSynthesisId(null)}
+        />
+      )}
     </div>
   );
 }
