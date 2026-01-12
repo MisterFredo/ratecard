@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Eye } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
 
 // DRAWER
 import SynthesisDrawerAdmin from "@/components/drawers/SynthesisDrawerAdmin";
 
 type SynthesisLite = {
   ID_SYNTHESIS: string;
-  NAME: string;
+  TITLE: string;          // 👈 TITRE OPÉRATIONNEL
   TYPE: string;
   DATE_FROM?: string | null;
   DATE_TO?: string | null;
@@ -46,6 +46,24 @@ export default function SynthesisListPage() {
     load();
   }, []);
 
+  /* ---------------------------------------------------------
+     DELETE SYNTHESIS (ADMIN)
+  --------------------------------------------------------- */
+  async function deleteSynthesis(id: string) {
+    const confirmDelete = confirm(
+      "Supprimer cette synthèse ?\n\nCette action est définitive."
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await api.delete(`/synthesis/${id}`);
+      await load(); // refresh list
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur suppression synthèse");
+    }
+  }
+
   if (loading) return <div>Chargement…</div>;
 
   /* ---------------------------------------------------------
@@ -71,11 +89,11 @@ export default function SynthesisListPage() {
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="bg-gray-100 border-b text-left text-gray-700">
-            <th className="p-2">Modèle</th>
+            <th className="p-2">Titre</th>
             <th className="p-2">Type</th>
             <th className="p-2">Période couverte</th>
             <th className="p-2">Statut</th>
-            <th className="p-2 text-right">Action</th>
+            <th className="p-2 text-right">Actions</th>
           </tr>
         </thead>
 
@@ -85,9 +103,9 @@ export default function SynthesisListPage() {
               key={s.ID_SYNTHESIS}
               className="border-b hover:bg-gray-50 transition"
             >
-              {/* MODELE */}
+              {/* TITRE */}
               <td className="p-2 font-medium">
-                {s.NAME}
+                {s.TITLE}
               </td>
 
               {/* TYPE */}
@@ -126,17 +144,31 @@ export default function SynthesisListPage() {
                 </span>
               </td>
 
-              {/* ACTION */}
+              {/* ACTIONS */}
               <td className="p-2 text-right">
-                <button
-                  onClick={() =>
-                    setOpenSynthesisId(s.ID_SYNTHESIS)
-                  }
-                  className="inline-flex items-center gap-1 text-ratecard-blue hover:text-ratecard-blue/80"
-                  title="Voir la synthèse"
-                >
-                  <Eye size={16} />
-                </button>
+                <div className="inline-flex items-center gap-3">
+                  {/* VIEW */}
+                  <button
+                    onClick={() =>
+                      setOpenSynthesisId(s.ID_SYNTHESIS)
+                    }
+                    className="text-ratecard-blue hover:text-ratecard-blue/80"
+                    title="Voir la synthèse"
+                  >
+                    <Eye size={16} />
+                  </button>
+
+                  {/* DELETE */}
+                  <button
+                    onClick={() =>
+                      deleteSynthesis(s.ID_SYNTHESIS)
+                    }
+                    className="text-red-600 hover:text-red-800"
+                    title="Supprimer la synthèse"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
