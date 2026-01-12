@@ -1,6 +1,5 @@
-# backend/api/synthesis/routes.py
-
 from fastapi import APIRouter, HTTPException
+
 from api.synthesis.models import (
     SynthesisCreate,
     SynthesisAttachContents,
@@ -14,6 +13,9 @@ from core.synthesis.service import (
     create_synthesis,
     attach_contents_to_synthesis,
     get_synthesis_preview,
+)
+
+from core.synthesis.model_service import (
     list_models,
     create_model,
     update_model,
@@ -21,9 +23,8 @@ from core.synthesis.service import (
 
 router = APIRouter()
 
-
 # ============================================================
-# LIST MODELS (ADMIN)
+# LIST SYNTHESIS MODELS (ADMIN)
 # ============================================================
 @router.get("/models")
 def list_synthesis_models():
@@ -34,7 +35,6 @@ def list_synthesis_models():
         raise HTTPException(
             400, f"Erreur chargement modèles : {e}"
         )
-
 
 # ============================================================
 # CREATE MODEL (ADMIN)
@@ -52,7 +52,6 @@ def create_synthesis_model(payload: SynthesisModelCreate):
         raise HTTPException(
             400, f"Erreur création modèle : {e}"
         )
-
 
 # ============================================================
 # UPDATE MODEL (ADMIN)
@@ -75,8 +74,6 @@ def update_synthesis_model(
             400, f"Erreur mise à jour modèle : {e}"
         )
 
-
-
 # ============================================================
 # LIST CANDIDATE CONTENTS (ADMIN)
 # ============================================================
@@ -93,7 +90,6 @@ def list_candidates(payload: SynthesisCandidatesQuery):
     except Exception as e:
         raise HTTPException(400, f"Erreur candidates synthèse : {e}")
 
-
 # ============================================================
 # CREATE SYNTHESIS
 # ============================================================
@@ -109,7 +105,6 @@ def create_synthesis_route(payload: SynthesisCreate):
         return {"status": "ok", "id_synthesis": id_synthesis}
     except Exception as e:
         raise HTTPException(400, f"Erreur création synthèse : {e}")
-
 
 # ============================================================
 # ATTACH CONTENTS TO SYNTHESIS
@@ -133,13 +128,6 @@ def attach_contents_route(id_synthesis: str, payload: SynthesisAttachContents):
 # ============================================================
 @router.get("/list")
 def list_syntheses():
-    """
-    Liste des synthèses pour l’ADMIN.
-
-    ⚠️ ADMIN ONLY
-    - lecture simple
-    - aucune logique de diffusion
-    """
     try:
         rows = query_bq(
             f"""
@@ -181,8 +169,6 @@ def list_syntheses():
             f"Erreur chargement synthèses : {e}",
         )
 
-
-
 # ============================================================
 # PREVIEW SYNTHESIS (ADMIN)
 # ============================================================
@@ -193,41 +179,3 @@ def preview_synthesis_route(id_synthesis: str):
         return {"status": "ok", "synthesis": preview}
     except Exception as e:
         raise HTTPException(400, f"Erreur preview synthèse : {e}")
-
-# ============================================================
-# LIST SYNTHESIS MODELS (ADMIN)
-# ============================================================
-@router.get("/models")
-def list_synthesis_models():
-    try:
-        rows = query_bq(
-            f"""
-            SELECT
-              ID_MODEL,
-              NAME,
-              TOPIC_IDS,
-              COMPANY_IDS
-            FROM `{TABLE_SYNTHESIS_MODEL}`
-            ORDER BY NAME
-            """
-        )
-
-        return {
-            "status": "ok",
-            "models": [
-                {
-                    "id_model": r["ID_MODEL"],
-                    "name": r["NAME"],
-                    "topic_ids": r.get("TOPIC_IDS") or [],
-                    "company_ids": r.get("COMPANY_IDS") or [],
-                }
-                for r in rows
-            ],
-        }
-
-    except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur chargement modèles de synthèse : {e}",
-        )
-
