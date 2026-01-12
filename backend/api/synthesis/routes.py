@@ -9,11 +9,11 @@ from api.synthesis.models import (
 )
 
 from core.synthesis.service import (
-    list_candidate_contents,
-    create_synthesis,
+    list_candidate_contents,     # lecture pure
+    create_synthesis,            # création finale uniquement
     attach_contents_to_synthesis,
     get_synthesis_preview,
-    list_syntheses,
+    list_syntheses,              # inventaire (lecture seule)
 )
 
 from core.synthesis.model_service import (
@@ -25,23 +25,22 @@ from core.synthesis.model_service import (
 router = APIRouter()
 
 # ============================================================
-# LIST SYNTHESIS MODELS (ADMIN)
+# SYNTHESIS MODELS (ADMIN)
 # ============================================================
+
 @router.get("/models")
 def list_synthesis_models():
+    """Liste des modèles de synthèse (ADMIN)."""
     try:
         models = list_models()
         return {"status": "ok", "models": models}
     except Exception as e:
-        raise HTTPException(
-            400, f"Erreur chargement modèles : {e}"
-        )
+        raise HTTPException(400, f"Erreur chargement modèles : {e}")
 
-# ============================================================
-# CREATE MODEL (ADMIN)
-# ============================================================
+
 @router.post("/models")
 def create_synthesis_model(payload: SynthesisModelCreate):
+    """Création d’un modèle de synthèse (ADMIN)."""
     try:
         id_model = create_model(
             name=payload.name,
@@ -50,18 +49,12 @@ def create_synthesis_model(payload: SynthesisModelCreate):
         )
         return {"status": "ok", "id_model": id_model}
     except Exception as e:
-        raise HTTPException(
-            400, f"Erreur création modèle : {e}"
-        )
+        raise HTTPException(400, f"Erreur création modèle : {e}")
 
-# ============================================================
-# UPDATE MODEL (ADMIN)
-# ============================================================
+
 @router.put("/models/{id_model}")
-def update_synthesis_model(
-    id_model: str,
-    payload: SynthesisModelUpdate,
-):
+def update_synthesis_model(id_model: str, payload: SynthesisModelUpdate):
+    """Mise à jour d’un modèle de synthèse (ADMIN)."""
     try:
         update_model(
             id_model=id_model,
@@ -71,15 +64,22 @@ def update_synthesis_model(
         )
         return {"status": "ok", "updated": True}
     except Exception as e:
-        raise HTTPException(
-            400, f"Erreur mise à jour modèle : {e}"
-        )
+        raise HTTPException(400, f"Erreur mise à jour modèle : {e}")
+
 
 # ============================================================
-# LIST CANDIDATE CONTENTS (ADMIN)
+# SYNTHESIS — LECTURE (ADMIN)
 # ============================================================
+
 @router.post("/candidates")
 def list_candidates(payload: SynthesisCandidatesQuery):
+    """
+    Liste des analyses candidates pour une synthèse.
+
+    ⚠️ Lecture pure :
+    - aucune écriture
+    - aucune création de synthèse ici
+    """
     try:
         contents = list_candidate_contents(
             topic_ids=payload.topic_ids or [],
@@ -91,11 +91,45 @@ def list_candidates(payload: SynthesisCandidatesQuery):
     except Exception as e:
         raise HTTPException(400, f"Erreur candidates synthèse : {e}")
 
+
+@router.get("/list")
+def list_syntheses_route():
+    """
+    Inventaire des synthèses existantes (ADMIN).
+
+    Lecture seule :
+    - pas d’édition
+    - pas de suppression
+    """
+    try:
+        syntheses = list_syntheses()
+        return {"status": "ok", "syntheses": syntheses}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur chargement synthèses : {e}")
+
+
+@router.get("/{id_synthesis}/preview")
+def preview_synthesis_route(id_synthesis: str):
+    """Aperçu d’une synthèse (ADMIN)."""
+    try:
+        preview = get_synthesis_preview(id_synthesis)
+        return {"status": "ok", "synthesis": preview}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur preview synthèse : {e}")
+
+
 # ============================================================
-# CREATE SYNTHESIS
+# SYNTHESIS — ÉCRITURE FINALE (ADMIN)
 # ============================================================
+
 @router.post("/create")
 def create_synthesis_route(payload: SynthesisCreate):
+    """
+    Création finale d’une synthèse.
+
+    ⚠️ Appelée UNIQUEMENT après validation humaine
+    (sélection des analyses).
+    """
     try:
         id_synthesis = create_synthesis(
             id_model=payload.id_model,
@@ -107,11 +141,15 @@ def create_synthesis_route(payload: SynthesisCreate):
     except Exception as e:
         raise HTTPException(400, f"Erreur création synthèse : {e}")
 
-# ============================================================
-# ATTACH CONTENTS TO SYNTHESIS
-# ============================================================
+
 @router.post("/{id_synthesis}/contents")
 def attach_contents_route(id_synthesis: str, payload: SynthesisAttachContents):
+    """
+    Association des analyses à une synthèse.
+
+    - max 5 analyses
+    - étape finale avant aperçu
+    """
     try:
         if len(payload.content_ids) > 5:
             raise ValueError("Maximum 5 analyses par synthèse")
@@ -124,27 +162,3 @@ def attach_contents_route(id_synthesis: str, payload: SynthesisAttachContents):
     except Exception as e:
         raise HTTPException(400, f"Erreur association contenus : {e}")
 
-# ============================================================
-# LIST SYNTHESIS (ADMIN)
-# ============================================================
-@router.get("/list")
-def list_syntheses_route():
-    try:
-        syntheses = list_syntheses()
-        return {"status": "ok", "syntheses": syntheses}
-    except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur chargement synthèses : {e}",
-        )
-
-# ============================================================
-# PREVIEW SYNTHESIS (ADMIN)
-# ============================================================
-@router.get("/{id_synthesis}/preview")
-def preview_synthesis_route(id_synthesis: str):
-    try:
-        preview = get_synthesis_preview(id_synthesis)
-        return {"status": "ok", "synthesis": preview}
-    except Exception as e:
-        raise HTTPException(400, f"Erreur preview synthèse : {e}")
