@@ -117,40 +117,48 @@ def list_candidate_contents(
 
 
 # ============================================================
-# 2. CREATE SYNTHESIS (META ONLY)
+# 2. CREATE SYNTHESIS (META ONLY — FINAL)
 # ============================================================
 def create_synthesis(
     id_model: str,
     synthesis_type: str,
-    date_from: date,
-    date_to: date,
+    date_from: str,   # format "YYYY-MM-DD"
+    date_to: str,     # format "YYYY-MM-DD"
 ) -> str:
     """
     Crée une synthèse vide (DRAFT).
+    Appelée UNIQUEMENT après validation humaine.
     """
 
     id_synthesis = str(uuid.uuid4())
-    now = datetime.utcnow()
+    now = datetime.utcnow().isoformat()  # JSON SAFE
 
-    insert_bq(
+    row = [{
+        "ID_SYNTHESIS": id_synthesis,
+        "ID_MODEL": id_model,
+        "TYPE": synthesis_type,
+        "DATE_FROM": date_from,     # STRING
+        "DATE_TO": date_to,         # STRING
+        "STATUS": "DRAFT",
+        "CREATED_AT": now,
+        "UPDATED_AT": now,
+    }]
+
+    client = get_bigquery_client()
+
+    client.load_table_from_json(
+        row,
         TABLE_SYNTHESIS,
-        [{
-            "ID_SYNTHESIS": id_synthesis,
-            "ID_MODEL": id_model,
-            "TYPE": synthesis_type,
-            "DATE_FROM": date_from,
-            "DATE_TO": date_to,
-            "STATUS": "DRAFT",
-            "CREATED_AT": now,
-            "UPDATED_AT": now,
-        }]
-    )
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
+    ).result()
 
     return id_synthesis
 
 
 # ============================================================
-# 3. ATTACH CONTENTS TO SYNTHESIS
+# 3. ATTACH CONTENTS TO SYNTHESIS (FINAL)
 # ============================================================
 def attach_contents_to_synthesis(
     id_synthesis: str,
@@ -160,7 +168,7 @@ def attach_contents_to_synthesis(
     Associe les analyses sélectionnées (max 5) à une synthèse.
     """
 
-    now = datetime.utcnow()
+    now = datetime.utcnow().isoformat()  # JSON SAFE
 
     rows = [
         {
@@ -172,7 +180,15 @@ def attach_contents_to_synthesis(
         for idx, cid in enumerate(content_ids)
     ]
 
-    insert_bq(TABLE_SYNTHESIS_CONTENT, rows)
+    client = get_bigquery_client()
+
+    client.load_table_from_json(
+        rows,
+        TABLE_SYNTHESIS_CONTENT,
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
+    ).result()
 
 
 # ============================================================
