@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "@/lib/api";
 
 // STEPS
@@ -10,7 +10,7 @@ import StepType from "@/components/admin/synthesis/steps/StepType";
 import StepSelection from "@/components/admin/synthesis/steps/StepSelection";
 import StepPreview from "@/components/admin/synthesis/steps/StepPreview";
 
-// DRAWER ADMIN
+// DRAWER
 import AnalysisDrawerAdmin from "@/components/drawers/AnalysisDrawerAdmin";
 
 type Step =
@@ -22,10 +22,13 @@ type Step =
 
 export default function SynthesisStudio() {
   /* =========================================================
-     STATE — CONFIG
+     STATE — FLOW
   ========================================================= */
   const [step, setStep] = useState<Step>("MODEL");
 
+  /* =========================================================
+     STATE — CONFIG (STRICT STRING)
+  ========================================================= */
   const [model, setModel] = useState<any | null>(null);
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
@@ -49,7 +52,7 @@ export default function SynthesisStudio() {
     useState<string | null>(null);
 
   /* =========================================================
-     LOAD CANDIDATES (READ ONLY)
+     LOAD CANDIDATES (LECTURE PURE)
   ========================================================= */
   async function loadCandidates() {
     if (!model || !dateFrom || !dateTo) {
@@ -61,8 +64,8 @@ export default function SynthesisStudio() {
       const res = await api.post("/synthesis/candidates", {
         topic_ids: model.topic_ids || [],
         company_ids: model.company_ids || [],
-        date_from: String(dateFrom),
-        date_to: String(dateTo),
+        date_from: dateFrom,
+        date_to: dateTo,
       });
 
       setCandidates(res.contents || []);
@@ -89,18 +92,16 @@ export default function SynthesisStudio() {
     }
 
     try {
-      // 1️⃣ Création synthèse
       const createRes = await api.post("/synthesis/create", {
         id_model: model.id_model,
         synthesis_type: synthesisType,
-        date_from: String(dateFrom),
-        date_to: String(dateTo),
+        date_from: dateFrom,
+        date_to: dateTo,
       });
 
       const newId = createRes.id_synthesis;
       setInternalSynthesisId(newId);
 
-      // 2️⃣ Association contenus
       await api.post(`/synthesis/${newId}/contents`, {
         content_ids: selectedContentIds,
       });
@@ -142,9 +143,9 @@ export default function SynthesisStudio() {
             dateTo={dateTo}
             onChange={(d) => {
               if (d.dateFrom !== undefined)
-                setDateFrom(d.dateFrom);
+                setDateFrom(String(d.dateFrom));
               if (d.dateTo !== undefined)
-                setDateTo(d.dateTo);
+                setDateTo(String(d.dateTo));
             }}
             onValidate={() => setStep("TYPE")}
           />
@@ -161,7 +162,7 @@ export default function SynthesisStudio() {
             type={synthesisType}
             onSelect={(t) => {
               setSynthesisType(t);
-              loadCandidates(); // 🔥 lecture uniquement
+              loadCandidates(); // 👈 LECTURE SEULE
             }}
           />
         </details>
