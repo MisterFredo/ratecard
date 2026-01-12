@@ -23,9 +23,17 @@ export default function StepModel({ model, onSelect }: Props) {
     async function loadModels() {
       setLoading(true);
       try {
-        // 🔒 ADMIN ONLY — modèles de synthèse
         const res = await api.get("/synthesis/models");
-        setModels(res.models || []);
+
+        // 🔑 lecture robuste du wrapper api
+        const list =
+          res.models ??
+          res.data?.models ??
+          [];
+
+        console.log("SYNTHESIS MODELS", list);
+
+        setModels(list);
       } catch (e) {
         console.error(e);
         alert("❌ Erreur chargement modèles de synthèse");
