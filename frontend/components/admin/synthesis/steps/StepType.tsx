@@ -21,8 +21,9 @@ export default function StepType({ type, onSelect }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* CHIFFRES */}
         <button
+          type="button"
           onClick={() => onSelect("CHIFFRES")}
-          className={`border rounded p-4 text-left ${
+          className={`border rounded p-4 text-left transition ${
             type === "CHIFFRES"
               ? "border-ratecard-blue bg-blue-50"
               : "hover:border-gray-400"
@@ -43,8 +44,9 @@ export default function StepType({ type, onSelect }: Props) {
 
         {/* ANALYTIQUE */}
         <button
+          type="button"
           onClick={() => onSelect("ANALYTIQUE")}
-          className={`border rounded p-4 text-left ${
+          className={`border rounded p-4 text-left transition ${
             type === "ANALYTIQUE"
               ? "border-ratecard-blue bg-blue-50"
               : "hover:border-gray-400"
@@ -54,7 +56,7 @@ export default function StepType({ type, onSelect }: Props) {
             Synthèse — Analytique descriptive
           </h4>
           <p className="text-sm text-gray-600 mt-1">
-            Panorama des angles et des constats abordés dans les analyses.
+            Panorama des angles et constats abordés dans les analyses.
           </p>
           <ul className="text-xs text-gray-500 mt-2 list-disc list-inside">
             <li>Basée sur les angles & excerpts</li>
@@ -65,8 +67,9 @@ export default function StepType({ type, onSelect }: Props) {
 
         {/* CARTOGRAPHIE */}
         <button
+          type="button"
           onClick={() => onSelect("CARTOGRAPHIE")}
-          className={`border rounded p-4 text-left ${
+          className={`border rounded p-4 text-left transition ${
             type === "CARTOGRAPHIE"
               ? "border-ratecard-blue bg-blue-50"
               : "hover:border-gray-400"
@@ -81,7 +84,7 @@ export default function StepType({ type, onSelect }: Props) {
           <ul className="text-xs text-gray-500 mt-2 list-disc list-inside">
             <li>Répartition par topics & sociétés</li>
             <li>Comptage, pas d’analyse</li>
-            <li>Très utile en bilan mensuel</li>
+            <li>Utile pour bilans mensuels</li>
           </ul>
         </button>
       </div>
