@@ -259,3 +259,42 @@ def get_synthesis_preview(
         "id_synthesis": id_synthesis,
         "preview": data,
     }
+
+# ============================================================
+# LIST SYNTHESIS (ADMIN)
+# ============================================================
+def list_syntheses():
+    """
+    Liste des synthèses pour l’ADMIN.
+    """
+    rows = query_bq(
+        f"""
+        SELECT
+          S.ID_SYNTHESIS,
+          M.NAME AS MODEL_NAME,
+          S.TYPE,
+          S.DATE_FROM,
+          S.DATE_TO,
+          S.STATUS,
+          S.CREATED_AT
+        FROM `{TABLE_SYNTHESIS}` S
+        LEFT JOIN `{TABLE_SYNTHESIS_MODEL}` M
+          ON S.ID_MODEL = M.ID_MODEL
+        ORDER BY
+          S.CREATED_AT DESC
+        """
+    )
+
+    return [
+        {
+            "ID_SYNTHESIS": r["ID_SYNTHESIS"],
+            "NAME": r["MODEL_NAME"],
+            "TYPE": r["TYPE"],
+            "DATE_FROM": r.get("DATE_FROM"),
+            "DATE_TO": r.get("DATE_TO"),
+            "STATUS": r["STATUS"],
+            "CREATED_AT": r["CREATED_AT"],
+        }
+        for r in rows
+    ]
+
