@@ -3,13 +3,16 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-// STEPS (à venir progressivement)
+// STEPS
 import StepModel from "@/components/admin/synthesis/steps/StepModel";
 import StepPeriod from "@/components/admin/synthesis/steps/StepPeriod";
 import StepType from "@/components/admin/synthesis/steps/StepType";
 import StepCandidates from "@/components/admin/synthesis/steps/StepCandidates";
 import StepSelection from "@/components/admin/synthesis/steps/StepSelection";
 import StepPreview from "@/components/admin/synthesis/steps/StepPreview";
+
+// DRAWER ADMIN
+import AnalysisDrawerAdmin from "@/components/drawers/AnalysisDrawerAdmin";
 
 type Mode = "create" | "edit";
 
@@ -66,6 +69,12 @@ export default function SynthesisStudio({
     useState<string | null>(synthesisId || null);
 
   /* =========================================================
+     STATE — DRAWER ADMIN
+  ========================================================= */
+  const [openAnalysisId, setOpenAnalysisId] =
+    useState<string | null>(null);
+
+  /* =========================================================
      LOAD SYNTHESIS (EDIT MODE)
   ========================================================= */
   useEffect(() => {
@@ -73,8 +82,6 @@ export default function SynthesisStudio({
 
     async function load() {
       try {
-        // 🔒 volontairement minimal en V1
-        // On partira directement sur la PREVIEW
         setInternalSynthesisId(synthesisId);
         setStep("PREVIEW");
       } catch (e) {
@@ -230,6 +237,7 @@ export default function SynthesisStudio({
             candidates={candidates}
             onLoad={loadCandidates}
             onValidate={() => setStep("SELECTION")}
+            onOpenAnalysis={(id) => setOpenAnalysisId(id)}
           />
         </details>
       )}
@@ -249,6 +257,7 @@ export default function SynthesisStudio({
             selectedIds={selectedContentIds}
             onChange={setSelectedContentIds}
             onValidate={attachContents}
+            onOpenAnalysis={(id) => setOpenAnalysisId(id)}
           />
         </details>
       )}
@@ -268,6 +277,14 @@ export default function SynthesisStudio({
             onBack={() => setStep("SELECTION")}
           />
         </details>
+      )}
+
+      {/* DRAWER ADMIN */}
+      {openAnalysisId && (
+        <AnalysisDrawerAdmin
+          contentId={openAnalysisId}
+          onClose={() => setOpenAnalysisId(null)}
+        />
       )}
     </div>
   );
