@@ -38,6 +38,7 @@ def list_candidate_contents(
     - exclut ARCHIVED
     - filtre par topics / sociétés si fournis
     - filtre par DATE_CREATION (DATE)
+    - réponse JSON-safe
     """
 
     client = get_bigquery_client()
@@ -98,7 +99,6 @@ def list_candidate_contents(
                 "STRING",
                 company_ids or []
             ),
-            # Dates transmises en STRING, cast explicite en SQL
             bigquery.ScalarQueryParameter(
                 "date_from",
                 "STRING",
@@ -113,8 +113,24 @@ def list_candidate_contents(
     )
 
     rows = client.query(sql, job_config=job_config).result()
-    return [dict(row) for row in rows]
 
+    # ---------------------------------------------------------
+    # SERIALIZATION JSON-SAFE
+    # ---------------------------------------------------------
+    def serialize_row(row: Dict) -> Dict:
+        out = dict(row)
+
+        # DATE -> string YYYY-MM-DD
+        if isinstance(out.get("DATE_CREATION"), (date, datetime)):
+            out["DATE_CREATION"] = out["DATE_CREATION"].isoformat()
+
+        # TIMESTAMP -> ISO string
+        if isinstance(out.get("PUBLISHED_AT"), datetime):
+            out["PUBLISHED_AT"] = out["PUBLISHED_AT"].isoformat()
+
+        return out
+
+    return [serialize_row(dict(row)) for row in rows]
 
 # ============================================================
 # 2. CREATE SYNTHESIS (META ONLY — FINAL)
@@ -137,8 +153,8 @@ def create_synthesis(
         "ID_SYNTHESIS": id_synthesis,
         "ID_MODEL": id_model,
         "TYPE": synthesis_type,
-        "DATE_FROM": date_from,     # STRING
-        "DATE_TO": date_to,         # STRING
+        "DATE_FROM": date_from,
+        "DATE_TO": date_to,
         "STATUS": "DRAFT",
         "CREATED_AT": now,
         "UPDATED_AT": now,
