@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
-
 type Candidate = {
   ID_CONTENT: string;
   ANGLE_TITLE: string;
@@ -12,40 +10,27 @@ type Candidate = {
 
 type Props = {
   candidates: Candidate[];
-  onLoad: () => void;
   onValidate: () => void;
   onOpenAnalysis: (contentId: string) => void;
 };
 
 export default function StepCandidates({
   candidates,
-  onLoad,
   onValidate,
   onOpenAnalysis,
 }: Props) {
-  useEffect(() => {
-    // Chargement automatique des analyses candidates
-    onLoad();
-  }, []);
-
   return (
     <div className="space-y-6">
       <p className="text-sm text-gray-600">
         Voici les analyses correspondant au périmètre et à la période
         sélectionnés.
-        <br />
-        <span className="italic">
-          Vérifiez rapidement avant de passer à la sélection.
-        </span>
       </p>
 
-      {candidates.length === 0 && (
+      {candidates.length === 0 ? (
         <p className="text-sm text-gray-400 italic">
           Aucune analyse trouvée pour ce périmètre.
         </p>
-      )}
-
-      {candidates.length > 0 && (
+      ) : (
         <div className="space-y-3">
           {candidates.map((c) => (
             <div
@@ -67,11 +52,11 @@ export default function StepCandidates({
                   {c.PUBLISHED_AT
                     ? `Publié le ${new Date(
                         c.PUBLISHED_AT
-                      ).toLocaleDateString()}`
+                      ).toLocaleDateString("fr-FR")}`
                     : c.DATE_CREATION
                     ? `Créé le ${new Date(
                         c.DATE_CREATION
-                      ).toLocaleDateString()}`
+                      ).toLocaleDateString("fr-FR")}`
                     : null}
                 </p>
 
@@ -96,7 +81,7 @@ export default function StepCandidates({
             : "bg-gray-200 text-gray-500 cursor-not-allowed"
         }`}
       >
-        Continuer vers la sélection
+        Continuer
       </button>
     </div>
   );
