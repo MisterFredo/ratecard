@@ -30,20 +30,11 @@ def list_candidate_contents(
     date_from: date,
     date_to: date,
 ) -> List[Dict]:
-    """
-    Liste des analyses candidates pour une synthèse (ADMIN).
-
-    Règles :
-    - inclut DRAFT + PUBLISHED
-    - exclut ARCHIVED
-    - filtre par topics / sociétés si fournis
-    - filtre par DATE_CREATION (DATE)
-    """
 
     client = get_bigquery_client()
 
     sql = f"""
-    SELECT DISTINCT
+    SELECT
       C.ID_CONTENT,
       C.ANGLE_TITLE,
       C.EXCERPT,
@@ -52,53 +43,46 @@ def list_candidate_contents(
       C.DATE_CREATION,
       C.PUBLISHED_AT
     FROM `{TABLE_CONTENT}` C
-
-    LEFT JOIN `{TABLE_CONTENT_TOPIC}` CT
-      ON C.ID_CONTENT = CT.ID_CONTENT
-    LEFT JOIN `{TABLE_CONTENT_COMPANY}` CC
-      ON C.ID_CONTENT = CC.ID_CONTENT
-
     WHERE
       C.IS_ACTIVE = TRUE
       AND C.STATUS != 'ARCHIVED'
-      AND (
-        ARRAY_LENGTH(@topic_ids) = 0
-        OR CT.ID_TOPIC IN UNNEST(@topic_ids)
-      )
-      AND (
-        ARRAY_LENGTH(@company_ids) = 0
-        OR CC.ID_COMPANY IN UNNEST(@company_ids)
-      )
       AND C.DATE_CREATION BETWEEN DATE(@date_from) AND DATE(@date_to)
 
+      AND (
+        ARRAY_LENGTH(@topic_ids) = 0
+        OR EXISTS (
+          SELECT 1
+          FROM `{TABLE_CONTENT_TOPIC}` CT
+          WHERE CT.ID_CONTENT = C.ID_CONTENT
+            AND CT.ID_TOPIC IN UNNEST(@topic_ids)
+        )
+      )
+
+      AND (
+        ARRAY_LENGTH(@company_ids) = 0
+        OR EXISTS (
+          SELECT 1
+          FROM `{TABLE_CONTENT_COMPANY}` CC
+          WHERE CC.ID_CONTENT = C.ID_CONTENT
+            AND CC.ID_COMPANY IN UNNEST(@company_ids)
+        )
+      )
+
     ORDER BY
-      COALESCE(
-        C.PUBLISHED_AT,
-        TIMESTAMP(C.DATE_CREATION)
-      ) DESC
+      COALESCE(C.PUBLISHED_AT, TIMESTAMP(C.DATE_CREATION)) DESC
     """
 
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
-            bigquery.ArrayQueryParameter(
-                "topic_ids", "STRING", topic_ids or []
-            ),
-            bigquery.ArrayQueryParameter(
-                "company_ids", "STRING", company_ids or []
-            ),
-            bigquery.ScalarQueryParameter(
-                "date_from", "DATE", date_from
-            ),
-            bigquery.ScalarQueryParameter(
-                "date_to", "DATE", date_to
-            ),
+            bigquery.ArrayQueryParameter("topic_ids", "STRING", topic_ids or []),
+            bigquery.ArrayQueryParameter("company_ids", "STRING", company_ids or []),
+            bigquery.ScalarQueryParameter("date_from", "DATE", date_from),
+            bigquery.ScalarQueryParameter("date_to", "DATE", date_to),
         ]
     )
 
     rows = client.query(sql, job_config=job_config).result()
-
     return [dict(r) for r in rows]
-
 
 # ============================================================
 # 2. CREATE SYNTHESIS (META ONLY)
