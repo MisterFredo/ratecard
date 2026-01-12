@@ -4,14 +4,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+/* =========================================================
+   TYPES — ALIGNÉS BACKEND
+========================================================= */
+
 type Topic = {
-  id_topic: string;
-  label: string;
+  ID_TOPIC: string;
+  LABEL: string;
 };
 
 type Company = {
-  id_company: string;
-  name: string;
+  ID_COMPANY: string;
+  NAME: string;
 };
 
 type Model = {
@@ -112,6 +116,7 @@ export default function EditSynthesisModelPage({
   --------------------------------------------------------- */
   return (
     <div className="space-y-8 max-w-3xl">
+      {/* HEADER */}
       <div className="flex justify-between">
         <h1 className="text-2xl font-semibold">
           Modifier le modèle
@@ -145,19 +150,19 @@ export default function EditSynthesisModelPage({
         <div className="flex flex-wrap gap-2">
           {topics.map((t) => {
             const selected = selectedTopicIds.includes(
-              t.id_topic
+              t.ID_TOPIC
             );
 
             return (
               <button
-                key={t.id_topic}
+                key={t.ID_TOPIC}
                 onClick={() =>
                   setSelectedTopicIds((prev) =>
                     selected
                       ? prev.filter(
-                          (x) => x !== t.id_topic
+                          (x) => x !== t.ID_TOPIC
                         )
-                      : [...prev, t.id_topic]
+                      : [...prev, t.ID_TOPIC]
                   )
                 }
                 className={`px-3 py-1 rounded text-xs border ${
@@ -166,7 +171,7 @@ export default function EditSynthesisModelPage({
                     : "bg-white text-gray-700"
                 }`}
               >
-                {t.label}
+                {t.LABEL}
               </button>
             );
           })}
@@ -182,19 +187,19 @@ export default function EditSynthesisModelPage({
         <div className="flex flex-wrap gap-2">
           {companies.map((c) => {
             const selected = selectedCompanyIds.includes(
-              c.id_company
+              c.ID_COMPANY
             );
 
             return (
               <button
-                key={c.id_company}
+                key={c.ID_COMPANY}
                 onClick={() =>
                   setSelectedCompanyIds((prev) =>
                     selected
                       ? prev.filter(
-                          (x) => x !== c.id_company
+                          (x) => x !== c.ID_COMPANY
                         )
-                      : [...prev, c.id_company]
+                      : [...prev, c.ID_COMPANY]
                   )
                 }
                 className={`px-3 py-1 rounded text-xs border ${
@@ -203,7 +208,7 @@ export default function EditSynthesisModelPage({
                     : "bg-white text-gray-700"
                 }`}
               >
-                {c.name}
+                {c.NAME}
               </button>
             );
           })}
