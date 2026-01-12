@@ -42,6 +42,7 @@ export default function SynthesisStudio({
   const [model, setModel] = useState<any | null>(null);
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+
   const [synthesisType, setSynthesisType] = useState<
     "CHIFFRES" | "ANALYTIQUE" | "CARTOGRAPHIE" | null
   >(null);
@@ -80,7 +81,7 @@ export default function SynthesisStudio({
     }
 
     try {
-      // 1️⃣ create synthesis
+      // 1️⃣ Création de la synthèse
       const createRes = await api.post("/synthesis/create", {
         id_model: model.id_model,
         synthesis_type: synthesisType,
@@ -91,7 +92,7 @@ export default function SynthesisStudio({
       const newId = createRes.id_synthesis;
       setInternalSynthesisId(newId);
 
-      // 2️⃣ load analyses
+      // 2️⃣ Chargement des analyses candidates
       const candidatesRes = await api.post("/synthesis/candidates", {
         topic_ids: model.topic_ids || [],
         company_ids: model.company_ids || [],
@@ -108,10 +109,27 @@ export default function SynthesisStudio({
   }
 
   /* =========================================================
+     TRIGGER SAFE AFTER TYPE SELECTION
+  ========================================================= */
+  useEffect(() => {
+    if (
+      step === "TYPE" &&
+      synthesisType &&
+      model &&
+      dateFrom &&
+      dateTo
+    ) {
+      createSynthesisAndLoad();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [synthesisType]);
+
+  /* =========================================================
      ATTACH CONTENTS
   ========================================================= */
   async function attachContents() {
     if (!internalSynthesisId) return;
+
     if (selectedContentIds.length === 0) {
       alert("Sélectionnez au moins une analyse");
       return;
@@ -178,7 +196,7 @@ export default function SynthesisStudio({
             type={synthesisType}
             onSelect={(t) => {
               setSynthesisType(t);
-              createSynthesisAndLoad();
+              // ⚠️ Aucune action métier ici
             }}
           />
         </details>
@@ -213,7 +231,7 @@ export default function SynthesisStudio({
         </details>
       )}
 
-      {/* DRAWER */}
+      {/* DRAWER ADMIN */}
       {openAnalysisId && (
         <AnalysisDrawerAdmin
           contentId={openAnalysisId}
