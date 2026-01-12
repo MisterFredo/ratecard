@@ -111,6 +111,7 @@ def list_candidate_contents(
 # 2. CREATE SYNTHESIS (META ONLY — FINAL)
 # ============================================================
 def create_synthesis(
+    title: str,
     id_model: str,
     synthesis_type: str,
     date_from: str,   # format "YYYY-MM-DD"
