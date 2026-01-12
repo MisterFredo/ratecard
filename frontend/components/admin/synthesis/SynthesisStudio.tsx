@@ -7,7 +7,6 @@ import { api } from "@/lib/api";
 import StepModel from "@/components/admin/synthesis/steps/StepModel";
 import StepPeriod from "@/components/admin/synthesis/steps/StepPeriod";
 import StepType from "@/components/admin/synthesis/steps/StepType";
-import StepCandidates from "@/components/admin/synthesis/steps/StepCandidates";
 import StepSelection from "@/components/admin/synthesis/steps/StepSelection";
 import StepPreview from "@/components/admin/synthesis/steps/StepPreview";
 
@@ -20,7 +19,6 @@ type Step =
   | "MODEL"
   | "PERIOD"
   | "TYPE"
-  | "CANDIDATES"
   | "SELECTION"
   | "PREVIEW";
 
@@ -39,37 +37,26 @@ export default function SynthesisStudio({
   const [step, setStep] = useState<Step>("MODEL");
 
   /* =========================================================
-     STATE — MODEL
+     STATE — MODEL / PERIOD / TYPE
   ========================================================= */
   const [model, setModel] = useState<any | null>(null);
-
-  /* =========================================================
-     STATE — PERIOD
-  ========================================================= */
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
-
-  /* =========================================================
-     STATE — TYPE
-  ========================================================= */
   const [synthesisType, setSynthesisType] = useState<
     "CHIFFRES" | "ANALYTIQUE" | "CARTOGRAPHIE" | null
   >(null);
 
   /* =========================================================
-     STATE — CANDIDATES & SELECTION
-  ========================================================= */
-  const [candidates, setCandidates] = useState<any[]>([]);
-  const [selectedContentIds, setSelectedContentIds] = useState<string[]>([]);
-
-  /* =========================================================
-     STATE — SYNTHESIS
+     STATE — DATA
   ========================================================= */
   const [internalSynthesisId, setInternalSynthesisId] =
     useState<string | null>(synthesisId || null);
 
+  const [candidates, setCandidates] = useState<any[]>([]);
+  const [selectedContentIds, setSelectedContentIds] = useState<string[]>([]);
+
   /* =========================================================
-     STATE — DRAWER ADMIN
+     STATE — DRAWER
   ========================================================= */
   const [openAnalysisId, setOpenAnalysisId] =
     useState<string | null>(null);
@@ -79,22 +66,21 @@ export default function SynthesisStudio({
   ========================================================= */
   useEffect(() => {
     if (mode !== "edit" || !synthesisId) return;
-
     setInternalSynthesisId(synthesisId);
     setStep("PREVIEW");
   }, [mode, synthesisId]);
 
   /* =========================================================
-     CREATE SYNTHESIS + LOAD CANDIDATES (ATOMIC)
+     CREATE SYNTHESIS + LOAD ANALYSES
   ========================================================= */
-  async function createSynthesisAndLoadCandidates() {
+  async function createSynthesisAndLoad() {
     if (!model || !synthesisType || !dateFrom || !dateTo) {
       alert("Informations manquantes pour créer la synthèse");
       return;
     }
 
     try {
-      // 1) Création de la synthèse
+      // 1️⃣ create synthesis
       const createRes = await api.post("/synthesis/create", {
         id_model: model.id_model,
         synthesis_type: synthesisType,
@@ -105,7 +91,7 @@ export default function SynthesisStudio({
       const newId = createRes.id_synthesis;
       setInternalSynthesisId(newId);
 
-      // 2) Chargement des analyses candidates
+      // 2️⃣ load analyses
       const candidatesRes = await api.post("/synthesis/candidates", {
         topic_ids: model.topic_ids || [],
         company_ids: model.company_ids || [],
@@ -122,21 +108,10 @@ export default function SynthesisStudio({
   }
 
   /* =========================================================
-     TRIGGER CREATION WHEN STEP === CANDIDATES
-  ========================================================= */
-  useEffect(() => {
-    if (step === "CANDIDATES") {
-      createSynthesisAndLoadCandidates();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
-
-  /* =========================================================
      ATTACH CONTENTS
   ========================================================= */
   async function attachContents() {
     if (!internalSynthesisId) return;
-
     if (selectedContentIds.length === 0) {
       alert("Sélectionnez au moins une analyse");
       return;
@@ -145,11 +120,8 @@ export default function SynthesisStudio({
     try {
       await api.post(
         `/synthesis/${internalSynthesisId}/contents`,
-        {
-          content_ids: selectedContentIds,
-        }
+        { content_ids: selectedContentIds }
       );
-
       setStep("PREVIEW");
     } catch (e) {
       console.error(e);
@@ -167,7 +139,6 @@ export default function SynthesisStudio({
         <summary className="font-semibold cursor-pointer">
           1. Modèle
         </summary>
-
         <StepModel
           model={model}
           onSelect={(m) => {
@@ -183,14 +154,14 @@ export default function SynthesisStudio({
           <summary className="font-semibold cursor-pointer">
             2. Période
           </summary>
-
           <StepPeriod
             dateFrom={dateFrom}
             dateTo={dateTo}
             onChange={(d) => {
               if (d.dateFrom !== undefined)
                 setDateFrom(d.dateFrom);
-              if (d.dateTo !== undefined) setDateTo(d.dateTo);
+              if (d.dateTo !== undefined)
+                setDateTo(d.dateTo);
             }}
             onValidate={() => setStep("TYPE")}
           />
@@ -203,37 +174,22 @@ export default function SynthesisStudio({
           <summary className="font-semibold cursor-pointer">
             3. Type de synthèse
           </summary>
-
           <StepType
             type={synthesisType}
             onSelect={(t) => {
               setSynthesisType(t);
-              setStep("CANDIDATES");
+              createSynthesisAndLoad();
             }}
           />
         </details>
       )}
 
-      {/* STEP 4 — CANDIDATES (LOADING STATE) */}
-      {step === "CANDIDATES" && (
-        <details open className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            4. Analyses candidates
-          </summary>
-
-          <p className="text-sm text-gray-500">
-            Chargement des analyses…
-          </p>
-        </details>
-      )}
-
-      {/* STEP 5 — SELECTION */}
+      {/* STEP 4 — SELECTION */}
       {step === "SELECTION" && (
         <details open className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            5. Sélection
+            4. Sélection
           </summary>
-
           <StepSelection
             candidates={candidates}
             selectedIds={selectedContentIds}
@@ -244,13 +200,12 @@ export default function SynthesisStudio({
         </details>
       )}
 
-      {/* STEP 6 — PREVIEW */}
+      {/* STEP 5 — PREVIEW */}
       {step === "PREVIEW" && internalSynthesisId && (
         <details open className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            6. Aperçu
+            5. Aperçu
           </summary>
-
           <StepPreview
             synthesisId={internalSynthesisId}
             onBack={() => setStep("SELECTION")}
@@ -258,7 +213,7 @@ export default function SynthesisStudio({
         </details>
       )}
 
-      {/* DRAWER ADMIN */}
+      {/* DRAWER */}
       {openAnalysisId && (
         <AnalysisDrawerAdmin
           contentId={openAnalysisId}
