@@ -128,42 +128,10 @@ def attach_contents_route(id_synthesis: str, payload: SynthesisAttachContents):
 # LIST SYNTHESIS (ADMIN)
 # ============================================================
 @router.get("/list")
-def list_syntheses():
+def list_syntheses_route():
     try:
-        rows = query_bq(
-            f"""
-            SELECT
-              S.ID_SYNTHESIS,
-              M.NAME AS MODEL_NAME,
-              S.TYPE,
-              S.DATE_FROM,
-              S.DATE_TO,
-              S.STATUS,
-              S.CREATED_AT
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SYNTHESIS` S
-            LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SYNTHESIS_MODEL` M
-              ON S.ID_MODEL = M.ID_MODEL
-            ORDER BY
-              S.CREATED_AT DESC
-            """
-        )
-
-        return {
-            "status": "ok",
-            "syntheses": [
-                {
-                    "ID_SYNTHESIS": r["ID_SYNTHESIS"],
-                    "NAME": r["MODEL_NAME"],
-                    "TYPE": r["TYPE"],
-                    "DATE_FROM": r.get("DATE_FROM"),
-                    "DATE_TO": r.get("DATE_TO"),
-                    "STATUS": r["STATUS"],
-                    "CREATED_AT": r["CREATED_AT"],
-                }
-                for r in rows
-            ],
-        }
-
+        syntheses = list_syntheses()
+        return {"status": "ok", "syntheses": syntheses}
     except Exception as e:
         raise HTTPException(
             400,
