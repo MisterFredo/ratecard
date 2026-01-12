@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 
 // STEPS
+import StepTitle from "@/components/admin/synthesis/steps/StepTitle";
 import StepModel from "@/components/admin/synthesis/steps/StepModel";
 import StepPeriod from "@/components/admin/synthesis/steps/StepPeriod";
 import StepType from "@/components/admin/synthesis/steps/StepType";
@@ -14,6 +15,7 @@ import StepPreview from "@/components/admin/synthesis/steps/StepPreview";
 import AnalysisDrawerAdmin from "@/components/drawers/AnalysisDrawerAdmin";
 
 type Step =
+  | "TITLE"       // 👈 STEP 0
   | "MODEL"
   | "PERIOD"
   | "TYPE"
@@ -24,7 +26,12 @@ export default function SynthesisStudio() {
   /* =========================================================
      STATE — FLOW
   ========================================================= */
-  const [step, setStep] = useState<Step>("MODEL");
+  const [step, setStep] = useState<Step>("TITLE");
+
+  /* =========================================================
+     STATE — TITLE (STEP 0)
+  ========================================================= */
+  const [title, setTitle] = useState<string>("");
 
   /* =========================================================
      STATE — CONFIG
@@ -52,6 +59,22 @@ export default function SynthesisStudio() {
     useState<string | null>(null);
 
   /* =========================================================
+     UTILS — DEFAULT TITLE
+  ========================================================= */
+  function buildDefaultTitle() {
+    if (!model || !synthesisType || !dateFrom || !dateTo) return "";
+
+    const typeLabel =
+      synthesisType === "CHIFFRES"
+        ? "Synthèse chiffrée"
+        : synthesisType === "ANALYTIQUE"
+        ? "Panorama analytique"
+        : "Cartographie";
+
+    return `${model.name} — ${typeLabel} (${dateFrom} → ${dateTo})`;
+  }
+
+  /* =========================================================
      LOAD CANDIDATES (LECTURE PURE)
   ========================================================= */
   async function loadCandidates() {
@@ -70,7 +93,7 @@ export default function SynthesisStudio() {
 
       const res = await api.post("/synthesis/candidates", payload);
 
-      // 🔑 backend renvoie { status, contents }
+      // backend renvoie { status, contents }
       setCandidates(res.contents || []);
       setStep("SELECTION");
     } catch (e) {
@@ -84,6 +107,7 @@ export default function SynthesisStudio() {
   ========================================================= */
   async function createSynthesis() {
     if (
+      !title.trim() ||
       !model ||
       !synthesisType ||
       !dateFrom ||
@@ -96,6 +120,7 @@ export default function SynthesisStudio() {
 
     try {
       const res = await api.post("/synthesis/create", {
+        title, // 👈 TITRE OPÉRATIONNEL
         id_model: model.id_model,
         synthesis_type: synthesisType,
         date_from: dateFrom,
@@ -121,19 +146,33 @@ export default function SynthesisStudio() {
   ========================================================= */
   return (
     <div className="space-y-6">
-      {/* STEP 1 — MODEL */}
-      <details open={step === "MODEL"} className="border rounded p-4">
+      {/* STEP 0 — TITLE */}
+      <details open={step === "TITLE"} className="border rounded p-4">
         <summary className="font-semibold cursor-pointer">
-          1. Modèle
+          0. Titre
         </summary>
-        <StepModel
-          model={model}
-          onSelect={(m) => {
-            setModel(m);
-            setStep("PERIOD");
-          }}
+        <StepTitle
+          title={title}
+          onChange={setTitle}
+          onValidate={() => setStep("MODEL")}
         />
       </details>
+
+      {/* STEP 1 — MODEL */}
+      {step !== "TITLE" && (
+        <details open={step === "MODEL"} className="border rounded p-4">
+          <summary className="font-semibold cursor-pointer">
+            1. Modèle
+          </summary>
+          <StepModel
+            model={model}
+            onSelect={(m) => {
+              setModel(m);
+              setStep("PERIOD");
+            }}
+          />
+        </details>
+      )}
 
       {/* STEP 2 — PERIOD */}
       {model && (
@@ -165,7 +204,13 @@ export default function SynthesisStudio() {
             type={synthesisType}
             onSelect={(t) => {
               setSynthesisType(t);
-              loadCandidates(); // 👈 déclenchement volontaire
+
+              // Préremplissage automatique du titre si vide
+              if (!title.trim()) {
+                setTitle(buildDefaultTitle());
+              }
+
+              loadCandidates();
             }}
           />
         </details>
