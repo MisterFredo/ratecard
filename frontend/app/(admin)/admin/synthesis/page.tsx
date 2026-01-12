@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Pencil } from "lucide-react";
+import { Eye } from "lucide-react";
 
 type SynthesisLite = {
   ID_SYNTHESIS: string;
@@ -65,9 +65,9 @@ export default function SynthesisListPage() {
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="bg-gray-100 border-b text-left text-gray-700">
-            <th className="p-2">Nom</th>
+            <th className="p-2">Modèle</th>
             <th className="p-2">Type</th>
-            <th className="p-2">Période</th>
+            <th className="p-2">Période couverte</th>
             <th className="p-2">Statut</th>
             <th className="p-2 text-right">Actions</th>
           </tr>
@@ -79,7 +79,7 @@ export default function SynthesisListPage() {
               key={s.ID_SYNTHESIS}
               className="border-b hover:bg-gray-50 transition"
             >
-              {/* NOM */}
+              {/* MODELE */}
               <td className="p-2 font-medium">
                 {s.NAME}
               </td>
@@ -93,13 +93,16 @@ export default function SynthesisListPage() {
 
               {/* PERIODE */}
               <td className="p-2 text-gray-600">
-                {s.DATE_FROM && s.DATE_TO
-                  ? `${new Date(
-                      s.DATE_FROM
-                    ).toLocaleDateString("fr-FR")} → ${new Date(
-                      s.DATE_TO
-                    ).toLocaleDateString("fr-FR")}`
-                  : "—"}
+                {s.DATE_FROM && s.DATE_TO ? (
+                  <>
+                    du{" "}
+                    {new Date(s.DATE_FROM).toLocaleDateString("fr-FR")}{" "}
+                    au{" "}
+                    {new Date(s.DATE_TO).toLocaleDateString("fr-FR")}
+                  </>
+                ) : (
+                  "—"
+                )}
               </td>
 
               {/* STATUS */}
@@ -120,11 +123,11 @@ export default function SynthesisListPage() {
               {/* ACTIONS */}
               <td className="p-2 text-right">
                 <Link
-                  href={`/admin/synthesis/edit/${s.ID_SYNTHESIS}`}
+                  href={`/admin/synthesis/${s.ID_SYNTHESIS}`}
                   className="inline-flex items-center gap-1 text-ratecard-blue hover:text-ratecard-blue/80"
-                  title="Modifier la synthèse"
+                  title="Voir la synthèse"
                 >
-                  <Pencil size={16} />
+                  <Eye size={16} />
                 </Link>
               </td>
             </tr>
