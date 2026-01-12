@@ -306,9 +306,6 @@ def get_synthesis_preview(
 # ============================================================
 # LIST SYNTHESIS (ADMIN)
 # ============================================================
-# ============================================================
-# LIST SYNTHESIS (ADMIN)
-# ============================================================
 def list_syntheses():
     """
     Liste des synthèses pour l’ADMIN.
@@ -343,4 +340,43 @@ def list_syntheses():
         }
         for r in rows
     ]
+
+# ============================================================
+# DELETE SYNTHESIS (ADMIN)
+# ============================================================
+def delete_synthesis(id_synthesis: str):
+    """
+    Suppression définitive d’une synthèse (ADMIN).
+    """
+
+    client = get_bigquery_client()
+
+    # 1) Supprimer les liaisons contenus
+    client.query(
+        f"""
+        DELETE FROM `{TABLE_SYNTHESIS_CONTENT}`
+        WHERE ID_SYNTHESIS = @id
+        """,
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("id", "STRING", id_synthesis)
+            ]
+        ),
+    ).result()
+
+    # 2) Supprimer la synthèse
+    client.query(
+        f"""
+        DELETE FROM `{TABLE_SYNTHESIS}`
+        WHERE ID_SYNTHESIS = @id
+        """,
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("id", "STRING", id_synthesis)
+            ]
+        ),
+    ).result()
+
+    return True
+
 
