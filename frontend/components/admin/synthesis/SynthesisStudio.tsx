@@ -55,13 +55,6 @@ export default function SynthesisStudio() {
      LOAD CANDIDATES (LECTURE PURE)
   ========================================================= */
   async function loadCandidates() {
-    console.log("LOAD CANDIDATES CALLED", {
-      model,
-      dateFrom,
-      dateTo,
-      synthesisType,
-    });
-
     if (!model || !dateFrom || !dateTo) {
       alert("Informations manquantes pour charger les analyses");
       return;
@@ -79,28 +72,21 @@ export default function SynthesisStudio() {
 
       const res = await api.post("/synthesis/candidates", payload);
 
-      setCandidates(res.contents || []);
+      // 🔑 FIX CLÉ : lecture robuste du wrapper api
+      const contents =
+        res?.contents ??
+        res?.data?.contents ??
+        [];
+
+      console.log("CANDIDATES RESPONSE", contents);
+
+      setCandidates(contents);
+      setStep("SELECTION");
     } catch (e) {
       console.error(e);
       alert("❌ Erreur chargement analyses candidates");
     }
   }
-
-  /* =========================================================
-     TRIGGER LOAD WHEN STEP === SELECTION
-  ========================================================= */
-  useEffect(() => {
-    if (
-      step === "SELECTION" &&
-      synthesisType &&
-      model &&
-      dateFrom &&
-      dateTo
-    ) {
-      loadCandidates();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
 
   /* =========================================================
      CREATE SYNTHESIS (FINAL)
@@ -125,7 +111,14 @@ export default function SynthesisStudio() {
         date_to: dateTo,
       });
 
-      const newId = createRes.id_synthesis;
+      const newId =
+        createRes?.id_synthesis ??
+        createRes?.data?.id_synthesis;
+
+      if (!newId) {
+        throw new Error("ID synthèse introuvable");
+      }
+
       setInternalSynthesisId(newId);
 
       await api.post(`/synthesis/${newId}/contents`, {
@@ -188,7 +181,7 @@ export default function SynthesisStudio() {
             type={synthesisType}
             onSelect={(t) => {
               setSynthesisType(t);
-              setStep("SELECTION"); // 🔑 déclencheur réel
+              loadCandidates(); // 🔥 lecture uniquement
             }}
           />
         </details>
