@@ -27,8 +27,8 @@ TABLE_SYNTHESIS_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SYNTHESIS_CONTENT
 def list_candidate_contents(
     topic_ids: List[str],
     company_ids: List[str],
-    date_from: date,
-    date_to: date,
+    date_from: str,   # 👈 string assumé
+    date_to: str,     # 👈 string assumé
 ) -> List[Dict]:
 
     client = get_bigquery_client()
@@ -74,15 +74,25 @@ def list_candidate_contents(
 
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
-            bigquery.ArrayQueryParameter("topic_ids", "STRING", topic_ids or []),
-            bigquery.ArrayQueryParameter("company_ids", "STRING", company_ids or []),
-            bigquery.ScalarQueryParameter("date_from", "DATE", date_from),
-            bigquery.ScalarQueryParameter("date_to", "DATE", date_to),
+            bigquery.ArrayQueryParameter(
+                "topic_ids", "STRING", topic_ids or []
+            ),
+            bigquery.ArrayQueryParameter(
+                "company_ids", "STRING", company_ids or []
+            ),
+            # 👇 DATE PASSÉE EN STRING
+            bigquery.ScalarQueryParameter(
+                "date_from", "STRING", date_from
+            ),
+            bigquery.ScalarQueryParameter(
+                "date_to", "STRING", date_to
+            ),
         ]
     )
 
     rows = client.query(sql, job_config=job_config).result()
     return [dict(r) for r in rows]
+
 
 # ============================================================
 # 2. CREATE SYNTHESIS (META ONLY)
