@@ -22,7 +22,7 @@ TABLE_SYNTHESIS_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SYNTHESIS_CONTENT
 
 
 # ============================================================
-# 1. LIST CANDIDATE CONTENTS (ADMIN)
+# 1. LIST CANDIDATE CONTENTS (ADMIN) — DEBUG
 # ============================================================
 def list_candidate_contents(
     topic_ids: List[str],
@@ -33,13 +33,20 @@ def list_candidate_contents(
     """
     Liste des analyses candidates pour une synthèse (ADMIN).
 
-    Règles métier :
-    - inclut DRAFT + PUBLISHED
-    - exclut ARCHIVED
-    - filtre par topics / sociétés si fournis
-    - filtre par DATE_CREATION (DATE)
-    - réponse JSON-safe
+    VERSION DEBUG :
+    - logs explicites pour comprendre ce que l'API interroge réellement
     """
+
+    print("=== LIST_CANDIDATE_CONTENTS CALLED ===")
+    print("BQ_PROJECT:", BQ_PROJECT)
+    print("BQ_DATASET:", BQ_DATASET)
+    print("TABLE_CONTENT:", TABLE_CONTENT)
+    print("TABLE_CONTENT_TOPIC:", TABLE_CONTENT_TOPIC)
+    print("TABLE_CONTENT_COMPANY:", TABLE_CONTENT_COMPANY)
+    print("TOPIC_IDS:", topic_ids)
+    print("COMPANY_IDS:", company_ids)
+    print("DATE_FROM:", date_from)
+    print("DATE_TO:", date_to)
 
     client = get_bigquery_client()
 
@@ -58,7 +65,6 @@ def list_candidate_contents(
       AND C.STATUS != 'ARCHIVED'
       AND C.DATE_CREATION BETWEEN DATE(@date_from) AND DATE(@date_to)
 
-      -- Filtre Topics (si fournis)
       AND (
         ARRAY_LENGTH(@topic_ids) = 0
         OR EXISTS (
@@ -69,7 +75,6 @@ def list_candidate_contents(
         )
       )
 
-      -- Filtre Sociétés (si fournies)
       AND (
         ARRAY_LENGTH(@company_ids) = 0
         OR EXISTS (
@@ -90,29 +95,23 @@ def list_candidate_contents(
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
             bigquery.ArrayQueryParameter(
-                "topic_ids",
-                "STRING",
-                topic_ids or []
+                "topic_ids", "STRING", topic_ids or []
             ),
             bigquery.ArrayQueryParameter(
-                "company_ids",
-                "STRING",
-                company_ids or []
+                "company_ids", "STRING", company_ids or []
             ),
             bigquery.ScalarQueryParameter(
-                "date_from",
-                "STRING",
-                date_from
+                "date_from", "STRING", date_from
             ),
             bigquery.ScalarQueryParameter(
-                "date_to",
-                "STRING",
-                date_to
+                "date_to", "STRING", date_to
             ),
         ]
     )
 
-    rows = client.query(sql, job_config=job_config).result()
+    rows = list(client.query(sql, job_config=job_config).result())
+
+    print("NB ROWS FROM QUERY:", len(rows))
 
     # ---------------------------------------------------------
     # SERIALIZATION JSON-SAFE
@@ -120,17 +119,20 @@ def list_candidate_contents(
     def serialize_row(row: Dict) -> Dict:
         out = dict(row)
 
-        # DATE -> string YYYY-MM-DD
         if isinstance(out.get("DATE_CREATION"), (date, datetime)):
             out["DATE_CREATION"] = out["DATE_CREATION"].isoformat()
 
-        # TIMESTAMP -> ISO string
         if isinstance(out.get("PUBLISHED_AT"), datetime):
             out["PUBLISHED_AT"] = out["PUBLISHED_AT"].isoformat()
 
         return out
 
-    return [serialize_row(dict(row)) for row in rows]
+    serialized = [serialize_row(dict(row)) for row in rows]
+
+    print("NB ROWS AFTER SERIALIZATION:", len(serialized))
+    print("=== END LIST_CANDIDATE_CONTENTS ===")
+
+    return serialized
 
 # ============================================================
 # 2. CREATE SYNTHESIS (META ONLY — FINAL)
