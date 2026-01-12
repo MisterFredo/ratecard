@@ -55,7 +55,7 @@ def create_model(
     if not name or not name.strip():
         raise ValueError("Le nom du modèle est obligatoire")
 
-    now = datetime.utcnow()
+    now = datetime.utcnow().isoformat()  # ✅ JSON SAFE
     id_model = str(uuid.uuid4())
 
     row = [
@@ -80,6 +80,7 @@ def create_model(
     ).result()
 
     return id_model
+
 
 # ============================================================
 # UPDATE MODEL — NAME ONLY (V1 SAFE)
