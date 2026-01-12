@@ -134,6 +134,27 @@ def create_synthesis_route(payload: SynthesisCreate):
     except Exception as e:
         raise HTTPException(400, f"Erreur création synthèse : {e}")
 
+@router.delete("/{id_synthesis}")
+def delete_synthesis(id_synthesis: str):
+    try:
+        client = get_bigquery_client()
+        client.query(
+            f"""
+            DELETE FROM `{TABLE_SYNTHESIS}`
+            WHERE ID_SYNTHESIS = @id
+            """,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("id", "STRING", id_synthesis)
+                ]
+            ),
+        ).result()
+
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur suppression synthèse : {e}")
+
+
 
 @router.post("/{id_synthesis}/contents")
 def attach_contents_route(id_synthesis: str, payload: SynthesisAttachContents):
