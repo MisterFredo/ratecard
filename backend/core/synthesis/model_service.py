@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq, insert_bq, update_bq, get_bigquery_client,
+from utils.bigquery_utils import query_bq, insert_bq, update_bq, get_bigquery_client
 
 TABLE_SYNTHESIS_MODEL = (
     f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SYNTHESIS_MODEL"
