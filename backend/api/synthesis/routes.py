@@ -124,6 +124,7 @@ def create_synthesis_route(payload: SynthesisCreate):
     """
     try:
         id_synthesis = create_synthesis(
+            title=payload.title,
             id_model=payload.id_model,
             synthesis_type=payload.synthesis_type,
             date_from=payload.date_from,
