@@ -1,13 +1,16 @@
 "use client";
 
 import { useMemo } from "react";
-import type { NewsItem, AnalysisItem } from "@/app/(admin)/admin/newsletter/compose/page";
+import type {
+  NewsItem,
+  AnalysisItem,
+} from "@/app/(admin)/admin/newsletter/compose/page";
 
 /* =========================================================
    CONFIG
 ========================================================= */
 
-// ⚠️ Domaine réellement accessible (iframe + Brevo)
+// Domaine réellement accessible (preview iframe + Brevo)
 const SITE_URL = "https://ratecard-frontend.onrender.com";
 const LOGO_URL = `${SITE_URL}/assets/brand/ratecard-logo.jpeg`;
 
@@ -25,7 +28,7 @@ function escapeHtml(text: string) {
 }
 
 /* =========================================================
-   BLOCK RENDERERS
+   BLOCKS
 ========================================================= */
 
 function renderIntro(introText?: string) {
@@ -36,8 +39,8 @@ function renderIntro(introText?: string) {
       <td style="
         padding:16px 0 24px 0;
         font-family:Arial,Helvetica,sans-serif;
-        font-size:14px;
-        line-height:20px;
+        font-size:15px;
+        line-height:22px;
         color:#111827;
       ">
         ${escapeHtml(introText).replace(/\n/g, "<br/>")}
@@ -46,6 +49,9 @@ function renderIntro(introText?: string) {
   `;
 }
 
+/* -------------------------
+   NEWS — CARDS VERTICALES
+------------------------- */
 function renderNews(news: NewsItem[]) {
   if (news.length === 0) return "";
 
@@ -54,7 +60,7 @@ function renderNews(news: NewsItem[]) {
       <td style="
         padding:24px 0 12px 0;
         font-family:Arial,Helvetica,sans-serif;
-        font-size:16px;
+        font-size:18px;
         font-weight:bold;
         color:#111827;
       ">
@@ -66,32 +72,47 @@ function renderNews(news: NewsItem[]) {
       .map(
         (n) => `
       <tr>
-        <td style="padding:16px 0;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #E5E7EB;padding-bottom:16px;">
+        <td style="padding:0 0 24px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0"
+            style="
+              border:1px solid #E5E7EB;
+              border-radius:8px;
+              overflow:hidden;
+            "
+          >
+            <!-- IMAGE -->
             <tr>
-              <td width="170" valign="top">
+              <td>
                 <img
                   src="${n.visual_rect_url}"
                   alt="${escapeHtml(n.title)}"
-                  width="160"
-                  style="display:block;border-radius:6px;"
+                  width="100%"
+                  style="
+                    display:block;
+                    width:100%;
+                    max-width:600px;
+                    height:auto;
+                  "
                 />
               </td>
+            </tr>
 
-              <td valign="top" style="
-                padding-left:16px;
+            <!-- CONTENT -->
+            <tr>
+              <td style="
+                padding:16px;
                 font-family:Arial,Helvetica,sans-serif;
-                font-size:14px;
-                line-height:20px;
                 color:#111827;
               ">
-                <strong style="font-size:15px;">
+                <strong style="font-size:16px;line-height:22px;">
                   ${escapeHtml(n.title)}
                 </strong><br/>
 
                 ${
                   n.excerpt
-                    ? `<span style="color:#374151;">${escapeHtml(n.excerpt)}</span><br/>`
+                    ? `<p style="margin:8px 0 12px 0;font-size:14px;line-height:20px;color:#374151;">
+                        ${escapeHtml(n.excerpt)}
+                      </p>`
                     : ""
                 }
 
@@ -99,16 +120,16 @@ function renderNews(news: NewsItem[]) {
                   href="${SITE_URL}/news?news_id=${n.id}"
                   style="
                     display:inline-block;
-                    margin-top:8px;
-                    padding:6px 12px;
+                    padding:8px 16px;
                     background:#2563EB;
                     color:#ffffff;
                     text-decoration:none;
-                    border-radius:4px;
-                    font-size:13px;
+                    border-radius:6px;
+                    font-size:14px;
+                    font-weight:bold;
                   "
                 >
-                  Lire la news
+                  Lire l’article
                 </a>
               </td>
             </tr>
@@ -121,6 +142,9 @@ function renderNews(news: NewsItem[]) {
   `;
 }
 
+/* -------------------------
+   ANALYSES — BLOCS ÉDITO
+------------------------- */
 function renderAnalyses(analyses: AnalysisItem[]) {
   if (analyses.length === 0) return "";
 
@@ -129,7 +153,7 @@ function renderAnalyses(analyses: AnalysisItem[]) {
       <td style="
         padding:32px 0 12px 0;
         font-family:Arial,Helvetica,sans-serif;
-        font-size:16px;
+        font-size:18px;
         font-weight:bold;
         color:#111827;
       ">
@@ -142,20 +166,21 @@ function renderAnalyses(analyses: AnalysisItem[]) {
         (a) => `
       <tr>
         <td style="
-          padding:14px 0;
+          padding:16px;
+          background:#F9FAFB;
+          border-radius:8px;
           font-family:Arial,Helvetica,sans-serif;
-          font-size:14px;
-          line-height:20px;
           color:#111827;
-          border-bottom:1px solid #E5E7EB;
         ">
-          <strong style="font-size:15px;">
+          <strong style="font-size:16px;line-height:22px;">
             ${escapeHtml(a.title)}
           </strong><br/>
 
           ${
             a.excerpt
-              ? `<span style="color:#374151;">${escapeHtml(a.excerpt)}</span><br/>`
+              ? `<p style="margin:8px 0 12px 0;font-size:14px;line-height:20px;color:#374151;">
+                  ${escapeHtml(a.excerpt)}
+                </p>`
               : ""
           }
 
@@ -163,19 +188,21 @@ function renderAnalyses(analyses: AnalysisItem[]) {
             href="${SITE_URL}/analysis?analysis_id=${a.id}"
             style="
               display:inline-block;
-              margin-top:8px;
-              padding:6px 12px;
+              padding:8px 16px;
               background:#111827;
               color:#ffffff;
               text-decoration:none;
-              border-radius:4px;
-              font-size:13px;
+              border-radius:6px;
+              font-size:14px;
+              font-weight:bold;
             "
           >
-            Lire l’analyse
+            Lire l’analyse complète
           </a>
         </td>
       </tr>
+
+      <tr><td height="16"></td></tr>
     `
       )
       .join("")}
@@ -261,7 +288,7 @@ export default function NewsletterPreview({
         <iframe
           title="Newsletter preview"
           srcDoc={html}
-          className="w-full h-[720px]"
+          className="w-full h-[760px]"
         />
       </div>
     </section>
