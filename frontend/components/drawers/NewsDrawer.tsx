@@ -28,12 +28,21 @@ export default function NewsDrawer({ id, onClose }: Props) {
   const [data, setData] = useState<NewsData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
+  /* ---------------------------------------------------------
+     Fermeture du drawer
+     → nettoyage explicite de l’URL
+  --------------------------------------------------------- */
   function close() {
+    // ferme visuellement
+    setIsOpen(false);
+
+    // callback éventuel (DrawerContext)
     if (onClose) {
       onClose();
-    } else {
-      router.back();
     }
+
+    // nettoyage URL (robuste newsletter / LinkedIn)
+    router.push("/news", { scroll: false });
   }
 
   useEffect(() => {
@@ -89,7 +98,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
           </button>
         </div>
 
-        {/* VISUAL — HERO PARTENAIRE (INCHANGÉ) */}
+        {/* VISUAL — HERO PARTENAIRE */}
         {data.visual_rect_url && (
           <img
             src={data.visual_rect_url}
@@ -106,14 +115,14 @@ export default function NewsDrawer({ id, onClose }: Props) {
         {/* CONTENT */}
         <div className="px-5 py-6 space-y-8">
 
-          {/* EXCERPT — MISE EN AVANT */}
+          {/* EXCERPT */}
           {data.excerpt && (
             <p className="text-base font-medium text-gray-800 max-w-2xl">
               {data.excerpt}
             </p>
           )}
 
-          {/* BODY — HTML RENDER PREMIUM (ALIGNÉ ANALYSE) */}
+          {/* BODY */}
           {data.body && (
             <div
               className="
@@ -147,3 +156,4 @@ export default function NewsDrawer({ id, onClose }: Props) {
     </div>
   );
 }
+
