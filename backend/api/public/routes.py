@@ -12,6 +12,7 @@ from api.public.models import (
     HomeAnalysisLine,
     DrawerNewsResponse,
     DrawerAnalysisResponse,
+    LinkedInGenerateRequest,
 )
 
 from core.news.service import list_news
