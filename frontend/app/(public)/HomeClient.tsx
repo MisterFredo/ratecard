@@ -45,6 +45,11 @@ export default function HomeClient({ news, analyses }: Props) {
   const { openDrawer } = useDrawer();
 
   // ---------------------------------------------------------
+  // 9 DERNIÈRES NEWS (3 x 3)
+  // ---------------------------------------------------------
+  const latestNews = news.slice(0, 9);
+
+  // ---------------------------------------------------------
   // 12 DERNIÈRES ANALYSES (TRI CHRONO)
   // ---------------------------------------------------------
   const latestAnalyses = analyses
@@ -60,7 +65,7 @@ export default function HomeClient({ news, analyses }: Props) {
     <div className="space-y-16">
 
       {/* =====================================================
-          NEWS
+          NEWS — 3 LIGNES DE 3
       ===================================================== */}
       <section className="space-y-6">
         <div className="flex items-center justify-between">
@@ -75,8 +80,15 @@ export default function HomeClient({ news, analyses }: Props) {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {news.map((n) => (
+        <div
+          className="
+            grid grid-cols-1
+            sm:grid-cols-2
+            lg:grid-cols-3
+            gap-4 md:gap-6
+          "
+        >
+          {latestNews.map((n) => (
             <PartnerSignalCard
               key={n.id}
               id={n.id}
@@ -136,3 +148,4 @@ export default function HomeClient({ news, analyses }: Props) {
     </div>
   );
 }
+
