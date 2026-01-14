@@ -12,18 +12,24 @@ async function safeFetch<T>(url: string): Promise<T> {
 }
 
 export default async function HomePage() {
-  const [news, analyses] = await Promise.all([
+  const [newsRaw, analyses] = await Promise.all([
     safeFetch<{ news: any[] }>(`${API_BASE}/news/list`),
     safeFetch<{ items: any[] }>(`${API_BASE}/public/analysis/list`),
   ]);
 
+  // 🔁 mapping explicite news (MAJUSCULE → front)
+  const news = newsRaw.news.map((n) => ({
+    id: n.ID_NEWS,
+    title: n.TITLE,
+    excerpt: n.EXCERPT ?? null,
+    visual_rect_url: n.VISUAL_RECT_URL,
+    published_at: n.PUBLISHED_AT,
+  }));
+
   return (
     <HomeClient
-      news={news.news}
+      news={news}
       analyses={analyses.items}
     />
   );
 }
-
-
-
