@@ -23,33 +23,6 @@ router = APIRouter()
 
 
 # ============================================================
-# HOME — NEWS (CARTES)
-# ============================================================
-@router.get("/home/news", response_model=HomeNewsResponse)
-def get_home_news():
-    try:
-        news = list_news()
-
-        items = [
-            HomeNewsItem(
-                id=n["ID_NEWS"],
-                title=n["TITLE"],
-                excerpt=n.get("EXCERPT"),
-                published_at=n["PUBLISHED_AT"],
-                visual_rect_url=n["VISUAL_RECT_URL"],
-            )
-            for n in news
-            if n["STATUS"] == "PUBLISHED" and n.get("VISUAL_RECT_URL")
-        ]
-
-        return HomeNewsResponse(items=items[:4])
-
-    except Exception:
-        logger.exception("Erreur home news")
-        raise HTTPException(500, "Erreur récupération home news")
-
-
-# ============================================================
 # HOME — ANALYSES PAR EVENT (LIGNES + CONTEXTE)
 # ============================================================
 @router.get("/home/events", response_model=HomeEventsResponse)
