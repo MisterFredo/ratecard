@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useDrawer } from "@/contexts/DrawerContext";
 
 type Props = {
@@ -26,10 +27,14 @@ export default function AnalysisCard({
   keyMetric,
 }: Props) {
   const { openDrawer } = useDrawer();
+  const router = useRouter();
 
   return (
     <article
-      onClick={() => openDrawer("analysis", id)}
+      onClick={() => {
+        router.push(`/analysis?analysis_id=${id}`, { scroll: false });
+        openDrawer("analysis", id);
+      }}
       className="
         cursor-pointer rounded-2xl
         border border-ratecard-border bg-white
@@ -87,3 +92,4 @@ export default function AnalysisCard({
     </article>
   );
 }
+
