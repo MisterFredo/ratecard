@@ -6,6 +6,8 @@ import NewsletterSelector from "@/components/newsletter/NewsletterSelector";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
+const SITE_URL = "https://ratecard-frontend.onrender.com";
+
 /* =========================================================
    TYPES
 ========================================================= */
@@ -39,7 +41,7 @@ export default function LinkedInComposePage() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   /* -----------------------------------------------------
-     Fetch sources (same logic as Newsletter)
+     Fetch sources
   ----------------------------------------------------- */
   useEffect(() => {
     fetch(`${API_BASE}/news/list`, { cache: "no-store" })
@@ -79,24 +81,34 @@ export default function LinkedInComposePage() {
   );
 
   /* -----------------------------------------------------
-     GENERATION — LIST MODE (AUTO)
+     GENERATION — LIST MODE (AUTO, ENRICHI)
   ----------------------------------------------------- */
   function generateListPost() {
     const lines: string[] = [];
 
     if (selectedNews.length > 0) {
       selectedNews.forEach((n) => {
-        lines.push(`• ${n.title}`);
+        lines.push(
+          `• ${n.title}\n` +
+          (n.excerpt ? `  ${n.excerpt}\n` : "") +
+          `  ${SITE_URL}/news?news_id=${n.id}\n`
+        );
       });
     }
 
     if (selectedAnalyses.length > 0) {
       selectedAnalyses.forEach((a) => {
-        lines.push(`• ${a.title}`);
+        lines.push(
+          `• ${a.title}\n` +
+          (a.excerpt ? `  ${a.excerpt}\n` : "") +
+          `  ${SITE_URL}/analysis?analysis_id=${a.id}\n`
+        );
       });
     }
 
-    const intro = "Plusieurs annonces et analyses à retenir :\n\n";
+    const intro =
+      "Plusieurs annonces et analyses à retenir ces derniers jours :\n\n";
+
     setPostText(intro + lines.join("\n"));
   }
 
@@ -124,9 +136,7 @@ export default function LinkedInComposePage() {
         `${API_BASE}/public/linkedin/generate`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sources }),
         }
       );
@@ -243,7 +253,7 @@ export default function LinkedInComposePage() {
                 ? "Le texte du post sera généré automatiquement…"
                 : "Le texte sera généré par l’IA…"
             }
-            className="w-full min-h-[320px] rounded-lg border border-gray-300 p-3 text-sm"
+            className="w-full min-h-[360px] rounded-lg border border-gray-300 p-3 text-sm"
           />
 
           <div className="flex justify-between items-center text-xs text-gray-500">
