@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useDrawer } from "@/contexts/DrawerContext";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
@@ -45,22 +45,39 @@ export default function NewsPage() {
   const { openDrawer } = useDrawer();
   const searchParams = useSearchParams();
 
+  // 🔒 garde-fou anti-réouverture
+  const lastOpenedId = useRef<string | null>(null);
+
   /* ---------------------------------------------------------
-     Chargement de la liste
+     Chargement de la liste des news
   --------------------------------------------------------- */
   useEffect(() => {
     fetchNews().then(setNews);
   }, []);
 
   /* ---------------------------------------------------------
-     Ouverture automatique du drawer depuis l’URL
+     Ouverture du drawer pilotée par l’URL
      /news?news_id=XXXX
+     → avec protection contre les boucles
   --------------------------------------------------------- */
   useEffect(() => {
     const newsId = searchParams.get("news_id");
-    if (newsId) {
-      openDrawer("news", newsId);
+
+    // aucun drawer demandé → reset du garde-fou
+    if (!newsId) {
+      lastOpenedId.current = null;
+      return;
     }
+
+    // déjà ouvert → ne rien faire
+    if (lastOpenedId.current === newsId) {
+      return;
+    }
+
+    // nouvelle ouverture légitime
+    lastOpenedId.current = newsId;
+    openDrawer("news", newsId);
+
   }, [searchParams, openDrawer]);
 
   return (
@@ -92,5 +109,3 @@ export default function NewsPage() {
     </div>
   );
 }
-
-
