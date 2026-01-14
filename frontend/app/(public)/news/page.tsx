@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useDrawer } from "@/contexts/DrawerContext";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 
@@ -42,10 +43,25 @@ async function fetchNews(): Promise<NewsItem[]> {
 export default function NewsPage() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const { openDrawer } = useDrawer();
+  const searchParams = useSearchParams();
 
+  /* ---------------------------------------------------------
+     Chargement de la liste
+  --------------------------------------------------------- */
   useEffect(() => {
     fetchNews().then(setNews);
   }, []);
+
+  /* ---------------------------------------------------------
+     Ouverture automatique du drawer depuis l’URL
+     /news?news_id=XXXX
+  --------------------------------------------------------- */
+  useEffect(() => {
+    const newsId = searchParams.get("news_id");
+    if (newsId) {
+      openDrawer("news", newsId);
+    }
+  }, [searchParams, openDrawer]);
 
   return (
     <div className="space-y-12 md:space-y-14">
@@ -76,4 +92,5 @@ export default function NewsPage() {
     </div>
   );
 }
+
 
