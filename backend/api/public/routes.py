@@ -17,6 +17,7 @@ from api.public.models import (
 from core.news.service import list_news
 from core.content.service import list_contents
 from core.event.service import list_home_events, list_event_contents
+from core.linkedin.generate_post import generate_linkedin_post
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -206,4 +207,30 @@ def list_public_analyses():
     except Exception:
         logger.exception("Erreur list_public_analyses")
         raise HTTPException(500, "Erreur récupération analyses")
+
+
+# ============================================================
+# LINKEDIN — GÉNÉRATION POST IA
+# ============================================================
+@router.post("/linkedin/generate")
+def generate_linkedin_post_route(payload: LinkedInGenerateRequest):
+    """
+    Génère un texte LinkedIn à partir de sources News / Analyses.
+    Retourne toujours une string (vide si échec).
+    """
+    try:
+        text = generate_linkedin_post(
+            sources=[s.dict() for s in payload.sources]
+        )
+
+        return {
+            "text": text or ""
+        }
+
+    except Exception:
+        logger.exception("Erreur génération post LinkedIn")
+        return {
+            "text": ""
+        }
+
 
