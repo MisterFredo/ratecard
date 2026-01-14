@@ -63,7 +63,7 @@ function renderNews(news: NewsItem[]) {
         font-weight:bold;
         color:#111827;
       ">
-        Actualités partenaires
+        Actualités
       </td>
     </tr>
 
