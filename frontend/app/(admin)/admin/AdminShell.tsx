@@ -12,6 +12,7 @@ import {
   FileStack,
   SlidersHorizontal,
   Mail,
+  Share2,
 } from "lucide-react";
 
 export default function AdminShell({
@@ -35,6 +36,13 @@ export default function AdminShell({
       subtle: true,
     },
     { href: "/admin/news", label: "News", icon: Newspaper },
+
+    // LINKEDIN — POSTS QUOTIDIENS
+    {
+      href: "/admin/linkedin/compose",
+      label: "LinkedIn",
+      icon: Share2,
+    },
 
     // NEWSLETTER — COMPOSITION HEBDO
     {
@@ -96,3 +104,4 @@ export default function AdminShell({
     </div>
   );
 }
+
