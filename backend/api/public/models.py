@@ -78,4 +78,33 @@ class DrawerAnalysisResponse(BaseModel):
     event: Optional[dict]
 
 
+# =======================================================
+# LINKEDIN — GÉNÉRATION DE POST (IA)
+# =======================================================
+class LinkedInSource(BaseModel):
+    """
+    Source utilisée pour la génération d’un post LinkedIn.
+    ⚠️ Doit rester STRICTEMENT limitée à ces champs.
+    """
+    type: str  # "news" | "analysis"
+    title: str
+    excerpt: Optional[str] = None
+
+
+class LinkedInGenerateRequest(BaseModel):
+    """
+    Payload pour la génération d’un post LinkedIn via IA.
+    """
+    sources: List[LinkedInSource]
+
+
+class LinkedInGenerateResponse(BaseModel):
+    """
+    Réponse de génération LinkedIn.
+    ⚠️ Toujours du texte brut.
+    """
+    text: str
+
+
+
 
