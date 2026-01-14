@@ -163,7 +163,7 @@ function renderAnalyses(analyses: AnalysisItem[]) {
         font-weight:bold;
         color:#111827;
       ">
-        Analyses Ratecard
+        Analyses
       </td>
     </tr>
 
