@@ -1,67 +1,83 @@
-# backend/core/linkedin/generate_post.py
-
 from typing import List, Dict
 from utils.llm import run_llm
 
 
 def generate_linkedin_post(sources: List[Dict]) -> str:
     """
-    Génère un texte LinkedIn analytique à partir de sources News / Analyses.
-    Retourne toujours une string (vide si échec).
+    Génère un post LinkedIn analytique et structuré
+    à partir de sources News / Analyses.
+
+    - STRICTEMENT basé sur les titres et excerpts fournis
+    - Aucune extrapolation
+    - Aucune création de faits
+    - Texte brut uniquement
     """
 
     if not sources:
         return ""
 
     # -----------------------------------------------------
-    # Construction des sources textuelles
+    # Construction des blocs sources (verrouillés)
     # -----------------------------------------------------
-    source_lines = []
+    source_blocks = []
 
-    for i, s in enumerate(sources, start=1):
-        title = s.get("title", "").strip()
+    for idx, s in enumerate(sources, start=1):
+        source_type = (s.get("type") or "").upper()
+        title = (s.get("title") or "").strip()
         excerpt = (s.get("excerpt") or "").strip()
-        stype = s.get("type", "").upper()
 
         if not title:
             continue
 
-        block = f"{i}. [{stype}] Titre : {title}"
+        block = f"{idx}. [{source_type}]\nTitre : {title}"
         if excerpt:
-            block += f"\n   Extrait : {excerpt}"
+            block += f"\nExtrait : {excerpt}"
 
-        source_lines.append(block)
+        source_blocks.append(block)
 
-    if not source_lines:
+    if not source_blocks:
         return ""
 
-    sources_text = "\n\n".join(source_lines)
+    sources_text = "\n\n".join(source_blocks)
 
     # -----------------------------------------------------
-    # Prompt strict (aucune extrapolation autorisée)
+    # PROMPT ÉDITORIAL STRICT — LINKEDIN RATECARD
     # -----------------------------------------------------
     prompt = f"""
-Tu dois rédiger un post LinkedIn en français à partir EXCLUSIVEMENT des éléments ci-dessous.
+Tu dois rédiger un post LinkedIn en français à partir EXCLUSIVEMENT des éléments listés ci-dessous.
 
-Règles absolues :
-- N’ajoute aucun fait, chiffre, acteur ou information qui n’apparaît pas explicitement.
-- Ne fais aucune extrapolation, aucune hypothèse.
-- Ne donne aucune opinion personnelle.
-- Ne fais pas de conclusion marketing.
-- N’utilise jamais le pronom « nous ».
+RÈGLES ABSOLUES (NON NÉGOCIABLES) :
+- N’ajoute aucun fait, chiffre, acteur ou information qui n’apparaît PAS explicitement.
+- Ne fais AUCUNE extrapolation, AUCUNE hypothèse.
+- Ne donne AUCUNE opinion.
+- Ne fais AUCUNE conclusion marketing.
+- N’utilise JAMAIS le pronom « nous ».
+- N’emploie PAS de termes vagues ou creux (ex : « dynamique », « illustre », « témoigne ») sans fait précis associé.
 
-Objectif :
-- Mettre en lumière les points communs, tendances ou signaux qui se dégagent.
-- Produire un texte clair, analytique et factuel pour un public B2B.
+OBJECTIF :
+- Mettre en lumière le POINT COMMUN ou le SIGNAL partagé par les sources.
+- Rester factuel, analytique et structurant pour un public B2B.
+- Produire une lecture claire, pas un résumé journalistique.
 
-Contraintes de forme :
-- Longueur cible : 600 à 900 caractères.
-- 1 courte introduction.
-- 2 à 3 paragraphes maximum.
-- Pas de liste à puces.
+STRUCTURE OBLIGATOIRE DU TEXTE :
+1. Une phrase d’introduction qui décrit explicitement le point commun entre les sources.
+2. Un paragraphe par source :
+   - rappeler le fait principal tel qu’il apparaît dans le titre et/ou l’extrait
+   - sans reformulation approximative
+3. Une phrase de conclusion qui reformule le signal commun, sans extrapolation.
 
-Sources :
+CONTRAINTES DE FORME :
+- Longueur cible : entre 600 et 900 caractères.
+- Paragraphes courts.
+- Pas de listes à puces.
+- Pas d’emojis.
+- Pas de hashtags.
+
+SOURCES (SEUL CONTENU AUTORISÉ) :
 {sources_text}
 """
 
+    # -----------------------------------------------------
+    # Appel LLM (texte brut uniquement)
+    # -----------------------------------------------------
     return run_llm(prompt)
