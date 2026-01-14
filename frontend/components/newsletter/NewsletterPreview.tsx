@@ -4,7 +4,7 @@ import { useMemo } from "react";
 
 import type { NewsItem, AnalysisItem } from "@/app/(admin)/admin/newsletter/compose/page";
 
-const SITE_URL = "https://ratecard.fr";
+const SITE_URL = "https://ratecard-frontend.onrender.com";
 const LOGO_URL = `${SITE_URL}/assets/brand/ratecard-logo.jpeg`;
 
 function escapeHtml(text: string) {
