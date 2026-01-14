@@ -36,6 +36,7 @@ export default function LinkedInComposePage() {
   const [selectedAnalysisIds, setSelectedAnalysisIds] = useState<string[]>([]);
 
   const [postText, setPostText] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   /* -----------------------------------------------------
      Fetch sources (same logic as Newsletter)
@@ -100,6 +101,49 @@ export default function LinkedInComposePage() {
   }
 
   /* -----------------------------------------------------
+     GENERATION — AI MODE
+  ----------------------------------------------------- */
+  async function generateAIPost() {
+    setIsGenerating(true);
+
+    const sources = [
+      ...selectedNews.map((n) => ({
+        type: "news",
+        title: n.title,
+        excerpt: n.excerpt,
+      })),
+      ...selectedAnalyses.map((a) => ({
+        type: "analysis",
+        title: a.title,
+        excerpt: a.excerpt,
+      })),
+    ];
+
+    try {
+      const res = await fetch(
+        `${API_BASE}/public/linkedin/generate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ sources }),
+        }
+      );
+
+      const json = await res.json();
+
+      if (json?.text) {
+        setPostText(json.text);
+      }
+    } catch (e) {
+      console.error("Erreur génération IA LinkedIn", e);
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  /* -----------------------------------------------------
      COPY
   ----------------------------------------------------- */
   function copyPost() {
@@ -112,7 +156,9 @@ export default function LinkedInComposePage() {
 
       {/* HEADER */}
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Créer un post LinkedIn</h1>
+        <h1 className="text-lg font-semibold">
+          Créer un post LinkedIn
+        </h1>
 
         <div className="flex gap-2">
           <button
@@ -163,7 +209,9 @@ export default function LinkedInComposePage() {
         {/* RIGHT — TEXT */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Texte du post</h2>
+            <h2 className="text-sm font-semibold">
+              Texte du post
+            </h2>
 
             {mode === "list" && (
               <button
@@ -171,6 +219,18 @@ export default function LinkedInComposePage() {
                 className="px-3 py-1.5 rounded-md bg-gray-900 text-white text-xs"
               >
                 Générer automatiquement
+              </button>
+            )}
+
+            {mode === "ai" && (
+              <button
+                onClick={generateAIPost}
+                disabled={isGenerating}
+                className="px-3 py-1.5 rounded-md bg-ratecard-blue text-white text-xs disabled:opacity-60"
+              >
+                {isGenerating
+                  ? "Génération en cours…"
+                  : "Générer avec l’IA"}
               </button>
             )}
           </div>
@@ -181,7 +241,7 @@ export default function LinkedInComposePage() {
             placeholder={
               mode === "list"
                 ? "Le texte du post sera généré automatiquement…"
-                : "Le texte sera généré par l’IA (prochaine étape)…"
+                : "Le texte sera généré par l’IA…"
             }
             className="w-full min-h-[320px] rounded-lg border border-gray-300 p-3 text-sm"
           />
