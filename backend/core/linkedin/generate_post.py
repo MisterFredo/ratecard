@@ -4,20 +4,21 @@ from utils.llm import run_llm
 
 def generate_linkedin_post(sources: List[Dict]) -> str:
     """
-    Génère un post LinkedIn analytique et structuré
+    Génère un post LinkedIn structuré et lisible au scroll
     à partir de sources News / Analyses.
 
+    PRINCIPES :
     - STRICTEMENT basé sur les titres et excerpts fournis
-    - Aucune extrapolation
-    - Aucune création de faits
-    - Texte brut uniquement
+    - Aucun fait ajouté
+    - Aucun style journalistique
+    - Sortie optimisée pour LinkedIn (scan / blocs)
     """
 
     if not sources:
         return ""
 
     # -----------------------------------------------------
-    # Construction des blocs sources (verrouillés)
+    # Construction des sources verrouillées
     # -----------------------------------------------------
     source_blocks = []
 
@@ -41,10 +42,10 @@ def generate_linkedin_post(sources: List[Dict]) -> str:
     sources_text = "\n\n".join(source_blocks)
 
     # -----------------------------------------------------
-    # PROMPT ÉDITORIAL STRICT — LINKEDIN RATECARD
+    # PROMPT — LINKEDIN NATIVE (STRUCTURE OBLIGATOIRE)
     # -----------------------------------------------------
     prompt = f"""
-Tu dois rédiger un post LinkedIn en français à partir EXCLUSIVEMENT des éléments listés ci-dessous.
+Tu dois rédiger un post LinkedIn en français à partir EXCLUSIVEMENT des éléments ci-dessous.
 
 RÈGLES ABSOLUES (NON NÉGOCIABLES) :
 - N’ajoute aucun fait, chiffre, acteur ou information qui n’apparaît PAS explicitement.
@@ -52,26 +53,33 @@ RÈGLES ABSOLUES (NON NÉGOCIABLES) :
 - Ne donne AUCUNE opinion.
 - Ne fais AUCUNE conclusion marketing.
 - N’utilise JAMAIS le pronom « nous ».
-- N’emploie PAS de termes vagues ou creux (ex : « dynamique », « illustre », « témoigne ») sans fait précis associé.
+- N’utilise PAS de ton journalistique narratif.
+- N’utilise PAS de termes vagues ou creux (ex : « dynamique », « illustre », « témoigne »).
 
 OBJECTIF :
-- Mettre en lumière le POINT COMMUN ou le SIGNAL partagé par les sources.
-- Rester factuel, analytique et structurant pour un public B2B.
-- Produire une lecture claire, pas un résumé journalistique.
+- Produire une lecture claire et structurée adaptée au scroll LinkedIn.
+- Mettre en évidence un signal commun FACTUEL entre les sources.
+- Aider à comprendre, pas à raconter une histoire.
 
-STRUCTURE OBLIGATOIRE DU TEXTE :
-1. Une phrase d’introduction qui décrit explicitement le point commun entre les sources.
-2. Un paragraphe par source :
-   - rappeler le fait principal tel qu’il apparaît dans le titre et/ou l’extrait
-   - sans reformulation approximative
-3. Une phrase de conclusion qui reformule le signal commun, sans extrapolation.
+STRUCTURE OBLIGATOIRE DU POST LINKEDIN :
+
+1. Une première ligne servant de titre / accroche claire et factuelle.
+2. Une phrase de contexte courte (1 à 2 lignes maximum).
+3. Ensuite, un bloc par source, CHAQUE FOIS sous cette forme exacte :
+
+👉 [Intitulé principal issu du titre]
+Phrase factuelle basée UNIQUEMENT sur le titre et/ou l’extrait.
+
+4. Une phrase de clôture factuelle qui reformule le signal commun, sans extrapolation.
 
 CONTRAINTES DE FORME :
-- Longueur cible : entre 600 et 900 caractères.
+- Texte lisible en diagonale.
 - Paragraphes courts.
-- Pas de listes à puces.
+- Retours à la ligne fréquents.
+- Pas de listes à puces classiques.
 - Pas d’emojis.
 - Pas de hashtags.
+- Longueur cible : 700 à 1 000 caractères.
 
 SOURCES (SEUL CONTENU AUTORISÉ) :
 {sources_text}
