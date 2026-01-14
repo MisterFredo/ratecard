@@ -32,12 +32,21 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
   const [data, setData] = useState<AnalysisData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
+  /* ---------------------------------------------------------
+     Fermeture du drawer
+     → nettoyage explicite de l’URL
+  --------------------------------------------------------- */
   function close() {
+    // fermeture visuelle
+    setIsOpen(false);
+
+    // callback éventuel (DrawerContext)
     if (onClose) {
       onClose();
-    } else {
-      router.back();
     }
+
+    // URL propre et robuste (newsletter / liens externes)
+    router.push("/analysis", { scroll: false });
   }
 
   useEffect(() => {
@@ -212,3 +221,4 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
     </div>
   );
 }
+
