@@ -47,7 +47,14 @@ export default function HomeClient({ news, analyses }: Props) {
   // ---------------------------------------------------------
   // 9 DERNIÈRES NEWS (3 x 3)
   // ---------------------------------------------------------
-  const latestNews = news.slice(0, 9);
+  const latestNews = news
+     .slice()
+     .sort(
+       (a, b) =>
+         new Date(b.published_at).getTime() -
+         new Date(a.published_at).getTime()
+     )
+     .slice(0, 9);
 
   // ---------------------------------------------------------
   // 12 DERNIÈRES ANALYSES (TRI CHRONO)
