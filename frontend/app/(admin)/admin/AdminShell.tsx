@@ -11,6 +11,7 @@ import {
   Newspaper,
   FileStack,
   SlidersHorizontal,
+  Mail,
 } from "lucide-react";
 
 export default function AdminShell({
@@ -34,6 +35,14 @@ export default function AdminShell({
       subtle: true,
     },
     { href: "/admin/news", label: "News", icon: Newspaper },
+
+    // NEWSLETTER — COMPOSITION HEBDO
+    {
+      href: "/admin/newsletter/compose",
+      label: "Newsletter",
+      icon: Mail,
+    },
+
     { href: "/admin/company", label: "Sociétés", icon: Building2 },
     { href: "/admin/person", label: "Personnes", icon: UserCircle },
     { href: "/admin/topic", label: "Topics", icon: Tags },
