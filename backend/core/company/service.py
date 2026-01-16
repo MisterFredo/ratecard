@@ -23,6 +23,7 @@ def create_company(data: CompanyCreate) -> str:
     Règles :
     - aucun champ média au create
     - insertion via LOAD JOB (pas de streaming)
+    - un seul visuel possible : rectangle (16:9)
     - IS_PARTNER géré dès la création
     """
     company_id = str(uuid.uuid4())
@@ -33,8 +34,7 @@ def create_company(data: CompanyCreate) -> str:
         "NAME": data.name,
         "DESCRIPTION": data.description or None,
 
-        # ⚠️ PAS DE MEDIA AU CREATE
-        "MEDIA_LOGO_SQUARE_ID": None,
+        # 🔑 UN SEUL VISUEL : RECTANGLE
         "MEDIA_LOGO_RECTANGLE_ID": None,
 
         "LINKEDIN_URL": data.linkedin_url or None,
@@ -56,7 +56,7 @@ def create_company(data: CompanyCreate) -> str:
             write_disposition="WRITE_APPEND"
         ),
     )
-    job.result()
+    job.result()  # ⬅️ bloquant = ligne immédiatement stable
 
     return company_id
 
@@ -108,6 +108,7 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
     if not values:
         return False
 
+    # normalisation explicite
     if "is_partner" in values:
         values["is_partner"] = bool(values["is_partner"])
 
@@ -118,5 +119,3 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
         fields={k.upper(): v for k, v in values.items()},
         where={"ID_COMPANY": id_company},
     )
-
-
