@@ -8,9 +8,19 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 type Props = {
   id: string;
   name: string;
-  description?: string | null;
+  description?: string | null; // ⚠️ HTML
   visualRectId?: string | null;
 };
+
+/* ---------------------------------------------------------
+   UTIL — strip HTML → texte propre
+--------------------------------------------------------- */
+function stripHtml(html: string): string {
+  if (typeof window === "undefined") return html;
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div.textContent || div.innerText || "";
+}
 
 export default function MemberCard({
   id,
@@ -19,25 +29,25 @@ export default function MemberCard({
   visualRectId,
 }: Props) {
   const router = useRouter();
-  const { openLeftDrawer } = useDrawer();
+  const { openDrawer } = useDrawer();
 
   const visualUrl = visualRectId
     ? `${GCS_BASE_URL}/companies/${visualRectId}`
     : null;
 
+  const cleanDescription = description
+    ? stripHtml(description)
+    : null;
+
   return (
     <div
       onClick={() => {
-        // 🔑 synchro URL
-        router.push(`/members?member_id=${id}`, {
-          scroll: false,
-        });
-
-        // 🔑 ouverture drawer GAUCHE uniquement
-        openLeftDrawer("member", id);
+        router.push(`/members?member_id=${id}`, { scroll: false });
+        openDrawer("member", id);
       }}
       className="
-        group cursor-pointer rounded-2xl border border-ratecard-border
+        group cursor-pointer rounded-2xl
+        border border-ratecard-border
         bg-white shadow-card transition
         hover:shadow-cardHover overflow-hidden
       "
@@ -48,7 +58,11 @@ export default function MemberCard({
           <img
             src={visualUrl}
             alt={name}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            className="
+              h-full w-full object-contain
+              p-6 transition-transform duration-300
+              group-hover:scale-[1.02]
+            "
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-sm text-gray-400">
@@ -58,14 +72,14 @@ export default function MemberCard({
       </div>
 
       {/* CONTENU */}
-      <div className="p-4">
+      <div className="p-4 space-y-2">
         <h3 className="text-sm font-semibold text-gray-900 leading-snug group-hover:underline">
           {name}
         </h3>
 
-        {description && (
-          <p className="mt-2 text-sm text-gray-600 line-clamp-3">
-            {description}
+        {cleanDescription && (
+          <p className="text-sm text-gray-600 line-clamp-3">
+            {cleanDescription}
           </p>
         )}
       </div>
