@@ -9,6 +9,7 @@ import NewsStepContent from "@/components/admin/news/steps/NewsStepContent";
 import NewsStepVisual from "@/components/admin/news/steps/NewsStepVisual";
 import NewsStepPreview from "@/components/admin/news/steps/NewsStepPreview";
 import NewsStepPublish from "@/components/admin/news/steps/NewsStepPublish";
+import NewsStepLinkedIn from "@/components/admin/news/steps/NewsStepLinkedIn";
 
 type Mode = "create" | "edit";
 
@@ -17,7 +18,8 @@ type Step =
   | "CONTENT"
   | "VISUAL"
   | "PREVIEW"
-  | "PUBLISH";
+  | "PUBLISH"
+  | "LINKEDIN";
 
 type Props = {
   mode: Mode;
@@ -67,6 +69,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
     "VISUAL",
     "PREVIEW",
     "PUBLISH",
+    "LINKEDIN",
   ];
 
   function isStepReached(target: Step) {
@@ -167,6 +170,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
       });
 
       alert("News publiée");
+      setStep("LINKEDIN");
     } catch (e) {
       console.error(e);
       alert("❌ Erreur publication news");
@@ -231,7 +235,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </details>
       )}
 
-      {/* STEP 3 — VISUEL */}
+      {/* STEP 3 — VISUAL */}
       {isStepReached("VISUAL") && (
         <details open={step === "VISUAL"} className="border rounded p-4">
           <summary
@@ -293,7 +297,24 @@ export default function NewsStudio({ mode, newsId }: Props) {
           )}
         </details>
       )}
+
+      {/* STEP 6 — LINKEDIN */}
+      {isStepReached("LINKEDIN") && internalNewsId && (
+        <details open={step === "LINKEDIN"} className="border rounded p-4">
+          <summary
+            className="font-semibold cursor-pointer"
+            onClick={() => setStep("LINKEDIN")}
+          >
+            6. Post LinkedIn
+          </summary>
+
+          <NewsStepLinkedIn
+            newsId={internalNewsId}
+            title={title}
+            excerpt={excerpt}
+          />
+        </details>
+      )}
     </div>
   );
 }
-
