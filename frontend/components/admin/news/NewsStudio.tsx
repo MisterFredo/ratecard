@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 
 // STEPS
@@ -27,6 +28,8 @@ type Props = {
 };
 
 export default function NewsStudio({ mode, newsId }: Props) {
+  const searchParams = useSearchParams();
+
   /* =========================================================
      STATE — CORE
   ========================================================= */
@@ -45,7 +48,6 @@ export default function NewsStudio({ mode, newsId }: Props) {
   /* =========================================================
      STATE — VISUEL
   ========================================================= */
-  // visuel spécifique à la news (override)
   const [mediaId, setMediaId] = useState<string | null>(null);
 
   /* =========================================================
@@ -80,6 +82,17 @@ export default function NewsStudio({ mode, newsId }: Props) {
   }
 
   /* =========================================================
+     INIT STEP FROM URL (?step=LINKEDIN)
+  ========================================================= */
+  useEffect(() => {
+    const stepParam = searchParams.get("step") as Step | null;
+
+    if (stepParam && stepOrder.includes(stepParam)) {
+      setStep(stepParam);
+    }
+  }, [searchParams]);
+
+  /* =========================================================
      LOAD NEWS (EDIT MODE)
   ========================================================= */
   useEffect(() => {
@@ -94,7 +107,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
         setExcerpt(n.EXCERPT || "");
         setBody(n.BODY || "");
 
-        // 🔑 Société — format attendu par CompanySelector
+        // Société — format attendu par CompanySelector
         setCompany(
           n.company
             ? {
@@ -104,7 +117,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
             : null
         );
 
-        // 🔑 Topics — format attendu par TopicSelector
+        // Topics — format attendu par TopicSelector
         setTopics(
           (n.topics || []).map((t: any) => ({
             id_topic: t.ID_TOPIC,
@@ -117,7 +130,10 @@ export default function NewsStudio({ mode, newsId }: Props) {
         // visuel news éventuel
         setMediaId(n.MEDIA_RECTANGLE_ID || null);
 
-        setStep("CONTENT");
+        // si aucun step imposé par l’URL
+        if (!searchParams.get("step")) {
+          setStep("CONTENT");
+        }
       } catch (e) {
         console.error(e);
         alert("Erreur chargement news");
@@ -125,7 +141,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
     }
 
     load();
-  }, [mode, newsId]);
+  }, [mode, newsId, searchParams]);
 
   /* =========================================================
      LOAD FULL COMPANY (SOURCE DE VÉRITÉ)
@@ -182,7 +198,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
         const res = await api.post("/news/create", payload);
         setInternalNewsId(res.id_news);
 
-        // 🔑 Forcer le chargement société complète après création
+        // Forcer le chargement société complète après création
         try {
           const companyId =
             company.id_company || company.ID_COMPANY;
