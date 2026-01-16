@@ -57,8 +57,9 @@ class DrawerNewsResponse(BaseModel):
     excerpt: Optional[str]
     body: Optional[str]
     published_at: datetime
-    visual_rect_url: str
+    visual_rect_url: Optional[str] = None
     company: dict
+
 
 
 # =======================================================
