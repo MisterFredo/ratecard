@@ -14,11 +14,10 @@ type Props = {
   // visuel propre à la news (peut être null)
   visualRectUrl?: string | null;
 
-  // 🆕 visuel hérité de la société (peut être null)
+  // visuel hérité de la société (peut être null)
   companyVisualRectId?: string | null;
 
   publishedAt: string;
-
   openInDrawer?: boolean;
 };
 
@@ -31,7 +30,7 @@ export default function PartnerSignalCard({
   publishedAt,
   openInDrawer = false,
 }: Props) {
-  const { openDrawer } = useDrawer();
+  const { openRightDrawer } = useDrawer();
   const router = useRouter();
 
   /* ---------------------------------------------------------
@@ -51,7 +50,7 @@ export default function PartnerSignalCard({
       <div
         onClick={() => {
           router.push(`/news?news_id=${id}`, { scroll: false });
-          openDrawer("news", id);
+          openRightDrawer("news", id);
         }}
         className="
           group cursor-pointer rounded-2xl border border-ratecard-border
@@ -142,5 +141,6 @@ export default function PartnerSignalCard({
     </Link>
   );
 }
+
 
 
