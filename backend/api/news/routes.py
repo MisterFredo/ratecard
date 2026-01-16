@@ -12,9 +12,6 @@ from core.news.service import (
     update_news,
     archive_news,
     publish_news,
-)
-
-from core.linkedin.service import (
     get_news_linkedin_post,
     save_news_linkedin_post,
 )
