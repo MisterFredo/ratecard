@@ -8,14 +8,14 @@ import MemberCard from "@/components/members/MemberCard";
 export const dynamic = "force-dynamic";
 
 /* =========================================================
-   TYPES
+   TYPES — alignés avec PublicMembersResponse
 ========================================================= */
 
 type Member = {
-  ID_COMPANY: string;
-  NAME: string;
-  DESCRIPTION?: string | null;
-  MEDIA_LOGO_RECTANGLE_ID?: string | null;
+  id_company: string;
+  name: string;
+  description?: string | null;
+  media_logo_rectangle_id?: string | null;
 };
 
 /* =========================================================
@@ -90,11 +90,11 @@ export default function MembersPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {members.map((m) => (
             <MemberCard
-              key={m.ID_COMPANY}
-              id={m.ID_COMPANY}
-              name={m.NAME}
-              description={m.DESCRIPTION}
-              visualRectId={m.MEDIA_LOGO_RECTANGLE_ID}
+              key={m.id_company}
+              id={m.id_company}
+              name={m.name}
+              description={m.description}
+              visualRectId={m.media_logo_rectangle_id}
             />
           ))}
         </div>
