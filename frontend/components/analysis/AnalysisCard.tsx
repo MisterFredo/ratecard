@@ -26,14 +26,16 @@ export default function AnalysisCard({
   topic,
   keyMetric,
 }: Props) {
-  const { openDrawer } = useDrawer();
+  const { openRightDrawer } = useDrawer();
   const router = useRouter();
 
   return (
     <article
       onClick={() => {
-        router.push(`/analysis?analysis_id=${id}`, { scroll: false });
-        openDrawer("analysis", id);
+        router.push(`/analysis?analysis_id=${id}`, {
+          scroll: false,
+        });
+        openRightDrawer("analysis", id);
       }}
       className="
         cursor-pointer rounded-2xl
@@ -92,4 +94,3 @@ export default function AnalysisCard({
     </article>
   );
 }
-
