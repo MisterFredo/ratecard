@@ -126,10 +126,17 @@ def read_news(id_news: str):
             excerpt=n.get("EXCERPT"),
             body=n.get("BODY"),
             published_at=n["PUBLISHED_AT"],
-            visual_rect_url=n["VISUAL_RECT_URL"],
+
+            # 🔑 visuel news uniquement (peut être null)
+            visual_rect_url=n.get("VISUAL_RECT_URL"),
+
+            # 🔑 société enrichie pour fallback visuel
             company={
                 "id_company": n["ID_COMPANY"],
                 "name": n["COMPANY_NAME"],
+                "media_logo_rectangle_id": n.get(
+                    "MEDIA_LOGO_RECTANGLE_ID"
+                ),
             },
         )
 
