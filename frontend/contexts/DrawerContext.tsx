@@ -7,7 +7,15 @@ import {
   ReactNode,
 } from "react";
 
-type DrawerType = "news" | "analysis" | null;
+/* =========================================================
+   TYPES
+========================================================= */
+
+export type DrawerType =
+  | "news"
+  | "analysis"
+  | "member"
+  | null;
 
 type DrawerState = {
   type: DrawerType;
@@ -20,9 +28,17 @@ type DrawerContextType = {
   closeDrawer: () => void;
 };
 
+/* =========================================================
+   CONTEXT
+========================================================= */
+
 const DrawerContext = createContext<DrawerContextType | null>(
   null
 );
+
+/* =========================================================
+   PROVIDER
+========================================================= */
 
 export function DrawerProvider({
   children,
@@ -50,6 +66,10 @@ export function DrawerProvider({
     </DrawerContext.Provider>
   );
 }
+
+/* =========================================================
+   HOOK
+========================================================= */
 
 export function useDrawer() {
   const ctx = useContext(DrawerContext);
