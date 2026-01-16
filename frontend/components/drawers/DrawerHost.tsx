@@ -2,47 +2,46 @@
 
 import { useDrawer } from "@/contexts/DrawerContext";
 
-// DRAWERS EXISTANTS
+// DRAWERS
+import MemberDrawer from "@/components/drawers/MemberDrawer";
 import NewsDrawer from "@/components/drawers/NewsDrawer";
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
-
-// NOUVEAU DRAWER PARTENAIRE (GAUCHE)
-import MemberDrawer from "@/components/drawers/MemberDrawer";
 
 /* =========================================================
    HOST — RENDU CENTRALISÉ DES DRAWERS
 ========================================================= */
 
 export default function DrawerHost() {
-  const { drawer, closeDrawer } = useDrawer();
-
-  if (!drawer.type || !drawer.id) {
-    return null;
-  }
+  const {
+    leftDrawer,
+    rightDrawer,
+    closeLeftDrawer,
+    closeRightDrawer,
+  } = useDrawer();
 
   return (
     <>
-      {/* DRAWER PARTENAIRE — GAUCHE */}
-      {drawer.type === "member" && (
+      {/* DRAWER GAUCHE — PARTENAIRE */}
+      {leftDrawer.type === "member" && leftDrawer.id && (
         <MemberDrawer
-          id={drawer.id}
-          onClose={closeDrawer}
+          id={leftDrawer.id}
+          onClose={closeLeftDrawer}
         />
       )}
 
-      {/* DRAWER NEWS — DROITE */}
-      {drawer.type === "news" && (
+      {/* DRAWER DROITE — NEWS */}
+      {rightDrawer.type === "news" && rightDrawer.id && (
         <NewsDrawer
-          id={drawer.id}
-          onClose={closeDrawer}
+          id={rightDrawer.id}
+          onClose={closeRightDrawer}
         />
       )}
 
-      {/* DRAWER ANALYSIS — DROITE */}
-      {drawer.type === "analysis" && (
+      {/* DRAWER DROITE — ANALYSIS */}
+      {rightDrawer.type === "analysis" && rightDrawer.id && (
         <AnalysisDrawer
-          id={drawer.id}
-          onClose={closeDrawer}
+          id={rightDrawer.id}
+          onClose={closeRightDrawer}
         />
       )}
     </>
