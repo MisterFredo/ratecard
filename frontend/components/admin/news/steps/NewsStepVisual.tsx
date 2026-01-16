@@ -8,10 +8,10 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 type Props = {
   newsId: string;
 
-  // visuel spécifique à la news (si uploadé)
+  // visuel spécifique à la news (rectangle)
   mediaId: string | null;
 
-  // visuel hérité de la société
+  // visuel rectangle hérité de la société UNIQUEMENT
   companyMediaId?: string | null;
 
   onUpdated: (mediaId: string) => void;
@@ -43,8 +43,7 @@ export default function NewsStepVisual({
     return `${GCS_BASE_URL}/news/${filename}`;
   }
 
-  // ✅ CORRECTION ICI
-  function gcsCompanyUrl(filename: string) {
+  function gcsCompanyRectUrl(filename: string) {
     return `${GCS_BASE_URL}/companies/${filename}`;
   }
 
@@ -63,6 +62,7 @@ export default function NewsStepVisual({
         throw new Error("Upload échoué");
       }
 
+      // 👉 visuel news (rectangle) devient prioritaire
       onUpdated(res.filename);
     } catch (e) {
       console.error(e);
@@ -73,12 +73,12 @@ export default function NewsStepVisual({
   }
 
   // ---------------------------------------------------------
-  // LOGIQUE VISUEL AFFICHÉ
+  // LOGIQUE VISUEL — RECTANGLE UNIQUEMENT
   // ---------------------------------------------------------
-  const displayedSrc = mediaId
+  const visualSrc = mediaId
     ? gcsNewsUrl(mediaId)
     : companyMediaId
-    ? gcsCompanyUrl(companyMediaId)
+    ? gcsCompanyRectUrl(companyMediaId)
     : null;
 
   const isInherited = !mediaId && !!companyMediaId;
@@ -88,27 +88,27 @@ export default function NewsStepVisual({
       <p className="text-sm text-gray-600">
         Un visuel <strong>16:9</strong> est requis pour publier la news.
         <br />
-        Par défaut, le visuel de la société est utilisé.
+        Seuls les visuels rectangulaires sont acceptés.
       </p>
 
       {loading && <p className="text-gray-500">Traitement…</p>}
 
-      {displayedSrc ? (
+      {visualSrc ? (
         <div className="space-y-2">
           <img
-            src={displayedSrc}
+            src={visualSrc}
             className="max-w-xl border rounded bg-white"
           />
 
           {isInherited && (
             <p className="text-xs text-gray-500">
-              Visuel hérité de la société
+              Visuel rectangulaire hérité de la société
             </p>
           )}
         </div>
       ) : (
         <div className="max-w-xl h-40 bg-gray-100 border rounded flex items-center justify-center text-sm text-gray-500">
-          Aucun visuel disponible
+          Aucun visuel rectangulaire disponible
         </div>
       )}
 
@@ -123,7 +123,7 @@ export default function NewsStepVisual({
       <div className="pt-4">
         <button
           onClick={onNext}
-          disabled={!displayedSrc}
+          disabled={!visualSrc}
           className="bg-ratecard-blue text-white px-4 py-2 rounded disabled:opacity-50"
         >
           Continuer
