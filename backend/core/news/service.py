@@ -350,4 +350,98 @@ def publish_news(
     )
     return "SCHEDULED"
 
+# ============================================================
+# LINKEDIN — GET POST FOR NEWS
+# ============================================================
+
+def get_news_linkedin_post(news_id: str) -> Optional[dict]:
+    """
+    Récupère le post LinkedIn associé à une news.
+    Retourne None si inexistant.
+    """
+    client = get_bigquery_client()
+
+    query = f"""
+        SELECT
+            ID_NEWS,
+            TEXT,
+            MODE,
+            UPDATED_AT
+        FROM `{TABLE_NEWS_LINKEDIN_POST}`
+        WHERE ID_NEWS = @news_id
+        LIMIT 1
+    """
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter(
+                "news_id", "STRING", news_id
+            )
+        ]
+    )
+
+    rows = list(client.query(query, job_config=job_config).result())
+
+    if not rows:
+        return None
+
+    return serialize_row(dict(rows[0]))
+
+# ============================================================
+# LINKEDIN — SAVE / UPDATE POST FOR NEWS
+# ============================================================
+
+def save_news_linkedin_post(
+    news_id: str,
+    text: str,
+    mode: str,
+):
+    """
+    Sauvegarde ou met à jour le post LinkedIn lié à une news.
+    Utilise un MERGE BigQuery (UPSERT).
+    """
+    client = get_bigquery_client()
+
+    now = datetime.utcnow()
+
+    query = f"""
+        MERGE `{TABLE_NEWS_LINKEDIN_POST}` T
+        USING (
+            SELECT
+                @id_news AS ID_NEWS,
+                @text AS TEXT,
+                @mode AS MODE,
+                @updated_at AS UPDATED_AT
+        ) S
+        ON T.ID_NEWS = S.ID_NEWS
+        WHEN MATCHED THEN
+          UPDATE SET
+            TEXT = S.TEXT,
+            MODE = S.MODE,
+            UPDATED_AT = S.UPDATED_AT
+        WHEN NOT MATCHED THEN
+          INSERT (ID_NEWS, TEXT, MODE, UPDATED_AT)
+          VALUES (S.ID_NEWS, S.TEXT, S.MODE, S.UPDATED_AT)
+    """
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter(
+                "id_news", "STRING", news_id
+            ),
+            bigquery.ScalarQueryParameter(
+                "text", "STRING", text
+            ),
+            bigquery.ScalarQueryParameter(
+                "mode", "STRING", mode
+            ),
+            bigquery.ScalarQueryParameter(
+                "updated_at", "TIMESTAMP", now
+            ),
+        ]
+    )
+
+    client.query(query, job_config=job_config).result()
+
+
 
