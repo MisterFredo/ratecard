@@ -11,7 +11,7 @@ type Props = {
   // visuel spécifique à la news (si uploadé)
   mediaId: string | null;
 
-  // 🆕 visuel hérité de la société
+  // visuel hérité de la société
   companyMediaId?: string | null;
 
   onUpdated: (mediaId: string) => void;
@@ -39,12 +39,13 @@ export default function NewsStepVisual({
     });
   }
 
-  function gcsUrl(filename: string) {
+  function gcsNewsUrl(filename: string) {
     return `${GCS_BASE_URL}/news/${filename}`;
   }
 
+  // ✅ CORRECTION ICI
   function gcsCompanyUrl(filename: string) {
-    return `${GCS_BASE_URL}/company/${filename}`;
+    return `${GCS_BASE_URL}/companies/${filename}`;
   }
 
   async function upload(file: File) {
@@ -62,7 +63,6 @@ export default function NewsStepVisual({
         throw new Error("Upload échoué");
       }
 
-      // 👉 remplace le visuel news
       onUpdated(res.filename);
     } catch (e) {
       console.error(e);
@@ -75,9 +75,8 @@ export default function NewsStepVisual({
   // ---------------------------------------------------------
   // LOGIQUE VISUEL AFFICHÉ
   // ---------------------------------------------------------
-  const displayedMediaId = mediaId || companyMediaId;
   const displayedSrc = mediaId
-    ? gcsUrl(mediaId)
+    ? gcsNewsUrl(mediaId)
     : companyMediaId
     ? gcsCompanyUrl(companyMediaId)
     : null;
@@ -124,7 +123,7 @@ export default function NewsStepVisual({
       <div className="pt-4">
         <button
           onClick={onNext}
-          disabled={!displayedMediaId}
+          disabled={!displayedSrc}
           className="bg-ratecard-blue text-white px-4 py-2 rounded disabled:opacity-50"
         >
           Continuer
@@ -133,4 +132,3 @@ export default function NewsStepVisual({
     </div>
   );
 }
-
