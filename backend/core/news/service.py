@@ -304,11 +304,13 @@ def archive_news(id_news: str):
 # ============================================================
 def publish_news(
     id_news: str,
-    published_at: Optional[datetime] = None,
+    published_at: Optional[str] = None,
 ):
     """
-    Publie une news.
-    ⚠️ Le visuel ET l'excerpt sont requis à cette étape.
+    Publie une news à une date donnée.
+    - date passée  -> publication rétroactive
+    - date future  -> publication programmée
+    - date absente -> publication immédiate
     """
 
     rows = query_bq(
@@ -329,14 +331,29 @@ def publish_news(
     if not rows[0]["EXCERPT"]:
         raise ValueError("Un excerpt est requis pour publier la news")
 
-    now = datetime.utcnow().isoformat()
+    now = datetime.utcnow()
 
-    if not published_at or published_at <= now:
+    # ---------------------------------------------------------
+    # Détermination de la date de publication
+    # ---------------------------------------------------------
+    if published_at:
+        try:
+            publish_date = datetime.fromisoformat(published_at)
+        except ValueError:
+            raise ValueError("Format de date invalide")
+    else:
+        publish_date = now
+
+    # ---------------------------------------------------------
+    # Statut en fonction de la date
+    # ---------------------------------------------------------
+    if publish_date <= now:
         update_bq(
             table=TABLE_NEWS,
             fields={
                 "STATUS": "PUBLISHED",
-                "PUBLISHED_AT": now,
+                "PUBLISHED_AT": publish_date.isoformat(),
+                "UPDATED_AT": now.isoformat(),
             },
             where={"ID_NEWS": id_news},
         )
@@ -346,12 +363,12 @@ def publish_news(
         table=TABLE_NEWS,
         fields={
             "STATUS": "SCHEDULED",
-            "PUBLISHED_AT": published_at,
+            "PUBLISHED_AT": publish_date.isoformat(),
+            "UPDATED_AT": now.isoformat(),
         },
         where={"ID_NEWS": id_news},
     )
     return "SCHEDULED"
-
 # ============================================================
 # LINKEDIN — GET POST FOR NEWS
 # ============================================================
