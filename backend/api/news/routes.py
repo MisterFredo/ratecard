@@ -1,5 +1,10 @@
 from fastapi import APIRouter, HTTPException
-from api.news.models import NewsCreate, NewsUpdate
+from api.news.models import (
+    NewsCreate,
+    NewsUpdate,
+    NewsLinkedInPost,
+    NewsLinkedInPostResponse,
+)
 from core.news.service import (
     create_news,
     list_news,
@@ -8,6 +13,12 @@ from core.news.service import (
     archive_news,
     publish_news,
 )
+
+from core.linkedin.service import (
+    get_news_linkedin_post,
+    save_news_linkedin_post,
+)
+
 from utils.llm import run_llm
 
 import logging
