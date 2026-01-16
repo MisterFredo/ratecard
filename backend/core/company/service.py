@@ -31,17 +31,17 @@ def create_company(data: CompanyCreate) -> str:
     row = [{
         "ID_COMPANY": company_id,
         "NAME": data.name,
-        "DESCRIPTION": data.description,
+        "DESCRIPTION": data.description or None,
 
         # ⚠️ PAS DE MEDIA AU CREATE
         "MEDIA_LOGO_SQUARE_ID": None,
         "MEDIA_LOGO_RECTANGLE_ID": None,
 
-        "LINKEDIN_URL": data.linkedin_url,
-        "WEBSITE_URL": data.website_url,
+        "LINKEDIN_URL": data.linkedin_url or None,
+        "WEBSITE_URL": data.website_url or None,
 
-        # 🆕 PARTENAIRE (par défaut False)
-        "IS_PARTNER": bool(data.is_partner) if data.is_partner is not None else False,
+        # PARTENAIRE
+        "IS_PARTNER": bool(data.is_partner),
 
         "CREATED_AT": now,
         "UPDATED_AT": now,
@@ -56,7 +56,7 @@ def create_company(data: CompanyCreate) -> str:
             write_disposition="WRITE_APPEND"
         ),
     )
-    job.result()  # ⬅️ bloquant = ligne immédiatement stable
+    job.result()
 
     return company_id
 
@@ -108,7 +108,6 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
     if not values:
         return False
 
-    # 🔑 normalisation : bool explicite si présent
     if "is_partner" in values:
         values["is_partner"] = bool(values["is_partner"])
 
@@ -119,4 +118,5 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
         fields={k.upper(): v for k, v in values.items()},
         where={"ID_COMPANY": id_company},
     )
+
 
