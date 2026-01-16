@@ -4,14 +4,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDrawer } from "@/contexts/DrawerContext";
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
 type Props = {
   id: string;
   title: string;
   excerpt?: string | null;
-  visualRectUrl: string;
+
+  // visuel propre à la news (peut être null)
+  visualRectUrl?: string | null;
+
+  // 🆕 visuel hérité de la société (peut être null)
+  companyVisualRectId?: string | null;
+
   publishedAt: string;
 
-  // 🆕
   openInDrawer?: boolean;
 };
 
@@ -20,15 +27,24 @@ export default function PartnerSignalCard({
   title,
   excerpt,
   visualRectUrl,
+  companyVisualRectId,
   publishedAt,
   openInDrawer = false,
 }: Props) {
   const { openDrawer } = useDrawer();
   const router = useRouter();
 
+  /* ---------------------------------------------------------
+     VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
+  --------------------------------------------------------- */
+  const visualSrc =
+    visualRectUrl ||
+    (companyVisualRectId
+      ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
+      : null);
+
   /* ========================================================
      MODE DRAWER (HOME / NEWS PAGE)
-     → ouverture drawer + synchro URL
   ======================================================== */
   if (openInDrawer) {
     return (
@@ -43,13 +59,19 @@ export default function PartnerSignalCard({
           hover:shadow-cardHover overflow-hidden
         "
       >
-        {/* VISUEL — PLUS GRAND, STRUCTURANT */}
+        {/* VISUEL */}
         <div className="relative h-44 w-full bg-ratecard-light overflow-hidden">
-          <img
-            src={visualRectUrl}
-            alt={title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-          />
+          {visualSrc ? (
+            <img
+              src={visualSrc}
+              alt={title}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-sm text-gray-400">
+              Aucun visuel
+            </div>
+          )}
         </div>
 
         {/* CONTENU */}
@@ -75,7 +97,6 @@ export default function PartnerSignalCard({
 
   /* ========================================================
      MODE NAVIGATION (fallback / externe)
-     → redirection URL simple
   ======================================================== */
   return (
     <Link
@@ -86,15 +107,22 @@ export default function PartnerSignalCard({
         hover:shadow-cardHover overflow-hidden
       "
     >
-      {/* VISUEL — COHÉRENT AVEC MODE DRAWER */}
+      {/* VISUEL */}
       <div className="relative h-44 w-full bg-ratecard-light overflow-hidden">
-        <img
-          src={visualRectUrl}
-          alt={title}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-        />
+        {visualSrc ? (
+          <img
+            src={visualSrc}
+            alt={title}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center text-sm text-gray-400">
+            Aucun visuel
+          </div>
+        )}
       </div>
 
+      {/* CONTENU */}
       <div className="p-4">
         <h3 className="text-sm font-semibold text-gray-900 leading-snug group-hover:underline">
           {title}
@@ -114,4 +142,5 @@ export default function PartnerSignalCard({
     </Link>
   );
 }
+
 
