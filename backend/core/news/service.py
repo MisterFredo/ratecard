@@ -318,7 +318,6 @@ def delete_news(news_id: str):
         client.query(q, job_config=job_config).result()
 
 
-
 # ============================================================
 # PUBLISH NEWS
 # ============================================================
@@ -328,16 +327,21 @@ def publish_news(
 ):
     """
     Publie une news à une date donnée.
-    - date passée  -> publication rétroactive
-    - date future  -> publication programmée
-    - date absente -> publication immédiate
+    Une news est publiable si :
+    - elle a un visuel rectangle propre
+    - OU sa société a un visuel rectangle
     """
 
     rows = query_bq(
         f"""
-        SELECT MEDIA_RECTANGLE_ID, EXCERPT
-        FROM `{TABLE_NEWS}`
-        WHERE ID_NEWS = @id
+        SELECT
+            n.MEDIA_RECTANGLE_ID AS NEWS_RECT,
+            n.EXCERPT,
+            c.MEDIA_LOGO_RECTANGLE_ID AS COMPANY_RECT
+        FROM `{TABLE_NEWS}` n
+        JOIN `{TABLE_COMPANY}` c
+          ON n.ID_COMPANY = c.ID_COMPANY
+        WHERE n.ID_NEWS = @id
         """,
         {"id": id_news},
     )
@@ -345,10 +349,15 @@ def publish_news(
     if not rows:
         raise ValueError("News introuvable")
 
-    if not rows[0]["MEDIA_RECTANGLE_ID"]:
-        raise ValueError("Un visuel est requis pour publier la news")
+    row = rows[0]
 
-    if not rows[0]["EXCERPT"]:
+    # 🔑 VISUEL : NEWS > SOCIÉTÉ (RECTANGLE UNIQUEMENT)
+    if not row["NEWS_RECT"] and not row["COMPANY_RECT"]:
+        raise ValueError(
+            "Un visuel rectangulaire est requis pour publier la news"
+        )
+
+    if not row["EXCERPT"]:
         raise ValueError("Un excerpt est requis pour publier la news")
 
     now = datetime.utcnow()
@@ -389,6 +398,7 @@ def publish_news(
         where={"ID_NEWS": id_news},
     )
     return "SCHEDULED"
+
 # ============================================================
 # LINKEDIN — GET POST FOR NEWS
 # ============================================================
