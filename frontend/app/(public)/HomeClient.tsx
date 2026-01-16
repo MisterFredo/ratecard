@@ -42,19 +42,19 @@ type Props = {
 ========================================================= */
 
 export default function HomeClient({ news, analyses }: Props) {
-  const { openDrawer } = useDrawer();
+  const { openRightDrawer } = useDrawer();
 
   // ---------------------------------------------------------
   // 9 DERNIÈRES NEWS (3 x 3)
   // ---------------------------------------------------------
   const latestNews = news
-     .slice()
-     .sort(
-       (a, b) =>
-         new Date(b.published_at).getTime() -
-         new Date(a.published_at).getTime()
-     )
-     .slice(0, 9);
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(b.published_at).getTime() -
+        new Date(a.published_at).getTime()
+    )
+    .slice(0, 9);
 
   // ---------------------------------------------------------
   // 12 DERNIÈRES ANALYSES (TRI CHRONO)
@@ -70,7 +70,6 @@ export default function HomeClient({ news, analyses }: Props) {
 
   return (
     <div className="space-y-16">
-
       {/* =====================================================
           NEWS — 3 LIGNES DE 3
       ===================================================== */}
@@ -151,8 +150,6 @@ export default function HomeClient({ news, analyses }: Props) {
           ))}
         </div>
       </section>
-
     </div>
   );
 }
-
