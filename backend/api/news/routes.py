@@ -40,16 +40,30 @@ def create_route(data: NewsCreate):
         # ⚠️ temporaire : on renvoie le détail pour comprendre
         raise HTTPException(400, str(e))
 
-
 # ============================================================
-# LIST NEWS
+# LIST NEWS (ENRICHIE — VISUEL SOCIÉTÉ)
 # ============================================================
 @router.get("/list")
 def list_route():
     try:
-        return {"status": "ok", "news": list_news()}
+        rows = list_news()
+
+        news = [
+            {
+                **n,
+                # 🔑 ajout du visuel société pour fallback front
+                "COMPANY_MEDIA_LOGO_RECTANGLE_ID": n.get(
+                    "MEDIA_LOGO_RECTANGLE_ID"
+                )
+            }
+            for n in rows
+        ]
+
+        return {"status": "ok", "news": news}
+
     except Exception:
         raise HTTPException(400, "Erreur liste news")
+
 
 
 # ============================================================
