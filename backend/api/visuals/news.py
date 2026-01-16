@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import base64
+from datetime import datetime
 
 from google.cloud import bigquery
 from utils.bigquery_utils import get_bigquery_client
@@ -28,7 +29,7 @@ class NewsVisualReset(BaseModel):
 
 
 # ============================================================
-# UPLOAD VISUEL NEWS (OBLIGATOIRE)
+# UPLOAD VISUEL NEWS (RECTANGLE ONLY)
 # ============================================================
 
 @router.post("/upload")
@@ -42,19 +43,30 @@ def upload_news_visual(payload: NewsVisualUpload):
         rect_bytes = to_rectangle_16_9(img_bytes)
         filename = f"NEWS_{payload.id_news}_rect.jpg"
 
+        # Upload GCS
         upload_bytes(GCS_FOLDER, filename, rect_bytes)
 
+        # Update BigQuery
         client = get_bigquery_client()
         client.query(
             f"""
             UPDATE `{TABLE_NEWS}`
-            SET MEDIA_RECTANGLE_ID = @fname
+            SET
+                MEDIA_RECTANGLE_ID = @fname,
+                UPDATED_AT = @now
             WHERE ID_NEWS = @id
             """,
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter("fname", "STRING", filename),
-                    bigquery.ScalarQueryParameter("id", "STRING", payload.id_news),
+                    bigquery.ScalarQueryParameter(
+                        "fname", "STRING", filename
+                    ),
+                    bigquery.ScalarQueryParameter(
+                        "now", "TIMESTAMP", datetime.utcnow()
+                    ),
+                    bigquery.ScalarQueryParameter(
+                        "id", "STRING", payload.id_news
+                    ),
                 ]
             )
         ).result()
@@ -90,7 +102,9 @@ def reset_news_visual(payload: NewsVisualReset):
             """,
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter("id", "STRING", payload.id_news),
+                    bigquery.ScalarQueryParameter(
+                        "id", "STRING", payload.id_news
+                    ),
                 ]
             )
         ).result()
@@ -99,18 +113,27 @@ def reset_news_visual(payload: NewsVisualReset):
         for r in rows:
             old_file = r["MEDIA_RECTANGLE_ID"]
 
+        # Suppression GCS
         if old_file:
             delete_file(GCS_FOLDER, old_file)
 
+        # Reset BigQuery
         client.query(
             f"""
             UPDATE `{TABLE_NEWS}`
-            SET MEDIA_RECTANGLE_ID = NULL
+            SET
+                MEDIA_RECTANGLE_ID = NULL,
+                UPDATED_AT = @now
             WHERE ID_NEWS = @id
             """,
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter("id", "STRING", payload.id_news),
+                    bigquery.ScalarQueryParameter(
+                        "now", "TIMESTAMP", datetime.utcnow()
+                    ),
+                    bigquery.ScalarQueryParameter(
+                        "id", "STRING", payload.id_news
+                    ),
                 ]
             )
         ).result()
