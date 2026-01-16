@@ -5,12 +5,13 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import VisualSectionEvent from "@/components/visuals/VisualSectionEvent";
 import EntityBaseForm from "@/components/forms/EntityBaseForm";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 export default function CreateEvent() {
   const [label, setLabel] = useState("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(""); // 🔑 HTML
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
 
@@ -30,9 +31,9 @@ export default function CreateEvent() {
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  // ---------------------------------------------------------
-  // CREATE (DATA ONLY)
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     CREATE (DATA ONLY)
+  --------------------------------------------------------- */
   async function save() {
     if (!label.trim()) {
       alert("Nom de l’événement requis");
@@ -42,7 +43,7 @@ export default function CreateEvent() {
     try {
       const res = await api.post("/event/create", {
         label,
-        description: description || null,
+        description: description || null, // 🔑 HTML
         seo_title: seoTitle || null,
         seo_description: seoDescription || null,
         external_url: externalUrl || null,
@@ -74,11 +75,12 @@ export default function CreateEvent() {
     }
   }
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
+      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">
           Ajouter un événement
@@ -90,19 +92,22 @@ export default function CreateEvent() {
 
       {/* DONNÉES DE BASE */}
       <EntityBaseForm
-        values={{
-          name: label,
-          description,
-        }}
-        onChange={{
-          setName: setLabel,
-          setDescription,
-        }}
-        labels={{
-          name: "Nom de l’événement",
-          description: "Description éditoriale",
-        }}
+        values={{ name: label }}
+        onChange={{ setName: setLabel }}
+        labels={{ name: "Nom de l’événement" }}
       />
+
+      {/* DESCRIPTION HTML */}
+      <div className="space-y-2 max-w-2xl">
+        <label className="block text-sm font-medium">
+          Description éditoriale
+        </label>
+
+        <HtmlEditor
+          value={description}
+          onChange={setDescription}
+        />
+      </div>
 
       {/* SEO */}
       <div className="space-y-4 max-w-2xl">
@@ -213,6 +218,7 @@ export default function CreateEvent() {
         </div>
       </div>
 
+      {/* ACTION */}
       <button
         onClick={save}
         className="bg-ratecard-blue px-4 py-2 text-white rounded"
@@ -243,6 +249,7 @@ export default function CreateEvent() {
     </div>
   );
 }
+
 
 
 
