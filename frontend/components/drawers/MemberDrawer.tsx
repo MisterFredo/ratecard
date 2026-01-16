@@ -15,7 +15,7 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 type MemberData = {
   id_company: string;
   name: string;
-  description?: string | null;
+  description?: string | null; // ⚠️ HTML
   media_logo_rectangle_id?: string | null;
   news: {
     id_news: string;
@@ -124,15 +124,24 @@ export default function MemberDrawer({ id, onClose }: Props) {
         {/* =====================================================
             CONTENT
         ===================================================== */}
-        <div className="px-6 py-8 space-y-10">
-          {/* DESCRIPTION */}
+        <div className="px-6 py-8 space-y-12">
+          {/* DESCRIPTION — HTML ÉDITORIAL (RESTAURÉ) */}
           {data.description && (
-            <div className="prose prose-sm max-w-none text-gray-800">
-              {data.description}
-            </div>
+            <div
+              className="
+                prose prose-sm max-w-none
+                prose-p:my-4
+                prose-ul:my-4
+                prose-li:my-1
+                prose-strong:font-semibold
+              "
+              dangerouslySetInnerHTML={{
+                __html: data.description,
+              }}
+            />
           )}
 
-          {/* NEWS */}
+          {/* NEWS DU PARTENAIRE */}
           <section className="space-y-4">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
               Actualités
