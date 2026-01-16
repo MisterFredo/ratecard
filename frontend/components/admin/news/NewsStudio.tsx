@@ -34,7 +34,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   const [excerpt, setExcerpt] = useState("");
   const [body, setBody] = useState("");
 
-  // société sélectionnée (objet léger – formulaire)
+  // société sélectionnée (format selector)
   const [company, setCompany] = useState<any | null>(null);
   // société complète (source de vérité)
   const [companyFull, setCompanyFull] = useState<any | null>(null);
@@ -45,7 +45,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   /* =========================================================
      STATE — VISUEL
   ========================================================= */
-  // visuel spécifique à la news (override éventuel)
+  // visuel spécifique à la news (override)
   const [mediaId, setMediaId] = useState<string | null>(null);
 
   /* =========================================================
@@ -94,8 +94,24 @@ export default function NewsStudio({ mode, newsId }: Props) {
         setExcerpt(n.EXCERPT || "");
         setBody(n.BODY || "");
 
-        setCompany(n.company || null);
-        setTopics(n.topics || []);
+        // 🔑 Société — format attendu par CompanySelector
+        setCompany(
+          n.company
+            ? {
+                id_company: n.company.ID_COMPANY,
+                name: n.company.NAME,
+              }
+            : null
+        );
+
+        // 🔑 Topics — format attendu par TopicSelector
+        setTopics(
+          (n.topics || []).map((t: any) => ({
+            id_topic: t.ID_TOPIC,
+            label: t.LABEL,
+          }))
+        );
+
         setPersons(n.persons || []);
 
         // visuel news éventuel
@@ -157,7 +173,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
       title,
       excerpt,
       body,
-      topics: topics.map((t) => t.id_topic || t.ID_TOPIC),
+      topics: topics.map((t) => t.id_topic),
       persons: persons.map((p) => p.id_person || p.ID_PERSON),
     };
 
@@ -165,6 +181,21 @@ export default function NewsStudio({ mode, newsId }: Props) {
       if (!internalNewsId) {
         const res = await api.post("/news/create", payload);
         setInternalNewsId(res.id_news);
+
+        // 🔑 Forcer le chargement société complète après création
+        try {
+          const companyId =
+            company.id_company || company.ID_COMPANY;
+          const resCompany = await api.get(
+            `/company/${companyId}`
+          );
+          setCompanyFull(resCompany.company);
+        } catch (e) {
+          console.error(
+            "Erreur chargement société après création",
+            e
+          );
+        }
       } else {
         await api.put(`/news/update/${internalNewsId}`, payload);
       }
