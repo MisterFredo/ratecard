@@ -23,6 +23,7 @@ def create_company(data: CompanyCreate) -> str:
     Règles :
     - aucun champ média au create
     - insertion via LOAD JOB (pas de streaming)
+    - IS_PARTNER géré dès la création
     """
     company_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
@@ -38,6 +39,9 @@ def create_company(data: CompanyCreate) -> str:
 
         "LINKEDIN_URL": data.linkedin_url,
         "WEBSITE_URL": data.website_url,
+
+        # 🆕 PARTENAIRE (par défaut False)
+        "IS_PARTNER": bool(data.is_partner) if data.is_partner is not None else False,
 
         "CREATED_AT": now,
         "UPDATED_AT": now,
@@ -104,6 +108,10 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
     if not values:
         return False
 
+    # 🔑 normalisation : bool explicite si présent
+    if "is_partner" in values:
+        values["is_partner"] = bool(values["is_partner"])
+
     values["updated_at"] = datetime.utcnow().isoformat()
 
     return update_bq(
@@ -111,3 +119,4 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
         fields={k.upper(): v for k, v in values.items()},
         where={"ID_COMPANY": id_company},
     )
+
