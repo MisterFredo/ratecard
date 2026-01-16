@@ -190,3 +190,25 @@ SOURCE ({source_type or "texte libre"}):
             "body": body,
         },
     }
+
+# ============================================================
+# LINKEDIN — GET POST FOR NEWS
+# ============================================================
+
+@router.get("/{news_id}/linkedin", response_model=NewsLinkedInPostResponse)
+def get_linkedin_post_for_news(news_id: str):
+    try:
+        post = get_news_linkedin_post(news_id)
+
+        if not post:
+            return NewsLinkedInPostResponse()
+
+        return NewsLinkedInPostResponse(
+            text=post.get("TEXT"),
+            mode=post.get("MODE"),
+        )
+
+    except Exception:
+        logger.exception("Erreur récupération post LinkedIn")
+        raise HTTPException(500, "Erreur récupération post LinkedIn")
+
