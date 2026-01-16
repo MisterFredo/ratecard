@@ -33,14 +33,15 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
   if (loading) return <p>Chargement…</p>;
   if (!news) return <p>News introuvable</p>;
 
-  // ---------------------------------------------------------
-  // VISUEL — NEWS > SOCIÉTÉ (RECTANGLE)
-  // ---------------------------------------------------------
-  const visualSrc = news.MEDIA_RECTANGLE_ID
-    ? `${GCS_BASE_URL}/news/${news.MEDIA_RECTANGLE_ID}`
-    : news.company?.MEDIA_LOGO_RECTANGLE_ID
-    ? `${GCS_BASE_URL}/companies/${news.company.MEDIA_LOGO_RECTANGLE_ID}`
-    : null;
+  /* ---------------------------------------------------------
+     VISUEL — PRIORITÉ NEWS > SOCIÉTÉ (RECTANGLE)
+  --------------------------------------------------------- */
+  const visualSrc =
+    news.MEDIA_RECTANGLE_ID
+      ? `${GCS_BASE_URL}/news/${news.MEDIA_RECTANGLE_ID}`
+      : news.company?.MEDIA_LOGO_RECTANGLE_ID
+      ? `${GCS_BASE_URL}/companies/${news.company.MEDIA_LOGO_RECTANGLE_ID}`
+      : null;
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -48,6 +49,7 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
       {visualSrc && (
         <img
           src={visualSrc}
+          alt={news.TITLE}
           className="w-full max-h-[260px] object-cover border rounded"
         />
       )}
@@ -116,4 +118,3 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
     </div>
   );
 }
-
