@@ -7,7 +7,13 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 type Props = {
   newsId: string;
+
+  // visuel spécifique à la news (si uploadé)
   mediaId: string | null;
+
+  // 🆕 visuel hérité de la société
+  companyMediaId?: string | null;
+
   onUpdated: (mediaId: string) => void;
   onNext: () => void;
 };
@@ -15,6 +21,7 @@ type Props = {
 export default function NewsStepVisual({
   newsId,
   mediaId,
+  companyMediaId,
   onUpdated,
   onNext,
 }: Props) {
@@ -36,6 +43,10 @@ export default function NewsStepVisual({
     return `${GCS_BASE_URL}/news/${filename}`;
   }
 
+  function gcsCompanyUrl(filename: string) {
+    return `${GCS_BASE_URL}/company/${filename}`;
+  }
+
   async function upload(file: File) {
     setLoading(true);
 
@@ -51,6 +62,7 @@ export default function NewsStepVisual({
         throw new Error("Upload échoué");
       }
 
+      // 👉 remplace le visuel news
       onUpdated(res.filename);
     } catch (e) {
       console.error(e);
@@ -60,22 +72,44 @@ export default function NewsStepVisual({
     setLoading(false);
   }
 
+  // ---------------------------------------------------------
+  // LOGIQUE VISUEL AFFICHÉ
+  // ---------------------------------------------------------
+  const displayedMediaId = mediaId || companyMediaId;
+  const displayedSrc = mediaId
+    ? gcsUrl(mediaId)
+    : companyMediaId
+    ? gcsCompanyUrl(companyMediaId)
+    : null;
+
+  const isInherited = !mediaId && !!companyMediaId;
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-gray-600">
         Un visuel <strong>16:9</strong> est requis pour publier la news.
+        <br />
+        Par défaut, le visuel de la société est utilisé.
       </p>
 
       {loading && <p className="text-gray-500">Traitement…</p>}
 
-      {mediaId ? (
-        <img
-          src={gcsUrl(mediaId)}
-          className="max-w-xl border rounded bg-white"
-        />
+      {displayedSrc ? (
+        <div className="space-y-2">
+          <img
+            src={displayedSrc}
+            className="max-w-xl border rounded bg-white"
+          />
+
+          {isInherited && (
+            <p className="text-xs text-gray-500">
+              Visuel hérité de la société
+            </p>
+          )}
+        </div>
       ) : (
         <div className="max-w-xl h-40 bg-gray-100 border rounded flex items-center justify-center text-sm text-gray-500">
-          Aucun visuel
+          Aucun visuel disponible
         </div>
       )}
 
@@ -90,7 +124,7 @@ export default function NewsStepVisual({
       <div className="pt-4">
         <button
           onClick={onNext}
-          disabled={!mediaId}
+          disabled={!displayedMediaId}
           className="bg-ratecard-blue text-white px-4 py-2 rounded disabled:opacity-50"
         >
           Continuer
@@ -99,3 +133,4 @@ export default function NewsStepVisual({
     </div>
   );
 }
+
