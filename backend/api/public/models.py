@@ -60,8 +60,6 @@ class DrawerNewsResponse(BaseModel):
     visual_rect_url: Optional[str] = None
     company: dict
 
-
-
 # =======================================================
 # DRAWER — ANALYSE
 # =======================================================
