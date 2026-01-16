@@ -182,43 +182,36 @@ def get_news(id_news: str):
 # LIST NEWS (ADMIN + PUBLIC)
 # ============================================================
 def list_news():
-    rows = query_bq(
-        f"""
+    """
+    Liste des news PUBLIQUES uniquement.
+    Utilisée par le front public (home, /news, drawers).
+    """
+    sql = f"""
         SELECT
-            N.ID_NEWS,
-            N.TITLE,
-            N.EXCERPT,
-            N.BODY,                 -- ⬅️ AJOUT CRITIQUE
-            N.STATUS,
-            N.PUBLISHED_AT,
-            N.MEDIA_RECTANGLE_ID,
-            C.ID_COMPANY,
-            C.NAME AS COMPANY_NAME
-        FROM `{TABLE_NEWS}` N
-        JOIN `{TABLE_COMPANY}` C
-          ON N.ID_COMPANY = C.ID_COMPANY
-        WHERE N.IS_ACTIVE = TRUE
-        ORDER BY N.CREATED_AT DESC
-        """
-    )
+            n.ID_NEWS,
+            n.TITLE,
+            n.EXCERPT,
+            n.BODY,
+            n.STATUS,
+            n.PUBLISHED_AT,
+            n.MEDIA_RECTANGLE_ID AS VISUAL_RECT_URL,
 
-    results = []
+            c.ID_COMPANY,
+            c.NAME AS COMPANY_NAME,
+            c.MEDIA_LOGO_RECTANGLE_ID
 
-    for r in rows:
-        item = serialize_row(r)
+        FROM `{TABLE_NEWS}` n
+        JOIN `{TABLE_COMPANY}` c
+          ON n.ID_COMPANY = c.ID_COMPANY
 
-        # ----------------------------------------------------
-        # VISUEL — URL PUBLIQUE GCS (SI DISPONIBLE)
-        # ----------------------------------------------------
-        item["VISUAL_RECT_URL"] = get_public_url(
-            "news",
-            r.get("MEDIA_RECTANGLE_ID"),
-        )
+        WHERE
+            n.STATUS = 'PUBLISHED'
+            AND n.PUBLISHED_AT IS NOT NULL
+            AND n.PUBLISHED_AT <= CURRENT_TIMESTAMP()
 
-        results.append(item)
-
-    return results
-
+        ORDER BY n.PUBLISHED_AT DESC
+    """
+    return query_bq(sql)
 
 
 # ============================================================
