@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import VisualSectionPerson from "@/components/visuals/VisualSectionPerson";
 import EntityBaseForm from "@/components/forms/EntityBaseForm";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 import CompanySelector, {
   Company,
 } from "@/components/admin/CompanySelector";
@@ -18,7 +19,7 @@ export default function EditPerson({ params }: { params: { id: string } }) {
   const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(""); // 🔑 HTML éditorial
   const [linkedinUrl, setLinkedinUrl] = useState("");
 
   // Champs spécifiques Person
@@ -28,9 +29,9 @@ export default function EditPerson({ params }: { params: { id: string } }) {
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  // ---------------------------------------------------------
-  // LOAD
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     LOAD
+  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -38,9 +39,9 @@ export default function EditPerson({ params }: { params: { id: string } }) {
         const res = await api.get(`/person/${id}`);
         const p = res.person;
 
-        setName(p.NAME);
+        setName(p.NAME || "");
         setTitle(p.TITLE || "");
-        setDescription(p.DESCRIPTION || "");
+        setDescription(p.DESCRIPTION || ""); // 🔑 HTML
         setLinkedinUrl(p.LINKEDIN_URL || "");
 
         if (p.ID_COMPANY && p.COMPANY_NAME) {
@@ -73,18 +74,21 @@ export default function EditPerson({ params }: { params: { id: string } }) {
     load();
   }, [id]);
 
-  // ---------------------------------------------------------
-  // SAVE
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     SAVE
+  --------------------------------------------------------- */
   async function save() {
     setSaving(true);
     try {
       await api.put(`/person/update/${id}`, {
         name,
         title: title || null,
-        description: description || null,
+        description: description || null, // 🔑 HTML
         linkedin_url: linkedinUrl || null,
-        id_company: companies.length > 0 ? companies[0].id_company : null,
+        id_company:
+          companies.length > 0
+            ? companies[0].id_company
+            : null,
       });
       alert("Personne modifiée");
     } catch (e) {
@@ -96,11 +100,12 @@ export default function EditPerson({ params }: { params: { id: string } }) {
 
   if (loading) return <p>Chargement…</p>;
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
+      {/* HEADER */}
       <div className="flex justify-between">
         <h1 className="text-3xl font-semibold">
           Modifier la personne
@@ -110,12 +115,14 @@ export default function EditPerson({ params }: { params: { id: string } }) {
         </Link>
       </div>
 
-      {/* FORM BASE */}
+      {/* STRUCTURE */}
       <EntityBaseForm
-        values={{ name, description, linkedinUrl }}
+        values={{
+          name,
+          linkedinUrl,
+        }}
         onChange={{
           setName,
-          setDescription,
           setLinkedinUrl,
         }}
         labels={{
@@ -123,7 +130,19 @@ export default function EditPerson({ params }: { params: { id: string } }) {
         }}
       />
 
-      {/* TITLE */}
+      {/* DESCRIPTION HTML */}
+      <div className="space-y-2 max-w-2xl">
+        <label className="block text-sm font-medium">
+          Description éditoriale
+        </label>
+
+        <HtmlEditor
+          value={description}
+          onChange={setDescription}
+        />
+      </div>
+
+      {/* TITLE / ROLE */}
       <div className="max-w-2xl">
         <label className="block text-sm font-medium mb-1">
           Fonction / Titre
@@ -147,6 +166,7 @@ export default function EditPerson({ params }: { params: { id: string } }) {
         </p>
       </div>
 
+      {/* ACTION */}
       <button
         className="bg-ratecard-blue px-4 py-2 text-white rounded"
         onClick={save}
@@ -176,4 +196,3 @@ export default function EditPerson({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
