@@ -18,6 +18,9 @@ class CompanyCreate(BaseModel):
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
 
+    # 🆕 Statut partenaire
+    is_partner: Optional[bool] = False
+
 
 # ============================================================
 # UPDATE — mise à jour d'une société existante
@@ -35,8 +38,11 @@ class CompanyUpdate(BaseModel):
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
 
-    media_logo_square_id: Optional[str] = None
+    # 🔑 UN SEUL VISUEL AUTORISÉ : RECTANGLE
     media_logo_rectangle_id: Optional[str] = None
+
+    # 🆕 Statut partenaire (modifiable)
+    is_partner: Optional[bool] = None
 
 
 # ============================================================
@@ -51,22 +57,17 @@ class CompanyOut(BaseModel):
     name: str
     description: Optional[str] = None
 
-    media_logo_square_id: Optional[str] = None
+    # 🔑 UN SEUL VISUEL
     media_logo_rectangle_id: Optional[str] = None
 
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
 
+    # 🆕 Partenaire
+    is_partner: Optional[bool] = False
+
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     is_active: Optional[bool] = True
 
-class CompanyCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
-    linkedin_url: Optional[str] = None
-    website_url: Optional[str] = None
-
-    # 🆕
-    is_partner: Optional[bool] = False
 
