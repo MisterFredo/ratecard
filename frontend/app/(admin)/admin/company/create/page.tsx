@@ -18,7 +18,8 @@ export default function CreateCompany() {
   const [isPartner, setIsPartner] = useState(false);
 
   const [companyId, setCompanyId] = useState<string | null>(null);
-  const [squareUrl, setSquareUrl] = useState<string | null>(null);
+
+  // 🔑 UN SEUL VISUEL : RECTANGLE
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
@@ -50,11 +51,10 @@ export default function CreateCompany() {
       }
 
       setCompanyId(res.id_company);
-      setSquareUrl(null);
       setRectUrl(null);
 
       alert(
-        "Société créée. Vous pouvez maintenant ajouter des visuels."
+        "Société créée. Vous pouvez maintenant ajouter un visuel rectangulaire."
       );
     } catch (e) {
       console.error(e);
@@ -88,7 +88,7 @@ export default function CreateCompany() {
         }}
       />
 
-      {/* 🆕 PARTENAIRE */}
+      {/* PARTENAIRE */}
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
@@ -108,18 +108,12 @@ export default function CreateCompany() {
         {saving ? "Enregistrement…" : "Créer"}
       </button>
 
-      {/* VISUALS — POST CREATION */}
+      {/* VISUEL — POST CREATION (RECTANGLE ONLY) */}
       {companyId && (
         <VisualSection
           entityId={companyId}
-          squareUrl={squareUrl}
           rectUrl={rectUrl}
-          onUpdated={({ square, rectangle }) => {
-            setSquareUrl(
-              square
-                ? `${GCS}/companies/COMPANY_${companyId}_square.jpg`
-                : null
-            );
+          onUpdated={({ rectangle }) => {
             setRectUrl(
               rectangle
                 ? `${GCS}/companies/COMPANY_${companyId}_rect.jpg`
@@ -131,3 +125,4 @@ export default function CreateCompany() {
     </div>
   );
 }
+
