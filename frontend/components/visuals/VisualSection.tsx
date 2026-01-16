@@ -5,14 +5,15 @@ import { api } from "@/lib/api";
 
 type Props = {
   entityId: string;
-  squareUrl: string | null;
+
+  // 🔑 UN SEUL VISUEL : RECTANGLE
   rectUrl: string | null;
-  onUpdated: (urls: { square: string | null; rectangle: string | null }) => void;
+
+  onUpdated: (data: { rectangle: boolean }) => void;
 };
 
 export default function VisualSection({
   entityId,
-  squareUrl,
   rectUrl,
   onUpdated,
 }: Props) {
@@ -34,12 +35,9 @@ export default function VisualSection({
   }
 
   // ---------------------------------------------------------
-  // UPLOAD (square ou rectangle)
+  // UPLOAD — RECTANGLE ONLY
   // ---------------------------------------------------------
-  async function upload(
-    file: File,
-    format: "square" | "rectangle"
-  ) {
+  async function upload(file: File) {
     setLoading(true);
 
     try {
@@ -47,7 +45,6 @@ export default function VisualSection({
 
       const res = await api.post("/visuals/company/upload", {
         id_company: entityId,
-        format,
         base64_image: base64,
       });
 
@@ -55,41 +52,11 @@ export default function VisualSection({
         throw new Error("Upload échoué");
       }
 
-      onUpdated({
-        square: format === "square" ? "updated" : squareUrl,
-        rectangle: format === "rectangle" ? "updated" : rectUrl,
-      });
-
+      // 🔑 rectangle mis à jour
+      onUpdated({ rectangle: true });
     } catch (e) {
       console.error(e);
       alert("❌ Erreur upload visuel");
-    }
-
-    setLoading(false);
-  }
-
-  // ---------------------------------------------------------
-  // RESET VISUALS
-  // ---------------------------------------------------------
-  async function resetVisuals() {
-    if (!confirm("Supprimer les visuels ?")) return;
-
-    setLoading(true);
-
-    try {
-      const res = await api.post("/visuals/company/reset", {
-        id_company: entityId,
-      });
-
-      if (res.status !== "ok") {
-        throw new Error("Reset échoué");
-      }
-
-      onUpdated({ square: null, rectangle: null });
-
-    } catch (e) {
-      console.error(e);
-      alert("❌ Erreur reset visuels");
     }
 
     setLoading(false);
@@ -101,68 +68,39 @@ export default function VisualSection({
   return (
     <div className="p-4 border rounded bg-white space-y-4">
       <h2 className="text-xl font-semibold text-ratecard-blue">
-        Visuels
+        Visuel (16:9)
       </h2>
+
+      <p className="text-sm text-gray-600">
+        Un seul visuel est utilisé pour la société.
+        <br />
+        Format recommandé : <strong>16:9</strong> (ex. 1200×675).
+      </p>
 
       {loading && <p className="text-gray-500">Traitement…</p>}
 
-      {/* PREVIEWS */}
-      <div className="flex gap-6">
-        {/* SQUARE */}
-        <div>
-          <p className="text-sm text-gray-500">Carré</p>
-          {squareUrl ? (
-            <img
-              src={squareUrl}
-              className="w-24 h-24 object-cover border rounded"
-            />
-          ) : (
-            <div className="w-24 h-24 bg-gray-100 border rounded flex items-center justify-center text-xs text-gray-500">
-              Aucun
-            </div>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            className="mt-2"
-            onChange={(e) =>
-              e.target.files &&
-              upload(e.target.files[0], "square")
-            }
+      {/* PREVIEW RECTANGLE */}
+      <div>
+        {rectUrl ? (
+          <img
+            src={rectUrl}
+            className="w-full max-w-xl border rounded object-cover"
           />
-        </div>
+        ) : (
+          <div className="w-full max-w-xl h-40 bg-gray-100 border rounded flex items-center justify-center text-sm text-gray-500">
+            Aucun visuel rectangulaire
+          </div>
+        )}
 
-        {/* RECTANGLE */}
-        <div>
-          <p className="text-sm text-gray-500">Rectangle</p>
-          {rectUrl ? (
-            <img
-              src={rectUrl}
-              className="w-48 border rounded"
-            />
-          ) : (
-            <div className="w-48 h-24 bg-gray-100 border rounded flex items-center justify-center text-xs text-gray-500">
-              Aucun
-            </div>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            className="mt-2"
-            onChange={(e) =>
-              e.target.files &&
-              upload(e.target.files[0], "rectangle")
-            }
-          />
-        </div>
+        <input
+          type="file"
+          accept="image/*"
+          className="mt-2"
+          onChange={(e) =>
+            e.target.files && upload(e.target.files[0])
+          }
+        />
       </div>
-
-      <button
-        className="px-3 py-2 bg-red-600 text-white rounded text-sm"
-        onClick={resetVisuals}
-      >
-        Réinitialiser les visuels
-      </button>
     </div>
   );
 }
