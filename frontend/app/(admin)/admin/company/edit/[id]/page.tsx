@@ -19,6 +19,9 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
 
+  // 🆕 PARTENAIRE
+  const [isPartner, setIsPartner] = useState(false);
+
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
@@ -37,6 +40,9 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         setDescription(c.DESCRIPTION || "");
         setLinkedinUrl(c.LINKEDIN_URL || "");
         setWebsiteUrl(c.WEBSITE_URL || "");
+
+        // 🆕 statut partenaire
+        setIsPartner(Boolean(c.IS_PARTNER));
 
         setSquareUrl(
           c.MEDIA_LOGO_SQUARE_ID
@@ -72,6 +78,9 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         description: description || null,
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
+
+        // 🆕 statut partenaire
+        is_partner: isPartner,
       });
 
       alert("Société modifiée");
@@ -111,6 +120,18 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         }}
       />
 
+      {/* 🆕 PARTENAIRE */}
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={isPartner}
+          onChange={(e) => setIsPartner(e.target.checked)}
+        />
+        <label className="text-sm">
+          Société partenaire
+        </label>
+      </div>
+
       <button
         className="bg-ratecard-blue px-4 py-2 text-white rounded"
         onClick={save}
@@ -139,3 +160,4 @@ export default function EditCompany({ params }: { params: { id: string } }) {
     </div>
   );
 }
+
