@@ -234,4 +234,119 @@ def generate_linkedin_post_route(payload: LinkedInGenerateRequest):
             "text": ""
         }
 
+# ============================================================
+# MEMBERS — LISTE DES PARTENAIRES
+# ============================================================
+@router.get("/members")
+def get_members():
+    """
+    Retourne la liste des sociétés partenaires (public).
+    """
+    try:
+        rows = query_bq(
+            f"""
+            SELECT
+                ID_COMPANY,
+                NAME,
+                DESCRIPTION,
+                MEDIA_LOGO_RECTANGLE_ID
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY`
+            WHERE
+                IS_PARTNER = TRUE
+                AND IS_ACTIVE = TRUE
+            ORDER BY NAME ASC
+            """
+        )
+
+        items = [
+            {
+                "ID_COMPANY": r["ID_COMPANY"],
+                "NAME": r["NAME"],
+                "DESCRIPTION": r.get("DESCRIPTION"),
+                "MEDIA_LOGO_RECTANGLE_ID": r.get("MEDIA_LOGO_RECTANGLE_ID"),
+            }
+            for r in rows
+        ]
+
+        return {"items": items}
+
+    except Exception:
+        logger.exception("Erreur récupération membres")
+        raise HTTPException(500, "Erreur récupération membres")
+
+
+# ============================================================
+# MEMBER — FICHE PARTENAIRE + NEWS
+# ============================================================
+@router.get("/member/{id_company}")
+def get_member(id_company: str):
+    """
+    Retourne la fiche d’un partenaire + ses news publiées.
+    Utilisé par le drawer gauche.
+    """
+    try:
+        # --- Société
+        company_rows = query_bq(
+            f"""
+            SELECT
+                ID_COMPANY,
+                NAME,
+                DESCRIPTION,
+                MEDIA_LOGO_RECTANGLE_ID
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY`
+            WHERE
+                ID_COMPANY = @id
+                AND IS_PARTNER = TRUE
+                AND IS_ACTIVE = TRUE
+            """,
+            {"id": id_company},
+        )
+
+        if not company_rows:
+            raise HTTPException(404, "Partenaire introuvable")
+
+        c = company_rows[0]
+
+        # --- News du partenaire
+        news_rows = query_bq(
+            f"""
+            SELECT
+                ID_NEWS,
+                TITLE,
+                EXCERPT,
+                PUBLISHED_AT
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS`
+            WHERE
+                ID_COMPANY = @id
+                AND STATUS = 'PUBLISHED'
+            ORDER BY PUBLISHED_AT DESC
+            """,
+            {"id": id_company},
+        )
+
+        news = [
+            {
+                "id_news": n["ID_NEWS"],
+                "title": n["TITLE"],
+                "excerpt": n.get("EXCERPT"),
+                "published_at": n["PUBLISHED_AT"],
+            }
+            for n in news_rows
+        ]
+
+        return {
+            "id_company": c["ID_COMPANY"],
+            "name": c["NAME"],
+            "description": c.get("DESCRIPTION"),
+            "media_logo_rectangle_id": c.get("MEDIA_LOGO_RECTANGLE_ID"),
+            "news": news,
+        }
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Erreur récupération membre")
+        raise HTTPException(500, "Erreur récupération membre")
+
+
 
