@@ -46,8 +46,6 @@ export default function NewsStudio({ mode, newsId }: Props) {
   /* =========================================================
      PUBLICATION
   ========================================================= */
-  const [publishMode, setPublishMode] =
-    useState<"NOW" | "SCHEDULE">("NOW");
   const [publishAt, setPublishAt] = useState<string>("");
 
   /* =========================================================
@@ -249,16 +247,16 @@ export default function NewsStudio({ mode, newsId }: Props) {
           </summary>
 
           {internalNewsId && (
-            <<NewsStepVisual
+            <NewsStepVisual
               newsId={internalNewsId}
               mediaId={mediaId}
               companyMediaId={
-                company?.MEDIA_RECTANGLE_ID || company?.media_rectangle_id || null
+                company?.MEDIA_LOGO_RECTANGLE_ID ||
+                company?.media_rectangle_id ||
+                null
               }
               onUpdated={setMediaId}
               onNext={() => setStep("PREVIEW")}
-            />
-
             />
           )}
         </details>
@@ -295,10 +293,8 @@ export default function NewsStudio({ mode, newsId }: Props) {
 
           {internalNewsId && (
             <NewsStepPublish
-              publishMode={publishMode}
               publishAt={publishAt}
               publishing={publishing}
-              onChangeMode={setPublishMode}
               onChangeDate={setPublishAt}
               onPublish={publishNews}
             />
