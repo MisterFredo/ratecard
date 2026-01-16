@@ -195,16 +195,11 @@ SOURCE ({source_type or "texte libre"}):
 
 @router.delete("/{news_id}")
 def delete_news_route(news_id: str):
-    """
-    Suppression logique d'une news (archive).
-    """
     try:
-        archive_news(news_id)
+        delete_news(news_id)
         return {"status": "ok"}
-
-    except Exception:
-        logger.exception("Erreur suppression news")
-        raise HTTPException(500, "Erreur suppression news")
+    except Exception as e:
+        raise HTTPException(400, f"Erreur suppression news : {e}")
 
 
 # ============================================================
