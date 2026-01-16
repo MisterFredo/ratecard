@@ -22,7 +22,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   // 🆕 PARTENAIRE
   const [isPartner, setIsPartner] = useState(false);
 
-  const [squareUrl, setSquareUrl] = useState<string | null>(null);
+  // 🔑 UN SEUL VISUEL : RECTANGLE
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   // ---------------------------------------------------------
@@ -41,15 +41,10 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         setLinkedinUrl(c.LINKEDIN_URL || "");
         setWebsiteUrl(c.WEBSITE_URL || "");
 
-        // 🆕 statut partenaire
+        // statut partenaire
         setIsPartner(Boolean(c.IS_PARTNER));
 
-        setSquareUrl(
-          c.MEDIA_LOGO_SQUARE_ID
-            ? `${GCS}/companies/COMPANY_${id}_square.jpg`
-            : null
-        );
-
+        // visuel rectangle uniquement
         setRectUrl(
           c.MEDIA_LOGO_RECTANGLE_ID
             ? `${GCS}/companies/COMPANY_${id}_rect.jpg`
@@ -79,7 +74,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
 
-        // 🆕 statut partenaire
+        // statut partenaire
         is_partner: isPartner,
       });
 
@@ -120,7 +115,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         }}
       />
 
-      {/* 🆕 PARTENAIRE */}
+      {/* PARTENAIRE */}
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
@@ -140,16 +135,11 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
+      {/* VISUEL — RECTANGLE ONLY */}
       <VisualSection
         entityId={id}
-        squareUrl={squareUrl}
         rectUrl={rectUrl}
-        onUpdated={({ square, rectangle }) => {
-          setSquareUrl(
-            square
-              ? `${GCS}/companies/COMPANY_${id}_square.jpg`
-              : null
-          );
+        onUpdated={({ rectangle }) => {
           setRectUrl(
             rectangle
               ? `${GCS}/companies/COMPANY_${id}_rect.jpg`
@@ -160,4 +150,3 @@ export default function EditCompany({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
