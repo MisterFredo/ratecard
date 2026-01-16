@@ -3,19 +3,16 @@
 type Props = {
   values: {
     name: string;
-    description?: string;
     linkedinUrl?: string;
     websiteUrl?: string;
   };
   onChange: {
     setName: (v: string) => void;
-    setDescription?: (v: string) => void;
     setLinkedinUrl?: (v: string) => void;
     setWebsiteUrl?: (v: string) => void;
   };
   labels?: {
     name?: string;
-    description?: string;
   };
 };
 
@@ -35,24 +32,9 @@ export default function EntityBaseForm({
           className="border p-2 w-full rounded"
           value={values.name}
           onChange={(e) => onChange.setName(e.target.value)}
-          placeholder="Ex : Google, Lawrence Taylor, CTV"
+          placeholder="Ex : Google, Bespoke, Criteo"
         />
       </div>
-
-      {/* DESCRIPTION */}
-      {onChange.setDescription && (
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            {labels?.description || "Description"}
-          </label>
-          <textarea
-            className="border p-2 w-full rounded h-28"
-            value={values.description || ""}
-            onChange={(e) => onChange.setDescription?.(e.target.value)}
-            placeholder="Description éditoriale"
-          />
-        </div>
-      )}
 
       {/* LINKEDIN */}
       {onChange.setLinkedinUrl && (
@@ -63,7 +45,9 @@ export default function EntityBaseForm({
           <input
             className="border p-2 w-full rounded"
             value={values.linkedinUrl || ""}
-            onChange={(e) => onChange.setLinkedinUrl?.(e.target.value)}
+            onChange={(e) =>
+              onChange.setLinkedinUrl?.(e.target.value)
+            }
             placeholder="https://www.linkedin.com/company/..."
           />
         </div>
@@ -78,7 +62,9 @@ export default function EntityBaseForm({
           <input
             className="border p-2 w-full rounded"
             value={values.websiteUrl || ""}
-            onChange={(e) => onChange.setWebsiteUrl?.(e.target.value)}
+            onChange={(e) =>
+              onChange.setWebsiteUrl?.(e.target.value)
+            }
             placeholder="https://www.exemple.com"
           />
         </div>
@@ -86,3 +72,4 @@ export default function EntityBaseForm({
     </div>
   );
 }
+
