@@ -236,10 +236,18 @@ def generate_linkedin_post_route(payload: LinkedInGenerateRequest):
             "text": ""
         }
 
+from api.public.models import (
+    PublicMembersResponse,
+    PublicMemberResponse,
+)
+
 # ============================================================
 # MEMBERS — LISTE DES PARTENAIRES
 # ============================================================
-@router.get("/members")
+@router.get(
+    "/members",
+    response_model=PublicMembersResponse
+)
 def get_members():
     """
     Retourne la liste des sociétés partenaires (public).
@@ -262,10 +270,10 @@ def get_members():
 
         items = [
             {
-                "ID_COMPANY": r["ID_COMPANY"],
-                "NAME": r["NAME"],
-                "DESCRIPTION": r.get("DESCRIPTION"),
-                "MEDIA_LOGO_RECTANGLE_ID": r.get("MEDIA_LOGO_RECTANGLE_ID"),
+                "id_company": r["ID_COMPANY"],
+                "name": r["NAME"],
+                "description": r.get("DESCRIPTION"),
+                "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID"),
             }
             for r in rows
         ]
@@ -274,13 +282,19 @@ def get_members():
 
     except Exception:
         logger.exception("Erreur récupération membres")
-        raise HTTPException(500, "Erreur récupération membres")
+        raise HTTPException(
+            500,
+            "Erreur récupération membres"
+        )
 
 
 # ============================================================
 # MEMBER — FICHE PARTENAIRE + NEWS
 # ============================================================
-@router.get("/member/{id_company}")
+@router.get(
+    "/member/{id_company}",
+    response_model=PublicMemberResponse
+)
 def get_member(id_company: str):
     """
     Retourne la fiche d’un partenaire + ses news publiées.
@@ -305,7 +319,10 @@ def get_member(id_company: str):
         )
 
         if not company_rows:
-            raise HTTPException(404, "Partenaire introuvable")
+            raise HTTPException(
+                404,
+                "Partenaire introuvable"
+            )
 
         c = company_rows[0]
 
@@ -348,7 +365,7 @@ def get_member(id_company: str):
         raise
     except Exception:
         logger.exception("Erreur récupération membre")
-        raise HTTPException(500, "Erreur récupération membre")
-
-
-
+        raise HTTPException(
+            500,
+            "Erreur récupération membre"
+        )
