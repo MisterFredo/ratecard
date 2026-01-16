@@ -246,11 +246,16 @@ export default function NewsStudio({ mode, newsId }: Props) {
           </summary>
 
           {internalNewsId && (
-            <NewsStepVisual
+            <<NewsStepVisual
               newsId={internalNewsId}
               mediaId={mediaId}
+              companyMediaId={
+                company?.MEDIA_RECTANGLE_ID || company?.media_rectangle_id || null
+              }
               onUpdated={setMediaId}
               onNext={() => setStep("PREVIEW")}
+            />
+
             />
           )}
         </details>
