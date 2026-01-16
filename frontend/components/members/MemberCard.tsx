@@ -8,7 +8,7 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 type Props = {
   id: string;
   name: string;
-  description?: string | null; // ⚠️ HTML
+  description?: string | null; // HTML
   visualRectId?: string | null;
 };
 
@@ -29,7 +29,7 @@ export default function MemberCard({
   visualRectId,
 }: Props) {
   const router = useRouter();
-  const { openDrawer } = useDrawer();
+  const { openLeftDrawer } = useDrawer(); // ✅ API CORRECTE
 
   const visualUrl = visualRectId
     ? `${GCS_BASE_URL}/companies/${visualRectId}`
@@ -43,7 +43,7 @@ export default function MemberCard({
     <div
       onClick={() => {
         router.push(`/members?member_id=${id}`, { scroll: false });
-        openDrawer("member", id);
+        openLeftDrawer("member", id); // ✅ drawer GAUCHE
       }}
       className="
         group cursor-pointer rounded-2xl
