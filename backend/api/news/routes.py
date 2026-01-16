@@ -93,11 +93,12 @@ def archive_route(id_news: str):
 def publish_route(id_news: str, published_at: str | None = None):
     try:
         status = publish_news(id_news, published_at)
-        return {"status": "ok", "published_status": status}
-    except Exception:
-        raise HTTPException(400, "Erreur publication news")
-
-
+        return {
+            "status": "ok",
+            "published_status": status,
+        }
+    except Exception as e:
+        raise HTTPException(400, str(e))
 # ============================================================
 # IA — GENERATE NEWS (SOURCE → NEWS) — HTML ORIENTÉ (ROBUSTE)
 # ============================================================
