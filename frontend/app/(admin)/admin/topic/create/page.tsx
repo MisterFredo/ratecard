@@ -5,12 +5,13 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import VisualSectionTopic from "@/components/visuals/VisualSectionTopic";
 import EntityBaseForm from "@/components/forms/EntityBaseForm";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 export default function CreateTopic() {
   const [label, setLabel] = useState("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(""); // 🔑 HTML éditorial
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
 
@@ -18,9 +19,9 @@ export default function CreateTopic() {
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  // ---------------------------------------------------------
-  // CREATE
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     CREATE
+  --------------------------------------------------------- */
   async function save() {
     if (!label.trim()) {
       alert("Label requis");
@@ -30,7 +31,7 @@ export default function CreateTopic() {
     try {
       const res = await api.post("/topic/create", {
         label,
-        description: description || null,
+        description: description || null, // 🔑 HTML
         seo_title: seoTitle || null,
         seo_description: seoDescription || null,
       });
@@ -48,11 +49,12 @@ export default function CreateTopic() {
     }
   }
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
+      {/* HEADER */}
       <div className="flex justify-between">
         <h1 className="text-2xl font-semibold">
           Ajouter un topic
@@ -62,21 +64,24 @@ export default function CreateTopic() {
         </Link>
       </div>
 
-      {/* FORM BASE (label + description) */}
+      {/* STRUCTURE */}
       <EntityBaseForm
-        values={{
-          name: label,
-          description,
-        }}
-        onChange={{
-          setName: setLabel,
-          setDescription,
-        }}
-        labels={{
-          name: "Label",
-          description: "Description éditoriale",
-        }}
+        values={{ name: label }}
+        onChange={{ setName: setLabel }}
+        labels={{ name: "Label" }}
       />
+
+      {/* DESCRIPTION HTML */}
+      <div className="space-y-2 max-w-2xl">
+        <label className="block text-sm font-medium">
+          Description éditoriale
+        </label>
+
+        <HtmlEditor
+          value={description}
+          onChange={setDescription}
+        />
+      </div>
 
       {/* SEO */}
       <div className="space-y-4 max-w-2xl">
@@ -99,12 +104,15 @@ export default function CreateTopic() {
           <textarea
             className="border p-2 w-full rounded h-20"
             value={seoDescription}
-            onChange={(e) => setSeoDescription(e.target.value)}
+            onChange={(e) =>
+              setSeoDescription(e.target.value)
+            }
             placeholder="Description meta (optionnelle)"
           />
         </div>
       </div>
 
+      {/* ACTION */}
       <button
         onClick={save}
         className="bg-ratecard-blue px-4 py-2 text-white rounded"
@@ -112,7 +120,7 @@ export default function CreateTopic() {
         Créer
       </button>
 
-      {/* VISUALS — POST CREATION */}
+      {/* VISUALS — POST CRÉATION */}
       {topicId && (
         <VisualSectionTopic
           topicId={topicId}
@@ -135,4 +143,3 @@ export default function CreateTopic() {
     </div>
   );
 }
-
