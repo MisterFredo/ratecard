@@ -160,13 +160,16 @@ export default function NewsStudio({ mode, newsId }: Props) {
       return;
     }
 
+    if (!publishAt) {
+      alert("Veuillez définir une date de publication");
+      return;
+    }
+
     setPublishing(true);
 
     try {
       await api.post(`/news/publish/${internalNewsId}`, {
-        mode: publishMode,
-        publish_at:
-          publishMode === "SCHEDULE" ? publishAt : null,
+        publish_at: publishAt,
       });
 
       alert("News publiée");
@@ -174,9 +177,9 @@ export default function NewsStudio({ mode, newsId }: Props) {
     } catch (e) {
       console.error(e);
       alert("❌ Erreur publication news");
+    } finally {
+      setPublishing(false);
     }
-
-    setPublishing(false);
   }
 
   /* =========================================================
