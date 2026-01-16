@@ -40,7 +40,7 @@ async function fetchMembers(): Promise<Member[]> {
 
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
-  const { openDrawer } = useDrawer();
+  const { openLeftDrawer } = useDrawer();
   const searchParams = useSearchParams();
 
   // 🔒 garde-fou anti-réouverture
@@ -71,11 +71,11 @@ export default function MembersPage() {
       return;
     }
 
-    // ouverture légitime
+    // ouverture légitime — DRAWER GAUCHE
     lastOpenedId.current = memberId;
-    openDrawer("member", memberId);
+    openLeftDrawer("member", memberId);
 
-  }, [searchParams, openDrawer]);
+  }, [searchParams, openLeftDrawer]);
 
   return (
     <div className="space-y-12 md:space-y-14">
@@ -102,3 +102,4 @@ export default function MembersPage() {
     </div>
   );
 }
+
