@@ -11,21 +11,26 @@ import {
    TYPES
 ========================================================= */
 
-export type DrawerType =
-  | "news"
-  | "analysis"
-  | "member"
-  | null;
+type DrawerTypeLeft = "member" | null;
+type DrawerTypeRight = "news" | "analysis" | null;
 
-type DrawerState = {
-  type: DrawerType;
+type DrawerSlot = {
+  type: DrawerTypeLeft | DrawerTypeRight;
   id: string | null;
 };
 
 type DrawerContextType = {
-  drawer: DrawerState;
-  openDrawer: (type: DrawerType, id: string) => void;
-  closeDrawer: () => void;
+  leftDrawer: DrawerSlot;
+  rightDrawer: DrawerSlot;
+
+  openLeftDrawer: (type: "member", id: string) => void;
+  openRightDrawer: (
+    type: "news" | "analysis",
+    id: string
+  ) => void;
+
+  closeLeftDrawer: () => void;
+  closeRightDrawer: () => void;
 };
 
 /* =========================================================
@@ -45,22 +50,51 @@ export function DrawerProvider({
 }: {
   children: ReactNode;
 }) {
-  const [drawer, setDrawer] = useState<DrawerState>({
+  const [leftDrawer, setLeftDrawer] = useState<DrawerSlot>({
     type: null,
     id: null,
   });
 
-  function openDrawer(type: DrawerType, id: string) {
-    setDrawer({ type, id });
+  const [rightDrawer, setRightDrawer] = useState<DrawerSlot>({
+    type: null,
+    id: null,
+  });
+
+  /* -----------------------------
+     OPEN / CLOSE — LEFT
+  ----------------------------- */
+  function openLeftDrawer(type: "member", id: string) {
+    setLeftDrawer({ type, id });
   }
 
-  function closeDrawer() {
-    setDrawer({ type: null, id: null });
+  function closeLeftDrawer() {
+    setLeftDrawer({ type: null, id: null });
+  }
+
+  /* -----------------------------
+     OPEN / CLOSE — RIGHT
+  ----------------------------- */
+  function openRightDrawer(
+    type: "news" | "analysis",
+    id: string
+  ) {
+    setRightDrawer({ type, id });
+  }
+
+  function closeRightDrawer() {
+    setRightDrawer({ type: null, id: null });
   }
 
   return (
     <DrawerContext.Provider
-      value={{ drawer, openDrawer, closeDrawer }}
+      value={{
+        leftDrawer,
+        rightDrawer,
+        openLeftDrawer,
+        openRightDrawer,
+        closeLeftDrawer,
+        closeRightDrawer,
+      }}
     >
       {children}
     </DrawerContext.Provider>
