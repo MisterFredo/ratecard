@@ -14,6 +14,9 @@ export default function CreateCompany() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
 
+  // 🆕 PARTENAIRE
+  const [isPartner, setIsPartner] = useState(false);
+
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
@@ -37,15 +40,22 @@ export default function CreateCompany() {
         description: description || null,
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
+
+        // 🆕 statut partenaire
+        is_partner: isPartner,
       });
 
-      if (!res.id_company) throw new Error("ID société manquant");
+      if (!res.id_company) {
+        throw new Error("ID société manquant");
+      }
 
       setCompanyId(res.id_company);
       setSquareUrl(null);
       setRectUrl(null);
 
-      alert("Société créée. Vous pouvez maintenant ajouter des visuels.");
+      alert(
+        "Société créée. Vous pouvez maintenant ajouter des visuels."
+      );
     } catch (e) {
       console.error(e);
       alert("❌ Erreur création société");
@@ -77,6 +87,18 @@ export default function CreateCompany() {
           setWebsiteUrl,
         }}
       />
+
+      {/* 🆕 PARTENAIRE */}
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={isPartner}
+          onChange={(e) => setIsPartner(e.target.checked)}
+        />
+        <label className="text-sm">
+          Société partenaire
+        </label>
+      </div>
 
       <button
         onClick={save}
