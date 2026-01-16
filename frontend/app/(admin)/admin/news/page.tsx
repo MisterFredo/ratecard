@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Linkedin } from "lucide-react";
 
 type NewsLite = {
   ID_NEWS: string;
@@ -122,6 +122,7 @@ export default function NewsListPage() {
               {/* ACTIONS */}
               <td className="p-2 text-right">
                 <div className="inline-flex items-center gap-3">
+                  {/* EDIT */}
                   <Link
                     href={`/admin/news/edit/${n.ID_NEWS}`}
                     className="text-ratecard-blue hover:text-ratecard-blue/80"
@@ -130,6 +131,16 @@ export default function NewsListPage() {
                     <Pencil size={16} />
                   </Link>
 
+                  {/* LINKEDIN */}
+                  <Link
+                    href={`/admin/news/edit/${n.ID_NEWS}?step=LINKEDIN`}
+                    className="text-[#0A66C2] hover:opacity-80"
+                    title="Post LinkedIn"
+                  >
+                    <Linkedin size={16} />
+                  </Link>
+
+                  {/* DELETE */}
                   <button
                     onClick={() => deleteNews(n.ID_NEWS)}
                     className="text-red-600 hover:text-red-800"
