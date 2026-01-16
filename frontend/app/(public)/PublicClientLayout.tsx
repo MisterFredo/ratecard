@@ -1,6 +1,5 @@
 import PublicShell from "./PublicShell";
 import { DrawerProvider } from "@/contexts/DrawerContext";
-import GlobalDrawer from "@/components/drawers/GlobalDrawer";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -32,8 +31,7 @@ export default async function PublicClientLayout({
       <PublicShell events={events}>
         {children}
       </PublicShell>
-
-      <GlobalDrawer />
+      {/* DrawerHost est monté dans app/(public)/layout.tsx */}
     </DrawerProvider>
   );
 }
