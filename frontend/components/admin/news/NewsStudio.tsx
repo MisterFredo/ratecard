@@ -34,13 +34,18 @@ export default function NewsStudio({ mode, newsId }: Props) {
   const [excerpt, setExcerpt] = useState("");
   const [body, setBody] = useState("");
 
+  // société sélectionnée (objet léger – formulaire)
   const [company, setCompany] = useState<any | null>(null);
+  // société complète (source de vérité)
+  const [companyFull, setCompanyFull] = useState<any | null>(null);
+
   const [topics, setTopics] = useState<any[]>([]);
   const [persons, setPersons] = useState<any[]>([]);
 
   /* =========================================================
      STATE — VISUEL
   ========================================================= */
+  // visuel spécifique à la news (override éventuel)
   const [mediaId, setMediaId] = useState<string | null>(null);
 
   /* =========================================================
@@ -93,6 +98,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
         setTopics(n.topics || []);
         setPersons(n.persons || []);
 
+        // visuel news éventuel
         setMediaId(n.MEDIA_RECTANGLE_ID || null);
 
         setStep("CONTENT");
@@ -104,6 +110,31 @@ export default function NewsStudio({ mode, newsId }: Props) {
 
     load();
   }, [mode, newsId]);
+
+  /* =========================================================
+     LOAD FULL COMPANY (SOURCE DE VÉRITÉ)
+  ========================================================= */
+  useEffect(() => {
+    if (!company?.id_company && !company?.ID_COMPANY) {
+      setCompanyFull(null);
+      return;
+    }
+
+    const companyId =
+      company.id_company || company.ID_COMPANY;
+
+    async function loadCompany() {
+      try {
+        const res = await api.get(`/company/${companyId}`);
+        setCompanyFull(res.company);
+      } catch (e) {
+        console.error("Erreur chargement société complète", e);
+        setCompanyFull(null);
+      }
+    }
+
+    loadCompany();
+  }, [company]);
 
   /* =========================================================
      SAVE NEWS (CREATE / UPDATE)
@@ -153,8 +184,8 @@ export default function NewsStudio({ mode, newsId }: Props) {
   async function publishNews() {
     if (!internalNewsId) return;
 
-    if (!mediaId) {
-      alert("Un visuel est obligatoire");
+    if (!mediaId && !companyFull?.MEDIA_LOGO_RECTANGLE_ID) {
+      alert("Un visuel 16:9 est requis");
       return;
     }
 
@@ -251,9 +282,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
               newsId={internalNewsId}
               mediaId={mediaId}
               companyMediaId={
-                company?.MEDIA_LOGO_RECTANGLE_ID ||
-                company?.media_rectangle_id ||
-                null
+                companyFull?.MEDIA_LOGO_RECTANGLE_ID || null
               }
               onUpdated={setMediaId}
               onNext={() => setStep("PREVIEW")}
