@@ -5,16 +5,26 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { X } from "lucide-react";
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
+/* =========================================================
+   TYPES
+========================================================= */
+
 type NewsData = {
   id_news: string;
   title: string;
   excerpt?: string | null;
   body?: string | null;
   published_at: string;
-  visual_rect_url: string;
+
+  // visuel propre à la news (peut être null)
+  visual_rect_url?: string | null;
+
   company: {
     id_company: string;
     name: string;
+    media_logo_rectangle_id?: string | null;
   };
 };
 
@@ -22,6 +32,10 @@ type Props = {
   id: string;
   onClose?: () => void;
 };
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 export default function NewsDrawer({ id, onClose }: Props) {
   const router = useRouter();
@@ -33,10 +47,8 @@ export default function NewsDrawer({ id, onClose }: Props) {
      → nettoyage explicite de l’URL
   --------------------------------------------------------- */
   function close() {
-    // ferme visuellement
     setIsOpen(false);
 
-    // callback éventuel (DrawerContext)
     if (onClose) {
       onClose();
     }
@@ -45,6 +57,9 @@ export default function NewsDrawer({ id, onClose }: Props) {
     router.push("/news", { scroll: false });
   }
 
+  /* ---------------------------------------------------------
+     Chargement de la news
+  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       try {
@@ -55,10 +70,20 @@ export default function NewsDrawer({ id, onClose }: Props) {
         console.error(e);
       }
     }
+
     load();
   }, [id]);
 
   if (!data) return null;
+
+  /* ---------------------------------------------------------
+     VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
+  --------------------------------------------------------- */
+  const visualSrc =
+    data.visual_rect_url ||
+    (data.company?.media_logo_rectangle_id
+      ? `${GCS_BASE_URL}/companies/${data.company.media_logo_rectangle_id}`
+      : null);
 
   return (
     <div className="fixed inset-0 z-[100] flex">
@@ -68,7 +93,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
         onClick={close}
       />
 
-      {/* DRAWER */}
+      {/* DRAWER — DROITE */}
       <aside
         className={`
           relative ml-auto w-full md:w-[760px]
@@ -98,10 +123,10 @@ export default function NewsDrawer({ id, onClose }: Props) {
           </button>
         </div>
 
-        {/* VISUAL — HERO PARTENAIRE */}
-        {data.visual_rect_url && (
+        {/* VISUEL — HERO */}
+        {visualSrc && (
           <img
-            src={data.visual_rect_url}
+            src={visualSrc}
             alt={data.title}
             className="
               w-full
@@ -114,7 +139,6 @@ export default function NewsDrawer({ id, onClose }: Props) {
 
         {/* CONTENT */}
         <div className="px-5 py-6 space-y-8">
-
           {/* EXCERPT */}
           {data.excerpt && (
             <p className="text-base font-medium text-gray-800 max-w-2xl">
@@ -156,4 +180,3 @@ export default function NewsDrawer({ id, onClose }: Props) {
     </div>
   );
 }
-
