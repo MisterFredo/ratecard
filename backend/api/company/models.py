@@ -60,3 +60,13 @@ class CompanyOut(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     is_active: Optional[bool] = True
+
+class CompanyCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    website_url: Optional[str] = None
+
+    # 🆕
+    is_partner: Optional[bool] = False
+
