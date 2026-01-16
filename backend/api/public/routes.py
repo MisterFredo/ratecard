@@ -12,6 +12,8 @@ from api.public.models import (
     HomeAnalysisLine,
     DrawerNewsResponse,
     DrawerAnalysisResponse,
+    PublicMembersResponse,
+    PublicMemberResponse,
     LinkedInGenerateRequest,
 )
 
