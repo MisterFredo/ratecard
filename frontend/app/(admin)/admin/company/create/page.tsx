@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import VisualSection from "@/components/visuals/VisualSection";
 import EntityBaseForm from "@/components/forms/EntityBaseForm";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
@@ -24,9 +25,9 @@ export default function CreateCompany() {
 
   const [saving, setSaving] = useState(false);
 
-  // ---------------------------------------------------------
-  // CREATE
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     CREATE
+  --------------------------------------------------------- */
   async function save() {
     if (!name.trim()) {
       alert("Nom requis");
@@ -38,11 +39,9 @@ export default function CreateCompany() {
     try {
       const res = await api.post("/company/create", {
         name,
-        description: description || null,
+        description: description || null, // 🔑 HTML
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
-
-        // 🆕 statut partenaire
         is_partner: isPartner,
       });
 
@@ -64,11 +63,12 @@ export default function CreateCompany() {
     setSaving(false);
   }
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
+      {/* HEADER */}
       <div className="flex justify-between">
         <h1 className="text-2xl font-semibold text-ratecard-blue">
           Ajouter une société
@@ -78,15 +78,30 @@ export default function CreateCompany() {
         </Link>
       </div>
 
+      {/* INFOS DE BASE */}
       <EntityBaseForm
-        values={{ name, description, linkedinUrl, websiteUrl }}
+        values={{ name, linkedinUrl, websiteUrl }}
         onChange={{
           setName,
-          setDescription,
           setLinkedinUrl,
           setWebsiteUrl,
         }}
       />
+
+      {/* DESCRIPTION HTML */}
+      <div className="space-y-2">
+        <label className="block font-medium">
+          Description
+          <span className="ml-2 text-sm text-gray-500">
+            (contenu éditorial – HTML)
+          </span>
+        </label>
+
+        <HtmlEditor
+          value={description}
+          onChange={setDescription}
+        />
+      </div>
 
       {/* PARTENAIRE */}
       <div className="flex items-center gap-2">
@@ -100,6 +115,7 @@ export default function CreateCompany() {
         </label>
       </div>
 
+      {/* ACTION */}
       <button
         onClick={save}
         disabled={saving}
@@ -108,7 +124,7 @@ export default function CreateCompany() {
         {saving ? "Enregistrement…" : "Créer"}
       </button>
 
-      {/* VISUEL — POST CREATION (RECTANGLE ONLY) */}
+      {/* VISUEL — POST CRÉATION (RECTANGLE ONLY) */}
       {companyId && (
         <VisualSection
           entityId={companyId}
@@ -125,4 +141,3 @@ export default function CreateCompany() {
     </div>
   );
 }
-
