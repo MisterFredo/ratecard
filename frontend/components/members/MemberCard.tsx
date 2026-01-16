@@ -19,7 +19,7 @@ export default function MemberCard({
   visualRectId,
 }: Props) {
   const router = useRouter();
-  const { openDrawer } = useDrawer();
+  const { openLeftDrawer } = useDrawer();
 
   const visualUrl = visualRectId
     ? `${GCS_BASE_URL}/companies/${visualRectId}`
@@ -28,8 +28,13 @@ export default function MemberCard({
   return (
     <div
       onClick={() => {
-        router.push(`/members?member_id=${id}`, { scroll: false });
-        openDrawer("member", id);
+        // 🔑 synchro URL
+        router.push(`/members?member_id=${id}`, {
+          scroll: false,
+        });
+
+        // 🔑 ouverture drawer GAUCHE uniquement
+        openLeftDrawer("member", id);
       }}
       className="
         group cursor-pointer rounded-2xl border border-ratecard-border
