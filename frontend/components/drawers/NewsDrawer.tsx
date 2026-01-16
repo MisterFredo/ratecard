@@ -79,11 +79,12 @@ export default function NewsDrawer({ id, onClose }: Props) {
   /* ---------------------------------------------------------
      VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
   --------------------------------------------------------- */
-  const visualSrc =
-    data.visual_rect_url ||
-    (data.company?.media_logo_rectangle_id
-      ? `${GCS_BASE_URL}/companies/${data.company.media_logo_rectangle_id}`
-      : null);
+  const visualSrc = data.visual_rect_url
+     ? `${GCS_BASE_URL}/news/${data.visual_rect_url}`
+     : data.company?.media_logo_rectangle_id
+     ? `${GCS_BASE_URL}/companies/${data.company.media_logo_rectangle_id}`
+     : null;
+
 
   return (
     <div className="fixed inset-0 z-[100] flex">
