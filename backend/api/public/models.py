@@ -105,6 +105,40 @@ class LinkedInGenerateResponse(BaseModel):
     """
     text: str
 
+# =======================================================
+# MEMBERS — LISTE DES PARTENAIRES (PUBLIC)
+# =======================================================
+
+class PublicMemberItem(BaseModel):
+    id_company: str
+    name: str
+    description: Optional[str] = None
+    media_logo_rectangle_id: Optional[str] = None
+
+
+class PublicMembersResponse(BaseModel):
+    items: List[PublicMemberItem]
+
+
+# =======================================================
+# MEMBER — DRAWER PARTENAIRE (PUBLIC)
+# =======================================================
+
+class PublicMemberNewsItem(BaseModel):
+    id_news: str
+    title: str
+    excerpt: Optional[str] = None
+    published_at: datetime
+
+
+class PublicMemberResponse(BaseModel):
+    id_company: str
+    name: str
+    description: Optional[str] = None
+    media_logo_rectangle_id: Optional[str] = None
+    news: List[PublicMemberNewsItem]
+
+
 
 
 
