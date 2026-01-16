@@ -9,10 +9,11 @@ const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 type CompanyRow = {
   ID_COMPANY: string;
   NAME: string;
-  MEDIA_LOGO_SQUARE_ID?: string | null;
+
+  // 🔑 UN SEUL VISUEL
   MEDIA_LOGO_RECTANGLE_ID?: string | null;
 
-  // 🆕 PARTENAIRE
+  // PARTENAIRE
   IS_PARTNER?: boolean | null;
 };
 
@@ -30,7 +31,6 @@ export default function CompanyList() {
       try {
         const res = await api.get("/company/list");
         const rows: CompanyRow[] = res.companies || [];
-
         setCompanies(rows);
       } catch (e) {
         console.error(e);
@@ -73,18 +73,13 @@ export default function CompanyList() {
             <tr className="bg-gray-100 border-b text-left">
               <th className="p-2">Nom</th>
               <th className="p-2">Statut</th>
-              <th className="p-2">Logo carré</th>
-              <th className="p-2">Logo rectangle</th>
+              <th className="p-2">Visuel (16:9)</th>
               <th className="p-2 text-right">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {companies.map((c) => {
-              const squareUrl = c.MEDIA_LOGO_SQUARE_ID
-                ? `${GCS}/companies/COMPANY_${c.ID_COMPANY}_square.jpg`
-                : null;
-
               const rectUrl = c.MEDIA_LOGO_RECTANGLE_ID
                 ? `${GCS}/companies/COMPANY_${c.ID_COMPANY}_rect.jpg`
                 : null;
@@ -114,27 +109,17 @@ export default function CompanyList() {
                     )}
                   </td>
 
-                  {/* LOGO CARRÉ */}
-                  <td className="p-2">
-                    {squareUrl ? (
-                      <img
-                        src={squareUrl}
-                        className="w-12 h-12 rounded border object-cover"
-                      />
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-
-                  {/* LOGO RECTANGLE */}
+                  {/* VISUEL RECTANGLE */}
                   <td className="p-2">
                     {rectUrl ? (
                       <img
                         src={rectUrl}
-                        className="h-10 border rounded"
+                        className="h-10 border rounded object-cover"
                       />
                     ) : (
-                      "—"
+                      <span className="text-gray-400 text-sm">
+                        —
+                      </span>
                     )}
                   </td>
 
