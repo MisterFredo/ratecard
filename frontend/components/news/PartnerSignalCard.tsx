@@ -36,11 +36,11 @@ export default function PartnerSignalCard({
   /* ---------------------------------------------------------
      VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
   --------------------------------------------------------- */
-  const visualSrc =
-    visualRectUrl ||
-    (companyVisualRectId
-      ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
-      : null);
+  const visualSrc = visualRectUrl
+    ? `${GCS_BASE_URL}/news/${visualRectUrl}`
+    : companyVisualRectId
+    ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
+    : null;
 
   /* ========================================================
      MODE DRAWER (HOME / NEWS PAGE)
