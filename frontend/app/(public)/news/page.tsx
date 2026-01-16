@@ -15,8 +15,11 @@ type NewsItem = {
   ID_NEWS: string;
   TITLE: string;
   EXCERPT?: string | null;
-  VISUAL_RECT_URL: string;
+  VISUAL_RECT_URL: string | null;
   PUBLISHED_AT?: string | null;
+
+  // 🔑 visuel société pour fallback
+  COMPANY_MEDIA_LOGO_RECTANGLE_ID?: string | null;
 };
 
 const API_BASE =
@@ -42,7 +45,7 @@ async function fetchNews(): Promise<NewsItem[]> {
 
 export default function NewsPage() {
   const [news, setNews] = useState<NewsItem[]>([]);
-  const { openDrawer } = useDrawer();
+  const { openRightDrawer } = useDrawer();
   const searchParams = useSearchParams();
 
   // 🔒 garde-fou anti-réouverture
@@ -74,15 +77,14 @@ export default function NewsPage() {
       return;
     }
 
-    // nouvelle ouverture légitime
+    // nouvelle ouverture légitime — DRAWER DROITE
     lastOpenedId.current = newsId;
-    openDrawer("news", newsId);
+    openRightDrawer("news", newsId);
 
-  }, [searchParams, openDrawer]);
+  }, [searchParams, openRightDrawer]);
 
   return (
     <div className="space-y-12 md:space-y-14">
-
       {/* =====================================================
           LISTE DES NEWS — DRAWER ADEX-LIKE
       ===================================================== */}
@@ -99,13 +101,15 @@ export default function NewsPage() {
               title={n.TITLE}
               excerpt={n.EXCERPT}
               visualRectUrl={n.VISUAL_RECT_URL}
+              companyVisualRectId={
+                n.COMPANY_MEDIA_LOGO_RECTANGLE_ID
+              }
               publishedAt={n.PUBLISHED_AT || ""}
               openInDrawer
             />
           ))}
         </div>
       )}
-
     </div>
   );
 }
