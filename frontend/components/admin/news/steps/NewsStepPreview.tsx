@@ -22,8 +22,9 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
       } catch (e) {
         console.error(e);
         alert("Erreur chargement aperçu news");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
 
     load();
@@ -32,12 +33,21 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
   if (loading) return <p>Chargement…</p>;
   if (!news) return <p>News introuvable</p>;
 
+  // ---------------------------------------------------------
+  // VISUEL — NEWS > SOCIÉTÉ (RECTANGLE)
+  // ---------------------------------------------------------
+  const visualSrc = news.MEDIA_RECTANGLE_ID
+    ? `${GCS_BASE_URL}/news/${news.MEDIA_RECTANGLE_ID}`
+    : news.company?.MEDIA_LOGO_RECTANGLE_ID
+    ? `${GCS_BASE_URL}/companies/${news.company.MEDIA_LOGO_RECTANGLE_ID}`
+    : null;
+
   return (
     <div className="space-y-6 max-w-2xl">
       {/* VISUEL */}
-      {news.MEDIA_RECTANGLE_ID && (
+      {visualSrc && (
         <img
-          src={`${GCS_BASE_URL}/news/${news.MEDIA_RECTANGLE_ID}`}
+          src={visualSrc}
           className="w-full max-h-[260px] object-cover border rounded"
         />
       )}
@@ -106,3 +116,4 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
     </div>
   );
 }
+
