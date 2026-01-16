@@ -16,7 +16,7 @@ export default function EditEvent({ params }: { params: { id: string } }) {
   const [saving, setSaving] = useState(false);
 
   const [label, setLabel] = useState("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(""); // 🔑 HTML éditorial
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
 
@@ -32,15 +32,15 @@ export default function EditEvent({ params }: { params: { id: string } }) {
   // 🎨 Event color
   const [eventColor, setEventColor] = useState<string>("");
 
-  // 🧭 CONTEXTE ÉVÉNEMENTIEL
+  // 🧭 CONTEXTE ÉVÉNEMENTIEL (HOME)
   const [contextHtml, setContextHtml] = useState("");
 
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  // ---------------------------------------------------------
-  // LOAD
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     LOAD
+  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -49,8 +49,8 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         const res = await api.get(`/event/${id}`);
         const e = res.event;
 
-        setLabel(e.LABEL);
-        setDescription(e.DESCRIPTION || "");
+        setLabel(e.LABEL || "");
+        setDescription(e.DESCRIPTION || ""); // 🔑 HTML
         setSeoTitle(e.SEO_TITLE || "");
         setSeoDescription(e.SEO_DESCRIPTION || "");
 
@@ -92,16 +92,16 @@ export default function EditEvent({ params }: { params: { id: string } }) {
     load();
   }, [id]);
 
-  // ---------------------------------------------------------
-  // SAVE
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     SAVE
+  --------------------------------------------------------- */
   async function save() {
     setSaving(true);
 
     try {
       await api.put(`/event/update/${id}`, {
         label,
-        description: description || null,
+        description: description || null, // 🔑 HTML
         seo_title: seoTitle || null,
         seo_description: seoDescription || null,
 
@@ -129,11 +129,12 @@ export default function EditEvent({ params }: { params: { id: string } }) {
 
   if (loading) return <p>Chargement…</p>;
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <div className="space-y-10">
+      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold">
           Modifier l’événement
@@ -145,19 +146,22 @@ export default function EditEvent({ params }: { params: { id: string } }) {
 
       {/* ===================== BASE ===================== */}
       <EntityBaseForm
-        values={{
-          name: label,
-          description,
-        }}
-        onChange={{
-          setName: setLabel,
-          setDescription,
-        }}
-        labels={{
-          name: "Nom de l’événement",
-          description: "Description éditoriale",
-        }}
+        values={{ name: label }}
+        onChange={{ setName: setLabel }}
+        labels={{ name: "Nom de l’événement" }}
       />
+
+      {/* ===================== DESCRIPTION HTML ===================== */}
+      <div className="space-y-2 max-w-3xl">
+        <label className="block text-sm font-medium">
+          Description éditoriale
+        </label>
+
+        <HtmlEditor
+          value={description}
+          onChange={setDescription}
+        />
+      </div>
 
       {/* ===================== SEO ===================== */}
       <div className="space-y-4 max-w-2xl">
