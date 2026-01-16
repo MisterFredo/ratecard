@@ -60,3 +60,17 @@ class NewsOut(BaseModel):
     company: dict
     topics: list = []
     persons: list = []
+
+# ============================================================
+# LINKEDIN — POST LIÉ À UNE NEWS
+# ============================================================
+
+class NewsLinkedInPost(BaseModel):
+    text: str
+    mode: str  # "manual" | "ai"
+
+
+class NewsLinkedInPostResponse(BaseModel):
+    text: Optional[str] = None
+    mode: Optional[str] = None
+
