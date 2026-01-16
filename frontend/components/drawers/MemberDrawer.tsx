@@ -36,13 +36,13 @@ type Props = {
 
 export default function MemberDrawer({ id, onClose }: Props) {
   const router = useRouter();
-  const { openDrawer } = useDrawer();
+  const { openRightDrawer } = useDrawer();
 
   const [data, setData] = useState<MemberData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   /* ---------------------------------------------------------
-     Fermeture du drawer (gauche)
+     Fermeture du drawer (GAUCHE)
      → nettoyage URL
   --------------------------------------------------------- */
   function close() {
@@ -149,11 +149,8 @@ export default function MemberDrawer({ id, onClose }: Props) {
                   <li
                     key={n.id_news}
                     onClick={() => {
-                      router.push(
-                        `/members?member_id=${id}`,
-                        { scroll: false }
-                      );
-                      openDrawer("news", n.id_news);
+                      // 🔑 ouverture drawer DROITE uniquement
+                      openRightDrawer("news", n.id_news);
                     }}
                     className="
                       cursor-pointer p-3 rounded border border-gray-200
@@ -185,3 +182,4 @@ export default function MemberDrawer({ id, onClose }: Props) {
     </div>
   );
 }
+
