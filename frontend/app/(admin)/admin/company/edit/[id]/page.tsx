@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import VisualSection from "@/components/visuals/VisualSection";
 import EntityBaseForm from "@/components/forms/EntityBaseForm";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
@@ -25,9 +26,9 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   // 🔑 UN SEUL VISUEL : RECTANGLE
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  // ---------------------------------------------------------
-  // LOAD
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     LOAD
+  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -36,7 +37,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         const res = await api.get(`/company/${id}`);
         const c = res.company;
 
-        setName(c.NAME);
+        setName(c.NAME || "");
         setDescription(c.DESCRIPTION || "");
         setLinkedinUrl(c.LINKEDIN_URL || "");
         setWebsiteUrl(c.WEBSITE_URL || "");
@@ -61,20 +62,18 @@ export default function EditCompany({ params }: { params: { id: string } }) {
     load();
   }, [id]);
 
-  // ---------------------------------------------------------
-  // SAVE
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     SAVE
+  --------------------------------------------------------- */
   async function save() {
     setSaving(true);
 
     try {
       await api.put(`/company/update/${id}`, {
         name,
-        description: description || null,
+        description: description || null, // 🔑 HTML
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
-
-        // statut partenaire
         is_partner: isPartner,
       });
 
@@ -91,11 +90,12 @@ export default function EditCompany({ params }: { params: { id: string } }) {
     return <p>Chargement…</p>;
   }
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
+      {/* HEADER */}
       <div className="flex justify-between">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
           Modifier la société
@@ -105,15 +105,30 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         </Link>
       </div>
 
+      {/* INFOS DE BASE */}
       <EntityBaseForm
-        values={{ name, description, linkedinUrl, websiteUrl }}
+        values={{ name, linkedinUrl, websiteUrl }}
         onChange={{
           setName,
-          setDescription,
           setLinkedinUrl,
           setWebsiteUrl,
         }}
       />
+
+      {/* DESCRIPTION HTML */}
+      <div className="space-y-2">
+        <label className="block font-medium">
+          Description
+          <span className="ml-2 text-sm text-gray-500">
+            (contenu éditorial – HTML)
+          </span>
+        </label>
+
+        <HtmlEditor
+          value={description}
+          onChange={setDescription}
+        />
+      </div>
 
       {/* PARTENAIRE */}
       <div className="flex items-center gap-2">
@@ -127,6 +142,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         </label>
       </div>
 
+      {/* ACTION */}
       <button
         className="bg-ratecard-blue px-4 py-2 text-white rounded"
         onClick={save}
@@ -150,3 +166,4 @@ export default function EditCompany({ params }: { params: { id: string } }) {
     </div>
   );
 }
+
