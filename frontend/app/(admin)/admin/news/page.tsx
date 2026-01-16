@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 type NewsLite = {
   ID_NEWS: string;
@@ -29,6 +29,22 @@ export default function NewsListPage() {
       alert("Erreur chargement news");
     }
     setLoading(false);
+  }
+
+  async function deleteNews(id: string) {
+    const confirmed = confirm(
+      "Supprimer cette news ? Elle sera archivée et ne sera plus visible."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/news/${id}`);
+      await load();
+    } catch (e) {
+      console.error(e);
+      alert("Erreur suppression news");
+    }
   }
 
   useEffect(() => {
@@ -105,19 +121,39 @@ export default function NewsListPage() {
 
               {/* ACTIONS */}
               <td className="p-2 text-right">
-                <Link
-                  href={`/admin/news/edit/${n.ID_NEWS}`}
-                  className="inline-flex items-center gap-1 text-ratecard-blue hover:text-ratecard-blue/80"
-                  title="Modifier la news"
-                >
-                  <Pencil size={16} />
-                </Link>
+                <div className="inline-flex items-center gap-3">
+                  <Link
+                    href={`/admin/news/edit/${n.ID_NEWS}`}
+                    className="text-ratecard-blue hover:text-ratecard-blue/80"
+                    title="Modifier la news"
+                  >
+                    <Pencil size={16} />
+                  </Link>
+
+                  <button
+                    onClick={() => deleteNews(n.ID_NEWS)}
+                    className="text-red-600 hover:text-red-800"
+                    title="Supprimer la news"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
+
+          {news.length === 0 && (
+            <tr>
+              <td
+                colSpan={5}
+                className="p-4 text-center text-gray-500"
+              >
+                Aucune news pour le moment.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
   );
 }
-
