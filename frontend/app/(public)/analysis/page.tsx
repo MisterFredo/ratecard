@@ -49,7 +49,7 @@ async function fetchAnalyses(): Promise<AnalysisItem[]> {
 
 export default function AnalysisPage() {
   const [analyses, setAnalyses] = useState<AnalysisItem[]>([]);
-  const { openDrawer } = useDrawer();
+  const { openRightDrawer } = useDrawer();
   const searchParams = useSearchParams();
 
   // 🔒 garde-fou anti-réouverture
@@ -83,13 +83,12 @@ export default function AnalysisPage() {
 
     // nouvelle ouverture légitime
     lastOpenedId.current = analysisId;
-    openDrawer("analysis", analysisId);
+    openRightDrawer("analysis", analysisId);
 
-  }, [searchParams, openDrawer]);
+  }, [searchParams, openRightDrawer]);
 
   return (
     <div className="space-y-12">
-
       {/* =====================================================
           ANALYSES — GRILLE
       ===================================================== */}
@@ -118,9 +117,9 @@ export default function AnalysisPage() {
           />
         ))}
       </div>
-
     </div>
   );
 }
+
 
 
