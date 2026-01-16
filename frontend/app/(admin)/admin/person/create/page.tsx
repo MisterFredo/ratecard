@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import VisualSectionPerson from "@/components/visuals/VisualSectionPerson";
 import EntityBaseForm from "@/components/forms/EntityBaseForm";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 import CompanySelector, {
   Company,
 } from "@/components/admin/CompanySelector";
@@ -13,7 +14,7 @@ const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 export default function CreatePerson() {
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(""); // 🔑 HTML éditorial
   const [linkedinUrl, setLinkedinUrl] = useState("");
 
   // Champs spécifiques Person
@@ -24,9 +25,9 @@ export default function CreatePerson() {
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  // ---------------------------------------------------------
-  // CREATE
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     CREATE
+  --------------------------------------------------------- */
   async function save() {
     if (!name.trim()) {
       alert("Nom requis");
@@ -37,9 +38,12 @@ export default function CreatePerson() {
       const res = await api.post("/person/create", {
         name,
         title: title || null,
-        description: description || null,
+        description: description || null, // 🔑 HTML
         linkedin_url: linkedinUrl || null,
-        id_company: companies.length > 0 ? companies[0].id_company : null,
+        id_company:
+          companies.length > 0
+            ? companies[0].id_company
+            : null,
       });
 
       if (!res.id_person) {
@@ -55,11 +59,12 @@ export default function CreatePerson() {
     }
   }
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
+      {/* HEADER */}
       <div className="flex justify-between">
         <h1 className="text-2xl font-semibold">
           Ajouter une personne
@@ -69,12 +74,14 @@ export default function CreatePerson() {
         </Link>
       </div>
 
-      {/* FORM BASE */}
+      {/* FORM STRUCTURE */}
       <EntityBaseForm
-        values={{ name, description, linkedinUrl }}
+        values={{
+          name,
+          linkedinUrl,
+        }}
         onChange={{
           setName,
-          setDescription,
           setLinkedinUrl,
         }}
         labels={{
@@ -82,7 +89,19 @@ export default function CreatePerson() {
         }}
       />
 
-      {/* TITLE */}
+      {/* DESCRIPTION HTML */}
+      <div className="space-y-2 max-w-2xl">
+        <label className="block text-sm font-medium">
+          Description éditoriale
+        </label>
+
+        <HtmlEditor
+          value={description}
+          onChange={setDescription}
+        />
+      </div>
+
+      {/* TITLE / ROLE */}
       <div className="max-w-2xl">
         <label className="block text-sm font-medium mb-1">
           Fonction / Titre
@@ -106,6 +125,7 @@ export default function CreatePerson() {
         </p>
       </div>
 
+      {/* ACTION */}
       <button
         onClick={save}
         className="bg-ratecard-blue px-4 py-2 text-white rounded"
@@ -113,7 +133,7 @@ export default function CreatePerson() {
         Créer
       </button>
 
-      {/* VISUALS — POST CREATION */}
+      {/* VISUALS — POST CRÉATION */}
       {personId && (
         <VisualSectionPerson
           personId={personId}
