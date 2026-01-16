@@ -33,7 +33,7 @@ export default function NewsListPage() {
 
   async function deleteNews(id: string) {
     const confirmed = confirm(
-      "Supprimer cette news ? Elle sera archivée et ne sera plus visible."
+      "Supprimer définitivement cette news ?"
     );
 
     if (!confirmed) return;
