@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 const SITE_URL = "https://ratecard-frontend.onrender.com";
@@ -11,19 +11,64 @@ type Props = {
   excerpt: string;
 };
 
-type Mode = "MANUAL" | "AI";
+type Mode = "manual" | "ai";
 
 export default function NewsStepLinkedIn({
   newsId,
   title,
   excerpt,
 }: Props) {
-  const [mode, setMode] = useState<Mode>("MANUAL");
+  const [mode, setMode] = useState<Mode>("manual");
   const [text, setText] = useState("");
+  const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   /* ---------------------------------------------------------
-     IA — Génération depuis UNE news
+     LOAD EXISTING LINKEDIN POST (IF ANY)
+  --------------------------------------------------------- */
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await api.get(`/news/${newsId}/linkedin`);
+
+        if (res?.text) {
+          setText(res.text);
+          setMode(res.mode || "manual");
+        }
+      } catch (e) {
+        console.error("Erreur chargement post LinkedIn", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [newsId]);
+
+  /* ---------------------------------------------------------
+     SAVE (UPSERT)
+  --------------------------------------------------------- */
+  async function save(currentText = text, currentMode = mode) {
+    if (!currentText.trim()) return;
+
+    setSaving(true);
+
+    try {
+      await api.post(`/news/${newsId}/linkedin`, {
+        text: currentText,
+        mode: currentMode,
+      });
+    } catch (e) {
+      console.error("Erreur sauvegarde post LinkedIn", e);
+      alert("Erreur sauvegarde du post LinkedIn");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  /* ---------------------------------------------------------
+     GENERATE WITH AI (ONE SOURCE)
   --------------------------------------------------------- */
   async function generateWithAI() {
     setGenerating(true);
@@ -41,10 +86,12 @@ export default function NewsStepLinkedIn({
 
       if (res?.text) {
         setText(res.text);
+        setMode("ai");
+        await save(res.text, "ai");
       }
     } catch (e) {
-      console.error("Erreur génération IA LinkedIn (news)", e);
-      alert("Erreur lors de la génération du post LinkedIn");
+      console.error("Erreur génération IA LinkedIn", e);
+      alert("Erreur lors de la génération IA");
     } finally {
       setGenerating(false);
     }
@@ -58,6 +105,10 @@ export default function NewsStepLinkedIn({
     alert("Post LinkedIn copié. Prêt à être publié.");
   }
 
+  if (loading) {
+    return <div className="text-sm text-gray-500">Chargement…</div>;
+  }
+
   /* ---------------------------------------------------------
      UI
   --------------------------------------------------------- */
@@ -68,8 +119,8 @@ export default function NewsStepLinkedIn({
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="radio"
-            checked={mode === "MANUAL"}
-            onChange={() => setMode("MANUAL")}
+            checked={mode === "manual"}
+            onChange={() => setMode("manual")}
           />
           <span>Manuel</span>
         </label>
@@ -77,27 +128,31 @@ export default function NewsStepLinkedIn({
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="radio"
-            checked={mode === "AI"}
-            onChange={() => setMode("AI")}
+            checked={mode === "ai"}
+            onChange={() => setMode("ai")}
           />
           <span>Assisté IA</span>
         </label>
       </div>
 
-      {/* TEXTE */}
+      {/* TEXT */}
       <div>
         <label className="block font-medium mb-1">
           Texte du post LinkedIn
         </label>
         <textarea
-          className="w-full border rounded p-3 min-h-[240px]"
+          className="w-full border rounded p-3 min-h-[260px]"
           placeholder={
-            mode === "MANUAL"
+            mode === "manual"
               ? "Rédige le texte du post LinkedIn…"
               : "Clique sur « Générer avec l’IA » pour produire un texte"
           }
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            setMode("manual");
+          }}
+          onBlur={() => save()}
         />
         <div className="text-xs text-gray-500 mt-1">
           {text.length} caractères
@@ -106,7 +161,7 @@ export default function NewsStepLinkedIn({
 
       {/* ACTIONS */}
       <div className="flex gap-3 pt-2">
-        {mode === "AI" && (
+        {mode === "ai" && (
           <button
             onClick={generateWithAI}
             disabled={generating}
@@ -125,11 +180,17 @@ export default function NewsStepLinkedIn({
         >
           Copier le post
         </button>
+
+        {saving && (
+          <span className="text-xs text-gray-500 self-center">
+            Sauvegarde…
+          </span>
+        )}
       </div>
 
       {/* INFO */}
       <div className="text-xs text-gray-500 pt-2">
-        Le lien vers la news pourra être ajouté manuellement dans LinkedIn :
+        Lien public de la news :
         <br />
         {SITE_URL}/news?news_id={newsId}
       </div>
