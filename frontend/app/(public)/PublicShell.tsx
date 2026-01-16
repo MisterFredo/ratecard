@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   FileText,
   Newspaper,
+  Users,
   Linkedin,
   Mail,
   Menu,
@@ -31,9 +32,13 @@ export default function PublicShell({
     return pathname === path || pathname.startsWith(`${path}/`);
   }
 
+  /* =========================================================
+     NAVIGATION PRINCIPALE
+  ========================================================= */
   const mainNav = [
     { href: "/analysis", label: "Analyses", icon: FileText },
     { href: "/news", label: "News", icon: Newspaper },
+    { href: "/members", label: "Membres", icon: Users },
   ];
 
   const SidebarContent = (
