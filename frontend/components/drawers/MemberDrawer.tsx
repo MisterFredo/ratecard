@@ -110,31 +110,28 @@ export default function MemberDrawer({ id, onClose }: Props) {
           </button>
         </div>
 
-        {/* VISUEL */}
+        {/* LOGO / VISUEL PARTENAIRE */}
         {visualUrl && (
-          <img
-            src={visualUrl}
-            alt={data.name}
-            className="
-              w-full
-              h-auto
-              max-h-[300px]
-              object-cover
-            "
-          />
+          <div className="flex justify-center bg-gray-50 py-8">
+            <img
+              src={visualUrl}
+              alt={data.name}
+              className="max-h-[140px] w-auto object-contain"
+            />
+          </div>
         )}
 
         {/* CONTENT */}
-        <div className="px-5 py-6 space-y-8">
+        <div className="px-5 py-8 space-y-10">
           {/* DESCRIPTION */}
           {data.description && (
-            <p className="text-base text-gray-800">
+            <div className="max-w-2xl text-base leading-relaxed text-gray-800">
               {data.description}
-            </p>
+            </div>
           )}
 
           {/* NEWS DU PARTENAIRE */}
-          <section className="space-y-4">
+          <section className="pt-8 border-t border-gray-200 space-y-4">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
               Actualités
             </h2>
@@ -153,7 +150,7 @@ export default function MemberDrawer({ id, onClose }: Props) {
                       openRightDrawer("news", n.id_news);
                     }}
                     className="
-                      cursor-pointer p-3 rounded border border-gray-200
+                      cursor-pointer p-4 rounded border border-gray-200
                       hover:bg-gray-50 transition
                     "
                   >
@@ -182,4 +179,5 @@ export default function MemberDrawer({ id, onClose }: Props) {
     </div>
   );
 }
+
 
