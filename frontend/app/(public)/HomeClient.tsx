@@ -34,7 +34,7 @@ type MemberItem = {
 type Props = {
   news: NewsItem[];
   analyses: AnalysisItem[];
-  members?: MemberItem[];
+  members?: MemberItem[]; // optionnel pour ne pas bloquer la Home
 };
 
 /* =========================================================
@@ -109,12 +109,14 @@ export default function HomeClient({
           </Link>
         </div>
 
-        <div className="
-          grid grid-cols-1
-          sm:grid-cols-2
-          lg:grid-cols-3
-          gap-6
-        ">
+        <div
+          className="
+            grid grid-cols-1
+            sm:grid-cols-2
+            lg:grid-cols-3
+            gap-6
+          "
+        >
           {latestNews.map((n) => (
             <PartnerSignalCard
               key={n.id}
@@ -169,36 +171,41 @@ export default function HomeClient({
       {/* =====================================================
           MEMBRES PARTENAIRES
       ===================================================== */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
-            Membres partenaires
-          </h2>
-          <Link
-            href="/members"
-            className="text-sm text-gray-500 hover:underline"
-          >
-            Voir tous les membres
-          </Link>
-        </div>
+      {featuredMembers.length > 0 && (
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
+              Membres partenaires
+            </h2>
+            <Link
+              href="/members"
+              className="text-sm text-gray-500 hover:underline"
+            >
+              Voir tous les membres
+            </Link>
+          </div>
 
-        <div className="
-          grid grid-cols-1
-          sm:grid-cols-2
-          lg:grid-cols-3
-          gap-6
-        ">
-          {featuredMembers.map((m) => (
-            <MemberCard
-              key={m.id}
-              id={m.id}
-              name={m.name}
-              description={m.description}
-              visualRectId={m.visualRectId}
-            />
-          ))}
-        </div>
-      </section>
+          <div
+            className="
+              grid grid-cols-1
+              sm:grid-cols-2
+              lg:grid-cols-3
+              gap-6
+            "
+          >
+            {featuredMembers.map((m) => (
+              <MemberCard
+                key={m.id}
+                id={m.id}
+                name={m.name}
+                description={m.description}
+                visualRectId={m.visualRectId}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
+
