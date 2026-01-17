@@ -31,33 +31,16 @@ export default function HomeClient({ news, members }: Props) {
       new Date(a.published_at).getTime()
   );
 
-  const featuredNews = sortedNews[0];
-  const otherNews = sortedNews.slice(1, 10);
+  const featuredNews = sortedNews[0];     // UNE
+  const otherNews = sortedNews.slice(1);  // reste des news
+
   const featuredMembers = members.slice(0, 6);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 space-y-24">
+    <div className="max-w-7xl mx-auto px-4">
 
       {/* =====================================================
-          LA UNE — bloc dédié (rythme éditorial)
-      ===================================================== */}
-      {featuredNews && (
-        <section className="space-y-6">
-          <PartnerSignalCard
-            id={featuredNews.id}
-            title={featuredNews.title}
-            excerpt={featuredNews.excerpt}
-            visualRectUrl={featuredNews.visual_rect_url}
-            companyVisualRectId={featuredNews.company_visual_rect_id}
-            publishedAt={featuredNews.published_at}
-            openInDrawer
-            variant="featured"
-          />
-        </section>
-      )}
-
-      {/* =====================================================
-          AUTRES ACTUALITÉS — grille homogène
+          GRILLE PRINCIPALE — 3 COLONNES, LIGNES FIXES
       ===================================================== */}
       <section
         className="
@@ -65,8 +48,30 @@ export default function HomeClient({ news, members }: Props) {
           md:grid-cols-2
           lg:grid-cols-3
           gap-6
+          auto-rows-[340px]
         "
       >
+        {/* =================================================
+            UNE — occupe EXACTEMENT A-B-D-E
+        ================================================= */}
+        {featuredNews && (
+          <div className="lg:col-span-2 lg:row-span-2">
+            <PartnerSignalCard
+              id={featuredNews.id}
+              title={featuredNews.title}
+              excerpt={featuredNews.excerpt}
+              visualRectUrl={featuredNews.visual_rect_url}
+              companyVisualRectId={featuredNews.company_visual_rect_id}
+              publishedAt={featuredNews.published_at}
+              openInDrawer
+              variant="featured"
+            />
+          </div>
+        )}
+
+        {/* =================================================
+            AUTRES CARTES NEWS (C, F, G, H, I…)
+        ================================================= */}
         {otherNews.map((n) => (
           <PartnerSignalCard
             key={n.id}
@@ -82,9 +87,9 @@ export default function HomeClient({ news, members }: Props) {
       </section>
 
       {/* =====================================================
-          MEMBRES PARTENAIRES — bloc séparé
+          MEMBRES — BLOC SUIVANT (inchangé)
       ===================================================== */}
-      <section className="space-y-6">
+      <section className="mt-20 space-y-6">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
           Membres partenaires
         </h2>
