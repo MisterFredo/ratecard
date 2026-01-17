@@ -53,21 +53,77 @@ export default function PartnerSignalCard({
     openRightDrawer("news", id);
   }
 
+  /* ========================================================
+     MODE HOME / DRAWER
+  ======================================================== */
   if (openInDrawer) {
+    /* =====================================================
+       UNE — CARTE x4 (GRID INTERNE 2 ROWS)
+    ===================================================== */
+    if (isFeatured) {
+      return (
+        <article
+          onClick={open}
+          className="
+            group cursor-pointer overflow-hidden rounded-2xl
+            border border-ratecard-border
+            bg-white shadow-card transition
+            hover:shadow-cardHover
+            h-full
+            grid grid-rows-2
+          "
+        >
+          {/* IMAGE = 1ère ROW */}
+          <div className="relative w-full overflow-hidden bg-ratecard-light">
+            {visualSrc ? (
+              <img
+                src={visualSrc}
+                alt={title}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-sm text-gray-400">
+                Aucun visuel
+              </div>
+            )}
+          </div>
+
+          {/* TEXTE = 2e ROW */}
+          <div className="p-4 flex flex-col">
+            <h3 className="text-base font-semibold leading-snug text-gray-900">
+              {title}
+            </h3>
+
+            {excerpt && (
+              <p className="mt-2 text-sm text-gray-600 line-clamp-6">
+                {excerpt}
+              </p>
+            )}
+
+            <div className="mt-auto text-xs text-gray-400">
+              Publié le{" "}
+              {new Date(publishedAt).toLocaleDateString("fr-FR")}
+            </div>
+          </div>
+        </article>
+      );
+    }
+
+    /* =====================================================
+       CARTES NORMALES — 1x1 (INCHANGÉ)
+    ===================================================== */
     return (
       <article
         onClick={open}
-        className={`
+        className="
           group cursor-pointer overflow-hidden rounded-2xl
           border border-ratecard-border
           bg-white shadow-card transition
           hover:shadow-cardHover
-          flex flex-col
-          ${isFeatured ? "" : "h-full"}
-        `}
+          h-full flex flex-col
+        "
       >
-
-        {/* VISUEL — STRICTEMENT IDENTIQUE PARTOUT */}
+        {/* VISUEL */}
         <div className="relative h-40 w-full overflow-hidden bg-ratecard-light">
           {visualSrc ? (
             <img
@@ -82,24 +138,14 @@ export default function PartnerSignalCard({
           )}
         </div>
 
-        {/* CONTENU — SEULE DIFFÉRENCE = EXCERPT PLUS LONG */}
+        {/* TEXTE */}
         <div className="p-4 flex flex-col flex-1">
-          <h3
-            className={`
-              font-semibold leading-snug text-gray-900
-              ${isFeatured ? "text-base" : "text-sm"}
-            `}
-          >
+          <h3 className="text-sm font-semibold leading-snug text-gray-900">
             {title}
           </h3>
 
           {excerpt && (
-            <p
-              className={`
-                mt-2 text-sm text-gray-600
-                ${isFeatured ? "line-clamp-6" : "line-clamp-3"}
-              `}
-            >
+            <p className="mt-2 text-sm text-gray-600 line-clamp-3">
               {excerpt}
             </p>
           )}
@@ -113,7 +159,9 @@ export default function PartnerSignalCard({
     );
   }
 
-  /* fallback externe inchangé */
+  /* ========================================================
+     MODE NAVIGATION EXTERNE (INCHANGÉ)
+  ======================================================== */
   return (
     <Link
       href={`/news?news_id=${id}`}
