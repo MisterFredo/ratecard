@@ -6,6 +6,10 @@ import { useDrawer } from "@/contexts/DrawerContext";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 type Props = {
   id: string;
   title: string;
@@ -19,7 +23,14 @@ type Props = {
 
   publishedAt: string;
   openInDrawer?: boolean;
+
+  // VARIANTE ÉDITORIALE
+  variant?: "default" | "featured";
 };
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 export default function PartnerSignalCard({
   id,
@@ -29,9 +40,12 @@ export default function PartnerSignalCard({
   companyVisualRectId,
   publishedAt,
   openInDrawer = false,
+  variant = "default",
 }: Props) {
   const { openRightDrawer } = useDrawer();
   const router = useRouter();
+
+  const isFeatured = variant === "featured";
 
   /* ---------------------------------------------------------
      VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
@@ -42,29 +56,42 @@ export default function PartnerSignalCard({
     ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
     : null;
 
+  /* ---------------------------------------------------------
+     HANDLER OUVERTURE
+  --------------------------------------------------------- */
+  function open() {
+    router.push(`/news?news_id=${id}`, { scroll: false });
+    openRightDrawer("news", id);
+  }
+
   /* ========================================================
-     MODE DRAWER (HOME / NEWS PAGE)
+     MODE DRAWER (HOME / LISTING)
   ======================================================== */
   if (openInDrawer) {
     return (
-      <div
-        onClick={() => {
-          router.push(`/news?news_id=${id}`, { scroll: false });
-          openRightDrawer("news", id);
-        }}
+      <article
+        onClick={open}
         className="
-          group cursor-pointer rounded-2xl border border-ratecard-border
+          group cursor-pointer rounded-2xl
+          border border-ratecard-border
           bg-white shadow-card transition
           hover:shadow-cardHover overflow-hidden
         "
       >
-        {/* VISUEL */}
-        <div className="relative h-44 w-full bg-ratecard-light overflow-hidden">
+        {/* =====================================================
+            VISUEL — RYTHME ÉDITORIAL
+        ===================================================== */}
+        <div
+          className={`
+            relative w-full overflow-hidden bg-ratecard-light
+            ${isFeatured ? "aspect-[16/9]" : "h-44"}
+          `}
+        >
           {visualSrc ? (
             <img
               src={visualSrc}
               alt={title}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+              className="absolute inset-0 h-full w-full object-cover"
             />
           ) : (
             <div className="h-full w-full flex items-center justify-center text-sm text-gray-400">
@@ -73,14 +100,26 @@ export default function PartnerSignalCard({
           )}
         </div>
 
-        {/* CONTENU */}
-        <div className="p-4">
-          <h3 className="text-sm font-semibold text-gray-900 leading-snug group-hover:underline">
+        {/* =====================================================
+            CONTENU
+        ===================================================== */}
+        <div className={`p-4 ${isFeatured ? "md:p-6" : ""}`}>
+          <h3
+            className={`
+              font-semibold leading-snug text-gray-900
+              ${isFeatured ? "text-lg" : "text-sm"}
+            `}
+          >
             {title}
           </h3>
 
           {excerpt && (
-            <p className="mt-2 text-sm text-gray-600 line-clamp-3">
+            <p
+              className={`
+                mt-2 text-gray-600
+                ${isFeatured ? "text-base line-clamp-none" : "text-sm line-clamp-3"}
+              `}
+            >
               {excerpt}
             </p>
           )}
@@ -90,7 +129,7 @@ export default function PartnerSignalCard({
             {new Date(publishedAt).toLocaleDateString("fr-FR")}
           </div>
         </div>
-      </div>
+      </article>
     );
   }
 
@@ -101,7 +140,8 @@ export default function PartnerSignalCard({
     <Link
       href={`/news?news_id=${id}`}
       className="
-        group block rounded-2xl border border-ratecard-border
+        group block rounded-2xl
+        border border-ratecard-border
         bg-white shadow-card transition
         hover:shadow-cardHover overflow-hidden
       "
@@ -141,6 +181,3 @@ export default function PartnerSignalCard({
     </Link>
   );
 }
-
-
-
