@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useDrawer } from "@/contexts/DrawerContext";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
-import AnalysisCard from "@/components/analysis/AnalysisCard";
+import MemberCard from "@/components/members/MemberCard";
 
 /* =========================================================
    TYPES
@@ -13,7 +12,8 @@ type NewsItem = {
   id: string;
   title: string;
   excerpt?: string | null;
-  visual_rect_url: string;
+  visual_rect_url?: string | null;
+  company_visual_rect_id?: string | null;
   published_at: string;
 };
 
@@ -22,61 +22,84 @@ type AnalysisItem = {
   title: string;
   excerpt?: string;
   published_at: string;
-  topics?: string[];
-  key_metrics?: string[];
-  event: {
-    id: string;
-    label: string;
-    home_label?: string;
-    event_color?: string;
-  };
+};
+
+type MemberItem = {
+  id: string;
+  name: string;
+  description?: string | null;
+  visualRectId?: string | null;
 };
 
 type Props = {
   news: NewsItem[];
   analyses: AnalysisItem[];
+  members: MemberItem[];
 };
 
 /* =========================================================
    COMPONENT
 ========================================================= */
 
-export default function HomeClient({ news, analyses }: Props) {
-  const { openRightDrawer } = useDrawer();
+export default function HomeClient({
+  news,
+  analyses,
+  members,
+}: Props) {
+  /* ---------------------------------------------------------
+     DATA
+  --------------------------------------------------------- */
 
-  // ---------------------------------------------------------
-  // 9 DERNIÈRES NEWS (3 x 3)
-  // ---------------------------------------------------------
-  const latestNews = news
-    .slice()
+  const sortedNews = [...news].sort(
+    (a, b) =>
+      new Date(b.published_at).getTime() -
+      new Date(a.published_at).getTime()
+  );
+
+  const heroNews = sortedNews[0];
+  const latestNews = sortedNews.slice(1, 7); // 6 news
+
+  const latestAnalyses = [...analyses]
     .sort(
       (a, b) =>
         new Date(b.published_at).getTime() -
         new Date(a.published_at).getTime()
     )
-    .slice(0, 9);
+    .slice(0, 3);
 
-  // ---------------------------------------------------------
-  // 12 DERNIÈRES ANALYSES (TRI CHRONO)
-  // ---------------------------------------------------------
-  const latestAnalyses = analyses
-    .slice()
-    .sort(
-      (a, b) =>
-        new Date(b.published_at).getTime() -
-        new Date(a.published_at).getTime()
-    )
-    .slice(0, 12);
+  const featuredMembers = members.slice(0, 6);
+
+  /* ---------------------------------------------------------
+     RENDER
+  --------------------------------------------------------- */
 
   return (
-    <div className="space-y-16">
+    <div className="space-y-24">
+
       {/* =====================================================
-          NEWS — 3 LIGNES DE 3
+          HERO NEWS — UNE
+      ===================================================== */}
+      {heroNews && (
+        <section>
+          <PartnerSignalCard
+            id={heroNews.id}
+            title={heroNews.title}
+            excerpt={heroNews.excerpt}
+            visualRectUrl={heroNews.visual_rect_url}
+            companyVisualRectId={heroNews.company_visual_rect_id}
+            publishedAt={heroNews.published_at}
+            openInDrawer
+          />
+        </section>
+      )}
+
+      {/* =====================================================
+          NEWS PARTENAIRES
       ===================================================== */}
       <section className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-            Toutes les actualités de nos partenaires
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
+            Actualités partenaires
           </h2>
           <Link
             href="/news"
@@ -86,14 +109,12 @@ export default function HomeClient({ news, analyses }: Props) {
           </Link>
         </div>
 
-        <div
-          className="
-            grid grid-cols-1
-            sm:grid-cols-2
-            lg:grid-cols-3
-            gap-4 md:gap-6
-          "
-        >
+        <div className="
+          grid grid-cols-1
+          sm:grid-cols-2
+          lg:grid-cols-3
+          gap-6
+        ">
           {latestNews.map((n) => (
             <PartnerSignalCard
               key={n.id}
@@ -101,6 +122,7 @@ export default function HomeClient({ news, analyses }: Props) {
               title={n.title}
               excerpt={n.excerpt}
               visualRectUrl={n.visual_rect_url}
+              companyVisualRectId={n.company_visual_rect_id}
               publishedAt={n.published_at}
               openInDrawer
             />
@@ -109,43 +131,70 @@ export default function HomeClient({ news, analyses }: Props) {
       </section>
 
       {/* =====================================================
-          ANALYSES
+          ALLER PLUS LOIN AVEC CURATOR
+      ===================================================== */}
+      <section className="space-y-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
+          Aller plus loin avec Curator
+        </h2>
+
+        <ul className="space-y-3">
+          {latestAnalyses.map((a) => (
+            <li key={a.id}>
+              <Link
+                href={`/analysis?analysis_id=${a.id}`}
+                className="block group"
+              >
+                <p className="text-sm font-medium text-gray-900 group-hover:underline">
+                  {a.title}
+                </p>
+                {a.excerpt && (
+                  <p className="text-sm text-gray-500 line-clamp-2">
+                    {a.excerpt}
+                  </p>
+                )}
+              </Link>
+            </li>
+          ))}
+        </ul>
+
+        <Link
+          href="/analysis"
+          className="inline-block text-sm text-gray-600 hover:underline"
+        >
+          Explorer toutes les analyses →
+        </Link>
+      </section>
+
+      {/* =====================================================
+          MEMBRES PARTENAIRES
       ===================================================== */}
       <section className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-            Toutes les analyses AdTech, Agentique, Retail Media & Internationales
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
+            Membres partenaires
           </h2>
           <Link
-            href="/analysis"
+            href="/members"
             className="text-sm text-gray-500 hover:underline"
           >
-            Voir toutes les analyses
+            Voir tous les membres
           </Link>
         </div>
 
-        <div
-          className="
-            grid grid-cols-1
-            md:grid-cols-2
-            xl:grid-cols-3
-            gap-6
-          "
-        >
-          {latestAnalyses.map((a) => (
-            <AnalysisCard
-              key={a.id}
-              id={a.id}
-              title={a.title}
-              excerpt={a.excerpt}
-              publishedAt={a.published_at}
-              event={{
-                label: a.event.label,
-                homeLabel: a.event.home_label,
-                color: a.event.event_color,
-              }}
-              keyMetric={a.key_metrics?.[0]}
-              topic={a.topics?.[0]}
+        <div className="
+          grid grid-cols-1
+          sm:grid-cols-2
+          lg:grid-cols-3
+          gap-6
+        ">
+          {featuredMembers.map((m) => (
+            <MemberCard
+              key={m.id}
+              id={m.id}
+              name={m.name}
+              description={m.description}
+              visualRectId={m.visualRectId}
             />
           ))}
         </div>
