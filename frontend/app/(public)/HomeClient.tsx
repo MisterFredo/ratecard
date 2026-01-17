@@ -34,7 +34,7 @@ type MemberItem = {
 type Props = {
   news: NewsItem[];
   analyses: AnalysisItem[];
-  members?: MemberItem[]; // optionnel pour ne pas bloquer la Home
+  members?: MemberItem[];
 };
 
 /* =========================================================
@@ -56,10 +56,10 @@ export default function HomeClient({
       new Date(a.published_at).getTime()
   );
 
-  const heroNews = sortedNews[0];
-  const latestNews = sortedNews.slice(1, 7); // 6 news
+  const hero = sortedNews[0];
+  const otherNews = sortedNews.slice(1, 8); // 7 news
 
-  const latestAnalyses = [...analyses]
+  const teaserAnalyses = [...analyses]
     .sort(
       (a, b) =>
         new Date(b.published_at).getTime() -
@@ -67,145 +67,97 @@ export default function HomeClient({
     )
     .slice(0, 3);
 
-  const featuredMembers = members?.slice(0, 6) ?? [];
+  const teaserMembers = members?.slice(0, 3) ?? [];
 
   /* ---------------------------------------------------------
      RENDER
   --------------------------------------------------------- */
 
   return (
-    <div className="space-y-24">
-
+    <div
+      className="
+        grid grid-cols-1
+        md:grid-cols-3
+        auto-rows-fr
+        gap-6
+      "
+    >
       {/* =====================================================
-          HERO NEWS — UNE
+          HERO NEWS (desktop only)
       ===================================================== */}
-      {heroNews && (
-        <section>
+      {hero && (
+        <div className="md:col-span-2 md:row-span-2">
           <PartnerSignalCard
-            id={heroNews.id}
-            title={heroNews.title}
-            excerpt={heroNews.excerpt}
-            visualRectUrl={heroNews.visual_rect_url}
-            companyVisualRectId={heroNews.company_visual_rect_id}
-            publishedAt={heroNews.published_at}
+            id={hero.id}
+            title={hero.title}
+            excerpt={hero.excerpt}
+            visualRectUrl={hero.visual_rect_url}
+            companyVisualRectId={hero.company_visual_rect_id}
+            publishedAt={hero.published_at}
             openInDrawer
           />
-        </section>
+        </div>
       )}
 
       {/* =====================================================
-          NEWS PARTENAIRES
+          AUTRES NEWS
       ===================================================== */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
-            Actualités partenaires
-          </h2>
-          <Link
-            href="/news"
-            className="text-sm text-gray-500 hover:underline"
-          >
-            Voir toutes les news
-          </Link>
+      {otherNews.map((n) => (
+        <div key={n.id}>
+          <PartnerSignalCard
+            id={n.id}
+            title={n.title}
+            excerpt={n.excerpt}
+            visualRectUrl={n.visual_rect_url}
+            companyVisualRectId={n.company_visual_rect_id}
+            publishedAt={n.published_at}
+            openInDrawer
+          />
         </div>
+      ))}
 
+      {/* =====================================================
+          MEMBRES (cartes petites)
+      ===================================================== */}
+      {teaserMembers.map((m) => (
+        <div key={m.id}>
+          <MemberCard
+            id={m.id}
+            name={m.name}
+            description={m.description}
+            visualRectId={m.visualRectId}
+          />
+        </div>
+      ))}
+
+      {/* =====================================================
+          ANALYSES (cartes teaser)
+      ===================================================== */}
+      {teaserAnalyses.map((a) => (
         <div
+          key={a.id}
           className="
-            grid grid-cols-1
-            sm:grid-cols-2
-            lg:grid-cols-3
-            gap-6
+            cursor-pointer rounded-2xl
+            border border-gray-200
+            bg-gray-50 p-4
+            hover:bg-gray-100 transition
           "
         >
-          {latestNews.map((n) => (
-            <PartnerSignalCard
-              key={n.id}
-              id={n.id}
-              title={n.title}
-              excerpt={n.excerpt}
-              visualRectUrl={n.visual_rect_url}
-              companyVisualRectId={n.company_visual_rect_id}
-              publishedAt={n.published_at}
-              openInDrawer
-            />
-          ))}
+          <Link href={`/analysis?analysis_id=${a.id}`}>
+            <h3 className="text-sm font-semibold text-gray-900">
+              {a.title}
+            </h3>
+            {a.excerpt && (
+              <p className="mt-2 text-sm text-gray-600 line-clamp-3">
+                {a.excerpt}
+              </p>
+            )}
+            <span className="mt-3 inline-block text-xs text-gray-400 uppercase">
+              Analyse
+            </span>
+          </Link>
         </div>
-      </section>
-
-      {/* =====================================================
-          ALLER PLUS LOIN AVEC CURATOR
-      ===================================================== */}
-      <section className="space-y-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
-          Aller plus loin avec Curator
-        </h2>
-
-        <ul className="space-y-3">
-          {latestAnalyses.map((a) => (
-            <li key={a.id}>
-              <Link
-                href={`/analysis?analysis_id=${a.id}`}
-                className="block group"
-              >
-                <p className="text-sm font-medium text-gray-900 group-hover:underline">
-                  {a.title}
-                </p>
-                {a.excerpt && (
-                  <p className="text-sm text-gray-500 line-clamp-2">
-                    {a.excerpt}
-                  </p>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
-
-        <Link
-          href="/analysis"
-          className="inline-block text-sm text-gray-600 hover:underline"
-        >
-          Explorer toutes les analyses →
-        </Link>
-      </section>
-
-      {/* =====================================================
-          MEMBRES PARTENAIRES
-      ===================================================== */}
-      {featuredMembers.length > 0 && (
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
-              Membres partenaires
-            </h2>
-            <Link
-              href="/members"
-              className="text-sm text-gray-500 hover:underline"
-            >
-              Voir tous les membres
-            </Link>
-          </div>
-
-          <div
-            className="
-              grid grid-cols-1
-              sm:grid-cols-2
-              lg:grid-cols-3
-              gap-6
-            "
-          >
-            {featuredMembers.map((m) => (
-              <MemberCard
-                key={m.id}
-                id={m.id}
-                name={m.name}
-                description={m.description}
-                visualRectId={m.visualRectId}
-              />
-            ))}
-          </div>
-        </section>
-      )}
+      ))}
     </div>
   );
 }
-
