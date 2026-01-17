@@ -44,69 +44,121 @@ export default function HomeClient({ news, members }: Props) {
   );
 
   const heroNews = sortedNews[0];
-  const otherNews = sortedNews.slice(1, 9); // 8 news max
+  const heroSideNews = sortedNews.slice(1, 3); // 2 news à droite
+  const latestNews = sortedNews.slice(3, 9);  // 6 news
 
-  const featuredMembers = members.slice(0, 4); // 4 membres max
+  const featuredMembers = members.slice(0, 6);
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      RENDER
-  --------------------------------------------------------- */
+  ========================================================= */
 
   return (
-    <div
-      className="
-        grid grid-cols-1
-        lg:grid-cols-4
-        gap-6
-      "
-    >
+    <div className="space-y-20">
+
       {/* =====================================================
-          HERO NEWS — 2x2 (DESKTOP)
+          BLOC 1 — À LA UNE
+          Inspiré Le Monde (2/3 + 1/3)
       ===================================================== */}
       {heroNews && (
-        <div className="lg:col-span-2 lg:row-span-2">
-          <PartnerSignalCard
-            id={heroNews.id}
-            title={heroNews.title}
-            excerpt={heroNews.excerpt}
-            visualRectUrl={heroNews.visual_rect_url}
-            companyVisualRectId={heroNews.company_visual_rect_id}
-            publishedAt={heroNews.published_at}
-            openInDrawer
-          />
-        </div>
+        <section
+          className="
+            grid grid-cols-1
+            lg:grid-cols-3
+            gap-6
+          "
+        >
+          {/* HERO PRINCIPAL (2 colonnes) */}
+          <div className="lg:col-span-2">
+            <PartnerSignalCard
+              id={heroNews.id}
+              title={heroNews.title}
+              excerpt={heroNews.excerpt}
+              visualRectUrl={heroNews.visual_rect_url}
+              companyVisualRectId={heroNews.company_visual_rect_id}
+              publishedAt={heroNews.published_at}
+              openInDrawer
+            />
+          </div>
+
+          {/* HERO SECONDAIRE (colonne droite) */}
+          <div className="space-y-6">
+            {heroSideNews.map((n) => (
+              <PartnerSignalCard
+                key={n.id}
+                id={n.id}
+                title={n.title}
+                excerpt={n.excerpt}
+                visualRectUrl={n.visual_rect_url}
+                companyVisualRectId={n.company_visual_rect_id}
+                publishedAt={n.published_at}
+                openInDrawer
+              />
+            ))}
+          </div>
+        </section>
       )}
 
       {/* =====================================================
-          AUTRES NEWS
+          BLOC 2 — DERNIÈRES ACTUALITÉS PARTENAIRES
       ===================================================== */}
-      {otherNews.map((n) => (
-        <div key={n.id}>
-          <PartnerSignalCard
-            id={n.id}
-            title={n.title}
-            excerpt={n.excerpt}
-            visualRectUrl={n.visual_rect_url}
-            companyVisualRectId={n.company_visual_rect_id}
-            publishedAt={n.published_at}
-            openInDrawer
-          />
+      <section className="space-y-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
+          Dernières actualités partenaires
+        </h2>
+
+        <div
+          className="
+            grid grid-cols-1
+            md:grid-cols-2
+            lg:grid-cols-3
+            gap-6
+          "
+        >
+          {latestNews.map((n) => (
+            <PartnerSignalCard
+              key={n.id}
+              id={n.id}
+              title={n.title}
+              excerpt={n.excerpt}
+              visualRectUrl={n.visual_rect_url}
+              companyVisualRectId={n.company_visual_rect_id}
+              publishedAt={n.published_at}
+              openInDrawer
+            />
+          ))}
         </div>
-      ))}
+      </section>
 
       {/* =====================================================
-          MEMBRES (INTÉGRÉS À LA GRILLE)
+          BLOC 3 — MEMBRES PARTENAIRES
       ===================================================== */}
-      {featuredMembers.map((m) => (
-        <div key={m.id}>
-          <MemberCard
-            id={m.id}
-            name={m.name}
-            description={m.description}
-            visualRectId={m.visualRectId}
-          />
-        </div>
-      ))}
+      {featuredMembers.length > 0 && (
+        <section className="space-y-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
+            Membres partenaires
+          </h2>
+
+          <div
+            className="
+              grid grid-cols-1
+              md:grid-cols-2
+              lg:grid-cols-3
+              gap-6
+            "
+          >
+            {featuredMembers.map((m) => (
+              <MemberCard
+                key={m.id}
+                id={m.id}
+                name={m.name}
+                description={m.description}
+                visualRectId={m.visualRectId}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
