@@ -65,7 +65,7 @@ export default function PartnerSignalCard({
   }
 
   /* ========================================================
-     MODE DRAWER (HOME / LISTING)
+     MODE DRAWER / HOME (GRILLE CONTRAINTE)
   ======================================================== */
   if (openInDrawer) {
     return (
@@ -76,15 +76,17 @@ export default function PartnerSignalCard({
           border border-ratecard-border
           bg-white shadow-card transition
           hover:shadow-cardHover
+
+          h-full flex flex-col
         "
       >
         {/* =====================================================
-            VISUEL — RYTHME ÉDITORIAL CONTRÔLÉ
+            VISUEL — HAUTEUR CONTRÔLÉE
         ===================================================== */}
         <div
           className={`
             relative w-full overflow-hidden bg-ratecard-light
-            ${isFeatured ? "aspect-[3/2]" : "h-44"}
+            ${isFeatured ? "aspect-[3/2]" : "h-40"}
           `}
         >
           {visualSrc ? (
@@ -101,9 +103,9 @@ export default function PartnerSignalCard({
         </div>
 
         {/* =====================================================
-            CONTENU — MÊME PADDING, HIÉRARCHIE TEXTE
+            CONTENU — FLEX POUR VERROUILLER LA HAUTEUR
         ===================================================== */}
-        <div className="p-4">
+        <div className="p-4 flex flex-col flex-1">
           <h3
             className={`
               font-semibold leading-snug text-gray-900
@@ -114,17 +116,13 @@ export default function PartnerSignalCard({
           </h3>
 
           {excerpt && (
-            <p
-              className={`
-                mt-2 text-gray-600
-                ${isFeatured ? "text-sm line-clamp-3" : "text-sm line-clamp-3"}
-              `}
-            >
+            <p className="mt-2 text-sm text-gray-600 line-clamp-3">
               {excerpt}
             </p>
           )}
 
-          <div className="mt-3 text-xs text-gray-400">
+          {/* DATE TOUJOURS EN BAS */}
+          <div className="mt-auto text-xs text-gray-400">
             Publié le{" "}
             {new Date(publishedAt).toLocaleDateString("fr-FR")}
           </div>
