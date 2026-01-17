@@ -29,8 +29,8 @@ export default function PublicTopNavShell({
       {/* =====================================================
           TOP NAV — DESKTOP
       ===================================================== */}
-      <header className="hidden md:block bg-white border-b">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <header className="hidden md:block bg-white border-b sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           {/* LOGO */}
           <Link href="/" className="flex items-center">
             <img
@@ -44,14 +44,22 @@ export default function PublicTopNavShell({
           <nav className="flex items-center gap-8 text-sm font-medium">
             <Link
               href="/news"
-              className={active("/news") ? "text-ratecard-blue" : "hover:text-ratecard-blue"}
+              className={
+                active("/news")
+                  ? "text-ratecard-blue"
+                  : "hover:text-ratecard-blue"
+              }
             >
               News
             </Link>
 
             <Link
               href="/members"
-              className={active("/members") ? "text-ratecard-blue" : "hover:text-ratecard-blue"}
+              className={
+                active("/members")
+                  ? "text-ratecard-blue"
+                  : "hover:text-ratecard-blue"
+              }
             >
               Membres
             </Link>
@@ -62,7 +70,7 @@ export default function PublicTopNavShell({
                 Événements <ChevronDown size={14} />
               </button>
 
-              <div className="absolute left-0 top-full mt-2 w-48 bg-white border rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition">
+              <div className="absolute left-0 top-full mt-2 w-48 bg-white border rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition z-50">
                 {events.map((e) => (
                   <a
                     key={e.label}
@@ -91,7 +99,7 @@ export default function PublicTopNavShell({
                 Nos produits <ChevronDown size={14} />
               </button>
 
-              <div className="absolute left-0 top-full mt-2 w-56 bg-white border rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition">
+              <div className="absolute left-0 top-full mt-2 w-56 bg-white border rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition z-50">
                 <Link
                   href="/curator"
                   className="block px-4 py-2 text-sm hover:bg-gray-50"
@@ -131,9 +139,9 @@ export default function PublicTopNavShell({
       </header>
 
       {/* =====================================================
-          MOBILE HEADER
+          TOP NAV — MOBILE
       ===================================================== */}
-      <div className="md:hidden bg-white border-b px-4 py-3 flex items-center justify-between">
+      <div className="md:hidden bg-white border-b px-4 py-3 flex items-center justify-between sticky top-0 z-40">
         <button onClick={() => setMobileOpen(true)}>
           <Menu />
         </button>
@@ -162,6 +170,7 @@ export default function PublicTopNavShell({
               <Link href="/news" onClick={() => setMobileOpen(false)}>
                 News
               </Link>
+
               <Link href="/members" onClick={() => setMobileOpen(false)}>
                 Membres
               </Link>
@@ -209,7 +218,7 @@ export default function PublicTopNavShell({
           MAIN CONTENT
       ===================================================== */}
       <main className="flex-1">
-        <div className="p-4 md:p-10 max-w-7xl mx-auto">
+        <div className="p-4 md:p-10 max-w-6xl mx-auto">
           {children}
         </div>
       </main>
