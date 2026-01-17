@@ -81,12 +81,12 @@ export default function PartnerSignalCard({
         "
       >
         {/* =====================================================
-            VISUEL — HAUTEUR CONTRÔLÉE
+            VISUEL — REMPLISSAGE VERTICAL (UNE)
         ===================================================== */}
         <div
           className={`
             relative w-full overflow-hidden bg-ratecard-light
-            ${isFeatured ? "aspect-[3/2]" : "h-40"}
+            ${isFeatured ? "flex-1 min-h-0" : "h-40"}
           `}
         >
           {visualSrc ? (
@@ -103,9 +103,9 @@ export default function PartnerSignalCard({
         </div>
 
         {/* =====================================================
-            CONTENU — FLEX POUR VERROUILLER LA HAUTEUR
+            CONTENU — TEXTE COMPACT, DATE EN BAS
         ===================================================== */}
-        <div className="p-4 flex flex-col flex-1">
+        <div className="p-4 flex flex-col">
           <h3
             className={`
               font-semibold leading-snug text-gray-900
@@ -121,7 +121,7 @@ export default function PartnerSignalCard({
             </p>
           )}
 
-          {/* DATE TOUJOURS EN BAS */}
+          {/* DATE TOUJOURS CALÉE EN BAS */}
           <div className="mt-auto text-xs text-gray-400">
             Publié le{" "}
             {new Date(publishedAt).toLocaleDateString("fr-FR")}
