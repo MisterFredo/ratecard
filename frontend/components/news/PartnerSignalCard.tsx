@@ -15,16 +15,11 @@ type Props = {
   title: string;
   excerpt?: string | null;
 
-  // visuel propre à la news (peut être null)
   visualRectUrl?: string | null;
-
-  // visuel hérité de la société (peut être null)
   companyVisualRectId?: string | null;
 
   publishedAt: string;
   openInDrawer?: boolean;
-
-  // VARIANTE ÉDITORIALE
   variant?: "default" | "featured";
 };
 
@@ -47,26 +42,17 @@ export default function PartnerSignalCard({
 
   const isFeatured = variant === "featured";
 
-  /* ---------------------------------------------------------
-     VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
-  --------------------------------------------------------- */
   const visualSrc = visualRectUrl
     ? `${GCS_BASE_URL}/news/${visualRectUrl}`
     : companyVisualRectId
     ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
     : null;
 
-  /* ---------------------------------------------------------
-     HANDLER OUVERTURE
-  --------------------------------------------------------- */
   function open() {
     router.push(`/news?news_id=${id}`, { scroll: false });
     openRightDrawer("news", id);
   }
 
-  /* ========================================================
-     MODE DRAWER / HOME (GRILLE CONTRAINTE)
-  ======================================================== */
   if (openInDrawer) {
     return (
       <article
@@ -76,19 +62,11 @@ export default function PartnerSignalCard({
           border border-ratecard-border
           bg-white shadow-card transition
           hover:shadow-cardHover
-
           h-full flex flex-col
         "
       >
-        {/* =====================================================
-            VISUEL — HAUTEUR CONTRÔLÉE (INCHANGÉ)
-        ===================================================== */}
-        <div
-          className={`
-            relative w-full overflow-hidden bg-ratecard-light
-            ${isFeatured ? "aspect-[3/2]" : "h-40"}
-          `}
-        >
+        {/* VISUEL — STRICTEMENT IDENTIQUE PARTOUT */}
+        <div className="relative h-40 w-full overflow-hidden bg-ratecard-light">
           {visualSrc ? (
             <img
               src={visualSrc}
@@ -102,9 +80,7 @@ export default function PartnerSignalCard({
           )}
         </div>
 
-        {/* =====================================================
-            CONTENU — SEUL CHANGEMENT : EXCERPT ×2 SUR LA UNE
-        ===================================================== */}
+        {/* CONTENU — SEULE DIFFÉRENCE = EXCERPT PLUS LONG */}
         <div className="p-4 flex flex-col flex-1">
           <h3
             className={`
@@ -126,7 +102,6 @@ export default function PartnerSignalCard({
             </p>
           )}
 
-          {/* DATE TOUJOURS EN BAS */}
           <div className="mt-auto text-xs text-gray-400">
             Publié le{" "}
             {new Date(publishedAt).toLocaleDateString("fr-FR")}
@@ -136,9 +111,7 @@ export default function PartnerSignalCard({
     );
   }
 
-  /* ========================================================
-     MODE NAVIGATION (fallback / externe)
-  ======================================================== */
+  /* fallback externe inchangé */
   return (
     <Link
       href={`/news?news_id=${id}`}
@@ -149,7 +122,6 @@ export default function PartnerSignalCard({
         hover:shadow-cardHover
       "
     >
-      {/* VISUEL */}
       <div className="relative h-44 w-full bg-ratecard-light overflow-hidden">
         {visualSrc ? (
           <img
@@ -164,7 +136,6 @@ export default function PartnerSignalCard({
         )}
       </div>
 
-      {/* CONTENU */}
       <div className="p-4">
         <h3 className="text-sm font-semibold leading-snug text-gray-900 group-hover:underline">
           {title}
