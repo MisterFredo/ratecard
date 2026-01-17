@@ -72,19 +72,19 @@ export default function PartnerSignalCard({
       <article
         onClick={open}
         className="
-          group cursor-pointer rounded-2xl
+          group cursor-pointer overflow-hidden rounded-2xl
           border border-ratecard-border
           bg-white shadow-card transition
-          hover:shadow-cardHover overflow-hidden
+          hover:shadow-cardHover
         "
       >
         {/* =====================================================
-            VISUEL — RYTHME ÉDITORIAL
+            VISUEL — RYTHME ÉDITORIAL CONTRÔLÉ
         ===================================================== */}
         <div
           className={`
             relative w-full overflow-hidden bg-ratecard-light
-            ${isFeatured ? "aspect-[16/9]" : "h-44"}
+            ${isFeatured ? "aspect-[3/2]" : "h-44"}
           `}
         >
           {visualSrc ? (
@@ -101,13 +101,13 @@ export default function PartnerSignalCard({
         </div>
 
         {/* =====================================================
-            CONTENU
+            CONTENU — MÊME PADDING, HIÉRARCHIE TEXTE
         ===================================================== */}
-        <div className={`p-4 ${isFeatured ? "md:p-6" : ""}`}>
+        <div className="p-4">
           <h3
             className={`
               font-semibold leading-snug text-gray-900
-              ${isFeatured ? "text-lg" : "text-sm"}
+              ${isFeatured ? "text-base" : "text-sm"}
             `}
           >
             {title}
@@ -117,7 +117,7 @@ export default function PartnerSignalCard({
             <p
               className={`
                 mt-2 text-gray-600
-                ${isFeatured ? "text-base line-clamp-none" : "text-sm line-clamp-3"}
+                ${isFeatured ? "text-sm line-clamp-3" : "text-sm line-clamp-3"}
               `}
             >
               {excerpt}
@@ -140,10 +140,10 @@ export default function PartnerSignalCard({
     <Link
       href={`/news?news_id=${id}`}
       className="
-        group block rounded-2xl
+        group block overflow-hidden rounded-2xl
         border border-ratecard-border
         bg-white shadow-card transition
-        hover:shadow-cardHover overflow-hidden
+        hover:shadow-cardHover
       "
     >
       {/* VISUEL */}
@@ -163,7 +163,7 @@ export default function PartnerSignalCard({
 
       {/* CONTENU */}
       <div className="p-4">
-        <h3 className="text-sm font-semibold text-gray-900 leading-snug group-hover:underline">
+        <h3 className="text-sm font-semibold leading-snug text-gray-900 group-hover:underline">
           {title}
         </h3>
 
