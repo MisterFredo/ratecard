@@ -57,19 +57,78 @@ export default function PartnerSignalCard({
      MODE HOME / DRAWER
   ======================================================== */
   if (openInDrawer) {
+    /* =====================================================
+       UNE — CARTE x4 (GRID INTERNE STABLE)
+    ===================================================== */
+    if (isFeatured) {
+      return (
+        <article
+          onClick={open}
+          className="
+            group cursor-pointer overflow-hidden rounded-2xl
+            border border-ratecard-border
+            bg-white shadow-card transition
+            hover:shadow-cardHover
+            h-full
+            grid grid-rows-[auto_1fr]
+          "
+        >
+          {/* IMAGE — RATIO STRICT */}
+          <div className="relative w-full aspect-[3/2] overflow-hidden bg-ratecard-light">
+            {visualSrc ? (
+              <img
+                src={visualSrc}
+                alt={title}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">
+                Aucun visuel
+              </div>
+            )}
+          </div>
+
+          {/* TEXTE — REMPLIT LA 2e ZONE */}
+          <div className="p-4 flex flex-col">
+            <span className="text-xs uppercase tracking-wide text-gray-400">
+              À la une
+            </span>
+
+            <h3 className="mt-1 text-lg font-semibold leading-tight text-gray-900">
+              {title}
+            </h3>
+
+            {excerpt && (
+              <p className="mt-3 text-sm leading-relaxed text-gray-600 line-clamp-6">
+                {excerpt}
+              </p>
+            )}
+
+            <div className="mt-auto text-xs text-gray-400">
+              Publié le{" "}
+              {new Date(publishedAt).toLocaleDateString("fr-FR")}
+            </div>
+          </div>
+        </article>
+      );
+    }
+
+    /* =====================================================
+       CARTES NORMALES — 1x1 (INCHANGÉ)
+    ===================================================== */
     return (
       <article
         onClick={open}
-        className={`
+        className="
           group cursor-pointer overflow-hidden rounded-2xl
           border border-ratecard-border
           bg-white shadow-card transition
           hover:shadow-cardHover
+          h-full
           flex flex-col
-          ${isFeatured ? "" : "h-full"}
-        `}
+        "
       >
-        {/* VISUEL — STRICTEMENT IDENTIQUE PARTOUT */}
+        {/* VISUEL */}
         <div className="relative h-40 w-full overflow-hidden bg-ratecard-light">
           {visualSrc ? (
             <img
@@ -84,38 +143,18 @@ export default function PartnerSignalCard({
           )}
         </div>
 
-        {/* CONTENU */}
+        {/* TEXTE */}
         <div className="p-4 flex flex-col flex-1">
-          {/* LABEL ÉDITORIAL — UNE */}
-          {isFeatured && (
-            <span className="text-xs uppercase tracking-wide text-gray-400">
-              À la une
-            </span>
-          )}
-
-          {/* TITRE */}
-          <h3
-            className={`
-              mt-1 font-semibold text-gray-900
-              ${isFeatured ? "text-lg leading-tight" : "text-sm leading-snug"}
-            `}
-          >
+          <h3 className="text-sm font-semibold leading-snug text-gray-900">
             {title}
           </h3>
 
-          {/* EXCERPT */}
           {excerpt && (
-            <p
-              className={`
-                mt-3 text-sm text-gray-600
-                ${isFeatured ? "leading-relaxed line-clamp-6" : "line-clamp-3"}
-              `}
-            >
+            <p className="mt-2 text-sm text-gray-600 line-clamp-3">
               {excerpt}
             </p>
           )}
 
-          {/* DATE */}
           <div className="mt-auto text-xs text-gray-400">
             Publié le{" "}
             {new Date(publishedAt).toLocaleDateString("fr-FR")}
