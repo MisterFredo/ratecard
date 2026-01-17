@@ -36,20 +36,13 @@ export default function HomeClient({ news, members }: Props) {
   const featuredMembers = members.slice(0, 6);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 space-y-20">
+    <div className="max-w-7xl mx-auto px-4 space-y-24">
 
       {/* =====================================================
-          UNE — même grille, style éditorial
+          LA UNE — bloc dédié (rythme éditorial)
       ===================================================== */}
-      <section
-        className="
-          grid grid-cols-1
-          md:grid-cols-2
-          lg:grid-cols-3
-          gap-6
-        "
-      >
-        {featuredNews && (
+      {featuredNews && (
+        <section className="space-y-6">
           <PartnerSignalCard
             id={featuredNews.id}
             title={featuredNews.title}
@@ -60,8 +53,20 @@ export default function HomeClient({ news, members }: Props) {
             openInDrawer
             variant="featured"
           />
-        )}
+        </section>
+      )}
 
+      {/* =====================================================
+          AUTRES ACTUALITÉS — grille homogène
+      ===================================================== */}
+      <section
+        className="
+          grid grid-cols-1
+          md:grid-cols-2
+          lg:grid-cols-3
+          gap-6
+        "
+      >
         {otherNews.map((n) => (
           <PartnerSignalCard
             key={n.id}
