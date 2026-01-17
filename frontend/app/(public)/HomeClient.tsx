@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 import MemberCard from "@/components/members/MemberCard";
 
@@ -17,13 +16,6 @@ type NewsItem = {
   published_at: string;
 };
 
-type AnalysisItem = {
-  id: string;
-  title: string;
-  excerpt?: string;
-  published_at: string;
-};
-
 type MemberItem = {
   id: string;
   name: string;
@@ -33,19 +25,14 @@ type MemberItem = {
 
 type Props = {
   news: NewsItem[];
-  analyses: AnalysisItem[];
-  members?: MemberItem[];
+  members: MemberItem[];
 };
 
 /* =========================================================
    COMPONENT
 ========================================================= */
 
-export default function HomeClient({
-  news,
-  analyses,
-  members,
-}: Props) {
+export default function HomeClient({ news, members }: Props) {
   /* ---------------------------------------------------------
      DATA
   --------------------------------------------------------- */
@@ -56,18 +43,10 @@ export default function HomeClient({
       new Date(a.published_at).getTime()
   );
 
-  const hero = sortedNews[0];
-  const otherNews = sortedNews.slice(1, 8); // 7 news
+  const heroNews = sortedNews[0];
+  const otherNews = sortedNews.slice(1, 9); // 8 news max
 
-  const teaserAnalyses = [...analyses]
-    .sort(
-      (a, b) =>
-        new Date(b.published_at).getTime() -
-        new Date(a.published_at).getTime()
-    )
-    .slice(0, 3);
-
-  const teaserMembers = members?.slice(0, 3) ?? [];
+  const featuredMembers = members.slice(0, 4); // 4 membres max
 
   /* ---------------------------------------------------------
      RENDER
@@ -77,23 +56,22 @@ export default function HomeClient({
     <div
       className="
         grid grid-cols-1
-        md:grid-cols-3
-        auto-rows-fr
+        lg:grid-cols-4
         gap-6
       "
     >
       {/* =====================================================
-          HERO NEWS (desktop only)
+          HERO NEWS — 2x2 (DESKTOP)
       ===================================================== */}
-      {hero && (
-        <div className="md:col-span-2 md:row-span-2">
+      {heroNews && (
+        <div className="lg:col-span-2 lg:row-span-2">
           <PartnerSignalCard
-            id={hero.id}
-            title={hero.title}
-            excerpt={hero.excerpt}
-            visualRectUrl={hero.visual_rect_url}
-            companyVisualRectId={hero.company_visual_rect_id}
-            publishedAt={hero.published_at}
+            id={heroNews.id}
+            title={heroNews.title}
+            excerpt={heroNews.excerpt}
+            visualRectUrl={heroNews.visual_rect_url}
+            companyVisualRectId={heroNews.company_visual_rect_id}
+            publishedAt={heroNews.published_at}
             openInDrawer
           />
         </div>
@@ -117,9 +95,9 @@ export default function HomeClient({
       ))}
 
       {/* =====================================================
-          MEMBRES (cartes petites)
+          MEMBRES (INTÉGRÉS À LA GRILLE)
       ===================================================== */}
-      {teaserMembers.map((m) => (
+      {featuredMembers.map((m) => (
         <div key={m.id}>
           <MemberCard
             id={m.id}
@@ -127,35 +105,6 @@ export default function HomeClient({
             description={m.description}
             visualRectId={m.visualRectId}
           />
-        </div>
-      ))}
-
-      {/* =====================================================
-          ANALYSES (cartes teaser)
-      ===================================================== */}
-      {teaserAnalyses.map((a) => (
-        <div
-          key={a.id}
-          className="
-            cursor-pointer rounded-2xl
-            border border-gray-200
-            bg-gray-50 p-4
-            hover:bg-gray-100 transition
-          "
-        >
-          <Link href={`/analysis?analysis_id=${a.id}`}>
-            <h3 className="text-sm font-semibold text-gray-900">
-              {a.title}
-            </h3>
-            {a.excerpt && (
-              <p className="mt-2 text-sm text-gray-600 line-clamp-3">
-                {a.excerpt}
-              </p>
-            )}
-            <span className="mt-3 inline-block text-xs text-gray-400 uppercase">
-              Analyse
-            </span>
-          </Link>
         </div>
       ))}
     </div>
