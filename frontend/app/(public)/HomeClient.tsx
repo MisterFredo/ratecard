@@ -1,5 +1,6 @@
 "use client";
 
+import HeroNewsBlock from "@/components/news/HeroNewsBlock";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 import MemberCard from "@/components/members/MemberCard";
 
@@ -33,10 +34,6 @@ type Props = {
 ========================================================= */
 
 export default function HomeClient({ news, members }: Props) {
-  /* ---------------------------------------------------------
-     DATA
-  --------------------------------------------------------- */
-
   const sortedNews = [...news].sort(
     (a, b) =>
       new Date(b.published_at).getTime() -
@@ -44,8 +41,8 @@ export default function HomeClient({ news, members }: Props) {
   );
 
   const heroMain = sortedNews[0];
-  const heroSecondary = sortedNews.slice(1, 3); // 2 news
-  const latestNews = sortedNews.slice(3, 9);    // 6 news
+  const heroSecondary = sortedNews.slice(1, 3);
+  const latestNews = sortedNews.slice(3, 9);
 
   const featuredMembers = members.slice(0, 6);
 
@@ -53,43 +50,38 @@ export default function HomeClient({ news, members }: Props) {
     <div className="space-y-20">
 
       {/* =====================================================
-          BLOC 1 — À LA UNE (COMPOSITION DÉDIÉE)
+          BLOC 1 — À LA UNE
       ===================================================== */}
       {heroMain && (
-        <section className="max-w-7xl mx-auto px-4">
-          <div className="space-y-6">
-            {/* HERO PRINCIPAL */}
-            <PartnerSignalCard
-              id={heroMain.id}
-              title={heroMain.title}
-              excerpt={heroMain.excerpt}
-              visualRectUrl={heroMain.visual_rect_url}
-              companyVisualRectId={heroMain.company_visual_rect_id}
-              publishedAt={heroMain.published_at}
-              openInDrawer
-            />
+        <section className="max-w-7xl mx-auto px-4 space-y-6">
+          <HeroNewsBlock
+            id={heroMain.id}
+            title={heroMain.title}
+            excerpt={heroMain.excerpt}
+            visualRectUrl={heroMain.visual_rect_url}
+            companyVisualRectId={heroMain.company_visual_rect_id}
+            publishedAt={heroMain.published_at}
+          />
 
-            {/* HERO SECONDAIRE */}
-            <div
-              className="
-                grid grid-cols-1
-                md:grid-cols-2
-                gap-6
-              "
-            >
-              {heroSecondary.map((n) => (
-                <PartnerSignalCard
-                  key={n.id}
-                  id={n.id}
-                  title={n.title}
-                  excerpt={n.excerpt}
-                  visualRectUrl={n.visual_rect_url}
-                  companyVisualRectId={n.company_visual_rect_id}
-                  publishedAt={n.published_at}
-                  openInDrawer
-                />
-              ))}
-            </div>
+          <div
+            className="
+              grid grid-cols-1
+              md:grid-cols-2
+              gap-6
+            "
+          >
+            {heroSecondary.map((n) => (
+              <PartnerSignalCard
+                key={n.id}
+                id={n.id}
+                title={n.title}
+                excerpt={n.excerpt}
+                visualRectUrl={n.visual_rect_url}
+                companyVisualRectId={n.company_visual_rect_id}
+                publishedAt={n.published_at}
+                openInDrawer
+              />
+            ))}
           </div>
         </section>
       )}
