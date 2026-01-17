@@ -6,31 +6,16 @@ import { useDrawer } from "@/contexts/DrawerContext";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
-/* =========================================================
-   TYPES
-========================================================= */
-
 type Props = {
   id: string;
   title: string;
   excerpt?: string | null;
-
-  // visuel propre à la news (peut être null)
   visualRectUrl?: string | null;
-
-  // visuel hérité de la société (peut être null)
   companyVisualRectId?: string | null;
-
   publishedAt: string;
   openInDrawer?: boolean;
-
-  // VARIANTE ÉDITORIALE
   variant?: "default" | "featured";
 };
-
-/* =========================================================
-   COMPONENT
-========================================================= */
 
 export default function PartnerSignalCard({
   id,
@@ -47,26 +32,17 @@ export default function PartnerSignalCard({
 
   const isFeatured = variant === "featured";
 
-  /* ---------------------------------------------------------
-     VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
-  --------------------------------------------------------- */
   const visualSrc = visualRectUrl
     ? `${GCS_BASE_URL}/news/${visualRectUrl}`
     : companyVisualRectId
     ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
     : null;
 
-  /* ---------------------------------------------------------
-     HANDLER OUVERTURE
-  --------------------------------------------------------- */
   function open() {
     router.push(`/news?news_id=${id}`, { scroll: false });
     openRightDrawer("news", id);
   }
 
-  /* ========================================================
-     MODE DRAWER / HOME (GRILLE CONTRAINTE)
-  ======================================================== */
   if (openInDrawer) {
     return (
       <article
@@ -76,19 +52,11 @@ export default function PartnerSignalCard({
           border border-ratecard-border
           bg-white shadow-card transition
           hover:shadow-cardHover
-
           h-full flex flex-col
         "
       >
-        {/* =====================================================
-            VISUEL — REMPLISSAGE VERTICAL (UNE)
-        ===================================================== */}
-        <div
-          className={`
-            relative w-full overflow-hidden bg-ratecard-light
-            ${isFeatured ? "flex-1 min-h-0" : "h-40"}
-          `}
-        >
+        {/* VISUEL — RECTANGLE STRICT */}
+        <div className="relative h-40 w-full overflow-hidden bg-ratecard-light">
           {visualSrc ? (
             <img
               src={visualSrc}
@@ -102,10 +70,8 @@ export default function PartnerSignalCard({
           )}
         </div>
 
-        {/* =====================================================
-            CONTENU — TEXTE COMPACT, DATE EN BAS
-        ===================================================== */}
-        <div className="p-4 flex flex-col">
+        {/* CONTENU — LE TEXTE FAIT LA HIÉRARCHIE */}
+        <div className="p-4 flex flex-col flex-1">
           <h3
             className={`
               font-semibold leading-snug text-gray-900
@@ -116,12 +82,16 @@ export default function PartnerSignalCard({
           </h3>
 
           {excerpt && (
-            <p className="mt-2 text-sm text-gray-600 line-clamp-3">
+            <p
+              className={`
+                mt-2 text-sm text-gray-600
+                ${isFeatured ? "line-clamp-6" : "line-clamp-3"}
+              `}
+            >
               {excerpt}
             </p>
           )}
 
-          {/* DATE TOUJOURS CALÉE EN BAS */}
           <div className="mt-auto text-xs text-gray-400">
             Publié le{" "}
             {new Date(publishedAt).toLocaleDateString("fr-FR")}
@@ -131,9 +101,7 @@ export default function PartnerSignalCard({
     );
   }
 
-  /* ========================================================
-     MODE NAVIGATION (fallback / externe)
-  ======================================================== */
+  /* fallback navigation inchangé */
   return (
     <Link
       href={`/news?news_id=${id}`}
@@ -144,7 +112,6 @@ export default function PartnerSignalCard({
         hover:shadow-cardHover
       "
     >
-      {/* VISUEL */}
       <div className="relative h-44 w-full bg-ratecard-light overflow-hidden">
         {visualSrc ? (
           <img
@@ -159,7 +126,6 @@ export default function PartnerSignalCard({
         )}
       </div>
 
-      {/* CONTENU */}
       <div className="p-4">
         <h3 className="text-sm font-semibold leading-snug text-gray-900 group-hover:underline">
           {title}
