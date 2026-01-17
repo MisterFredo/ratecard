@@ -1,12 +1,7 @@
 "use client";
 
-import HeroNewsBlock from "@/components/news/HeroNewsBlock";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 import MemberCard from "@/components/members/MemberCard";
-
-/* =========================================================
-   TYPES
-========================================================= */
 
 type NewsItem = {
   id: string;
@@ -29,10 +24,6 @@ type Props = {
   members: MemberItem[];
 };
 
-/* =========================================================
-   COMPONENT
-========================================================= */
-
 export default function HomeClient({ news, members }: Props) {
   const sortedNews = [...news].sort(
     (a, b) =>
@@ -40,58 +31,57 @@ export default function HomeClient({ news, members }: Props) {
       new Date(a.published_at).getTime()
   );
 
-  const heroMain = sortedNews[0];
-  const heroSecondary = sortedNews.slice(1, 3);
-  const latestNews = sortedNews.slice(3, 9);
-
+  const featuredNews = sortedNews[0];
+  const otherNews = sortedNews.slice(1, 10);
   const featuredMembers = members.slice(0, 6);
 
   return (
-    <div className="space-y-20">
+    <div className="max-w-7xl mx-auto px-4 space-y-20">
 
       {/* =====================================================
-          BLOC 1 — À LA UNE
+          UNE — même grille, style éditorial
       ===================================================== */}
-      {heroMain && (
-        <section className="max-w-7xl mx-auto px-4 space-y-6">
-          <HeroNewsBlock
-            id={heroMain.id}
-            title={heroMain.title}
-            excerpt={heroMain.excerpt}
-            visualRectUrl={heroMain.visual_rect_url}
-            companyVisualRectId={heroMain.company_visual_rect_id}
-            publishedAt={heroMain.published_at}
+      <section
+        className="
+          grid grid-cols-1
+          md:grid-cols-2
+          lg:grid-cols-3
+          gap-6
+        "
+      >
+        {featuredNews && (
+          <PartnerSignalCard
+            id={featuredNews.id}
+            title={featuredNews.title}
+            excerpt={featuredNews.excerpt}
+            visualRectUrl={featuredNews.visual_rect_url}
+            companyVisualRectId={featuredNews.company_visual_rect_id}
+            publishedAt={featuredNews.published_at}
+            openInDrawer
+            variant="featured"
           />
+        )}
 
-          <div
-            className="
-              grid grid-cols-1
-              md:grid-cols-2
-              gap-6
-            "
-          >
-            {heroSecondary.map((n) => (
-              <PartnerSignalCard
-                key={n.id}
-                id={n.id}
-                title={n.title}
-                excerpt={n.excerpt}
-                visualRectUrl={n.visual_rect_url}
-                companyVisualRectId={n.company_visual_rect_id}
-                publishedAt={n.published_at}
-                openInDrawer
-              />
-            ))}
-          </div>
-        </section>
-      )}
+        {otherNews.map((n) => (
+          <PartnerSignalCard
+            key={n.id}
+            id={n.id}
+            title={n.title}
+            excerpt={n.excerpt}
+            visualRectUrl={n.visual_rect_url}
+            companyVisualRectId={n.company_visual_rect_id}
+            publishedAt={n.published_at}
+            openInDrawer
+          />
+        ))}
+      </section>
 
       {/* =====================================================
-          BLOC 2 — DERNIÈRES ACTUALITÉS PARTENAIRES
+          MEMBRES PARTENAIRES — bloc séparé
       ===================================================== */}
-      <section className="max-w-7xl mx-auto px-4 space-y-6">
+      <section className="space-y-6">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
-          Dernières actualités partenaires
+          Membres partenaires
         </h2>
 
         <div
@@ -102,50 +92,17 @@ export default function HomeClient({ news, members }: Props) {
             gap-6
           "
         >
-          {latestNews.map((n) => (
-            <PartnerSignalCard
-              key={n.id}
-              id={n.id}
-              title={n.title}
-              excerpt={n.excerpt}
-              visualRectUrl={n.visual_rect_url}
-              companyVisualRectId={n.company_visual_rect_id}
-              publishedAt={n.published_at}
-              openInDrawer
+          {featuredMembers.map((m) => (
+            <MemberCard
+              key={m.id}
+              id={m.id}
+              name={m.name}
+              description={m.description}
+              visualRectId={m.visualRectId}
             />
           ))}
         </div>
       </section>
-
-      {/* =====================================================
-          BLOC 3 — MEMBRES PARTENAIRES
-      ===================================================== */}
-      {featuredMembers.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 space-y-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
-            Membres partenaires
-          </h2>
-
-          <div
-            className="
-              grid grid-cols-1
-              md:grid-cols-2
-              lg:grid-cols-3
-              gap-6
-            "
-          >
-            {featuredMembers.map((m) => (
-              <MemberCard
-                key={m.id}
-                id={m.id}
-                name={m.name}
-                description={m.description}
-                visualRectId={m.visualRectId}
-              />
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }
