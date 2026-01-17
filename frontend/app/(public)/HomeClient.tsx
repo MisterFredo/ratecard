@@ -34,7 +34,7 @@ type MemberItem = {
 type Props = {
   news: NewsItem[];
   analyses: AnalysisItem[];
-  members: MemberItem[];
+  members?: MemberItem[];
 };
 
 /* =========================================================
