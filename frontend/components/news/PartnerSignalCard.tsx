@@ -99,7 +99,7 @@ export default function PartnerSignalCard({
             </h3>
 
             {excerpt && (
-              <p className="mt-3 text-sm leading-relaxed text-gray-600 line-clamp-6">
+              <p className="mt-3 text-sm leading-relaxed text-gray-600 line-clamp-4">
                 {excerpt}
               </p>
             )}
