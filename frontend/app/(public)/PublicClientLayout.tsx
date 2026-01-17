@@ -1,4 +1,4 @@
-import PublicShell from "./PublicShell";
+import PublicTopNavShell from "./PublicTopNavShell";
 import { DrawerProvider } from "@/contexts/DrawerContext";
 
 const API_BASE =
@@ -28,9 +28,9 @@ export default async function PublicClientLayout({
 
   return (
     <DrawerProvider>
-      <PublicShell events={events}>
+      <PublicTopNavShell events={events}>
         {children}
-      </PublicShell>
+      </PublicTopNavShell>
       {/* DrawerHost est monté dans app/(public)/layout.tsx */}
     </DrawerProvider>
   );
