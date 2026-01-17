@@ -67,7 +67,7 @@ export default function HomeClient({
     )
     .slice(0, 3);
 
-  const featuredMembers = members.slice(0, 6);
+  const featuredMembers = members?.slice(0, 6) ?? [];
 
   /* ---------------------------------------------------------
      RENDER
