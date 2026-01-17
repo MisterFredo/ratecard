@@ -57,14 +57,16 @@ export default function PartnerSignalCard({
     return (
       <article
         onClick={open}
-        className="
+        className={`
           group cursor-pointer overflow-hidden rounded-2xl
           border border-ratecard-border
           bg-white shadow-card transition
           hover:shadow-cardHover
-          h-full flex flex-col
-        "
+          flex flex-col
+          ${isFeatured ? "" : "h-full"}
+        `}
       >
+
         {/* VISUEL — STRICTEMENT IDENTIQUE PARTOUT */}
         <div className="relative h-40 w-full overflow-hidden bg-ratecard-light">
           {visualSrc ? (
