@@ -21,6 +21,7 @@ type Props = {
   // CONTEXTE PARTENAIRE
   companyId?: string;
   companyName?: string;
+  isPartner?: boolean;
 
   publishedAt: string;
   openInDrawer?: boolean;
@@ -39,6 +40,7 @@ export default function PartnerSignalCard({
   companyVisualRectId,
   companyId,
   companyName,
+  isPartner = false,
   publishedAt,
   openInDrawer = false,
   variant = "default",
@@ -59,21 +61,25 @@ export default function PartnerSignalCard({
 
   /* ---------------------------------------------------------
      OUVERTURE NEWS (DRAWER DROIT)
+     → UI-only par défaut (home)
   --------------------------------------------------------- */
   function openNews() {
-    router.push(`/news?news_id=${id}`, { scroll: false });
-    openRightDrawer("news", id);
+    openRightDrawer("news", id, "silent");
   }
 
   /* ---------------------------------------------------------
-     OUVERTURE PARTENAIRE (DRAWER GAUCHE)
-     👉 SANS CHANGEMENT DE PAGE
+     OUVERTURE PARTENAIRE
+     - membre → drawer partenaire
+     - non-membre → fallback = drawer news
   --------------------------------------------------------- */
   function openPartner(e: React.MouseEvent) {
     e.stopPropagation();
-    if (!companyId) return;
 
-    openLeftDrawer("member", companyId);
+    if (isPartner && companyId) {
+      openLeftDrawer("member", companyId, "silent");
+    } else {
+      openRightDrawer("news", id, "silent");
+    }
   }
 
   /* ========================================================
@@ -81,7 +87,7 @@ export default function PartnerSignalCard({
   ======================================================== */
   if (openInDrawer) {
     /* =====================================================
-       UNE — CARTE x4 (GRID INTERNE STABLE)
+       UNE — CARTE x4
     ===================================================== */
     if (isFeatured) {
       return (
@@ -116,7 +122,7 @@ export default function PartnerSignalCard({
             <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wide">
               <span>À la une</span>
 
-              {companyId && companyName && (
+              {companyName && (
                 <>
                   <span>•</span>
                   <button
@@ -180,7 +186,7 @@ export default function PartnerSignalCard({
 
         {/* TEXTE */}
         <div className="p-4 flex flex-col flex-1">
-          {companyId && companyName && (
+          {companyName && (
             <button
               onClick={openPartner}
               className="text-xs text-gray-400 uppercase tracking-wide hover:text-ratecard-blue mb-1 text-left"
@@ -210,6 +216,7 @@ export default function PartnerSignalCard({
 
   /* ========================================================
      MODE NAVIGATION EXTERNE (INCHANGÉ)
+     → utilisé uniquement hors home
   ======================================================== */
   return (
     <Link
