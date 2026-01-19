@@ -18,8 +18,13 @@ type NewsItem = {
   VISUAL_RECT_URL: string | null;
   PUBLISHED_AT?: string | null;
 
-  // 🔑 visuel société pour fallback
-  COMPANY_MEDIA_LOGO_RECTANGLE_ID?: string | null;
+  // CONTEXTE SOCIÉTÉ
+  ID_COMPANY: string;
+  COMPANY_NAME: string;
+  MEDIA_LOGO_RECTANGLE_ID?: string | null;
+
+  // si dispo plus tard
+  IS_PARTNER?: boolean;
 };
 
 const API_BASE =
@@ -61,7 +66,7 @@ export default function NewsPage() {
   /* ---------------------------------------------------------
      Ouverture du drawer pilotée par l’URL
      /news?news_id=XXXX
-     → avec protection contre les boucles
+     → mode = route
   --------------------------------------------------------- */
   useEffect(() => {
     const newsId = searchParams.get("news_id");
@@ -77,16 +82,16 @@ export default function NewsPage() {
       return;
     }
 
-    // nouvelle ouverture légitime — DRAWER DROITE
+    // nouvelle ouverture légitime — DRAWER DROIT piloté par l’URL
     lastOpenedId.current = newsId;
-    openRightDrawer("news", newsId);
+    openRightDrawer("news", newsId, "route");
 
   }, [searchParams, openRightDrawer]);
 
   return (
     <div className="space-y-12 md:space-y-14">
       {/* =====================================================
-          LISTE DES NEWS — DRAWER ADEX-LIKE
+          LISTE DES NEWS — PAGE DÉDIÉE
       ===================================================== */}
       {news.length === 0 ? (
         <p className="text-sm text-gray-400">
@@ -101,11 +106,14 @@ export default function NewsPage() {
               title={n.TITLE}
               excerpt={n.EXCERPT}
               visualRectUrl={n.VISUAL_RECT_URL}
-              companyVisualRectId={
-                n.COMPANY_MEDIA_LOGO_RECTANGLE_ID
-              }
+              companyVisualRectId={n.MEDIA_LOGO_RECTANGLE_ID}
               publishedAt={n.PUBLISHED_AT || ""}
               openInDrawer
+
+              /* 🔑 CONTEXTE PARTENAIRE */
+              companyId={n.ID_COMPANY}
+              companyName={n.COMPANY_NAME}
+              isPartner={n.IS_PARTNER === true}
             />
           ))}
         </div>
@@ -113,3 +121,4 @@ export default function NewsPage() {
     </div>
   );
 }
+
