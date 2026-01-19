@@ -1,7 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
-import MemberCard from "@/components/members/MemberCard";
+
+type Company = {
+  id_company: string;
+  name: string;
+};
 
 type NewsItem = {
   id: string;
@@ -9,38 +14,56 @@ type NewsItem = {
   excerpt?: string | null;
   visual_rect_url?: string | null;
   company_visual_rect_id?: string | null;
+  company?: Company;
   published_at: string;
-};
-
-type MemberItem = {
-  id: string;
-  name: string;
-  description?: string | null;
-  visualRectId?: string | null;
 };
 
 type Props = {
   news: NewsItem[];
-  members: MemberItem[];
 };
 
-export default function HomeClient({ news, members }: Props) {
+const PAGE_SIZE = 12;
+
+export default function HomeClient({ news }: Props) {
+  /* ---------------------------------------------------------
+     STATE — SCROLL INFINI
+  --------------------------------------------------------- */
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
   const sortedNews = [...news].sort(
     (a, b) =>
       new Date(b.published_at).getTime() -
       new Date(a.published_at).getTime()
   );
 
-  const featuredNews = sortedNews[0];     // UNE
-  const otherNews = sortedNews.slice(1);  // reste des news
+  const featuredNews = sortedNews[0];
+  const otherNews = sortedNews.slice(1);
 
-  const featuredMembers = members.slice(0, 6);
+  const visibleNews = otherNews.slice(0, visibleCount);
+
+  /* ---------------------------------------------------------
+     SCROLL HANDLER
+  --------------------------------------------------------- */
+  useEffect(() => {
+    function onScroll() {
+      if (
+        window.innerHeight + window.scrollY >=
+        document.body.offsetHeight - 300
+      ) {
+        setVisibleCount((prev) =>
+          Math.min(prev + PAGE_SIZE, otherNews.length)
+        );
+      }
+    }
+
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [otherNews.length]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4">
-
+    <div className="max-w-6xl mx-auto px-4">
       {/* =====================================================
-          GRILLE PRINCIPALE — 3 COLONNES, LIGNES FIXES
+          GRILLE NEWS — UNE x4 + FLUX CONTINU
       ===================================================== */}
       <section
         className="
@@ -52,7 +75,7 @@ export default function HomeClient({ news, members }: Props) {
         "
       >
         {/* =================================================
-            UNE — occupe EXACTEMENT A-B-D-E
+            UNE — x4
         ================================================= */}
         {featuredNews && (
           <div className="lg:col-span-2 lg:row-span-2">
@@ -62,6 +85,8 @@ export default function HomeClient({ news, members }: Props) {
               excerpt={featuredNews.excerpt}
               visualRectUrl={featuredNews.visual_rect_url}
               companyVisualRectId={featuredNews.company_visual_rect_id}
+              companyId={featuredNews.company?.id_company}
+              companyName={featuredNews.company?.name}
               publishedAt={featuredNews.published_at}
               openInDrawer
               variant="featured"
@@ -70,9 +95,9 @@ export default function HomeClient({ news, members }: Props) {
         )}
 
         {/* =================================================
-            AUTRES CARTES NEWS (C, F, G, H, I…)
+            FLUX NEWS (SCROLL INFINI)
         ================================================= */}
-        {otherNews.map((n) => (
+        {visibleNews.map((n) => (
           <PartnerSignalCard
             key={n.id}
             id={n.id}
@@ -80,6 +105,8 @@ export default function HomeClient({ news, members }: Props) {
             excerpt={n.excerpt}
             visualRectUrl={n.visual_rect_url}
             companyVisualRectId={n.company_visual_rect_id}
+            companyId={n.company?.id_company}
+            companyName={n.company?.name}
             publishedAt={n.published_at}
             openInDrawer
           />
@@ -87,32 +114,13 @@ export default function HomeClient({ news, members }: Props) {
       </section>
 
       {/* =====================================================
-          MEMBRES — BLOC SUIVANT (inchangé)
+          FIN DE FLUX
       ===================================================== */}
-      <section className="mt-20 space-y-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
-          Membres partenaires
-        </h2>
-
-        <div
-          className="
-            grid grid-cols-1
-            md:grid-cols-2
-            lg:grid-cols-3
-            gap-6
-          "
-        >
-          {featuredMembers.map((m) => (
-            <MemberCard
-              key={m.id}
-              id={m.id}
-              name={m.name}
-              description={m.description}
-              visualRectId={m.visualRectId}
-            />
-          ))}
+      {visibleCount < otherNews.length && (
+        <div className="py-10 text-center text-sm text-gray-400">
+          Chargement…
         </div>
-      </section>
+      )}
     </div>
   );
 }
