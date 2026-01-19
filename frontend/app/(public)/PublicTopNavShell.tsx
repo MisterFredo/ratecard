@@ -61,13 +61,12 @@ export default function PublicTopNavShell({
 
             {navLink("/curator", "Curator")}
 
-            <a
-              href="https://ratecard.fr/offre-ratecard-membership/"
-              target="_blank"
+            <Link
+              href="/membership"
               className="hover:text-ratecard-blue"
             >
               Membership
-            </a>
+            </Link>
           </nav>
 
           {/* ACTIONS */}
