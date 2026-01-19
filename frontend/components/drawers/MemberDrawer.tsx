@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { X } from "lucide-react";
 import { useDrawer } from "@/contexts/DrawerContext";
@@ -36,22 +36,37 @@ type Props = {
 
 export default function MemberDrawer({ id, onClose }: Props) {
   const router = useRouter();
-  const { openRightDrawer } = useDrawer();
+  const pathname = usePathname();
+
+  const {
+    leftDrawer,
+    openRightDrawer,
+    closeLeftDrawer,
+  } = useDrawer();
 
   const [data, setData] = useState<MemberData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   /* ---------------------------------------------------------
-     Fermeture du drawer (GAUCHE)
+     FERMETURE DU DRAWER (GAUCHE)
+     → dépend du mode d’ouverture
   --------------------------------------------------------- */
   function close() {
     setIsOpen(false);
     onClose?.();
-    router.push("/members", { scroll: false });
+    closeLeftDrawer();
+
+    // 🔑 nettoyage URL uniquement si ouverture pilotée par la route
+    if (
+      leftDrawer.mode === "route" &&
+      pathname.startsWith("/members")
+    ) {
+      router.push("/members", { scroll: false });
+    }
   }
 
   /* ---------------------------------------------------------
-     Chargement partenaire
+     CHARGEMENT PARTENAIRE
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
@@ -125,7 +140,7 @@ export default function MemberDrawer({ id, onClose }: Props) {
             CONTENT
         ===================================================== */}
         <div className="px-6 py-8 space-y-12">
-          {/* DESCRIPTION — HTML ÉDITORIAL (RESTAURÉ) */}
+          {/* DESCRIPTION — HTML ÉDITORIAL */}
           {data.description && (
             <div
               className="
@@ -157,7 +172,11 @@ export default function MemberDrawer({ id, onClose }: Props) {
                   <li
                     key={n.id_news}
                     onClick={() =>
-                      openRightDrawer("news", n.id_news)
+                      openRightDrawer(
+                        "news",
+                        n.id_news,
+                        "silent" // 🔑 ouverture AU-DESSUS, sans navigation
+                      )
                     }
                     className="
                       cursor-pointer p-4 rounded-lg
@@ -188,3 +207,4 @@ export default function MemberDrawer({ id, onClose }: Props) {
     </div>
   );
 }
+
