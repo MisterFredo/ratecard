@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { X } from "lucide-react";
+import { useDrawer } from "@/contexts/DrawerContext";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
@@ -25,6 +26,8 @@ type NewsData = {
     id_company: string;
     name: string;
     media_logo_rectangle_id?: string | null;
+    // 👉 optionnel si tu veux distinguer membre / non-membre
+    // is_member?: boolean;
   };
 };
 
@@ -39,26 +42,48 @@ type Props = {
 
 export default function NewsDrawer({ id, onClose }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+
+  const {
+    rightDrawer,
+    openLeftDrawer,
+    closeRightDrawer,
+  } = useDrawer();
+
   const [data, setData] = useState<NewsData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   /* ---------------------------------------------------------
-     Fermeture du drawer
-     → nettoyage explicite de l’URL
+     FERMETURE DU DRAWER (DROITE)
+     → dépend du mode d’ouverture
   --------------------------------------------------------- */
   function close() {
     setIsOpen(false);
+    onClose?.();
+    closeRightDrawer();
 
-    if (onClose) {
-      onClose();
+    // 🔑 nettoyage URL uniquement si ouverture pilotée par la route
+    if (
+      rightDrawer.mode === "route" &&
+      pathname.startsWith("/news")
+    ) {
+      router.push("/news", { scroll: false });
     }
-
-    // nettoyage URL (robuste newsletter / LinkedIn)
-    router.push("/news", { scroll: false });
   }
 
   /* ---------------------------------------------------------
-     Chargement de la news
+     OUVERTURE PARTENAIRE (DRAWER GAUCHE)
+     → AU-DESSUS, SANS NAVIGATION
+  --------------------------------------------------------- */
+  function openPartner(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!data?.company?.id_company) return;
+
+    openLeftDrawer("member", data.company.id_company, "silent");
+  }
+
+  /* ---------------------------------------------------------
+     CHARGEMENT DE LA NEWS
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
@@ -80,11 +105,10 @@ export default function NewsDrawer({ id, onClose }: Props) {
      VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
   --------------------------------------------------------- */
   const visualSrc = data.visual_rect_url
-     ? `${GCS_BASE_URL}/news/${data.visual_rect_url}`
-     : data.company?.media_logo_rectangle_id
-     ? `${GCS_BASE_URL}/companies/${data.company.media_logo_rectangle_id}`
-     : null;
-
+    ? `${GCS_BASE_URL}/news/${data.visual_rect_url}`
+    : data.company?.media_logo_rectangle_id
+    ? `${GCS_BASE_URL}/companies/${data.company.media_logo_rectangle_id}`
+    : null;
 
   return (
     <div className="fixed inset-0 z-[100] flex">
@@ -106,9 +130,13 @@ export default function NewsDrawer({ id, onClose }: Props) {
         {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 flex items-start justify-between">
           <div className="space-y-1 max-w-xl">
-            <span className="text-xs uppercase tracking-wide text-gray-400">
+            {/* TAG PARTENAIRE — TOUJOURS VISIBLE */}
+            <button
+              onClick={openPartner}
+              className="text-xs uppercase tracking-wide text-gray-400 hover:text-ratecard-blue"
+            >
               {data.company.name}
-            </span>
+            </button>
 
             <h1 className="text-xl font-semibold leading-tight text-gray-900">
               {data.title}
@@ -171,9 +199,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
           <div className="pt-4 border-t border-gray-200">
             <p className="text-xs text-gray-400">
               Publié le{" "}
-              {new Date(
-                data.published_at
-              ).toLocaleDateString("fr-FR")}
+              {new Date(data.published_at).toLocaleDateString("fr-FR")}
             </p>
           </div>
         </div>
@@ -181,3 +207,4 @@ export default function NewsDrawer({ id, onClose }: Props) {
     </div>
   );
 }
+
