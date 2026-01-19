@@ -198,7 +198,8 @@ def list_news():
 
             c.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
-            c.MEDIA_LOGO_RECTANGLE_ID
+            c.MEDIA_LOGO_RECTANGLE_ID,
+            c.IS_PARTNER          -- 👈 CLÉ MÉTIER
 
         FROM `{TABLE_NEWS}` n
         JOIN `{TABLE_COMPANY}` c
@@ -212,6 +213,7 @@ def list_news():
         ORDER BY n.PUBLISHED_AT DESC
     """
     return query_bq(sql)
+
 
 
 # ============================================================
