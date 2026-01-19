@@ -1,124 +1,262 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import PartnerSignalCard from "@/components/news/PartnerSignalCard";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useDrawer } from "@/contexts/DrawerContext";
 
-type Company = {
-  id_company: string;
-  name: string;
-  logo_rect_id?: string | null;
-};
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
-type NewsItem = {
+/* =========================================================
+   TYPES
+========================================================= */
+
+type Props = {
   id: string;
   title: string;
   excerpt?: string | null;
-  visual_rect_url?: string | null;
-  published_at: string;
-  company?: Company;
+
+  visualRectUrl?: string | null;
+  companyVisualRectId?: string | null;
+
+  // CONTEXTE PARTENAIRE
+  companyId?: string;
+  companyName?: string;
+
+  publishedAt: string;
+  openInDrawer?: boolean;
+  variant?: "default" | "featured";
 };
 
-type Props = {
-  news: NewsItem[];
-};
+/* =========================================================
+   COMPONENT
+========================================================= */
 
-const PAGE_SIZE = 12;
+export default function PartnerSignalCard({
+  id,
+  title,
+  excerpt,
+  visualRectUrl,
+  companyVisualRectId,
+  companyId,
+  companyName,
+  publishedAt,
+  openInDrawer = false,
+  variant = "default",
+}: Props) {
+  const { openRightDrawer, openLeftDrawer } = useDrawer();
+  const router = useRouter();
 
-export default function HomeClient({ news }: Props) {
-  /* ---------------------------------------------------------
-     STATE — SCROLL INFINI
-  --------------------------------------------------------- */
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-
-  const sortedNews = [...news].sort(
-    (a, b) =>
-      new Date(b.published_at).getTime() -
-      new Date(a.published_at).getTime()
-  );
-
-  const featuredNews = sortedNews[0];
-  const otherNews = sortedNews.slice(1);
-
-  const visibleNews = otherNews.slice(0, visibleCount);
+  const isFeatured = variant === "featured";
 
   /* ---------------------------------------------------------
-     SCROLL HANDLER
+     VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
   --------------------------------------------------------- */
-  useEffect(() => {
-    function onScroll() {
-      if (
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 300
-      ) {
-        setVisibleCount((prev) =>
-          Math.min(prev + PAGE_SIZE, otherNews.length)
-        );
-      }
+  const visualSrc = visualRectUrl
+    ? `${GCS_BASE_URL}/news/${visualRectUrl}`
+    : companyVisualRectId
+    ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
+    : null;
+
+  /* ---------------------------------------------------------
+     OUVERTURE NEWS (DRAWER DROIT)
+  --------------------------------------------------------- */
+  function openNews() {
+    router.push(`/news?news_id=${id}`, { scroll: false });
+    openRightDrawer("news", id);
+  }
+
+  /* ---------------------------------------------------------
+     OUVERTURE PARTENAIRE (DRAWER GAUCHE)
+     👉 SANS CHANGEMENT DE PAGE
+  --------------------------------------------------------- */
+  function openPartner(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!companyId) return;
+
+    openLeftDrawer("member", companyId);
+  }
+
+  /* ========================================================
+     MODE HOME / DRAWER
+  ======================================================== */
+  if (openInDrawer) {
+    /* =====================================================
+       UNE — CARTE x4 (GRID INTERNE STABLE)
+    ===================================================== */
+    if (isFeatured) {
+      return (
+        <article
+          onClick={openNews}
+          className="
+            group cursor-pointer overflow-hidden rounded-2xl
+            border border-ratecard-border
+            bg-white shadow-card transition
+            hover:shadow-cardHover
+            h-full
+            grid grid-rows-[auto_1fr]
+          "
+        >
+          {/* IMAGE */}
+          <div className="relative w-full aspect-[3/2] overflow-hidden bg-ratecard-light">
+            {visualSrc ? (
+              <img
+                src={visualSrc}
+                alt={title}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">
+                Aucun visuel
+              </div>
+            )}
+          </div>
+
+          {/* TEXTE */}
+          <div className="p-4 flex flex-col">
+            <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wide">
+              <span>À la une</span>
+
+              {companyId && companyName && (
+                <>
+                  <span>•</span>
+                  <button
+                    onClick={openPartner}
+                    className="hover:text-ratecard-blue"
+                  >
+                    {companyName}
+                  </button>
+                </>
+              )}
+            </div>
+
+            <h3 className="mt-1 text-lg font-semibold leading-tight text-gray-900">
+              {title}
+            </h3>
+
+            {excerpt && (
+              <p className="mt-3 text-sm leading-relaxed text-gray-600 line-clamp-4">
+                {excerpt}
+              </p>
+            )}
+
+            <div className="mt-auto text-xs text-gray-400">
+              Publié le{" "}
+              {new Date(publishedAt).toLocaleDateString("fr-FR")}
+            </div>
+          </div>
+        </article>
+      );
     }
 
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [otherNews.length]);
-
-  return (
-    <div className="max-w-6xl mx-auto px-4">
-      {/* =====================================================
-          GRILLE NEWS — UNE x4 + FLUX CONTINU
-      ===================================================== */}
-      <section
+    /* =====================================================
+       CARTES NEWS NORMALES — 1x1
+    ===================================================== */
+    return (
+      <article
+        onClick={openNews}
         className="
-          grid grid-cols-1
-          md:grid-cols-2
-          lg:grid-cols-3
-          gap-6
-          auto-rows-[340px]
+          group cursor-pointer overflow-hidden rounded-2xl
+          border border-ratecard-border
+          bg-white shadow-card transition
+          hover:shadow-cardHover
+          h-full
+          flex flex-col
         "
       >
-        {/* =================================================
-            UNE — x4
-        ================================================= */}
-        {featuredNews && (
-          <div className="lg:col-span-2 lg:row-span-2">
-            <PartnerSignalCard
-              id={featuredNews.id}
-              title={featuredNews.title}
-              excerpt={featuredNews.excerpt}
-              visualRectUrl={featuredNews.visual_rect_url}
-              companyId={featuredNews.company?.id_company}
-              companyName={featuredNews.company?.name}
-              publishedAt={featuredNews.published_at}
-              openInDrawer
-              variant="featured"
+        {/* VISUEL */}
+        <div className="relative h-40 w-full overflow-hidden bg-ratecard-light">
+          {visualSrc ? (
+            <img
+              src={visualSrc}
+              alt={title}
+              className="absolute inset-0 h-full w-full object-cover"
             />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-sm text-gray-400">
+              Aucun visuel
+            </div>
+          )}
+        </div>
+
+        {/* TEXTE */}
+        <div className="p-4 flex flex-col flex-1">
+          {companyId && companyName && (
+            <button
+              onClick={openPartner}
+              className="text-xs text-gray-400 uppercase tracking-wide hover:text-ratecard-blue mb-1 text-left"
+            >
+              {companyName}
+            </button>
+          )}
+
+          <h3 className="text-sm font-semibold leading-snug text-gray-900">
+            {title}
+          </h3>
+
+          {excerpt && (
+            <p className="mt-2 text-sm text-gray-600 line-clamp-3">
+              {excerpt}
+            </p>
+          )}
+
+          <div className="mt-auto text-xs text-gray-400">
+            Publié le{" "}
+            {new Date(publishedAt).toLocaleDateString("fr-FR")}
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  /* ========================================================
+     MODE NAVIGATION EXTERNE (INCHANGÉ)
+  ======================================================== */
+  return (
+    <Link
+      href={`/news?news_id=${id}`}
+      className="
+        group block overflow-hidden rounded-2xl
+        border border-ratecard-border
+        bg-white shadow-card transition
+        hover:shadow-cardHover
+      "
+    >
+      <div className="relative h-44 w-full bg-ratecard-light overflow-hidden">
+        {visualSrc ? (
+          <img
+            src={visualSrc}
+            alt={title}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center text-sm text-gray-400">
+            Aucun visuel
+          </div>
+        )}
+      </div>
+
+      <div className="p-4">
+        {companyName && (
+          <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+            {companyName}
           </div>
         )}
 
-        {/* =================================================
-            FLUX NEWS (SCROLL INFINI)
-        ================================================= */}
-        {visibleNews.map((n) => (
-          <PartnerSignalCard
-            key={n.id}
-            id={n.id}
-            title={n.title}
-            excerpt={n.excerpt}
-            visualRectUrl={n.visual_rect_url}
-            companyId={n.company?.id_company}
-            companyName={n.company?.name}
-            publishedAt={n.published_at}
-            openInDrawer
-          />
-        ))}
-      </section>
+        <h3 className="text-sm font-semibold leading-snug text-gray-900 group-hover:underline">
+          {title}
+        </h3>
 
-      {/* =====================================================
-          FIN DE FLUX
-      ===================================================== */}
-      {visibleCount < otherNews.length && (
-        <div className="py-10 text-center text-sm text-gray-400">
-          Chargement…
+        {excerpt && (
+          <p className="mt-2 text-sm text-gray-600 line-clamp-3">
+            {excerpt}
+          </p>
+        )}
+
+        <div className="mt-3 text-xs text-gray-400">
+          Publié le{" "}
+          {new Date(publishedAt).toLocaleDateString("fr-FR")}
         </div>
-      )}
-    </div>
+      </div>
+    </Link>
   );
 }
