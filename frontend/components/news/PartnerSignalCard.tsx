@@ -19,7 +19,6 @@ type Props = {
   companyVisualRectId?: string | null;
 
   // CONTEXTE SOCIÉTÉ
-  companyId?: string;
   companyName?: string;
   isPartner?: boolean;
 
@@ -38,15 +37,14 @@ export default function PartnerSignalCard({
   excerpt,
   visualRectUrl,
   companyVisualRectId,
-  companyId,
   companyName,
   isPartner = false,
   publishedAt,
   openInDrawer = false,
   variant = "default",
 }: Props) {
-  const { openRightDrawer, openLeftDrawer } = useDrawer();
-  const fromPartnerClick = useRef(false);
+  const { openRightDrawer } = useDrawer();
+  const fromInternalClick = useRef(false);
 
   const isFeatured = variant === "featured";
 
@@ -63,24 +61,16 @@ export default function PartnerSignalCard({
      OUVERTURE NEWS (DRAWER DROIT)
   --------------------------------------------------------- */
   function openNews() {
-    if (fromPartnerClick.current) return;
+    if (fromInternalClick.current) return;
     openRightDrawer("news", id, "silent");
   }
 
   /* ---------------------------------------------------------
-     OUVERTURE PARTENAIRE (UNIQUEMENT SI PARTENAIRE)
+     CLASSE DE FILET — STATUT PARTENAIRE (VISUEL UNIQUEMENT)
   --------------------------------------------------------- */
-  function openPartner(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (!companyId || !isPartner) return;
-
-    fromPartnerClick.current = true;
-    openLeftDrawer("member", companyId, "silent");
-
-    setTimeout(() => {
-      fromPartnerClick.current = false;
-    }, 0);
-  }
+  const borderClass = isPartner
+    ? "border-ratecard-blue"
+    : "border-ratecard-border";
 
   /* ========================================================
      MODE HOME / DRAWER
@@ -93,14 +83,13 @@ export default function PartnerSignalCard({
       return (
         <article
           onClick={openNews}
-          className="
+          className={`
             group cursor-pointer overflow-hidden rounded-2xl
-            border border-ratecard-border
-            bg-white shadow-card transition
-            hover:shadow-cardHover
+            bg-white shadow-card transition hover:shadow-cardHover
+            border ${borderClass}
             h-full
             grid grid-rows-[auto_1fr]
-          "
+          `}
         >
           {/* IMAGE */}
           <div className="relative w-full aspect-[3/2] overflow-hidden bg-ratecard-light">
@@ -119,25 +108,11 @@ export default function PartnerSignalCard({
 
           {/* TEXTE */}
           <div className="p-4 flex flex-col">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-gray-400">
-              <span>À la une</span>
-
-              {companyName && (
-                <>
-                  <span>•</span>
-                  {isPartner ? (
-                    <button
-                      onClick={openPartner}
-                      className="hover:text-ratecard-blue"
-                    >
-                      {companyName}
-                    </button>
-                  ) : (
-                    <span>{companyName}</span>
-                  )}
-                </>
-              )}
-            </div>
+            {companyName && (
+              <div className="text-xs uppercase tracking-wide text-gray-400">
+                {companyName}
+              </div>
+            )}
 
             <h3 className="mt-1 text-lg font-semibold leading-tight text-gray-900">
               {title}
@@ -164,14 +139,13 @@ export default function PartnerSignalCard({
     return (
       <article
         onClick={openNews}
-        className="
+        className={`
           group cursor-pointer overflow-hidden rounded-2xl
-          border border-ratecard-border
-          bg-white shadow-card transition
-          hover:shadow-cardHover
+          bg-white shadow-card transition hover:shadow-cardHover
+          border ${borderClass}
           h-full
           flex flex-col
-        "
+        `}
       >
         {/* VISUEL */}
         <div className="relative h-40 w-full overflow-hidden bg-ratecard-light">
@@ -191,18 +165,9 @@ export default function PartnerSignalCard({
         {/* TEXTE */}
         <div className="p-4 flex flex-col flex-1">
           {companyName && (
-            isPartner ? (
-              <button
-                onClick={openPartner}
-                className="text-xs uppercase tracking-wide text-gray-400 hover:text-ratecard-blue mb-1 text-left"
-              >
-                {companyName}
-              </button>
-            ) : (
-              <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">
-                {companyName}
-              </div>
-            )
+            <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+              {companyName}
+            </div>
           )}
 
           <h3 className="text-sm font-semibold leading-snug text-gray-900">
@@ -225,17 +190,16 @@ export default function PartnerSignalCard({
   }
 
   /* ========================================================
-     MODE NAVIGATION EXTERNE (HORS HOME)
+     MODE NAVIGATION EXTERNE (INCHANGÉ)
   ======================================================== */
   return (
     <Link
       href={`/news?news_id=${id}`}
-      className="
+      className={`
         group block overflow-hidden rounded-2xl
-        border border-ratecard-border
-        bg-white shadow-card transition
-        hover:shadow-cardHover
-      "
+        bg-white shadow-card transition hover:shadow-cardHover
+        border ${borderClass}
+      `}
     >
       <div className="relative h-44 w-full bg-ratecard-light overflow-hidden">
         {visualSrc ? (
@@ -276,3 +240,4 @@ export default function PartnerSignalCard({
     </Link>
   );
 }
+
