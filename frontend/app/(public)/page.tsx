@@ -12,37 +12,31 @@ async function safeFetch<T>(url: string): Promise<T> {
 }
 
 export default async function HomePage() {
-  const [newsRaw, membersRaw] = await Promise.all([
-    safeFetch<{ news: any[] }>(`${API_BASE}/news/list`),
-    safeFetch<{ items: any[] }>(`${API_BASE}/public/members`),
-  ]);
+  const newsRaw = await safeFetch<{ news: any[] }>(
+    `${API_BASE}/news/list`
+  );
 
   /* ---------------------------------------------------------
-     NEWS — mapping explicite
+     NEWS — mapping AVEC CONTEXTE PARTENAIRE
   --------------------------------------------------------- */
   const news = newsRaw.news.map((n) => ({
     id: n.ID_NEWS,
     title: n.TITLE,
     excerpt: n.EXCERPT ?? null,
     visual_rect_url: n.VISUAL_RECT_URL ?? null,
-    company_visual_rect_id: n.COMPANY_VISUAL_RECT_ID ?? null,
     published_at: n.PUBLISHED_AT,
-  }));
 
-  /* ---------------------------------------------------------
-     MEMBRES — mapping aligné MemberCard
-  --------------------------------------------------------- */
-  const members = membersRaw.items.map((m) => ({
-    id: m.id_company,
-    name: m.name,
-    description: m.description ?? null,
-    visualRectId: m.media_logo_rectangle_id ?? null,
+    company: {
+      id_company: n.ID_COMPANY,
+      name: n.COMPANY_NAME,
+      logo_rect_id: n.MEDIA_LOGO_RECTANGLE_ID ?? null,
+    },
   }));
 
   return (
     <HomeClient
       news={news}
-      members={members}
     />
   );
 }
+
