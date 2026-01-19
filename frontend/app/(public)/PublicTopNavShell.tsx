@@ -3,19 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Linkedin, Mail, Menu, X, ChevronDown } from "lucide-react";
-
-type EventNavItem = {
-  label: string;
-  url: string;
-};
+import { Linkedin, Mail, Menu, X } from "lucide-react";
 
 export default function PublicTopNavShell({
   children,
-  events = [],
 }: {
   children: React.ReactNode;
-  events?: EventNavItem[];
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -23,6 +16,19 @@ export default function PublicTopNavShell({
   function active(path: string) {
     return pathname === path || pathname.startsWith(`${path}/`);
   }
+
+  const navLink = (href: string, label: string) => (
+    <Link
+      href={href}
+      className={
+        active(href)
+          ? "text-ratecard-blue"
+          : "hover:text-ratecard-blue"
+      }
+    >
+      {label}
+    </Link>
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -40,82 +46,28 @@ export default function PublicTopNavShell({
             />
           </Link>
 
-          {/* NAV CENTRALE */}
+          {/* NAV PRINCIPALE — À PLAT */}
           <nav className="flex items-center gap-8 text-sm font-medium">
-            <Link
-              href="/news"
-              className={
-                active("/news")
-                  ? "text-ratecard-blue"
-                  : "hover:text-ratecard-blue"
-              }
+            {navLink("/news", "News")}
+            {navLink("/members", "Membres")}
+
+            <a
+              href="https://ratecard.fr/evenements/#event"
+              target="_blank"
+              className="hover:text-ratecard-blue"
             >
-              News
-            </Link>
+              Événements
+            </a>
 
-            <Link
-              href="/members"
-              className={
-                active("/members")
-                  ? "text-ratecard-blue"
-                  : "hover:text-ratecard-blue"
-              }
+            {navLink("/curator", "Curator")}
+
+            <a
+              href="https://ratecard.fr/offre-ratecard-membership/"
+              target="_blank"
+              className="hover:text-ratecard-blue"
             >
-              Membres
-            </Link>
-
-            {/* ÉVÉNEMENTS */}
-            <div className="relative group">
-              <button className="flex items-center gap-1 hover:text-ratecard-blue">
-                Événements <ChevronDown size={14} />
-              </button>
-
-              <div className="absolute left-0 top-full mt-2 w-48 bg-white border rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition z-50">
-                {events.map((e) => (
-                  <a
-                    key={e.label}
-                    href={e.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block px-4 py-2 text-sm hover:bg-gray-50"
-                  >
-                    {e.label}
-                  </a>
-                ))}
-
-                <a
-                  href="https://ratecard.fr/evenements/#event"
-                  target="_blank"
-                  className="block px-4 py-2 text-sm font-medium hover:bg-gray-50 border-t"
-                >
-                  Tous les événements
-                </a>
-              </div>
-            </div>
-
-            {/* NOS PRODUITS */}
-            <div className="relative group">
-              <button className="flex items-center gap-1 hover:text-ratecard-blue">
-                Nos produits <ChevronDown size={14} />
-              </button>
-
-              <div className="absolute left-0 top-full mt-2 w-56 bg-white border rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition z-50">
-                <Link
-                  href="/curator"
-                  className="block px-4 py-2 text-sm hover:bg-gray-50"
-                >
-                  Curator
-                </Link>
-
-                <a
-                  href="https://ratecard.fr/offre-ratecard-membership/"
-                  target="_blank"
-                  className="block px-4 py-2 text-sm hover:bg-gray-50"
-                >
-                  Membership
-                </a>
-              </div>
-            </div>
+              Membership
+            </a>
           </nav>
 
           {/* ACTIONS */}
