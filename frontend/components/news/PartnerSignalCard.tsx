@@ -18,6 +18,10 @@ type Props = {
   visualRectUrl?: string | null;
   companyVisualRectId?: string | null;
 
+  // 👇 NOUVEAU — CONTEXTE PARTENAIRE
+  companyId?: string;
+  companyName?: string;
+
   publishedAt: string;
   openInDrawer?: boolean;
   variant?: "default" | "featured";
@@ -33,11 +37,13 @@ export default function PartnerSignalCard({
   excerpt,
   visualRectUrl,
   companyVisualRectId,
+  companyId,
+  companyName,
   publishedAt,
   openInDrawer = false,
   variant = "default",
 }: Props) {
-  const { openRightDrawer } = useDrawer();
+  const { openRightDrawer, openLeftDrawer } = useDrawer();
   const router = useRouter();
 
   const isFeatured = variant === "featured";
@@ -48,9 +54,17 @@ export default function PartnerSignalCard({
     ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
     : null;
 
-  function open() {
+  function openNews() {
     router.push(`/news?news_id=${id}`, { scroll: false });
     openRightDrawer("news", id);
+  }
+
+  function openPartner(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!companyId) return;
+
+    router.push(`/members?member_id=${companyId}`, { scroll: false });
+    openLeftDrawer("member", companyId);
   }
 
   /* ========================================================
@@ -63,7 +77,7 @@ export default function PartnerSignalCard({
     if (isFeatured) {
       return (
         <article
-          onClick={open}
+          onClick={openNews}
           className="
             group cursor-pointer overflow-hidden rounded-2xl
             border border-ratecard-border
@@ -73,7 +87,7 @@ export default function PartnerSignalCard({
             grid grid-rows-[auto_1fr]
           "
         >
-          {/* IMAGE — RATIO STRICT */}
+          {/* IMAGE */}
           <div className="relative w-full aspect-[3/2] overflow-hidden bg-ratecard-light">
             {visualSrc ? (
               <img
@@ -88,11 +102,23 @@ export default function PartnerSignalCard({
             )}
           </div>
 
-          {/* TEXTE — REMPLIT LA 2e ZONE */}
+          {/* TEXTE */}
           <div className="p-4 flex flex-col">
-            <span className="text-xs uppercase tracking-wide text-gray-400">
-              À la une
-            </span>
+            <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wide">
+              <span>À la une</span>
+
+              {companyId && companyName && (
+                <>
+                  <span>•</span>
+                  <button
+                    onClick={openPartner}
+                    className="hover:text-ratecard-blue"
+                  >
+                    {companyName}
+                  </button>
+                </>
+              )}
+            </div>
 
             <h3 className="mt-1 text-lg font-semibold leading-tight text-gray-900">
               {title}
@@ -114,11 +140,11 @@ export default function PartnerSignalCard({
     }
 
     /* =====================================================
-       CARTES NORMALES — 1x1 (INCHANGÉ)
+       CARTES NORMALES — 1x1
     ===================================================== */
     return (
       <article
-        onClick={open}
+        onClick={openNews}
         className="
           group cursor-pointer overflow-hidden rounded-2xl
           border border-ratecard-border
@@ -145,6 +171,15 @@ export default function PartnerSignalCard({
 
         {/* TEXTE */}
         <div className="p-4 flex flex-col flex-1">
+          {companyId && companyName && (
+            <button
+              onClick={openPartner}
+              className="text-xs text-gray-400 uppercase tracking-wide hover:text-ratecard-blue mb-1 text-left"
+            >
+              {companyName}
+            </button>
+          )}
+
           <h3 className="text-sm font-semibold leading-snug text-gray-900">
             {title}
           </h3>
@@ -192,6 +227,12 @@ export default function PartnerSignalCard({
       </div>
 
       <div className="p-4">
+        {companyName && (
+          <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+            {companyName}
+          </div>
+        )}
+
         <h3 className="text-sm font-semibold leading-snug text-gray-900 group-hover:underline">
           {title}
         </h3>
