@@ -19,15 +19,13 @@ type NewsData = {
   body?: string | null;
   published_at: string;
 
-  // visuel propre à la news (peut être null)
   visual_rect_url?: string | null;
 
   company: {
     id_company: string;
     name: string;
     media_logo_rectangle_id?: string | null;
-    // 👉 optionnel si tu veux distinguer membre / non-membre
-    // is_member?: boolean;
+    is_partner?: boolean; // 🔑 clé métier
   };
 };
 
@@ -62,7 +60,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
     onClose?.();
     closeRightDrawer();
 
-    // 🔑 nettoyage URL uniquement si ouverture pilotée par la route
+    // Nettoyage URL uniquement si ouverture pilotée par la route
     if (
       rightDrawer.mode === "route" &&
       pathname.startsWith("/news")
@@ -72,14 +70,16 @@ export default function NewsDrawer({ id, onClose }: Props) {
   }
 
   /* ---------------------------------------------------------
-     OUVERTURE PARTENAIRE (DRAWER GAUCHE)
-     → AU-DESSUS, SANS NAVIGATION
+     OUVERTURE FICHE PARTENAIRE
+     → UNIQUEMENT SI IS_PARTNER = true
   --------------------------------------------------------- */
-  function openPartner(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (!data?.company?.id_company) return;
-
-    openLeftDrawer("member", data.company.id_company, "silent");
+  function openPartner() {
+    if (!data?.company?.is_partner) return;
+    openLeftDrawer(
+      "member",
+      data.company.id_company,
+      "silent"
+    );
   }
 
   /* ---------------------------------------------------------
@@ -95,7 +95,6 @@ export default function NewsDrawer({ id, onClose }: Props) {
         console.error(e);
       }
     }
-
     load();
   }, [id]);
 
@@ -130,17 +129,29 @@ export default function NewsDrawer({ id, onClose }: Props) {
         {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 flex items-start justify-between">
           <div className="space-y-1 max-w-xl">
-            {/* TAG PARTENAIRE — TOUJOURS VISIBLE */}
-            <button
-              onClick={openPartner}
-              className="text-xs uppercase tracking-wide text-gray-400 hover:text-ratecard-blue"
-            >
+            {/* SOCIÉTÉ — INFO + CTA CONDITIONNEL */}
+            <div className="text-xs uppercase tracking-wide text-gray-400">
               {data.company.name}
-            </button>
+              {data.company.is_partner && (
+                <span className="ml-2 text-ratecard-blue">
+                  — Partenaire Ratecard
+                </span>
+              )}
+            </div>
 
             <h1 className="text-xl font-semibold leading-tight text-gray-900">
               {data.title}
             </h1>
+
+            {/* CTA PARTENAIRE (UNIQUEMENT SI MEMBRE) */}
+            {data.company.is_partner && (
+              <button
+                onClick={openPartner}
+                className="mt-2 inline-block text-sm text-ratecard-blue hover:underline"
+              >
+                Voir la fiche partenaire →
+              </button>
+            )}
           </div>
 
           <button
@@ -207,4 +218,3 @@ export default function NewsDrawer({ id, onClose }: Props) {
     </div>
   );
 }
-
