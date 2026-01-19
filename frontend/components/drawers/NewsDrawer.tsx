@@ -76,7 +76,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
     async function load() {
       try {
         const res = await api.get(`/news/${id}`);
-        setData(res);
+        setData(res.news);
         requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
         console.error(e);
