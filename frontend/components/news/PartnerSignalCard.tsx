@@ -18,7 +18,7 @@ type Props = {
   visualRectUrl?: string | null;
   companyVisualRectId?: string | null;
 
-  // 👇 NOUVEAU — CONTEXTE PARTENAIRE
+  // CONTEXTE PARTENAIRE
   companyId?: string;
   companyName?: string;
 
@@ -48,22 +48,31 @@ export default function PartnerSignalCard({
 
   const isFeatured = variant === "featured";
 
+  /* ---------------------------------------------------------
+     VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
+  --------------------------------------------------------- */
   const visualSrc = visualRectUrl
     ? `${GCS_BASE_URL}/news/${visualRectUrl}`
     : companyVisualRectId
     ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
     : null;
 
+  /* ---------------------------------------------------------
+     OUVERTURE NEWS (DRAWER DROIT)
+  --------------------------------------------------------- */
   function openNews() {
     router.push(`/news?news_id=${id}`, { scroll: false });
     openRightDrawer("news", id);
   }
 
+  /* ---------------------------------------------------------
+     OUVERTURE PARTENAIRE (DRAWER GAUCHE)
+     👉 SANS CHANGEMENT DE PAGE
+  --------------------------------------------------------- */
   function openPartner(e: React.MouseEvent) {
     e.stopPropagation();
     if (!companyId) return;
 
-    router.push(`/members?member_id=${companyId}`, { scroll: false });
     openLeftDrawer("member", companyId);
   }
 
@@ -140,7 +149,7 @@ export default function PartnerSignalCard({
     }
 
     /* =====================================================
-       CARTES NORMALES — 1x1
+       CARTES NEWS NORMALES — 1x1
     ===================================================== */
     return (
       <article
