@@ -1,11 +1,6 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-
-const PAGE_TITLE = "Offre Ratecard Membership";
-const PAGE_DESCRIPTION =
-  "Le Ratecard Membership est une offre de visibilité et de relais éditorial pour les entreprises du marché AdTech / MarTech.";
 
 export default function MembershipPage() {
   return (
@@ -14,89 +9,76 @@ export default function MembershipPage() {
       {/* HERO */}
       <header className="text-center space-y-4">
         <h1 className="text-3xl font-bold text-gray-900">
-          {PAGE_TITLE}
+          Ratecard Membership
         </h1>
+
         <p className="text-lg text-gray-700">
-          Plateforme d’accompagnement éditorial, visibilité et relais de contenu pour les entreprises du marché.
+          Une offre de visibilité, de relais éditorial et d’accompagnement
+          pour les acteurs de l’AdTech, du Retail Media et de l’écosystème data.
         </p>
       </header>
 
       {/* INTRO */}
       <section className="space-y-6">
         <p className="text-gray-800">
-          Le Ratecard Membership permet à votre entreprise d’augmenter sa visibilité et
-          d’élargir son impact à travers les canaux éditoriaux de Ratecard : site web,
-          newsletter hebdomadaire, LinkedIn et événements de communauté.:contentReference[oaicite:1]{index=1}
+          Le Ratecard Membership permet à votre entreprise d’augmenter sa visibilité
+          et d’élargir son impact à travers les canaux éditoriaux de Ratecard :
+          site web, newsletter hebdomadaire, LinkedIn et événements de communauté.
         </p>
 
         <p className="text-gray-800">
-          C’est une offre pensée pour les acteurs AdTech / MarTech souhaitant fédérer
-          leur audience autour de contenus stratégiques, partager leurs insights,
-          et s’inscrire dans un écosystème d’influence professionnel.:contentReference[oaicite:2]{index=2}
+          L’objectif est simple : offrir un cadre éditorial structuré pour relayer
+          vos prises de parole, valoriser votre expertise et vous inscrire dans
+          un écosystème professionnel de référence.
         </p>
       </section>
 
-      {/* OFFRE — NIVEAUX */}
+      {/* OFFRES */}
       <section className="grid gap-8 md:grid-cols-3">
-        {/* Basic */}
-        <div className="border border-gray-200 rounded-lg p-6 shadow-sm space-y-4">
+        <div className="border border-gray-200 rounded-lg p-6 space-y-4">
           <h2 className="text-xl font-semibold text-gray-900">
-            Basic Membership
+            Membership Basic
           </h2>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
-            <li>Relai illimité de news sur Ratecard.fr</li>
-            <li>Relai illimité dans la newsletter hebdomadaire</li>
-            <li>Relai illimité des offres d’emploi</li>
-            <li>Relayage LinkedIn</li>
+            <li>Relais illimité de news sur Ratecard.fr</li>
+            <li>Relais dans la newsletter hebdomadaire</li>
+            <li>Relais des offres d’emploi</li>
+            <li>Visibilité LinkedIn</li>
             <li>Profil entreprise sur Ratecard</li>
           </ul>
         </div>
 
-        {/* Classic */}
-        <div className="border border-gray-200 rounded-lg p-6 shadow-sm space-y-4">
+        <div className="border border-gray-200 rounded-lg p-6 space-y-4">
           <h2 className="text-xl font-semibold text-gray-900">
-            Classic Membership
+            Membership Classic
           </h2>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Toutes les prestations Basic</li>
-            <li>Rencontres éditoriales mensuelles avec l’équipe</li>
-            <li>Visibilité sur événements spécifiques</li>
-            <li>Possibilités de contenus co-créés</li>
+            <li>Rencontres éditoriales régulières</li>
+            <li>Visibilité sur événements Ratecard</li>
+            <li>Contenus co-créés</li>
           </ul>
         </div>
 
-        {/* Premium */}
-        <div className="border border-gray-200 rounded-lg p-6 shadow-sm space-y-4">
+        <div className="border border-gray-200 rounded-lg p-6 space-y-4">
           <h2 className="text-xl font-semibold text-gray-900">
-            Premium Membership
+            Membership Premium
           </h2>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Toutes les prestations Classic</li>
-            <li>Analyse et rapports de marché réguliers</li>
             <li>Accompagnement stratégique dédié</li>
-            <li>Contenus éditoriaux personnalisés</li>
+            <li>Analyses et contenus sur mesure</li>
+            <li>Présence renforcée sur l’écosystème Ratecard</li>
           </ul>
         </div>
-      </section>
-
-      {/* VANTAGES */}
-      <section className="space-y-4">
-        <h2 className="text-2xl font-bold text-gray-900">
-          Pourquoi choisir Ratecard Membership ?
-        </h2>
-
-        <ul className="list-disc list-inside text-gray-700 space-y-2">
-          <li>Vous gagnez en visibilité sur un média professionnel reconnu.</li>
-          <li>Vos contenus (news, offres, prises de parole) sont relayés sur plusieurs canaux.</li>
-          <li>Vous bénéficiez d’un accompagnement marketing ciblé.:contentReference[oaicite:3]{index=3}</li>
-        </ul>
       </section>
 
       {/* CTA */}
       <section className="text-center space-y-4">
         <p className="text-lg text-gray-800">
-          Intéressé(e) par le Ratecard Membership ?
+          Vous souhaitez en savoir plus sur le Ratecard Membership ?
         </p>
+
         <Link
           href="mailto:contact@ratecard.fr"
           className="inline-block bg-ratecard-blue text-white font-semibold px-6 py-3 rounded-lg hover:bg-ratecard-blue/90 transition"
