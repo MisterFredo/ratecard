@@ -18,7 +18,7 @@ type Props = {
   visualRectUrl?: string | null;
   companyVisualRectId?: string | null;
 
-  // CONTEXTE PARTENAIRE
+  // CONTEXTE SOCIÉTÉ
   companyId?: string;
   companyName?: string;
   isPartner?: boolean;
@@ -61,7 +61,6 @@ export default function PartnerSignalCard({
 
   /* ---------------------------------------------------------
      OUVERTURE NEWS (DRAWER DROIT)
-     → UI-only par défaut
   --------------------------------------------------------- */
   function openNews() {
     if (fromPartnerClick.current) return;
@@ -69,21 +68,15 @@ export default function PartnerSignalCard({
   }
 
   /* ---------------------------------------------------------
-     OUVERTURE PARTENAIRE (TAG)
-     - partenaire → drawer partenaire
-     - non-partenaire → fallback = drawer news
+     OUVERTURE PARTENAIRE (UNIQUEMENT SI PARTENAIRE)
   --------------------------------------------------------- */
   function openPartner(e: React.MouseEvent) {
     e.stopPropagation();
+    if (!companyId || !isPartner) return;
+
     fromPartnerClick.current = true;
+    openLeftDrawer("member", companyId, "silent");
 
-    if (isPartner && companyId) {
-      openLeftDrawer("member", companyId, "silent");
-    } else {
-      openRightDrawer("news", id, "silent");
-    }
-
-    // reset après propagation
     setTimeout(() => {
       fromPartnerClick.current = false;
     }, 0);
@@ -126,18 +119,22 @@ export default function PartnerSignalCard({
 
           {/* TEXTE */}
           <div className="p-4 flex flex-col">
-            <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wide">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-gray-400">
               <span>À la une</span>
 
               {companyName && (
                 <>
                   <span>•</span>
-                  <button
-                    onClick={openPartner}
-                    className="hover:text-ratecard-blue"
-                  >
-                    {companyName}
-                  </button>
+                  {isPartner ? (
+                    <button
+                      onClick={openPartner}
+                      className="hover:text-ratecard-blue"
+                    >
+                      {companyName}
+                    </button>
+                  ) : (
+                    <span>{companyName}</span>
+                  )}
                 </>
               )}
             </div>
@@ -194,12 +191,18 @@ export default function PartnerSignalCard({
         {/* TEXTE */}
         <div className="p-4 flex flex-col flex-1">
           {companyName && (
-            <button
-              onClick={openPartner}
-              className="text-xs text-gray-400 uppercase tracking-wide hover:text-ratecard-blue mb-1 text-left"
-            >
-              {companyName}
-            </button>
+            isPartner ? (
+              <button
+                onClick={openPartner}
+                className="text-xs uppercase tracking-wide text-gray-400 hover:text-ratecard-blue mb-1 text-left"
+              >
+                {companyName}
+              </button>
+            ) : (
+              <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+                {companyName}
+              </div>
+            )
           )}
 
           <h3 className="text-sm font-semibold leading-snug text-gray-900">
@@ -250,7 +253,7 @@ export default function PartnerSignalCard({
 
       <div className="p-4">
         {companyName && (
-          <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+          <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">
             {companyName}
           </div>
         )}
