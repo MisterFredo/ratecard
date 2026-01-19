@@ -17,12 +17,11 @@ type NewsData = {
   title: string;
   excerpt?: string | null;
   body?: string | null;
-  published_at: string;
+  published_at?: string | null;
 
   visual_rect_url?: string | null;
 
   company?: {
-    id_company: string;
     name: string;
     media_logo_rectangle_id?: string | null;
   };
@@ -34,6 +33,14 @@ type Props = {
 };
 
 /* =========================================================
+   HELPERS
+========================================================= */
+
+function isValidDate(value?: string | null) {
+  return !!value && !isNaN(Date.parse(value));
+}
+
+/* =========================================================
    COMPONENT
 ========================================================= */
 
@@ -41,23 +48,19 @@ export default function NewsDrawer({ id, onClose }: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const {
-    rightDrawer,
-    closeRightDrawer,
-  } = useDrawer();
+  const { rightDrawer, closeRightDrawer } = useDrawer();
 
   const [data, setData] = useState<NewsData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   /* ---------------------------------------------------------
-     FERMETURE DU DRAWER (DROITE)
+     FERMETURE DU DRAWER
   --------------------------------------------------------- */
   function close() {
     setIsOpen(false);
     onClose?.();
     closeRightDrawer();
 
-    // Nettoyage URL uniquement si ouverture pilotée par la route
     if (
       rightDrawer.mode === "route" &&
       pathname.startsWith("/news")
@@ -68,13 +71,12 @@ export default function NewsDrawer({ id, onClose }: Props) {
 
   /* ---------------------------------------------------------
      CHARGEMENT DE LA NEWS
-     (route backend alignée)
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       try {
         const res = await api.get(`/news/${id}`);
-        setData(res); // api.get renvoie directement l’objet news
+        setData(res);
         requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
         console.error(e);
@@ -98,93 +100,67 @@ export default function NewsDrawer({ id, onClose }: Props) {
     <div className="fixed inset-0 z-[100] flex">
       {/* OVERLAY */}
       <div
-        className="absolute inset-0 bg-black/40 transition-opacity"
+        className="absolute inset-0 bg-black/40"
         onClick={close}
       />
 
-      {/* DRAWER — DROITE */}
+      {/* DRAWER */}
       <aside
         className={`
           relative ml-auto w-full md:w-[760px]
           bg-white shadow-xl overflow-y-auto
-          transform transition-transform duration-300 ease-out
+          transform transition-transform duration-300
           ${isOpen ? "translate-x-0" : "translate-x-full"}
         `}
       >
         {/* HEADER */}
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 flex items-start justify-between">
-          <div className="space-y-1 max-w-xl">
-            {/* SOCIÉTÉ — INFO SIMPLE */}
-            {data.company && (
+        <div className="sticky top-0 bg-white border-b px-5 py-4 flex justify-between">
+          <div>
+            {data.company?.name && (
               <div className="text-xs uppercase tracking-wide text-gray-400">
                 {data.company.name}
               </div>
             )}
-
-            <h1 className="text-xl font-semibold leading-tight text-gray-900">
+            <h1 className="text-xl font-semibold text-gray-900">
               {data.title}
             </h1>
           </div>
 
-          <button
-            onClick={close}
-            aria-label="Fermer"
-            className="mt-1"
-          >
+          <button onClick={close}>
             <X size={18} />
           </button>
         </div>
 
-        {/* VISUEL — HERO */}
+        {/* VISUEL */}
         {visualSrc && (
           <img
             src={visualSrc}
             alt={data.title}
-            className="
-              w-full
-              h-auto
-              max-h-[340px]
-              object-cover
-            "
+            className="w-full max-h-[340px] object-cover"
           />
         )}
 
         {/* CONTENT */}
         <div className="px-5 py-6 space-y-8">
-          {/* EXCERPT */}
           {data.excerpt && (
             <p className="text-base font-medium text-gray-800 max-w-2xl">
               {data.excerpt}
             </p>
           )}
 
-          {/* BODY */}
           {data.body && (
             <div
-              className="
-                prose prose-sm max-w-none
-                prose-p:my-4
-                prose-ul:my-4
-                prose-ol:my-4
-                prose-li:my-1
-                prose-strong:font-semibold
-                prose-a:text-ratecard-blue
-                prose-a:no-underline
-                hover:prose-a:underline
-              "
-              dangerouslySetInnerHTML={{
-                __html: data.body,
-              }}
+              className="prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: data.body }}
             />
           )}
 
-          {/* FOOTER */}
-          <div className="pt-4 border-t border-gray-200">
-            <p className="text-xs text-gray-400">
+          {isValidDate(data.published_at) && (
+            <div className="pt-4 border-t text-xs text-gray-400">
               Publié le{" "}
-              {new Date(data.published_at).toLocaleDateString("fr-FR")}
-            </p>
-          </div>
+              {new Date(data.published_at!).toLocaleDateString("fr-FR")}
+            </div>
+          )}
         </div>
       </aside>
     </div>
