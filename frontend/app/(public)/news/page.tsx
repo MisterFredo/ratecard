@@ -135,7 +135,6 @@ export default function NewsPage() {
               openInDrawer
 
               /* 🔑 CONTEXTE PARTENAIRE — IDENTIQUE À LA HOME */
-              companyId={n.company.id_company}
               companyName={n.company.name}
               isPartner={n.company.is_partner}
             />
