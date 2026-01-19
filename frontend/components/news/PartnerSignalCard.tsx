@@ -18,7 +18,6 @@ type Props = {
   visualRectUrl?: string | null;
   companyVisualRectId?: string | null;
 
-  // CONTEXTE SOCIÉTÉ
   companyName?: string;
   isPartner?: boolean;
 
@@ -26,6 +25,14 @@ type Props = {
   openInDrawer?: boolean;
   variant?: "default" | "featured";
 };
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function isValidDate(value?: string) {
+  return !!value && !isNaN(Date.parse(value));
+}
 
 /* =========================================================
    COMPONENT
@@ -66,7 +73,7 @@ export default function PartnerSignalCard({
   }
 
   /* ---------------------------------------------------------
-     CLASSE DE FILET — STATUT PARTENAIRE (VISUEL UNIQUEMENT)
+     FILET PARTENAIRE (VISUEL UNIQUEMENT)
   --------------------------------------------------------- */
   const borderClass = isPartner
     ? "border-ratecard-blue"
@@ -87,8 +94,7 @@ export default function PartnerSignalCard({
             group cursor-pointer overflow-hidden rounded-2xl
             bg-white shadow-card transition hover:shadow-cardHover
             border ${borderClass}
-            h-full
-            grid grid-rows-[auto_1fr]
+            h-full grid grid-rows-[auto_1fr]
           `}
         >
           {/* IMAGE */}
@@ -124,17 +130,19 @@ export default function PartnerSignalCard({
               </p>
             )}
 
-            <div className="mt-auto text-xs text-gray-400">
-              Publié le{" "}
-              {new Date(publishedAt).toLocaleDateString("fr-FR")}
-            </div>
+            {isValidDate(publishedAt) && (
+              <div className="mt-auto text-xs text-gray-400">
+                Publié le{" "}
+                {new Date(publishedAt).toLocaleDateString("fr-FR")}
+              </div>
+            )}
           </div>
         </article>
       );
     }
 
     /* =====================================================
-       CARTES NEWS NORMALES — 1x1
+       CARTES NEWS NORMALES
     ===================================================== */
     return (
       <article
@@ -143,8 +151,7 @@ export default function PartnerSignalCard({
           group cursor-pointer overflow-hidden rounded-2xl
           bg-white shadow-card transition hover:shadow-cardHover
           border ${borderClass}
-          h-full
-          flex flex-col
+          h-full flex flex-col
         `}
       >
         {/* VISUEL */}
@@ -180,17 +187,19 @@ export default function PartnerSignalCard({
             </p>
           )}
 
-          <div className="mt-auto text-xs text-gray-400">
-            Publié le{" "}
-            {new Date(publishedAt).toLocaleDateString("fr-FR")}
-          </div>
+          {isValidDate(publishedAt) && (
+            <div className="mt-auto text-xs text-gray-400">
+              Publié le{" "}
+              {new Date(publishedAt).toLocaleDateString("fr-FR")}
+            </div>
+          )}
         </div>
       </article>
     );
   }
 
   /* ========================================================
-     MODE NAVIGATION EXTERNE (INCHANGÉ)
+     MODE NAVIGATION EXTERNE
   ======================================================== */
   return (
     <Link
@@ -232,12 +241,13 @@ export default function PartnerSignalCard({
           </p>
         )}
 
-        <div className="mt-3 text-xs text-gray-400">
-          Publié le{" "}
-          {new Date(publishedAt).toLocaleDateString("fr-FR")}
-        </div>
+        {isValidDate(publishedAt) && (
+          <div className="mt-3 text-xs text-gray-400">
+            Publié le{" "}
+            {new Date(publishedAt).toLocaleDateString("fr-FR")}
+          </div>
+        )}
       </div>
     </Link>
   );
 }
-
