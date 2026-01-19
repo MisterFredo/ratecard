@@ -25,7 +25,7 @@ type NewsData = {
     id_company: string;
     name: string;
     media_logo_rectangle_id?: string | null;
-    is_partner?: boolean; // 🔑 clé métier
+    is_partner?: boolean;
   };
 };
 
@@ -53,14 +53,12 @@ export default function NewsDrawer({ id, onClose }: Props) {
 
   /* ---------------------------------------------------------
      FERMETURE DU DRAWER (DROITE)
-     → dépend du mode d’ouverture
   --------------------------------------------------------- */
   function close() {
     setIsOpen(false);
     onClose?.();
     closeRightDrawer();
 
-    // Nettoyage URL uniquement si ouverture pilotée par la route
     if (
       rightDrawer.mode === "route" &&
       pathname.startsWith("/news")
@@ -85,12 +83,13 @@ export default function NewsDrawer({ id, onClose }: Props) {
 
   /* ---------------------------------------------------------
      CHARGEMENT DE LA NEWS
+     ⚠️ ROUTE CORRECTE : /news/{id}
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get(`/public/news/${id}`);
-        // ⚠️ api.get renvoie déjà l’objet `news`
+        const res = await api.get(`/news/${id}`);
+        // api.get renvoie déjà l’objet news
         setData(res);
         requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
