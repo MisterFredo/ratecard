@@ -136,11 +136,15 @@ def get_news(id_news: str):
     news = serialize_row(rows[0])
 
     # ----------------------------
-    # COMPANY
+    # COMPANY (ENRICHED)
     # ----------------------------
     company = query_bq(
         f"""
-        SELECT ID_COMPANY, NAME, MEDIA_LOGO_RECTANGLE_ID
+        SELECT
+            ID_COMPANY,
+            NAME,
+            MEDIA_LOGO_RECTANGLE_ID,
+            IS_PARTNER              -- 👈 AJOUT CLÉ
         FROM `{TABLE_COMPANY}`
         WHERE ID_COMPANY = @id
         """,
@@ -154,9 +158,12 @@ def get_news(id_news: str):
     # ----------------------------
     news["topics"] = query_bq(
         f"""
-        SELECT T.ID_TOPIC, T.LABEL
+        SELECT
+            T.ID_TOPIC,
+            T.LABEL
         FROM `{TABLE_NEWS_TOPIC}` NT
-        JOIN `{TABLE_TOPIC}` T ON NT.ID_TOPIC = T.ID_TOPIC
+        JOIN `{TABLE_TOPIC}` T
+          ON NT.ID_TOPIC = T.ID_TOPIC
         WHERE NT.ID_NEWS = @id
         """,
         {"id": id_news},
@@ -167,9 +174,12 @@ def get_news(id_news: str):
     # ----------------------------
     news["persons"] = query_bq(
         f"""
-        SELECT P.ID_PERSON, P.NAME
+        SELECT
+            P.ID_PERSON,
+            P.NAME
         FROM `{TABLE_NEWS_PERSON}` NP
-        JOIN `{TABLE_PERSON}` P ON NP.ID_PERSON = P.ID_PERSON
+        JOIN `{TABLE_PERSON}` P
+          ON NP.ID_PERSON = P.ID_PERSON
         WHERE NP.ID_NEWS = @id
         """,
         {"id": id_news},
