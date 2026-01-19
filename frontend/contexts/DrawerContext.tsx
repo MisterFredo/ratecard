@@ -14,19 +14,28 @@ import {
 type DrawerTypeLeft = "member" | null;
 type DrawerTypeRight = "news" | "analysis" | null;
 
+type DrawerMode = "silent" | "route";
+
 type DrawerSlot = {
   type: DrawerTypeLeft | DrawerTypeRight;
   id: string | null;
+  mode: DrawerMode | null;
 };
 
 type DrawerContextType = {
   leftDrawer: DrawerSlot;
   rightDrawer: DrawerSlot;
 
-  openLeftDrawer: (type: "member", id: string) => void;
+  openLeftDrawer: (
+    type: "member",
+    id: string,
+    mode?: DrawerMode
+  ) => void;
+
   openRightDrawer: (
     type: "news" | "analysis",
-    id: string
+    id: string,
+    mode?: DrawerMode
   ) => void;
 
   closeLeftDrawer: () => void;
@@ -53,22 +62,28 @@ export function DrawerProvider({
   const [leftDrawer, setLeftDrawer] = useState<DrawerSlot>({
     type: null,
     id: null,
+    mode: null,
   });
 
   const [rightDrawer, setRightDrawer] = useState<DrawerSlot>({
     type: null,
     id: null,
+    mode: null,
   });
 
   /* -----------------------------
      OPEN / CLOSE — LEFT
   ----------------------------- */
-  function openLeftDrawer(type: "member", id: string) {
-    setLeftDrawer({ type, id });
+  function openLeftDrawer(
+    type: "member",
+    id: string,
+    mode: DrawerMode = "silent"
+  ) {
+    setLeftDrawer({ type, id, mode });
   }
 
   function closeLeftDrawer() {
-    setLeftDrawer({ type: null, id: null });
+    setLeftDrawer({ type: null, id: null, mode: null });
   }
 
   /* -----------------------------
@@ -76,13 +91,14 @@ export function DrawerProvider({
   ----------------------------- */
   function openRightDrawer(
     type: "news" | "analysis",
-    id: string
+    id: string,
+    mode: DrawerMode = "silent"
   ) {
-    setRightDrawer({ type, id });
+    setRightDrawer({ type, id, mode });
   }
 
   function closeRightDrawer() {
-    setRightDrawer({ type: null, id: null });
+    setRightDrawer({ type: null, id: null, mode: null });
   }
 
   return (
