@@ -1,7 +1,7 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useDrawer } from "@/contexts/DrawerContext";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
@@ -46,7 +46,7 @@ export default function PartnerSignalCard({
   variant = "default",
 }: Props) {
   const { openRightDrawer, openLeftDrawer } = useDrawer();
-  const router = useRouter();
+  const fromPartnerClick = useRef(false);
 
   const isFeatured = variant === "featured";
 
@@ -61,25 +61,32 @@ export default function PartnerSignalCard({
 
   /* ---------------------------------------------------------
      OUVERTURE NEWS (DRAWER DROIT)
-     → UI-only par défaut (home)
+     → UI-only par défaut
   --------------------------------------------------------- */
   function openNews() {
+    if (fromPartnerClick.current) return;
     openRightDrawer("news", id, "silent");
   }
 
   /* ---------------------------------------------------------
-     OUVERTURE PARTENAIRE
-     - membre → drawer partenaire
-     - non-membre → fallback = drawer news
+     OUVERTURE PARTENAIRE (TAG)
+     - partenaire → drawer partenaire
+     - non-partenaire → fallback = drawer news
   --------------------------------------------------------- */
   function openPartner(e: React.MouseEvent) {
     e.stopPropagation();
+    fromPartnerClick.current = true;
 
     if (isPartner && companyId) {
       openLeftDrawer("member", companyId, "silent");
     } else {
       openRightDrawer("news", id, "silent");
     }
+
+    // reset après propagation
+    setTimeout(() => {
+      fromPartnerClick.current = false;
+    }, 0);
   }
 
   /* ========================================================
@@ -215,8 +222,7 @@ export default function PartnerSignalCard({
   }
 
   /* ========================================================
-     MODE NAVIGATION EXTERNE (INCHANGÉ)
-     → utilisé uniquement hors home
+     MODE NAVIGATION EXTERNE (HORS HOME)
   ======================================================== */
   return (
     <Link
