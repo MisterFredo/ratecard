@@ -6,6 +6,7 @@ import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 type Company = {
   id_company: string;
   name: string;
+  logo_rect_id?: string | null;
 };
 
 type NewsItem = {
@@ -13,9 +14,8 @@ type NewsItem = {
   title: string;
   excerpt?: string | null;
   visual_rect_url?: string | null;
-  company_visual_rect_id?: string | null;
-  company?: Company;
   published_at: string;
+  company?: Company;
 };
 
 type Props = {
@@ -84,7 +84,6 @@ export default function HomeClient({ news }: Props) {
               title={featuredNews.title}
               excerpt={featuredNews.excerpt}
               visualRectUrl={featuredNews.visual_rect_url}
-              companyVisualRectId={featuredNews.company_visual_rect_id}
               companyId={featuredNews.company?.id_company}
               companyName={featuredNews.company?.name}
               publishedAt={featuredNews.published_at}
@@ -104,7 +103,6 @@ export default function HomeClient({ news }: Props) {
             title={n.title}
             excerpt={n.excerpt}
             visualRectUrl={n.visual_rect_url}
-            companyVisualRectId={n.company_visual_rect_id}
             companyId={n.company?.id_company}
             companyName={n.company?.name}
             publishedAt={n.published_at}
