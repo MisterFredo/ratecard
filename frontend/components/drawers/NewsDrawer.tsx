@@ -19,15 +19,12 @@ type NewsData = {
   body?: string | null;
   published_at: string;
 
-  // visuel propre à la news (peut être null)
   visual_rect_url?: string | null;
 
   company: {
     id_company: string;
     name: string;
     media_logo_rectangle_id?: string | null;
-    // 👉 optionnel si tu veux distinguer membre / non-membre
-    // is_member?: boolean;
   };
 };
 
@@ -54,15 +51,13 @@ export default function NewsDrawer({ id, onClose }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
   /* ---------------------------------------------------------
-     FERMETURE DU DRAWER (DROITE)
-     → dépend du mode d’ouverture
+     FERMETURE DU DRAWER
   --------------------------------------------------------- */
   function close() {
     setIsOpen(false);
     onClose?.();
     closeRightDrawer();
 
-    // 🔑 nettoyage URL uniquement si ouverture pilotée par la route
     if (
       rightDrawer.mode === "route" &&
       pathname.startsWith("/news")
@@ -72,8 +67,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
   }
 
   /* ---------------------------------------------------------
-     OUVERTURE PARTENAIRE (DRAWER GAUCHE)
-     → AU-DESSUS, SANS NAVIGATION
+     OUVERTURE PARTENAIRE (COMME AVANT)
   --------------------------------------------------------- */
   function openPartner(e: React.MouseEvent) {
     e.stopPropagation();
@@ -83,13 +77,16 @@ export default function NewsDrawer({ id, onClose }: Props) {
   }
 
   /* ---------------------------------------------------------
-     CHARGEMENT DE LA NEWS
+     CHARGEMENT DE LA NEWS (CORRECTION CLÉ)
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       try {
         const res = await api.get(`/public/news/${id}`);
-        setData(res);
+
+        // 🔑 FIX ABSOLU : on prend res.news
+        setData(res.news);
+
         requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
         console.error(e);
@@ -114,7 +111,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
     <div className="fixed inset-0 z-[100] flex">
       {/* OVERLAY */}
       <div
-        className="absolute inset-0 bg-black/40 transition-opacity"
+        className="absolute inset-0 bg-black/40"
         onClick={close}
       />
 
@@ -130,7 +127,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
         {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 flex items-start justify-between">
           <div className="space-y-1 max-w-xl">
-            {/* TAG PARTENAIRE — TOUJOURS VISIBLE */}
+            {/* TAG SOCIÉTÉ — COMPORTEMENT ORIGINAL */}
             <button
               onClick={openPartner}
               className="text-xs uppercase tracking-wide text-gray-400 hover:text-ratecard-blue"
@@ -152,30 +149,23 @@ export default function NewsDrawer({ id, onClose }: Props) {
           </button>
         </div>
 
-        {/* VISUEL — HERO */}
+        {/* VISUEL */}
         {visualSrc && (
           <img
             src={visualSrc}
             alt={data.title}
-            className="
-              w-full
-              h-auto
-              max-h-[340px]
-              object-cover
-            "
+            className="w-full max-h-[340px] object-cover"
           />
         )}
 
         {/* CONTENT */}
         <div className="px-5 py-6 space-y-8">
-          {/* EXCERPT */}
           {data.excerpt && (
             <p className="text-base font-medium text-gray-800 max-w-2xl">
               {data.excerpt}
             </p>
           )}
 
-          {/* BODY */}
           {data.body && (
             <div
               className="
@@ -195,7 +185,6 @@ export default function NewsDrawer({ id, onClose }: Props) {
             />
           )}
 
-          {/* FOOTER */}
           <div className="pt-4 border-t border-gray-200">
             <p className="text-xs text-gray-400">
               Publié le{" "}
