@@ -47,36 +47,32 @@ function isValidDate(value?: string | null) {
 export default function NewsDrawer({ id, onClose }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-
   const { rightDrawer, closeRightDrawer } = useDrawer();
 
   const [data, setData] = useState<NewsData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   /* ---------------------------------------------------------
-     FERMETURE DU DRAWER
+     CLOSE
   --------------------------------------------------------- */
   function close() {
     setIsOpen(false);
     onClose?.();
     closeRightDrawer();
 
-    if (
-      rightDrawer.mode === "route" &&
-      pathname.startsWith("/news")
-    ) {
+    if (rightDrawer.mode === "route" && pathname.startsWith("/news")) {
       router.push("/news", { scroll: false });
     }
   }
 
   /* ---------------------------------------------------------
-     CHARGEMENT DE LA NEWS
+     LOAD NEWS
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       try {
         const res = await api.get(`/news/${id}`);
-        setData(res.news);
+        setData(res.news); // 🔑 IMPORTANT
         requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
         console.error(e);
@@ -87,14 +83,8 @@ export default function NewsDrawer({ id, onClose }: Props) {
 
   if (!data) return null;
 
-  /* ---------------------------------------------------------
-     VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
-  --------------------------------------------------------- */
-  const visualSrc = data.visual_rect_url
-    ? `${GCS_BASE_URL}/news/${data.visual_rect_url}`
-    : data.company?.media_logo_rectangle_id
-    ? `${GCS_BASE_URL}/companies/${data.company.media_logo_rectangle_id}`
-    : null;
+  const hasNewsVisual = !!data.visual_rect_url;
+  const hasCompanyLogo = !!data.company?.media_logo_rectangle_id;
 
   return (
     <div className="fixed inset-0 z-[100] flex">
@@ -131,13 +121,23 @@ export default function NewsDrawer({ id, onClose }: Props) {
           </button>
         </div>
 
-        {/* VISUEL */}
-        {visualSrc && (
+        {/* VISUAL */}
+        {hasNewsVisual && (
           <img
-            src={visualSrc}
+            src={`${GCS_BASE_URL}/news/${data.visual_rect_url}`}
             alt={data.title}
             className="w-full max-h-[340px] object-cover"
           />
+        )}
+
+        {!hasNewsVisual && hasCompanyLogo && (
+          <div className="py-10 flex justify-center bg-gray-50 border-b">
+            <img
+              src={`${GCS_BASE_URL}/companies/${data.company!.media_logo_rectangle_id}`}
+              alt={data.company!.name}
+              className="max-h-[120px] object-contain"
+            />
+          </div>
         )}
 
         {/* CONTENT */}
