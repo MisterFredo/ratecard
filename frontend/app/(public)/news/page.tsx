@@ -11,20 +11,32 @@ export const dynamic = "force-dynamic";
    TYPES
 ========================================================= */
 
-type NewsItem = {
+type NewsItemRaw = {
   ID_NEWS: string;
   TITLE: string;
   EXCERPT?: string | null;
   VISUAL_RECT_URL: string | null;
   PUBLISHED_AT?: string | null;
 
-  // CONTEXTE SOCIÉTÉ
   ID_COMPANY: string;
   COMPANY_NAME: string;
   MEDIA_LOGO_RECTANGLE_ID?: string | null;
-
-  // si dispo plus tard
   IS_PARTNER?: boolean;
+};
+
+type NewsItem = {
+  id: string;
+  title: string;
+  excerpt?: string | null;
+  visual_rect_url: string | null;
+  published_at: string;
+
+  company: {
+    id_company: string;
+    name: string;
+    logo_rect_id?: string | null;
+    is_partner: boolean;
+  };
 };
 
 const API_BASE =
@@ -34,7 +46,7 @@ const API_BASE =
    FETCH
 ========================================================= */
 
-async function fetchNews(): Promise<NewsItem[]> {
+async function fetchNews(): Promise<NewsItemRaw[]> {
   const res = await fetch(
     `${API_BASE}/news/list`,
     { cache: "no-store" }
@@ -57,32 +69,45 @@ export default function NewsPage() {
   const lastOpenedId = useRef<string | null>(null);
 
   /* ---------------------------------------------------------
-     Chargement de la liste des news
+     Chargement + mapping explicite des news
   --------------------------------------------------------- */
   useEffect(() => {
-    fetchNews().then(setNews);
+    fetchNews().then((rows) => {
+      const mapped = rows.map((n) => ({
+        id: n.ID_NEWS,
+        title: n.TITLE,
+        excerpt: n.EXCERPT ?? null,
+        visual_rect_url: n.VISUAL_RECT_URL,
+        published_at: n.PUBLISHED_AT || "",
+
+        company: {
+          id_company: n.ID_COMPANY,
+          name: n.COMPANY_NAME,
+          logo_rect_id: n.MEDIA_LOGO_RECTANGLE_ID ?? null,
+          is_partner: n.IS_PARTNER === true,
+        },
+      }));
+
+      setNews(mapped);
+    });
   }, []);
 
   /* ---------------------------------------------------------
      Ouverture du drawer pilotée par l’URL
-     /news?news_id=XXXX
-     → mode = route
+     /news?news_id=XXXX → mode = route
   --------------------------------------------------------- */
   useEffect(() => {
     const newsId = searchParams.get("news_id");
 
-    // aucun drawer demandé → reset du garde-fou
     if (!newsId) {
       lastOpenedId.current = null;
       return;
     }
 
-    // déjà ouvert → ne rien faire
     if (lastOpenedId.current === newsId) {
       return;
     }
 
-    // nouvelle ouverture légitime — DRAWER DROIT piloté par l’URL
     lastOpenedId.current = newsId;
     openRightDrawer("news", newsId, "route");
 
@@ -101,19 +126,18 @@ export default function NewsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {news.map((n) => (
             <PartnerSignalCard
-              key={n.ID_NEWS}
-              id={n.ID_NEWS}
-              title={n.TITLE}
-              excerpt={n.EXCERPT}
-              visualRectUrl={n.VISUAL_RECT_URL}
-              companyVisualRectId={n.MEDIA_LOGO_RECTANGLE_ID}
-              publishedAt={n.PUBLISHED_AT || ""}
+              key={n.id}
+              id={n.id}
+              title={n.title}
+              excerpt={n.excerpt}
+              visualRectUrl={n.visual_rect_url}
+              publishedAt={n.published_at}
               openInDrawer
 
-              /* 🔑 CONTEXTE PARTENAIRE */
-              companyId={n.ID_COMPANY}
-              companyName={n.COMPANY_NAME}
-              isPartner={n.IS_PARTNER === true}
+              /* 🔑 CONTEXTE PARTENAIRE — IDENTIQUE À LA HOME */
+              companyId={n.company.id_company}
+              companyName={n.company.name}
+              isPartner={n.company.is_partner}
             />
           ))}
         </div>
@@ -121,4 +145,5 @@ export default function NewsPage() {
     </div>
   );
 }
+
 
