@@ -99,6 +99,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
   }, [id]);
 
   if (!data) return null;
+   console.log("NEWS DRAWER COMPANY", data.company);
 
   /* ---------------------------------------------------------
      VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
