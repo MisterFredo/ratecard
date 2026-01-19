@@ -17,7 +17,7 @@ export default async function HomePage() {
   );
 
   /* ---------------------------------------------------------
-     NEWS — mapping AVEC CONTEXTE PARTENAIRE
+     NEWS — mapping AVEC CONTEXTE PARTENAIRE (DÉFINITIF)
   --------------------------------------------------------- */
   const news = newsRaw.news.map((n) => ({
     id: n.ID_NEWS,
@@ -30,6 +30,7 @@ export default async function HomePage() {
       id_company: n.ID_COMPANY,
       name: n.COMPANY_NAME,
       logo_rect_id: n.MEDIA_LOGO_RECTANGLE_ID ?? null,
+      is_partner: n.IS_PARTNER === true, // 👈 CLÉ MÉTIER
     },
   }));
 
@@ -39,4 +40,5 @@ export default async function HomePage() {
     />
   );
 }
+
 
