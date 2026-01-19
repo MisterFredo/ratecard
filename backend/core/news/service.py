@@ -120,6 +120,9 @@ def create_news(data: NewsCreate) -> str:
 # GET ONE NEWS (ENRICHI, JSON-SAFE)
 # ============================================================
 def get_news(id_news: str):
+    # ----------------------------
+    # NEWS
+    # ----------------------------
     rows = query_bq(
         f"""
         SELECT *
@@ -133,25 +136,35 @@ def get_news(id_news: str):
     if not rows:
         return None
 
+    # sérialisation standard de la news
     news = serialize_row(rows[0])
 
     # ----------------------------
-    # COMPANY (ENRICHED)
+    # COMPANY (ENRICHED, EXPLICIT)
     # ----------------------------
-    company = query_bq(
+    company_rows = query_bq(
         f"""
         SELECT
             ID_COMPANY,
             NAME,
             MEDIA_LOGO_RECTANGLE_ID,
-            IS_PARTNER              -- 👈 AJOUT CLÉ
+            IS_PARTNER
         FROM `{TABLE_COMPANY}`
         WHERE ID_COMPANY = @id
         """,
         {"id": news["ID_COMPANY"]},
     )
 
-    news["company"] = serialize_row(company[0]) if company else None
+    if company_rows:
+        row = company_rows[0]
+        news["company"] = {
+            "id_company": row["ID_COMPANY"],
+            "name": row["NAME"],
+            "media_logo_rectangle_id": row["MEDIA_LOGO_RECTANGLE_ID"],
+            "is_partner": bool(row["IS_PARTNER"]),  # 🔒 FORCÉ EN BOOL
+        }
+    else:
+        news["company"] = None
 
     # ----------------------------
     # TOPICS
