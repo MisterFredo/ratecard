@@ -21,11 +21,10 @@ type NewsData = {
 
   visual_rect_url?: string | null;
 
-  company: {
+  company?: {
     id_company: string;
     name: string;
     media_logo_rectangle_id?: string | null;
-    is_partner?: boolean;
   };
 };
 
@@ -44,7 +43,6 @@ export default function NewsDrawer({ id, onClose }: Props) {
 
   const {
     rightDrawer,
-    openLeftDrawer,
     closeRightDrawer,
   } = useDrawer();
 
@@ -59,6 +57,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
     onClose?.();
     closeRightDrawer();
 
+    // Nettoyage URL uniquement si ouverture pilotée par la route
     if (
       rightDrawer.mode === "route" &&
       pathname.startsWith("/news")
@@ -68,29 +67,14 @@ export default function NewsDrawer({ id, onClose }: Props) {
   }
 
   /* ---------------------------------------------------------
-     OUVERTURE FICHE PARTENAIRE
-     → UNIQUEMENT SI IS_PARTNER = true
-  --------------------------------------------------------- */
-  function openPartner() {
-    if (!data?.company?.is_partner) return;
-
-    openLeftDrawer(
-      "member",
-      data.company.id_company,
-      "silent"
-    );
-  }
-
-  /* ---------------------------------------------------------
      CHARGEMENT DE LA NEWS
-     ⚠️ ROUTE CORRECTE : /news/{id}
+     (route backend alignée)
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       try {
         const res = await api.get(`/news/${id}`);
-        // api.get renvoie déjà l’objet news
-        setData(res);
+        setData(res); // api.get renvoie directement l’objet news
         requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
         console.error(e);
@@ -130,29 +114,16 @@ export default function NewsDrawer({ id, onClose }: Props) {
         {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 flex items-start justify-between">
           <div className="space-y-1 max-w-xl">
-            {/* SOCIÉTÉ — INFO + LABEL PARTENAIRE */}
-            <div className="text-xs uppercase tracking-wide text-gray-400">
-              {data.company.name}
-              {data.company.is_partner && (
-                <span className="ml-2 text-ratecard-blue">
-                  — Partenaire Ratecard
-                </span>
-              )}
-            </div>
+            {/* SOCIÉTÉ — INFO SIMPLE */}
+            {data.company && (
+              <div className="text-xs uppercase tracking-wide text-gray-400">
+                {data.company.name}
+              </div>
+            )}
 
             <h1 className="text-xl font-semibold leading-tight text-gray-900">
               {data.title}
             </h1>
-
-            {/* CTA PARTENAIRE */}
-            {data.company.is_partner && (
-              <button
-                onClick={openPartner}
-                className="mt-2 inline-block text-sm text-ratecard-blue hover:underline"
-              >
-                Voir la fiche partenaire →
-              </button>
-            )}
           </div>
 
           <button
