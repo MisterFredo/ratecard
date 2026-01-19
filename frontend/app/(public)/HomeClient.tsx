@@ -3,10 +3,13 @@
 import { useState, useEffect } from "react";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 type Company = {
-  id_company: string;
   name: string;
-  logo_rect_id?: string | null;
+  is_partner?: boolean;
 };
 
 type NewsItem = {
@@ -24,6 +27,10 @@ type Props = {
 
 const PAGE_SIZE = 12;
 
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 export default function HomeClient({ news }: Props) {
   /* ---------------------------------------------------------
      STATE — SCROLL INFINI
@@ -38,7 +45,6 @@ export default function HomeClient({ news }: Props) {
 
   const featuredNews = sortedNews[0];
   const otherNews = sortedNews.slice(1);
-
   const visibleNews = otherNews.slice(0, visibleCount);
 
   /* ---------------------------------------------------------
@@ -84,8 +90,8 @@ export default function HomeClient({ news }: Props) {
               title={featuredNews.title}
               excerpt={featuredNews.excerpt}
               visualRectUrl={featuredNews.visual_rect_url}
-              companyId={featuredNews.company?.id_company}
               companyName={featuredNews.company?.name}
+              isPartner={featuredNews.company?.is_partner === true}
               publishedAt={featuredNews.published_at}
               openInDrawer
               variant="featured"
@@ -103,8 +109,8 @@ export default function HomeClient({ news }: Props) {
             title={n.title}
             excerpt={n.excerpt}
             visualRectUrl={n.visual_rect_url}
-            companyId={n.company?.id_company}
             companyName={n.company?.name}
+            isPartner={n.company?.is_partner === true}
             publishedAt={n.published_at}
             openInDrawer
           />
@@ -122,3 +128,4 @@ export default function HomeClient({ news }: Props) {
     </div>
   );
 }
+
