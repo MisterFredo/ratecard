@@ -75,6 +75,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
   --------------------------------------------------------- */
   function openPartner() {
     if (!data?.company?.is_partner) return;
+
     openLeftDrawer(
       "member",
       data.company.id_company,
@@ -89,7 +90,8 @@ export default function NewsDrawer({ id, onClose }: Props) {
     async function load() {
       try {
         const res = await api.get(`/public/news/${id}`);
-        setData(res.news);
+        // ⚠️ api.get renvoie déjà l’objet `news`
+        setData(res);
         requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
         console.error(e);
@@ -99,7 +101,6 @@ export default function NewsDrawer({ id, onClose }: Props) {
   }, [id]);
 
   if (!data) return null;
-   console.log("NEWS DRAWER COMPANY", data.company);
 
   /* ---------------------------------------------------------
      VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
@@ -130,7 +131,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
         {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 flex items-start justify-between">
           <div className="space-y-1 max-w-xl">
-            {/* SOCIÉTÉ — INFO + CTA CONDITIONNEL */}
+            {/* SOCIÉTÉ — INFO + LABEL PARTENAIRE */}
             <div className="text-xs uppercase tracking-wide text-gray-400">
               {data.company.name}
               {data.company.is_partner && (
@@ -144,7 +145,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
               {data.title}
             </h1>
 
-            {/* CTA PARTENAIRE (UNIQUEMENT SI MEMBRE) */}
+            {/* CTA PARTENAIRE */}
             {data.company.is_partner && (
               <button
                 onClick={openPartner}
