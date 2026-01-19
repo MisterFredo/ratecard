@@ -128,4 +128,3 @@ export default function HomeClient({ news }: Props) {
     </div>
   );
 }
-
