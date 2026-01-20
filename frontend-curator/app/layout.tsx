@@ -1,4 +1,3 @@
-import DrawerHost from "@/components/drawers/DrawerHost";
 import "./globals.css";
 
 export default function RootLayout({
@@ -8,10 +7,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body>
-        {children}
-        <DrawerHost />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
