@@ -5,7 +5,6 @@ import { useDrawer } from "@/contexts/DrawerContext";
 // DRAWERS
 import MemberDrawer from "@/components/drawers/MemberDrawer";
 import NewsDrawer from "@/components/drawers/NewsDrawer";
-import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
 
 /* =========================================================
    HOST — RENDU CENTRALISÉ DES DRAWERS
