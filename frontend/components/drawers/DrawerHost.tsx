@@ -35,14 +35,6 @@ export default function DrawerHost() {
           onClose={closeRightDrawer}
         />
       )}
-
-      {/* DRAWER DROITE — ANALYSIS */}
-      {rightDrawer.type === "analysis" && rightDrawer.id && (
-        <AnalysisDrawer
-          id={rightDrawer.id}
-          onClose={closeRightDrawer}
-        />
-      )}
     </>
   );
 }
