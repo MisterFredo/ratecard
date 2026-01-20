@@ -1,8 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useDrawer } from "@/contexts/DrawerContext";
-
 type Props = {
   id: string;
   title: string;
@@ -15,6 +12,7 @@ type Props = {
   };
   topic?: string;
   keyMetric?: string;
+  onOpen?: (id: string) => void;
 };
 
 export default function AnalysisCard({
@@ -25,18 +23,11 @@ export default function AnalysisCard({
   event,
   topic,
   keyMetric,
+  onOpen,
 }: Props) {
-  const { openRightDrawer } = useDrawer();
-  const router = useRouter();
-
   return (
     <article
-      onClick={() => {
-        router.push(`/analysis?analysis_id=${id}`, {
-          scroll: false,
-        });
-        openRightDrawer("analysis", id);
-      }}
+      onClick={() => onOpen?.(id)}
       className="
         cursor-pointer rounded-2xl
         border border-ratecard-border bg-white
