@@ -1,5 +1,3 @@
-import axios from "axios";
-
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:8000/api";
@@ -9,9 +7,11 @@ export const api = {
     const res = await fetch(`${API_BASE}${path}`, {
       cache: "no-store",
     });
+
     if (!res.ok) {
-      throw new Error("API error");
+      throw new Error(`API error: ${res.status}`);
     }
+
     return res.json();
   },
 };
