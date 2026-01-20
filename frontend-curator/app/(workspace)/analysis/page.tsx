@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import AnalysisCard from "@/components/analysis/AnalysisCard";
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
 
+export const dynamic = "force-dynamic";
+
 /* =========================================================
    TYPES
 ========================================================= */
@@ -35,7 +37,9 @@ async function fetchAnalyses(): Promise<AnalysisItem[]> {
     `${API_BASE}/public/analysis/list`,
     { cache: "no-store" }
   );
+
   if (!res.ok) return [];
+
   const json = await res.json();
   return json.items || [];
 }
@@ -48,6 +52,9 @@ export default function AnalysisPage() {
   const [analyses, setAnalyses] = useState<AnalysisItem[]>([]);
   const [openedId, setOpenedId] = useState<string | null>(null);
 
+  /* ---------------------------------------------------------
+     LOAD ANALYSES
+  --------------------------------------------------------- */
   useEffect(() => {
     fetchAnalyses().then(setAnalyses);
   }, []);
@@ -79,19 +86,18 @@ export default function AnalysisPage() {
             }}
             keyMetric={a.key_metrics?.[0]}
             topic={a.topics?.[0]}
-            onClick={() => setOpenedId(a.id)}
+            onOpen={(id) => setOpenedId(id)}
           />
         ))}
       </div>
 
       {/* =====================================================
-          ANALYSIS DRAWER (UX TOOL)
+          ANALYSIS DRAWER — UX TOOL
       ===================================================== */}
       {openedId && (
         <AnalysisDrawer
           id={openedId}
           onClose={() => setOpenedId(null)}
-          onNavigate={(nextId) => setOpenedId(nextId)}
         />
       )}
     </>
