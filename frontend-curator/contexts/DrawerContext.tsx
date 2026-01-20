@@ -8,38 +8,28 @@ import {
 } from "react";
 
 /* =========================================================
-   TYPES
+   TYPES — CURATOR
 ========================================================= */
 
-type DrawerTypeLeft = "member" | null;
-type DrawerTypeRight = "news" | "analysis" | null;
+export type DrawerType = "analysis" | "synthesis" | null;
+export type DrawerSide = "left" | "right";
 
-type DrawerMode = "silent" | "route";
-
-type DrawerSlot = {
-  type: DrawerTypeLeft | DrawerTypeRight;
+type DrawerState = {
+  type: DrawerType;
   id: string | null;
-  mode: DrawerMode | null;
 };
 
 type DrawerContextType = {
-  leftDrawer: DrawerSlot;
-  rightDrawer: DrawerSlot;
+  leftDrawer: DrawerState;
+  rightDrawer: DrawerState;
 
-  openLeftDrawer: (
-    type: "member",
-    id: string,
-    mode?: DrawerMode
+  openDrawer: (
+    side: DrawerSide,
+    type: Exclude<DrawerType, null>,
+    id: string
   ) => void;
 
-  openRightDrawer: (
-    type: "news" | "analysis",
-    id: string,
-    mode?: DrawerMode
-  ) => void;
-
-  closeLeftDrawer: () => void;
-  closeRightDrawer: () => void;
+  closeDrawer: (side: DrawerSide) => void;
 };
 
 /* =========================================================
@@ -59,46 +49,37 @@ export function DrawerProvider({
 }: {
   children: ReactNode;
 }) {
-  const [leftDrawer, setLeftDrawer] = useState<DrawerSlot>({
+  const [leftDrawer, setLeftDrawer] = useState<DrawerState>({
     type: null,
     id: null,
-    mode: null,
   });
 
-  const [rightDrawer, setRightDrawer] = useState<DrawerSlot>({
+  const [rightDrawer, setRightDrawer] = useState<DrawerState>({
     type: null,
     id: null,
-    mode: null,
   });
 
   /* -----------------------------
-     OPEN / CLOSE — LEFT
+     OPEN / CLOSE
   ----------------------------- */
-  function openLeftDrawer(
-    type: "member",
-    id: string,
-    mode: DrawerMode = "silent"
+  function openDrawer(
+    side: DrawerSide,
+    type: Exclude<DrawerType, null>,
+    id: string
   ) {
-    setLeftDrawer({ type, id, mode });
+    if (side === "left") {
+      setLeftDrawer({ type, id });
+    } else {
+      setRightDrawer({ type, id });
+    }
   }
 
-  function closeLeftDrawer() {
-    setLeftDrawer({ type: null, id: null, mode: null });
-  }
-
-  /* -----------------------------
-     OPEN / CLOSE — RIGHT
-  ----------------------------- */
-  function openRightDrawer(
-    type: "news" | "analysis",
-    id: string,
-    mode: DrawerMode = "silent"
-  ) {
-    setRightDrawer({ type, id, mode });
-  }
-
-  function closeRightDrawer() {
-    setRightDrawer({ type: null, id: null, mode: null });
+  function closeDrawer(side: DrawerSide) {
+    if (side === "left") {
+      setLeftDrawer({ type: null, id: null });
+    } else {
+      setRightDrawer({ type: null, id: null });
+    }
   }
 
   return (
@@ -106,10 +87,8 @@ export function DrawerProvider({
       value={{
         leftDrawer,
         rightDrawer,
-        openLeftDrawer,
-        openRightDrawer,
-        closeLeftDrawer,
-        closeRightDrawer,
+        openDrawer,
+        closeDrawer,
       }}
     >
       {children}
