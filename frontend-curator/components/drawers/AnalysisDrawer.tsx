@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { X } from "lucide-react";
 
@@ -24,42 +23,34 @@ type AnalysisData = {
 
 type Props = {
   id: string;
-  onClose?: () => void;
+  onClose: () => void;
 };
 
 export default function AnalysisDrawer({ id, onClose }: Props) {
-  const router = useRouter();
   const [data, setData] = useState<AnalysisData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   /* ---------------------------------------------------------
-     Fermeture du drawer
-     → nettoyage explicite de l’URL
+     LOAD ANALYSIS
   --------------------------------------------------------- */
-  function close() {
-    // fermeture visuelle
-    setIsOpen(false);
-
-    // callback éventuel (DrawerContext)
-    if (onClose) {
-      onClose();
-    }
-
-    // URL propre et robuste (newsletter / liens externes)
-    router.push("/analysis", { scroll: false });
-  }
-
   useEffect(() => {
+    let mounted = true;
+
     async function load() {
       try {
         const res = await api.get(`/public/content/${id}`);
+        if (!mounted) return;
         setData(res);
         requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
         console.error(e);
       }
     }
+
     load();
+    return () => {
+      mounted = false;
+    };
   }, [id]);
 
   if (!data) return null;
@@ -69,7 +60,7 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
       {/* OVERLAY */}
       <div
         className="absolute inset-0 bg-black/40 transition-opacity"
-        onClick={close}
+        onClick={onClose}
       />
 
       {/* DRAWER */}
@@ -100,7 +91,7 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
           </div>
 
           <button
-            onClick={close}
+            onClick={onClose}
             aria-label="Fermer"
             className="mt-1"
           >
@@ -110,7 +101,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
 
         {/* CONTENT */}
         <div className="px-5 py-6 space-y-8">
-
           {/* EXCERPT */}
           {data.excerpt && (
             <p className="text-base font-medium text-gray-800">
@@ -211,9 +201,7 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
           <div className="pt-4 border-t border-gray-200">
             <p className="text-xs text-gray-400">
               Publié le{" "}
-              {new Date(
-                data.published_at
-              ).toLocaleDateString("fr-FR")}
+              {new Date(data.published_at).toLocaleDateString("fr-FR")}
             </p>
           </div>
         </div>
