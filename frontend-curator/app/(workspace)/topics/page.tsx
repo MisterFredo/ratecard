@@ -29,7 +29,13 @@ export default function TopicsPage() {
 
         if (res.ok) {
           const json = await res.json();
-          setTopics(json.topics || []);
+
+          const mappedTopics = (json.topics || []).map((t: any) => ({
+            id_topic: t.ID_TOPIC,
+            label: t.LABEL,
+          }));
+
+          setTopics(mappedTopics);
         }
       } catch (e) {
         console.error(e);
@@ -43,9 +49,7 @@ export default function TopicsPage() {
 
   return (
     <div className="space-y-6">
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
+      {/* HEADER */}
       <header>
         <h1 className="text-2xl font-semibold">
           Topics
@@ -55,9 +59,6 @@ export default function TopicsPage() {
         </p>
       </header>
 
-      {/* =====================================================
-          GRID
-      ===================================================== */}
       {loading && (
         <p className="text-sm text-gray-500">
           Chargement des topics…
