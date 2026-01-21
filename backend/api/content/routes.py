@@ -55,17 +55,6 @@ def list_route():
 
 
 # ============================================================
-# GET ONE CONTENT (ADMIN)
-# ============================================================
-@router.get("/{id_content}")
-def get_route(id_content: str):
-    content = get_content(id_content)
-    if not content:
-        raise HTTPException(404, "Content introuvable")
-    return {"status": "ok", "content": content}
-
-
-# ============================================================
 # UPDATE CONTENT
 # ============================================================
 @router.put("/update/{id_content}")
@@ -137,3 +126,16 @@ def ai_generate(payload: ContentGenerateRequest):
         return {"status": "ok", "content": content}
     except Exception as e:
         raise HTTPException(400, f"Erreur génération content : {e}")
+
+
+# ============================================================
+# GET ONE CONTENT (ADMIN)
+# ⚠️ DOIT IMPÉRATIVEMENT ÊTRE TOUT EN BAS
+# ============================================================
+@router.get("/{id_content}")
+def get_route(id_content: str):
+    content = get_content(id_content)
+    if not content:
+        raise HTTPException(404, "Content introuvable")
+    return {"status": "ok", "content": content}
+
