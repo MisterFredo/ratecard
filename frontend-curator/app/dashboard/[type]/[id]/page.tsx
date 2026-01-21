@@ -2,7 +2,7 @@
 
 import { notFound } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import PublicShell from "@/app/(public)/PublicShell";
+import WorkspaceShell from "@/app/(workspace)/WorkspaceShell";
 
 type Props = {
   params: {
@@ -19,11 +19,11 @@ export default function DashboardPage({ params }: Props) {
   }
 
   return (
-    <PublicShell>
+    <WorkspaceShell>
       <DashboardLayout
         scopeType={type}
         scopeId={id}
       />
-    </PublicShell>
+    </WorkspaceShell>
   );
 }
