@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AnalysisCard from "@/components/analysis/AnalysisCard";
+import { useDrawer } from "@/contexts/DrawerContext";
 
 type Props = {
   scopeType: "topic" | "company";
@@ -17,12 +18,14 @@ type AnalysisItem = {
 };
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function DashboardAnalyses({ scopeType, scopeId }: Props) {
   const [items, setItems] = useState<AnalysisItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { openRightDrawer } = useDrawer();
 
   useEffect(() => {
     async function load() {
@@ -36,7 +39,7 @@ export default function DashboardAnalyses({ scopeType, scopeId }: Props) {
 
       try {
         const res = await fetch(
-          `${API_BASE}/content/list?${params}`,
+          `${API_BASE}/api/content/list?${params}`,
           { cache: "no-store" }
         );
 
@@ -92,10 +95,9 @@ export default function DashboardAnalyses({ scopeType, scopeId }: Props) {
             event={{
               label: scopeId,
             }}
-            onOpen={(id) => {
-              // reuse existing drawer logic
-              window.history.pushState({}, "", `/analysis/${id}`);
-            }}
+            onClick={() =>
+              openRightDrawer("analysis", item.id_content)
+            }
           />
         ))}
       </div>
