@@ -39,7 +39,7 @@ export default function DashboardAnalyses({ scopeType, scopeId }: Props) {
 
       try {
         const res = await fetch(
-          `${API_BASE}/api/content/list?${params}`,
+          `${API_BASE}/content/list?${params}`,
           { cache: "no-store" }
         );
 
