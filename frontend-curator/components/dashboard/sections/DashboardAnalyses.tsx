@@ -90,7 +90,7 @@ export default function DashboardAnalyses({ scopeType, scopeId }: Props) {
             key={item.id_content}
             className="cursor-pointer"
             onClick={() =>
-              openDrawer("analysis", item.id_content)
+              openDrawer("right", "analysis", item.id_content)
             }
           >
             <AnalysisCard
