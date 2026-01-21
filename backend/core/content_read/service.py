@@ -117,7 +117,7 @@ def list_content_read(
             "angle_title": r["ANGLE_TITLE"],
             "angle_signal": r["ANGLE_SIGNAL"],
             "excerpt": r["EXCERPT"],
-            "published_at": r["PUBLISHED_AT"],
+            "published_at": r["PUBLISHED_AT"].date() if r["PUBLISHED_AT"] else None,
             "topics": [],
             "companies": [],
         })
