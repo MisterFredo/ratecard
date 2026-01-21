@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Layers, Menu, X } from "lucide-react";
+import { FileText, Layers, Menu, X, Grid } from "lucide-react";
 import { DrawerProvider } from "@/contexts/DrawerContext";
 
 export default function WorkspaceShell({
@@ -22,8 +22,21 @@ export default function WorkspaceShell({
      NAVIGATION WORKSPACE
   ========================================================= */
   const mainNav = [
-    { href: "/analysis", label: "Analyses", icon: FileText },
-    { href: "/synthesis", label: "Synthèses", icon: Layers },
+    {
+      href: "/analysis",
+      label: "Analyses",
+      icon: FileText,
+    },
+    {
+      href: "/topics",
+      label: "Topics",
+      icon: Grid,
+    },
+    {
+      href: "/companies",
+      label: "Sociétés",
+      icon: Layers,
+    },
   ];
 
   const SidebarContent = (
@@ -114,4 +127,5 @@ export default function WorkspaceShell({
     </DrawerProvider>
   );
 }
+
 
