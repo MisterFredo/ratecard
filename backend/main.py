@@ -45,6 +45,9 @@ def include_router(module_path: str, prefix: str, tag: str):
 # --- HEALTH
 include_router("api.health", "/api/health", "HEALTH")
 
+# --- CURATOR / LECTURE (DASHBOARDS)
+include_router("api.content_read", "/api/content", "CONTENT_READ")
+
 # --- ADMIN / PRODUCTION
 include_router("api.content", "/api/content", "CONTENT")
 include_router("api.news", "/api/news", "NEWS")
@@ -53,9 +56,6 @@ include_router("api.person", "/api/person", "PERSON")
 include_router("api.topic", "/api/topic", "TOPIC")
 include_router("api.event", "/api/event", "EVENT")
 include_router("api.synthesis", "/api/synthesis", "SYNTHESIS")
-
-# --- CURATOR / LECTURE (DASHBOARDS)
-include_router("api.content_read", "/api/content", "CONTENT_READ")
 
 # --- FRONT PUBLIC (MEDIA)
 include_router("api.public", "/api/public", "PUBLIC")
