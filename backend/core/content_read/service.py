@@ -1,7 +1,6 @@
 import uuid
 from datetime import datetime, date
 from typing import Optional, Dict
-from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import (
@@ -11,11 +10,10 @@ from utils.bigquery_utils import (
     update_bq,
 )
 
-
-
 # ============================================================
-# TABLES
+# TABLES (FULLY QUALIFIED)
 # ============================================================
+
 TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
 TABLE_CONTENT_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC"
 TABLE_CONTENT_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY"
@@ -24,6 +22,13 @@ TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_SYNTHESIS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SYNTHESIS"
 TABLE_SYNTHESIS_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SYNTHESIS_CONTENT"
 
+# ============================================================
+# SQL CANONICAL HELPERS
+# ============================================================
+
+# ⚠️ RÈGLE ABSOLUE :
+# On ne compare JAMAIS un TIMESTAMP à un DATE sans cast explicite.
+PUBLISHED_AT_DATE = "DATE(c.PUBLISHED_AT)"
 
 
 # ============================================================
@@ -91,7 +96,7 @@ def list_content_read(
             {where}
             AND c.STATUS = 'PUBLISHED'
             AND c.IS_ACTIVE = TRUE
-            AND c.PUBLISHED_AT BETWEEN @date_from AND @date_to
+            AND {PUBLISHED_AT_DATE} BETWEEN @date_from AND @date_to
         ORDER BY c.PUBLISHED_AT DESC
         LIMIT @limit OFFSET @offset
     """
@@ -123,7 +128,7 @@ def list_content_read(
             "pagination": {
                 "limit": limit,
                 "offset": offset,
-                "total": len(items)  # ⚠️ simplification Phase 1
+                "total": len(items)  # Phase 1 volontairement simple
             }
         },
         "items": items
@@ -145,15 +150,15 @@ def overview_content_read(
     sql = f"""
         SELECT
             COUNT(*) AS total,
-            COUNTIF(c.PUBLISHED_AT >= DATE_SUB(@date_to, INTERVAL 30 DAY)) AS last_30,
-            COUNTIF(c.PUBLISHED_AT >= DATE_SUB(@date_to, INTERVAL 90 DAY)) AS last_90
+            COUNTIF({PUBLISHED_AT_DATE} >= DATE_SUB(@date_to, INTERVAL 30 DAY)) AS last_30,
+            COUNTIF({PUBLISHED_AT_DATE} >= DATE_SUB(@date_to, INTERVAL 90 DAY)) AS last_90
         FROM {TABLE_CONTENT} c
         {join}
         WHERE
             {where}
             AND c.STATUS = 'PUBLISHED'
             AND c.IS_ACTIVE = TRUE
-            AND c.PUBLISHED_AT BETWEEN @date_from AND @date_to
+            AND {PUBLISHED_AT_DATE} BETWEEN @date_from AND @date_to
     """
 
     row = query_bq(sql, {
@@ -168,7 +173,7 @@ def overview_content_read(
         "total_analyses": row["total"],
         "last_30_days": row["last_30"],
         "last_90_days": row["last_90"],
-        "delta_vs_previous_period": 0  # ⚠️ calcul ultérieur
+        "delta_vs_previous_period": 0  # Phase 1
     }
 
 
@@ -186,7 +191,7 @@ def timeline_content_read(
 
     sql = f"""
         SELECT
-            FORMAT_DATE('%Y-%m', c.PUBLISHED_AT) AS period,
+            FORMAT_DATE('%Y-%m', {PUBLISHED_AT_DATE}) AS period,
             COUNT(*) AS count
         FROM {TABLE_CONTENT} c
         {join}
@@ -194,7 +199,7 @@ def timeline_content_read(
             {where}
             AND c.STATUS = 'PUBLISHED'
             AND c.IS_ACTIVE = TRUE
-            AND c.PUBLISHED_AT BETWEEN @date_from AND @date_to
+            AND {PUBLISHED_AT_DATE} BETWEEN @date_from AND @date_to
         GROUP BY period
         ORDER BY period ASC
     """
@@ -215,7 +220,7 @@ def timeline_content_read(
 
 
 # ============================================================
-# /content/signals (STUB)
+# /content/signals (STUB — PINECONE READY)
 # ============================================================
 
 def signals_stub_content_read(
@@ -224,9 +229,6 @@ def signals_stub_content_read(
     date_from: date,
     date_to: date,
 ):
-    """
-    Stub for Pinecone-based signals.
-    """
     return {
         "scope": _build_scope(topic_id, company_id),
         "period": _build_period(date_from, date_to),
@@ -242,10 +244,6 @@ def treatments_content_read(
     topic_id: Optional[str],
     company_id: Optional[str],
 ):
-    """
-    Existing syntheses for this scope.
-    """
-    # Phase 1: simple listing without joins
     sql = f"""
         SELECT
             s.ID_SYNTHESIS,
@@ -278,3 +276,4 @@ def treatments_content_read(
         "scope": _build_scope(topic_id, company_id),
         "treatments": treatments
     }
+
