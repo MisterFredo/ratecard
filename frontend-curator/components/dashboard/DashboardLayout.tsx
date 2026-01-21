@@ -18,7 +18,7 @@ type ScopeMeta = {
 };
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function DashboardLayout({ scopeType, scopeId }: Props) {
   const [meta, setMeta] = useState<ScopeMeta | null>(null);
@@ -31,8 +31,8 @@ export default function DashboardLayout({ scopeType, scopeId }: Props) {
       try {
         const endpoint =
           scopeType === "topic"
-            ? `/api/topic/${encodeURIComponent(scopeId)}`
-            : `/api/company/${encodeURIComponent(scopeId)}`;
+            ? `/topic/${encodeURIComponent(scopeId)}`
+            : `/company/${encodeURIComponent(scopeId)}`;
 
         const res = await fetch(`${API_BASE}${endpoint}`, {
           cache: "no-store",
