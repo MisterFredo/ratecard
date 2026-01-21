@@ -3,8 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Layers, Menu, X, Grid } from "lucide-react";
-import { DrawerProvider } from "@/contexts/DrawerContext";
+import { FileText, Grid, Layers, Menu, X } from "lucide-react";
 
 export default function WorkspaceShell({
   children,
@@ -83,49 +82,45 @@ export default function WorkspaceShell({
   );
 
   return (
-    <DrawerProvider>
-      <div className="min-h-screen flex">
-        {/* ===== DESKTOP SIDEBAR ===== */}
-        <aside className="hidden md:flex w-56 bg-white border-r p-6 flex-col">
-          {SidebarContent}
-        </aside>
+    <div className="min-h-screen flex">
+      {/* ===== DESKTOP SIDEBAR ===== */}
+      <aside className="hidden md:flex w-56 bg-white border-r p-6 flex-col">
+        {SidebarContent}
+      </aside>
 
-        {/* ===== MOBILE SIDEBAR ===== */}
-        {mobileOpen && (
-          <div className="fixed inset-0 z-50 flex md:hidden">
-            <div
-              className="absolute inset-0 bg-black/40"
+      {/* ===== MOBILE SIDEBAR ===== */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setMobileOpen(false)}
+          />
+          <aside className="relative w-4/5 max-w-xs bg-white p-6 flex-col">
+            <button
               onClick={() => setMobileOpen(false)}
-            />
-            <aside className="relative w-4/5 max-w-xs bg-white p-6 flex-col">
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="absolute top-4 right-4"
-              >
-                <X />
-              </button>
-              {SidebarContent}
-            </aside>
-          </div>
-        )}
-
-        {/* ===== MAIN CONTENT ===== */}
-        <main className="flex-1 bg-gray-50">
-          {/* MOBILE HEADER */}
-          <div className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-white">
-            <button onClick={() => setMobileOpen(true)}>
-              <Menu />
+              className="absolute top-4 right-4"
+            >
+              <X />
             </button>
-            <span className="font-semibold">Curator</span>
-          </div>
+            {SidebarContent}
+          </aside>
+        </div>
+      )}
 
-          <div className="p-4 md:p-10 max-w-6xl mx-auto">
-            {children}
-          </div>
-        </main>
-      </div>
-    </DrawerProvider>
+      {/* ===== MAIN CONTENT ===== */}
+      <main className="flex-1 bg-gray-50">
+        {/* MOBILE HEADER */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-white">
+          <button onClick={() => setMobileOpen(true)}>
+            <Menu />
+          </button>
+          <span className="font-semibold">Curator</span>
+        </div>
+
+        <div className="p-4 md:p-10 max-w-6xl mx-auto">
+          {children}
+        </div>
+      </main>
+    </div>
   );
 }
-
-
