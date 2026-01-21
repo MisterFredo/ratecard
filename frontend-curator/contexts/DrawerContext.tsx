@@ -11,22 +11,46 @@ import {
    TYPES — CURATOR
 ========================================================= */
 
-export type DrawerType = "analysis" | "synthesis" | null;
+/**
+ * Types de drawer supportés
+ */
+export type DrawerType =
+  | "dashboard"
+  | "analysis"
+  | "synthesis"
+  | null;
+
 export type DrawerSide = "left" | "right";
 
-type DrawerState = {
-  type: DrawerType;
-  id: string | null;
+/**
+ * Payloads spécifiques par type de drawer
+ */
+export type DashboardPayload = {
+  scopeType: "topic" | "company";
+  scopeId: string;
 };
 
+type DrawerPayload =
+  | { type: "dashboard"; payload: DashboardPayload }
+  | { type: "analysis"; payload: { id: string } }
+  | { type: "synthesis"; payload: { id: string } }
+  | { type: null; payload: null };
+
+/**
+ * État interne d’un drawer
+ */
+type DrawerState = DrawerPayload;
+
+/**
+ * API exposée par le contexte
+ */
 type DrawerContextType = {
   leftDrawer: DrawerState;
   rightDrawer: DrawerState;
 
   openDrawer: (
     side: DrawerSide,
-    type: Exclude<DrawerType, null>,
-    id: string
+    drawer: Exclude<DrawerPayload, { type: null }>
   ) => void;
 
   closeDrawer: (side: DrawerSide) => void;
@@ -51,12 +75,12 @@ export function DrawerProvider({
 }) {
   const [leftDrawer, setLeftDrawer] = useState<DrawerState>({
     type: null,
-    id: null,
+    payload: null,
   });
 
   const [rightDrawer, setRightDrawer] = useState<DrawerState>({
     type: null,
-    id: null,
+    payload: null,
   });
 
   /* -----------------------------
@@ -64,21 +88,20 @@ export function DrawerProvider({
   ----------------------------- */
   function openDrawer(
     side: DrawerSide,
-    type: Exclude<DrawerType, null>,
-    id: string
+    drawer: Exclude<DrawerPayload, { type: null }>
   ) {
     if (side === "left") {
-      setLeftDrawer({ type, id });
+      setLeftDrawer(drawer);
     } else {
-      setRightDrawer({ type, id });
+      setRightDrawer(drawer);
     }
   }
 
   function closeDrawer(side: DrawerSide) {
     if (side === "left") {
-      setLeftDrawer({ type: null, id: null });
+      setLeftDrawer({ type: null, payload: null });
     } else {
-      setRightDrawer({ type: null, id: null });
+      setRightDrawer({ type: null, payload: null });
     }
   }
 
