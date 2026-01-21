@@ -6,7 +6,7 @@ import CompanyCard from "@/components/companies/CompanyCard";
 
 type CompanyItem = {
   id_company: string;
-  name: string;
+  label: string;
 };
 
 const API_BASE =
@@ -29,7 +29,13 @@ export default function CompaniesPage() {
 
         if (res.ok) {
           const json = await res.json();
-          setCompanies(json.companies || []);
+
+          const mappedCompanies = (json.companies || []).map((c: any) => ({
+            id_company: c.ID_COMPANY,
+            label: c.NAME,
+          }));
+
+          setCompanies(mappedCompanies);
         }
       } catch (e) {
         console.error(e);
@@ -55,9 +61,6 @@ export default function CompaniesPage() {
         </p>
       </header>
 
-      {/* =====================================================
-          GRID
-      ===================================================== */}
       {loading && (
         <p className="text-sm text-gray-500">
           Chargement des sociétés…
@@ -74,13 +77,13 @@ export default function CompaniesPage() {
         {companies.map((company) => (
           <CompanyCard
             key={company.id_company}
-            label={company.name}
+            label={company.label}
             onClick={() =>
               openDrawer("left", {
                 type: "dashboard",
                 payload: {
                   scopeType: "company",
-                  scopeId: company.name,
+                  scopeId: company.label,
                 },
               })
             }
