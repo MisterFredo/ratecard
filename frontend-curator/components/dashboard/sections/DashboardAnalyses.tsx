@@ -25,7 +25,7 @@ export default function DashboardAnalyses({ scopeType, scopeId }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { openRightDrawer } = useDrawer();
+  const { openDrawer } = useDrawer(); // ✅ API réelle
 
   useEffect(() => {
     async function load() {
@@ -92,11 +92,9 @@ export default function DashboardAnalyses({ scopeType, scopeId }: Props) {
             title={item.angle_title}
             excerpt={item.excerpt}
             publishedAt={item.published_at}
-            event={{
-              label: scopeId,
-            }}
+            event={{ label: scopeId }}
             onClick={() =>
-              openRightDrawer("analysis", item.id_content)
+              openDrawer("analysis", item.id_content)
             }
           />
         ))}
