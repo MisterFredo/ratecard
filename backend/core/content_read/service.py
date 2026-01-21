@@ -1,7 +1,17 @@
-from typing import Optional, List, Dict
-from datetime import date, timedelta
+import uuid
+from datetime import datetime, date
+from typing import Optional
+from google.cloud import bigquery
 
-from utils.bigquery_utils import query_bq
+from config import BQ_PROJECT, BQ_DATASET
+from utils.bigquery_utils import (
+    query_bq,
+    insert_bq,
+    get_bigquery_client,
+    update_bq,
+)
+
+
 
 # ============================================================
 # TABLES
