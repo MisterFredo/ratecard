@@ -65,7 +65,7 @@ def _scope_join_and_where(topic_id: Optional[str], company_id: Optional[str]):
             JOIN {TABLE_COMPANY} co
               ON cc.ID_COMPANY = co.ID_COMPANY
         """
-        where = "co.LABEL = @scope_id"
+        where = "co.NAME = @scope_id"
 
     return join, where
 
