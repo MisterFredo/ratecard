@@ -18,9 +18,12 @@ type AnalysisItem = {
 };
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-export default function DashboardAnalyses({ scopeType, scopeId }: Props) {
+export default function DashboardAnalyses({
+  scopeType,
+  scopeId,
+}: Props) {
   const [items, setItems] = useState<AnalysisItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +93,10 @@ export default function DashboardAnalyses({ scopeType, scopeId }: Props) {
             key={item.id_content}
             className="cursor-pointer"
             onClick={() =>
-              openDrawer("right", "analysis", item.id_content)
+              openDrawer("right", {
+                type: "analysis",
+                payload: { id: item.id_content },
+              })
             }
           >
             <AnalysisCard
