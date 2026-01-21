@@ -25,7 +25,7 @@ export default function DashboardAnalyses({ scopeType, scopeId }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { openDrawer } = useDrawer(); // ✅ API réelle
+  const { openDrawer } = useDrawer();
 
   useEffect(() => {
     async function load() {
@@ -86,17 +86,21 @@ export default function DashboardAnalyses({ scopeType, scopeId }: Props) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {items.map((item) => (
-          <AnalysisCard
+          <div
             key={item.id_content}
-            id={item.id_content}
-            title={item.angle_title}
-            excerpt={item.excerpt}
-            publishedAt={item.published_at}
-            event={{ label: scopeId }}
+            className="cursor-pointer"
             onClick={() =>
               openDrawer("analysis", item.id_content)
             }
-          />
+          >
+            <AnalysisCard
+              id={item.id_content}
+              title={item.angle_title}
+              excerpt={item.excerpt}
+              publishedAt={item.published_at}
+              event={{ label: scopeId }}
+            />
+          </div>
         ))}
       </div>
     </section>
