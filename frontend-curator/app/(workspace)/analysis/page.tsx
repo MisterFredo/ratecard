@@ -50,10 +50,10 @@ export default function AnalysisPage() {
     fetchAnalyses().then(setAnalyses);
   }, []);
 
-  const latestAnalyses = analyses.slice(0, 5);
+  const latestAnalyses = analyses.slice(0, 6);
 
   return (
-    <div className="space-y-14">
+    <div className="space-y-16">
 
       {/* =====================================================
           MY CURATOR — ENTRY POINT
@@ -65,31 +65,53 @@ export default function AnalysisPage() {
             My Curator
           </h1>
           <p className="text-sm text-gray-500">
-            Lecture personnalisée et priorisée de l’actualité
+            Lecture priorisée et intelligente de l’actualité
           </p>
         </header>
 
         {/* =========================
-            SIGNAL MOCK (PINECONE)
+            SIGNALS — 2 COLS
         ========================= */}
-        <div className="rounded-xl border bg-slate-50 p-5">
-          <h2 className="text-sm font-semibold mb-2">
-            Ce qui compte aujourd’hui
-          </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          <ul className="text-sm text-gray-700 space-y-2">
-            <li>• Forte accélération des analyses sur la CTV ces 30 derniers jours</li>
-            <li>• Google concentre une part croissante des analyses liées à l’agentique</li>
-            <li>• La mesure revient comme un angle critique dans plusieurs sujets récents</li>
-          </ul>
+          {/* WHAT MATTERS */}
+          <div className="rounded-xl border bg-slate-50 p-5">
+            <h2 className="text-sm font-semibold mb-3">
+              Ce qui compte aujourd’hui
+            </h2>
 
-          <p className="text-xs text-gray-400 mt-3">
-            Signaux générés automatiquement (bientôt disponibles)
-          </p>
+            <ul className="text-sm text-gray-700 space-y-2">
+              <li>• Forte accélération des analyses sur la CTV ces 30 derniers jours</li>
+              <li>• Google concentre une part croissante des analyses liées à l’agentique</li>
+              <li>• La mesure revient comme un angle critique dans plusieurs sujets récents</li>
+            </ul>
+
+            <p className="text-xs text-gray-400 mt-4">
+              Signaux générés automatiquement (bientôt disponibles)
+            </p>
+          </div>
+
+          {/* EMERGING ANGLES */}
+          <div className="rounded-xl border bg-white p-5">
+            <h2 className="text-sm font-semibold mb-3">
+              Angles émergents
+            </h2>
+
+            <ul className="text-sm text-gray-700 space-y-2">
+              <li>• Vers une IA agentique intégrée aux plateformes d’achat média</li>
+              <li>• Repositionnement des acteurs autour de la durabilité publicitaire</li>
+              <li>• Fragmentation des approches de mesure post-cookies</li>
+            </ul>
+
+            <p className="text-xs text-gray-400 mt-4">
+              Analyse sémantique en cours de déploiement
+            </p>
+          </div>
+
         </div>
 
         {/* =========================
-            PRIORITY ANALYSES (REAL)
+            PRIORITY ANALYSES
         ========================= */}
         {latestAnalyses.length > 0 && (
           <div className="space-y-4">
@@ -113,25 +135,6 @@ export default function AnalysisPage() {
             </div>
           </div>
         )}
-
-        {/* =========================
-            EMERGING ANGLES (MOCK)
-        ========================= */}
-        <div className="rounded-xl border bg-white p-5">
-          <h2 className="text-sm font-semibold mb-2">
-            Angles émergents
-          </h2>
-
-          <ul className="text-sm text-gray-700 space-y-1">
-            <li>• Vers une IA agentique intégrée aux plateformes d’achat média</li>
-            <li>• Repositionnement des acteurs autour de la durabilité publicitaire</li>
-            <li>• Fragmentation des approches de mesure post-cookies</li>
-          </ul>
-
-          <p className="text-xs text-gray-400 mt-3">
-            Analyse sémantique en cours de déploiement
-          </p>
-        </div>
 
       </section>
 
@@ -180,4 +183,3 @@ export default function AnalysisPage() {
     </div>
   );
 }
-
