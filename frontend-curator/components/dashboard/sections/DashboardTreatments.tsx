@@ -19,7 +19,19 @@ type TreatmentItem = {
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-export default function DashboardTreatments({ scopeType, scopeId }: Props) {
+function getScopeQuery(
+  scopeType: "topic" | "company",
+  scopeId: string
+) {
+  return scopeType === "topic"
+    ? `topic_id=${encodeURIComponent(scopeId)}`
+    : `company_id=${encodeURIComponent(scopeId)}`;
+}
+
+export default function DashboardTreatments({
+  scopeType,
+  scopeId,
+}: Props) {
   const [items, setItems] = useState<TreatmentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,14 +39,11 @@ export default function DashboardTreatments({ scopeType, scopeId }: Props) {
     async function load() {
       setLoading(true);
 
-      const params =
-        scopeType === "topic"
-          ? `topic_id=${encodeURIComponent(scopeId)}`
-          : `company_id=${encodeURIComponent(scopeId)}`;
+      const scopeQuery = getScopeQuery(scopeType, scopeId);
 
       try {
         const res = await fetch(
-          `${API_BASE}/content/treatments?${params}`,
+          `${API_BASE}/analysis/treatments?${scopeQuery}`,
           { cache: "no-store" }
         );
 
@@ -83,7 +92,8 @@ export default function DashboardTreatments({ scopeType, scopeId }: Props) {
                     {t.title || t.type}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    Créé le {new Date(t.created_at).toLocaleDateString()}
+                    Créé le{" "}
+                    {new Date(t.created_at).toLocaleDateString("fr-FR")}
                   </div>
                 </div>
 
