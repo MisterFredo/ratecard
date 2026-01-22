@@ -1,87 +1,69 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 type Props = {
   label: string;
   onClick: () => void;
+
+  // Données pilotées par la page
+  nbAnalyses?: number;
+  delta30d?: number;
+
+  // Variante visuelle
+  variant?: "active" | "default";
 };
 
-type Metrics = {
-  total_analyses: number;
-  last_30_days: number;
-};
-
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-
-export default function CompanyCard({ label, onClick }: Props) {
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadMetrics() {
-      setLoading(true);
-
-      try {
-        const res = await fetch(
-          `${API_BASE}/content/overview?company_id=${encodeURIComponent(label)}`,
-          { cache: "no-store" }
-        );
-
-        if (res.ok) {
-          const json = await res.json();
-          setMetrics({
-            total_analyses: json.total_analyses,
-            last_30_days: json.last_30_days,
-          });
-        }
-      } catch (e) {
-        console.error(e);
-      }
-
-      setLoading(false);
-    }
-
-    loadMetrics();
-  }, [label]);
+export default function CompanyCard({
+  label,
+  onClick,
+  nbAnalyses = 0,
+  delta30d = 0,
+  variant = "default",
+}: Props) {
+  const isActive = variant === "active";
 
   return (
     <div
       onClick={onClick}
-      className="
+      className={`
         cursor-pointer
         rounded-xl
         border
-        bg-white
         p-5
         transition
-        hover:shadow-md
-        hover:border-gray-300
-      "
+        ${
+          isActive
+            ? "bg-teal-50 border-teal-200 hover:shadow-md"
+            : "bg-white hover:shadow-sm hover:border-gray-300"
+        }
+      `}
     >
-      {/* TITLE */}
-      <h3 className="text-lg font-semibold">
-        {label}
-      </h3>
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="text-lg font-semibold leading-tight">
+          {label}
+        </h3>
 
-      {/* METRICS */}
-      <div className="mt-4 text-sm text-gray-600 space-y-1">
-        {loading && (
-          <span className="text-gray-400">
-            Chargement…
+        {isActive && (
+          <span className="text-xs px-2 py-0.5 rounded bg-teal-100 text-teal-800 font-medium">
+            En mouvement
           </span>
         )}
+      </div>
 
-        {!loading && metrics && (
-          <>
-            <div>
-              {metrics.total_analyses} analyses
-            </div>
-            <div className="text-xs text-gray-500">
-              +{metrics.last_30_days} sur 30j
-            </div>
-          </>
+      {/* =====================================================
+          METRICS
+      ===================================================== */}
+      <div className="mt-4 text-sm text-gray-600 space-y-1">
+        <div className="font-medium">
+          {nbAnalyses} analyse{nbAnalyses > 1 ? "s" : ""}
+        </div>
+
+        {isActive && (
+          <div className="text-xs text-teal-700">
+            +{delta30d} sur 30j
+          </div>
         )}
       </div>
     </div>
