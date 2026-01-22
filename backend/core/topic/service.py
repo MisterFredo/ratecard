@@ -61,16 +61,39 @@ def create_topic(data: TopicCreate) -> str:
 # LIST TOPICS
 # ============================================================
 def list_topics():
-    """
-    Liste les topics actifs (admin).
-    """
     sql = f"""
-        SELECT *
-        FROM `{TABLE_TOPIC}`
-        WHERE IS_ACTIVE = TRUE
-        ORDER BY LABEL ASC
+        SELECT
+            t.ID_TOPIC,
+            t.LABEL,
+
+            COUNT(c.ID_CONTENT) AS NB_ANALYSES,
+            COUNTIF(
+              c.PUBLISHED_AT >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+            ) AS DELTA_30D
+
+        FROM {TABLE_TOPIC} t
+        LEFT JOIN {TABLE_CONTENT_TOPIC} ct
+          ON ct.ID_TOPIC = t.ID_TOPIC
+        LEFT JOIN {TABLE_CONTENT} c
+          ON c.ID_CONTENT = ct.ID_CONTENT
+          AND c.STATUS = 'PUBLISHED'
+          AND c.IS_ACTIVE = TRUE
+
+        GROUP BY t.ID_TOPIC, t.LABEL
+        ORDER BY NB_ANALYSES DESC, t.LABEL ASC
     """
-    return query_bq(sql)
+
+    rows = query_bq(sql)
+
+    return [
+        {
+            "ID_TOPIC": r["ID_TOPIC"],
+            "LABEL": r["LABEL"],
+            "NB_ANALYSES": r["NB_ANALYSES"],
+            "DELTA_30D": r["DELTA_30D"],
+        }
+        for r in rows
+    ]
 
 
 # ============================================================
