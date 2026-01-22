@@ -321,7 +321,7 @@ def list_contents():
     ]
 
 # ============================================================
-# LIST CONTENTS (ADMIN)
+# LIST CONTENTS (ADMIN) — VERSION STABLE
 # ============================================================
 def list_contents_admin():
     rows = query_bq(
@@ -336,7 +336,7 @@ def list_contents_admin():
         WHERE
           (C.IS_ACTIVE = TRUE OR C.IS_ACTIVE IS NULL)
         ORDER BY
-          COALESCE(C.PUBLISHED_AT, C.DATE_CREATION) DESC
+          C.PUBLISHED_AT DESC
         """
     )
 
@@ -350,6 +350,7 @@ def list_contents_admin():
         }
         for r in rows
     ]
+
 
 # ============================================================
 # UPDATE CONTENT
