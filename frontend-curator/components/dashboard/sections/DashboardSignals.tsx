@@ -16,7 +16,19 @@ type SignalItem = {
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-export default function DashboardSignals({ scopeType, scopeId }: Props) {
+function getScopeQuery(
+  scopeType: "topic" | "company",
+  scopeId: string
+) {
+  return scopeType === "topic"
+    ? `topic_id=${encodeURIComponent(scopeId)}`
+    : `company_id=${encodeURIComponent(scopeId)}`;
+}
+
+export default function DashboardSignals({
+  scopeType,
+  scopeId,
+}: Props) {
   const [signals, setSignals] = useState<SignalItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,14 +36,11 @@ export default function DashboardSignals({ scopeType, scopeId }: Props) {
     async function load() {
       setLoading(true);
 
-      const params =
-        scopeType === "topic"
-          ? `topic_id=${encodeURIComponent(scopeId)}`
-          : `company_id=${encodeURIComponent(scopeId)}`;
+      const scopeQuery = getScopeQuery(scopeType, scopeId);
 
       try {
         const res = await fetch(
-          `${API_BASE}/content/signals?${params}`,
+          `${API_BASE}/analysis/signals?${scopeQuery}`,
           { cache: "no-store" }
         );
 
