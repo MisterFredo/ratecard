@@ -330,8 +330,7 @@ def list_contents_admin():
           C.ID_CONTENT,
           C.ANGLE_TITLE,
           C.STATUS,
-          C.PUBLISHED_AT,
-          C.DATE_CREATION
+          C.PUBLISHED_AT
         FROM `{TABLE_CONTENT}` C
         WHERE
           (C.IS_ACTIVE = TRUE OR C.IS_ACTIVE IS NULL)
@@ -346,7 +345,6 @@ def list_contents_admin():
             "TITLE": r["ANGLE_TITLE"],
             "STATUS": r["STATUS"],
             "PUBLISHED_AT": r["PUBLISHED_AT"],
-            "DATE_CREATION": r["DATE_CREATION"],
         }
         for r in rows
     ]
