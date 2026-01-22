@@ -19,15 +19,13 @@ type NewsData = {
   body?: string | null;
   published_at: string;
 
-  // visuel propre à la news (peut être null)
-  visual_rect_url?: string | null;
+  // 🔑 VISUEL NEWS — ID UNIQUEMENT
+  visual_rect_id?: string | null;
 
   company: {
     id_company: string;
     name: string;
     media_logo_rectangle_id?: string | null;
-    // 👉 optionnel si tu veux distinguer membre / non-membre
-    // is_member?: boolean;
   };
 };
 
@@ -104,8 +102,8 @@ export default function NewsDrawer({ id, onClose }: Props) {
   /* ---------------------------------------------------------
      VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
   --------------------------------------------------------- */
-  const visualSrc = data.visual_rect_url
-    ? `${GCS_BASE_URL}/news/${data.visual_rect_url}`
+  const visualSrc = data.visual_rect_id
+    ? `${GCS_BASE_URL}/news/${data.visual_rect_id}`
     : data.company?.media_logo_rectangle_id
     ? `${GCS_BASE_URL}/companies/${data.company.media_logo_rectangle_id}`
     : null;
@@ -207,3 +205,4 @@ export default function NewsDrawer({ id, onClose }: Props) {
     </div>
   );
 }
+
