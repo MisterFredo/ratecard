@@ -6,18 +6,12 @@ import { api } from "@/lib/api";
 type AnalysisData = {
   id_content: string;
   angle_title: string;
-  angle_signal: string;
-  excerpt?: string | null;
   concept?: string | null;
   content_body?: string | null;
   chiffres: string[];
   citations: string[];
   acteurs_cites: string[];
   published_at: string;
-  event?: {
-    id: string;
-    label: string;
-  } | null;
 };
 
 export default function AnalysisContent({ id }: { id: string }) {
@@ -44,32 +38,17 @@ export default function AnalysisContent({ id }: { id: string }) {
   }
 
   return (
-    <div className="space-y-8">
-      {/* HEADER */}
-      <div className="space-y-2">
-        {data.event && (
-          <span className="text-xs uppercase tracking-wide text-gray-400">
-            {data.event.label}
-          </span>
-        )}
+    <div className="space-y-10">
+      {/* =====================================================
+          TITLE
+      ===================================================== */}
+      <h1 className="text-2xl font-semibold leading-tight text-gray-900">
+        {data.angle_title}
+      </h1>
 
-        <h1 className="text-2xl font-semibold leading-tight text-gray-900">
-          {data.angle_title}
-        </h1>
-
-        <p className="text-base text-gray-600">
-          {data.angle_signal}
-        </p>
-      </div>
-
-      {/* EXCERPT */}
-      {data.excerpt && (
-        <p className="text-base font-medium text-gray-800">
-          {data.excerpt}
-        </p>
-      )}
-
-      {/* CONCEPT */}
+      {/* =====================================================
+          CONCEPT
+      ===================================================== */}
       {data.concept && (
         <div className="border-l-4 border-ratecard-blue pl-4">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
@@ -81,7 +60,9 @@ export default function AnalysisContent({ id }: { id: string }) {
         </div>
       )}
 
-      {/* BODY */}
+      {/* =====================================================
+          BODY
+      ===================================================== */}
       {data.content_body && (
         <div
           className="
@@ -101,7 +82,9 @@ export default function AnalysisContent({ id }: { id: string }) {
         />
       )}
 
-      {/* CHIFFRES */}
+      {/* =====================================================
+          CHIFFRES
+      ===================================================== */}
       {data.chiffres?.length > 0 && (
         <section>
           <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
@@ -120,26 +103,9 @@ export default function AnalysisContent({ id }: { id: string }) {
         </section>
       )}
 
-      {/* CITATIONS */}
-      {data.citations?.length > 0 && (
-        <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
-            Citations
-          </h2>
-          <div className="space-y-4">
-            {data.citations.map((c, i) => (
-              <blockquote
-                key={i}
-                className="border-l-2 border-gray-300 pl-4 italic text-sm text-gray-700"
-              >
-                {c}
-              </blockquote>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ACTEURS */}
+      {/* =====================================================
+          ACTEURS
+      ===================================================== */}
       {data.acteurs_cites?.length > 0 && (
         <section>
           <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
@@ -158,7 +124,9 @@ export default function AnalysisContent({ id }: { id: string }) {
         </section>
       )}
 
-      {/* FOOTER */}
+      {/* =====================================================
+          FOOTER
+      ===================================================== */}
       <div className="pt-4 border-t border-gray-200">
         <p className="text-xs text-gray-400">
           Publié le{" "}
