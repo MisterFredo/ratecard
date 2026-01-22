@@ -7,6 +7,8 @@ import CompanyCard from "@/components/companies/CompanyCard";
 type CompanyItem = {
   id_company: string;
   label: string;
+  nb_analyses: number;
+  delta_30d?: number;
 };
 
 const API_BASE =
@@ -33,6 +35,8 @@ export default function CompaniesPage() {
           const mappedCompanies = (json.companies || []).map((c: any) => ({
             id_company: c.ID_COMPANY,
             label: c.NAME,
+            nb_analyses: c.NB_ANALYSES ?? 0,
+            delta_30d: c.DELTA_30D ?? 0,
           }));
 
           setCompanies(mappedCompanies);
@@ -47,8 +51,16 @@ export default function CompaniesPage() {
     load();
   }, []);
 
+  const activeCompanies = companies
+    .filter((c) => c.nb_analyses > 0)
+    .sort((a, b) => b.nb_analyses - a.nb_analyses);
+
+  const otherCompanies = companies
+    .filter((c) => c.nb_analyses === 0)
+    .sort((a, b) => a.label.localeCompare(b.label));
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       {/* =====================================================
           HEADER
       ===================================================== */}
@@ -57,7 +69,7 @@ export default function CompaniesPage() {
           Sociétés
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Explore les acteurs analysés par Curator
+          Acteurs suivis et analysés par Curator
         </p>
       </header>
 
@@ -73,23 +85,69 @@ export default function CompaniesPage() {
         </p>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {companies.map((company) => (
-          <CompanyCard
-            key={company.id_company}
-            label={company.label}
-            onClick={() =>
-              openDrawer("left", {
-                type: "dashboard",
-                payload: {
-                  scopeType: "company",
-                  scopeId: company.label,
-                },
-              })
-            }
-          />
-        ))}
-      </div>
+      {/* =====================================================
+          SOCIÉTÉS EN MOUVEMENT
+      ===================================================== */}
+      {!loading && activeCompanies.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold">
+            Sociétés en mouvement
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {activeCompanies.map((company) => (
+              <CompanyCard
+                key={company.id_company}
+                label={company.label}
+                nbAnalyses={company.nb_analyses}
+                delta30d={company.delta_30d}
+                variant="active"
+                onClick={() =>
+                  openDrawer("left", {
+                    type: "dashboard",
+                    payload: {
+                      scopeType: "company",
+                      scopeId: company.label,
+                    },
+                  })
+                }
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* =====================================================
+          AUTRES SOCIÉTÉS
+      ===================================================== */}
+      {!loading && otherCompanies.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-400">
+            Autres sociétés suivies
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {otherCompanies.map((company) => (
+              <CompanyCard
+                key={company.id_company}
+                label={company.label}
+                nbAnalyses={company.nb_analyses}
+                variant="default"
+                onClick={() =>
+                  openDrawer("left", {
+                    type: "dashboard",
+                    payload: {
+                      scopeType: "company",
+                      scopeId: company.label,
+                    },
+                  })
+                }
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
+
