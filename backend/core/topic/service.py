@@ -68,7 +68,7 @@ def list_topics():
 
             COUNT(c.ID_CONTENT) AS NB_ANALYSES,
             COUNTIF(
-              c.PUBLISHED_AT >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+              DATE(c.PUBLISHED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
             ) AS DELTA_30D
 
         FROM {TABLE_TOPIC} t
