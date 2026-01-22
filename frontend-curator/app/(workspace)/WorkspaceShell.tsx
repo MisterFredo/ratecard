@@ -21,11 +21,18 @@ export default function WorkspaceShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   /* =========================================================
-     ACTIVE ROUTE — STRICT MATCH
+     ACTIVE ROUTE — STRICT & SAFE MATCH
   ========================================================= */
   function isActive(path: string) {
     if (!pathname) return false;
-    return pathname === path || pathname.startsWith(path + "/");
+
+    // sécurité : on ignore les query strings
+    const cleanPath = pathname.split("?")[0];
+
+    return (
+      cleanPath === path ||
+      cleanPath.startsWith(path + "/")
+    );
   }
 
   /* =========================================================
