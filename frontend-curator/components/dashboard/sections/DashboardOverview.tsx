@@ -17,7 +17,19 @@ type OverviewData = {
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-export default function DashboardOverview({ scopeType, scopeId }: Props) {
+function getScopeQuery(
+  scopeType: "topic" | "company",
+  scopeId: string
+) {
+  return scopeType === "topic"
+    ? `topic_id=${encodeURIComponent(scopeId)}`
+    : `company_id=${encodeURIComponent(scopeId)}`;
+}
+
+export default function DashboardOverview({
+  scopeType,
+  scopeId,
+}: Props) {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,14 +39,11 @@ export default function DashboardOverview({ scopeType, scopeId }: Props) {
       setLoading(true);
       setError(null);
 
-      const params =
-        scopeType === "topic"
-          ? `topic_id=${encodeURIComponent(scopeId)}`
-          : `company_id=${encodeURIComponent(scopeId)}`;
+      const scopeQuery = getScopeQuery(scopeType, scopeId);
 
       try {
         const res = await fetch(
-          `${API_BASE}/content/overview?${params}`,
+          `${API_BASE}/analysis/overview?${scopeQuery}`,
           { cache: "no-store" }
         );
 
