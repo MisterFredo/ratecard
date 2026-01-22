@@ -7,6 +7,8 @@ import TopicCard from "@/components/topics/TopicCard";
 type TopicItem = {
   id_topic: string;
   label: string;
+  nb_analyses: number;
+  delta_30d?: number;
 };
 
 const API_BASE =
@@ -33,6 +35,8 @@ export default function TopicsPage() {
           const mappedTopics = (json.topics || []).map((t: any) => ({
             id_topic: t.ID_TOPIC,
             label: t.LABEL,
+            nb_analyses: t.NB_ANALYSES ?? 0,
+            delta_30d: t.DELTA_30D ?? 0,
           }));
 
           setTopics(mappedTopics);
@@ -47,15 +51,25 @@ export default function TopicsPage() {
     load();
   }, []);
 
+  const activeTopics = topics
+    .filter((t) => t.nb_analyses > 0)
+    .sort((a, b) => b.nb_analyses - a.nb_analyses);
+
+  const otherTopics = topics
+    .filter((t) => t.nb_analyses === 0)
+    .sort((a, b) => a.label.localeCompare(b.label));
+
   return (
-    <div className="space-y-6">
-      {/* HEADER */}
+    <div className="space-y-10">
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
       <header>
         <h1 className="text-2xl font-semibold">
           Topics
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Explore les sujets analysés par Curator
+          Sujets suivis et analysés par Curator
         </p>
       </header>
 
@@ -71,23 +85,68 @@ export default function TopicsPage() {
         </p>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {topics.map((topic) => (
-          <TopicCard
-            key={topic.id_topic}
-            label={topic.label}
-            onClick={() =>
-              openDrawer("left", {
-                type: "dashboard",
-                payload: {
-                  scopeType: "topic",
-                  scopeId: topic.label,
-                },
-              })
-            }
-          />
-        ))}
-      </div>
+      {/* =====================================================
+          TOPICS EN MOUVEMENT
+      ===================================================== */}
+      {!loading && activeTopics.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold">
+            Topics en mouvement
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {activeTopics.map((topic) => (
+              <TopicCard
+                key={topic.id_topic}
+                label={topic.label}
+                nbAnalyses={topic.nb_analyses}
+                delta30d={topic.delta_30d}
+                variant="active"
+                onClick={() =>
+                  openDrawer("left", {
+                    type: "dashboard",
+                    payload: {
+                      scopeType: "topic",
+                      scopeId: topic.label,
+                    },
+                  })
+                }
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* =====================================================
+          AUTRES TOPICS
+      ===================================================== */}
+      {!loading && otherTopics.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-400">
+            Autres topics suivis
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {otherTopics.map((topic) => (
+              <TopicCard
+                key={topic.id_topic}
+                label={topic.label}
+                nbAnalyses={topic.nb_analyses}
+                variant="default"
+                onClick={() =>
+                  openDrawer("left", {
+                    type: "dashboard",
+                    payload: {
+                      scopeType: "topic",
+                      scopeId: topic.label,
+                    },
+                  })
+                }
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
