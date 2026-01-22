@@ -80,11 +80,11 @@ export default function DashboardOverview({ scopeType, scopeId }: Props) {
             value={data.total_analyses}
           />
           <StatCard
-            label="30 derniers jours"
+            label="30 jours"
             value={data.last_30_days}
           />
           <StatCard
-            label="90 derniers jours"
+            label="90 jours"
             value={data.last_90_days}
           />
           <StatCard
