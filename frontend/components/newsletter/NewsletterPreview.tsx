@@ -13,6 +13,9 @@ import type {
 const SITE_URL = "https://ratecard-frontend.onrender.com";
 const LOGO_URL = `${SITE_URL}/assets/brand/ratecard-logo.jpeg`;
 
+const GCS_BASE_URL =
+  "https://storage.googleapis.com/ratecard-media";
+
 /* =========================================================
    UTILS
 ========================================================= */
@@ -82,11 +85,15 @@ function renderNews(news: NewsItem[]) {
               overflow:hidden;
             "
           >
+
+            ${
+              n.visual_rect_id
+                ? `
             <!-- IMAGE -->
             <tr>
               <td>
                 <img
-                  src="${n.visual_rect_url}"
+                  src="${GCS_BASE_URL}/news/${n.visual_rect_id}"
                   alt="${escapeHtml(n.title)}"
                   style="
                     display:block;
@@ -97,6 +104,9 @@ function renderNews(news: NewsItem[]) {
                 />
               </td>
             </tr>
+            `
+                : ""
+            }
 
             <!-- CONTENT -->
             <tr>
