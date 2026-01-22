@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AnalysisCard from "@/components/analysis/AnalysisCard";
 import { useDrawer } from "@/contexts/DrawerContext";
 
 type Props = {
@@ -12,13 +11,16 @@ type Props = {
 type AnalysisItem = {
   id_content: string;
   angle_title: string;
-  angle_signal: string;
   excerpt?: string;
   published_at: string;
 };
 
+type Mode = "focus" | "all";
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
+const FOCUS_LIMIT = 10;
 
 export default function DashboardAnalyses({
   scopeType,
@@ -27,6 +29,7 @@ export default function DashboardAnalyses({
   const [items, setItems] = useState<AnalysisItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>("focus");
 
   const { openDrawer } = useDrawer();
 
@@ -40,9 +43,12 @@ export default function DashboardAnalyses({
           ? `topic_id=${encodeURIComponent(scopeId)}`
           : `company_id=${encodeURIComponent(scopeId)}`;
 
+      const limit =
+        mode === "focus" ? `&limit=${FOCUS_LIMIT}` : "";
+
       try {
         const res = await fetch(
-          `${API_BASE}/content/list?${params}`,
+          `${API_BASE}/content/list?${params}${limit}`,
           { cache: "no-store" }
         );
 
@@ -61,14 +67,36 @@ export default function DashboardAnalyses({
     }
 
     load();
-  }, [scopeType, scopeId]);
+  }, [scopeType, scopeId, mode]);
 
   return (
-    <section>
-      <h2 className="text-lg font-semibold mb-4">
-        Analyses
-      </h2>
+    <section className="space-y-4">
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">
+          Analyses
+        </h2>
 
+        {mode === "focus" && items.length === FOCUS_LIMIT && (
+          <button
+            onClick={() => setMode("all")}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Voir toutes
+          </button>
+        )}
+
+        {mode === "all" && (
+          <button
+            onClick={() => setMode("focus")}
+            className="text-sm text-gray-500 hover:underline"
+          >
+            Vue réduite
+          </button>
+        )}
+      </div>
+
+      {/* STATES */}
       {loading && (
         <p className="text-sm text-gray-500">
           Chargement des analyses…
@@ -87,28 +115,50 @@ export default function DashboardAnalyses({
         </p>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {/* LIST */}
+      <div
+        className={`divide-y ${
+          mode === "all" ? "max-h-[420px] overflow-y-auto" : ""
+        }`}
+      >
         {items.map((item) => (
           <div
             key={item.id_content}
-            className="cursor-pointer"
             onClick={() =>
               openDrawer("right", {
                 type: "analysis",
                 payload: { id: item.id_content },
               })
             }
+            className="
+              cursor-pointer
+              py-3
+              px-1
+              hover:bg-gray-50
+              transition
+            "
           >
-            <AnalysisCard
-              id={item.id_content}
-              title={item.angle_title}
-              excerpt={item.excerpt}
-              publishedAt={item.published_at}
-              event={{ label: scopeId }}
-            />
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="text-sm font-medium leading-snug">
+                  {item.angle_title}
+                </div>
+
+                {item.excerpt && (
+                  <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                    {item.excerpt}
+                  </div>
+                )}
+              </div>
+
+              <div className="text-xs text-gray-400 whitespace-nowrap pt-0.5">
+                {new Date(item.published_at).toLocaleDateString("fr-FR")}
+              </div>
+            </div>
           </div>
         ))}
       </div>
     </section>
   );
 }
+
