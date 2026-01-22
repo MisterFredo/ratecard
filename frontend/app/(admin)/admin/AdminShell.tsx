@@ -22,8 +22,12 @@ export default function AdminShell({
 }) {
   const pathname = usePathname();
 
-  function active(path: string) {
-    return pathname?.startsWith(path);
+  /* =========================================================
+     ACTIVE STATE — STRICT ROUTE MATCHING
+  ========================================================= */
+  function isActive(href: string) {
+    if (!pathname) return false;
+    return pathname === href || pathname.startsWith(href + "/");
   }
 
   const navItems = [
@@ -59,6 +63,7 @@ export default function AdminShell({
 
   return (
     <div className="min-h-screen flex">
+      {/* ===== SIDEBAR ===== */}
       <aside className="w-64 bg-ratecard-blue text-white p-6 space-y-10 flex flex-col">
         <div>
           <h1 className="text-xl font-semibold">Ratecard Admin</h1>
@@ -70,21 +75,21 @@ export default function AdminShell({
         <nav className="space-y-1 text-sm flex-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = active(item.href);
+            const active = isActive(item.href);
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2 px-3 py-2 rounded ${
-                  item.subtle
-                    ? "ml-6 text-xs opacity-80"
-                    : ""
-                } ${
-                  isActive
-                    ? "bg-white text-ratecard-blue font-semibold"
-                    : "hover:bg-ratecard-green/20"
-                }`}
+                className={`
+                  flex items-center gap-2 px-3 py-2 rounded
+                  ${item.subtle ? "ml-6 text-xs opacity-80" : ""}
+                  ${
+                    active
+                      ? "bg-white text-ratecard-blue font-semibold"
+                      : "hover:bg-ratecard-green/20"
+                  }
+                `}
               >
                 <Icon size={item.subtle ? 14 : 18} />
                 <span>{item.label}</span>
@@ -98,10 +103,10 @@ export default function AdminShell({
         </div>
       </aside>
 
+      {/* ===== MAIN ===== */}
       <main className="flex-1 p-10 bg-gray-50">
         {children}
       </main>
     </div>
   );
 }
-
