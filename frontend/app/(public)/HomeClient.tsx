@@ -10,13 +10,14 @@ import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 type Company = {
   name: string;
   is_partner?: boolean;
+  media_logo_rectangle_id?: string | null;
 };
 
 type NewsItem = {
   id: string;
   title: string;
   excerpt?: string | null;
-  visual_rect_url?: string | null;
+  visual_rect_id?: string | null;
   published_at: string;
   company?: Company;
 };
@@ -89,7 +90,10 @@ export default function HomeClient({ news }: Props) {
               id={featuredNews.id}
               title={featuredNews.title}
               excerpt={featuredNews.excerpt}
-              visualRectUrl={featuredNews.visual_rect_url}
+              visualRectId={featuredNews.visual_rect_id}
+              companyVisualRectId={
+                featuredNews.company?.media_logo_rectangle_id
+              }
               companyName={featuredNews.company?.name}
               isPartner={featuredNews.company?.is_partner === true}
               publishedAt={featuredNews.published_at}
@@ -108,7 +112,8 @@ export default function HomeClient({ news }: Props) {
             id={n.id}
             title={n.title}
             excerpt={n.excerpt}
-            visualRectUrl={n.visual_rect_url}
+            visualRectId={n.visual_rect_id}
+            companyVisualRectId={n.company?.media_logo_rectangle_id}
             companyName={n.company?.name}
             isPartner={n.company?.is_partner === true}
             publishedAt={n.published_at}
