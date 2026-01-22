@@ -207,7 +207,7 @@ def get_news(id_news: str):
 def list_news():
     """
     Liste des news PUBLIQUES uniquement.
-    Utilisée par le front public (home, /news, drawers).
+    Utilisée par le front public (home, /news, drawers, newsletter).
     """
     sql = f"""
         SELECT
@@ -217,12 +217,14 @@ def list_news():
             n.BODY,
             n.STATUS,
             n.PUBLISHED_AT,
-            n.MEDIA_RECTANGLE_ID AS VISUAL_RECT_URL,
+
+            -- 🔑 VISUEL NEWS
+            n.MEDIA_RECTANGLE_ID AS VISUAL_RECT_ID,
 
             c.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
             c.MEDIA_LOGO_RECTANGLE_ID,
-            c.IS_PARTNER          -- 👈 CLÉ MÉTIER
+            c.IS_PARTNER
 
         FROM `{TABLE_NEWS}` n
         JOIN `{TABLE_COMPANY}` c
@@ -236,7 +238,6 @@ def list_news():
         ORDER BY n.PUBLISHED_AT DESC
     """
     return query_bq(sql)
-
 
 
 # ============================================================
