@@ -29,8 +29,10 @@ export default function PublicShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   function active(path: string) {
-    return pathname === path || pathname.startsWith(`${path}/`);
+    if (pathname === path) return true;
+    return pathname.startsWith(path + "/");
   }
+
 
   /* =========================================================
      NAVIGATION PRINCIPALE
