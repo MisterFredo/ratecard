@@ -15,7 +15,10 @@ type NewsItemRaw = {
   ID_NEWS: string;
   TITLE: string;
   EXCERPT?: string | null;
-  VISUAL_RECT_URL: string | null;
+
+  // 🔑 NOUVEAU CONTRAT
+  VISUAL_RECT_ID?: string | null;
+
   PUBLISHED_AT?: string | null;
 
   ID_COMPANY: string;
@@ -28,7 +31,7 @@ type NewsItem = {
   id: string;
   title: string;
   excerpt?: string | null;
-  visual_rect_url: string | null;
+  visual_rect_id?: string | null;
   published_at: string;
 
   company: {
@@ -47,10 +50,9 @@ const API_BASE =
 ========================================================= */
 
 async function fetchNews(): Promise<NewsItemRaw[]> {
-  const res = await fetch(
-    `${API_BASE}/news/list`,
-    { cache: "no-store" }
-  );
+  const res = await fetch(`${API_BASE}/news/list`, {
+    cache: "no-store",
+  });
   if (!res.ok) return [];
   const json = await res.json();
   return json.news || [];
@@ -73,11 +75,14 @@ export default function NewsPage() {
   --------------------------------------------------------- */
   useEffect(() => {
     fetchNews().then((rows) => {
-      const mapped = rows.map((n) => ({
+      const mapped: NewsItem[] = rows.map((n) => ({
         id: n.ID_NEWS,
         title: n.TITLE,
         excerpt: n.EXCERPT ?? null,
-        visual_rect_url: n.VISUAL_RECT_URL,
+
+        // 🔑 ALIGNEMENT VISUEL
+        visual_rect_id: n.VISUAL_RECT_ID ?? null,
+
         published_at: n.PUBLISHED_AT || "",
 
         company: {
@@ -110,7 +115,6 @@ export default function NewsPage() {
 
     lastOpenedId.current = newsId;
     openRightDrawer("news", newsId, "route");
-
   }, [searchParams, openRightDrawer]);
 
   return (
@@ -130,7 +134,13 @@ export default function NewsPage() {
               id={n.id}
               title={n.title}
               excerpt={n.excerpt}
-              visualRectUrl={n.visual_rect_url}
+
+              /* 🔑 VISUEL NEWS */
+              visualRectId={n.visual_rect_id}
+
+              /* 🔑 FALLBACK SOCIÉTÉ */
+              companyVisualRectId={n.company.logo_rect_id}
+
               publishedAt={n.published_at}
               openInDrawer
 
@@ -144,5 +154,3 @@ export default function NewsPage() {
     </div>
   );
 }
-
-
