@@ -11,6 +11,7 @@ from utils.bigquery_utils import (
 from api.company.models import CompanyCreate, CompanyUpdate
 
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
+TABLE_COMPANY_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_METRICS"
 
 
 # ============================================================
@@ -67,24 +68,17 @@ def create_company(data: CompanyCreate) -> str:
 def list_companies():
     sql = f"""
         SELECT
-            co.ID_COMPANY,
-            co.NAME,
+            c.ID_COMPANY,
+            c.NAME,
 
-            COUNT(c.ID_CONTENT) AS NB_ANALYSES,
-            COUNTIF(
-              DATE(c.PUBLISHED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
-            ) AS DELTA_30D
+            COALESCE(m.NB_ANALYSES, 0) AS NB_ANALYSES,
+            COALESCE(m.LAST_30_DAYS, 0) AS DELTA_30D
 
-        FROM {TABLE_COMPANY} co
-        LEFT JOIN {TABLE_CONTENT_COMPANY} cc
-          ON cc.ID_COMPANY = co.ID_COMPANY
-        LEFT JOIN {TABLE_CONTENT} c
-          ON c.ID_CONTENT = cc.ID_CONTENT
-          AND c.STATUS = 'PUBLISHED'
-          AND c.IS_ACTIVE = TRUE
+        FROM {TABLE_COMPANY} c
+        LEFT JOIN {TABLE_COMPANY_METRICS} m
+          ON m.ID_COMPANY = c.ID_COMPANY
 
-        GROUP BY co.ID_COMPANY, co.NAME
-        ORDER BY NB_ANALYSES DESC, co.NAME ASC
+        ORDER BY NB_ANALYSES DESC, c.NAME ASC
     """
 
     rows = query_bq(sql)
