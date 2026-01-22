@@ -8,7 +8,6 @@ from utils.bigquery_utils import (
     update_bq,
     get_bigquery_client,
 )
-from utils.gcs import get_public_url
 from api.event.models import EventCreate, EventUpdate
 
 TABLE_EVENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_EVENT"
@@ -40,7 +39,7 @@ def create_event(data: EventCreate) -> str:
         # 🔗 URL externe
         "EXTERNAL_URL": data.external_url,
 
-        # Médias
+        # Médias (IDs uniquement)
         "MEDIA_SQUARE_ID": None,
         "MEDIA_RECTANGLE_ID": None,
 
@@ -112,8 +111,7 @@ def update_event(id_event: str, data: EventUpdate) -> bool:
     # 🧭 Gestion spécifique du contexte événementiel
     if "context_html" in values:
         values["context_updated_at"] = now
-        # context_author peut être injecté plus tard
-        # via auth / session admin si nécessaire
+        # context_author pourra être injecté plus tard
 
     values["updated_at"] = now
 
@@ -164,10 +162,9 @@ def get_event_by_slug(slug: str):
         "description": e.get("DESCRIPTION"),
         "event_color": e.get("EVENT_COLOR"),
         "external_url": e.get("EXTERNAL_URL"),
-        "visual_rect_url": get_public_url(
-            "events",
-            e.get("MEDIA_RECTANGLE_ID"),
-        ),
+
+        # 🔑 VISUEL ÉVÉNEMENT — ID UNIQUEMENT
+        "visual_rect_id": e.get("MEDIA_RECTANGLE_ID"),
     }
 
 
@@ -203,10 +200,9 @@ def list_home_events():
             "event_color": r.get("EVENT_COLOR"),
             "external_url": r.get("EXTERNAL_URL"),
             "context_html": r.get("CONTEXT_HTML"),
-            "visual_rect_url": get_public_url(
-                "events",
-                r.get("MEDIA_RECTANGLE_ID"),
-            ),
+
+            # 🔑 VISUEL ÉVÉNEMENT — ID UNIQUEMENT
+            "visual_rect_id": r.get("MEDIA_RECTANGLE_ID"),
         })
 
     return events
@@ -261,6 +257,7 @@ def list_event_contents(event_id: str):
         }
         for r in rows
     ]
+
 
 
 
