@@ -128,7 +128,7 @@ def read_news(id_news: str):
             published_at=n["PUBLISHED_AT"],
 
             # 🔑 visuel news uniquement (peut être null)
-            visual_rect_url=n.get("VISUAL_RECT_URL"),
+            visual_rect_id=n.get("VISUAL_RECT_ID"),
 
             # 🔑 société enrichie pour fallback visuel
             company={
