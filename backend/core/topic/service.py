@@ -11,6 +11,7 @@ from utils.bigquery_utils import (
 from api.topic.models import TopicCreate, TopicUpdate
 
 TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
+TABLE_TOPIC_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC_METRICS"
 
 
 # ============================================================
@@ -66,20 +67,13 @@ def list_topics():
             t.ID_TOPIC,
             t.LABEL,
 
-            COUNT(c.ID_CONTENT) AS NB_ANALYSES,
-            COUNTIF(
-              DATE(c.PUBLISHED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
-            ) AS DELTA_30D
+            COALESCE(m.NB_ANALYSES, 0) AS NB_ANALYSES,
+            COALESCE(m.LAST_30_DAYS, 0) AS DELTA_30D
 
         FROM {TABLE_TOPIC} t
-        LEFT JOIN {TABLE_CONTENT_TOPIC} ct
-          ON ct.ID_TOPIC = t.ID_TOPIC
-        LEFT JOIN {TABLE_CONTENT} c
-          ON c.ID_CONTENT = ct.ID_CONTENT
-          AND c.STATUS = 'PUBLISHED'
-          AND c.IS_ACTIVE = TRUE
+        LEFT JOIN {TABLE_TOPIC_METRICS} m
+          ON m.ID_TOPIC = t.ID_TOPIC
 
-        GROUP BY t.ID_TOPIC, t.LABEL
         ORDER BY NB_ANALYSES DESC, t.LABEL ASC
     """
 
