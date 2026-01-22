@@ -7,11 +7,15 @@ import NewsletterSelector from "@/components/newsletter/NewsletterSelector";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 export type NewsItem = {
   id: string;
   title: string;
   excerpt?: string | null;
-  visual_rect_url: string;
+  visual_rect_id?: string | null;
   published_at: string;
 };
 
@@ -22,31 +26,39 @@ export type AnalysisItem = {
   published_at: string;
 };
 
+/* =========================================================
+   PAGE
+========================================================= */
+
 export default function NewsletterComposePage() {
   const [introText, setIntroText] = useState("");
+
   const [news, setNews] = useState<NewsItem[]>([]);
   const [analyses, setAnalyses] = useState<AnalysisItem[]>([]);
 
   const [selectedNewsIds, setSelectedNewsIds] = useState<string[]>([]);
   const [selectedAnalysisIds, setSelectedAnalysisIds] = useState<string[]>([]);
 
-  // -----------------------------------------------------
-  // Fetch sources (same as Home / News / Analysis)
-  // -----------------------------------------------------
+  /* -----------------------------------------------------
+     FETCH SOURCES
+  ----------------------------------------------------- */
   useEffect(() => {
+    // NEWS
     fetch(`${API_BASE}/news/list`, { cache: "no-store" })
       .then((r) => r.json())
       .then((json) => {
-        const mapped = (json.news || []).map((n: any) => ({
+        const mapped: NewsItem[] = (json.news || []).map((n: any) => ({
           id: n.ID_NEWS,
           title: n.TITLE,
           excerpt: n.EXCERPT ?? null,
-          visual_rect_url: n.VISUAL_RECT_URL,
+          visual_rect_id: n.VISUAL_RECT_ID ?? null,
           published_at: n.PUBLISHED_AT,
         }));
+
         setNews(mapped);
       });
 
+    // ANALYSES
     fetch(`${API_BASE}/public/analysis/list`, { cache: "no-store" })
       .then((r) => r.json())
       .then((json) => {
@@ -54,9 +66,9 @@ export default function NewsletterComposePage() {
       });
   }, []);
 
-  // -----------------------------------------------------
-  // Selected objects (ordered)
-  // -----------------------------------------------------
+  /* -----------------------------------------------------
+     SELECTED OBJECTS (ORDERED)
+  ----------------------------------------------------- */
   const selectedNews = useMemo(
     () => news.filter((n) => selectedNewsIds.includes(n.id)),
     [news, selectedNewsIds]
@@ -67,13 +79,18 @@ export default function NewsletterComposePage() {
     [analyses, selectedAnalysisIds]
   );
 
+  /* -----------------------------------------------------
+     RENDER
+  ----------------------------------------------------- */
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-
       {/* LEFT — COMPOSITION */}
       <div className="space-y-8">
         <section className="space-y-3">
-          <h1 className="text-lg font-semibold">Composer la newsletter</h1>
+          <h1 className="text-lg font-semibold">
+            Composer la newsletter
+          </h1>
+
           <textarea
             value={introText}
             onChange={(e) => setIntroText(e.target.value)}
