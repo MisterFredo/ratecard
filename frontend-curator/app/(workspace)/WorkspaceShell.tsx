@@ -3,7 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Grid, Layers, Menu, X } from "lucide-react";
+import {
+  FileText,
+  Newspaper,
+  Grid,
+  Layers,
+  Menu,
+  X,
+} from "lucide-react";
 
 export default function WorkspaceShell({
   children,
@@ -13,17 +20,51 @@ export default function WorkspaceShell({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  function active(path: string) {
-    return pathname === path || pathname.startsWith(`${path}/`);
+  /* =========================================================
+     ACTIVE ROUTE — STRICT MATCH
+  ========================================================= */
+  function isActive(path: string) {
+    if (!pathname) return false;
+    return pathname === path || pathname.startsWith(path + "/");
   }
 
   /* =========================================================
      NAVIGATION WORKSPACE
+     Logique produit :
+     1. Lecture (Analyses, News)
+     2. Exploration (Topics, Sociétés)
   ========================================================= */
   const mainNav = [
-    { href: "/analysis", label: "Analyses", icon: FileText },
-    { href: "/topics", label: "Topics", icon: Grid },
-    { href: "/companies", label: "Sociétés", icon: Layers },
+    {
+      section: "lecture",
+      items: [
+        {
+          href: "/analysis",
+          label: "Analyses",
+          icon: FileText,
+        },
+        {
+          href: "/news",
+          label: "News",
+          icon: Newspaper,
+        },
+      ],
+    },
+    {
+      section: "exploration",
+      items: [
+        {
+          href: "/topics",
+          label: "Topics",
+          icon: Grid,
+        },
+        {
+          href: "/companies",
+          label: "Sociétés",
+          icon: Layers,
+        },
+      ],
+    },
   ];
 
   const SidebarContent = (
@@ -39,33 +80,38 @@ export default function WorkspaceShell({
         </span>
       </Link>
 
-      {/* ===== NAV PRINCIPALE ===== */}
-      <nav className="space-y-1 text-sm">
-        {mainNav.map((item) => {
-          const Icon = item.icon;
-          const isActive = active(item.href);
+      {/* ===== NAVIGATION ===== */}
+      <nav className="space-y-6 text-sm">
+        {mainNav.map((group) => (
+          <div key={group.section} className="space-y-1">
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={`
-                flex items-center gap-2 px-3 py-2 rounded-md transition
-                ${
-                  isActive
-                    ? "bg-teal-100 text-teal-900 font-semibold"
-                    : "text-gray-700 hover:bg-slate-100"
-                }
-              `}
-            >
-              <Icon size={18} />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`
+                    flex items-center gap-2 px-3 py-2 rounded-md transition
+                    ${
+                      active
+                        ? "bg-teal-100 text-teal-900 font-semibold"
+                        : "text-gray-700 hover:bg-slate-100"
+                    }
+                  `}
+                >
+                  <Icon size={18} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
+      {/* ===== FOOTER ===== */}
       <div className="text-xs text-gray-400 mt-10">
         © {new Date().getFullYear()} Curator
       </div>
@@ -117,4 +163,3 @@ export default function WorkspaceShell({
     </div>
   );
 }
-
