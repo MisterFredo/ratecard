@@ -7,7 +7,7 @@ import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
 export const dynamic = "force-dynamic";
 
 /* =========================================================
-   TYPES
+   TYPES — alignés avec /api/public/analysis/list
 ========================================================= */
 
 type AnalysisItem = {
@@ -50,6 +50,7 @@ export default function AnalysisPage() {
     fetchAnalyses().then(setAnalyses);
   }, []);
 
+  // 6 analyses mises en avant (cohérent grille 3x2)
   const latestAnalyses = analyses.slice(0, 6);
 
   return (
@@ -70,7 +71,7 @@ export default function AnalysisPage() {
         </header>
 
         {/* =========================
-            SIGNALS — 2 COLS
+            SIGNALS — 2 COLS (MOCK)
         ========================= */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -129,7 +130,7 @@ export default function AnalysisPage() {
                   publishedAt={a.published_at}
                   topic={a.topics?.[0]}
                   keyMetric={a.key_metrics?.[0]}
-                  onOpen={(id) => setOpenedId(id)}
+                  onOpen={setOpenedId}
                 />
               ))}
             </div>
@@ -148,14 +149,7 @@ export default function AnalysisPage() {
           </h2>
         </header>
 
-        <div
-          className="
-            grid grid-cols-1
-            md:grid-cols-2
-            xl:grid-cols-3
-            gap-6
-          "
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {analyses.map((a) => (
             <AnalysisCard
               key={a.id}
@@ -165,7 +159,7 @@ export default function AnalysisPage() {
               publishedAt={a.published_at}
               topic={a.topics?.[0]}
               keyMetric={a.key_metrics?.[0]}
-              onOpen={(id) => setOpenedId(id)}
+              onOpen={setOpenedId}
             />
           ))}
         </div>
@@ -183,3 +177,4 @@ export default function AnalysisPage() {
     </div>
   );
 }
+
