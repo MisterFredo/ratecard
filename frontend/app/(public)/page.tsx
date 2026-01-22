@@ -23,7 +23,10 @@ export default async function HomePage() {
     id: n.ID_NEWS,
     title: n.TITLE,
     excerpt: n.EXCERPT ?? null,
-    visual_rect_url: n.VISUAL_RECT_URL ?? null,
+
+    // 🔑 ALIGNEMENT FINAL
+    visual_rect_id: n.VISUAL_RECT_ID ?? null,
+
     published_at: n.PUBLISHED_AT,
 
     company: {
@@ -34,11 +37,5 @@ export default async function HomePage() {
     },
   }));
 
-  return (
-    <HomeClient
-      news={news}
-    />
-  );
+  return <HomeClient news={news} />;
 }
-
-
