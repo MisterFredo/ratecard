@@ -15,7 +15,19 @@ type TimelinePoint = {
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-export default function DashboardTimeline({ scopeType, scopeId }: Props) {
+function getScopeQuery(
+  scopeType: "topic" | "company",
+  scopeId: string
+) {
+  return scopeType === "topic"
+    ? `topic_id=${encodeURIComponent(scopeId)}`
+    : `company_id=${encodeURIComponent(scopeId)}`;
+}
+
+export default function DashboardTimeline({
+  scopeType,
+  scopeId,
+}: Props) {
   const [timeline, setTimeline] = useState<TimelinePoint[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,14 +35,11 @@ export default function DashboardTimeline({ scopeType, scopeId }: Props) {
     async function load() {
       setLoading(true);
 
-      const params =
-        scopeType === "topic"
-          ? `topic_id=${encodeURIComponent(scopeId)}`
-          : `company_id=${encodeURIComponent(scopeId)}`;
+      const scopeQuery = getScopeQuery(scopeType, scopeId);
 
       try {
         const res = await fetch(
-          `${API_BASE}/content/timeline?${params}`,
+          `${API_BASE}/analysis/timeline?${scopeQuery}`,
           { cache: "no-store" }
         );
 
