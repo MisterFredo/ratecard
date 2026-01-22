@@ -15,8 +15,9 @@ type Props = {
   title: string;
   excerpt?: string | null;
 
-  visualRectUrl?: string | null;
-  companyVisualRectId?: string | null;
+  /* 🔑 VISUELS */
+  visualRectId?: string | null;          // NEWS
+  companyVisualRectId?: string | null;   // FALLBACK SOCIÉTÉ
 
   companyName?: string;
   isPartner?: boolean;
@@ -42,7 +43,7 @@ export default function PartnerSignalCard({
   id,
   title,
   excerpt,
-  visualRectUrl,
+  visualRectId,
   companyVisualRectId,
   companyName,
   isPartner = false,
@@ -58,8 +59,8 @@ export default function PartnerSignalCard({
   /* ---------------------------------------------------------
      VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
   --------------------------------------------------------- */
-  const visualSrc = visualRectUrl
-    ? `${GCS_BASE_URL}/news/${visualRectUrl}`
+  const visualSrc = visualRectId
+    ? `${GCS_BASE_URL}/news/${visualRectId}`
     : companyVisualRectId
     ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
     : null;
@@ -199,7 +200,7 @@ export default function PartnerSignalCard({
   }
 
   /* ========================================================
-     MODE NAVIGATION EXTERNE
+     MODE NAVIGATION EXTERNE (LIEN)
   ======================================================== */
   return (
     <Link
