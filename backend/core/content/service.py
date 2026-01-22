@@ -334,10 +334,9 @@ def list_contents_admin():
           C.DATE_CREATION
         FROM `{TABLE_CONTENT}` C
         WHERE
-          C.IS_ACTIVE = TRUE
+          (C.IS_ACTIVE = TRUE OR C.IS_ACTIVE IS NULL)
         ORDER BY
-          C.PUBLISHED_AT DESC,
-          C.DATE_CREATION DESC
+          COALESCE(C.PUBLISHED_AT, C.DATE_CREATION) DESC
         """
     )
 
