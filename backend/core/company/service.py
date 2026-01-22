@@ -65,17 +65,39 @@ def create_company(data: CompanyCreate) -> str:
 # LIST COMPANIES
 # ============================================================
 def list_companies():
-    """
-    Liste les sociétés actives (admin).
-    """
     sql = f"""
-        SELECT *
-        FROM `{TABLE_COMPANY}`
-        WHERE IS_ACTIVE = TRUE
-        ORDER BY NAME ASC
-    """
-    return query_bq(sql)
+        SELECT
+            co.ID_COMPANY,
+            co.NAME,
 
+            COUNT(c.ID_CONTENT) AS NB_ANALYSES,
+            COUNTIF(
+              c.PUBLISHED_AT >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+            ) AS DELTA_30D
+
+        FROM {TABLE_COMPANY} co
+        LEFT JOIN {TABLE_CONTENT_COMPANY} cc
+          ON cc.ID_COMPANY = co.ID_COMPANY
+        LEFT JOIN {TABLE_CONTENT} c
+          ON c.ID_CONTENT = cc.ID_CONTENT
+          AND c.STATUS = 'PUBLISHED'
+          AND c.IS_ACTIVE = TRUE
+
+        GROUP BY co.ID_COMPANY, co.NAME
+        ORDER BY NB_ANALYSES DESC, co.NAME ASC
+    """
+
+    rows = query_bq(sql)
+
+    return [
+        {
+            "ID_COMPANY": r["ID_COMPANY"],
+            "NAME": r["NAME"],
+            "NB_ANALYSES": r["NB_ANALYSES"],
+            "DELTA_30D": r["DELTA_30D"],
+        }
+        for r in rows
+    ]
 
 # ============================================================
 # GET ONE COMPANY
