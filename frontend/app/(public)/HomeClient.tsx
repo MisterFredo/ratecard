@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import PartnerSignalCard from "@/components/news/PartnerSignalCard";
+import PartnerSignalCard from "@shared/components/news/PartnerSignalCard";
 
 /* =========================================================
    TYPES
