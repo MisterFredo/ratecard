@@ -3,6 +3,9 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  // 🔑 IMPORTANT : transpiler le code partagé
+  transpilePackages: ["shared"],
+
   async rewrites() {
     return [
       {
@@ -23,4 +26,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-
