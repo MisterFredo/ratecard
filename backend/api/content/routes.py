@@ -40,18 +40,8 @@ def create_route(data: ContentCreate):
 # ============================================================
 @router.get("/list")
 def list_route():
-    """
-    Liste des contenus pour l’ADMIN.
-
-    ⚠️ IMPORTANT :
-    - Utilise list_contents_admin()
-    - Ne doit JAMAIS dépendre du modèle public
-    """
-    try:
-        contents = list_contents_admin()
-        return {"status": "ok", "contents": contents}
-    except Exception as e:
-        raise HTTPException(400, f"Erreur liste contents : {e}")
+    contents = list_contents_admin()
+    return {"status": "ok", "contents": contents}
 
 
 # ============================================================
