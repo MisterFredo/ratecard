@@ -6,12 +6,15 @@ from datetime import datetime
 # =======================================================
 # HOME — NEWS (CARTES)
 # =======================================================
+
 class HomeNewsItem(BaseModel):
     id: str
     title: str
     excerpt: Optional[str]
     published_at: datetime
-    visual_rect_url: str
+
+    # 🔑 VISUEL NEWS
+    visual_rect_id: Optional[str] = None
 
 
 class HomeNewsResponse(BaseModel):
@@ -21,6 +24,7 @@ class HomeNewsResponse(BaseModel):
 # =======================================================
 # HOME — ANALYSES (LIGNES PAR EVENT)
 # =======================================================
+
 class HomeEventInfo(BaseModel):
     id: str
     label: str
@@ -51,18 +55,24 @@ class HomeEventsResponse(BaseModel):
 # =======================================================
 # DRAWER — NEWS
 # =======================================================
+
 class DrawerNewsResponse(BaseModel):
     id_news: str
     title: str
     excerpt: Optional[str]
     body: Optional[str]
     published_at: datetime
-    visual_rect_url: Optional[str] = None
+
+    # 🔑 VISUEL NEWS
+    visual_rect_id: Optional[str] = None
+
     company: dict
+
 
 # =======================================================
 # DRAWER — ANALYSE
 # =======================================================
+
 class DrawerAnalysisResponse(BaseModel):
     id_content: str
     angle_title: str
@@ -80,6 +90,7 @@ class DrawerAnalysisResponse(BaseModel):
 # =======================================================
 # LINKEDIN — GÉNÉRATION DE POST (IA)
 # =======================================================
+
 class LinkedInSource(BaseModel):
     """
     Source utilisée pour la génération d’un post LinkedIn.
@@ -103,6 +114,7 @@ class LinkedInGenerateResponse(BaseModel):
     ⚠️ Toujours du texte brut.
     """
     text: str
+
 
 # =======================================================
 # MEMBERS — LISTE DES PARTENAIRES (PUBLIC)
@@ -136,8 +148,3 @@ class PublicMemberResponse(BaseModel):
     description: Optional[str] = None
     media_logo_rectangle_id: Optional[str] = None
     news: List[PublicMemberNewsItem]
-
-
-
-
-
