@@ -9,9 +9,9 @@ type Props = {
 };
 
 type AnalysisItem = {
-  id_content: string;
-  angle_title: string;
-  excerpt?: string;
+  id: string;
+  title: string;
+  excerpt?: string | null;
   published_at: string;
 };
 
@@ -21,6 +21,15 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 const FOCUS_LIMIT = 10;
+
+function getScopeQuery(
+  scopeType: "topic" | "company",
+  scopeId: string
+) {
+  return scopeType === "topic"
+    ? `topic_id=${encodeURIComponent(scopeId)}`
+    : `company_id=${encodeURIComponent(scopeId)}`;
+}
 
 export default function DashboardAnalyses({
   scopeType,
@@ -38,17 +47,13 @@ export default function DashboardAnalyses({
       setLoading(true);
       setError(null);
 
-      const params =
-        scopeType === "topic"
-          ? `topic_id=${encodeURIComponent(scopeId)}`
-          : `company_id=${encodeURIComponent(scopeId)}`;
-
+      const scopeQuery = getScopeQuery(scopeType, scopeId);
       const limit =
         mode === "focus" ? `&limit=${FOCUS_LIMIT}` : "";
 
       try {
         const res = await fetch(
-          `${API_BASE}/content/list?${params}${limit}`,
+          `${API_BASE}/analysis/list?${scopeQuery}${limit}`,
           { cache: "no-store" }
         );
 
@@ -123,11 +128,11 @@ export default function DashboardAnalyses({
       >
         {items.map((item) => (
           <div
-            key={item.id_content}
+            key={item.id}
             onClick={() =>
               openDrawer("right", {
                 type: "analysis",
-                payload: { id: item.id_content },
+                payload: { id: item.id },
               })
             }
             className="
@@ -141,7 +146,7 @@ export default function DashboardAnalyses({
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="text-sm font-medium leading-snug">
-                  {item.angle_title}
+                  {item.title}
                 </div>
 
                 {item.excerpt && (
@@ -161,4 +166,3 @@ export default function DashboardAnalyses({
     </section>
   );
 }
-
