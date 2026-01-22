@@ -331,20 +331,10 @@ def list_contents_admin():
           C.ANGLE_TITLE,
           C.STATUS,
           C.PUBLISHED_AT,
-          C.DATE_CREATION,
-
-          E.HOME_LABEL AS EVENT_LABEL_FRIENDLY,
-          E.LABEL AS EVENT_LABEL_FALLBACK
+          C.DATE_CREATION
         FROM `{TABLE_CONTENT}` C
-
-        LEFT JOIN `{TABLE_CONTENT_EVENT}` CE
-          ON C.ID_CONTENT = CE.ID_CONTENT
-        LEFT JOIN `{TABLE_EVENT}` E
-          ON CE.ID_EVENT = E.ID_EVENT
-
         WHERE
           C.IS_ACTIVE = TRUE
-
         ORDER BY
           C.PUBLISHED_AT DESC,
           C.DATE_CREATION DESC
@@ -355,9 +345,9 @@ def list_contents_admin():
         {
             "ID_CONTENT": r["ID_CONTENT"],
             "TITLE": r["ANGLE_TITLE"],
-            "EVENT_LABEL": r["EVENT_LABEL_FRIENDLY"] or r["EVENT_LABEL_FALLBACK"],
             "STATUS": r["STATUS"],
             "PUBLISHED_AT": r["PUBLISHED_AT"],
+            "DATE_CREATION": r["DATE_CREATION"],
         }
         for r in rows
     ]
