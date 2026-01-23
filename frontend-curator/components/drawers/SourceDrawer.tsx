@@ -90,7 +90,7 @@ export default function SourceDrawer({ id, onClose }: Props) {
       {/* DRAWER — DROITE */}
       <aside
         className={`
-          relative ml-auto w-full md:w-[760px]
+          relative ml-auto w-full md:w-[900px]
           bg-white shadow-xl overflow-y-auto
           transform transition-transform duration-300 ease-out
           ${isOpen ? "translate-x-0" : "translate-x-full"}
