@@ -37,7 +37,7 @@ type Props = {
 ========================================================= */
 
 export default function SourceDrawer({ id, onClose }: Props) {
-  const { closeRightDrawer } = useDrawer();
+  const { closeDrawer } = useDrawer(); // ✅ API Curator
 
   const [data, setData] = useState<SourceData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -48,7 +48,7 @@ export default function SourceDrawer({ id, onClose }: Props) {
   function close() {
     setIsOpen(false);
     onClose?.();
-    closeRightDrawer();
+    closeDrawer("right");
   }
 
   /* ---------------------------------------------------------
@@ -99,7 +99,6 @@ export default function SourceDrawer({ id, onClose }: Props) {
         {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 flex items-start justify-between">
           <div className="space-y-1 max-w-xl">
-            {/* SOURCE LABEL */}
             <div className="text-xs uppercase tracking-wide text-gray-400">
               Source
             </div>
@@ -134,14 +133,12 @@ export default function SourceDrawer({ id, onClose }: Props) {
 
         {/* CONTENT */}
         <div className="px-5 py-6 space-y-8">
-          {/* EXCERPT */}
           {data.excerpt && (
             <p className="text-base font-medium text-gray-800 max-w-2xl">
               {data.excerpt}
             </p>
           )}
 
-          {/* BODY */}
           {data.body && (
             <div
               className="
@@ -161,7 +158,6 @@ export default function SourceDrawer({ id, onClose }: Props) {
             />
           )}
 
-          {/* FOOTER */}
           <div className="pt-4 border-t border-gray-200">
             <p className="text-xs text-gray-400">
               Publication du{" "}
