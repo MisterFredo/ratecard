@@ -58,7 +58,7 @@ async function fetchNews(): Promise<NewsItemRaw[]> {
 }
 
 /* =========================================================
-   COMPONENT — CURATOR VERSION
+   COMPONENT — CURATOR
 ========================================================= */
 
 export default function NewsScreen({ mode }: { mode: Mode }) {
@@ -95,6 +95,7 @@ export default function NewsScreen({ mode }: { mode: Mode }) {
   /* ---------------------------------------------------------
      DRAWER — PILOTÉ PAR URL
      /news?news_id=XXX
+     → lecture via drawer "analysis" avec source = news
   --------------------------------------------------------- */
   useEffect(() => {
     const newsId = searchParams.get("news_id");
@@ -108,10 +109,12 @@ export default function NewsScreen({ mode }: { mode: Mode }) {
 
     lastOpenedId.current = newsId;
 
-    // ✅ API Drawer Curator
     openDrawer("right", {
-      type: "news",
-      payload: { id: newsId },
+      type: "analysis",
+      payload: {
+        id: newsId,
+        source: "news",
+      },
     });
   }, [searchParams, openDrawer]);
 
