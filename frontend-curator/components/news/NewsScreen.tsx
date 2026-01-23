@@ -58,12 +58,12 @@ async function fetchNews(): Promise<NewsItemRaw[]> {
 }
 
 /* =========================================================
-   COMPONENT
+   COMPONENT — CURATOR VERSION
 ========================================================= */
 
 export default function NewsScreen({ mode }: { mode: Mode }) {
   const [news, setNews] = useState<NewsItem[]>([]);
-  const { openRightDrawer } = useDrawer();
+  const { openDrawer } = useDrawer(); // ✅ API Curator
   const searchParams = useSearchParams();
 
   // 🔒 garde-fou anti-réouverture
@@ -108,8 +108,12 @@ export default function NewsScreen({ mode }: { mode: Mode }) {
 
     lastOpenedId.current = newsId;
 
-    openRightDrawer("news", newsId, "route");
-  }, [searchParams, openRightDrawer]);
+    // ✅ API Drawer Curator
+    openDrawer("right", {
+      type: "news",
+      payload: { id: newsId },
+    });
+  }, [searchParams, openDrawer]);
 
   /* =========================================================
      RENDER
