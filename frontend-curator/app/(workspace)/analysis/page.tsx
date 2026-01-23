@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useDrawer } from "@/contexts/DrawerContext";
 import AnalysisCard from "@/components/analysis/AnalysisCard";
-import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
 
 export const dynamic = "force-dynamic";
 
 /* =========================================================
-   TYPES — alignés avec /api/public/analysis/list
+   TYPES — alignés avec /api/analysis/list
 ========================================================= */
 
 type AnalysisItem = {
@@ -28,7 +28,7 @@ const API_BASE =
 
 async function fetchAnalyses(): Promise<AnalysisItem[]> {
   const res = await fetch(
-    `${API_BASE}/public/analysis/list`,
+    `${API_BASE}/analysis/list`,
     { cache: "no-store" }
   );
 
@@ -39,116 +39,55 @@ async function fetchAnalyses(): Promise<AnalysisItem[]> {
 }
 
 /* =========================================================
-   PAGE
+   PAGE — ANALYSES (BIBLIOTHÈQUE)
 ========================================================= */
 
 export default function AnalysisPage() {
+  const { openDrawer } = useDrawer();
   const [analyses, setAnalyses] = useState<AnalysisItem[]>([]);
-  const [openedId, setOpenedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchAnalyses().then(setAnalyses);
+    fetchAnalyses().then((items) => {
+      setAnalyses(items);
+      setLoading(false);
+    });
   }, []);
 
-  // 6 analyses mises en avant (cohérent grille 3x2)
-  const latestAnalyses = analyses.slice(0, 6);
-
   return (
-    <div className="space-y-16">
+    <div className="space-y-10">
 
       {/* =====================================================
-          MY CURATOR — ENTRY POINT
+          HEADER
       ===================================================== */}
-      <section className="space-y-6">
-
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold">
-            My Curator
-          </h1>
-          <p className="text-sm text-gray-500">
-            Lecture priorisée et intelligente de l’actualité
-          </p>
-        </header>
-
-        {/* =========================
-            SIGNALS — 2 COLS (MOCK)
-        ========================= */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-          {/* WHAT MATTERS */}
-          <div className="rounded-xl border bg-slate-50 p-5">
-            <h2 className="text-sm font-semibold mb-3">
-              Ce qui compte aujourd’hui
-            </h2>
-
-            <ul className="text-sm text-gray-700 space-y-2">
-              <li>• Forte accélération des analyses sur la CTV ces 30 derniers jours</li>
-              <li>• Google concentre une part croissante des analyses liées à l’agentique</li>
-              <li>• La mesure revient comme un angle critique dans plusieurs sujets récents</li>
-            </ul>
-
-            <p className="text-xs text-gray-400 mt-4">
-              Signaux générés automatiquement (bientôt disponibles)
-            </p>
-          </div>
-
-          {/* EMERGING ANGLES */}
-          <div className="rounded-xl border bg-white p-5">
-            <h2 className="text-sm font-semibold mb-3">
-              Angles émergents
-            </h2>
-
-            <ul className="text-sm text-gray-700 space-y-2">
-              <li>• Vers une IA agentique intégrée aux plateformes d’achat média</li>
-              <li>• Repositionnement des acteurs autour de la durabilité publicitaire</li>
-              <li>• Fragmentation des approches de mesure post-cookies</li>
-            </ul>
-
-            <p className="text-xs text-gray-400 mt-4">
-              Analyse sémantique en cours de déploiement
-            </p>
-          </div>
-
-        </div>
-
-        {/* =========================
-            PRIORITY ANALYSES
-        ========================= */}
-        {latestAnalyses.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-sm font-semibold">
-              Analyses à lire en priorité
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {latestAnalyses.map((a) => (
-                <AnalysisCard
-                  key={a.id}
-                  id={a.id}
-                  title={a.title}
-                  excerpt={a.excerpt}
-                  publishedAt={a.published_at}
-                  topic={a.topics?.[0]}
-                  keyMetric={a.key_metrics?.[0]}
-                  onOpen={setOpenedId}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-      </section>
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">
+          Analyses
+        </h1>
+        <p className="text-sm text-gray-500">
+          L’ensemble des analyses produites par Curator
+        </p>
+      </header>
 
       {/* =====================================================
-          ALL ANALYSES — FULL FEED
+          STATES
       ===================================================== */}
-      <section className="space-y-6">
-        <header>
-          <h2 className="text-xl font-semibold">
-            Toutes les analyses
-          </h2>
-        </header>
+      {loading && (
+        <p className="text-sm text-gray-500">
+          Chargement des analyses…
+        </p>
+      )}
 
+      {!loading && analyses.length === 0 && (
+        <p className="text-sm text-gray-500">
+          Aucune analyse disponible pour le moment.
+        </p>
+      )}
+
+      {/* =====================================================
+          GRID — ALL ANALYSES
+      ===================================================== */}
+      {!loading && analyses.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {analyses.map((a) => (
             <AnalysisCard
@@ -159,22 +98,17 @@ export default function AnalysisPage() {
               publishedAt={a.published_at}
               topic={a.topics?.[0]}
               keyMetric={a.key_metrics?.[0]}
-              onOpen={setOpenedId}
+              onOpen={(id) =>
+                openDrawer("right", {
+                  type: "analysis",
+                  payload: { id },
+                })
+              }
             />
           ))}
         </div>
-      </section>
-
-      {/* =====================================================
-          ANALYSIS DRAWER
-      ===================================================== */}
-      {openedId && (
-        <AnalysisDrawer
-          id={openedId}
-          onClose={() => setOpenedId(null)}
-        />
       )}
+
     </div>
   );
 }
-
