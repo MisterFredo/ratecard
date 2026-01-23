@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef } from "react";
-import Link from "next/link";
 import { useDrawer } from "@/contexts/DrawerContext";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
@@ -36,7 +35,7 @@ function isValidDate(value?: string) {
 }
 
 /* =========================================================
-   COMPONENT
+   COMPONENT — CURATOR
 ========================================================= */
 
 export default function PartnerSignalCard({
@@ -51,7 +50,7 @@ export default function PartnerSignalCard({
   openInDrawer = false,
   variant = "default",
 }: Props) {
-  const { openRightDrawer } = useDrawer();
+  const { openDrawer } = useDrawer();
   const fromInternalClick = useRef(false);
 
   const isFeatured = variant === "featured";
@@ -66,11 +65,18 @@ export default function PartnerSignalCard({
     : null;
 
   /* ---------------------------------------------------------
-     OUVERTURE NEWS (DRAWER DROIT)
+     OUVERTURE NEWS — DRAWER CURATOR
   --------------------------------------------------------- */
   function openNews() {
     if (fromInternalClick.current) return;
-    openRightDrawer("news", id, "silent");
+
+    openDrawer("right", {
+      type: "analysis",
+      payload: {
+        id,
+        source: "news",
+      },
+    });
   }
 
   /* ---------------------------------------------------------
@@ -81,11 +87,12 @@ export default function PartnerSignalCard({
     : "border-ratecard-border";
 
   /* ========================================================
-     MODE HOME / DRAWER
+     MODE GRID / DRAWER
   ======================================================== */
+
   if (openInDrawer) {
     /* =====================================================
-       UNE — CARTE x4
+       UNE — CARTE FEATURED
     ===================================================== */
     if (isFeatured) {
       return (
@@ -200,13 +207,15 @@ export default function PartnerSignalCard({
   }
 
   /* ========================================================
-     MODE NAVIGATION EXTERNE (LIEN)
+     MODE NAVIGATION “EXTERNE”
+     → EN CURATOR, ON RESTE DANS LE PRODUIT
   ======================================================== */
+
   return (
-    <Link
-      href={`/news?news_id=${id}`}
+    <article
+      onClick={openNews}
       className={`
-        group block overflow-hidden rounded-2xl
+        group cursor-pointer overflow-hidden rounded-2xl
         bg-white shadow-card transition hover:shadow-cardHover
         border ${borderClass}
       `}
@@ -249,6 +258,7 @@ export default function PartnerSignalCard({
           </div>
         )}
       </div>
-    </Link>
+    </article>
   );
 }
+
