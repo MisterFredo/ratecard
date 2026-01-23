@@ -102,10 +102,10 @@ export default function MyCuratorPage() {
   const [news, setNews] = useState<NewsItem[]>([]);
 
   /* ---------------------------------------------------------
-     LOAD ANALYSES
+     LOAD ANALYSES (GLOBAL — OK)
   --------------------------------------------------------- */
   useEffect(() => {
-    fetch(`${API_BASE}/analysis/list`, { cache: "no-store" })
+    fetch(`${API_BASE}/public/analysis/list`, { cache: "no-store" })
       .then((r) => r.json())
       .then((json) => setAnalyses(json.items || []));
   }, []);
