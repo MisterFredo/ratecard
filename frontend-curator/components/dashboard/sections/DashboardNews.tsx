@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useDrawer } from "@/contexts/DrawerContext";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 
 type Props = {
@@ -41,7 +40,7 @@ type Mode = "focus" | "all";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-const FOCUS_LIMIT = 6; // un peu moins que les analyses (choix éditorial)
+const FOCUS_LIMIT = 6;
 
 function getScopeQuery(
   scopeType: "topic" | "company",
@@ -59,8 +58,6 @@ export default function DashboardNews({
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<Mode>("focus");
-
-  const { openDrawer } = useDrawer();
 
   useEffect(() => {
     async function load() {
@@ -98,6 +95,7 @@ export default function DashboardNews({
         setItems(mapped);
       } catch (e) {
         console.error(e);
+        setItems([]);
       }
 
       setLoading(false);
@@ -166,15 +164,6 @@ export default function DashboardNews({
             isPartner={n.company.is_partner}
             publishedAt={n.published_at}
             openInDrawer
-            onClick={() =>
-              openDrawer("right", {
-                type: "analysis",
-                payload: {
-                  id: n.id,
-                  source: "news",
-                },
-              })
-            }
           />
         ))}
       </div>
