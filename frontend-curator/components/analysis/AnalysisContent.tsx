@@ -24,7 +24,7 @@ export default function AnalysisContent({ id }: { id: string }) {
 
       try {
         // 🔑 CURATOR = lecture via /analysis/*
-        const res = await api.get(`/analysis/read/${id}`);
+        const res = await api.get(`/analysis/${id}`);
         setData(res);
       } catch (e) {
         console.error(e);
