@@ -23,7 +23,6 @@ type NewsItemRaw = {
 
   ID_COMPANY: string;
   COMPANY_NAME: string;
-  MEDIA_LOGO_RECTANGLE_ID?: string | null;
   IS_PARTNER?: boolean;
 };
 
@@ -35,9 +34,7 @@ type NewsItem = {
   published_at: string;
 
   company: {
-    id_company: string;
     name: string;
-    logo_rect_id?: string | null;
     is_partner: boolean;
   };
 };
@@ -63,10 +60,9 @@ async function fetchNews(): Promise<NewsItemRaw[]> {
 
 export default function NewsScreen({ mode }: { mode: Mode }) {
   const [news, setNews] = useState<NewsItem[]>([]);
-  const { openDrawer } = useDrawer(); // ✅ API Curator
+  const { openDrawer } = useDrawer();
   const searchParams = useSearchParams();
 
-  // 🔒 garde-fou anti-réouverture
   const lastOpenedId = useRef<string | null>(null);
 
   /* ---------------------------------------------------------
@@ -81,9 +77,7 @@ export default function NewsScreen({ mode }: { mode: Mode }) {
         visual_rect_id: n.VISUAL_RECT_ID ?? null,
         published_at: n.PUBLISHED_AT || "",
         company: {
-          id_company: n.ID_COMPANY,
           name: n.COMPANY_NAME,
-          logo_rect_id: n.MEDIA_LOGO_RECTANGLE_ID ?? null,
           is_partner: n.IS_PARTNER === true,
         },
       }));
@@ -95,7 +89,6 @@ export default function NewsScreen({ mode }: { mode: Mode }) {
   /* ---------------------------------------------------------
      DRAWER — PILOTÉ PAR URL
      /news?news_id=XXX
-     → lecture via drawer "analysis" avec source = news
   --------------------------------------------------------- */
   useEffect(() => {
     const newsId = searchParams.get("news_id");
@@ -136,7 +129,6 @@ export default function NewsScreen({ mode }: { mode: Mode }) {
               title={n.title}
               excerpt={n.excerpt}
               visualRectId={n.visual_rect_id}
-              companyVisualRectId={n.company.logo_rect_id}
               companyName={n.company.name}
               isPartner={n.company.is_partner}
               publishedAt={n.published_at}
