@@ -14,9 +14,8 @@ type Props = {
   title: string;
   excerpt?: string | null;
 
-  /* 🔑 VISUELS */
-  visualRectId?: string | null;          // NEWS
-  companyVisualRectId?: string | null;   // FALLBACK SOCIÉTÉ
+  /* 🔑 VISUEL NEWS UNIQUEMENT */
+  visualRectId?: string | null;
 
   companyName?: string;
   isPartner?: boolean;
@@ -43,7 +42,6 @@ export default function PartnerSignalCard({
   title,
   excerpt,
   visualRectId,
-  companyVisualRectId,
   companyName,
   isPartner = false,
   publishedAt,
@@ -56,16 +54,14 @@ export default function PartnerSignalCard({
   const isFeatured = variant === "featured";
 
   /* ---------------------------------------------------------
-     VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
+     VISUEL — NEWS UNIQUEMENT
   --------------------------------------------------------- */
   const visualSrc = visualRectId
     ? `${GCS_BASE_URL}/news/${visualRectId}`
-    : companyVisualRectId
-    ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
     : null;
 
   /* ---------------------------------------------------------
-     OUVERTURE NEWS — DRAWER CURATOR
+     OUVERTURE NEWS — SOURCE DRAWER
   --------------------------------------------------------- */
   function openNews() {
     if (fromInternalClick.current) return;
@@ -105,20 +101,16 @@ export default function PartnerSignalCard({
             h-full grid grid-rows-[auto_1fr]
           `}
         >
-          {/* IMAGE */}
-          <div className="relative w-full aspect-[3/2] overflow-hidden bg-ratecard-light">
-            {visualSrc ? (
+          {/* IMAGE — uniquement si visuel */}
+          {visualSrc && (
+            <div className="relative w-full aspect-[3/2] overflow-hidden bg-ratecard-light">
               <img
                 src={visualSrc}
                 alt={title}
                 className="absolute inset-0 w-full h-full object-cover"
               />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">
-                Aucun visuel
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* TEXTE */}
           <div className="p-4 flex flex-col">
@@ -162,20 +154,16 @@ export default function PartnerSignalCard({
           h-full flex flex-col
         `}
       >
-        {/* VISUEL */}
-        <div className="relative h-40 w-full overflow-hidden bg-ratecard-light">
-          {visualSrc ? (
+        {/* VISUEL — uniquement si présent */}
+        {visualSrc && (
+          <div className="relative h-40 w-full overflow-hidden bg-ratecard-light">
             <img
               src={visualSrc}
               alt={title}
               className="absolute inset-0 h-full w-full object-cover"
             />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center text-sm text-gray-400">
-              Aucun visuel
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* TEXTE */}
         <div className="p-4 flex flex-col flex-1">
@@ -207,58 +195,46 @@ export default function PartnerSignalCard({
   }
 
   /* ========================================================
-     MODE NAVIGATION “EXTERNE”
-     → EN CURATOR, ON RESTE DANS LE PRODUIT
+     MODE LISTE / DASHBOARD
+     → TEXTE SEULEMENT
   ======================================================== */
 
   return (
     <article
       onClick={openNews}
       className={`
-        group cursor-pointer overflow-hidden rounded-2xl
-        bg-white shadow-card transition hover:shadow-cardHover
-        border ${borderClass}
+        cursor-pointer
+        rounded-lg
+        border
+        bg-white
+        p-4
+        transition
+        hover:border-gray-300
+        hover:shadow-sm
       `}
     >
-      <div className="relative h-44 w-full bg-ratecard-light overflow-hidden">
-        {visualSrc ? (
-          <img
-            src={visualSrc}
-            alt={title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-          />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center text-sm text-gray-400">
-            Aucun visuel
-          </div>
-        )}
-      </div>
+      {companyName && (
+        <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+          {companyName}
+        </div>
+      )}
 
-      <div className="p-4">
-        {companyName && (
-          <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">
-            {companyName}
-          </div>
-        )}
+      <h3 className="text-sm font-semibold leading-snug text-gray-900">
+        {title}
+      </h3>
 
-        <h3 className="text-sm font-semibold leading-snug text-gray-900 group-hover:underline">
-          {title}
-        </h3>
+      {excerpt && (
+        <p className="mt-2 text-sm text-gray-600 line-clamp-3">
+          {excerpt}
+        </p>
+      )}
 
-        {excerpt && (
-          <p className="mt-2 text-sm text-gray-600 line-clamp-3">
-            {excerpt}
-          </p>
-        )}
-
-        {isValidDate(publishedAt) && (
-          <div className="mt-3 text-xs text-gray-400">
-            Publié le{" "}
-            {new Date(publishedAt).toLocaleDateString("fr-FR")}
-          </div>
-        )}
-      </div>
+      {isValidDate(publishedAt) && (
+        <div className="mt-3 text-xs text-gray-400">
+          Publié le{" "}
+          {new Date(publishedAt).toLocaleDateString("fr-FR")}
+        </div>
+      )}
     </article>
   );
 }
-
