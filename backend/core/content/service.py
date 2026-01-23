@@ -186,6 +186,9 @@ def create_content(data: Dict[str, Any]) -> str:
 # ============================================================
 # GET ONE CONTENT (ENRICHI)
 # ============================================================
+# ============================================================
+# GET ONE CONTENT (ENRICHI)
+# ============================================================
 def get_content(id_content: str):
     rows = query_bq(
         f"""
@@ -200,7 +203,31 @@ def get_content(id_content: str):
     if not rows:
         return None
 
-    content = rows[0]
+    row = rows[0]
+
+    # ---------------------------------------------------------
+    # MAPPING CANONIQUE (API → FRONT)
+    # ---------------------------------------------------------
+    content = {
+        "id_content": row["ID_CONTENT"],
+        "angle_title": row["ANGLE_TITLE"],
+        "angle_signal": row["ANGLE_SIGNAL"],
+        "excerpt": row.get("EXCERPT"),
+        "concept": row.get("CONCEPT"),
+        "content_body": row.get("CONTENT_BODY"),
+        "chiffres": row.get("CHIFFRES") or [],
+        "citations": row.get("CITATIONS") or [],
+        "acteurs_cites": row.get("ACTEURS_CITES") or [],
+    }
+
+    # ---------------------------------------------------------
+    # DATE — ISO 8601
+    # ---------------------------------------------------------
+    published_at = row.get("PUBLISHED_AT")
+    if isinstance(published_at, datetime):
+        content["published_at"] = published_at.isoformat()
+    else:
+        content["published_at"] = None
 
     # ---------------------------------------------------------
     # RELATIONS
@@ -244,18 +271,6 @@ def get_content(id_content: str):
         """,
         {"id": id_content}
     )
-
-    # ---------------------------------------------------------
-    # NORMALISATION DATE — ISO 8601 POUR LE FRONT
-    # ---------------------------------------------------------
-    published_at = content.get("PUBLISHED_AT")
-    if isinstance(published_at, datetime):
-        content["published_at"] = published_at.isoformat()
-    else:
-        content["published_at"] = None
-
-    # Nettoyage de la clé brute BigQuery
-    content.pop("PUBLISHED_AT", None)
 
     return content
 
