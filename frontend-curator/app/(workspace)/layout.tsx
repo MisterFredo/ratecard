@@ -1,3 +1,5 @@
+"use client";
+
 import { DrawerProvider } from "@/contexts/DrawerContext";
 import WorkspaceShell from "./WorkspaceShell";
 import DrawerHost from "@/components/drawers/DrawerHost";
@@ -18,4 +20,5 @@ export default function WorkspaceLayout({
     </DrawerProvider>
   );
 }
+
 
