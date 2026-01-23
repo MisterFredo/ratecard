@@ -164,14 +164,25 @@ export default function MyCuratorPage() {
 
           <div className="flex flex-wrap gap-2">
             {badges.map((b) => (
-              <span
+              <button
                 key={`${b.type}-${b.id}`}
+                onClick={() =>
+                  openDrawer("left", {
+                    type: "dashboard",
+                    payload: {
+                      scopeType: b.type,
+                      scopeId: b.id,
+                    },
+                  })
+                }
                 className={`
                   cursor-pointer
                   rounded-full
                   px-3 py-1
                   text-xs
                   border
+                  transition
+                  hover:bg-gray-50
                   ${
                     b.type === "topic"
                       ? "bg-slate-50 text-slate-700"
@@ -180,7 +191,7 @@ export default function MyCuratorPage() {
                 `}
               >
                 {b.label}
-              </span>
+              </button>
             ))}
           </div>
 
