@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Home,
   FileText,
   Newspaper,
   Grid,
@@ -26,7 +27,6 @@ export default function WorkspaceShell({
   function isActive(path: string) {
     if (!pathname) return false;
 
-    // sécurité : on ignore les query strings
     const cleanPath = pathname.split("?")[0];
 
     return (
@@ -38,10 +38,21 @@ export default function WorkspaceShell({
   /* =========================================================
      NAVIGATION WORKSPACE
      Logique produit :
-     1. Lecture (Analyses, News)
-     2. Exploration (Topics, Sociétés)
+     1. Cockpit (My Curator)
+     2. Lecture (Analyses, News)
+     3. Exploration (Topics, Sociétés)
   ========================================================= */
   const mainNav = [
+    {
+      section: "cockpit",
+      items: [
+        {
+          href: "/my-curator",
+          label: "My Curator",
+          icon: Home,
+        },
+      ],
+    },
     {
       section: "lecture",
       items: [
@@ -78,7 +89,7 @@ export default function WorkspaceShell({
     <>
       {/* ===== LOGO / MARQUE ===== */}
       <Link
-        href="/analysis"
+        href="/my-curator"
         onClick={() => setMobileOpen(false)}
         className="mb-10 block"
       >
