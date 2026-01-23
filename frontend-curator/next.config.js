@@ -3,7 +3,12 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // 🔑 IMPORTANT : transpiler le code partagé
+  // 🔑 OBLIGATOIRE pour importer du TS hors du projet
+  experimental: {
+    externalDir: true,
+  },
+
+  // 🔑 Transpilation du code partagé
   transpilePackages: ["shared"],
 
   async rewrites() {
