@@ -3,6 +3,7 @@
 import { useDrawer } from "@/contexts/DrawerContext";
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
 import DashboardDrawer from "@/components/drawers/DashboardDrawer";
+import SourceDrawer from "@/components/drawers/SourceDrawer";
 
 /* =========================================================
    HOST — CURATOR DRAWERS
@@ -30,16 +31,24 @@ export default function DrawerHost() {
         )}
 
       {/* =====================================================
-          DRAWER DROIT — ANALYSE
+          DRAWER DROIT — LECTURE
+          - Analysis (par défaut)
+          - Source (news)
       ===================================================== */}
       {rightDrawer.type === "analysis" &&
         rightDrawer.payload && (
-          <AnalysisDrawer
-            id={rightDrawer.payload.id}
-            onClose={() => closeDrawer("right")}
-          />
+          rightDrawer.payload.source === "news" ? (
+            <SourceDrawer
+              id={rightDrawer.payload.id}
+              onClose={() => closeDrawer("right")}
+            />
+          ) : (
+            <AnalysisDrawer
+              id={rightDrawer.payload.id}
+              onClose={() => closeDrawer("right")}
+            />
+          )
         )}
     </>
   );
 }
-
