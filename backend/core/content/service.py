@@ -11,9 +11,6 @@ from utils.bigquery_utils import (
     update_bq,
 )
 
-from api.content.models import ContentCreate, ContentUpdate
-
-
 # ============================================================
 # TABLES
 # ============================================================
