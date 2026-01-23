@@ -16,23 +16,39 @@ type AnalysisData = {
 
 export default function AnalysisContent({ id }: { id: string }) {
   const [data, setData] = useState<AnalysisData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
+      setLoading(true);
+
       try {
-        const res = await api.get(`/public/content/${id}`);
+        // 🔑 CURATOR = lecture via /analysis/*
+        const res = await api.get(`/analysis/read/${id}`);
         setData(res);
       } catch (e) {
         console.error(e);
+        setData(null);
       }
+
+      setLoading(false);
     }
+
     load();
   }, [id]);
+
+  if (loading) {
+    return (
+      <p className="text-sm text-gray-500">
+        Chargement…
+      </p>
+    );
+  }
 
   if (!data) {
     return (
       <p className="text-sm text-gray-500">
-        Chargement…
+        Analyse introuvable.
       </p>
     );
   }
