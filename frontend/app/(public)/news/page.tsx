@@ -1,6 +1,6 @@
 "use client";
 
-import NewsScreen from "@shared/components/news/NewsScreen";
+import NewsScreen from "@/components/news/NewsScreen";
 
 export const dynamic = "force-dynamic";
 
