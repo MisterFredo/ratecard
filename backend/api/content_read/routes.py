@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query, HTTPException
 from typing import Optional
 from datetime import date, timedelta
 
-from api.content_read.models import (
+from api.analysis.models import (
     ContentListResponse,
     ContentOverviewOut,
     ContentTimelineOut,
@@ -24,7 +24,10 @@ router = APIRouter()
 # ============================================================
 # HELPERS
 # ============================================================
-def _validate_scope(topic_id: Optional[str], company_id: Optional[str]):
+def _validate_scope(
+    topic_id: Optional[str],
+    company_id: Optional[str]
+):
     """
     Exactly one scope must be provided.
     """
@@ -58,13 +61,13 @@ def _resolve_period(
 
 
 # ============================================================
-# GET /content/list
+# GET /analysis/list
 # ============================================================
 @router.get(
     "/list",
     response_model=ContentListResponse
 )
-def get_content_list(
+def list_analyses(
     topic_id: Optional[str] = Query(None),
     company_id: Optional[str] = Query(None),
     date_from: Optional[date] = Query(None),
@@ -77,7 +80,11 @@ def get_content_list(
     """
 
     _validate_scope(topic_id, company_id)
-    date_from, date_to = _resolve_period(date_from, date_to, default_days=90)
+    date_from, date_to = _resolve_period(
+        date_from,
+        date_to,
+        default_days=90
+    )
 
     return list_content_read(
         topic_id=topic_id,
@@ -90,13 +97,13 @@ def get_content_list(
 
 
 # ============================================================
-# GET /content/overview
+# GET /analysis/overview
 # ============================================================
 @router.get(
     "/overview",
     response_model=ContentOverviewOut
 )
-def get_content_overview(
+def get_analysis_overview(
     topic_id: Optional[str] = Query(None),
     company_id: Optional[str] = Query(None),
     date_from: Optional[date] = Query(None),
@@ -107,7 +114,11 @@ def get_content_overview(
     """
 
     _validate_scope(topic_id, company_id)
-    date_from, date_to = _resolve_period(date_from, date_to, default_days=90)
+    date_from, date_to = _resolve_period(
+        date_from,
+        date_to,
+        default_days=90
+    )
 
     return overview_content_read(
         topic_id=topic_id,
@@ -118,13 +129,13 @@ def get_content_overview(
 
 
 # ============================================================
-# GET /content/timeline
+# GET /analysis/timeline
 # ============================================================
 @router.get(
     "/timeline",
     response_model=ContentTimelineOut
 )
-def get_content_timeline(
+def get_analysis_timeline(
     topic_id: Optional[str] = Query(None),
     company_id: Optional[str] = Query(None),
     date_from: Optional[date] = Query(None),
@@ -135,7 +146,11 @@ def get_content_timeline(
     """
 
     _validate_scope(topic_id, company_id)
-    date_from, date_to = _resolve_period(date_from, date_to, default_days=365)
+    date_from, date_to = _resolve_period(
+        date_from,
+        date_to,
+        default_days=365
+    )
 
     return timeline_content_read(
         topic_id=topic_id,
@@ -146,13 +161,14 @@ def get_content_timeline(
 
 
 # ============================================================
-# GET /content/signals  (STUB — Pinecone-ready)
+# GET /analysis/signals
+# (STUB — Pinecone-ready)
 # ============================================================
 @router.get(
     "/signals",
     response_model=ContentSignalsOut
 )
-def get_content_signals(
+def get_analysis_signals(
     topic_id: Optional[str] = Query(None),
     company_id: Optional[str] = Query(None),
     date_from: Optional[date] = Query(None),
@@ -164,7 +180,11 @@ def get_content_signals(
     """
 
     _validate_scope(topic_id, company_id)
-    date_from, date_to = _resolve_period(date_from, date_to, default_days=90)
+    date_from, date_to = _resolve_period(
+        date_from,
+        date_to,
+        default_days=90
+    )
 
     return signals_stub_content_read(
         topic_id=topic_id,
@@ -175,13 +195,13 @@ def get_content_signals(
 
 
 # ============================================================
-# GET /content/treatments
+# GET /analysis/treatments
 # ============================================================
 @router.get(
     "/treatments",
     response_model=ContentTreatmentsOut
 )
-def get_content_treatments(
+def get_analysis_treatments(
     topic_id: Optional[str] = Query(None),
     company_id: Optional[str] = Query(None),
 ):
@@ -195,3 +215,4 @@ def get_content_treatments(
         topic_id=topic_id,
         company_id=company_id,
     )
+
