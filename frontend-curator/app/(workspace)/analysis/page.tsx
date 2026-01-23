@@ -7,7 +7,7 @@ import AnalysisCard from "@/components/analysis/AnalysisCard";
 export const dynamic = "force-dynamic";
 
 /* =========================================================
-   TYPES — alignés avec /api/analysis/list
+   TYPES — alignés avec /api/public/analysis/list
 ========================================================= */
 
 type AnalysisItem = {
@@ -28,7 +28,7 @@ const API_BASE =
 
 async function fetchAnalyses(): Promise<AnalysisItem[]> {
   const res = await fetch(
-    `${API_BASE}/analysis/list`,
+    `${API_BASE}/public/analysis/list`,
     { cache: "no-store" }
   );
 
@@ -39,7 +39,7 @@ async function fetchAnalyses(): Promise<AnalysisItem[]> {
 }
 
 /* =========================================================
-   PAGE — ANALYSES (BIBLIOTHÈQUE)
+   PAGE — ANALYSES (BIBLIOTHÈQUE EXHAUSTIVE)
 ========================================================= */
 
 export default function AnalysisPage() {
