@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import DashboardOverview from "./sections/DashboardOverview";
 import DashboardAnalyses from "./sections/DashboardAnalyses";
+import DashboardNews from "./sections/DashboardNews";
 import DashboardSignals from "./sections/DashboardSignals";
 import DashboardTreatments from "./sections/DashboardTreatments";
 import DashboardTimeline from "./sections/DashboardTimeline";
@@ -20,7 +22,10 @@ type ScopeMeta = {
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-export default function DashboardLayout({ scopeType, scopeId }: Props) {
+export default function DashboardLayout({
+  scopeType,
+  scopeId,
+}: Props) {
   const [meta, setMeta] = useState<ScopeMeta | null>(null);
   const [loadingMeta, setLoadingMeta] = useState(true);
 
@@ -92,7 +97,15 @@ export default function DashboardLayout({ scopeType, scopeId }: Props) {
       />
 
       {/* =====================================================
-          SECTION C — SIGNAUX & PATTERNS
+          SECTION C — NEWS (SOURCES)
+      ===================================================== */}
+      <DashboardNews
+        scopeType={scopeType}
+        scopeId={scopeId}
+      />
+
+      {/* =====================================================
+          SECTION D — SIGNAUX & PATTERNS
       ===================================================== */}
       <DashboardSignals
         scopeType={scopeType}
@@ -100,7 +113,7 @@ export default function DashboardLayout({ scopeType, scopeId }: Props) {
       />
 
       {/* =====================================================
-          SECTION D — TRAITEMENTS
+          SECTION E — TRAITEMENTS
       ===================================================== */}
       <DashboardTreatments
         scopeType={scopeType}
@@ -108,7 +121,7 @@ export default function DashboardLayout({ scopeType, scopeId }: Props) {
       />
 
       {/* =====================================================
-          SECTION E — HISTORIQUE
+          SECTION F — HISTORIQUE
       ===================================================== */}
       <DashboardTimeline
         scopeType={scopeType}
