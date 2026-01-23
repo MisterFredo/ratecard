@@ -9,6 +9,10 @@ type Props = {
   onClose: () => void;
 };
 
+/**
+ * Drawer de lecture d'analyse (Curator)
+ * ⚠️ Ne gère QUE les analyses, pas les sources (news)
+ */
 export default function AnalysisDrawer({ id, onClose }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -17,7 +21,9 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
   --------------------------------------------------------- */
   useEffect(() => {
     requestAnimationFrame(() => setIsOpen(true));
-  }, []);
+  }, [id]);
+
+  if (!id) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex">
@@ -53,7 +59,8 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
 
         {/* CONTENT */}
         <div className="px-5 py-6">
-          <AnalysisContent id={id} />
+          {/* 🔑 key force le remount quand on change d'analyse */}
+          <AnalysisContent key={id} id={id} />
         </div>
       </aside>
     </div>
