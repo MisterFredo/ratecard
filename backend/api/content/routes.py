@@ -43,6 +43,15 @@ def list_route():
     contents = list_contents_admin()
     return {"status": "ok", "contents": contents}
 
+@router.get("/{id_content}")
+def read_analysis(id_content: str):
+    content = get_content(id_content)
+
+    if not content:
+        raise HTTPException(404, "Analyse introuvable")
+
+    return content
+
 
 # ============================================================
 # UPDATE CONTENT
