@@ -44,8 +44,9 @@ export default function DrawerHost() {
             />
           ) : (
             <AnalysisDrawer
-              id={rightDrawer.payload.id}
-              onClose={() => closeDrawer("right")}
+               key={rightDrawer.payload.id}
+               id={rightDrawer.payload.id}
+               onClose={() => closeDrawer("right")}
             />
           )
         )}
