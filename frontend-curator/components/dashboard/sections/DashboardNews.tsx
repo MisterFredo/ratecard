@@ -12,12 +12,9 @@ type NewsItemRaw = {
   ID_NEWS: string;
   TITLE: string;
   EXCERPT?: string | null;
-  VISUAL_RECT_ID?: string | null;
   PUBLISHED_AT?: string | null;
 
-  ID_COMPANY: string;
   COMPANY_NAME: string;
-  MEDIA_LOGO_RECTANGLE_ID?: string | null;
   IS_PARTNER?: boolean;
 };
 
@@ -25,12 +22,10 @@ type NewsItem = {
   id: string;
   title: string;
   excerpt?: string | null;
-  visual_rect_id?: string | null;
   published_at: string;
 
   company: {
     name: string;
-    logo_rect_id?: string | null;
     is_partner: boolean;
   };
 };
@@ -82,11 +77,9 @@ export default function DashboardNews({
             id: n.ID_NEWS,
             title: n.TITLE,
             excerpt: n.EXCERPT ?? null,
-            visual_rect_id: n.VISUAL_RECT_ID ?? null,
             published_at: n.PUBLISHED_AT || "",
             company: {
               name: n.COMPANY_NAME,
-              logo_rect_id: n.MEDIA_LOGO_RECTANGLE_ID ?? null,
               is_partner: n.IS_PARTNER === true,
             },
           })
@@ -144,11 +137,11 @@ export default function DashboardNews({
         </p>
       )}
 
-      {/* LIST */}
+      {/* LIST — SANS VISUELS */}
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${
+        className={`space-y-2 ${
           mode === "all"
-            ? "max-h-[520px] overflow-y-auto"
+            ? "max-h-[420px] overflow-y-auto"
             : ""
         }`}
       >
@@ -158,8 +151,6 @@ export default function DashboardNews({
             id={n.id}
             title={n.title}
             excerpt={n.excerpt}
-            visualRectId={n.visual_rect_id}
-            companyVisualRectId={n.company.logo_rect_id}
             companyName={n.company.name}
             isPartner={n.company.is_partner}
             publishedAt={n.published_at}
