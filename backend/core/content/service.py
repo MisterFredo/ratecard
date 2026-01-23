@@ -44,7 +44,7 @@ def normalize_array(value):
 # ============================================================
 # CREATE CONTENT — ANALYSE RATECARD
 # ============================================================
-def create_content(data: ContentCreate) -> str:
+def create_content(data: Dict[str, Any]) -> str:
     """
     Crée un contenu ANALYTIQUE Ratecard (validation humaine).
 
@@ -350,7 +350,8 @@ def list_contents_admin():
 # ============================================================
 # UPDATE CONTENT
 # ============================================================
-def update_content(id_content: str, data: ContentUpdate):
+def update_content(id_content: str, data: Dict[str, Any]):
+    ...
     # ---------------------------------------------------------
     # VALIDATIONS MÉTIER
     # ---------------------------------------------------------
