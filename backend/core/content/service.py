@@ -202,6 +202,9 @@ def get_content(id_content: str):
 
     content = rows[0]
 
+    # ---------------------------------------------------------
+    # RELATIONS
+    # ---------------------------------------------------------
     content["topics"] = query_bq(
         f"""
         SELECT T.ID_TOPIC, T.LABEL
@@ -241,6 +244,18 @@ def get_content(id_content: str):
         """,
         {"id": id_content}
     )
+
+    # ---------------------------------------------------------
+    # NORMALISATION DATE — ISO 8601 POUR LE FRONT
+    # ---------------------------------------------------------
+    published_at = content.get("PUBLISHED_AT")
+    if isinstance(published_at, datetime):
+        content["published_at"] = published_at.isoformat()
+    else:
+        content["published_at"] = None
+
+    # Nettoyage de la clé brute BigQuery
+    content.pop("PUBLISHED_AT", None)
 
     return content
 
