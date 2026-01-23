@@ -20,6 +20,9 @@
       "@shared/*": ["../shared/*"]
     },
 
+    // 🔑 LA LIGNE QUI MANQUAIT
+    "types": ["react", "react-dom", "node"],
+
     "incremental": true,
     "plugins": [{ "name": "next" }]
   },
