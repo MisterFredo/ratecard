@@ -30,9 +30,22 @@ export type DashboardPayload = {
   scopeId: string;
 };
 
+/**
+ * Payload pour le drawer de lecture (analysis)
+ * - source = "analysis" (par défaut)
+ * - source = "news" → SourceDrawer
+ */
+export type AnalysisPayload = {
+  id: string;
+  source?: "analysis" | "news";
+};
+
+/**
+ * Union des payloads
+ */
 type DrawerPayload =
   | { type: "dashboard"; payload: DashboardPayload }
-  | { type: "analysis"; payload: { id: string } }
+  | { type: "analysis"; payload: AnalysisPayload }
   | { type: "synthesis"; payload: { id: string } }
   | { type: null; payload: null };
 
