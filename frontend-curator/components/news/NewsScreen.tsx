@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useDrawer } from "@/contexts/DrawerContext";
-import PartnerSignalCard from "@shared/components/news/PartnerSignalCard";
+import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
