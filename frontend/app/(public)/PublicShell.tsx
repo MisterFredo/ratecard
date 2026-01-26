@@ -80,7 +80,7 @@ export default function PublicShell({
         <p className="mt-2 text-xs text-white/70 leading-snug">
           Décryptage & lecture stratégique
           <br />
-          de l’écosystème AdTech & Media
+          de l’écosystème AdTech & Média
         </p>
       </Link>
 
