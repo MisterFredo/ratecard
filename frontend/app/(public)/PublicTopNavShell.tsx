@@ -65,7 +65,7 @@ export default function PublicTopNavShell({
             {navLink("/members", "Membres")}
 
             <a
-              href="https://ratecard.fr/evenements/#event"
+              href="https://ratecard-frontend.onrender.com/events"
               target="_blank"
               className="text-sm font-medium text-gray-700 hover:text-ratecard-blue transition"
             >
