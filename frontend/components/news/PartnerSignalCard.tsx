@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { useDrawer } from "@/contexts/DrawerContext";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
@@ -52,8 +52,10 @@ export default function PartnerSignalCard({
   variant = "default",
 }: Props) {
   const { openRightDrawer } = useDrawer();
-  const fromInternalClick = useRef(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
+  const fromInternalClick = useRef(false);
   const isFeatured = variant === "featured";
 
   /* ---------------------------------------------------------
@@ -66,26 +68,32 @@ export default function PartnerSignalCard({
     : null;
 
   /* ---------------------------------------------------------
-     OUVERTURE NEWS (DRAWER DROIT)
+     OUVERTURE NEWS (DRAWER + URL)
   --------------------------------------------------------- */
   function openNews() {
     if (fromInternalClick.current) return;
-    openRightDrawer("news", id, "silent");
+
+    openRightDrawer("news", id);
+
+    router.replace(
+      `${pathname}?news_id=${id}`,
+      { scroll: false }
+    );
   }
 
   /* ---------------------------------------------------------
-     FILET PARTENAIRE (VISUEL UNIQUEMENT)
+     FILET PARTENAIRE
   --------------------------------------------------------- */
   const borderClass = isPartner
     ? "border-ratecard-blue"
     : "border-ratecard-border";
 
   /* ========================================================
-     MODE HOME / DRAWER
+     MODE DRAWER (HOME / MY CURATOR / DASHBOARDS)
   ======================================================== */
   if (openInDrawer) {
     /* =====================================================
-       UNE — CARTE x4
+       VARIANT FEATURED
     ===================================================== */
     if (isFeatured) {
       return (
@@ -200,13 +208,14 @@ export default function PartnerSignalCard({
   }
 
   /* ========================================================
-     MODE NAVIGATION EXTERNE (LIEN)
+     MODE LECTURE PUBLIQUE (PAGE /news)
+     ➜ drawer + URL, PAS de navigation
   ======================================================== */
   return (
-    <Link
-      href={`/news?news_id=${id}`}
+    <article
+      onClick={openNews}
       className={`
-        group block overflow-hidden rounded-2xl
+        group cursor-pointer overflow-hidden rounded-2xl
         bg-white shadow-card transition hover:shadow-cardHover
         border ${borderClass}
       `}
@@ -249,6 +258,6 @@ export default function PartnerSignalCard({
           </div>
         )}
       </div>
-    </Link>
+    </article>
   );
 }
