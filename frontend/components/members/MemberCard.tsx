@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useDrawer } from "@/contexts/DrawerContext";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
@@ -8,7 +8,7 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 type Props = {
   id: string;
   name: string;
-  description?: string | null; // HTML
+  description?: string | null;
   visualRectId?: string | null;
 };
 
@@ -29,7 +29,8 @@ export default function MemberCard({
   visualRectId,
 }: Props) {
   const router = useRouter();
-  const { openLeftDrawer } = useDrawer(); // ✅ API CORRECTE
+  const pathname = usePathname();
+  const { openLeftDrawer } = useDrawer();
 
   const visualUrl = visualRectId
     ? `${GCS_BASE_URL}/companies/${visualRectId}`
@@ -39,12 +40,20 @@ export default function MemberCard({
     ? stripHtml(description)
     : null;
 
+  function handleClick() {
+    // 1️⃣ ouverture immédiate du drawer (UX)
+    openLeftDrawer("member", id);
+
+    // 2️⃣ synchro URL sans navigation
+    router.replace(
+      `${pathname}?member_id=${id}`,
+      { scroll: false }
+    );
+  }
+
   return (
     <div
-      onClick={() => {
-        router.push(`/members?member_id=${id}`, { scroll: false });
-        openLeftDrawer("member", id); // ✅ drawer GAUCHE
-      }}
+      onClick={handleClick}
       className="
         group cursor-pointer rounded-2xl
         border border-ratecard-border
@@ -86,3 +95,4 @@ export default function MemberCard({
     </div>
   );
 }
+
