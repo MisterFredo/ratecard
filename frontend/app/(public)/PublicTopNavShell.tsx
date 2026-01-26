@@ -28,10 +28,13 @@ export default function PublicTopNavShell({
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* =====================================================
-          TOP BAR
+          TOP NAV — LIGNÉE BLEUE
       ===================================================== */}
-      <header className="sticky top-0 z-40 bg-ratecard-blue text-white">
-        <div className="max-w-6xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white border-b">
+        {/* Liseré */}
+        <div className="h-1 bg-ratecard-blue" />
+
+        <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           {/* LEFT — LOGO + NAV */}
           <div className="flex items-center gap-10">
             {/* LOGO */}
@@ -44,7 +47,7 @@ export default function PublicTopNavShell({
             </Link>
 
             {/* DESKTOP NAV */}
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+            <nav className="hidden md:flex items-center gap-2 text-sm font-medium">
               {navItems.map((item) => {
                 const active = isActive(item.href);
 
@@ -53,11 +56,11 @@ export default function PublicTopNavShell({
                     key={item.href}
                     href={item.href}
                     className={`
-                      transition
+                      px-3 py-1.5 rounded-full transition
                       ${
                         active
-                          ? "text-white underline underline-offset-8"
-                          : "text-white/80 hover:text-white"
+                          ? "text-ratecard-blue border border-ratecard-blue"
+                          : "text-ratecard-blue hover:border hover:border-ratecard-blue/40"
                       }
                     `}
                   >
@@ -69,26 +72,36 @@ export default function PublicTopNavShell({
           </div>
 
           {/* RIGHT — ACTIONS */}
-          <div className="hidden md:flex items-center gap-5">
+          <div className="hidden md:flex items-center gap-4">
             <Link
               href="/newsletter"
-              className="text-white/80 hover:text-white transition"
+              className="
+                px-3 py-1.5 rounded-full
+                text-ratecard-blue
+                hover:border hover:border-ratecard-blue/40
+                transition
+              "
             >
-              <Mail size={18} />
+              <Mail size={16} />
             </Link>
 
             <Link
               href="/linkedin"
-              className="text-white/80 hover:text-white transition"
+              className="
+                px-3 py-1.5 rounded-full
+                text-ratecard-blue
+                hover:border hover:border-ratecard-blue/40
+                transition
+              "
             >
-              <Linkedin size={18} />
+              <Linkedin size={16} />
             </Link>
           </div>
 
           {/* MOBILE BURGER */}
           <button
             onClick={() => setMobileOpen(true)}
-            className="md:hidden"
+            className="md:hidden text-ratecard-blue"
           >
             <Menu />
           </button>
@@ -108,13 +121,16 @@ export default function PublicTopNavShell({
                 alt="Ratecard"
                 className="h-6"
               />
-              <button onClick={() => setMobileOpen(false)}>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="text-ratecard-blue"
+              >
                 <X />
               </button>
             </div>
 
             {/* NAV */}
-            <nav className="flex flex-col gap-5 p-6 text-base font-medium">
+            <nav className="flex flex-col gap-4 p-6 text-base font-medium">
               {navItems.map((item) => {
                 const active = isActive(item.href);
 
@@ -124,10 +140,11 @@ export default function PublicTopNavShell({
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
                     className={`
+                      px-3 py-2 rounded-lg transition
                       ${
                         active
-                          ? "text-ratecard-blue"
-                          : "text-gray-900"
+                          ? "text-ratecard-blue border border-ratecard-blue"
+                          : "text-gray-800 hover:border hover:border-ratecard-blue/40"
                       }
                     `}
                   >
@@ -142,7 +159,7 @@ export default function PublicTopNavShell({
               <Link
                 href="/newsletter"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 text-gray-700"
+                className="flex items-center gap-2 text-ratecard-blue"
               >
                 <Mail size={16} />
                 Newsletter
@@ -151,7 +168,7 @@ export default function PublicTopNavShell({
               <Link
                 href="/linkedin"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 text-gray-700"
+                className="flex items-center gap-2 text-ratecard-blue"
               >
                 <Linkedin size={16} />
                 LinkedIn
