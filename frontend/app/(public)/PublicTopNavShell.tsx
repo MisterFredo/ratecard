@@ -22,74 +22,10 @@ export default function PublicTopNavShell({
     { href: "/members", label: "Membres" },
     { href: "/events", label: "Événements" },
     { href: "/curator", label: "Curator" },
-    { href: "/membership", label: "Membership" },
   ];
-
-  const NavLink = ({ href, label }: { href: string; label: string }) => {
-    const isActive = active(href);
-
-    return (
-      <Link
-        href={href}
-        className={`
-          px-4 py-2 rounded-full text-sm font-medium transition
-          ${
-            isActive
-              ? "bg-ratecard-light text-ratecard-blue"
-              : "text-gray-700 hover:bg-gray-100 hover:text-ratecard-blue"
-          }
-        `}
-      >
-        {label}
-      </Link>
-    );
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* =====================================================
-          TOP NAV — DESKTOP
-      ===================================================== */}
-      <header className="hidden md:block sticky top-0 z-40 bg-white border-b">
-        {/* bande fine identitaire */}
-        <div className="h-[3px] bg-ratecard-blue" />
-
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          {/* LOGO */}
-          <Link href="/" className="flex items-center">
-            <img
-              src="/assets/brand/ratecard-logo.png"
-              alt="Ratecard"
-              className="h-8 w-auto"
-            />
-          </Link>
-
-          {/* NAV */}
-          <nav className="flex items-center gap-2">
-            {navItems.map((item) => (
-              <NavLink key={item.href} {...item} />
-            ))}
-          </nav>
-
-          {/* ACTIONS */}
-          <div className="flex items-center gap-5 text-gray-600">
-            <Link href="https://www.linkedin.com/company/ratecard-adnovia/">
-              <Linkedin
-                size={18}
-                className="hover:text-ratecard-blue transition"
-              />
-            </Link>
-
-            <Link href="/newsletter">
-              <Mail
-                size={18}
-                className="hover:text-ratecard-blue transition"
-              />
-            </Link>
-          </div>
-        </div>
-      </header>
-
       {/* =====================================================
           TOP NAV — MOBILE
       ===================================================== */}
@@ -111,35 +47,62 @@ export default function PublicTopNavShell({
         </div>
       </div>
 
-      {/* MOBILE MENU */}
+      {/* =====================================================
+          MOBILE MENU — VERSION PROPRE
+      ===================================================== */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 bg-black/40">
-          <aside className="absolute left-0 top-0 h-full w-4/5 max-w-xs bg-white p-6 flex flex-col">
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="self-end mb-8"
-            >
-              <X />
-            </button>
+          <aside className="absolute left-0 top-0 h-full w-4/5 max-w-xs bg-white flex flex-col">
+            {/* HEADER */}
+            <div className="p-6 flex items-center justify-between border-b">
+              <img
+                src="/assets/brand/ratecard-logo.png"
+                alt="Ratecard"
+                className="h-7"
+              />
+              <button onClick={() => setMobileOpen(false)}>
+                <X />
+              </button>
+            </div>
 
-            <nav className="space-y-4 text-base font-medium">
+            {/* NAV PRINCIPALE */}
+            <nav className="px-6 py-6 space-y-4 text-base font-medium">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className={
+                  className={`block ${
                     active(item.href)
                       ? "text-ratecard-blue"
                       : "text-gray-800"
-                  }
+                  }`}
                 >
                   {item.label}
                 </Link>
               ))}
             </nav>
 
-            <div className="mt-auto pt-6 border-t space-y-4 text-sm text-gray-600">
+            {/* CTA */}
+            <div className="px-6 py-6 border-t">
+              <Link
+                href="/membership"
+                onClick={() => setMobileOpen(false)}
+                className="
+                  block text-center
+                  px-4 py-2 rounded-full
+                  border border-ratecard-blue
+                  text-ratecard-blue font-medium
+                  hover:bg-ratecard-blue hover:text-white
+                  transition
+                "
+              >
+                Membership
+              </Link>
+            </div>
+
+            {/* CANAUX */}
+            <div className="mt-auto px-6 py-6 border-t space-y-4 text-sm text-gray-600">
               <Link
                 href="https://www.linkedin.com/company/ratecard-adnovia/"
                 className="flex items-center gap-2"
