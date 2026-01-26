@@ -85,7 +85,7 @@ export default function HomeClient({
     ) {
       mixedItems.push({
         type: "analysis",
-        item: analyses[0], // première analyse pour V1
+        item: analyses[0], // V1 : 1 analyse teaser
       });
     }
   });
@@ -106,7 +106,8 @@ export default function HomeClient({
     }
 
     window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+    return () =>
+      window.removeEventListener("scroll", onScroll);
   }, [otherNews.length]);
 
   return (
@@ -137,7 +138,9 @@ export default function HomeClient({
                 featuredNews.company?.media_logo_rectangle_id
               }
               companyName={featuredNews.company?.name}
-              isPartner={featuredNews.company?.is_partner === true}
+              isPartner={
+                featuredNews.company?.is_partner === true
+              }
               publishedAt={featuredNews.published_at}
               openInDrawer
               variant="featured"
@@ -163,7 +166,9 @@ export default function HomeClient({
                   n.company?.media_logo_rectangle_id
                 }
                 companyName={n.company?.name}
-                isPartner={n.company?.is_partner === true}
+                isPartner={
+                  n.company?.is_partner === true
+                }
                 publishedAt={n.published_at}
                 openInDrawer
               />
@@ -180,7 +185,8 @@ export default function HomeClient({
               excerpt={a.excerpt}
               publishedAt={a.published_at}
               topic={a.topics?.[0]}
-              onOpen={(id) =>
+              mode="test"
+              onOpenTest={(id) =>
                 openRightDrawer("analysis", id)
               }
             />
