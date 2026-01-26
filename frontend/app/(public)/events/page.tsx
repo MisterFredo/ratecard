@@ -92,7 +92,7 @@ export default function EventsPage() {
 
         <p className="max-w-2xl mx-auto text-lg text-gray-700 leading-relaxed">
           Ratecard conçoit, co-organise et accompagne des événements
-          structurants pour l’écosystème AdTech, Retail Media et innovation.
+          structurants pour l’écosystème AdTech, Retail Media et IA.
         </p>
       </header>
 
