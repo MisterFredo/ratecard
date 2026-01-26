@@ -3,208 +3,193 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  FileText,
-  Newspaper,
-  Users,
-  Linkedin,
-  Mail,
-  Menu,
-  X,
-} from "lucide-react";
+import { Linkedin, Mail, Menu, X } from "lucide-react";
 
-/* =========================================================
-   TYPES
-========================================================= */
-
-type EventNavItem = {
-  label: string;
-  url: string;
-};
-
-/* =========================================================
-   COMPONENT
-========================================================= */
-
-export default function PublicShell({
+export default function PublicTopNavShell({
   children,
-  events = [],
 }: {
   children: React.ReactNode;
-  events?: EventNavItem[];
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   function active(path: string) {
-    if (pathname === path) return true;
-    return pathname.startsWith(path + "/");
+    return pathname === path || pathname.startsWith(`${path}/`);
   }
 
-  /* =========================================================
-     NAVIGATION PRINCIPALE (ÉDITORIALISÉE)
-  ========================================================= */
-  const mainNav = [
-    {
-      href: "/analysis",
-      label: "Lectures du marché",
-      icon: FileText,
-    },
-    {
-      href: "/news",
-      label: "Signaux & annonces",
-      icon: Newspaper,
-    },
-    {
-      href: "/members",
-      label: "Écosystème",
-      icon: Users,
-    },
-  ];
+  const navLink = (href: string, label: string) => {
+    const isActive = active(href);
 
-  /* =========================================================
-     SIDEBAR CONTENT (DESKTOP + MOBILE)
-  ========================================================= */
-  const SidebarContent = (
-    <>
-      {/* ===== LOGO / IDENTITÉ ===== */}
+    return (
       <Link
-        href="/"
-        onClick={() => setMobileOpen(false)}
-        className="mb-6 block"
+        href={href}
+        className={`
+          relative text-sm font-medium transition
+          ${isActive ? "text-ratecard-blue" : "text-gray-700 hover:text-ratecard-blue"}
+        `}
       >
-        <span className="text-2xl font-semibold text-white tracking-wide">
-          ratecard
-        </span>
+        {label}
 
-        <p className="mt-2 text-xs text-white/70 leading-snug">
-          Décryptage & lecture stratégique
-          <br />
-          de l’écosystème AdTech & Média
-        </p>
-      </Link>
-
-      {/* ===== NAV PRINCIPALE ===== */}
-      <nav className="space-y-1 text-sm">
-        {mainNav.map((item) => {
-          const Icon = item.icon;
-          const isActive = active(item.href);
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={`
-                flex items-center gap-3 px-3 py-2 rounded-md transition
-                ${
-                  isActive
-                    ? "bg-white text-ratecard-blue font-semibold border-l-4 border-ratecard-green"
-                    : "text-white/90 hover:bg-ratecard-green/20"
-                }
-              `}
-            >
-              <Icon size={18} />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* ===== SÉPARATEUR ===== */}
-      <div className="my-6 border-t border-white/20" />
-
-      {/* ===== ÉVÉNEMENTS / TEMPS FORTS ===== */}
-      {events.length > 0 && (
-        <nav className="space-y-1 text-sm">
-          <div className="px-3 mb-2 text-xs uppercase tracking-wide text-white/50">
-            Temps forts
-          </div>
-
-          {events.map((e) => (
-            <a
-              key={e.label}
-              href={e.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block px-3 py-2 rounded text-white/80 hover:text-white hover:bg-white/10 transition"
-            >
-              {e.label}
-            </a>
-          ))}
-        </nav>
-      )}
-
-      {/* ===== SÉPARATEUR ===== */}
-      <div className="my-6 border-t border-white/20" />
-
-      {/* ===== ACTIONS ===== */}
-      <div className="space-y-3 text-sm">
-        <a
-          href="https://www.linkedin.com/company/ratecard-adnovia/"
-          target="_blank"
-          className="flex items-center gap-2 text-white/90 hover:text-white transition"
-        >
-          <Linkedin size={16} />
-          6 000+ followers
-        </a>
-
-        <a
-          href="/newsletter"
-          className="flex items-center gap-2 text-white/90 hover:text-white transition"
-        >
-          <Mail size={16} />
-          25 000+ abonnés
-        </a>
-      </div>
-
-      <div className="text-xs text-white/50 mt-8">
-        © {new Date().getFullYear()} Ratecard
-      </div>
-    </>
-  );
-
-  /* =========================================================
-     LAYOUT
-  ========================================================= */
-  return (
-    <div className="min-h-screen flex">
-      {/* ===== DESKTOP SIDEBAR ===== */}
-      <aside className="hidden md:flex w-60 bg-ratecard-blue text-white p-6 flex-col">
-        {SidebarContent}
-      </aside>
-
-      {/* ===== MOBILE SIDEBAR ===== */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setMobileOpen(false)}
+        {/* underline active */}
+        {isActive && (
+          <span
+            className="
+              absolute left-0 -bottom-2 h-[2px] w-full
+              bg-ratecard-blue rounded-full
+            "
           />
-          <aside className="relative w-4/5 max-w-xs bg-ratecard-blue text-white p-6 flex-col">
+        )}
+      </Link>
+    );
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* =====================================================
+          TOP NAV — DESKTOP
+      ===================================================== */}
+      <header className="hidden md:block bg-white border-b sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          {/* LOGO */}
+          <Link href="/" className="flex items-center gap-2">
+            <img
+              src="/assets/brand/ratecard-logo.png"
+              alt="Ratecard"
+              className="h-8 w-auto"
+            />
+          </Link>
+
+          {/* NAV PRINCIPALE */}
+          <nav className="flex items-center gap-10">
+            {navLink("/news", "News")}
+            {navLink("/members", "Membres")}
+
+            <a
+              href="https://ratecard.fr/evenements/#event"
+              target="_blank"
+              className="text-sm font-medium text-gray-700 hover:text-ratecard-blue transition"
+            >
+              Événements
+            </a>
+
+            {navLink("/curator", "Curator")}
+
+            <Link
+              href="/membership"
+              className="
+                text-sm font-medium
+                px-4 py-1.5 rounded-full
+                border border-ratecard-blue/20
+                text-ratecard-blue
+                hover:bg-ratecard-blue hover:text-white
+                transition
+              "
+            >
+              Membership
+            </Link>
+          </nav>
+
+          {/* ACTIONS */}
+          <div className="flex items-center gap-5 text-gray-600">
+            <a
+              href="https://www.linkedin.com/company/ratecard-adnovia/"
+              target="_blank"
+              className="hover:text-ratecard-blue transition"
+            >
+              <Linkedin size={18} />
+            </a>
+
+            <a
+              href="/newsletter"
+              className="hover:text-ratecard-blue transition"
+            >
+              <Mail size={18} />
+            </a>
+          </div>
+        </div>
+      </header>
+
+      {/* =====================================================
+          TOP NAV — MOBILE
+      ===================================================== */}
+      <div className="md:hidden bg-white border-b px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+        <button onClick={() => setMobileOpen(true)}>
+          <Menu />
+        </button>
+
+        <Link href="/">
+          <img
+            src="/assets/brand/ratecard-logo.png"
+            alt="Ratecard"
+            className="h-7"
+          />
+        </Link>
+      </div>
+
+      {/* MOBILE MENU */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40">
+          <aside className="absolute left-0 top-0 h-full w-4/5 max-w-xs bg-white p-6 flex flex-col">
             <button
               onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4 text-white"
+              className="self-end mb-8"
             >
               <X />
             </button>
-            {SidebarContent}
+
+            <nav className="space-y-5 text-base font-medium">
+              <Link href="/news" onClick={() => setMobileOpen(false)}>
+                News
+              </Link>
+
+              <Link href="/members" onClick={() => setMobileOpen(false)}>
+                Membres
+              </Link>
+
+              <a
+                href="https://ratecard.fr/evenements/#event"
+                target="_blank"
+              >
+                Événements
+              </a>
+
+              <Link href="/curator" onClick={() => setMobileOpen(false)}>
+                Curator
+              </Link>
+
+              <a
+                href="https://ratecard.fr/offre-ratecard-membership/"
+                target="_blank"
+                className="text-ratecard-blue"
+              >
+                Membership
+              </a>
+            </nav>
+
+            <div className="mt-auto pt-6 border-t space-y-4 text-sm text-gray-600">
+              <a
+                href="https://www.linkedin.com/company/ratecard-adnovia/"
+                target="_blank"
+                className="flex items-center gap-2"
+              >
+                <Linkedin size={16} /> LinkedIn
+              </a>
+
+              <a
+                href="/newsletter"
+                className="flex items-center gap-2"
+              >
+                <Mail size={16} /> Newsletter
+              </a>
+            </div>
           </aside>
         </div>
       )}
 
-      {/* ===== MAIN CONTENT ===== */}
-      <main className="flex-1 bg-gray-50">
-        {/* MOBILE HEADER */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-white">
-          <button onClick={() => setMobileOpen(true)}>
-            <Menu />
-          </button>
-          <Link href="/" className="font-semibold">
-            ratecard
-          </Link>
-        </div>
-
+      {/* =====================================================
+          MAIN CONTENT
+      ===================================================== */}
+      <main className="flex-1">
         <div className="p-4 md:p-10 max-w-6xl mx-auto">
           {children}
         </div>
