@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 
 /* =========================================================
@@ -38,11 +38,16 @@ export default function HomeClient({ news }: Props) {
   --------------------------------------------------------- */
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const sortedNews = [...news].sort(
-    (a, b) =>
-      new Date(b.published_at).getTime() -
-      new Date(a.published_at).getTime()
-  );
+  /* ---------------------------------------------------------
+     TRI DES NEWS (STABLE)
+  --------------------------------------------------------- */
+  const sortedNews = useMemo(() => {
+    return [...news].sort(
+      (a, b) =>
+        new Date(b.published_at).getTime() -
+        new Date(a.published_at).getTime()
+    );
+  }, [news]);
 
   const featuredNews = sortedNews[0];
   const otherNews = sortedNews.slice(1);
@@ -68,9 +73,22 @@ export default function HomeClient({ news }: Props) {
   }, [otherNews.length]);
 
   return (
-    <div className="max-w-6xl mx-auto px-4">
+    <div className="max-w-6xl mx-auto px-4 space-y-12">
       {/* =====================================================
-          GRILLE NEWS — UNE x4 + FLUX CONTINU
+          HEADER ÉDITORIAL
+      ===================================================== */}
+      <header className="space-y-2">
+        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
+          Lectures & signaux du marché
+        </h1>
+        <p className="text-sm md:text-base text-gray-500 max-w-2xl">
+          Sélection quotidienne d’annonces, mouvements et signaux
+          structurants pour l’écosystème AdTech, Media & IA.
+        </p>
+      </header>
+
+      {/* =====================================================
+          GRILLE NEWS — UNE + FLUX CONTINU
       ===================================================== */}
       <section
         className="
@@ -104,7 +122,7 @@ export default function HomeClient({ news }: Props) {
         )}
 
         {/* =================================================
-            FLUX NEWS (SCROLL INFINI)
+            FLUX NEWS
         ================================================= */}
         {visibleNews.map((n) => (
           <PartnerSignalCard
@@ -127,9 +145,10 @@ export default function HomeClient({ news }: Props) {
       ===================================================== */}
       {visibleCount < otherNews.length && (
         <div className="py-10 text-center text-sm text-gray-400">
-          Chargement…
+          Chargement des signaux suivants…
         </div>
       )}
     </div>
   );
 }
+
