@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
+import AnalysisTeaserCard from "@/components/analysis/AnalysisTeaserCard";
+import { useDrawer } from "@/contexts/DrawerContext";
 
 /* =========================================================
    TYPES
@@ -22,36 +24,71 @@ type NewsItem = {
   company?: Company;
 };
 
+type AnalysisItem = {
+  id: string;
+  title: string;
+  excerpt?: string;
+  published_at: string;
+  topics?: string[];
+};
+
 type Props = {
   news: NewsItem[];
+  analyses?: AnalysisItem[];
 };
 
 const PAGE_SIZE = 12;
+const ANALYSIS_INSERT_INDEX = 5; // 1 analyse après 5 news
 
 /* =========================================================
    COMPONENT
 ========================================================= */
 
-export default function HomeClient({ news }: Props) {
+export default function HomeClient({
+  news,
+  analyses = [],
+}: Props) {
+  const { openRightDrawer } = useDrawer();
+
   /* ---------------------------------------------------------
      STATE — SCROLL INFINI
   --------------------------------------------------------- */
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   /* ---------------------------------------------------------
-     TRI DES NEWS (STABLE)
+     TRI DES NEWS
   --------------------------------------------------------- */
-  const sortedNews = useMemo(() => {
-    return [...news].sort(
-      (a, b) =>
-        new Date(b.published_at).getTime() -
-        new Date(a.published_at).getTime()
-    );
-  }, [news]);
+  const sortedNews = [...news].sort(
+    (a, b) =>
+      new Date(b.published_at).getTime() -
+      new Date(a.published_at).getTime()
+  );
 
   const featuredNews = sortedNews[0];
   const otherNews = sortedNews.slice(1);
   const visibleNews = otherNews.slice(0, visibleCount);
+
+  /* ---------------------------------------------------------
+     CONSTRUCTION DU FLUX MIXTE
+  --------------------------------------------------------- */
+  const mixedItems: Array<
+    | { type: "news"; item: NewsItem }
+    | { type: "analysis"; item: AnalysisItem }
+  > = [];
+
+  visibleNews.forEach((n, index) => {
+    mixedItems.push({ type: "news", item: n });
+
+    if (
+      index === ANALYSIS_INSERT_INDEX &&
+      analyses.length > 0
+    ) {
+      mixedItems.push({
+        type: "analysis",
+        item: analyses[0], // première analyse pour V1
+      });
+    }
+  });
 
   /* ---------------------------------------------------------
      SCROLL HANDLER
@@ -73,22 +110,9 @@ export default function HomeClient({ news }: Props) {
   }, [otherNews.length]);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 space-y-12">
+    <div className="max-w-6xl mx-auto px-4">
       {/* =====================================================
-          HEADER ÉDITORIAL
-      ===================================================== */}
-      <header className="space-y-2">
-        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
-          Lectures & signaux du marché
-        </h1>
-        <p className="text-sm md:text-base text-gray-500 max-w-2xl">
-          Sélection quotidienne d’annonces, mouvements et signaux
-          structurants pour l’écosystème AdTech, Media & IA.
-        </p>
-      </header>
-
-      {/* =====================================================
-          GRILLE NEWS — UNE + FLUX CONTINU
+          GRILLE — UNE + FLUX MIXTE
       ===================================================== */}
       <section
         className="
@@ -100,7 +124,7 @@ export default function HomeClient({ news }: Props) {
         "
       >
         {/* =================================================
-            UNE — x4
+            UNE — NEWS x4
         ================================================= */}
         {featuredNews && (
           <div className="lg:col-span-2 lg:row-span-2">
@@ -122,22 +146,46 @@ export default function HomeClient({ news }: Props) {
         )}
 
         {/* =================================================
-            FLUX NEWS
+            FLUX MIXTE — NEWS + ANALYSE
         ================================================= */}
-        {visibleNews.map((n) => (
-          <PartnerSignalCard
-            key={n.id}
-            id={n.id}
-            title={n.title}
-            excerpt={n.excerpt}
-            visualRectId={n.visual_rect_id}
-            companyVisualRectId={n.company?.media_logo_rectangle_id}
-            companyName={n.company?.name}
-            isPartner={n.company?.is_partner === true}
-            publishedAt={n.published_at}
-            openInDrawer
-          />
-        ))}
+        {mixedItems.map((entry, idx) => {
+          if (entry.type === "news") {
+            const n = entry.item;
+
+            return (
+              <PartnerSignalCard
+                key={`news-${n.id}-${idx}`}
+                id={n.id}
+                title={n.title}
+                excerpt={n.excerpt}
+                visualRectId={n.visual_rect_id}
+                companyVisualRectId={
+                  n.company?.media_logo_rectangle_id
+                }
+                companyName={n.company?.name}
+                isPartner={n.company?.is_partner === true}
+                publishedAt={n.published_at}
+                openInDrawer
+              />
+            );
+          }
+
+          const a = entry.item;
+
+          return (
+            <AnalysisTeaserCard
+              key={`analysis-${a.id}`}
+              id={a.id}
+              title={a.title}
+              excerpt={a.excerpt}
+              publishedAt={a.published_at}
+              topic={a.topics?.[0]}
+              onOpen={(id) =>
+                openRightDrawer("analysis", id)
+              }
+            />
+          );
+        })}
       </section>
 
       {/* =====================================================
@@ -145,10 +193,9 @@ export default function HomeClient({ news }: Props) {
       ===================================================== */}
       {visibleCount < otherNews.length && (
         <div className="py-10 text-center text-sm text-gray-400">
-          Chargement des signaux suivants…
+          Chargement…
         </div>
       )}
     </div>
   );
 }
-
