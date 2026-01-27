@@ -40,7 +40,7 @@ export default function PublicTopNavShell({
             {/* LOGO */}
             <Link href="/" className="flex items-center">
               <img
-                src="/assets/brand/ratecard-logo.png"
+                src="/assets/brand/ratecard-logo.jpeg"
                 alt="Ratecard"
                 className="h-7 w-auto"
               />
