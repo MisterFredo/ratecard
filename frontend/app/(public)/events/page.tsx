@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 type EventItem = {
   tag: string;
   title: string;
@@ -17,6 +21,10 @@ type EventItem = {
     shape: "rect" | "square";
   };
 };
+
+/* =========================================================
+   EVENTS DATA — HARMONISÉ
+========================================================= */
 
 const events: EventItem[] = [
   {
@@ -34,9 +42,9 @@ const events: EventItem[] = [
     },
   },
   {
-    tag: "Co-organisation",
+    tag: "Événement Ratecard",
     title: "E-Retail Meetings #4",
-    by: "by Ratecard & Retail4Brands",
+    by: "by Ratecard, en collaboration avec Retail 4 Brands",
     location: "Paris – Le Grand Rex & The Hoxton",
     dates: "31 mars & 1er avril 2026",
     focus: "100% E-Retail",
@@ -48,9 +56,9 @@ const events: EventItem[] = [
     },
   },
   {
-    tag: "Reseller exclusif",
+    tag: "Partenaire international",
     title: "POSSIBLE",
-    by: "by MMA / A Hyve Event",
+    by: "Ratecard – Exclusive Reseller (MMA / A Hyve Event)",
     location: "Miami – Fontainebleau & Eden Rock",
     dates: "du 27 au 29 avril 2026",
     focus: "100% Innovation",
@@ -75,6 +83,10 @@ const events: EventItem[] = [
   },
 ];
 
+/* =========================================================
+   PAGE
+========================================================= */
+
 export default function EventsPage() {
   return (
     <div className="max-w-6xl mx-auto px-6 py-16 space-y-24">
@@ -91,8 +103,9 @@ export default function EventsPage() {
         </h1>
 
         <p className="max-w-2xl mx-auto text-lg text-gray-700 leading-relaxed">
-          Ratecard conçoit, co-organise et accompagne des événements
-          structurants pour l’écosystème AdTech, Retail Media et IA.
+          Ratecard conçoit, structure et accompagne des événements
+          structurants pour l’écosystème AdTech, Retail Media et IA,
+          en France et à l’international.
         </p>
       </header>
 
@@ -105,10 +118,14 @@ export default function EventsPage() {
             key={event.title}
             className="grid gap-12 md:grid-cols-2 items-center"
           >
-            {/* VISUELS */}
+            {/* =========================
+                VISUELS (CLIQUABLES)
+            ========================= */}
             <div className="space-y-4">
-              <div
-                className={`overflow-hidden rounded-2xl bg-gray-100 ${
+              <Link
+                href={event.url}
+                target="_blank"
+                className={`block overflow-hidden rounded-2xl bg-gray-100 transition hover:opacity-90 ${
                   event.visuals.shape === "square"
                     ? "aspect-square"
                     : "aspect-[16/9]"
@@ -119,20 +136,26 @@ export default function EventsPage() {
                   alt={event.title}
                   className="w-full h-full object-cover"
                 />
-              </div>
+              </Link>
 
               {event.visuals.secondary && (
-                <div className="overflow-hidden rounded-xl bg-gray-100 aspect-[16/9]">
+                <Link
+                  href={event.url}
+                  target="_blank"
+                  className="block overflow-hidden rounded-xl bg-gray-100 aspect-[16/9] transition hover:opacity-90"
+                >
                   <img
                     src={event.visuals.secondary}
                     alt={`${event.title} – partenaires`}
                     className="w-full h-full object-cover"
                   />
-                </div>
+                </Link>
               )}
             </div>
 
-            {/* TEXTE */}
+            {/* =========================
+                TEXTE
+            ========================= */}
             <div className="space-y-5">
               <span className="inline-block text-xs uppercase tracking-wide text-ratecard-blue">
                 {event.tag}
