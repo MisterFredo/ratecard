@@ -117,7 +117,7 @@ export default function PublicTopNavShell({
             {/* HEADER */}
             <div className="flex items-center justify-between p-4 border-b">
               <img
-                src="/assets/brand/ratecard-logo.png"
+                src="/assets/brand/ratecard-logo.jpg"
                 alt="Ratecard"
                 className="h-6"
               />
