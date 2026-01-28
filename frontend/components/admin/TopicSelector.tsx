@@ -6,6 +6,10 @@ import SearchableMultiSelect, {
   SelectOption,
 } from "@/components/ui/SearchableMultiSelect";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 type Topic = {
   id_topic: string;
   label: string;
@@ -17,21 +21,29 @@ type Props = {
   onChange: (topics: Topic[]) => void;
 };
 
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 export default function TopicSelector({ values, onChange }: Props) {
   const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
 
+  /* ---------------------------------------------------------
+     LOAD TOPICS
+  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
+
       try {
         const res = await api.get("/topic/list");
-
         const topics = res.topics || [];
 
         const businessTopics = topics.filter(
           (t: any) => t.TOPIC_AXIS === "BUSINESS"
         );
+
         const fieldTopics = topics.filter(
           (t: any) => t.TOPIC_AXIS === "FIELD"
         );
@@ -69,6 +81,7 @@ export default function TopicSelector({ values, onChange }: Props) {
         setOptions(groupedOptions);
       } catch (e) {
         console.error("Erreur chargement topics", e);
+        setOptions([]);
       } finally {
         setLoading(false);
       }
@@ -77,6 +90,9 @@ export default function TopicSelector({ values, onChange }: Props) {
     load();
   }, []);
 
+  /* ---------------------------------------------------------
+     HANDLERS
+  --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
     onChange(
       selected.map((s) => ({
@@ -86,10 +102,13 @@ export default function TopicSelector({ values, onChange }: Props) {
     );
   }
 
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium">
-        Topics
+        Topics <span className="text-red-500">*</span>
       </label>
 
       <p className="text-sm text-gray-500">
@@ -117,4 +136,3 @@ export default function TopicSelector({ values, onChange }: Props) {
     </div>
   );
 }
-
