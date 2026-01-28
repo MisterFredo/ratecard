@@ -9,6 +9,7 @@ const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 type TopicRow = {
   ID_TOPIC: string;
   LABEL: string;
+  TOPIC_AXIS?: "BUSINESS" | "FIELD";
   MEDIA_SQUARE_ID?: string | null;
   MEDIA_RECTANGLE_ID?: string | null;
 };
@@ -37,6 +38,7 @@ export default function TopicList() {
 
   return (
     <div className="space-y-8">
+      {/* HEADER */}
       <div className="flex justify-between">
         <h1 className="text-3xl font-semibold">Topics</h1>
 
@@ -57,11 +59,13 @@ export default function TopicList() {
           <thead>
             <tr className="bg-gray-100 border-b text-left">
               <th className="p-2">Label</th>
+              <th className="p-2">Axe</th>
               <th className="p-2">Carré</th>
               <th className="p-2">Rectangle</th>
               <th className="p-2 text-right">Actions</th>
             </tr>
           </thead>
+
           <tbody>
             {topics.map((t) => {
               const squareUrl = t.MEDIA_SQUARE_ID
@@ -77,8 +81,25 @@ export default function TopicList() {
                   key={t.ID_TOPIC}
                   className="border-b hover:bg-gray-50"
                 >
-                  <td className="p-2">{t.LABEL}</td>
+                  {/* LABEL */}
+                  <td className="p-2 font-medium">
+                    {t.LABEL}
+                  </td>
 
+                  {/* AXIS */}
+                  <td className="p-2">
+                    {t.TOPIC_AXIS === "FIELD" ? (
+                      <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
+                        FIELD
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800">
+                        BUSINESS
+                      </span>
+                    )}
+                  </td>
+
+                  {/* SQUARE */}
                   <td className="p-2">
                     {squareUrl ? (
                       <img
@@ -90,6 +111,7 @@ export default function TopicList() {
                     )}
                   </td>
 
+                  {/* RECTANGLE */}
                   <td className="p-2">
                     {rectUrl ? (
                       <img
@@ -101,6 +123,7 @@ export default function TopicList() {
                     )}
                   </td>
 
+                  {/* ACTIONS */}
                   <td className="p-2 text-right">
                     <Link
                       href={`/admin/topic/edit/${t.ID_TOPIC}`}
@@ -118,3 +141,4 @@ export default function TopicList() {
     </div>
   );
 }
+
