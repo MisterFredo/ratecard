@@ -7,6 +7,7 @@ import TopicCard from "@/components/topics/TopicCard";
 type TopicItem = {
   id_topic: string;
   label: string;
+  topic_axis: "BUSINESS" | "FIELD";
   nb_analyses: number;
   delta_30d?: number;
 };
@@ -35,6 +36,7 @@ export default function TopicsPage() {
           const mappedTopics = (json.topics || []).map((t: any) => ({
             id_topic: t.ID_TOPIC,
             label: t.LABEL,
+            topic_axis: t.TOPIC_AXIS,
             nb_analyses: t.NB_ANALYSES ?? 0,
             delta_30d: t.DELTA_30D ?? 0,
           }));
@@ -51,25 +53,99 @@ export default function TopicsPage() {
     load();
   }, []);
 
-  const activeTopics = topics
-    .filter((t) => t.nb_analyses > 0)
-    .sort((a, b) => b.nb_analyses - a.nb_analyses);
+  function renderSection(
+    axis: "BUSINESS" | "FIELD",
+    title: string,
+    subtitle: string
+  ) {
+    const axisTopics = topics.filter(
+      (t) => t.topic_axis === axis
+    );
 
-  const otherTopics = topics
-    .filter((t) => t.nb_analyses === 0)
-    .sort((a, b) => a.label.localeCompare(b.label));
+    const activeTopics = axisTopics
+      .filter((t) => t.nb_analyses > 0)
+      .sort((a, b) => b.nb_analyses - a.nb_analyses);
+
+    const otherTopics = axisTopics
+      .filter((t) => t.nb_analyses === 0)
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    if (axisTopics.length === 0) return null;
+
+    return (
+      <section className="space-y-8">
+        <header>
+          <h2 className="text-xl font-semibold">{title}</h2>
+          <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+        </header>
+
+        {activeTopics.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400">
+              Topics en mouvement
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {activeTopics.map((topic) => (
+                <TopicCard
+                  key={topic.id_topic}
+                  label={topic.label}
+                  nbAnalyses={topic.nb_analyses}
+                  delta30d={topic.delta_30d}
+                  variant="active"
+                  onClick={() =>
+                    openDrawer("left", {
+                      type: "dashboard",
+                      payload: {
+                        scopeType: "topic",
+                        scopeId: topic.label,
+                      },
+                    })
+                  }
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {otherTopics.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400">
+              Autres topics
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {otherTopics.map((topic) => (
+                <TopicCard
+                  key={topic.id_topic}
+                  label={topic.label}
+                  nbAnalyses={topic.nb_analyses}
+                  variant="default"
+                  onClick={() =>
+                    openDrawer("left", {
+                      type: "dashboard",
+                      payload: {
+                        scopeType: "topic",
+                        scopeId: topic.label,
+                      },
+                    })
+                  }
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+    );
+  }
 
   return (
-    <div className="space-y-10">
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
+    <div className="space-y-14">
+      {/* HEADER */}
       <header>
-        <h1 className="text-2xl font-semibold">
-          Topics
-        </h1>
+        <h1 className="text-2xl font-semibold">Topics</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Sujets suivis et analysés par Curator
+          Grilles de lecture et terrains analysés par Curator
         </p>
       </header>
 
@@ -85,67 +161,20 @@ export default function TopicsPage() {
         </p>
       )}
 
-      {/* =====================================================
-          TOPICS EN MOUVEMENT
-      ===================================================== */}
-      {!loading && activeTopics.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold">
-            Topics en mouvement
-          </h2>
+      {!loading && (
+        <>
+          {renderSection(
+            "BUSINESS",
+            "Business & enjeux",
+            "Comprendre les logiques économiques, stratégiques et opérationnelles"
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {activeTopics.map((topic) => (
-              <TopicCard
-                key={topic.id_topic}
-                label={topic.label}
-                nbAnalyses={topic.nb_analyses}
-                delta30d={topic.delta_30d}
-                variant="active"
-                onClick={() =>
-                  openDrawer("left", {
-                    type: "dashboard",
-                    payload: {
-                      scopeType: "topic",
-                      scopeId: topic.label,
-                    },
-                  })
-                }
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* =====================================================
-          AUTRES TOPICS
-      ===================================================== */}
-      {!loading && otherTopics.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-400">
-            Autres topics suivis
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {otherTopics.map((topic) => (
-              <TopicCard
-                key={topic.id_topic}
-                label={topic.label}
-                nbAnalyses={topic.nb_analyses}
-                variant="default"
-                onClick={() =>
-                  openDrawer("left", {
-                    type: "dashboard",
-                    payload: {
-                      scopeType: "topic",
-                      scopeId: topic.label,
-                    },
-                  })
-                }
-              />
-            ))}
-          </div>
-        </section>
+          {renderSection(
+            "FIELD",
+            "Terrains & environnements",
+            "Canaux, contextes et espaces d’activation"
+          )}
+        </>
       )}
     </div>
   );
