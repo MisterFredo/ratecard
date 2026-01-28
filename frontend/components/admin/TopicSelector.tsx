@@ -103,6 +103,7 @@ export default function TopicSelector({ values, onChange }: Props) {
         </div>
       ) : (
         <SearchableMultiSelect
+          label="Topics"
           required
           placeholder="Rechercher un topic…"
           options={options}
