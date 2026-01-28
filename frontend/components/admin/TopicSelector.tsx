@@ -13,7 +13,7 @@ import SearchableMultiSelect, {
 type Topic = {
   id_topic: string;
   label: string;
-  topic_axis?: "BUSINESS" | "FIELD";
+  topic_axis?: "BUSINESS" | "FIELD" | null;
 };
 
 type Props = {
@@ -40,6 +40,9 @@ export default function TopicSelector({ values, onChange }: Props) {
         const res = await api.get("/topic/list");
         const topics = res.topics || [];
 
+        // ─────────────────────────────────────────
+        // SPLIT PAR AXE (SANS EXCLUSION)
+        // ─────────────────────────────────────────
         const businessTopics = topics.filter(
           (t: any) => t.TOPIC_AXIS === "BUSINESS"
         );
@@ -48,12 +51,16 @@ export default function TopicSelector({ values, onChange }: Props) {
           (t: any) => t.TOPIC_AXIS === "FIELD"
         );
 
+        const otherTopics = topics.filter(
+          (t: any) => !t.TOPIC_AXIS
+        );
+
         const groupedOptions: SelectOption[] = [
           ...(businessTopics.length
             ? [
                 {
                   id: "__group_business__",
-                  label: "— Business & enjeux",
+                  label: "— Angles métier (BUSINESS)",
                   disabled: true,
                 },
                 ...businessTopics.map((t: any) => ({
@@ -67,10 +74,24 @@ export default function TopicSelector({ values, onChange }: Props) {
             ? [
                 {
                   id: "__group_field__",
-                  label: "— Terrains & écosystèmes",
+                  label: "— Terrains & écosystèmes (FIELD)",
                   disabled: true,
                 },
                 ...fieldTopics.map((t: any) => ({
+                  id: t.ID_TOPIC,
+                  label: t.LABEL,
+                })),
+              ]
+            : []),
+
+          ...(otherTopics.length
+            ? [
+                {
+                  id: "__group_other__",
+                  label: "— Autres topics (à qualifier)",
+                  disabled: true,
+                },
+                ...otherTopics.map((t: any) => ({
                   id: t.ID_TOPIC,
                   label: t.LABEL,
                 })),
@@ -80,7 +101,7 @@ export default function TopicSelector({ values, onChange }: Props) {
 
         setOptions(groupedOptions);
       } catch (e) {
-        console.error("Erreur chargement topics", e);
+        console.error("❌ Erreur chargement topics", e);
         setOptions([]);
       } finally {
         setLoading(false);
@@ -91,7 +112,7 @@ export default function TopicSelector({ values, onChange }: Props) {
   }, []);
 
   /* ---------------------------------------------------------
-     HANDLERS
+     HANDLE CHANGE
   --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
     onChange(
@@ -106,16 +127,7 @@ export default function TopicSelector({ values, onChange }: Props) {
      UI
   --------------------------------------------------------- */
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium">
-        Topics <span className="text-red-500">*</span>
-      </label>
-
-      <p className="text-sm text-gray-500">
-        Sélectionnez un angle <strong>métier</strong> (BUSINESS) et,
-        si pertinent, un ou plusieurs <strong>terrains</strong> (FIELD).
-      </p>
-
+    <div className="space-y-1">
       {loading ? (
         <div className="text-sm text-gray-500">
           Chargement des topics…
