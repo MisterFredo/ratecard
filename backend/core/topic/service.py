@@ -76,7 +76,7 @@ def list_topics():
         LEFT JOIN {TABLE_TOPIC_METRICS} m
           ON m.ID_TOPIC = t.ID_TOPIC
 
-        WHERE t.IS_ACTIVE = TRUE
+        WHERE COALESCE(t.IS_ACTIVE, TRUE) = TRUE
 
         ORDER BY NB_ANALYSES DESC, t.LABEL ASC
     """
