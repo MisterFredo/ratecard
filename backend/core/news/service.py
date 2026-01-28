@@ -136,11 +136,10 @@ def get_news(id_news: str):
     if not rows:
         return None
 
-    # sérialisation standard de la news
     news = serialize_row(rows[0])
 
     # ----------------------------
-    # COMPANY (ENRICHED, EXPLICIT)
+    # COMPANY
     # ----------------------------
     company_rows = query_bq(
         f"""
@@ -161,19 +160,20 @@ def get_news(id_news: str):
             "id_company": row["ID_COMPANY"],
             "name": row["NAME"],
             "media_logo_rectangle_id": row["MEDIA_LOGO_RECTANGLE_ID"],
-            "is_partner": bool(row["IS_PARTNER"]),  # 🔒 FORCÉ EN BOOL
+            "is_partner": bool(row["IS_PARTNER"]),
         }
     else:
         news["company"] = None
 
     # ----------------------------
-    # TOPICS
+    # TOPICS (AVEC AXIS)
     # ----------------------------
     news["topics"] = query_bq(
         f"""
         SELECT
             T.ID_TOPIC,
-            T.LABEL
+            T.LABEL,
+            T.TOPIC_AXIS
         FROM `{TABLE_NEWS_TOPIC}` NT
         JOIN `{TABLE_TOPIC}` T
           ON NT.ID_TOPIC = T.ID_TOPIC
@@ -200,14 +200,12 @@ def get_news(id_news: str):
 
     return news
 
-
 # ============================================================
 # LIST NEWS (ADMIN + PUBLIC)
 # ============================================================
 def list_news():
     """
     Liste des news PUBLIQUES uniquement.
-    Utilisée par le front public (home, /news, drawers, newsletter).
     """
     sql = f"""
         SELECT
@@ -218,17 +216,33 @@ def list_news():
             n.STATUS,
             n.PUBLISHED_AT,
 
-            -- 🔑 VISUEL NEWS
             n.MEDIA_RECTANGLE_ID AS VISUAL_RECT_ID,
 
             c.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
             c.MEDIA_LOGO_RECTANGLE_ID,
-            c.IS_PARTNER
+            c.IS_PARTNER,
 
+            T.TOPICS
         FROM `{TABLE_NEWS}` n
         JOIN `{TABLE_COMPANY}` c
           ON n.ID_COMPANY = c.ID_COMPANY
+
+        LEFT JOIN (
+            SELECT
+                NT.ID_NEWS,
+                ARRAY_AGG(
+                    STRUCT(
+                        T.LABEL AS label,
+                        T.TOPIC_AXIS AS axis
+                    )
+                ) AS TOPICS
+            FROM `{TABLE_NEWS_TOPIC}` NT
+            JOIN `{TABLE_TOPIC}` T
+              ON NT.ID_TOPIC = T.ID_TOPIC
+            GROUP BY NT.ID_NEWS
+        ) T
+          ON n.ID_NEWS = T.ID_NEWS
 
         WHERE
             n.STATUS = 'PUBLISHED'
@@ -238,7 +252,6 @@ def list_news():
         ORDER BY n.PUBLISHED_AT DESC
     """
     return query_bq(sql)
-
 
 # ============================================================
 # UPDATE NEWS
