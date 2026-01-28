@@ -31,6 +31,7 @@ def create_topic(data: TopicCreate) -> str:
     row = [{
         "ID_TOPIC": topic_id,
         "LABEL": data.label,
+        "TOPIC_AXIS": data.topic_axis,  # ⬅️ NOUVEAU
         "DESCRIPTION": data.description,
 
         # ⚠️ PAS DE MEDIA AU CREATE
@@ -66,6 +67,7 @@ def list_topics():
         SELECT
             t.ID_TOPIC,
             t.LABEL,
+            t.TOPIC_AXIS,              -- ⬅️ NOUVEAU
 
             COALESCE(m.NB_ANALYSES, 0) AS NB_ANALYSES,
             COALESCE(m.LAST_30_DAYS, 0) AS DELTA_30D
@@ -73,6 +75,8 @@ def list_topics():
         FROM {TABLE_TOPIC} t
         LEFT JOIN {TABLE_TOPIC_METRICS} m
           ON m.ID_TOPIC = t.ID_TOPIC
+
+        WHERE t.IS_ACTIVE = TRUE
 
         ORDER BY NB_ANALYSES DESC, t.LABEL ASC
     """
@@ -83,12 +87,12 @@ def list_topics():
         {
             "ID_TOPIC": r["ID_TOPIC"],
             "LABEL": r["LABEL"],
+            "TOPIC_AXIS": r.get("TOPIC_AXIS"),  # ⬅️ NOUVEAU
             "NB_ANALYSES": r["NB_ANALYSES"],
             "DELTA_30D": r["DELTA_30D"],
         }
         for r in rows
     ]
-
 
 
 # ============================================================
