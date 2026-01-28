@@ -11,7 +11,9 @@ const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 export default function CreateTopic() {
   const [label, setLabel] = useState("");
-  const [description, setDescription] = useState(""); // 🔑 HTML éditorial
+  const [topicAxis, setTopicAxis] = useState<"BUSINESS" | "FIELD">("BUSINESS");
+
+  const [description, setDescription] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
 
@@ -31,7 +33,8 @@ export default function CreateTopic() {
     try {
       const res = await api.post("/topic/create", {
         label,
-        description: description || null, // 🔑 HTML
+        topic_axis: topicAxis,
+        description: description || null,
         seo_title: seoTitle || null,
         seo_description: seoDescription || null,
       });
@@ -64,12 +67,34 @@ export default function CreateTopic() {
         </Link>
       </div>
 
-      {/* STRUCTURE */}
+      {/* LABEL */}
       <EntityBaseForm
         values={{ name: label }}
         onChange={{ setName: setLabel }}
         labels={{ name: "Label" }}
       />
+
+      {/* AXIS */}
+      <div className="space-y-2 max-w-2xl">
+        <label className="block text-sm font-medium">
+          Axe du topic
+        </label>
+
+        <select
+          className="border p-2 rounded w-full"
+          value={topicAxis}
+          onChange={(e) =>
+            setTopicAxis(e.target.value as "BUSINESS" | "FIELD")
+          }
+        >
+          <option value="BUSINESS">
+            BUSINESS — enjeux métier, stratégie, monétisation
+          </option>
+          <option value="FIELD">
+            FIELD — canaux, terrains, environnements d’activation
+          </option>
+        </select>
+      </div>
 
       {/* DESCRIPTION HTML */}
       <div className="space-y-2 max-w-2xl">
@@ -143,3 +168,4 @@ export default function CreateTopic() {
     </div>
   );
 }
+
