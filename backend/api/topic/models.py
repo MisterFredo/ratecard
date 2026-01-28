@@ -12,8 +12,14 @@ class TopicCreate(BaseModel):
 
     ⚠️ AUCUN champ média ici :
     les visuels sont associés uniquement après création.
+
+    topic_axis :
+    - BUSINESS : enjeu / mécanique business
+    - FIELD    : domaine / contexte / terrain d'expression
     """
     label: str
+    topic_axis: str  # BUSINESS | FIELD
+
     description: Optional[str] = None
 
     seo_title: Optional[str] = None
@@ -31,6 +37,8 @@ class TopicUpdate(BaseModel):
     - Les champs média sont autorisés ici (post-création)
     """
     label: Optional[str] = None
+    topic_axis: Optional[str] = None  # BUSINESS | FIELD
+
     description: Optional[str] = None
 
     seo_title: Optional[str] = None
@@ -50,6 +58,8 @@ class TopicOut(BaseModel):
     """
     id_topic: str
     label: str
+    topic_axis: Optional[str] = None  # BUSINESS | FIELD
+
     description: Optional[str] = None
 
     media_square_id: Optional[str] = None
