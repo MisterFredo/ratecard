@@ -186,9 +186,6 @@ def create_content(data: Dict[str, Any]) -> str:
 # ============================================================
 # GET ONE CONTENT (ENRICHI)
 # ============================================================
-# ============================================================
-# GET ONE CONTENT (ENRICHI)
-# ============================================================
 def get_content(id_content: str):
     rows = query_bq(
         f"""
@@ -234,9 +231,13 @@ def get_content(id_content: str):
     # ---------------------------------------------------------
     content["topics"] = query_bq(
         f"""
-        SELECT T.ID_TOPIC, T.LABEL
+        SELECT
+            T.ID_TOPIC,
+            T.LABEL,
+            T.TOPIC_AXIS
         FROM `{TABLE_CONTENT_TOPIC}` CT
-        JOIN `{TABLE_TOPIC}` T ON CT.ID_TOPIC = T.ID_TOPIC
+        JOIN `{TABLE_TOPIC}` T
+          ON CT.ID_TOPIC = T.ID_TOPIC
         WHERE CT.ID_CONTENT = @id
         """,
         {"id": id_content}
@@ -307,7 +308,12 @@ def list_contents():
         LEFT JOIN (
           SELECT
             CT.ID_CONTENT,
-            ARRAY_AGG(T.LABEL) AS TOPICS
+            ARRAY_AGG(
+              STRUCT(
+                T.LABEL AS label,
+                T.TOPIC_AXIS AS axis
+              )
+            ) AS TOPICS
           FROM `{TABLE_CONTENT_TOPIC}` CT
           JOIN `{TABLE_TOPIC}` T
             ON CT.ID_TOPIC = T.ID_TOPIC
@@ -324,7 +330,7 @@ def list_contents():
 
     return [
         {
-            "id": r["ID_CONTENT"],                # ⬅️ CLÉ CRITIQUE
+            "id": r["ID_CONTENT"],
             "title": r["ANGLE_TITLE"],
             "signal": r["ANGLE_SIGNAL"],
             "excerpt": r.get("EXCERPT"),
