@@ -26,7 +26,7 @@ export default function StepPreview({
 
       try {
         const res = await api.get(`/content/${contentId}`);
-        const c = res.content;
+        const c = res;
 
         if (!c) {
           throw new Error("Content vide");
