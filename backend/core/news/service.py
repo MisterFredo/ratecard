@@ -349,7 +349,6 @@ def delete_news(news_id: str):
     for q in queries:
         client.query(q, job_config=job_config).result()
 
-
 # ============================================================
 # PUBLISH NEWS
 # ============================================================
@@ -359,9 +358,13 @@ def publish_news(
 ):
     """
     Publie une news à une date donnée.
-    Une news est publiable si :
-    - elle a un visuel rectangle propre
-    - OU sa société a un visuel rectangle
+
+    Règles :
+    - une news est publiable si :
+      - elle a un visuel rectangle propre
+      - OU sa société a un visuel rectangle
+    - la date choisie (passée / future) DOIT être respectée
+    - toutes les dates sont normalisées en UTC
     """
 
     rows = query_bq(
@@ -383,7 +386,9 @@ def publish_news(
 
     row = rows[0]
 
-    # 🔑 VISUEL : NEWS > SOCIÉTÉ (RECTANGLE UNIQUEMENT)
+    # ---------------------------------------------------------
+    # VALIDATIONS MÉTIER
+    # ---------------------------------------------------------
     if not row["NEWS_RECT"] and not row["COMPANY_RECT"]:
         raise ValueError(
             "Un visuel rectangulaire est requis pour publier la news"
@@ -392,21 +397,28 @@ def publish_news(
     if not row["EXCERPT"]:
         raise ValueError("Un excerpt est requis pour publier la news")
 
-    now = datetime.utcnow()
+    # ---------------------------------------------------------
+    # DATES — NORMALISATION UTC
+    # ---------------------------------------------------------
+    now = datetime.now(timezone.utc)
 
-    # ---------------------------------------------------------
-    # Détermination de la date de publication
-    # ---------------------------------------------------------
     if published_at:
         try:
             publish_date = datetime.fromisoformat(published_at)
+
+            # ⚠️ datetime-local → datetime naïf → forcer UTC
+            if publish_date.tzinfo is None:
+                publish_date = publish_date.replace(
+                    tzinfo=timezone.utc
+                )
+
         except ValueError:
             raise ValueError("Format de date invalide")
     else:
         publish_date = now
 
     # ---------------------------------------------------------
-    # Statut en fonction de la date
+    # STATUT EN FONCTION DE LA DATE
     # ---------------------------------------------------------
     if publish_date <= now:
         update_bq(
@@ -430,6 +442,7 @@ def publish_news(
         where={"ID_NEWS": id_news},
     )
     return "SCHEDULED"
+
 
 # ============================================================
 # LINKEDIN — GET POST FOR NEWS
