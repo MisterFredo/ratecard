@@ -3,6 +3,7 @@ from api.content.models import (
     ContentCreate,
     ContentUpdate,
     ContentAnglesRequest,
+    ContentPublish,
     ContentGenerateRequest,
 )
 
@@ -81,12 +82,19 @@ def archive_route(id_content: str):
 # PUBLISH CONTENT
 # ============================================================
 @router.post("/publish/{id_content}")
-def publish_route(id_content: str, published_at: str | None = None):
+def publish_route(id_content: str, payload: ContentPublish):
     try:
-        status = publish_content(id_content, published_at)
-        return {"status": "ok", "published_status": status}
+        status = publish_content(
+            id_content=id_content,
+            published_at=payload.publish_at,
+        )
+        return {
+            "status": "ok",
+            "published_status": status,
+        }
     except Exception as e:
         raise HTTPException(400, f"Erreur publication content : {e}")
+
 
 
 # ============================================================
