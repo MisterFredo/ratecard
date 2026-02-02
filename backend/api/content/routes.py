@@ -82,19 +82,21 @@ def archive_route(id_content: str):
 # PUBLISH CONTENT
 # ============================================================
 @router.post("/publish/{id_content}")
-def publish_route(id_content: str, payload: ContentPublish):
+def publish_route(id_content: str, published_at: str | None = None):
     try:
-        status = publish_content(
-            id_content=id_content,
-            published_at=payload.publish_at,
-        )
-        return {
-            "status": "ok",
-            "published_status": status,
-        }
+        publish_dt = None
+
+        if published_at:
+            try:
+                publish_dt = datetime.fromisoformat(published_at)
+            except ValueError:
+                raise ValueError("Format de date invalide (ISO attendu)")
+
+        status = publish_content(id_content, publish_dt)
+        return {"status": "ok", "published_status": status}
+
     except Exception as e:
         raise HTTPException(400, f"Erreur publication content : {e}")
-
 
 
 # ============================================================
