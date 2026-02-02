@@ -15,39 +15,42 @@ export default function StepPreview({
   onNext,
 }: Props) {
   const [loading, setLoading] = useState(true);
-  const [content, setContent] = useState<any>(null);
+  const [content, setContent] = useState<any | null>(null);
 
   /* ---------------------------------------------------------
      LOAD CONTENT
   --------------------------------------------------------- */
-  async function load() {
-    setLoading(true);
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
 
-    try {
-      const res = await api.get(`/content/${contentId}`);
+      try {
+        const res = await api.get(`/content/${contentId}`);
+        const c = res.content;
 
-      // 🔑 structure API : { status, content }
-      const c = res.content?.content;
+        if (!c) {
+          throw new Error("Content vide");
+        }
 
-      if (!c) {
-        throw new Error("Content vide");
+        setContent(c);
+      } catch (e) {
+        console.error(e);
+        alert("Contenu introuvable");
+        setContent(null);
+      } finally {
+        setLoading(false);
       }
-
-      setContent(c);
-    } catch (e) {
-      console.error(e);
-      alert("Contenu introuvable");
     }
 
-    setLoading(false);
-  }
-
-  useEffect(() => {
     load();
   }, [contentId]);
 
-  if (loading || !content) {
+  if (loading) {
     return <div>Chargement de l’aperçu…</div>;
+  }
+
+  if (!content) {
+    return <div className="text-red-500">Aucun contenu à afficher.</div>;
   }
 
   /* ---------------------------------------------------------
@@ -59,7 +62,7 @@ export default function StepPreview({
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-ratecard-blue">
-          Aperçu de l’analyse
+          Aperçu du contenu
         </h2>
 
         <button
@@ -72,7 +75,6 @@ export default function StepPreview({
 
       {/* HEADER ANALYTIQUE */}
       <div className="bg-white border rounded p-5 shadow-sm space-y-4">
-
         <h3 className="text-xl font-semibold text-gray-900">
           {content.angle_title}
         </h3>
