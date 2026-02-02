@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
-
 type Props = {
   contentId: string;
   onBack: () => void;
@@ -27,21 +25,15 @@ export default function StepPreview({
 
     try {
       const res = await api.get(`/content/${contentId}`);
-      const c = res.content;
 
-      const rectUrl = c.MEDIA_RECTANGLE_ID
-        ? `${GCS_BASE_URL}/content/${c.MEDIA_RECTANGLE_ID}`
-        : null;
+      // 🔑 structure API : { status, content }
+      const c = res.content?.content;
 
-      const squareUrl = c.MEDIA_SQUARE_ID
-        ? `${GCS_BASE_URL}/content/${c.MEDIA_SQUARE_ID}`
-        : null;
+      if (!c) {
+        throw new Error("Content vide");
+      }
 
-      setContent({
-        ...c,
-        rectUrl,
-        squareUrl,
-      });
+      setContent(c);
     } catch (e) {
       console.error(e);
       alert("Contenu introuvable");
@@ -67,7 +59,7 @@ export default function StepPreview({
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-ratecard-blue">
-          Aperçu du contenu
+          Aperçu de l’analyse
         </h2>
 
         <button
@@ -78,43 +70,20 @@ export default function StepPreview({
         </button>
       </div>
 
-      {/* VISUEL */}
-      <div className="space-y-2">
-        <p className="text-xs text-gray-500">
-          Visuel principal
-        </p>
-
-        {content.rectUrl ? (
-          <img
-            src={content.rectUrl}
-            className="w-full max-h-[260px] object-cover rounded border bg-white shadow"
-          />
-        ) : content.squareUrl ? (
-          <img
-            src={content.squareUrl}
-            className="w-64 rounded border bg-white shadow"
-          />
-        ) : (
-          <p className="text-gray-400 italic">
-            Aucun visuel
-          </p>
-        )}
-      </div>
-
       {/* HEADER ANALYTIQUE */}
       <div className="bg-white border rounded p-5 shadow-sm space-y-4">
 
         <h3 className="text-xl font-semibold text-gray-900">
-          {content.ANGLE_TITLE}
+          {content.angle_title}
         </h3>
 
         <p className="text-sm text-gray-600">
-          {content.ANGLE_SIGNAL}
+          {content.angle_signal}
         </p>
 
-        {content.EXCERPT && (
+        {content.excerpt && (
           <p className="text-base font-medium text-gray-800">
-            {content.EXCERPT}
+            {content.excerpt}
           </p>
         )}
 
@@ -155,13 +124,13 @@ export default function StepPreview({
       </div>
 
       {/* CONCEPT */}
-      {content.CONCEPT && (
+      {content.concept && (
         <div className="border-l-4 border-ratecard-blue pl-4">
           <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
             Concept clé
           </h4>
           <p className="text-sm text-gray-700">
-            {content.CONCEPT}
+            {content.concept}
           </p>
         </div>
       )}
@@ -180,7 +149,7 @@ export default function StepPreview({
           hover:prose-a:underline
         "
         dangerouslySetInnerHTML={{
-          __html: content.CONTENT_BODY || "",
+          __html: content.content_body || "",
         }}
       />
 
@@ -203,4 +172,3 @@ export default function StepPreview({
     </div>
   );
 }
-
