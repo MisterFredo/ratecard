@@ -115,6 +115,13 @@ class ContentUpdate(BaseModel):
     # META
     author: Optional[str] = None
 
+# ============================================================
+# PUBLISH CONTENT
+# ============================================================
+class ContentPublish(BaseModel):
+    publish_at: Optional[datetime] = None
+
+
 
 # ============================================================
 # OUT
