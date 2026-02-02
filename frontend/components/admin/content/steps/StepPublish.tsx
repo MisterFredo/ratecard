@@ -30,12 +30,11 @@ export default function StepPublish({
       </div>
 
       <p className="text-sm text-gray-600">
-        Choisissez quand publier le contenu. Une fois publié, il pourra être
-        utilisé dans les différents formats de diffusion (site, newsletter,
-        LinkedIn, etc.).
+        Choisissez quand publier le contenu.  
+        La date sélectionnée sera utilisée comme date officielle de publication.
       </p>
 
-      {/* MODE */}
+      {/* MODE (UI ONLY) */}
       <div className="space-y-3">
         <label className="flex items-start gap-2 cursor-pointer">
           <input
@@ -46,7 +45,7 @@ export default function StepPublish({
           <span>
             <strong>Publier maintenant</strong>
             <div className="text-xs text-gray-500">
-              Le contenu sera publié immédiatement.
+              Publication immédiate.
             </div>
           </span>
         </label>
@@ -60,7 +59,7 @@ export default function StepPublish({
           <span>
             <strong>Planifier la publication</strong>
             <div className="text-xs text-gray-500">
-              Le contenu sera publié automatiquement à la date choisie.
+              Publication automatique à la date choisie.
             </div>
           </span>
         </label>
@@ -74,7 +73,7 @@ export default function StepPublish({
           </label>
           <input
             type="datetime-local"
-            className="border rounded p-2"
+            className="border rounded p-2 w-full"
             value={publishAt}
             onChange={(e) => onChangeDate(e.target.value)}
           />
@@ -98,3 +97,4 @@ export default function StepPublish({
     </div>
   );
 }
+
