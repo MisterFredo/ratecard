@@ -8,6 +8,18 @@ type Props = {
   onPublish: () => void;
 };
 
+/**
+ * Convertit une date datetime-local (sans timezone)
+ * en ISO UTC exploitable côté backend
+ */
+function toLocalDatetimeValue(date: Date) {
+  return new Date(
+    date.getTime() - date.getTimezoneOffset() * 60000
+  )
+    .toISOString()
+    .slice(0, 16);
+}
+
 export default function NewsStepPublish({
   publishAt,
   publishing,
@@ -16,17 +28,12 @@ export default function NewsStepPublish({
 }: Props) {
   function publishNow() {
     const now = new Date();
-    const isoLocal = new Date(
-      now.getTime() - now.getTimezoneOffset() * 60000
-    )
-      .toISOString()
-      .slice(0, 16);
-
-    onChangeDate(isoLocal);
+    onChangeDate(toLocalDatetimeValue(now));
   }
 
   return (
     <div className="space-y-6 max-w-md">
+      {/* DATE */}
       <div className="space-y-2">
         <label className="block font-medium">
           Date de publication
@@ -46,6 +53,7 @@ export default function NewsStepPublish({
         </p>
       </div>
 
+      {/* ACTIONS */}
       <div className="flex gap-3 pt-2">
         <button
           type="button"
@@ -66,4 +74,3 @@ export default function NewsStepPublish({
     </div>
   );
 }
-
