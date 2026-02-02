@@ -244,8 +244,11 @@ export default function NewsStudio({ mode, newsId }: Props) {
     setPublishing(true);
 
     try {
+      // 🔑 Conversion datetime-local -> ISO UTC
+      const publishAtUTC = new Date(publishAt).toISOString();
+
       await api.post(`/news/publish/${internalNewsId}`, {
-        publish_at: publishAt,
+        publish_at: publishAtUTC,
       });
 
       alert("News publiée");
@@ -257,6 +260,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
       setPublishing(false);
     }
   }
+
 
   /* =========================================================
      UI — STUDIO
