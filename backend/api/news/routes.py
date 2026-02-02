@@ -105,16 +105,25 @@ def archive_route(id_news: str):
 # ============================================================
 # PUBLISH NEWS
 # ============================================================
+
 @router.post("/publish/{id_news}")
-def publish_route(id_news: str, published_at: str | None = None):
+def publish_route(
+    id_news: str,
+    data: NewsPublish,
+):
     try:
-        status = publish_news(id_news, published_at)
+        status = publish_news(
+            id_news=id_news,
+            published_at=data.publish_at,
+        )
         return {
             "status": "ok",
             "published_status": status,
         }
     except Exception as e:
         raise HTTPException(400, str(e))
+
+
 # ============================================================
 # IA — GENERATE NEWS (SOURCE → NEWS) — HTML ORIENTÉ (ROBUSTE)
 # ============================================================
