@@ -3,6 +3,7 @@ from api.news.models import (
     NewsCreate,
     NewsUpdate,
     NewsLinkedInPost,
+    NewsPublish,
     NewsLinkedInPostResponse,
 )
 from core.news.service import (
