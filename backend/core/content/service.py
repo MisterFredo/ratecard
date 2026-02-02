@@ -564,23 +564,35 @@ def publish_content(
 ):
     now = datetime.utcnow()
 
+    def bq_ts(dt: datetime) -> str:
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    # ---------------------------------------------------------
+    # PUBLICATION IMMÉDIATE OU DATE PASSÉE
+    # ---------------------------------------------------------
     if not published_at or published_at <= now:
         update_bq(
             table=TABLE_CONTENT,
             fields={
                 "STATUS": "PUBLISHED",
-                "PUBLISHED_AT": now,
+                "PUBLISHED_AT": bq_ts(published_at or now),
+                "UPDATED_AT": bq_ts(now),
             },
             where={"ID_CONTENT": id_content},
         )
         return "PUBLISHED"
 
+    # ---------------------------------------------------------
+    # PUBLICATION PLANIFIÉE
+    # ---------------------------------------------------------
     update_bq(
         table=TABLE_CONTENT,
         fields={
             "STATUS": "SCHEDULED",
-            "PUBLISHED_AT": published_at,
+            "PUBLISHED_AT": bq_ts(published_at),
+            "UPDATED_AT": bq_ts(now),
         },
         where={"ID_CONTENT": id_content},
     )
     return "SCHEDULED"
+
