@@ -43,6 +43,15 @@ class NewsUpdate(BaseModel):
     topics: Optional[List[str]] = []
     persons: Optional[List[str]] = []
 
+# ============================================================
+# PUBLISH NEWS
+# ============================================================
+class NewsPublish(BaseModel):
+    """
+    Payload de publication d'une news.
+    """
+    publish_at: Optional[str] = None
+
 
 # ============================================================
 # OUT (ADMIN / API)
