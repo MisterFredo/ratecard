@@ -560,33 +560,62 @@ def archive_content(id_content: str):
 # ============================================================
 def publish_content(
     id_content: str,
-    published_at: Optional[datetime] = None,
+    published_at: Optional[str] = None,
 ):
-    now = datetime.utcnow()
+    """
+    Publie un contenu analytique à une date donnée.
 
-    # Aucune date fournie → publication immédiate
+    Règles :
+    - si aucune date n’est fournie → publication immédiate
+    - si une date est fournie (passée ou future) → elle est respectée
+    - toutes les dates sont normalisées en UTC
+    """
+
+    now = datetime.now(timezone.utc)
+
+    # ---------------------------------------------------------
+    # AUCUNE DATE FOURNIE → PUBLICATION IMMÉDIATE
+    # ---------------------------------------------------------
     if not published_at:
         update_bq(
             table=TABLE_CONTENT,
             fields={
                 "STATUS": "PUBLISHED",
-                "PUBLISHED_AT": now,
+                "PUBLISHED_AT": now.isoformat(),
             },
             where={"ID_CONTENT": id_content},
         )
         return "PUBLISHED"
 
-    # Date fournie → on la respecte TOUJOURS
-    status = "PUBLISHED" if published_at <= now else "SCHEDULED"
+    # ---------------------------------------------------------
+    # DATE FOURNIE → PARSING + NORMALISATION
+    # ---------------------------------------------------------
+    try:
+        publish_date = datetime.fromisoformat(published_at)
+
+        # datetime-local (front) → datetime naïf → UTC forcé
+        if publish_date.tzinfo is None:
+            publish_date = publish_date.replace(
+                tzinfo=timezone.utc
+            )
+
+    except ValueError:
+        raise ValueError("Format de date invalide")
+
+    # ---------------------------------------------------------
+    # STATUT EN FONCTION DE LA DATE
+    # ---------------------------------------------------------
+    status = "PUBLISHED" if publish_date <= now else "SCHEDULED"
 
     update_bq(
         table=TABLE_CONTENT,
         fields={
             "STATUS": status,
-            "PUBLISHED_AT": published_at,
+            "PUBLISHED_AT": publish_date.isoformat(),
         },
         where={"ID_CONTENT": id_content},
     )
 
     return status
+
 
