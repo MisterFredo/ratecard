@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 type Props = {
   entityId: string;
 
-  // 🔑 UN SEUL VISUEL : RECTANGLE
+  // 🔑 UN SEUL VISUEL : LOGO RECTANGLE (affiché en contain)
   rectUrl: string | null;
 
   onUpdated: (data: { rectangle: boolean }) => void;
@@ -35,7 +35,7 @@ export default function VisualSection({
   }
 
   // ---------------------------------------------------------
-  // UPLOAD — RECTANGLE ONLY
+  // UPLOAD — LOGO RECTANGLE
   // ---------------------------------------------------------
   async function upload(file: File) {
     setLoading(true);
@@ -56,9 +56,9 @@ export default function VisualSection({
     } catch (e) {
       console.error(e);
       alert("❌ Erreur upload visuel");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   // ---------------------------------------------------------
@@ -73,24 +73,27 @@ export default function VisualSection({
       <p className="text-sm text-gray-600">
         Logo de la société.
         <br />
-        Le visuel est affiché sans déformation, proportions respectées.
+        Le visuel est affiché <strong>sans déformation</strong>, proportions
+        respectées.
       </p>
 
-      {loading && <p className="text-gray-500">Traitement…</p>}
+      {loading && (
+        <p className="text-sm text-gray-500">Traitement en cours…</p>
+      )}
 
-      {/* PREVIEW */}
+      {/* PREVIEW LOGO */}
       <div className="space-y-2">
         {rectUrl ? (
-          <div className="w-full max-w-xl h-40 bg-gray-50 border rounded flex items-center justify-center">
+          <div className="max-w-xl border rounded bg-white p-8 flex items-center justify-center">
             <img
               src={rectUrl}
               alt="Logo société"
-              className="max-h-28 max-w-[90%] object-contain"
+              className="max-h-40 w-auto object-contain"
             />
           </div>
         ) : (
-          <div className="w-full max-w-xl h-40 bg-gray-100 border rounded flex items-center justify-center text-sm text-gray-500">
-            Aucun visuel
+          <div className="max-w-xl h-40 bg-gray-100 border rounded flex items-center justify-center text-sm text-gray-500">
+            Aucun logo défini
           </div>
         )}
 
