@@ -16,6 +16,9 @@ router = APIRouter()
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 GCS_FOLDER = "companies"
 
+# ⚠️ Base publique GCS — DOIT matcher le front
+GCS_PUBLIC_BASE_URL = "https://storage.googleapis.com/ratecard-assets"
+
 
 # ============================================================
 # MODELS
@@ -107,10 +110,15 @@ def upload_company_visual(payload: CompanyVisualUpload):
             )
         ).result()
 
-        # 🔑 CONTRAT API CLAIR (comme pour les news)
+        public_url = (
+            f"{GCS_PUBLIC_BASE_URL}/{GCS_FOLDER}/{logo_filename}"
+        )
+
+        # 🔑 CONTRAT API CLAIR
         return {
             "status": "ok",
             "filename": logo_filename,
+            "public_url": public_url,
         }
 
     except Exception as e:
@@ -188,6 +196,7 @@ def reset_company_visual(payload: CompanyVisualReset):
         return {
             "status": "ok",
             "filename": None,
+            "public_url": None,
         }
 
     except Exception as e:
