@@ -13,19 +13,19 @@ export default function CreateCompany() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
 
-  // PARTENAIRE
+  // 🆕 PARTENAIRE
   const [isPartner, setIsPartner] = useState(false);
 
   const [companyId, setCompanyId] = useState<string | null>(null);
 
-  // LOGO SOCIÉTÉ (URL complète, fournie par l’API)
+  // 🔑 LOGO SOCIÉTÉ (URL complète)
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
 
-  // ---------------------------------------------------------
-  // CREATE
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     CREATE
+  --------------------------------------------------------- */
   async function save() {
     if (!name.trim()) {
       alert("Nom requis");
@@ -50,7 +50,9 @@ export default function CreateCompany() {
       setCompanyId(res.id_company);
       setRectUrl(null);
 
-      alert("Société créée. Vous pouvez maintenant ajouter un logo.");
+      alert(
+        "Société créée. Vous pouvez maintenant ajouter un logo."
+      );
     } catch (e) {
       console.error(e);
       alert("❌ Erreur création société");
@@ -59,26 +61,9 @@ export default function CreateCompany() {
     }
   }
 
-  // ---------------------------------------------------------
-  // RELOAD COMPANY (post upload logo)
-  // ---------------------------------------------------------
-  async function reloadCompany() {
-    if (!companyId) return;
-
-    try {
-      const res = await api.get(`/company/${companyId}`);
-      setRectUrl(
-        res.company?.MEDIA_LOGO_RECTANGLE_URL || null
-      );
-    } catch (e) {
-      console.error(e);
-      alert("❌ Erreur rechargement société");
-    }
-  }
-
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <div className="space-y-10">
       {/* HEADER */}
@@ -110,7 +95,10 @@ export default function CreateCompany() {
           </span>
         </label>
 
-        <HtmlEditor value={description} onChange={setDescription} />
+        <HtmlEditor
+          value={description}
+          onChange={setDescription}
+        />
       </div>
 
       {/* PARTENAIRE */}
@@ -120,7 +108,9 @@ export default function CreateCompany() {
           checked={isPartner}
           onChange={(e) => setIsPartner(e.target.checked)}
         />
-        <label className="text-sm">Société partenaire</label>
+        <label className="text-sm">
+          Société partenaire
+        </label>
       </div>
 
       {/* ACTION */}
@@ -137,10 +127,11 @@ export default function CreateCompany() {
         <VisualSection
           entityId={companyId}
           rectUrl={rectUrl}
-          onUpdated={reloadCompany}
+          onUpdated={(newUrl) => {
+            setRectUrl(newUrl);
+          }}
         />
       )}
     </div>
   );
 }
-
