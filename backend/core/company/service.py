@@ -72,6 +72,15 @@ def list_companies():
             c.NAME,
             CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
 
+            IF(
+                c.MEDIA_LOGO_RECTANGLE_ID IS NOT NULL,
+                CONCAT(
+                    "{GCS_PUBLIC_BASE_URL}/{COMPANY_MEDIA_PATH}/",
+                    c.MEDIA_LOGO_RECTANGLE_ID
+                ),
+                NULL
+            ) AS MEDIA_LOGO_RECTANGLE_URL,
+
             COALESCE(m.NB_ANALYSES, 0) AS NB_ANALYSES,
             COALESCE(m.LAST_30_DAYS, 0) AS DELTA_30D
 
@@ -89,11 +98,13 @@ def list_companies():
             "ID_COMPANY": r["ID_COMPANY"],
             "NAME": r["NAME"],
             "IS_PARTNER": bool(r["IS_PARTNER"]),
+            "MEDIA_LOGO_RECTANGLE_URL": r["MEDIA_LOGO_RECTANGLE_URL"],
             "NB_ANALYSES": r["NB_ANALYSES"],
             "DELTA_30D": r["DELTA_30D"],
         }
         for r in rows
     ]
+
 
 
 # ============================================================
