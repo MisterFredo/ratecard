@@ -21,7 +21,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   // 🆕 PARTENAIRE
   const [isPartner, setIsPartner] = useState(false);
 
-  // 🔑 LOGO SOCIÉTÉ (URL complète, source de vérité)
+  // 🔑 LOGO SOCIÉTÉ (URL complète – source de vérité backend)
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
@@ -32,8 +32,8 @@ export default function EditCompany({ params }: { params: { id: string } }) {
       setLoading(true);
 
       try {
-        const res = await api.get(`/company/${id}`);
-        const c = res.company;
+        // ⚠️ L’API renvoie DIRECTEMENT la société
+        const c = await api.get(`/company/${id}`);
 
         setName(c.NAME || "");
         setDescription(c.DESCRIPTION || "");
@@ -42,9 +42,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
 
         setIsPartner(Boolean(c.IS_PARTNER));
 
-        // ⚠️ IMPORTANT
-        // On récupère DIRECTEMENT l’URL renvoyée par l’API
-        // (ou null s’il n’y a pas de logo)
+        // 🔑 URL publique fournie par le backend
         setRectUrl(c.MEDIA_LOGO_RECTANGLE_URL || null);
       } catch (e) {
         console.error(e);
