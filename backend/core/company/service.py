@@ -16,12 +16,6 @@ from api.company.models import CompanyCreate, CompanyUpdate
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_COMPANY_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_METRICS"
 
-# ------------------------------------------------------------
-# GCS — BASE PUBLIQUE (SOURCE DE VÉRITÉ BACKEND)
-# ------------------------------------------------------------
-GCS_PUBLIC_BASE_URL = "https://storage.googleapis.com/ratecard-assets"
-COMPANY_MEDIA_PATH = "companies"
-
 
 # ============================================================
 # CREATE COMPANY — DATA ONLY (LOAD JOB, NO STREAMING)
@@ -39,7 +33,7 @@ def create_company(data: CompanyCreate) -> str:
         "NAME": data.name,
         "DESCRIPTION": data.description or None,
 
-        # 🔑 UN SEUL VISUEL SOCIÉTÉ — ID DU FICHIER GCS
+        # 🔑 UN SEUL VISUEL SOCIÉTÉ — NOM DE FICHIER GCS
         "MEDIA_LOGO_RECTANGLE_ID": None,
 
         "LINKEDIN_URL": data.linkedin_url or None,
@@ -71,31 +65,21 @@ def create_company(data: CompanyCreate) -> str:
 # ============================================================
 def list_companies():
     """
-    Liste des sociétés avec URL publique du logo
-    (prête à consommer côté frontend).
+    Liste des sociétés.
+    Le backend renvoie uniquement le nom du fichier GCS du logo.
+    L’URL est construite côté frontend.
     """
     sql = f"""
         SELECT
             c.ID_COMPANY,
             c.NAME,
             CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
-
-            IF(
-                c.MEDIA_LOGO_RECTANGLE_ID IS NOT NULL,
-                CONCAT(
-                    "{GCS_PUBLIC_BASE_URL}/{COMPANY_MEDIA_PATH}/",
-                    c.MEDIA_LOGO_RECTANGLE_ID
-                ),
-                NULL
-            ) AS MEDIA_LOGO_RECTANGLE_URL,
-
+            c.MEDIA_LOGO_RECTANGLE_ID,
             COALESCE(m.NB_ANALYSES, 0) AS NB_ANALYSES,
             COALESCE(m.LAST_30_DAYS, 0) AS DELTA_30D
-
         FROM `{TABLE_COMPANY}` c
         LEFT JOIN `{TABLE_COMPANY_METRICS}` m
           ON m.ID_COMPANY = c.ID_COMPANY
-
         ORDER BY NB_ANALYSES DESC, c.NAME ASC
     """
 
@@ -106,7 +90,7 @@ def list_companies():
             "ID_COMPANY": r["ID_COMPANY"],
             "NAME": r["NAME"],
             "IS_PARTNER": bool(r["IS_PARTNER"]),
-            "MEDIA_LOGO_RECTANGLE_URL": r["MEDIA_LOGO_RECTANGLE_URL"],
+            "MEDIA_LOGO_RECTANGLE_ID": r["MEDIA_LOGO_RECTANGLE_ID"],
             "NB_ANALYSES": r["NB_ANALYSES"],
             "DELTA_30D": r["DELTA_30D"],
         }
@@ -120,7 +104,7 @@ def list_companies():
 def get_company(company_id: str):
     """
     Récupère une société par ID.
-    Tous les champs sont normalisés et prêts pour le frontend.
+    Aucun calcul d’URL image côté backend.
     """
     sql = f"""
         SELECT
@@ -137,21 +121,8 @@ def get_company(company_id: str):
 
     row = dict(rows[0])
 
-    # --------------------------------------------------------
-    # NORMALISATION FRONT
-    # --------------------------------------------------------
-
-    # Bool JS fiable
+    # Normalisation bool pour le frontend
     row["IS_PARTNER"] = bool(row.get("IS_PARTNER"))
-
-    # URL publique du logo (SOURCE DE VÉRITÉ)
-    if row.get("MEDIA_LOGO_RECTANGLE_ID"):
-        row["MEDIA_LOGO_RECTANGLE_URL"] = (
-            f"{GCS_PUBLIC_BASE_URL}/{COMPANY_MEDIA_PATH}/"
-            f"{row['MEDIA_LOGO_RECTANGLE_ID']}"
-        )
-    else:
-        row["MEDIA_LOGO_RECTANGLE_URL"] = None
 
     return row
 
