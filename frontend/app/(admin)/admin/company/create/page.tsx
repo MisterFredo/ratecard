@@ -16,10 +16,9 @@ export default function CreateCompany() {
   // 🆕 PARTENAIRE
   const [isPartner, setIsPartner] = useState(false);
 
-  // ID généré après création
   const [companyId, setCompanyId] = useState<string | null>(null);
 
-  // 🔑 LOGO SOCIÉTÉ — URL complète (source de vérité)
+  // 🔑 LOGO SOCIÉTÉ (URL complète)
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
@@ -38,7 +37,7 @@ export default function CreateCompany() {
     try {
       const res = await api.post("/company/create", {
         name,
-        description: description || null,
+        description: description || null, // HTML
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
         is_partner: isPartner,
@@ -51,7 +50,9 @@ export default function CreateCompany() {
       setCompanyId(res.id_company);
       setRectUrl(null);
 
-      alert("Société créée. Vous pouvez maintenant ajouter un logo.");
+      alert(
+        "Société créée. Vous pouvez maintenant ajouter un logo."
+      );
     } catch (e) {
       console.error(e);
       alert("❌ Erreur création société");
