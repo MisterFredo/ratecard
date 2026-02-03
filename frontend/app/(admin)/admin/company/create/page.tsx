@@ -7,6 +7,8 @@ import VisualSection from "@/components/visuals/VisualSection";
 import EntityBaseForm from "@/components/forms/EntityBaseForm";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
+const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
 export default function CreateCompany() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -18,7 +20,7 @@ export default function CreateCompany() {
 
   const [companyId, setCompanyId] = useState<string | null>(null);
 
-  // 🔑 LOGO SOCIÉTÉ (URL complète)
+  // 🔑 UN SEUL VISUEL : RECTANGLE
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
@@ -37,7 +39,7 @@ export default function CreateCompany() {
     try {
       const res = await api.post("/company/create", {
         name,
-        description: description || null, // HTML
+        description: description || null, // 🔑 HTML
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
         is_partner: isPartner,
@@ -51,14 +53,14 @@ export default function CreateCompany() {
       setRectUrl(null);
 
       alert(
-        "Société créée. Vous pouvez maintenant ajouter un logo."
+        "Société créée. Vous pouvez maintenant ajouter un visuel rectangulaire."
       );
     } catch (e) {
       console.error(e);
       alert("❌ Erreur création société");
-    } finally {
-      setSaving(false);
     }
+
+    setSaving(false);
   }
 
   /* ---------------------------------------------------------
@@ -122,13 +124,17 @@ export default function CreateCompany() {
         {saving ? "Enregistrement…" : "Créer"}
       </button>
 
-      {/* VISUEL — POST CRÉATION */}
+      {/* VISUEL — POST CRÉATION (RECTANGLE ONLY) */}
       {companyId && (
         <VisualSection
           entityId={companyId}
           rectUrl={rectUrl}
-          onUpdated={(newUrl) => {
-            setRectUrl(newUrl);
+          onUpdated={({ rectangle }) => {
+            setRectUrl(
+              rectangle
+                ? `${GCS}/companies/COMPANY_${companyId}_rect.jpg`
+                : null
+            );
           }}
         />
       )}
