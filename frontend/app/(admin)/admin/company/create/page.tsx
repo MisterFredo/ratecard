@@ -7,8 +7,6 @@ import VisualSection from "@/components/visuals/VisualSection";
 import EntityBaseForm from "@/components/forms/EntityBaseForm";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
-const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
-
 export default function CreateCompany() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -20,7 +18,7 @@ export default function CreateCompany() {
 
   const [companyId, setCompanyId] = useState<string | null>(null);
 
-  // 🔑 UN SEUL VISUEL : RECTANGLE
+  // 🔑 LOGO SOCIÉTÉ (URL complète)
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
@@ -39,7 +37,7 @@ export default function CreateCompany() {
     try {
       const res = await api.post("/company/create", {
         name,
-        description: description || null, // 🔑 HTML
+        description: description || null, // HTML
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
         is_partner: isPartner,
@@ -53,14 +51,14 @@ export default function CreateCompany() {
       setRectUrl(null);
 
       alert(
-        "Société créée. Vous pouvez maintenant ajouter un visuel rectangulaire."
+        "Société créée. Vous pouvez maintenant ajouter un logo."
       );
     } catch (e) {
       console.error(e);
       alert("❌ Erreur création société");
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
   }
 
   /* ---------------------------------------------------------
@@ -124,23 +122,15 @@ export default function CreateCompany() {
         {saving ? "Enregistrement…" : "Créer"}
       </button>
 
-      {/* VISUEL — POST CRÉATION (RECTANGLE ONLY) */}
+      {/* VISUEL — POST CRÉATION */}
       {companyId && (
         <VisualSection
           entityId={companyId}
           rectUrl={rectUrl}
-          onUpdated={({ rectangle }) => {
-            if (!rectangle || !companyId) {
-              setRectUrl(null);
-              return;
-            }
-
-            setRectUrl(
-              `${GCS}/companies/COMPANY_${companyId}_rect.jpg?${Date.now()}`
-            );
+          onUpdated={(newUrl) => {
+            setRectUrl(newUrl);
           }}
         />
-
       )}
     </div>
   );
