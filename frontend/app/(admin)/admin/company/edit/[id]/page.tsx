@@ -150,8 +150,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
       <VisualSection
         entityId={id}
         rectUrl={rectUrl}
-        onUpdated={(newUrl) => {
-          setRectUrl(newUrl);
+        onUpdated={() => load()}
         }}
       />
     </div>
