@@ -23,7 +23,7 @@ GCS_FOLDER = "companies"
 
 class CompanyVisualUpload(BaseModel):
     id_company: str
-    base64_image: str        # image encodée côté frontend
+    base64_image: str  # image encodée côté frontend
 
 
 class CompanyVisualReset(BaseModel):
@@ -107,7 +107,11 @@ def upload_company_visual(payload: CompanyVisualUpload):
             )
         ).result()
 
-        return {"status": "ok"}
+        # 🔑 CONTRAT API CLAIR (comme pour les news)
+        return {
+            "status": "ok",
+            "filename": logo_filename,
+        }
 
     except Exception as e:
         raise HTTPException(
@@ -180,11 +184,14 @@ def reset_company_visual(payload: CompanyVisualReset):
             )
         ).result()
 
-        return {"status": "ok"}
+        # 🔑 CONTRAT API SYMÉTRIQUE
+        return {
+            "status": "ok",
+            "filename": None,
+        }
 
     except Exception as e:
         raise HTTPException(
             400,
             f"Erreur reset visuel société : {e}"
         )
-
