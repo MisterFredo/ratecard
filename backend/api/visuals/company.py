@@ -5,7 +5,6 @@ from pydantic import BaseModel
 from datetime import datetime
 import base64
 from io import BytesIO
-import uuid
 
 from PIL import Image
 from google.cloud import bigquery
@@ -18,8 +17,11 @@ router = APIRouter()
 
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 GCS_FOLDER = "companies"
-GCS_PUBLIC_BASE_URL = "https://storage.googleapis.com/ratecard-assets"
 
+
+# ============================================================
+# MODELS
+# ============================================================
 
 class CompanyVisualUpload(BaseModel):
     id_company: str
@@ -30,7 +32,15 @@ class CompanyVisualReset(BaseModel):
     id_company: str
 
 
-def generate_logo(image_bytes: bytes) -> bytes:
+# ============================================================
+# IMAGE UTILS
+# ============================================================
+
+def to_rectangle_logo(image_bytes: bytes) -> bytes:
+    """
+    Génère un logo rectangulaire simple.
+    Pas de versionnement, pas de logique avancée.
+    """
     img = Image.open(BytesIO(image_bytes)).convert("RGB")
     img.thumbnail((800, 400), Image.LANCZOS)
 
@@ -39,44 +49,125 @@ def generate_logo(image_bytes: bytes) -> bytes:
     return buf.getvalue()
 
 
+# ============================================================
+# UPLOAD LOGO SOCIÉTÉ
+# ============================================================
+
 @router.post("/upload")
 def upload_company_visual(payload: CompanyVisualUpload):
     try:
-        image_bytes = base64.b64decode(payload.base64_image)
+        try:
+            image_bytes = base64.b64decode(payload.base64_image)
+        except Exception:
+            raise HTTPException(400, "Base64 invalide")
 
-        logo_bytes = generate_logo(image_bytes)
+        logo_bytes = to_rectangle_logo(image_bytes)
 
-        # 🔥 VERSIONNEMENT — CLÉ DU FIX
-        logo_filename = (
-            f"COMPANY_{payload.id_company}_logo_{uuid.uuid4().hex}.jpg"
-        )
+        # 🔒 NOM DÉTERMINISTE — UNE SOCIÉTÉ = UN FICHIER
+        filename = f"COMPANY_{payload.id_company}_logo.jpg"
 
-        upload_bytes(GCS_FOLDER, logo_filename, logo_bytes)
+        # Upload GCS (overwrite autorisé)
+        upload_bytes(GCS_FOLDER, filename, logo_bytes)
 
+        # Update BigQuery
         client = get_bigquery_client()
-        sql = f"""
+        client.query(
+            f"""
             UPDATE `{TABLE_COMPANY}`
             SET
-                MEDIA_LOGO_RECTANGLE_ID = @logo,
+                MEDIA_LOGO_RECTANGLE_ID = @fname,
                 UPDATED_AT = @now
             WHERE ID_COMPANY = @id
-        """
-
-        client.query(
-            sql,
+            """,
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter("logo", "STRING", logo_filename),
-                    bigquery.ScalarQueryParameter("now", "TIMESTAMP", datetime.utcnow()),
-                    bigquery.ScalarQueryParameter("id", "STRING", payload.id_company),
+                    bigquery.ScalarQueryParameter(
+                        "fname", "STRING", filename
+                    ),
+                    bigquery.ScalarQueryParameter(
+                        "now", "TIMESTAMP", datetime.utcnow()
+                    ),
+                    bigquery.ScalarQueryParameter(
+                        "id", "STRING", payload.id_company
+                    ),
                 ]
             )
         ).result()
 
-        return {
-            "status": "ok",
-            "public_url": f"{GCS_PUBLIC_BASE_URL}/{GCS_FOLDER}/{logo_filename}",
-        }
+        return {"status": "ok", "filename": filename}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "company_visual_upload_failed",
+                "message": str(e),
+            }
+        )
+
+
+# ============================================================
+# RESET LOGO SOCIÉTÉ
+# ============================================================
+
+@router.post("/reset")
+def reset_company_visual(payload: CompanyVisualReset):
+    try:
+        client = get_bigquery_client()
+
+        rows = client.query(
+            f"""
+            SELECT MEDIA_LOGO_RECTANGLE_ID
+            FROM `{TABLE_COMPANY}`
+            WHERE ID_COMPANY = @id
+            """,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter(
+                        "id", "STRING", payload.id_company
+                    ),
+                ]
+            )
+        ).result()
+
+        old_file = None
+        for r in rows:
+            old_file = r["MEDIA_LOGO_RECTANGLE_ID"]
+
+        # Suppression GCS si existant
+        if old_file:
+            delete_file(GCS_FOLDER, old_file)
+
+        # Reset BigQuery
+        client.query(
+            f"""
+            UPDATE `{TABLE_COMPANY}`
+            SET
+                MEDIA_LOGO_RECTANGLE_ID = NULL,
+                UPDATED_AT = @now
+            WHERE ID_COMPANY = @id
+            """,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter(
+                        "now", "TIMESTAMP", datetime.utcnow()
+                    ),
+                    bigquery.ScalarQueryParameter(
+                        "id", "STRING", payload.id_company
+                    ),
+                ]
+            )
+        ).result()
+
+        return {"status": "ok"}
 
     except Exception as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "company_visual_reset_failed",
+                "message": str(e),
+            }
+        )
