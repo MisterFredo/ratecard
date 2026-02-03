@@ -7,6 +7,9 @@ import VisualSection from "@/components/visuals/VisualSection";
 import EntityBaseForm from "@/components/forms/EntityBaseForm";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+const COMPANY_MEDIA_PATH = "companies";
+
 export default function EditCompany({ params }: { params: { id: string } }) {
   const { id } = params;
 
@@ -20,8 +23,8 @@ export default function EditCompany({ params }: { params: { id: string } }) {
 
   const [isPartner, setIsPartner] = useState(false);
 
-  // 🔑 URL publique du logo (source de vérité backend)
-  const [rectUrl, setRectUrl] = useState<string | null>(null);
+  // 🔑 LOGO — NOM DU FICHIER GCS
+  const [logoFilename, setLogoFilename] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
      LOAD
@@ -38,11 +41,11 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         setDescription(c.DESCRIPTION || "");
         setLinkedinUrl(c.LINKEDIN_URL || "");
         setWebsiteUrl(c.WEBSITE_URL || "");
-
         setIsPartner(Boolean(c.IS_PARTNER));
 
-        // 🔑 URL fournie par le backend
-        setRectUrl(c.MEDIA_LOGO_RECTANGLE_URL || null);
+        setLogoFilename(
+          c.MEDIA_LOGO_RECTANGLE_ID || null
+        );
       } catch (e) {
         console.error(e);
         alert("❌ Erreur chargement société");
@@ -77,6 +80,13 @@ export default function EditCompany({ params }: { params: { id: string } }) {
       setSaving(false);
     }
   }
+
+  /* ---------------------------------------------------------
+     URL LOGO (SOURCE DE VÉRITÉ FRONT)
+  --------------------------------------------------------- */
+  const rectUrl = logoFilename
+    ? `${GCS_BASE_URL}/${COMPANY_MEDIA_PATH}/${logoFilename}`
+    : null;
 
   if (loading) {
     return <p>Chargement…</p>;
@@ -141,11 +151,17 @@ export default function EditCompany({ params }: { params: { id: string } }) {
       <VisualSection
         entityId={id}
         rectUrl={rectUrl}
-        onUpdated={(newUrl) => {
-          setRectUrl(newUrl);
+        onUpdated={async () => {
+          try {
+            const res = await api.get(`/company/${id}`);
+            setLogoFilename(
+              res.company?.MEDIA_LOGO_RECTANGLE_ID || null
+            );
+          } catch (e) {
+            console.error(e);
+          }
         }}
       />
     </div>
   );
 }
-
