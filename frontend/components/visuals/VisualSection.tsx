@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
 type Props = {
   entityId: string;
 
-  // 🔑 UN SEUL VISUEL : LOGO RECTANGLE (affiché en contain)
+  // 🔑 URL complète du logo (ou null)
   rectUrl: string | null;
 
-  onUpdated: (data: { rectangle: boolean }) => void;
+  // 🔑 le parent reçoit directement la nouvelle URL
+  onUpdated: (rectUrl: string | null) => void;
 };
 
 export default function VisualSection({
@@ -19,9 +22,9 @@ export default function VisualSection({
 }: Props) {
   const [loading, setLoading] = useState(false);
 
-  // ---------------------------------------------------------
-  // Convert file → base64 (sans header)
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     Convert file → base64 (sans header)
+  --------------------------------------------------------- */
   function fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -34,9 +37,9 @@ export default function VisualSection({
     });
   }
 
-  // ---------------------------------------------------------
-  // UPLOAD — LOGO RECTANGLE
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     UPLOAD — LOGO SOCIÉTÉ
+  --------------------------------------------------------- */
   async function upload(file: File) {
     setLoading(true);
 
@@ -48,11 +51,13 @@ export default function VisualSection({
         base64_image: base64,
       });
 
-      if (res.status !== "ok") {
+      if (res.status !== "ok" || !res.filename) {
         throw new Error("Upload échoué");
       }
 
-      onUpdated({ rectangle: true });
+      // 🔑 source de vérité = backend
+      const newUrl = `${GCS_BASE_URL}/companies/${res.filename}`;
+      onUpdated(newUrl);
     } catch (e) {
       console.error(e);
       alert("❌ Erreur upload visuel");
@@ -61,20 +66,19 @@ export default function VisualSection({
     }
   }
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <div className="p-4 border rounded bg-white space-y-4">
       <h2 className="text-xl font-semibold text-ratecard-blue">
-        Visuel (logo)
+        Logo de la société
       </h2>
 
       <p className="text-sm text-gray-600">
-        Logo de la société.
+        Logo affiché sans déformation.
         <br />
-        Le visuel est affiché <strong>sans déformation</strong>, proportions
-        respectées.
+        Les proportions sont <strong>strictement respectées</strong>.
       </p>
 
       {loading && (
@@ -101,9 +105,11 @@ export default function VisualSection({
           type="file"
           accept="image/*"
           className="mt-2"
-          onChange={(e) =>
-            e.target.files && upload(e.target.files[0])
-          }
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              upload(e.target.files[0]);
+            }
+          }}
         />
       </div>
     </div>
