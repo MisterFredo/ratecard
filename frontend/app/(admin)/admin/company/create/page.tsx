@@ -7,27 +7,25 @@ import VisualSection from "@/components/visuals/VisualSection";
 import EntityBaseForm from "@/components/forms/EntityBaseForm";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
-const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
-
 export default function CreateCompany() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
 
-  // 🆕 PARTENAIRE
+  // PARTENAIRE
   const [isPartner, setIsPartner] = useState(false);
 
   const [companyId, setCompanyId] = useState<string | null>(null);
 
-  // 🔑 UN SEUL VISUEL : RECTANGLE
+  // LOGO SOCIÉTÉ (URL complète, fournie par l’API)
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
 
-  /* ---------------------------------------------------------
-     CREATE
-  --------------------------------------------------------- */
+  // ---------------------------------------------------------
+  // CREATE
+  // ---------------------------------------------------------
   async function save() {
     if (!name.trim()) {
       alert("Nom requis");
@@ -39,7 +37,7 @@ export default function CreateCompany() {
     try {
       const res = await api.post("/company/create", {
         name,
-        description: description || null, // 🔑 HTML
+        description: description || null, // HTML
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
         is_partner: isPartner,
@@ -52,20 +50,35 @@ export default function CreateCompany() {
       setCompanyId(res.id_company);
       setRectUrl(null);
 
-      alert(
-        "Société créée. Vous pouvez maintenant ajouter un visuel rectangulaire."
-      );
+      alert("Société créée. Vous pouvez maintenant ajouter un logo.");
     } catch (e) {
       console.error(e);
       alert("❌ Erreur création société");
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
   }
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
+  // ---------------------------------------------------------
+  // RELOAD COMPANY (post upload logo)
+  // ---------------------------------------------------------
+  async function reloadCompany() {
+    if (!companyId) return;
+
+    try {
+      const res = await api.get(`/company/${companyId}`);
+      setRectUrl(
+        res.company?.MEDIA_LOGO_RECTANGLE_URL || null
+      );
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur rechargement société");
+    }
+  }
+
+  // ---------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------
   return (
     <div className="space-y-10">
       {/* HEADER */}
@@ -97,10 +110,7 @@ export default function CreateCompany() {
           </span>
         </label>
 
-        <HtmlEditor
-          value={description}
-          onChange={setDescription}
-        />
+        <HtmlEditor value={description} onChange={setDescription} />
       </div>
 
       {/* PARTENAIRE */}
@@ -110,9 +120,7 @@ export default function CreateCompany() {
           checked={isPartner}
           onChange={(e) => setIsPartner(e.target.checked)}
         />
-        <label className="text-sm">
-          Société partenaire
-        </label>
+        <label className="text-sm">Société partenaire</label>
       </div>
 
       {/* ACTION */}
@@ -124,18 +132,12 @@ export default function CreateCompany() {
         {saving ? "Enregistrement…" : "Créer"}
       </button>
 
-      {/* VISUEL — POST CRÉATION (RECTANGLE ONLY) */}
+      {/* VISUEL — POST CRÉATION */}
       {companyId && (
         <VisualSection
           entityId={companyId}
           rectUrl={rectUrl}
-          onUpdated={({ rectangle }) => {
-            setRectUrl(
-              rectangle
-                ? `${GCS}/companies/COMPANY_${companyId}_rect.jpg`
-                : null
-            );
-          }}
+          onUpdated={reloadCompany}
         />
       )}
     </div>
