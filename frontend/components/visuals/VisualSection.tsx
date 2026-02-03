@@ -52,7 +52,6 @@ export default function VisualSection({
         throw new Error("Upload échoué");
       }
 
-      // 🔑 rectangle mis à jour
       onUpdated({ rectangle: true });
     } catch (e) {
       console.error(e);
@@ -68,27 +67,30 @@ export default function VisualSection({
   return (
     <div className="p-4 border rounded bg-white space-y-4">
       <h2 className="text-xl font-semibold text-ratecard-blue">
-        Visuel (16:9)
+        Visuel (logo)
       </h2>
 
       <p className="text-sm text-gray-600">
-        Un seul visuel est utilisé pour la société.
+        Logo de la société.
         <br />
-        Format recommandé : <strong>16:9</strong> (ex. 1200×675).
+        Le visuel est affiché sans déformation, proportions respectées.
       </p>
 
       {loading && <p className="text-gray-500">Traitement…</p>}
 
-      {/* PREVIEW RECTANGLE */}
-      <div>
+      {/* PREVIEW */}
+      <div className="space-y-2">
         {rectUrl ? (
-          <img
-            src={rectUrl}
-            className="w-full max-w-xl border rounded object-cover"
-          />
+          <div className="w-full max-w-xl h-40 bg-gray-50 border rounded flex items-center justify-center">
+            <img
+              src={rectUrl}
+              alt="Logo société"
+              className="max-h-28 max-w-[90%] object-contain"
+            />
+          </div>
         ) : (
           <div className="w-full max-w-xl h-40 bg-gray-100 border rounded flex items-center justify-center text-sm text-gray-500">
-            Aucun visuel rectangulaire
+            Aucun visuel
           </div>
         )}
 
