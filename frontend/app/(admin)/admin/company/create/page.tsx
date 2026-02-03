@@ -130,13 +130,17 @@ export default function CreateCompany() {
           entityId={companyId}
           rectUrl={rectUrl}
           onUpdated={({ rectangle }) => {
+            if (!rectangle || !companyId) {
+              setRectUrl(null);
+              return;
+            }
+
             setRectUrl(
-              rectangle
-                ? `${GCS}/companies/COMPANY_${companyId}_rect.jpg`
-                : null
+              `${GCS}/companies/COMPANY_${companyId}_rect.jpg?${Date.now()}`
             );
           }}
         />
+
       )}
     </div>
   );
