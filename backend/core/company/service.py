@@ -1,3 +1,5 @@
+# backend/core/company/service.py
+
 import uuid
 from datetime import datetime
 from google.cloud import bigquery
@@ -14,8 +16,9 @@ from api.company.models import CompanyCreate, CompanyUpdate
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_COMPANY_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_METRICS"
 
-# ⚠️ Base publique GCS — définie LOCALMENT (pas dans config)
-# À aligner avec ce que le front utilise déjà
+# ------------------------------------------------------------
+# GCS — BASE PUBLIQUE (SOURCE DE VÉRITÉ BACKEND)
+# ------------------------------------------------------------
 GCS_PUBLIC_BASE_URL = "https://storage.googleapis.com/ratecard-assets"
 COMPANY_MEDIA_PATH = "companies"
 
@@ -25,7 +28,8 @@ COMPANY_MEDIA_PATH = "companies"
 # ============================================================
 def create_company(data: CompanyCreate) -> str:
     """
-    Crée une société.
+    Crée une société (données uniquement).
+    Le visuel est uploadé dans un second temps.
     """
     company_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
@@ -35,7 +39,7 @@ def create_company(data: CompanyCreate) -> str:
         "NAME": data.name,
         "DESCRIPTION": data.description or None,
 
-        # 🔑 UN SEUL VISUEL : RECTANGLE
+        # 🔑 UN SEUL VISUEL SOCIÉTÉ — ID DU FICHIER GCS
         "MEDIA_LOGO_RECTANGLE_ID": None,
 
         "LINKEDIN_URL": data.linkedin_url or None,
@@ -63,9 +67,13 @@ def create_company(data: CompanyCreate) -> str:
 
 
 # ============================================================
-# LIST COMPANIES
+# LIST COMPANIES (ADMIN / LISTING)
 # ============================================================
 def list_companies():
+    """
+    Liste des sociétés avec URL publique du logo
+    (prête à consommer côté frontend).
+    """
     sql = f"""
         SELECT
             c.ID_COMPANY,
@@ -106,14 +114,13 @@ def list_companies():
     ]
 
 
-
 # ============================================================
-# GET ONE COMPANY
+# GET ONE COMPANY (ADMIN / EDIT)
 # ============================================================
 def get_company(company_id: str):
     """
     Récupère une société par ID.
-    Champs prêts à consommer par le frontend.
+    Tous les champs sont normalisés et prêts pour le frontend.
     """
     sql = f"""
         SELECT
@@ -131,13 +138,13 @@ def get_company(company_id: str):
     row = dict(rows[0])
 
     # --------------------------------------------------------
-    # NORMALISATION
+    # NORMALISATION FRONT
     # --------------------------------------------------------
 
-    # IS_PARTNER → bool JS fiable
+    # Bool JS fiable
     row["IS_PARTNER"] = bool(row.get("IS_PARTNER"))
 
-    # URL publique du logo rectangle (source de vérité backend)
+    # URL publique du logo (SOURCE DE VÉRITÉ)
     if row.get("MEDIA_LOGO_RECTANGLE_ID"):
         row["MEDIA_LOGO_RECTANGLE_URL"] = (
             f"{GCS_PUBLIC_BASE_URL}/{COMPANY_MEDIA_PATH}/"
@@ -148,12 +155,13 @@ def get_company(company_id: str):
 
     return row
 
+
 # ============================================================
 # UPDATE COMPANY
 # ============================================================
 def update_company(id_company: str, data: CompanyUpdate) -> bool:
     """
-    Met à jour une société existante.
+    Met à jour une société existante (hors visuel).
     """
     values = data.dict(exclude_unset=True)
 
