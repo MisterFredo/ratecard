@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from google.cloud import bigquery
 
-from config import BQ_PROJECT, BQ_DATASET, GCS_PUBLIC_BASE_URL
+from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import (
     query_bq,
     update_bq,
@@ -14,7 +14,9 @@ from api.company.models import CompanyCreate, CompanyUpdate
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_COMPANY_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_METRICS"
 
-# chemin logique des visuels (standard Ratecard)
+# ⚠️ Base publique GCS — définie LOCALMENT (pas dans config)
+# À aligner avec ce que le front utilise déjà
+GCS_PUBLIC_BASE_URL = "https://storage.googleapis.com/ratecard-assets"
 COMPANY_MEDIA_PATH = "companies"
 
 
@@ -24,12 +26,6 @@ COMPANY_MEDIA_PATH = "companies"
 def create_company(data: CompanyCreate) -> str:
     """
     Crée une société.
-
-    Règles :
-    - aucun champ média au create
-    - insertion via LOAD JOB (pas de streaming)
-    - un seul visuel possible : rectangle (16:9)
-    - IS_PARTNER géré dès la création
     """
     company_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
@@ -61,13 +57,13 @@ def create_company(data: CompanyCreate) -> str:
             write_disposition="WRITE_APPEND"
         ),
     )
-    job.result()  # ⬅️ bloquant = ligne immédiatement stable
+    job.result()
 
     return company_id
 
 
 # ============================================================
-# LIST COMPANIES (ADMIN / LISTING)
+# LIST COMPANIES
 # ============================================================
 def list_companies():
     sql = f"""
@@ -101,23 +97,21 @@ def list_companies():
 
 
 # ============================================================
-# GET ONE COMPANY (ADMIN / EDIT)
+# GET ONE COMPANY
 # ============================================================
 def get_company(company_id: str):
     """
     Récupère une société par ID.
-    Retourne des champs prêts à consommer par le frontend.
+    Champs prêts à consommer par le frontend.
     """
     sql = f"""
         SELECT
             c.*,
 
-            -- URL publique du logo rectangle (si présent)
             IF(
                 c.MEDIA_LOGO_RECTANGLE_ID IS NOT NULL,
                 CONCAT(
-                    @gcs_base_url,
-                    "/{COMPANY_MEDIA_PATH}/",
+                    "{GCS_PUBLIC_BASE_URL}/{COMPANY_MEDIA_PATH}/",
                     c.MEDIA_LOGO_RECTANGLE_ID
                 ),
                 NULL
@@ -128,27 +122,21 @@ def get_company(company_id: str):
         LIMIT 1
     """
 
-    rows = query_bq(
-        sql,
-        {
-            "id": company_id,
-            "gcs_base_url": GCS_PUBLIC_BASE_URL,
-        }
-    )
+    rows = query_bq(sql, {"id": company_id})
 
     if not rows:
         return None
 
     row = dict(rows[0])
 
-    # 🔒 normalisation explicite pour le frontend
+    # 🔒 normalisation explicite
     row["IS_PARTNER"] = bool(row.get("IS_PARTNER"))
 
     return row
 
 
 # ============================================================
-# UPDATE COMPANY — DATA + MEDIA (POST-CREATION)
+# UPDATE COMPANY
 # ============================================================
 def update_company(id_company: str, data: CompanyUpdate) -> bool:
     """
@@ -159,7 +147,6 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
     if not values:
         return False
 
-    # normalisation explicite
     if "is_partner" in values:
         values["is_partner"] = bool(values["is_partner"])
 
