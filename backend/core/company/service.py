@@ -117,17 +117,7 @@ def get_company(company_id: str):
     """
     sql = f"""
         SELECT
-            c.*,
-
-            IF(
-                c.MEDIA_LOGO_RECTANGLE_ID IS NOT NULL,
-                CONCAT(
-                    "{GCS_PUBLIC_BASE_URL}/{COMPANY_MEDIA_PATH}/",
-                    c.MEDIA_LOGO_RECTANGLE_ID
-                ),
-                NULL
-            ) AS MEDIA_LOGO_RECTANGLE_URL
-
+            c.*
         FROM `{TABLE_COMPANY}` c
         WHERE c.ID_COMPANY = @id
         LIMIT 1
@@ -140,11 +130,23 @@ def get_company(company_id: str):
 
     row = dict(rows[0])
 
-    # 🔒 normalisation explicite
+    # --------------------------------------------------------
+    # NORMALISATION
+    # --------------------------------------------------------
+
+    # IS_PARTNER → bool JS fiable
     row["IS_PARTNER"] = bool(row.get("IS_PARTNER"))
 
-    return row
+    # URL publique du logo rectangle (source de vérité backend)
+    if row.get("MEDIA_LOGO_RECTANGLE_ID"):
+        row["MEDIA_LOGO_RECTANGLE_URL"] = (
+            f"{GCS_PUBLIC_BASE_URL}/{COMPANY_MEDIA_PATH}/"
+            f"{row['MEDIA_LOGO_RECTANGLE_ID']}"
+        )
+    else:
+        row["MEDIA_LOGO_RECTANGLE_URL"] = None
 
+    return row
 
 # ============================================================
 # UPDATE COMPANY
