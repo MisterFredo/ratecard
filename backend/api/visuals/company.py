@@ -31,63 +31,61 @@ class CompanyVisualReset(BaseModel):
 
 
 # ============================================================
-# IMAGE UTILS — RECTANGLE ONLY (16:9)
+# IMAGE UTILS — LOGO ONLY (NO CROP)
 # ============================================================
 
-def generate_rectangle(image_bytes: bytes) -> bytes:
+def generate_logo(image_bytes: bytes) -> bytes:
     """
-    Génère un visuel rectangulaire 1200x675 (16:9) centré.
+    Génère un logo sans crop, proportions respectées.
+    Redimensionnement max uniquement.
     """
     img = Image.open(BytesIO(image_bytes)).convert("RGB")
 
-    target_ratio = 16 / 9
-    img_ratio = img.width / img.height
+    MAX_WIDTH = 800
+    MAX_HEIGHT = 400
 
-    if img_ratio > target_ratio:
-        # trop large → crop largeur
-        new_width = int(img.height * target_ratio)
-        left = (img.width - new_width) // 2
-        rect = img.crop((left, 0, left + new_width, img.height))
-    else:
-        # trop haut → crop hauteur
-        new_height = int(img.width / target_ratio)
-        top = (img.height - new_height) // 2
-        rect = img.crop((0, top, img.width, top + new_height))
-
-    rect = rect.resize((1200, 675), Image.LANCZOS)
+    img.thumbnail((MAX_WIDTH, MAX_HEIGHT), Image.LANCZOS)
 
     buf = BytesIO()
-    rect.save(buf, format="JPEG", quality=90)
+    img.save(buf, format="JPEG", quality=90)
 
     return buf.getvalue()
 
 
 # ============================================================
-# UPLOAD VISUAL — RECTANGLE ONLY
+# UPLOAD VISUAL — LOGO ONLY
 # ============================================================
 
 @router.post("/upload")
 def upload_company_visual(payload: CompanyVisualUpload):
     try:
+        # -----------------------------------------------------
         # Decode base64
+        # -----------------------------------------------------
         try:
             image_bytes = base64.b64decode(payload.base64_image)
         except Exception:
             raise HTTPException(400, "Base64 invalide")
 
-        # Generate rectangle
-        rect_bytes = generate_rectangle(image_bytes)
-        rect_filename = f"COMPANY_{payload.id_company}_rect.jpg"
+        # -----------------------------------------------------
+        # Generate logo (NO CROP)
+        # -----------------------------------------------------
+        logo_bytes = generate_logo(image_bytes)
+        logo_filename = f"COMPANY_{payload.id_company}_logo.jpg"
 
+        # -----------------------------------------------------
         # Upload to GCS
-        upload_bytes(GCS_FOLDER, rect_filename, rect_bytes)
+        # -----------------------------------------------------
+        upload_bytes(GCS_FOLDER, logo_filename, logo_bytes)
 
+        # -----------------------------------------------------
         # Update BigQuery
+        # -----------------------------------------------------
         client = get_bigquery_client()
         sql = f"""
             UPDATE `{TABLE_COMPANY}`
             SET
-                MEDIA_LOGO_RECTANGLE_ID = @rect,
+                MEDIA_LOGO_RECTANGLE_ID = @logo,
                 UPDATED_AT = @now
             WHERE ID_COMPANY = @id
         """
@@ -97,7 +95,7 @@ def upload_company_visual(payload: CompanyVisualUpload):
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
                     bigquery.ScalarQueryParameter(
-                        "rect", "STRING", rect_filename
+                        "logo", "STRING", logo_filename
                     ),
                     bigquery.ScalarQueryParameter(
                         "now", "TIMESTAMP", datetime.utcnow()
@@ -119,7 +117,7 @@ def upload_company_visual(payload: CompanyVisualUpload):
 
 
 # ============================================================
-# RESET VISUAL — RECTANGLE ONLY
+# RESET VISUAL — LOGO ONLY
 # ============================================================
 
 @router.post("/reset")
@@ -127,7 +125,9 @@ def reset_company_visual(payload: CompanyVisualReset):
     try:
         client = get_bigquery_client()
 
-        # Récupération ancien visuel rectangle
+        # -----------------------------------------------------
+        # Récupération ancien logo
+        # -----------------------------------------------------
         sql_select = f"""
             SELECT MEDIA_LOGO_RECTANGLE_ID
             FROM `{TABLE_COMPANY}`
@@ -145,15 +145,19 @@ def reset_company_visual(payload: CompanyVisualReset):
             )
         ).result()
 
-        old_rect = None
+        old_logo = None
         for r in rows:
-            old_rect = r["MEDIA_LOGO_RECTANGLE_ID"]
+            old_logo = r["MEDIA_LOGO_RECTANGLE_ID"]
 
+        # -----------------------------------------------------
         # Suppression GCS
-        if old_rect:
-            delete_file(GCS_FOLDER, old_rect)
+        # -----------------------------------------------------
+        if old_logo:
+            delete_file(GCS_FOLDER, old_logo)
 
+        # -----------------------------------------------------
         # Reset BigQuery
+        # -----------------------------------------------------
         sql_update = f"""
             UPDATE `{TABLE_COMPANY}`
             SET
@@ -183,3 +187,4 @@ def reset_company_visual(payload: CompanyVisualReset):
             400,
             f"Erreur reset visuel société : {e}"
         )
+
