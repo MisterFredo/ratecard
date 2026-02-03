@@ -18,10 +18,9 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
 
-  // 🆕 PARTENAIRE
   const [isPartner, setIsPartner] = useState(false);
 
-  // 🔑 LOGO SOCIÉTÉ (URL complète – source de vérité backend)
+  // 🔑 URL publique du logo (source de vérité backend)
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
@@ -32,8 +31,8 @@ export default function EditCompany({ params }: { params: { id: string } }) {
       setLoading(true);
 
       try {
-        // ⚠️ L’API renvoie DIRECTEMENT la société
-        const c = await api.get(`/company/${id}`);
+        const res = await api.get(`/company/${id}`);
+        const c = res.company;
 
         setName(c.NAME || "");
         setDescription(c.DESCRIPTION || "");
@@ -42,7 +41,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
 
         setIsPartner(Boolean(c.IS_PARTNER));
 
-        // 🔑 URL publique fournie par le backend
+        // 🔑 URL fournie par le backend
         setRectUrl(c.MEDIA_LOGO_RECTANGLE_URL || null);
       } catch (e) {
         console.error(e);
@@ -88,7 +87,6 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   --------------------------------------------------------- */
   return (
     <div className="space-y-10">
-      {/* HEADER */}
       <div className="flex justify-between">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
           Modifier la société
@@ -98,7 +96,6 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         </Link>
       </div>
 
-      {/* INFOS DE BASE */}
       <EntityBaseForm
         values={{ name, linkedinUrl, websiteUrl }}
         onChange={{
@@ -108,7 +105,6 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         }}
       />
 
-      {/* DESCRIPTION HTML */}
       <div className="space-y-2">
         <label className="block font-medium">
           Description
@@ -123,7 +119,6 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         />
       </div>
 
-      {/* PARTENAIRE */}
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
@@ -135,7 +130,6 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         </label>
       </div>
 
-      {/* ACTION */}
       <button
         className="bg-ratecard-blue px-4 py-2 text-white rounded"
         onClick={save}
@@ -144,7 +138,6 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
-      {/* VISUEL — LOGO SOCIÉTÉ */}
       <VisualSection
         entityId={id}
         rectUrl={rectUrl}
@@ -155,3 +148,4 @@ export default function EditCompany({ params }: { params: { id: string } }) {
     </div>
   );
 }
+
