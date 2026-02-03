@@ -6,11 +6,11 @@ import { api } from "@/lib/api";
 type Props = {
   entityId: string;
 
-  // 🔑 URL complète du logo (ou null)
+  // 🔑 URL calculée par le parent (ou null)
   rectUrl: string | null;
 
-  // 🔑 le parent reçoit directement la nouvelle URL
-  onUpdated: (rectUrl: string | null) => void;
+  // 🔑 signal simple : “le visuel a changé”
+  onUpdated: () => void;
 };
 
 export default function VisualSection({
@@ -49,12 +49,12 @@ export default function VisualSection({
         base64_image: base64,
       });
 
-      if (res.status !== "ok" || !res.public_url) {
+      if (res.status !== "ok") {
         throw new Error("Upload échoué");
       }
 
-      // ✅ SOURCE DE VÉRITÉ = BACKEND
-      onUpdated(res.public_url);
+      // ✅ on ne manipule PLUS d’URL ici
+      onUpdated();
     } catch (e) {
       console.error(e);
       alert("❌ Erreur upload visuel");
