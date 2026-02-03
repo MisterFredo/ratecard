@@ -18,44 +18,48 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
 
-  // PARTENAIRE
+  // 🆕 PARTENAIRE
   const [isPartner, setIsPartner] = useState(false);
 
-  // LOGO SOCIÉTÉ (URL complète)
+  // 🔑 LOGO SOCIÉTÉ (URL complète, source de vérité)
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  // ---------------------------------------------------------
-  // LOAD COMPANY
-  // ---------------------------------------------------------
-  async function loadCompany() {
-    setLoading(true);
-
-    try {
-      const res = await api.get(`/company/${id}`);
-      const c = res.company;
-
-      setName(c.NAME || "");
-      setDescription(c.DESCRIPTION || "");
-      setLinkedinUrl(c.LINKEDIN_URL || "");
-      setWebsiteUrl(c.WEBSITE_URL || "");
-
-      setIsPartner(Boolean(c.IS_PARTNER));
-      setRectUrl(c.MEDIA_LOGO_RECTANGLE_URL || null);
-    } catch (e) {
-      console.error(e);
-      alert("❌ Erreur chargement société");
-    } finally {
-      setLoading(false);
-    }
-  }
-
+  /* ---------------------------------------------------------
+     LOAD
+  --------------------------------------------------------- */
   useEffect(() => {
-    loadCompany();
+    async function load() {
+      setLoading(true);
+
+      try {
+        const res = await api.get(`/company/${id}`);
+        const c = res.company;
+
+        setName(c.NAME || "");
+        setDescription(c.DESCRIPTION || "");
+        setLinkedinUrl(c.LINKEDIN_URL || "");
+        setWebsiteUrl(c.WEBSITE_URL || "");
+
+        setIsPartner(Boolean(c.IS_PARTNER));
+
+        // ⚠️ IMPORTANT
+        // On récupère DIRECTEMENT l’URL renvoyée par l’API
+        // (ou null s’il n’y a pas de logo)
+        setRectUrl(c.MEDIA_LOGO_RECTANGLE_URL || null);
+      } catch (e) {
+        console.error(e);
+        alert("❌ Erreur chargement société");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
   }, [id]);
 
-  // ---------------------------------------------------------
-  // SAVE
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     SAVE
+  --------------------------------------------------------- */
   async function save() {
     setSaving(true);
 
@@ -81,9 +85,9 @@ export default function EditCompany({ params }: { params: { id: string } }) {
     return <p>Chargement…</p>;
   }
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <div className="space-y-10">
       {/* HEADER */}
@@ -115,7 +119,10 @@ export default function EditCompany({ params }: { params: { id: string } }) {
           </span>
         </label>
 
-        <HtmlEditor value={description} onChange={setDescription} />
+        <HtmlEditor
+          value={description}
+          onChange={setDescription}
+        />
       </div>
 
       {/* PARTENAIRE */}
@@ -125,7 +132,9 @@ export default function EditCompany({ params }: { params: { id: string } }) {
           checked={isPartner}
           onChange={(e) => setIsPartner(e.target.checked)}
         />
-        <label className="text-sm">Société partenaire</label>
+        <label className="text-sm">
+          Société partenaire
+        </label>
       </div>
 
       {/* ACTION */}
@@ -141,7 +150,9 @@ export default function EditCompany({ params }: { params: { id: string } }) {
       <VisualSection
         entityId={id}
         rectUrl={rectUrl}
-        onUpdated={loadCompany}
+        onUpdated={(newUrl) => {
+          setRectUrl(newUrl);
+        }}
       />
     </div>
   );
