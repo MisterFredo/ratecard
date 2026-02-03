@@ -1,3 +1,4 @@
+// frontend/app/(admin)/admin/company/create/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -6,6 +7,9 @@ import { api } from "@/lib/api";
 import VisualSection from "@/components/visuals/VisualSection";
 import EntityBaseForm from "@/components/forms/EntityBaseForm";
 import HtmlEditor from "@/components/admin/HtmlEditor";
+
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+const COMPANY_MEDIA_PATH = "companies";
 
 export default function CreateCompany() {
   const [name, setName] = useState("");
@@ -18,8 +22,8 @@ export default function CreateCompany() {
 
   const [companyId, setCompanyId] = useState<string | null>(null);
 
-  // LOGO SOCIÉTÉ (URL complète, fournie par l’API)
-  const [rectUrl, setRectUrl] = useState<string | null>(null);
+  // 🔑 LOGO SOCIÉTÉ — NOM DU FICHIER GCS
+  const [logoFilename, setLogoFilename] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
 
@@ -37,7 +41,7 @@ export default function CreateCompany() {
     try {
       const res = await api.post("/company/create", {
         name,
-        description: description || null, // HTML
+        description: description || null,
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
         is_partner: isPartner,
@@ -48,7 +52,7 @@ export default function CreateCompany() {
       }
 
       setCompanyId(res.id_company);
-      setRectUrl(null);
+      setLogoFilename(null);
 
       alert("Société créée. Vous pouvez maintenant ajouter un logo.");
     } catch (e) {
@@ -67,14 +71,21 @@ export default function CreateCompany() {
 
     try {
       const res = await api.get(`/company/${companyId}`);
-      setRectUrl(
-        res.company?.MEDIA_LOGO_RECTANGLE_URL || null
+      setLogoFilename(
+        res.company?.MEDIA_LOGO_RECTANGLE_ID || null
       );
     } catch (e) {
       console.error(e);
       alert("❌ Erreur rechargement société");
     }
   }
+
+  // ---------------------------------------------------------
+  // URL LOGO (SOURCE DE VÉRITÉ FRONT)
+  // ---------------------------------------------------------
+  const rectUrl = logoFilename
+    ? `${GCS_BASE_URL}/${COMPANY_MEDIA_PATH}/${logoFilename}`
+    : null;
 
   // ---------------------------------------------------------
   // UI
@@ -143,3 +154,4 @@ export default function CreateCompany() {
     </div>
   );
 }
+
