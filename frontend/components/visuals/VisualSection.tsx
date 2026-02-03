@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 
-const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
-
 type Props = {
   entityId: string;
 
@@ -51,13 +49,12 @@ export default function VisualSection({
         base64_image: base64,
       });
 
-      if (res.status !== "ok" || !res.filename) {
+      if (res.status !== "ok" || !res.public_url) {
         throw new Error("Upload échoué");
       }
 
-      // 🔑 source de vérité = backend
-      const newUrl = `${GCS_BASE_URL}/companies/${res.filename}`;
-      onUpdated(newUrl);
+      // ✅ SOURCE DE VÉRITÉ = BACKEND
+      onUpdated(res.public_url);
     } catch (e) {
       console.error(e);
       alert("❌ Erreur upload visuel");
