@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from google.cloud import bigquery
 
-from config import BQ_PROJECT, BQ_DATASET
+from config import BQ_PROJECT, BQ_DATASET, GCS_PUBLIC_BASE_URL
 from utils.bigquery_utils import (
     query_bq,
     update_bq,
@@ -10,8 +10,12 @@ from utils.bigquery_utils import (
 )
 from api.company.models import CompanyCreate, CompanyUpdate
 
+
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_COMPANY_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_METRICS"
+
+# chemin logique des visuels (standard Ratecard)
+COMPANY_MEDIA_PATH = "companies"
 
 
 # ============================================================
@@ -63,19 +67,20 @@ def create_company(data: CompanyCreate) -> str:
 
 
 # ============================================================
-# LIST COMPANIES
+# LIST COMPANIES (ADMIN / LISTING)
 # ============================================================
 def list_companies():
     sql = f"""
         SELECT
             c.ID_COMPANY,
             c.NAME,
+            CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
 
             COALESCE(m.NB_ANALYSES, 0) AS NB_ANALYSES,
             COALESCE(m.LAST_30_DAYS, 0) AS DELTA_30D
 
-        FROM {TABLE_COMPANY} c
-        LEFT JOIN {TABLE_COMPANY_METRICS} m
+        FROM `{TABLE_COMPANY}` c
+        LEFT JOIN `{TABLE_COMPANY_METRICS}` m
           ON m.ID_COMPANY = c.ID_COMPANY
 
         ORDER BY NB_ANALYSES DESC, c.NAME ASC
@@ -87,6 +92,7 @@ def list_companies():
         {
             "ID_COMPANY": r["ID_COMPANY"],
             "NAME": r["NAME"],
+            "IS_PARTNER": bool(r["IS_PARTNER"]),
             "NB_ANALYSES": r["NB_ANALYSES"],
             "DELTA_30D": r["DELTA_30D"],
         }
@@ -95,20 +101,50 @@ def list_companies():
 
 
 # ============================================================
-# GET ONE COMPANY
+# GET ONE COMPANY (ADMIN / EDIT)
 # ============================================================
 def get_company(company_id: str):
     """
     Récupère une société par ID.
+    Retourne des champs prêts à consommer par le frontend.
     """
     sql = f"""
-        SELECT *
-        FROM `{TABLE_COMPANY}`
-        WHERE ID_COMPANY = @id
+        SELECT
+            c.*,
+
+            -- URL publique du logo rectangle (si présent)
+            IF(
+                c.MEDIA_LOGO_RECTANGLE_ID IS NOT NULL,
+                CONCAT(
+                    @gcs_base_url,
+                    "/{COMPANY_MEDIA_PATH}/",
+                    c.MEDIA_LOGO_RECTANGLE_ID
+                ),
+                NULL
+            ) AS MEDIA_LOGO_RECTANGLE_URL
+
+        FROM `{TABLE_COMPANY}` c
+        WHERE c.ID_COMPANY = @id
         LIMIT 1
     """
-    rows = query_bq(sql, {"id": company_id})
-    return rows[0] if rows else None
+
+    rows = query_bq(
+        sql,
+        {
+            "id": company_id,
+            "gcs_base_url": GCS_PUBLIC_BASE_URL,
+        }
+    )
+
+    if not rows:
+        return None
+
+    row = dict(rows[0])
+
+    # 🔒 normalisation explicite pour le frontend
+    row["IS_PARTNER"] = bool(row.get("IS_PARTNER"))
+
+    return row
 
 
 # ============================================================
@@ -117,8 +153,6 @@ def get_company(company_id: str):
 def update_company(id_company: str, data: CompanyUpdate) -> bool:
     """
     Met à jour une société existante.
-
-    Utilise UPDATE (pas de load job).
     """
     values = data.dict(exclude_unset=True)
 
