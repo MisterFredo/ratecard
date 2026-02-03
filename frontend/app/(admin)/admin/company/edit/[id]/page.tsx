@@ -7,8 +7,6 @@ import VisualSection from "@/components/visuals/VisualSection";
 import EntityBaseForm from "@/components/forms/EntityBaseForm";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
-const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
-
 export default function EditCompany({ params }: { params: { id: string } }) {
   const { id } = params;
 
@@ -23,7 +21,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   // 🆕 PARTENAIRE
   const [isPartner, setIsPartner] = useState(false);
 
-  // 🔑 UN SEUL VISUEL : RECTANGLE
+  // 🔑 LOGO SOCIÉTÉ (URL complète, source de vérité)
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
@@ -42,21 +40,18 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         setLinkedinUrl(c.LINKEDIN_URL || "");
         setWebsiteUrl(c.WEBSITE_URL || "");
 
-        // statut partenaire
         setIsPartner(Boolean(c.IS_PARTNER));
 
-        // visuel rectangle uniquement
-        setRectUrl(
-          c.MEDIA_LOGO_RECTANGLE_ID
-            ? `${GCS}/companies/COMPANY_${id}_rect.jpg`
-            : null
-        );
+        // ⚠️ IMPORTANT
+        // On récupère DIRECTEMENT l’URL renvoyée par l’API
+        // (ou null s’il n’y a pas de logo)
+        setRectUrl(c.MEDIA_LOGO_RECTANGLE_URL || null);
       } catch (e) {
         console.error(e);
         alert("❌ Erreur chargement société");
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     }
 
     load();
@@ -71,7 +66,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
     try {
       await api.put(`/company/update/${id}`, {
         name,
-        description: description || null, // 🔑 HTML
+        description: description || null,
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
         is_partner: isPartner,
@@ -81,9 +76,9 @@ export default function EditCompany({ params }: { params: { id: string } }) {
     } catch (e) {
       console.error(e);
       alert("❌ Erreur mise à jour");
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
   }
 
   if (loading) {
@@ -151,19 +146,14 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
-      {/* VISUEL — RECTANGLE ONLY */}
+      {/* VISUEL — LOGO SOCIÉTÉ */}
       <VisualSection
         entityId={id}
         rectUrl={rectUrl}
-        onUpdated={({ rectangle }) => {
-          setRectUrl(
-            rectangle
-              ? `${GCS}/companies/COMPANY_${id}_rect.jpg`
-              : null
-          );
+        onUpdated={(newUrl) => {
+          setRectUrl(newUrl);
         }}
       />
     </div>
   );
 }
-
