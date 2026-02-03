@@ -4,14 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
-const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
-
 type CompanyRow = {
   ID_COMPANY: string;
   NAME: string;
 
-  // 🔑 UN SEUL VISUEL
-  MEDIA_LOGO_RECTANGLE_ID?: string | null;
+  // 🔑 URL publique complète (source de vérité backend)
+  MEDIA_LOGO_RECTANGLE_URL?: string | null;
 
   // PARTENAIRE
   IS_PARTNER?: boolean | null;
@@ -21,9 +19,9 @@ export default function CompanyList() {
   const [companies, setCompanies] = useState<CompanyRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ---------------------------------------------------------
-  // LOAD
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     LOAD
+  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -35,17 +33,17 @@ export default function CompanyList() {
       } catch (e) {
         console.error(e);
         alert("❌ Erreur chargement sociétés");
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     }
 
     load();
   }, []);
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <div className="space-y-8">
       <div className="flex justify-between">
@@ -73,18 +71,15 @@ export default function CompanyList() {
             <tr className="bg-gray-100 border-b text-left">
               <th className="p-2">Nom</th>
               <th className="p-2">Statut</th>
-              <th className="p-2">Visuel (16:9)</th>
+              <th className="p-2">Logo</th>
               <th className="p-2 text-right">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {companies.map((c) => {
-              const rectUrl = c.MEDIA_LOGO_RECTANGLE_ID
-                ? `${GCS}/companies/COMPANY_${c.ID_COMPANY}_rect.jpg`
-                : null;
-
               const isPartner = Boolean(c.IS_PARTNER);
+              const rectUrl = c.MEDIA_LOGO_RECTANGLE_URL || null;
 
               return (
                 <tr
@@ -96,7 +91,7 @@ export default function CompanyList() {
                     {c.NAME}
                   </td>
 
-                  {/* STATUT PARTENAIRE */}
+                  {/* STATUT */}
                   <td className="p-2">
                     {isPartner ? (
                       <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
@@ -109,17 +104,16 @@ export default function CompanyList() {
                     )}
                   </td>
 
-                  {/* VISUEL RECTANGLE */}
+                  {/* LOGO */}
                   <td className="p-2">
                     {rectUrl ? (
                       <img
                         src={rectUrl}
-                        className="h-10 border rounded object-cover"
+                        alt={`Logo ${c.NAME}`}
+                        className="h-10 max-w-[120px] object-contain"
                       />
                     ) : (
-                      <span className="text-gray-400 text-sm">
-                        —
-                      </span>
+                      <span className="text-gray-400 text-sm">—</span>
                     )}
                   </td>
 
