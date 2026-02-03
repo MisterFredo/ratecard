@@ -4,12 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+const COMPANY_MEDIA_PATH = "companies";
+
 type CompanyRow = {
   ID_COMPANY: string;
   NAME: string;
 
-  // 🔑 URL publique complète (source de vérité backend)
-  MEDIA_LOGO_RECTANGLE_URL?: string | null;
+  // 🔑 NOM DU FICHIER GCS
+  MEDIA_LOGO_RECTANGLE_ID?: string | null;
 
   // PARTENAIRE
   IS_PARTNER?: boolean | null;
@@ -79,7 +82,10 @@ export default function CompanyList() {
           <tbody>
             {companies.map((c) => {
               const isPartner = Boolean(c.IS_PARTNER);
-              const rectUrl = c.MEDIA_LOGO_RECTANGLE_URL || null;
+
+              const rectUrl = c.MEDIA_LOGO_RECTANGLE_ID
+                ? `${GCS_BASE_URL}/${COMPANY_MEDIA_PATH}/${c.MEDIA_LOGO_RECTANGLE_ID}`
+                : null;
 
               return (
                 <tr
