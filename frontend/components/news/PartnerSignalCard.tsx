@@ -68,7 +68,7 @@ export default function PartnerSignalCard({
     : "border-ratecard-border";
 
   const imageClass = isCompanyFallback
-    ? "absolute inset-0 w-full h-full object-contain p-6"
+    ? "absolute inset-0 w-full h-full object-contain p-2"
     : "absolute inset-0 w-full h-full object-cover";
 
   /* ========================================================
