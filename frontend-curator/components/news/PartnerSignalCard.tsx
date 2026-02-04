@@ -76,7 +76,7 @@ export default function PartnerSignalCard({
   }
 
   /* ---------------------------------------------------------
-     FILET PARTENAIRE (VISUEL UNIQUEMENT)
+     FILET PARTENAIRE
   --------------------------------------------------------- */
   const borderClass = isPartner
     ? "border-ratecard-blue"
@@ -101,18 +101,16 @@ export default function PartnerSignalCard({
             h-full grid grid-rows-[auto_1fr]
           `}
         >
-          {/* IMAGE — uniquement si visuel */}
           {visualSrc && (
-            <div className="relative w-full aspect-[3/2] overflow-hidden bg-ratecard-light">
+            <div className="relative w-full aspect-[3/2] overflow-hidden bg-ratecard-light p-2">
               <img
                 src={visualSrc}
                 alt={title}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover rounded-xl"
               />
             </div>
           )}
 
-          {/* TEXTE */}
           <div className="p-4 flex flex-col">
             {companyName && (
               <div className="text-xs uppercase tracking-wide text-gray-400">
@@ -154,18 +152,16 @@ export default function PartnerSignalCard({
           h-full flex flex-col
         `}
       >
-        {/* VISUEL — uniquement si présent */}
         {visualSrc && (
-          <div className="relative h-40 w-full overflow-hidden bg-ratecard-light">
+          <div className="relative h-40 w-full overflow-hidden bg-ratecard-light p-2">
             <img
               src={visualSrc}
               alt={title}
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover rounded-lg"
             />
           </div>
         )}
 
-        {/* TEXTE */}
         <div className="p-4 flex flex-col flex-1">
           {companyName && (
             <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">
