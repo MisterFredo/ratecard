@@ -69,7 +69,7 @@ export default function NewsStepVisual({
   const isCompanyFallback = !mediaId && !!companyMediaId;
 
   const imageClass = isCompanyFallback
-    ? "absolute inset-0 w-full h-full object-contain p-8"
+    ? "absolute inset-0 w-full h-full object-contain p-2"
     : "absolute inset-0 w-full h-full object-cover";
 
   return (
