@@ -6,16 +6,11 @@ import { useDrawer } from "@/contexts/DrawerContext";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
-/* =========================================================
-   TYPES
-========================================================= */
-
 type Props = {
   id: string;
   title: string;
   excerpt?: string | null;
 
-  /* 🔑 VISUELS */
   visualRectId?: string | null;          // NEWS
   companyVisualRectId?: string | null;   // FALLBACK SOCIÉTÉ
 
@@ -27,17 +22,9 @@ type Props = {
   variant?: "default" | "featured";
 };
 
-/* =========================================================
-   HELPERS
-========================================================= */
-
 function isValidDate(value?: string) {
   return !!value && !isNaN(Date.parse(value));
 }
-
-/* =========================================================
-   COMPONENT
-========================================================= */
 
 export default function PartnerSignalCard({
   id,
@@ -67,34 +54,27 @@ export default function PartnerSignalCard({
     ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
     : null;
 
-  /* ---------------------------------------------------------
-     OUVERTURE NEWS (DRAWER + URL)
-  --------------------------------------------------------- */
+  const isCompanyFallback = !visualRectId && !!companyVisualRectId;
+
   function openNews() {
     if (fromInternalClick.current) return;
 
     openRightDrawer("news", id);
-
-    router.replace(
-      `${pathname}?news_id=${id}`,
-      { scroll: false }
-    );
+    router.replace(`${pathname}?news_id=${id}`, { scroll: false });
   }
 
-  /* ---------------------------------------------------------
-     FILET PARTENAIRE
-  --------------------------------------------------------- */
   const borderClass = isPartner
     ? "border-ratecard-blue"
     : "border-ratecard-border";
 
+  const imageClass = isCompanyFallback
+    ? "absolute inset-0 w-full h-full object-contain p-6"
+    : "absolute inset-0 w-full h-full object-cover";
+
   /* ========================================================
-     MODE DRAWER (HOME / MY CURATOR / DASHBOARDS)
+     DRAWER MODE
   ======================================================== */
   if (openInDrawer) {
-    /* =====================================================
-       VARIANT FEATURED
-    ===================================================== */
     if (isFeatured) {
       return (
         <article
@@ -106,14 +86,9 @@ export default function PartnerSignalCard({
             h-full grid grid-rows-[auto_1fr]
           `}
         >
-          {/* IMAGE */}
           <div className="relative w-full aspect-[3/2] overflow-hidden bg-ratecard-light">
             {visualSrc ? (
-              <img
-                src={visualSrc}
-                alt={title}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
+              <img src={visualSrc} alt={title} className={imageClass} />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">
                 Aucun visuel
@@ -121,7 +96,6 @@ export default function PartnerSignalCard({
             )}
           </div>
 
-          {/* TEXTE */}
           <div className="p-4 flex flex-col">
             {companyName && (
               <div className="text-xs uppercase tracking-wide text-gray-400">
@@ -150,9 +124,6 @@ export default function PartnerSignalCard({
       );
     }
 
-    /* =====================================================
-       CARTES NEWS NORMALES
-    ===================================================== */
     return (
       <article
         onClick={openNews}
@@ -163,14 +134,9 @@ export default function PartnerSignalCard({
           h-full flex flex-col
         `}
       >
-        {/* VISUEL */}
         <div className="relative h-40 w-full overflow-hidden bg-ratecard-light">
           {visualSrc ? (
-            <img
-              src={visualSrc}
-              alt={title}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
+            <img src={visualSrc} alt={title} className={imageClass} />
           ) : (
             <div className="h-full w-full flex items-center justify-center text-sm text-gray-400">
               Aucun visuel
@@ -178,7 +144,6 @@ export default function PartnerSignalCard({
           )}
         </div>
 
-        {/* TEXTE */}
         <div className="p-4 flex flex-col flex-1">
           {companyName && (
             <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">
@@ -208,8 +173,7 @@ export default function PartnerSignalCard({
   }
 
   /* ========================================================
-     MODE LECTURE PUBLIQUE (PAGE /news)
-     ➜ drawer + URL, PAS de navigation
+     PUBLIC MODE
   ======================================================== */
   return (
     <article
@@ -225,7 +189,7 @@ export default function PartnerSignalCard({
           <img
             src={visualSrc}
             alt={title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            className={`${imageClass} transition-transform duration-300 group-hover:scale-[1.02]`}
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-sm text-gray-400">
