@@ -12,22 +12,12 @@ import PersonSelector, {
 
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
-/* =========================================================
-   TYPES
-========================================================= */
+/**
+ * NEWS_KIND  = structure éditoriale (NEWS | BRIEF)
+ * NEWS_TYPE  = catégorie métier (CORPORATE, PRODUIT, etc.)
+ */
 
-type EditorialKind = "NEWS" | "BRIEF";
-
-type NewsType =
-  | "ACQUISITION"
-  | "CAS CLIENT"
-  | "CORPORATE"
-  | "EVENT"
-  | "NOMINATION"
-  | "PARTENARIAT"
-  | "PRODUIT"
-  | "THOUGHT LEADERSHIP"
-  | null;
+type NewsKind = "NEWS" | "BRIEF";
 
 type Props = {
   title: string;
@@ -38,8 +28,8 @@ type Props = {
   topics: any[];
   persons: ArticlePerson[];
 
-  editorialKind: EditorialKind;
-  newsType: NewsType;
+  newsKind: NewsKind;
+  newsType?: string | null;
 
   onChange: (d: {
     title?: string;
@@ -48,17 +38,24 @@ type Props = {
     company?: any | null;
     topics?: any[];
     persons?: ArticlePerson[];
-    editorialKind?: EditorialKind;
-    newsType?: NewsType;
+    newsKind?: NewsKind;
+    newsType?: string | null;
   }) => void;
 
   onValidate: () => void;
   saving: boolean;
 };
 
-/* =========================================================
-   COMPONENT
-========================================================= */
+const NEWS_TYPES = [
+  "ACQUISITION",
+  "CAS CLIENT",
+  "CORPORATE",
+  "EVENT",
+  "NOMINATION",
+  "PARTENARIAT",
+  "PRODUIT",
+  "THOUGHT LEADERSHIP",
+];
 
 export default function NewsStepContent({
   title,
@@ -67,8 +64,8 @@ export default function NewsStepContent({
   company,
   topics,
   persons,
-  editorialKind,
-  newsType,
+  newsKind,
+  newsType = null,
   onChange,
   onValidate,
   saving,
@@ -77,6 +74,7 @@ export default function NewsStepContent({
      PERSONNES — chargées UNE FOIS
   --------------------------------------------------------- */
   const [allPersons, setAllPersons] = useState<PersonRef[]>([]);
+  const [loadingPersons, setLoadingPersons] = useState(true);
 
   useEffect(() => {
     async function loadPersons() {
@@ -90,8 +88,11 @@ export default function NewsStepContent({
             id_company: p.ID_COMPANY || null,
           }))
         );
-      } catch {
+      } catch (e) {
+        console.error("Erreur chargement personnes", e);
         setAllPersons([]);
+      } finally {
+        setLoadingPersons(false);
       }
     }
 
@@ -106,17 +107,15 @@ export default function NewsStepContent({
       {/* STRUCTURE ÉDITORIALE */}
       <div>
         <label className="block font-medium mb-1">
-          Format éditorial
+          Type de contenu
         </label>
 
         <div className="flex gap-6">
           <label className="flex items-center gap-2">
             <input
               type="radio"
-              checked={editorialKind === "NEWS"}
-              onChange={() =>
-                onChange({ editorialKind: "NEWS" })
-              }
+              checked={newsKind === "NEWS"}
+              onChange={() => onChange({ newsKind: "NEWS" })}
             />
             <span>News</span>
           </label>
@@ -124,48 +123,47 @@ export default function NewsStepContent({
           <label className="flex items-center gap-2">
             <input
               type="radio"
-              checked={editorialKind === "BRIEF"}
-              onChange={() =>
-                onChange({ editorialKind: "BRIEF" })
-              }
+              checked={newsKind === "BRIEF"}
+              onChange={() => onChange({ newsKind: "BRIEF" })}
             />
             <span>Brève</span>
           </label>
         </div>
+
+        <p className="text-sm text-gray-500 mt-1">
+          Une brève est un signal court (titre + excerpt), sans article long.
+        </p>
       </div>
 
-      {/* NEWS_TYPE (CATÉGORIE MÉTIER) */}
+      {/* CATÉGORIE MÉTIER */}
       <div>
         <label className="block font-medium mb-1">
-          Type de news (optionnel)
+          Catégorie éditoriale
         </label>
 
         <select
-          className="border rounded p-2 w-full"
+          className="w-full border rounded p-2"
           value={newsType || ""}
           onChange={(e) =>
             onChange({
-              newsType: e.target.value
-                ? (e.target.value as NewsType)
-                : null,
+              newsType: e.target.value || null,
             })
           }
         >
-          <option value="">— Aucun —</option>
-          <option value="ACQUISITION">Acquisition</option>
-          <option value="CAS CLIENT">Cas client</option>
-          <option value="CORPORATE">Corporate</option>
-          <option value="EVENT">Event</option>
-          <option value="NOMINATION">Nomination</option>
-          <option value="PARTENARIAT">Partenariat</option>
-          <option value="PRODUIT">Produit</option>
-          <option value="THOUGHT LEADERSHIP">
-            Thought leadership
-          </option>
+          <option value="">— Aucune —</option>
+          {NEWS_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
         </select>
+
+        <p className="text-sm text-gray-500 mt-1">
+          Information métier non obligatoire (corporate, produit, etc.).
+        </p>
       </div>
 
-      {/* SOCIÉTÉ */}
+      {/* SOCIÉTÉ (OBLIGATOIRE) */}
       <CompanySelector
         values={company ? [company] : []}
         onChange={(items) => {
@@ -192,7 +190,7 @@ export default function NewsStepContent({
       {/* EXCERPT */}
       <div>
         <label className="block font-medium mb-1">
-          Excerpt *
+          Excerpt <span className="text-sm text-gray-500">(obligatoire)</span>
         </label>
         <textarea
           className="w-full border rounded p-2 h-24"
@@ -200,11 +198,16 @@ export default function NewsStepContent({
           onChange={(e) =>
             onChange({ excerpt: e.target.value })
           }
+          placeholder={
+            newsKind === "BRIEF"
+              ? "Texte court affiché tel quel dans les brèves"
+              : "Résumé court pour la Home et les listes"
+          }
         />
       </div>
 
-      {/* TEXTE LONG — UNIQUEMENT NEWS */}
-      {editorialKind === "NEWS" && (
+      {/* TEXTE LONG — UNIQUEMENT POUR NEWS */}
+      {newsKind === "NEWS" && (
         <div>
           <label className="block font-medium mb-1">
             Texte
