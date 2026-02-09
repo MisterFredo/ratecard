@@ -23,7 +23,7 @@ type Props = {
   topics: any[];
   persons: ArticlePerson[];
 
-  newsType?: NewsType;
+  newsType: NewsType;
 
   onChange: (d: {
     title?: string;
@@ -46,7 +46,7 @@ export default function NewsStepContent({
   company,
   topics,
   persons,
-  newsType = "NEWS",
+  newsType,
   onChange,
   onValidate,
   saving,
@@ -85,14 +85,16 @@ export default function NewsStepContent({
   --------------------------------------------------------- */
   return (
     <div className="space-y-6">
-      {/* TYPE DE CONTENU */}
-      <div>
-        <label className="block font-medium mb-1">
+      {/* =====================================================
+          TYPE DE CONTENU
+      ===================================================== */}
+      <div className="border rounded p-4 bg-gray-50">
+        <label className="block font-medium mb-2">
           Type de contenu
         </label>
 
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2">
+        <div className="flex gap-6">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="radio"
               checked={newsType === "NEWS"}
@@ -100,10 +102,10 @@ export default function NewsStepContent({
                 onChange({ newsType: "NEWS" })
               }
             />
-            <span>News</span>
+            <span className="font-medium">News</span>
           </label>
 
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="radio"
               checked={newsType === "BRIEF"}
@@ -111,26 +113,32 @@ export default function NewsStepContent({
                 onChange({ newsType: "BRIEF" })
               }
             />
-            <span>Brève</span>
+            <span className="font-medium">Brève</span>
           </label>
         </div>
 
-        <p className="text-sm text-gray-500 mt-1">
-          Une brève est un signal court (titre + excerpt),
-          sans article détaillé.
+        <p className="text-sm text-gray-500 mt-2">
+          {newsType === "BRIEF"
+            ? "Une brève est un signal court (titre + excerpt), sans article détaillé."
+            : "Une news est un contenu éditorial complet avec texte long et visuel."}
         </p>
       </div>
 
-      {/* SOCIÉTÉ (OBLIGATOIRE) */}
+      {/* =====================================================
+          SOCIÉTÉ (OBLIGATOIRE)
+      ===================================================== */}
       <CompanySelector
         values={company ? [company] : []}
         onChange={(items) => {
           onChange({ company: items[0] || null });
+          // reset personnes si la société change
           onChange({ persons: [] });
         }}
       />
 
-      {/* TITRE */}
+      {/* =====================================================
+          TITRE
+      ===================================================== */}
       <div>
         <label className="block font-medium mb-1">
           Titre *
@@ -145,13 +153,12 @@ export default function NewsStepContent({
         />
       </div>
 
-      {/* EXCERPT */}
+      {/* =====================================================
+          EXCERPT (OBLIGATOIRE)
+      ===================================================== */}
       <div>
         <label className="block font-medium mb-1">
-          Excerpt{" "}
-          <span className="text-sm text-gray-500">
-            (obligatoire)
-          </span>
+          Excerpt *
         </label>
         <textarea
           className="w-full border rounded p-2 h-24"
@@ -162,12 +169,14 @@ export default function NewsStepContent({
           placeholder={
             newsType === "BRIEF"
               ? "Texte court affiché tel quel dans les brèves"
-              : "Résumé court pour la Home et les listes"
+              : "Résumé court affiché sur la Home et les listes"
           }
         />
       </div>
 
-      {/* TEXTE LONG — UNIQUEMENT POUR NEWS */}
+      {/* =====================================================
+          TEXTE LONG — UNIQUEMENT POUR NEWS
+      ===================================================== */}
       {newsType === "NEWS" && (
         <div>
           <label className="block font-medium mb-1">
@@ -182,7 +191,9 @@ export default function NewsStepContent({
         </div>
       )}
 
-      {/* TOPICS */}
+      {/* =====================================================
+          TOPICS
+      ===================================================== */}
       <TopicSelector
         values={topics}
         onChange={(items) =>
@@ -190,7 +201,9 @@ export default function NewsStepContent({
         }
       />
 
-      {/* PERSONNES */}
+      {/* =====================================================
+          PERSONNES
+      ===================================================== */}
       <PersonSelector
         values={persons}
         persons={allPersons}
@@ -204,7 +217,9 @@ export default function NewsStepContent({
         }
       />
 
-      {/* ACTION */}
+      {/* =====================================================
+          ACTION
+      ===================================================== */}
       <div className="pt-4">
         <button
           onClick={onValidate}
