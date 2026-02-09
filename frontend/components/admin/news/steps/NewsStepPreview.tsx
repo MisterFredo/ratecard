@@ -5,6 +5,8 @@ import { api } from "@/lib/api";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
+type NewsType = "NEWS" | "BRIEF";
+
 type Props = {
   newsId: string;
   onNext: () => void;
@@ -21,7 +23,7 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
         setNews(res.news);
       } catch (e) {
         console.error(e);
-        alert("Erreur chargement aperçu news");
+        alert("Erreur chargement aperçu");
       } finally {
         setLoading(false);
       }
@@ -31,21 +33,30 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
   }, [newsId]);
 
   if (loading) return <p>Chargement…</p>;
-  if (!news) return <p>News introuvable</p>;
+  if (!news) return <p>Contenu introuvable</p>;
+
+  const newsType: NewsType = news.NEWS_TYPE || "NEWS";
 
   /* ---------------------------------------------------------
-     VISUEL — PRIORITÉ NEWS > SOCIÉTÉ (RECTANGLE)
+     VISUEL — uniquement pertinent pour NEWS
   --------------------------------------------------------- */
   const visualSrc =
-    news.MEDIA_RECTANGLE_ID
-      ? `${GCS_BASE_URL}/news/${news.MEDIA_RECTANGLE_ID}`
-      : news.company?.MEDIA_LOGO_RECTANGLE_ID
-      ? `${GCS_BASE_URL}/companies/${news.company.MEDIA_LOGO_RECTANGLE_ID}`
+    newsType === "NEWS"
+      ? news.MEDIA_RECTANGLE_ID
+        ? `${GCS_BASE_URL}/news/${news.MEDIA_RECTANGLE_ID}`
+        : news.company?.MEDIA_LOGO_RECTANGLE_ID
+        ? `${GCS_BASE_URL}/companies/${news.company.MEDIA_LOGO_RECTANGLE_ID}`
+        : null
       : null;
 
   return (
     <div className="space-y-6 max-w-2xl">
-      {/* VISUEL */}
+      {/* LABEL TYPE */}
+      <div className="text-xs uppercase tracking-wide text-gray-500">
+        {newsType === "BRIEF" ? "Brève" : "News"}
+      </div>
+
+      {/* VISUEL (NEWS UNIQUEMENT) */}
       {visualSrc && (
         <img
           src={visualSrc}
@@ -66,15 +77,15 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
         {news.TITLE}
       </h2>
 
-      {/* EXCERPT */}
+      {/* EXCERPT — TOUJOURS AFFICHÉ */}
       {news.EXCERPT && (
         <p className="text-base font-medium text-gray-800">
           {news.EXCERPT}
         </p>
       )}
 
-      {/* TEXTE — HTML PREVIEW */}
-      {news.BODY && (
+      {/* TEXTE LONG — NEWS UNIQUEMENT */}
+      {newsType === "NEWS" && news.BODY && (
         <div
           className="
             prose prose-sm max-w-none
@@ -107,6 +118,7 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
         </div>
       )}
 
+      {/* ACTION */}
       <div className="pt-6">
         <button
           onClick={onNext}
