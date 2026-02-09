@@ -13,7 +13,6 @@ import NewsStepPublish from "@/components/admin/news/steps/NewsStepPublish";
 import NewsStepLinkedIn from "@/components/admin/news/steps/NewsStepLinkedIn";
 
 type Mode = "create" | "edit";
-type NewsType = "NEWS" | "BRIEF";
 
 type Step =
   | "SOURCE"
@@ -32,9 +31,9 @@ export default function NewsStudio({ mode, newsId }: Props) {
   const searchParams = useSearchParams();
 
   /* =========================================================
-     STATE — CORE
+     STATE — CORE (ALIGNÉ BQ)
   ========================================================= */
-  const [newsType, setNewsType] = useState<NewsType>("NEWS");
+  const [newsType, setNewsType] = useState<"NEWS" | "BRIEF">("NEWS");
 
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
@@ -75,9 +74,8 @@ export default function NewsStudio({ mode, newsId }: Props) {
     "LINKEDIN",
   ];
 
-  function isStepReached(target: Step) {
-    return stepOrder.indexOf(step) >= stepOrder.indexOf(target);
-  }
+  const isStepReached = (target: Step) =>
+    stepOrder.indexOf(step) >= stepOrder.indexOf(target);
 
   /* =========================================================
      INIT STEP FROM URL
@@ -146,8 +144,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
       return;
     }
 
-    const companyId =
-      company.id_company || company.ID_COMPANY;
+    const companyId = company.id_company || company.ID_COMPANY;
 
     async function loadCompany() {
       try {
@@ -165,20 +162,9 @@ export default function NewsStudio({ mode, newsId }: Props) {
      SAVE NEWS / BRIEF
   ========================================================= */
   async function saveNews() {
-    if (!title.trim()) {
-      alert("Titre requis");
-      return;
-    }
-
-    if (!company) {
-      alert("Société requise");
-      return;
-    }
-
-    if (!excerpt.trim()) {
-      alert("Excerpt requis");
-      return;
-    }
+    if (!title.trim()) return alert("Titre requis");
+    if (!excerpt.trim()) return alert("Excerpt requis");
+    if (!company) return alert("Société requise");
 
     setSaving(true);
 
@@ -203,7 +189,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
       setStep(newsType === "BRIEF" ? "PREVIEW" : "VISUAL");
     } catch (e) {
       console.error(e);
-      alert("❌ Erreur sauvegarde");
+      alert("Erreur sauvegarde");
     } finally {
       setSaving(false);
     }
@@ -215,28 +201,23 @@ export default function NewsStudio({ mode, newsId }: Props) {
   async function publishNews() {
     if (!internalNewsId) return;
 
-    if (newsType === "NEWS") {
-      if (!mediaId && !companyFull?.MEDIA_LOGO_RECTANGLE_ID) {
-        alert("Visuel requis pour une news");
-        return;
-      }
+    if (
+      newsType === "NEWS" &&
+      !mediaId &&
+      !companyFull?.MEDIA_LOGO_RECTANGLE_ID
+    ) {
+      return alert("Visuel requis pour une news");
     }
 
-    if (!publishAt) {
-      alert("Date de publication requise");
-      return;
-    }
+    if (!publishAt) return alert("Date requise");
 
     setPublishing(true);
 
     try {
-      const publishAtUTC = new Date(publishAt).toISOString();
-
       await api.post(`/news/publish/${internalNewsId}`, {
-        publish_at: publishAtUTC,
+        publish_at: new Date(publishAt).toISOString(),
       });
 
-      alert("Publié");
       setStep("LINKEDIN");
     } catch {
       alert("Erreur publication");
@@ -250,13 +231,9 @@ export default function NewsStudio({ mode, newsId }: Props) {
   ========================================================= */
   return (
     <div className="space-y-6">
-
       {/* SOURCE */}
       <details open={step === "SOURCE"} className="border rounded p-4">
-        <summary
-          className="font-semibold cursor-pointer"
-          onClick={() => setStep("SOURCE")}
-        >
+        <summary onClick={() => setStep("SOURCE")} className="font-semibold">
           1. Source
         </summary>
 
@@ -274,10 +251,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
       {/* CONTENT */}
       {isStepReached("CONTENT") && (
         <details open={step === "CONTENT"} className="border rounded p-4">
-          <summary
-            className="font-semibold cursor-pointer"
-            onClick={() => setStep("CONTENT")}
-          >
+          <summary onClick={() => setStep("CONTENT")} className="font-semibold">
             2. Contenu
           </summary>
 
@@ -304,13 +278,10 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </details>
       )}
 
-      {/* VISUAL — NEWS ONLY */}
+      {/* VISUAL */}
       {newsType === "NEWS" && isStepReached("VISUAL") && (
         <details open={step === "VISUAL"} className="border rounded p-4">
-          <summary
-            className="font-semibold cursor-pointer"
-            onClick={() => setStep("VISUAL")}
-          >
+          <summary onClick={() => setStep("VISUAL")} className="font-semibold">
             3. Visuel
           </summary>
 
@@ -318,9 +289,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
             <NewsStepVisual
               newsId={internalNewsId}
               mediaId={mediaId}
-              companyMediaId={
-                companyFull?.MEDIA_LOGO_RECTANGLE_ID || null
-              }
+              companyMediaId={companyFull?.MEDIA_LOGO_RECTANGLE_ID || null}
               onUpdated={setMediaId}
               onNext={() => setStep("PREVIEW")}
             />
@@ -329,61 +298,31 @@ export default function NewsStudio({ mode, newsId }: Props) {
       )}
 
       {/* PREVIEW */}
-      {isStepReached("PREVIEW") && (
-        <details open={step === "PREVIEW"} className="border rounded p-4">
-          <summary
-            className="font-semibold cursor-pointer"
-            onClick={() => setStep("PREVIEW")}
-          >
-            4. Aperçu
-          </summary>
-
-          {internalNewsId && (
-            <NewsStepPreview
-              newsId={internalNewsId}
-              onNext={() => setStep("PUBLISH")}
-            />
-          )}
-        </details>
+      {isStepReached("PREVIEW") && internalNewsId && (
+        <NewsStepPreview
+          newsId={internalNewsId}
+          onNext={() => setStep("PUBLISH")}
+        />
       )}
 
       {/* PUBLISH */}
-      {isStepReached("PUBLISH") && (
-        <details open={step === "PUBLISH"} className="border rounded p-4">
-          <summary
-            className="font-semibold cursor-pointer"
-            onClick={() => setStep("PUBLISH")}
-          >
-            5. Publication
-          </summary>
-
-          {internalNewsId && (
-            <NewsStepPublish
-              publishAt={publishAt}
-              publishing={publishing}
-              onChangeDate={setPublishAt}
-              onPublish={publishNews}
-            />
-          )}
-        </details>
+      {isStepReached("PUBLISH") && internalNewsId && (
+        <NewsStepPublish
+          publishAt={publishAt}
+          publishing={publishing}
+          onChangeDate={setPublishAt}
+          onPublish={publishNews}
+        />
       )}
 
-      {/* LINKEDIN — NEWS ONLY */}
-      {newsType === "NEWS" &&
-        isStepReached("LINKEDIN") &&
-        internalNewsId && (
-          <details open className="border rounded p-4">
-            <summary className="font-semibold">
-              6. Post LinkedIn
-            </summary>
-
-            <NewsStepLinkedIn
-              newsId={internalNewsId}
-              title={title}
-              excerpt={excerpt}
-            />
-          </details>
-        )}
+      {/* LINKEDIN */}
+      {newsType === "NEWS" && isStepReached("LINKEDIN") && internalNewsId && (
+        <NewsStepLinkedIn
+          newsId={internalNewsId}
+          title={title}
+          excerpt={excerpt}
+        />
+      )}
     </div>
   );
 }
