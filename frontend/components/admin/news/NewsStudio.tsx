@@ -170,21 +170,36 @@ export default function NewsStudio({ mode, newsId }: Props) {
     setSaving(true);
 
     const payload = {
+      // --------------------------------------------------
+      // SOCIÉTÉ
+      // --------------------------------------------------
       id_company: company.id_company || company.ID_COMPANY,
 
-      // STRUCTURE
-      news_type: newsKind,     // NEWS | BRIEF
-      type: newsType,          // catégorie éditoriale (BQ)
+      // --------------------------------------------------
+      // STRUCTURE ÉDITORIALE
+      // --------------------------------------------------
+      news_kind: newsKind,        // ✅ NEWS | BRIEF
+      news_type: newsType ?? null, // ✅ CORPORATE | PARTENAIRE | ...
 
+      // --------------------------------------------------
       // CONTENU
+      // --------------------------------------------------
       title,
       excerpt,
       body: newsKind === "NEWS" ? body : null,
 
-      // RELATIONS
+      // --------------------------------------------------
+      // RELATIONS (IDs UNIQUEMENT)
+      // --------------------------------------------------
       topics: topics.map((t) => t.id_topic),
       persons: persons.map((p) => p.id_person || p.ID_PERSON),
     };
+
+    // 🔍 DEBUG TEMPORAIRE (tu peux laisser pendant les tests)
+    console.log(
+      "SAVE NEWS PAYLOAD",
+      JSON.stringify(payload, null, 2)
+    );
 
     try {
       if (!internalNewsId) {
@@ -196,12 +211,13 @@ export default function NewsStudio({ mode, newsId }: Props) {
 
       setStep(newsKind === "BRIEF" ? "PREVIEW" : "VISUAL");
     } catch (e) {
-      console.error(e);
+      console.error("SAVE NEWS ERROR", e);
       alert("Erreur sauvegarde");
     } finally {
       setSaving(false);
     }
   }
+
 
   /* =========================================================
      PUBLISH
