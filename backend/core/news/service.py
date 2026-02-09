@@ -235,6 +235,28 @@ def list_news():
     """
     return query_bq(sql)
 
+# ============================================================
+# NEWS TYPES (RÉFÉRENTIEL ÉDITORIAL)
+# ============================================================
+
+def list_news_types():
+    rows = query_bq(
+        f"""
+        SELECT CODE, LABEL
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_TYPE`
+        WHERE IS_ACTIVE = TRUE
+        ORDER BY LABEL
+        """
+    )
+
+    return [
+        {
+            "code": r["CODE"],
+            "label": r["LABEL"],
+        }
+        for r in rows
+    ]
+
 
 # ============================================================
 # UPDATE NEWS / BRÈVE
