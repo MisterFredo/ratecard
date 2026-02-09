@@ -13,10 +13,16 @@ import PersonSelector, {
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
 /**
- * 🔒 Alignement strict BQ
- * - NEWS_KIND : structure (NEWS | BRIEF)
- * - NEWS_TYPE : catégorie éditoriale (valeurs BQ)
+ * 🔒 ALIGNEMENT STRICT
+ *
+ * - NEWS_KIND : structure du contenu (NEWS | BRIEF)
+ * - NEWS_TYPE : catégorie rédactionnelle gouvernée (RATECARD_NEWS_TYPE.CODE)
  */
+
+type NewsType = {
+  code: string;
+  label: string;
+};
 
 type Props = {
   title: string;
@@ -28,8 +34,10 @@ type Props = {
   persons: ArticlePerson[];
 
   // STRUCTURE
-  newsKind: "NEWS" | "BRIEF";      // STRUCTURE
-  newsType?: string | null;        // CATÉGORIE (BQ)
+  newsKind: "NEWS" | "BRIEF";
+
+  // CATÉGORIE RÉDACTIONNELLE (CODE)
+  newsType?: string | null;
 
   onChange: (d: {
     title?: string;
@@ -60,16 +68,22 @@ export default function NewsStepContent({
   saving,
 }: Props) {
   /* ---------------------------------------------------------
-     NEWS_TYPE — chargés depuis BQ
+     NEWS_TYPE — référentiel gouverné (BQ)
   --------------------------------------------------------- */
-  const [newsTypes, setNewsTypes] = useState<string[]>([]);
+  const [newsTypes, setNewsTypes] = useState<NewsType[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
 
   useEffect(() => {
     async function loadTypes() {
       try {
         const res = await api.get("/news/types");
-        setNewsTypes(res.types || []);
+
+        setNewsTypes(
+          (res.types || []).map((t: any) => ({
+            code: t.code,
+            label: t.label,
+          }))
+        );
       } catch (e) {
         console.error("Erreur chargement NEWS_TYPE", e);
         setNewsTypes([]);
@@ -118,7 +132,7 @@ export default function NewsStepContent({
           Type de contenu
         </label>
 
-        <div className="flex gap-4">
+        <div className="flex gap-6">
           <label className="flex items-center gap-2">
             <input
               type="radio"
@@ -139,11 +153,13 @@ export default function NewsStepContent({
         </div>
       </div>
 
-      {/* CATÉGORIE ÉDITORIALE — NEWS_TYPE (BQ) */}
+      {/* CATÉGORIE RÉDACTIONNELLE — NEWS_TYPE */}
       <div>
         <label className="block font-medium mb-1">
           Catégorie éditoriale
-          <span className="text-sm text-gray-400 ml-1">(optionnel)</span>
+          <span className="text-sm text-gray-400 ml-1">
+            (optionnel)
+          </span>
         </label>
 
         <select
@@ -159,8 +175,8 @@ export default function NewsStepContent({
           <option value="">— Non renseignée —</option>
 
           {newsTypes.map((t) => (
-            <option key={t} value={t}>
-              {t}
+            <option key={t.code} value={t.code}>
+              {t.label}
             </option>
           ))}
         </select>
@@ -177,7 +193,9 @@ export default function NewsStepContent({
 
       {/* TITRE */}
       <div>
-        <label className="block font-medium mb-1">Titre *</label>
+        <label className="block font-medium mb-1">
+          Titre *
+        </label>
         <input
           type="text"
           className="w-full border rounded p-2"
@@ -188,7 +206,9 @@ export default function NewsStepContent({
 
       {/* EXCERPT */}
       <div>
-        <label className="block font-medium mb-1">Excerpt *</label>
+        <label className="block font-medium mb-1">
+          Excerpt *
+        </label>
         <textarea
           className="w-full border rounded p-2 h-24"
           value={excerpt}
@@ -196,7 +216,7 @@ export default function NewsStepContent({
         />
       </div>
 
-      {/* TEXTE — UNIQUEMENT NEWS */}
+      {/* TEXTE — UNIQUEMENT POUR NEWS */}
       {newsKind === "NEWS" && (
         <HtmlEditor
           value={body}
