@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 import AnalysisTeaserCard from "@/components/analysis/AnalysisTeaserCard";
+import BriefCard from "@/components/news/BriefCard";
 import { useDrawer } from "@/contexts/DrawerContext";
 
 /* =========================================================
@@ -22,6 +23,9 @@ type NewsItem = {
   visual_rect_id?: string | null;
   published_at: string;
   company?: Company;
+
+  // 🔑 distingue news “riche” vs brève
+  kind?: "news" | "brief";
 };
 
 type AnalysisItem = {
@@ -38,7 +42,7 @@ type Props = {
 };
 
 const PAGE_SIZE = 12;
-const ANALYSIS_INSERT_INDEX = 5; // 1 analyse après 5 news
+const ANALYSIS_INSERT_INDEX = 5;
 
 /* =========================================================
    COMPONENT
@@ -56,7 +60,7 @@ export default function HomeClient({
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   /* ---------------------------------------------------------
-     TRI DES NEWS
+     TRI PAR DATE
   --------------------------------------------------------- */
   const sortedNews = [...news].sort(
     (a, b) =>
@@ -64,8 +68,14 @@ export default function HomeClient({
       new Date(a.published_at).getTime()
   );
 
-  const featuredNews = sortedNews[0];
-  const otherNews = sortedNews.slice(1);
+  const featuredNews = sortedNews.find(
+    (n) => n.kind !== "brief"
+  );
+
+  const otherNews = sortedNews.filter(
+    (n) => n.id !== featuredNews?.id
+  );
+
   const visibleNews = otherNews.slice(0, visibleCount);
 
   /* ---------------------------------------------------------
@@ -73,11 +83,16 @@ export default function HomeClient({
   --------------------------------------------------------- */
   const mixedItems: Array<
     | { type: "news"; item: NewsItem }
+    | { type: "brief"; item: NewsItem }
     | { type: "analysis"; item: AnalysisItem }
   > = [];
 
   visibleNews.forEach((n, index) => {
-    mixedItems.push({ type: "news", item: n });
+    if (n.kind === "brief") {
+      mixedItems.push({ type: "brief", item: n });
+    } else {
+      mixedItems.push({ type: "news", item: n });
+    }
 
     if (
       index === ANALYSIS_INSERT_INDEX &&
@@ -85,7 +100,7 @@ export default function HomeClient({
     ) {
       mixedItems.push({
         type: "analysis",
-        item: analyses[0], // V1 : 1 analyse teaser
+        item: analyses[0],
       });
     }
   });
@@ -110,11 +125,12 @@ export default function HomeClient({
       window.removeEventListener("scroll", onScroll);
   }, [otherNews.length]);
 
+  /* =========================================================
+     RENDER
+  ========================================================= */
+
   return (
     <div className="max-w-6xl mx-auto px-4">
-      {/* =====================================================
-          GRILLE — UNE + FLUX MIXTE
-      ===================================================== */}
       <section
         className="
           grid grid-cols-1
@@ -125,7 +141,7 @@ export default function HomeClient({
         "
       >
         {/* =================================================
-            UNE — NEWS x4
+            UNE — NEWS RICHE UNIQUEMENT
         ================================================= */}
         {featuredNews && (
           <div className="lg:col-span-2 lg:row-span-2">
@@ -149,7 +165,7 @@ export default function HomeClient({
         )}
 
         {/* =================================================
-            FLUX MIXTE — NEWS + ANALYSE
+            FLUX MIXTE
         ================================================= */}
         {mixedItems.map((entry, idx) => {
           if (entry.type === "news") {
@@ -171,6 +187,19 @@ export default function HomeClient({
                 }
                 publishedAt={n.published_at}
                 openInDrawer
+              />
+            );
+          }
+
+          if (entry.type === "brief") {
+            const b = entry.item;
+
+            return (
+              <BriefCard
+                key={`brief-${b.id}-${idx}`}
+                title={b.title}
+                excerpt={b.excerpt}
+                publishedAt={b.published_at}
               />
             );
           }
