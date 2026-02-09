@@ -10,19 +10,19 @@ class NewsCreate(BaseModel):
     # --------------------------------------------------------
     # SOCIÉTÉ
     # --------------------------------------------------------
-    id_company: str = Field(..., alias="idCompany")
+    id_company: str
 
     # --------------------------------------------------------
     # STRUCTURE ÉDITORIALE (FORMAT)
-    # NEWS | BRIEF
     # --------------------------------------------------------
-    news_kind: str = Field(..., alias="newsKind")
+    # NEWS | BRIEF
+    news_kind: str
 
     # --------------------------------------------------------
     # CATÉGORIE RÉDACTIONNELLE (GOUVERNÉE BQ)
     # ex: CORPORATE, PARTENAIRE, EVENT, etc.
     # --------------------------------------------------------
-    news_type: Optional[str] = Field(None, alias="newsType")
+    news_type: Optional[str] = None
 
     # --------------------------------------------------------
     # CONTENU
@@ -34,20 +34,17 @@ class NewsCreate(BaseModel):
     # --------------------------------------------------------
     # VISUEL / META
     # --------------------------------------------------------
-    media_rectangle_id: Optional[str] = Field(
-        None, alias="mediaRectangleId"
-    )
-    source_url: Optional[str] = Field(None, alias="sourceUrl")
+    media_rectangle_id: Optional[str] = None
+    source_url: Optional[str] = None
     author: Optional[str] = None
 
     # --------------------------------------------------------
-    # ENRICHISSEMENTS
+    # ENRICHISSEMENTS (IDs UNIQUEMENT)
     # --------------------------------------------------------
-    topics: List[str] = []
-    persons: List[str] = []
+    topics: List[str] = Field(default_factory=list)
+    persons: List[str] = Field(default_factory=list)
 
     class Config:
-        allow_population_by_field_name = True
         extra = "forbid"
 
 
@@ -58,12 +55,13 @@ class NewsUpdate(BaseModel):
     # --------------------------------------------------------
     # STRUCTURE ÉDITORIALE
     # --------------------------------------------------------
-    news_kind: Optional[str] = Field(None, alias="newsKind")
+    # NEWS | BRIEF
+    news_kind: Optional[str] = None
 
     # --------------------------------------------------------
     # CATÉGORIE RÉDACTIONNELLE
     # --------------------------------------------------------
-    news_type: Optional[str] = Field(None, alias="newsType")
+    news_type: Optional[str] = None
 
     # --------------------------------------------------------
     # CONTENU
@@ -75,20 +73,17 @@ class NewsUpdate(BaseModel):
     # --------------------------------------------------------
     # VISUEL / META
     # --------------------------------------------------------
-    media_rectangle_id: Optional[str] = Field(
-        None, alias="mediaRectangleId"
-    )
-    source_url: Optional[str] = Field(None, alias="sourceUrl")
+    media_rectangle_id: Optional[str] = None
+    source_url: Optional[str] = None
     author: Optional[str] = None
 
     # --------------------------------------------------------
-    # ENRICHISSEMENTS
+    # ENRICHISSEMENTS (IDs UNIQUEMENT)
     # --------------------------------------------------------
-    topics: List[str] = []
-    persons: List[str] = []
+    topics: List[str] = Field(default_factory=list)
+    persons: List[str] = Field(default_factory=list)
 
     class Config:
-        allow_population_by_field_name = True
         extra = "forbid"
 
 
