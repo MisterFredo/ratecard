@@ -208,16 +208,18 @@ def list_news():
     sql = f"""
         SELECT
             n.ID_NEWS,
-            n.NEWS_KIND,
-            n.NEWS_TYPE,
+            n.NEWS_TYPE,        -- news | brief
+            n.TYPE,             -- partenariat | produit | client | etc
 
             n.TITLE,
             n.EXCERPT,
             n.BODY,
             n.STATUS,
             n.PUBLISHED_AT,
+            n.CREATED_AT,
 
             n.MEDIA_RECTANGLE_ID AS VISUAL_RECT_ID,
+            n.HAS_VISUAL,
 
             c.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
