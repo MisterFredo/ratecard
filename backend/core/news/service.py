@@ -344,12 +344,11 @@ def publish_news(
     published_at: Optional[str] = None,
 ):
     """
-    Publie une news à une date donnée.
+    Publie une news ou une brève à une date donnée.
 
     Règles :
-    - une news est publiable si :
-      - elle a un visuel rectangle propre
-      - OU sa société a un visuel rectangle
+    - EXCERPT obligatoire dans tous les cas
+    - VISUEL requis UNIQUEMENT pour les news (pas pour les brèves)
     - la date choisie (passée / future) DOIT être respectée
     - toutes les dates sont normalisées en UTC
     """
@@ -359,6 +358,7 @@ def publish_news(
         SELECT
             n.MEDIA_RECTANGLE_ID AS NEWS_RECT,
             n.EXCERPT,
+            n.NEWS_FORMAT,
             c.MEDIA_LOGO_RECTANGLE_ID AS COMPANY_RECT
         FROM `{TABLE_NEWS}` n
         JOIN `{TABLE_COMPANY}` c
@@ -373,16 +373,19 @@ def publish_news(
 
     row = rows[0]
 
+    news_format = row.get("NEWS_FORMAT", "NEWS")
+
     # ---------------------------------------------------------
     # VALIDATIONS MÉTIER
     # ---------------------------------------------------------
-    if not row["NEWS_RECT"] and not row["COMPANY_RECT"]:
-        raise ValueError(
-            "Un visuel rectangulaire est requis pour publier la news"
-        )
-
     if not row["EXCERPT"]:
-        raise ValueError("Un excerpt est requis pour publier la news")
+        raise ValueError("Un excerpt est requis pour publier")
+
+    if news_format == "NEWS":
+        if not row["NEWS_RECT"] and not row["COMPANY_RECT"]:
+            raise ValueError(
+                "Un visuel rectangulaire est requis pour publier une news"
+            )
 
     # ---------------------------------------------------------
     # DATES — NORMALISATION UTC
@@ -393,7 +396,7 @@ def publish_news(
         try:
             publish_date = datetime.fromisoformat(published_at)
 
-            # ⚠️ datetime-local → datetime naïf → forcer UTC
+            # datetime-local → datetime naïf → forcer UTC
             if publish_date.tzinfo is None:
                 publish_date = publish_date.replace(
                     tzinfo=timezone.utc
@@ -407,28 +410,19 @@ def publish_news(
     # ---------------------------------------------------------
     # STATUT EN FONCTION DE LA DATE
     # ---------------------------------------------------------
-    if publish_date <= now:
-        update_bq(
-            table=TABLE_NEWS,
-            fields={
-                "STATUS": "PUBLISHED",
-                "PUBLISHED_AT": publish_date.isoformat(),
-                "UPDATED_AT": now.isoformat(),
-            },
-            where={"ID_NEWS": id_news},
-        )
-        return "PUBLISHED"
+    status = "PUBLISHED" if publish_date <= now else "SCHEDULED"
 
     update_bq(
         table=TABLE_NEWS,
         fields={
-            "STATUS": "SCHEDULED",
+            "STATUS": status,
             "PUBLISHED_AT": publish_date.isoformat(),
             "UPDATED_AT": now.isoformat(),
         },
         where={"ID_NEWS": id_news},
     )
-    return "SCHEDULED"
+
+    return status
 
 
 # ============================================================
