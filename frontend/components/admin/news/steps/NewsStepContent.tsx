@@ -13,8 +13,9 @@ import PersonSelector, {
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
 /**
- * 🔒 On n'invente PAS de types front.
- * On manipule directement les valeurs métiers stockées en BQ.
+ * 🔒 Alignement strict BQ
+ * - NEWS_KIND : structure (NEWS | BRIEF)
+ * - NEWS_TYPE : catégorie éditoriale (valeurs BQ)
  */
 
 type Props = {
@@ -27,8 +28,8 @@ type Props = {
   persons: ArticlePerson[];
 
   // STRUCTURE
-  newsType: "NEWS" | "BRIEF";          // NEWS / BRÈVE
-  newsKind?: string | null;            // ACQUISITION / CORPORATE / ...
+  newsKind: "NEWS" | "BRIEF";      // ⬅️ STRUCTURE
+  newsType?: string | null;        // ⬅️ CATÉGORIE (BQ)
 
   onChange: (d: {
     title?: string;
@@ -37,28 +38,13 @@ type Props = {
     company?: any | null;
     topics?: any[];
     persons?: ArticlePerson[];
-    newsType?: "NEWS" | "BRIEF";
-    newsKind?: string | null;
+    newsKind?: "NEWS" | "BRIEF";
+    newsType?: string | null;
   }) => void;
 
   onValidate: () => void;
   saving: boolean;
 };
-
-/**
- * 📌 Valeurs gouvernées (BQ)
- * Non obligatoires
- */
-const NEWS_KIND_VALUES = [
-  "ACQUISITION",
-  "CAS CLIENT",
-  "CORPORATE",
-  "EVENT",
-  "NOMINATION",
-  "PARTENARIAT",
-  "PRODUIT",
-  "THOUGHT LEADERSHIP",
-];
 
 export default function NewsStepContent({
   title,
@@ -67,36 +53,50 @@ export default function NewsStepContent({
   company,
   topics,
   persons,
-  newsType,
-  newsKind = null,
+  newsKind,
+  newsType = null,
   onChange,
   onValidate,
   saving,
 }: Props) {
   /* ---------------------------------------------------------
-     PERSONNES — chargées UNE FOIS
+     NEWS_TYPE — chargés depuis BQ
+  --------------------------------------------------------- */
+  const [newsTypes, setNewsTypes] = useState<string[]>([]);
+  const [loadingTypes, setLoadingTypes] = useState(true);
+
+  useEffect(() => {
+    async function loadTypes() {
+      try {
+        const res = await api.get("/news/types");
+        setNewsTypes(res.types || []);
+      } catch (e) {
+        console.error("Erreur chargement NEWS_TYPE", e);
+        setNewsTypes([]);
+      } finally {
+        setLoadingTypes(false);
+      }
+    }
+
+    loadTypes();
+  }, []);
+
+  /* ---------------------------------------------------------
+     PERSONNES
   --------------------------------------------------------- */
   const [allPersons, setAllPersons] = useState<PersonRef[]>([]);
-  const [loadingPersons, setLoadingPersons] = useState(true);
 
   useEffect(() => {
     async function loadPersons() {
-      try {
-        const res = await api.get("/person/list");
-        setAllPersons(
-          (res.persons || []).map((p: any) => ({
-            id_person: p.ID_PERSON,
-            name: p.NAME,
-            title: p.TITLE || "",
-            id_company: p.ID_COMPANY || null,
-          }))
-        );
-      } catch (e) {
-        console.error("Erreur chargement personnes", e);
-        setAllPersons([]);
-      } finally {
-        setLoadingPersons(false);
-      }
+      const res = await api.get("/person/list");
+      setAllPersons(
+        (res.persons || []).map((p: any) => ({
+          id_person: p.ID_PERSON,
+          name: p.NAME,
+          title: p.TITLE || "",
+          id_company: p.ID_COMPANY || null,
+        }))
+      );
     }
 
     loadPersons();
@@ -117,10 +117,8 @@ export default function NewsStepContent({
           <label className="flex items-center gap-2">
             <input
               type="radio"
-              checked={newsType === "NEWS"}
-              onChange={() =>
-                onChange({ newsType: "NEWS" })
-              }
+              checked={newsKind === "NEWS"}
+              onChange={() => onChange({ newsKind: "NEWS" })}
             />
             <span>News</span>
           </label>
@@ -128,52 +126,42 @@ export default function NewsStepContent({
           <label className="flex items-center gap-2">
             <input
               type="radio"
-              checked={newsType === "BRIEF"}
-              onChange={() =>
-                onChange({ newsType: "BRIEF" })
-              }
+              checked={newsKind === "BRIEF"}
+              onChange={() => onChange({ newsKind: "BRIEF" })}
             />
             <span>Brève</span>
           </label>
         </div>
-
-        <p className="text-sm text-gray-500 mt-1">
-          Une brève est un signal court (titre + excerpt),
-          sans article détaillé.
-        </p>
       </div>
 
-      {/* CATÉGORIE MÉTIER — NEWS_KIND */}
+      {/* CATÉGORIE ÉDITORIALE — NEWS_TYPE (BQ) */}
       <div>
         <label className="block font-medium mb-1">
           Catégorie éditoriale
-          <span className="text-sm text-gray-400 ml-1">
-            (optionnel)
-          </span>
+          <span className="text-sm text-gray-400 ml-1">(optionnel)</span>
         </label>
 
         <select
           className="border rounded p-2 w-full"
-          value={newsKind || ""}
+          disabled={loadingTypes}
+          value={newsType || ""}
           onChange={(e) =>
             onChange({
-              newsKind: e.target.value || null,
+              newsType: e.target.value || null,
             })
           }
         >
-          <option value="">
-            — Non renseignée —
-          </option>
+          <option value="">— Non renseignée —</option>
 
-          {NEWS_KIND_VALUES.map((k) => (
-            <option key={k} value={k}>
-              {k}
+          {newsTypes.map((t) => (
+            <option key={t} value={t}>
+              {t}
             </option>
           ))}
         </select>
       </div>
 
-      {/* SOCIÉTÉ (OBLIGATOIRE) */}
+      {/* SOCIÉTÉ */}
       <CompanySelector
         values={company ? [company] : []}
         onChange={(items) => {
@@ -184,86 +172,52 @@ export default function NewsStepContent({
 
       {/* TITRE */}
       <div>
-        <label className="block font-medium mb-1">
-          Titre *
-        </label>
+        <label className="block font-medium mb-1">Titre *</label>
         <input
           type="text"
           className="w-full border rounded p-2"
           value={title}
-          onChange={(e) =>
-            onChange({ title: e.target.value })
-          }
+          onChange={(e) => onChange({ title: e.target.value })}
         />
       </div>
 
       {/* EXCERPT */}
       <div>
-        <label className="block font-medium mb-1">
-          Excerpt *
-        </label>
+        <label className="block font-medium mb-1">Excerpt *</label>
         <textarea
           className="w-full border rounded p-2 h-24"
           value={excerpt}
-          onChange={(e) =>
-            onChange({ excerpt: e.target.value })
-          }
-          placeholder={
-            newsType === "BRIEF"
-              ? "Texte court affiché tel quel dans les brèves"
-              : "Résumé court pour la Home et les listes"
-          }
+          onChange={(e) => onChange({ excerpt: e.target.value })}
         />
       </div>
 
-      {/* TEXTE LONG — UNIQUEMENT NEWS */}
-      {newsType === "NEWS" && (
-        <div>
-          <label className="block font-medium mb-1">
-            Texte
-          </label>
-          <HtmlEditor
-            value={body}
-            onChange={(html) =>
-              onChange({ body: html })
-            }
-          />
-        </div>
+      {/* TEXTE — UNIQUEMENT NEWS */}
+      {newsKind === "NEWS" && (
+        <HtmlEditor
+          value={body}
+          onChange={(html) => onChange({ body: html })}
+        />
       )}
 
-      {/* TOPICS */}
       <TopicSelector
         values={topics}
-        onChange={(items) =>
-          onChange({ topics: items })
-        }
+        onChange={(items) => onChange({ topics: items })}
       />
 
-      {/* PERSONNES */}
       <PersonSelector
         values={persons}
         persons={allPersons}
-        companyId={
-          company?.id_company ||
-          company?.ID_COMPANY ||
-          null
-        }
-        onChange={(items) =>
-          onChange({ persons: items })
-        }
+        companyId={company?.id_company || null}
+        onChange={(items) => onChange({ persons: items })}
       />
 
-      {/* ACTION */}
-      <div className="pt-4">
-        <button
-          onClick={onValidate}
-          disabled={saving}
-          className="bg-ratecard-green text-white px-4 py-2 rounded"
-        >
-          {saving ? "Sauvegarde…" : "Enregistrer"}
-        </button>
-      </div>
+      <button
+        onClick={onValidate}
+        disabled={saving}
+        className="bg-ratecard-green text-white px-4 py-2 rounded"
+      >
+        {saving ? "Sauvegarde…" : "Enregistrer"}
+      </button>
     </div>
   );
 }
-
