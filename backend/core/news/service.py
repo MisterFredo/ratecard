@@ -51,7 +51,7 @@ def serialize_row(row: dict) -> dict:
 # ============================================================
 def create_news(data: NewsCreate) -> str:
     """
-    Crée une NEWS partenaire (sans publication).
+    Crée une NEWS ou une BRÈVE (sans publication).
     """
 
     if not data.id_company:
@@ -68,12 +68,16 @@ def create_news(data: NewsCreate) -> str:
         "STATUS": "DRAFT",
         "IS_ACTIVE": True,
 
+        # 🆕 TYPE DE CONTENU
+        "NEWS_KIND": data.news_kind,   # "NEWS" | "BRIEF"
+        "NEWS_TYPE": data.news_type,   # ex: nomination, partenariat…
+
         "ID_COMPANY": data.id_company,
         "TITLE": data.title,
         "BODY": data.body,
         "EXCERPT": data.excerpt,
 
-        # VISUEL (optionnel à la création)
+        # VISUEL — uniquement pour NEWS
         "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
 
         "SOURCE_URL": data.source_url,
@@ -86,7 +90,6 @@ def create_news(data: NewsCreate) -> str:
 
     client = get_bigquery_client()
 
-    # INSERT VIA LOAD JOB (ANTI STREAMING BUFFER)
     client.load_table_from_json(
         row,
         TABLE_NEWS,
@@ -95,18 +98,12 @@ def create_news(data: NewsCreate) -> str:
         ),
     ).result()
 
-    # ----------------------------
-    # RELATIONS — TOPICS
-    # ----------------------------
     if data.topics:
         insert_bq(
             TABLE_NEWS_TOPIC,
             [{"ID_NEWS": news_id, "ID_TOPIC": tid} for tid in data.topics],
         )
 
-    # ----------------------------
-    # RELATIONS — PERSONS
-    # ----------------------------
     if data.persons:
         insert_bq(
             TABLE_NEWS_PERSON,
@@ -114,6 +111,7 @@ def create_news(data: NewsCreate) -> str:
         )
 
     return news_id
+
 
 
 # ============================================================
