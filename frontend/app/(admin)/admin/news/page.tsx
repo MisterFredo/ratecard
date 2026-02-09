@@ -5,6 +5,10 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { Pencil, Trash2, Linkedin } from "lucide-react";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 type NewsLite = {
   ID_NEWS: string;
   TITLE: string;
@@ -12,27 +16,34 @@ type NewsLite = {
   STATUS: string;
   PUBLISHED_AT?: string | null;
 
-  NEWS_TYPE?: "NEWS" | "BRIEF";
+  // ✅ STRUCTURE (FORMAT)
+  NEWS_KIND: "NEWS" | "BRIEF";
 
   ID_COMPANY: string;
   COMPANY_NAME: string;
 };
 
-function NewsTypeBadge({ type }: { type?: "NEWS" | "BRIEF" }) {
-  if (!type) return null;
+/* =========================================================
+   BADGE — FORMAT (NEWS / BRÈVE)
+========================================================= */
 
+function NewsKindBadge({ kind }: { kind: "NEWS" | "BRIEF" }) {
   return (
     <span
       className={`px-2 py-1 rounded text-xs font-medium ${
-        type === "BRIEF"
+        kind === "BRIEF"
           ? "bg-blue-100 text-blue-700"
           : "bg-purple-100 text-purple-700"
       }`}
     >
-      {type === "BRIEF" ? "Brève" : "News"}
+      {kind === "BRIEF" ? "Brève" : "News"}
     </span>
   );
 }
+
+/* =========================================================
+   PAGE
+========================================================= */
 
 export default function NewsListPage() {
   const [news, setNews] = useState<NewsLite[]>([]);
@@ -52,7 +63,7 @@ export default function NewsListPage() {
 
   async function deleteNews(id: string) {
     const confirmed = confirm(
-      "Supprimer définitivement cette news ?"
+      "Supprimer définitivement ce contenu ?"
     );
 
     if (!confirmed) return;
@@ -92,8 +103,8 @@ export default function NewsListPage() {
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="bg-gray-100 border-b text-left text-gray-700">
-            <th className="p-2">Titre</th>
-            <th className="p-2">Type</th>
+            <th className="p-2">Contenu</th>
+            <th className="p-2">Format</th>
             <th className="p-2">Société</th>
             <th className="p-2">Statut</th>
             <th className="p-2">Publié le</th>
@@ -105,16 +116,34 @@ export default function NewsListPage() {
           {news.map((n) => (
             <tr
               key={n.ID_NEWS}
-              className="border-b hover:bg-gray-50 transition"
+              className={`border-b transition ${
+                n.NEWS_KIND === "BRIEF"
+                  ? "bg-blue-50/40 hover:bg-blue-50"
+                  : "hover:bg-gray-50"
+              }`}
             >
-              {/* TITRE */}
-              <td className="p-2 font-medium">
-                {n.TITLE}
+              {/* TITRE + EXCERPT */}
+              <td className="p-2">
+                <div
+                  className={`font-medium ${
+                    n.NEWS_KIND === "BRIEF"
+                      ? "text-blue-900"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {n.TITLE}
+                </div>
+
+                {n.NEWS_KIND === "NEWS" && n.EXCERPT && (
+                  <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                    {n.EXCERPT}
+                  </div>
+                )}
               </td>
 
-              {/* TYPE : NEWS / BRÈVE */}
+              {/* FORMAT */}
               <td className="p-2">
-                <NewsTypeBadge type={n.NEWS_TYPE} />
+                <NewsKindBadge kind={n.NEWS_KIND} />
               </td>
 
               {/* SOCIÉTÉ */}
@@ -137,7 +166,7 @@ export default function NewsListPage() {
                 </span>
               </td>
 
-              {/* DATE DE PUBLICATION */}
+              {/* DATE */}
               <td className="p-2">
                 {n.PUBLISHED_AT
                   ? new Date(n.PUBLISHED_AT).toLocaleDateString("fr-FR")
@@ -155,13 +184,15 @@ export default function NewsListPage() {
                     <Pencil size={16} />
                   </Link>
 
-                  <Link
-                    href={`/admin/news/edit/${n.ID_NEWS}?step=LINKEDIN`}
-                    className="text-[#0A66C2] hover:opacity-80"
-                    title="Post LinkedIn"
-                  >
-                    <Linkedin size={16} />
-                  </Link>
+                  {n.NEWS_KIND === "NEWS" && (
+                    <Link
+                      href={`/admin/news/edit/${n.ID_NEWS}?step=LINKEDIN`}
+                      className="text-[#0A66C2] hover:opacity-80"
+                      title="Post LinkedIn"
+                    >
+                      <Linkedin size={16} />
+                    </Link>
+                  )}
 
                   <button
                     onClick={() => deleteNews(n.ID_NEWS)}
