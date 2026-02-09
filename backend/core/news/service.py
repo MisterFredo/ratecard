@@ -201,32 +201,46 @@ def get_news(id_news: str):
 # ============================================================
 # LIST NEWS (ADMIN + PUBLIC)
 # ============================================================
+# ============================================================
+# LIST NEWS (ADMIN + PUBLIC)
+# ============================================================
 def list_news():
     """
     Liste des news et brèves PUBLIQUES.
+    - NEWS_TYPE : news | brief
+    - TYPE      : partenariat | produit | client | corporate | etc.
     """
+
     sql = f"""
         SELECT
             n.ID_NEWS,
-            n.NEWS_TYPE,        -- news | brief
-            n.TYPE,             -- partenariat | produit | client | etc
 
+            -- Typologie
+            n.NEWS_TYPE,
+            n.TYPE,
+
+            -- Contenu
             n.TITLE,
             n.EXCERPT,
             n.BODY,
+
+            -- Publication
             n.STATUS,
             n.PUBLISHED_AT,
-            n.CREATED_AT,
 
+            -- Visuel
             n.MEDIA_RECTANGLE_ID AS VISUAL_RECT_ID,
             n.HAS_VISUAL,
 
+            -- Société
             c.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
             c.MEDIA_LOGO_RECTANGLE_ID,
             c.IS_PARTNER,
 
+            -- Topics
             T.TOPICS
+
         FROM `{TABLE_NEWS}` n
         JOIN `{TABLE_COMPANY}` c
           ON n.ID_COMPANY = c.ID_COMPANY
@@ -254,6 +268,7 @@ def list_news():
 
         ORDER BY n.PUBLISHED_AT DESC
     """
+
     return query_bq(sql)
 
 # ============================================================
