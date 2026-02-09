@@ -7,28 +7,40 @@ from datetime import datetime
 # CREATE NEWS / BRÈVE
 # ============================================================
 class NewsCreate(BaseModel):
+    # --------------------------------------------------------
     # SOCIÉTÉ
+    # --------------------------------------------------------
     id_company: str
 
+    # --------------------------------------------------------
+    # STRUCTURE ÉDITORIALE (FORMAT)
+    # --------------------------------------------------------
+    # NEWS | BRIEF
+    news_kind: str
+
+    # --------------------------------------------------------
+    # CATÉGORIE RÉDACTIONNELLE (GOUVERNÉE BQ)
+    # ex: CORPORATE, PARTENAIRE, EVENT, etc.
+    # --------------------------------------------------------
+    news_type: Optional[str] = None
+
+    # --------------------------------------------------------
     # CONTENU
+    # --------------------------------------------------------
     title: str
     excerpt: Optional[str] = None
     body: Optional[str] = None
 
-    # STRUCTURE ÉDITORIALE (STRUCTURE FIXE)
-    # NEWS | BRIEF
-    news_kind: str
-
-    # CATÉGORIE MÉTIER (VALEURS BQ)
-    # ACQUISITION | CAS CLIENT | CORPORATE | EVENT | ...
-    news_type: Optional[str] = None
-
+    # --------------------------------------------------------
     # VISUEL / META
+    # --------------------------------------------------------
     media_rectangle_id: Optional[str] = None
     source_url: Optional[str] = None
     author: Optional[str] = None
 
+    # --------------------------------------------------------
     # ENRICHISSEMENTS
+    # --------------------------------------------------------
     topics: Optional[List[str]] = []
     persons: Optional[List[str]] = []
 
@@ -37,23 +49,34 @@ class NewsCreate(BaseModel):
 # UPDATE NEWS / BRÈVE
 # ============================================================
 class NewsUpdate(BaseModel):
+    # --------------------------------------------------------
     # STRUCTURE ÉDITORIALE
-    news_kind: Optional[str] = None  # NEWS | BRIEF
+    # --------------------------------------------------------
+    # NEWS | BRIEF
+    news_kind: Optional[str] = None
 
-    # CATÉGORIE MÉTIER
+    # --------------------------------------------------------
+    # CATÉGORIE RÉDACTIONNELLE
+    # --------------------------------------------------------
     news_type: Optional[str] = None
 
+    # --------------------------------------------------------
     # CONTENU
+    # --------------------------------------------------------
     title: str
     excerpt: Optional[str] = None
     body: Optional[str] = None
 
+    # --------------------------------------------------------
     # VISUEL / META
+    # --------------------------------------------------------
     media_rectangle_id: Optional[str] = None
     source_url: Optional[str] = None
     author: Optional[str] = None
 
+    # --------------------------------------------------------
     # ENRICHISSEMENTS
+    # --------------------------------------------------------
     topics: Optional[List[str]] = []
     persons: Optional[List[str]] = []
 
@@ -66,26 +89,48 @@ class NewsPublish(BaseModel):
 
 
 # ============================================================
-# OUT (ADMIN / API)
+# OUT — NEWS / BRÈVE (ADMIN / API)
 # ============================================================
 class NewsOut(BaseModel):
     id_news: str
     status: str
 
+    # --------------------------------------------------------
     # STRUCTURE
-    news_kind: Optional[str]   # NEWS | BRIEF
-    news_type: Optional[str]   # ACQUISITION | CORPORATE | ...
+    # --------------------------------------------------------
+    news_kind: Optional[str]      # NEWS | BRIEF
+    news_type: Optional[str]      # CORPORATE | PARTENAIRE | ...
 
+    # --------------------------------------------------------
     # CONTENU
+    # --------------------------------------------------------
     title: str
     excerpt: Optional[str]
     body: Optional[str]
 
+    # --------------------------------------------------------
+    # PUBLICATION
+    # --------------------------------------------------------
     published_at: Optional[datetime]
 
+    # --------------------------------------------------------
+    # RELATIONS
+    # --------------------------------------------------------
     company: dict
     topics: list = []
     persons: list = []
+
+
+# ============================================================
+# NEWS TYPE (RÉFÉRENTIEL GOUVERNÉ)
+# ============================================================
+class NewsTypeOut(BaseModel):
+    code: str
+    label: str
+
+
+class NewsTypeListResponse(BaseModel):
+    types: List[NewsTypeOut]
 
 
 # ============================================================
