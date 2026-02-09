@@ -31,10 +31,16 @@ export default function NewsStudio({ mode, newsId }: Props) {
   const searchParams = useSearchParams();
 
   /* =========================================================
-     STATE — CORE (ALIGNÉ BQ)
+     STATE — ALIGNÉ BQ
   ========================================================= */
-  const [newsType, setNewsType] = useState<"NEWS" | "BRIEF">("NEWS");
 
+  // STRUCTURE
+  const [newsKind, setNewsKind] = useState<"NEWS" | "BRIEF">("NEWS");
+
+  // CATÉGORIE ÉDITORIALE (NEWS_TYPE en BQ)
+  const [newsType, setNewsType] = useState<string | null>(null);
+
+  // CONTENU
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [body, setBody] = useState("");
@@ -98,7 +104,8 @@ export default function NewsStudio({ mode, newsId }: Props) {
         const res = await api.get(`/news/${newsId}`);
         const n = res.news;
 
-        setNewsType(n.NEWS_TYPE || "NEWS");
+        setNewsKind(n.NEWS_KIND || "NEWS");
+        setNewsType(n.NEWS_TYPE || null);
 
         setTitle(n.TITLE || "");
         setExcerpt(n.EXCERPT || "");
@@ -159,7 +166,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   }, [company]);
 
   /* =========================================================
-     SAVE NEWS / BRIEF
+     SAVE NEWS / BRÈVE
   ========================================================= */
   async function saveNews() {
     if (!title.trim()) return alert("Titre requis");
@@ -172,8 +179,12 @@ export default function NewsStudio({ mode, newsId }: Props) {
       id_company: company.id_company || company.ID_COMPANY,
       title,
       excerpt,
-      body: newsType === "BRIEF" ? null : body,
-      news_type: newsType,
+      body: newsKind === "BRIEF" ? null : body,
+
+      // ALIGNEMENT BQ
+      news_kind: newsKind,
+      news_type: newsType, // facultatif
+
       topics: topics.map((t) => t.id_topic),
       persons: persons.map((p) => p.id_person || p.ID_PERSON),
     };
@@ -186,7 +197,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
         await api.put(`/news/update/${internalNewsId}`, payload);
       }
 
-      setStep(newsType === "BRIEF" ? "PREVIEW" : "VISUAL");
+      setStep(newsKind === "BRIEF" ? "PREVIEW" : "VISUAL");
     } catch (e) {
       console.error(e);
       alert("Erreur sauvegarde");
@@ -202,7 +213,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
     if (!internalNewsId) return;
 
     if (
-      newsType === "NEWS" &&
+      newsKind === "NEWS" &&
       !mediaId &&
       !companyFull?.MEDIA_LOGO_RECTANGLE_ID
     ) {
@@ -262,9 +273,13 @@ export default function NewsStudio({ mode, newsId }: Props) {
             company={company}
             topics={topics}
             persons={persons}
+
+            newsKind={newsKind}
             newsType={newsType}
+
             onChange={(d) => {
-              if (d.newsType) setNewsType(d.newsType);
+              if (d.newsKind !== undefined) setNewsKind(d.newsKind);
+              if (d.newsType !== undefined) setNewsType(d.newsType);
               if (d.title !== undefined) setTitle(d.title);
               if (d.excerpt !== undefined) setExcerpt(d.excerpt);
               if (d.body !== undefined) setBody(d.body);
@@ -279,7 +294,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
       )}
 
       {/* VISUAL */}
-      {newsType === "NEWS" && isStepReached("VISUAL") && (
+      {newsKind === "NEWS" && isStepReached("VISUAL") && (
         <details open={step === "VISUAL"} className="border rounded p-4">
           <summary onClick={() => setStep("VISUAL")} className="font-semibold">
             3. Visuel
@@ -316,7 +331,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
       )}
 
       {/* LINKEDIN */}
-      {newsType === "NEWS" && isStepReached("LINKEDIN") && internalNewsId && (
+      {newsKind === "NEWS" && isStepReached("LINKEDIN") && internalNewsId && (
         <NewsStepLinkedIn
           newsId={internalNewsId}
           title={title}
