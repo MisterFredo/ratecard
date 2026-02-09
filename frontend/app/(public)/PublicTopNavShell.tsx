@@ -17,18 +17,22 @@ export default function PublicTopNavShell({
     return pathname === path || pathname.startsWith(`${path}/`);
   }
 
+  /* =====================================================
+     NAV ITEMS — PUBLIC
+     (Curator débranché)
+  ===================================================== */
   const navItems = [
     { href: "/news", label: "News" },
+    { href: "/breves", label: "Brèves" },
     { href: "/members", label: "Membres" },
     { href: "/events", label: "Événements" },
-    { href: "/curator", label: "Curator" },
     { href: "/membership", label: "Membership" },
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* =====================================================
-          TOP NAV — LIGNÉE BLEUE
+          TOP NAV
       ===================================================== */}
       <header className="sticky top-0 z-40 bg-white border-b">
         {/* Liseré */}
@@ -81,6 +85,7 @@ export default function PublicTopNavShell({
                 hover:border hover:border-ratecard-blue/40
                 transition
               "
+              aria-label="Newsletter"
             >
               <Mail size={16} />
             </Link>
@@ -93,6 +98,7 @@ export default function PublicTopNavShell({
                 hover:border hover:border-ratecard-blue/40
                 transition
               "
+              aria-label="LinkedIn"
             >
               <Linkedin size={16} />
             </Link>
@@ -102,6 +108,7 @@ export default function PublicTopNavShell({
           <button
             onClick={() => setMobileOpen(true)}
             className="md:hidden text-ratecard-blue"
+            aria-label="Menu"
           >
             <Menu />
           </button>
@@ -117,13 +124,14 @@ export default function PublicTopNavShell({
             {/* HEADER */}
             <div className="flex items-center justify-between p-4 border-b">
               <img
-                src="/assets/brand/ratecard-logo.jpg"
+                src="/assets/brand/ratecard-logo.jpeg"
                 alt="Ratecard"
                 className="h-6"
               />
               <button
                 onClick={() => setMobileOpen(false)}
                 className="text-ratecard-blue"
+                aria-label="Fermer"
               >
                 <X />
               </button>
@@ -189,3 +197,4 @@ export default function PublicTopNavShell({
     </div>
   );
 }
+
