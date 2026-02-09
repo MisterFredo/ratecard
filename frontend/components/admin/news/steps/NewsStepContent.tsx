@@ -13,11 +13,9 @@ import PersonSelector, {
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
 /**
- * NEWS_KIND  = structure éditoriale (NEWS | BRIEF)
- * NEWS_TYPE  = catégorie métier (CORPORATE, PRODUIT, etc.)
+ * 🔒 On n'invente PAS de types front.
+ * On manipule directement les valeurs métiers stockées en BQ.
  */
-
-type NewsKind = "NEWS" | "BRIEF";
 
 type Props = {
   title: string;
@@ -28,8 +26,9 @@ type Props = {
   topics: any[];
   persons: ArticlePerson[];
 
-  newsKind: NewsKind;
-  newsType?: string | null;
+  // STRUCTURE
+  newsType: "NEWS" | "BRIEF";          // NEWS / BRÈVE
+  newsKind?: string | null;            // ACQUISITION / CORPORATE / ...
 
   onChange: (d: {
     title?: string;
@@ -38,15 +37,19 @@ type Props = {
     company?: any | null;
     topics?: any[];
     persons?: ArticlePerson[];
-    newsKind?: NewsKind;
-    newsType?: string | null;
+    newsType?: "NEWS" | "BRIEF";
+    newsKind?: string | null;
   }) => void;
 
   onValidate: () => void;
   saving: boolean;
 };
 
-const NEWS_TYPES = [
+/**
+ * 📌 Valeurs gouvernées (BQ)
+ * Non obligatoires
+ */
+const NEWS_KIND_VALUES = [
   "ACQUISITION",
   "CAS CLIENT",
   "CORPORATE",
@@ -64,8 +67,8 @@ export default function NewsStepContent({
   company,
   topics,
   persons,
-  newsKind,
-  newsType = null,
+  newsType,
+  newsKind = null,
   onChange,
   onValidate,
   saving,
@@ -104,18 +107,20 @@ export default function NewsStepContent({
   --------------------------------------------------------- */
   return (
     <div className="space-y-6">
-      {/* STRUCTURE ÉDITORIALE */}
+      {/* STRUCTURE — NEWS / BRÈVE */}
       <div>
         <label className="block font-medium mb-1">
           Type de contenu
         </label>
 
-        <div className="flex gap-6">
+        <div className="flex gap-4">
           <label className="flex items-center gap-2">
             <input
               type="radio"
-              checked={newsKind === "NEWS"}
-              onChange={() => onChange({ newsKind: "NEWS" })}
+              checked={newsType === "NEWS"}
+              onChange={() =>
+                onChange({ newsType: "NEWS" })
+              }
             />
             <span>News</span>
           </label>
@@ -123,44 +128,49 @@ export default function NewsStepContent({
           <label className="flex items-center gap-2">
             <input
               type="radio"
-              checked={newsKind === "BRIEF"}
-              onChange={() => onChange({ newsKind: "BRIEF" })}
+              checked={newsType === "BRIEF"}
+              onChange={() =>
+                onChange({ newsType: "BRIEF" })
+              }
             />
             <span>Brève</span>
           </label>
         </div>
 
         <p className="text-sm text-gray-500 mt-1">
-          Une brève est un signal court (titre + excerpt), sans article long.
+          Une brève est un signal court (titre + excerpt),
+          sans article détaillé.
         </p>
       </div>
 
-      {/* CATÉGORIE MÉTIER */}
+      {/* CATÉGORIE MÉTIER — NEWS_KIND */}
       <div>
         <label className="block font-medium mb-1">
           Catégorie éditoriale
+          <span className="text-sm text-gray-400 ml-1">
+            (optionnel)
+          </span>
         </label>
 
         <select
-          className="w-full border rounded p-2"
-          value={newsType || ""}
+          className="border rounded p-2 w-full"
+          value={newsKind || ""}
           onChange={(e) =>
             onChange({
-              newsType: e.target.value || null,
+              newsKind: e.target.value || null,
             })
           }
         >
-          <option value="">— Aucune —</option>
-          {NEWS_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
+          <option value="">
+            — Non renseignée —
+          </option>
+
+          {NEWS_KIND_VALUES.map((k) => (
+            <option key={k} value={k}>
+              {k}
             </option>
           ))}
         </select>
-
-        <p className="text-sm text-gray-500 mt-1">
-          Information métier non obligatoire (corporate, produit, etc.).
-        </p>
       </div>
 
       {/* SOCIÉTÉ (OBLIGATOIRE) */}
@@ -190,7 +200,7 @@ export default function NewsStepContent({
       {/* EXCERPT */}
       <div>
         <label className="block font-medium mb-1">
-          Excerpt <span className="text-sm text-gray-500">(obligatoire)</span>
+          Excerpt *
         </label>
         <textarea
           className="w-full border rounded p-2 h-24"
@@ -199,15 +209,15 @@ export default function NewsStepContent({
             onChange({ excerpt: e.target.value })
           }
           placeholder={
-            newsKind === "BRIEF"
+            newsType === "BRIEF"
               ? "Texte court affiché tel quel dans les brèves"
               : "Résumé court pour la Home et les listes"
           }
         />
       </div>
 
-      {/* TEXTE LONG — UNIQUEMENT POUR NEWS */}
-      {newsKind === "NEWS" && (
+      {/* TEXTE LONG — UNIQUEMENT NEWS */}
+      {newsType === "NEWS" && (
         <div>
           <label className="block font-medium mb-1">
             Texte
@@ -256,3 +266,4 @@ export default function NewsStepContent({
     </div>
   );
 }
+
