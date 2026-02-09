@@ -72,6 +72,23 @@ def list_route():
         logger.exception("Erreur liste news")
         raise HTTPException(400, "Erreur liste news")
 
+@router.get("/types")
+def list_news_types():
+    rows = query_bq(f"""
+        SELECT CODE, LABEL
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_TYPE`
+        WHERE IS_ACTIVE = TRUE
+        ORDER BY LABEL
+    """)
+
+    return {
+        "types": [
+            {"code": r["CODE"], "label": r["LABEL"]}
+            for r in rows
+        ]
+    }
+
+
 
 # ============================================================
 # GET ONE NEWS / BRÈVE
