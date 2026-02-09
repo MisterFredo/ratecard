@@ -16,10 +16,13 @@ class NewsCreate(BaseModel):
     body: Optional[str] = None
 
     # STRUCTURE ÉDITORIALE
+    # NEWS = article éditorial complet
+    # BRIEF = signal court (titre + excerpt)
     news_type: str  # "NEWS" | "BRIEF"
 
     # CATÉGORIE MÉTIER
-    type: Optional[str] = None  # "partenariat" | "produit" | ...
+    # ex: "partenariat" | "produit" | "client" | "corporate" | ...
+    type: Optional[str] = None
 
     # VISUEL / META
     media_rectangle_id: Optional[str] = None
@@ -30,12 +33,15 @@ class NewsCreate(BaseModel):
     topics: Optional[List[str]] = []
     persons: Optional[List[str]] = []
 
+
 # ============================================================
 # UPDATE NEWS / BRÈVE
 # ============================================================
 class NewsUpdate(BaseModel):
-    # STRUCTURE / CATÉGORIE
+    # STRUCTURE ÉDITORIALE
     news_type: Optional[str] = None  # "NEWS" | "BRIEF"
+
+    # CATÉGORIE MÉTIER
     type: Optional[str] = None
 
     # CONTENU
@@ -69,7 +75,7 @@ class NewsOut(BaseModel):
 
     # STRUCTURE
     news_type: Optional[str]  # "NEWS" | "BRIEF"
-    type: Optional[str]       # "partenariat" | ...
+    type: Optional[str]       # "partenariat" | "produit" | ...
 
     # CONTENU
     title: str
@@ -81,6 +87,7 @@ class NewsOut(BaseModel):
     company: dict
     topics: list = []
     persons: list = []
+
 
 # ============================================================
 # LINKEDIN
