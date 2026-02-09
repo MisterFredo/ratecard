@@ -203,11 +203,14 @@ def get_news(id_news: str):
 # ============================================================
 def list_news():
     """
-    Liste des news PUBLIQUES uniquement.
+    Liste des news et brèves PUBLIQUES.
     """
     sql = f"""
         SELECT
             n.ID_NEWS,
+            n.NEWS_KIND,
+            n.NEWS_TYPE,
+
             n.TITLE,
             n.EXCERPT,
             n.BODY,
