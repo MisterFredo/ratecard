@@ -31,13 +31,13 @@ export default function NewsStudio({ mode, newsId }: Props) {
   const searchParams = useSearchParams();
 
   /* =========================================================
-     STATE — ALIGNÉ BQ
+     STATE — STRICTEMENT ALIGNÉ BQ
   ========================================================= */
 
-  // STRUCTURE
+  // STRUCTURE (EN DUR)
   const [newsKind, setNewsKind] = useState<"NEWS" | "BRIEF">("NEWS");
 
-  // CATÉGORIE ÉDITORIALE (NEWS_TYPE en BQ)
+  // CATÉGORIE ÉDITORIALE (BQ)
   const [newsType, setNewsType] = useState<string | null>(null);
 
   // CONTENU
@@ -45,25 +45,19 @@ export default function NewsStudio({ mode, newsId }: Props) {
   const [excerpt, setExcerpt] = useState("");
   const [body, setBody] = useState("");
 
+  // RELATIONS
   const [company, setCompany] = useState<any | null>(null);
   const [companyFull, setCompanyFull] = useState<any | null>(null);
-
   const [topics, setTopics] = useState<any[]>([]);
   const [persons, setPersons] = useState<any[]>([]);
 
-  /* =========================================================
-     VISUEL
-  ========================================================= */
+  // VISUEL
   const [mediaId, setMediaId] = useState<string | null>(null);
 
-  /* =========================================================
-     PUBLICATION
-  ========================================================= */
+  // PUBLICATION
   const [publishAt, setPublishAt] = useState<string>("");
 
-  /* =========================================================
-     META
-  ========================================================= */
+  // META
   const [internalNewsId, setInternalNewsId] = useState<string | null>(
     newsId || null
   );
@@ -166,7 +160,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   }, [company]);
 
   /* =========================================================
-     SAVE NEWS / BRÈVE
+     SAVE
   ========================================================= */
   async function saveNews() {
     if (!title.trim()) return alert("Titre requis");
@@ -177,14 +171,17 @@ export default function NewsStudio({ mode, newsId }: Props) {
 
     const payload = {
       id_company: company.id_company || company.ID_COMPANY,
+
+      // STRUCTURE
+      news_type: newsKind,     // NEWS | BRIEF
+      type: newsType,          // catégorie éditoriale (BQ)
+
+      // CONTENU
       title,
       excerpt,
-      body: newsKind === "BRIEF" ? null : body,
+      body: newsKind === "NEWS" ? body : null,
 
-      // ALIGNEMENT BQ
-      news_kind: newsKind,
-      news_type: newsType, // facultatif
-
+      // RELATIONS
       topics: topics.map((t) => t.id_topic),
       persons: persons.map((p) => p.id_person || p.ID_PERSON),
     };
@@ -273,10 +270,8 @@ export default function NewsStudio({ mode, newsId }: Props) {
             company={company}
             topics={topics}
             persons={persons}
-
             newsKind={newsKind}
             newsType={newsType}
-
             onChange={(d) => {
               if (d.newsKind !== undefined) setNewsKind(d.newsKind);
               if (d.newsType !== undefined) setNewsType(d.newsType);
