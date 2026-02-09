@@ -12,17 +12,20 @@ import PersonSelector, {
 
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
-/**
- * 🔒 ALIGNEMENT STRICT
- *
- * - NEWS_KIND : structure du contenu (NEWS | BRIEF)
- * - NEWS_TYPE : catégorie rédactionnelle gouvernée (RATECARD_NEWS_TYPE.CODE)
- */
+/* =========================================================
+   TYPES
+========================================================= */
 
 type NewsType = {
   code: string;
   label: string;
 };
+
+/**
+ * 🔒 Alignement strict BQ
+ * - NEWS_KIND : structure (NEWS | BRIEF)
+ * - NEWS_TYPE : catégorie éditoriale (CODE string)
+ */
 
 type Props = {
   title: string;
@@ -35,8 +38,6 @@ type Props = {
 
   // STRUCTURE
   newsKind: "NEWS" | "BRIEF";
-
-  // CATÉGORIE RÉDACTIONNELLE (CODE)
   newsType?: string | null;
 
   onChange: (d: {
@@ -54,6 +55,10 @@ type Props = {
   saving: boolean;
 };
 
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 export default function NewsStepContent({
   title,
   excerpt,
@@ -68,7 +73,7 @@ export default function NewsStepContent({
   saving,
 }: Props) {
   /* ---------------------------------------------------------
-     NEWS_TYPE — référentiel gouverné (BQ)
+     NEWS_TYPE — référentiel éditorial (BQ)
   --------------------------------------------------------- */
   const [newsTypes, setNewsTypes] = useState<NewsType[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
@@ -77,13 +82,7 @@ export default function NewsStepContent({
     async function loadTypes() {
       try {
         const res = await api.get("/news/types");
-
-        setNewsTypes(
-          (res.types || []).map((t: any) => ({
-            code: t.code,
-            label: t.label,
-          }))
-        );
+        setNewsTypes(res.types || []);
       } catch (e) {
         console.error("Erreur chargement NEWS_TYPE", e);
         setNewsTypes([]);
@@ -121,18 +120,21 @@ export default function NewsStepContent({
     loadPersons();
   }, []);
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      UI
-  --------------------------------------------------------- */
+  ========================================================= */
+
   return (
     <div className="space-y-6">
-      {/* STRUCTURE — NEWS / BRÈVE */}
+      {/* =====================================================
+          STRUCTURE — NEWS / BRÈVE
+      ===================================================== */}
       <div>
         <label className="block font-medium mb-1">
           Type de contenu
         </label>
 
-        <div className="flex gap-6">
+        <div className="flex gap-4">
           <label className="flex items-center gap-2">
             <input
               type="radio"
@@ -153,7 +155,9 @@ export default function NewsStepContent({
         </div>
       </div>
 
-      {/* CATÉGORIE RÉDACTIONNELLE — NEWS_TYPE */}
+      {/* =====================================================
+          CATÉGORIE ÉDITORIALE — NEWS_TYPE
+      ===================================================== */}
       <div>
         <label className="block font-medium mb-1">
           Catégorie éditoriale
@@ -182,7 +186,9 @@ export default function NewsStepContent({
         </select>
       </div>
 
-      {/* SOCIÉTÉ */}
+      {/* =====================================================
+          SOCIÉTÉ
+      ===================================================== */}
       <CompanySelector
         values={company ? [company] : []}
         onChange={(items) => {
@@ -191,7 +197,9 @@ export default function NewsStepContent({
         }}
       />
 
-      {/* TITRE */}
+      {/* =====================================================
+          TITRE
+      ===================================================== */}
       <div>
         <label className="block font-medium mb-1">
           Titre *
@@ -200,11 +208,15 @@ export default function NewsStepContent({
           type="text"
           className="w-full border rounded p-2"
           value={title}
-          onChange={(e) => onChange({ title: e.target.value })}
+          onChange={(e) =>
+            onChange({ title: e.target.value })
+          }
         />
       </div>
 
-      {/* EXCERPT */}
+      {/* =====================================================
+          EXCERPT
+      ===================================================== */}
       <div>
         <label className="block font-medium mb-1">
           Excerpt *
@@ -212,25 +224,37 @@ export default function NewsStepContent({
         <textarea
           className="w-full border rounded p-2 h-24"
           value={excerpt}
-          onChange={(e) => onChange({ excerpt: e.target.value })}
+          onChange={(e) =>
+            onChange({ excerpt: e.target.value })
+          }
         />
       </div>
 
-      {/* TEXTE — UNIQUEMENT POUR NEWS */}
+      {/* =====================================================
+          TEXTE — UNIQUEMENT NEWS
+      ===================================================== */}
       {newsKind === "NEWS" && (
         <HtmlEditor
           value={body}
-          onChange={(html) => onChange({ body: html })}
+          onChange={(html) =>
+            onChange({ body: html })
+          }
         />
       )}
 
-      {/* TOPICS */}
+      {/* =====================================================
+          TOPICS
+      ===================================================== */}
       <TopicSelector
         values={topics}
-        onChange={(items) => onChange({ topics: items })}
+        onChange={(items) =>
+          onChange({ topics: items })
+        }
       />
 
-      {/* PERSONNES */}
+      {/* =====================================================
+          PERSONNES
+      ===================================================== */}
       <PersonSelector
         values={persons}
         persons={allPersons}
@@ -239,10 +263,14 @@ export default function NewsStepContent({
           company?.ID_COMPANY ||
           null
         }
-        onChange={(items) => onChange({ persons: items })}
+        onChange={(items) =>
+          onChange({ persons: items })
+        }
       />
 
-      {/* ACTION */}
+      {/* =====================================================
+          ACTION
+      ===================================================== */}
       <button
         onClick={onValidate}
         disabled={saving}
