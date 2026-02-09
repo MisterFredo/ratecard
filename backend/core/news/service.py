@@ -4,7 +4,6 @@ from typing import Optional
 from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.gcs import get_public_url
 from utils.bigquery_utils import (
     query_bq,
     insert_bq,
@@ -19,7 +18,6 @@ from api.news.models import NewsCreate, NewsUpdate
 # TABLES
 # ============================================================
 TABLE_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS"
-
 TABLE_NEWS_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_TOPIC"
 TABLE_NEWS_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_PERSON"
 
@@ -29,14 +27,10 @@ TABLE_PERSON = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_PERSON"
 TABLE_NEWS_LINKEDIN_POST = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_LINKEDIN_POST"
 
 
-
 # ============================================================
-# SERIALIZATION (JSON-SAFE)
+# SERIALIZATION
 # ============================================================
 def serialize_row(row: dict) -> dict:
-    """
-    Prépare une ligne BigQuery pour un retour API (JSON-safe).
-    """
     clean = {}
     for k, v in row.items():
         if hasattr(v, "isoformat"):
@@ -47,7 +41,7 @@ def serialize_row(row: dict) -> dict:
 
 
 # ============================================================
-# CREATE NEWS
+# CREATE NEWS / BRÈVE
 # ============================================================
 def create_news(data: NewsCreate) -> str:
     if not data.id_company:
@@ -57,7 +51,7 @@ def create_news(data: NewsCreate) -> str:
         raise ValueError("TITLE obligatoire")
 
     if data.news_type not in ("NEWS", "BRIEF"):
-        raise ValueError("NEWS_TYPE invalide (NEWS | BRIEF)")
+        raise ValueError("NEWS_KIND invalide (NEWS | BRIEF)")
 
     news_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
@@ -67,14 +61,17 @@ def create_news(data: NewsCreate) -> str:
         "STATUS": "DRAFT",
         "IS_ACTIVE": True,
 
-        # TYPOLOGIE
-        "NEWS_TYPE": data.news_type,   # NEWS | BRIEF
+        # STRUCTURE
+        "NEWS_KIND": data.news_type,   # NEWS | BRIEF
+
+        # CATÉGORIE MÉTIER
+        "NEWS_TYPE": data.type,        # partenariat | produit | ...
 
         # CONTENU
         "ID_COMPANY": data.id_company,
         "TITLE": data.title,
-        "BODY": data.body,
         "EXCERPT": data.excerpt,
+        "BODY": data.body if data.news_type == "NEWS" else None,
 
         # VISUEL
         "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
@@ -93,9 +90,7 @@ def create_news(data: NewsCreate) -> str:
     client.load_table_from_json(
         row,
         TABLE_NEWS,
-        job_config=bigquery.LoadJobConfig(
-            write_disposition="WRITE_APPEND"
-        ),
+        job_config=bigquery.LoadJobConfig(write_disposition="WRITE_APPEND"),
     ).result()
 
     if data.topics:
@@ -113,9 +108,8 @@ def create_news(data: NewsCreate) -> str:
     return news_id
 
 
-
 # ============================================================
-# GET ONE NEWS (ENRICHI, JSON-SAFE)
+# GET ONE NEWS / BRÈVE
 # ============================================================
 def get_news(id_news: str):
     rows = query_bq(
@@ -133,14 +127,9 @@ def get_news(id_news: str):
 
     news = serialize_row(rows[0])
 
-    # COMPANY
     company_rows = query_bq(
         f"""
-        SELECT
-            ID_COMPANY,
-            NAME,
-            MEDIA_LOGO_RECTANGLE_ID,
-            IS_PARTNER
+        SELECT ID_COMPANY, NAME, MEDIA_LOGO_RECTANGLE_ID, IS_PARTNER
         FROM `{TABLE_COMPANY}`
         WHERE ID_COMPANY = @id
         """,
@@ -162,8 +151,7 @@ def get_news(id_news: str):
         f"""
         SELECT T.ID_TOPIC, T.LABEL, T.TOPIC_AXIS
         FROM `{TABLE_NEWS_TOPIC}` NT
-        JOIN `{TABLE_TOPIC}` T
-          ON NT.ID_TOPIC = T.ID_TOPIC
+        JOIN `{TABLE_TOPIC}` T ON NT.ID_TOPIC = T.ID_TOPIC
         WHERE NT.ID_NEWS = @id
         """,
         {"id": id_news},
@@ -173,8 +161,7 @@ def get_news(id_news: str):
         f"""
         SELECT P.ID_PERSON, P.NAME
         FROM `{TABLE_NEWS_PERSON}` NP
-        JOIN `{TABLE_PERSON}` P
-          ON NP.ID_PERSON = P.ID_PERSON
+        JOIN `{TABLE_PERSON}` P ON NP.ID_PERSON = P.ID_PERSON
         WHERE NP.ID_NEWS = @id
         """,
         {"id": id_news},
@@ -182,41 +169,41 @@ def get_news(id_news: str):
 
     return news
 
+
 # ============================================================
-# LIST NEWS (ADMIN + PUBLIC)
+# LIST NEWS / BRÈVES (PUBLIC)
 # ============================================================
 def list_news():
-    """
-    Liste des NEWS et BRÈVES publiées.
-    """
-
     sql = f"""
         SELECT
             n.ID_NEWS,
 
-            -- Typologie
-            n.NEWS_TYPE,   -- NEWS | BRIEF
+            -- STRUCTURE
+            n.NEWS_KIND,     -- NEWS | BRIEF
 
-            -- Contenu
+            -- CATÉGORIE MÉTIER
+            n.NEWS_TYPE,     -- partenariat | produit | ...
+
+            -- CONTENU
             n.TITLE,
             n.EXCERPT,
             n.BODY,
 
-            -- Publication
+            -- PUBLICATION
             n.STATUS,
             n.PUBLISHED_AT,
 
-            -- Visuel
+            -- VISUEL
             n.MEDIA_RECTANGLE_ID AS VISUAL_RECT_ID,
             n.HAS_VISUAL,
 
-            -- Société
+            -- SOCIÉTÉ
             c.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
             c.MEDIA_LOGO_RECTANGLE_ID,
             c.IS_PARTNER,
 
-            -- Topics
+            -- TOPICS
             T.TOPICS
 
         FROM `{TABLE_NEWS}` n
@@ -236,8 +223,7 @@ def list_news():
             JOIN `{TABLE_TOPIC}` T
               ON NT.ID_TOPIC = T.ID_TOPIC
             GROUP BY NT.ID_NEWS
-        ) T
-          ON n.ID_NEWS = T.ID_NEWS
+        ) T ON n.ID_NEWS = T.ID_NEWS
 
         WHERE
             n.STATUS = 'PUBLISHED'
@@ -246,19 +232,24 @@ def list_news():
 
         ORDER BY n.PUBLISHED_AT DESC
     """
-
     return query_bq(sql)
 
 
-
 # ============================================================
-# UPDATE NEWS
+# UPDATE NEWS / BRÈVE
 # ============================================================
 def update_news(id_news: str, data: NewsUpdate):
     fields = {
+        # STRUCTURE / CATÉGORIE
+        "NEWS_KIND": data.news_type,
+        "NEWS_TYPE": data.type,
+
+        # CONTENU
         "TITLE": data.title,
         "EXCERPT": data.excerpt,
         "BODY": data.body,
+
+        # VISUEL
         "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
         "HAS_VISUAL": (
             bool(data.media_rectangle_id)
@@ -266,11 +257,10 @@ def update_news(id_news: str, data: NewsUpdate):
             else None
         ),
 
-        # TYPOLOGIE
-        "NEWS_TYPE": data.news_type,
-
+        # META
         "SOURCE_URL": data.source_url,
         "AUTHOR": data.author,
+
         "UPDATED_AT": datetime.utcnow(),
     }
 
@@ -308,7 +298,7 @@ def update_news(id_news: str, data: NewsUpdate):
 
 
 # ============================================================
-# ARCHIVE NEWS
+# ARCHIVE / DELETE
 # ============================================================
 def archive_news(id_news: str):
     update_bq(
@@ -318,36 +308,30 @@ def archive_news(id_news: str):
     )
     return True
 
+
 def delete_news(news_id: str):
     client = get_bigquery_client()
-
     queries = [
         f"DELETE FROM `{TABLE_NEWS}` WHERE ID_NEWS = @id",
         f"DELETE FROM `{TABLE_NEWS_TOPIC}` WHERE ID_NEWS = @id",
         f"DELETE FROM `{TABLE_NEWS_PERSON}` WHERE ID_NEWS = @id",
-        f"DELETE FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_LINKEDIN_POST` WHERE ID_NEWS = @id",
+        f"DELETE FROM `{TABLE_NEWS_LINKEDIN_POST}` WHERE ID_NEWS = @id",
     ]
-
     job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("id", "STRING", news_id)
-        ]
+        query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", news_id)]
     )
-
     for q in queries:
         client.query(q, job_config=job_config).result()
 
+
 # ============================================================
-# PUBLISH NEWS
+# PUBLISH
 # ============================================================
-def publish_news(
-    id_news: str,
-    published_at: Optional[str] = None,
-):
+def publish_news(id_news: str, published_at: Optional[str] = None):
     rows = query_bq(
         f"""
         SELECT
-            n.NEWS_TYPE,
+            n.NEWS_KIND,
             n.EXCERPT,
             n.MEDIA_RECTANGLE_ID,
             c.MEDIA_LOGO_RECTANGLE_ID AS COMPANY_RECT
@@ -367,7 +351,7 @@ def publish_news(
     if not row["EXCERPT"]:
         raise ValueError("Un excerpt est requis pour publier")
 
-    if row["NEWS_TYPE"] == "NEWS":
+    if row["NEWS_KIND"] == "NEWS":
         if not row["MEDIA_RECTANGLE_ID"] and not row["COMPANY_RECT"]:
             raise ValueError("Un visuel est requis pour publier une news")
 
@@ -396,60 +380,36 @@ def publish_news(
 
 
 # ============================================================
-# LINKEDIN — GET POST FOR NEWS
+# LINKEDIN
 # ============================================================
-
 def get_news_linkedin_post(news_id: str) -> Optional[dict]:
-    """
-    Récupère le post LinkedIn associé à une news.
-    Retourne None si inexistant.
-    """
     client = get_bigquery_client()
-
-    query = f"""
-        SELECT
-            ID_NEWS,
-            TEXT,
-            MODE,
-            UPDATED_AT
-        FROM `{TABLE_NEWS_LINKEDIN_POST}`
-        WHERE ID_NEWS = @news_id
-        LIMIT 1
-    """
-
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter(
-                "news_id", "STRING", news_id
-            )
-        ]
+    rows = list(
+        client.query(
+            f"""
+            SELECT ID_NEWS, TEXT, MODE, UPDATED_AT
+            FROM `{TABLE_NEWS_LINKEDIN_POST}`
+            WHERE ID_NEWS = @id
+            LIMIT 1
+            """,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("id", "STRING", news_id)
+                ]
+            ),
+        ).result()
     )
-
-    rows = list(client.query(query, job_config=job_config).result())
-
     if not rows:
         return None
-
     return serialize_row(dict(rows[0]))
 
-# ============================================================
-# LINKEDIN — SAVE / UPDATE POST FOR NEWS
-# ============================================================
 
-def save_news_linkedin_post(
-    news_id: str,
-    text: str,
-    mode: str,
-):
-    """
-    Sauvegarde ou met à jour le post LinkedIn lié à une news.
-    Utilise un MERGE BigQuery (UPSERT).
-    """
+def save_news_linkedin_post(news_id: str, text: str, mode: str):
     client = get_bigquery_client()
-
     now = datetime.utcnow()
 
-    query = f"""
+    client.query(
+        f"""
         MERGE `{TABLE_NEWS_LINKEDIN_POST}` T
         USING (
             SELECT
@@ -467,26 +427,13 @@ def save_news_linkedin_post(
         WHEN NOT MATCHED THEN
           INSERT (ID_NEWS, TEXT, MODE, UPDATED_AT)
           VALUES (S.ID_NEWS, S.TEXT, S.MODE, S.UPDATED_AT)
-    """
-
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter(
-                "id_news", "STRING", news_id
-            ),
-            bigquery.ScalarQueryParameter(
-                "text", "STRING", text
-            ),
-            bigquery.ScalarQueryParameter(
-                "mode", "STRING", mode
-            ),
-            bigquery.ScalarQueryParameter(
-                "updated_at", "TIMESTAMP", now
-            ),
-        ]
-    )
-
-    client.query(query, job_config=job_config).result()
-
-
-
+        """,
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("id_news", "STRING", news_id),
+                bigquery.ScalarQueryParameter("text", "STRING", text),
+                bigquery.ScalarQueryParameter("mode", "STRING", mode),
+                bigquery.ScalarQueryParameter("updated_at", "TIMESTAMP", now),
+            ]
+        ),
+    ).result()
