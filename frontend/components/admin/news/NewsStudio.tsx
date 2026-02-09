@@ -13,6 +13,7 @@ import NewsStepPublish from "@/components/admin/news/steps/NewsStepPublish";
 import NewsStepLinkedIn from "@/components/admin/news/steps/NewsStepLinkedIn";
 
 type Mode = "create" | "edit";
+type NewsType = "NEWS" | "BRIEF";
 
 type Step =
   | "SOURCE"
@@ -33,20 +34,20 @@ export default function NewsStudio({ mode, newsId }: Props) {
   /* =========================================================
      STATE — CORE
   ========================================================= */
+  const [newsType, setNewsType] = useState<NewsType>("NEWS");
+
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [body, setBody] = useState("");
 
-  // société sélectionnée (format selector)
   const [company, setCompany] = useState<any | null>(null);
-  // société complète (source de vérité)
   const [companyFull, setCompanyFull] = useState<any | null>(null);
 
   const [topics, setTopics] = useState<any[]>([]);
   const [persons, setPersons] = useState<any[]>([]);
 
   /* =========================================================
-     STATE — VISUEL
+     VISUEL
   ========================================================= */
   const [mediaId, setMediaId] = useState<string | null>(null);
 
@@ -65,9 +66,6 @@ export default function NewsStudio({ mode, newsId }: Props) {
   const [publishing, setPublishing] = useState(false);
   const [step, setStep] = useState<Step>("SOURCE");
 
-  /* =========================================================
-     UTILS — STEP ORDER
-  ========================================================= */
   const stepOrder: Step[] = [
     "SOURCE",
     "CONTENT",
@@ -82,18 +80,17 @@ export default function NewsStudio({ mode, newsId }: Props) {
   }
 
   /* =========================================================
-     INIT STEP FROM URL (?step=LINKEDIN)
+     INIT STEP FROM URL
   ========================================================= */
   useEffect(() => {
     const stepParam = searchParams.get("step") as Step | null;
-
     if (stepParam && stepOrder.includes(stepParam)) {
       setStep(stepParam);
     }
   }, [searchParams]);
 
   /* =========================================================
-     LOAD NEWS (EDIT MODE)
+     LOAD NEWS (EDIT)
   ========================================================= */
   useEffect(() => {
     if (mode !== "edit" || !newsId) return;
@@ -103,11 +100,12 @@ export default function NewsStudio({ mode, newsId }: Props) {
         const res = await api.get(`/news/${newsId}`);
         const n = res.news;
 
+        setNewsType(n.NEWS_TYPE || "NEWS");
+
         setTitle(n.TITLE || "");
         setExcerpt(n.EXCERPT || "");
         setBody(n.BODY || "");
 
-        // Société — format attendu par CompanySelector
         setCompany(
           n.company
             ? {
@@ -117,7 +115,6 @@ export default function NewsStudio({ mode, newsId }: Props) {
             : null
         );
 
-        // Topics — format attendu par TopicSelector
         setTopics(
           (n.topics || []).map((t: any) => ({
             id_topic: t.ID_TOPIC,
@@ -126,11 +123,8 @@ export default function NewsStudio({ mode, newsId }: Props) {
         );
 
         setPersons(n.persons || []);
-
-        // visuel news éventuel
         setMediaId(n.MEDIA_RECTANGLE_ID || null);
 
-        // si aucun step imposé par l’URL
         if (!searchParams.get("step")) {
           setStep("CONTENT");
         }
@@ -144,7 +138,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   }, [mode, newsId, searchParams]);
 
   /* =========================================================
-     LOAD FULL COMPANY (SOURCE DE VÉRITÉ)
+     LOAD COMPANY FULL
   ========================================================= */
   useEffect(() => {
     if (!company?.id_company && !company?.ID_COMPANY) {
@@ -159,8 +153,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
       try {
         const res = await api.get(`/company/${companyId}`);
         setCompanyFull(res.company);
-      } catch (e) {
-        console.error("Erreur chargement société complète", e);
+      } catch {
         setCompanyFull(null);
       }
     }
@@ -169,7 +162,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   }, [company]);
 
   /* =========================================================
-     SAVE NEWS (CREATE / UPDATE)
+     SAVE NEWS / BRIEF
   ========================================================= */
   async function saveNews() {
     if (!title.trim()) {
@@ -188,7 +181,8 @@ export default function NewsStudio({ mode, newsId }: Props) {
       id_company: company.id_company || company.ID_COMPANY,
       title,
       excerpt,
-      body,
+      body: newsType === "BRIEF" ? null : body,
+      news_type: newsType,
       topics: topics.map((t) => t.id_topic),
       persons: persons.map((p) => p.id_person || p.ID_PERSON),
     };
@@ -197,77 +191,80 @@ export default function NewsStudio({ mode, newsId }: Props) {
       if (!internalNewsId) {
         const res = await api.post("/news/create", payload);
         setInternalNewsId(res.id_news);
-
-        // Forcer le chargement société complète après création
-        try {
-          const companyId =
-            company.id_company || company.ID_COMPANY;
-          const resCompany = await api.get(
-            `/company/${companyId}`
-          );
-          setCompanyFull(resCompany.company);
-        } catch (e) {
-          console.error(
-            "Erreur chargement société après création",
-            e
-          );
-        }
       } else {
         await api.put(`/news/update/${internalNewsId}`, payload);
       }
 
-      setStep("VISUAL");
+      setStep(newsType === "BRIEF" ? "PREVIEW" : "VISUAL");
     } catch (e) {
       console.error(e);
-      alert("❌ Erreur sauvegarde news");
+      alert("❌ Erreur sauvegarde");
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
   }
 
   /* =========================================================
-     PUBLISH NEWS
+     PUBLISH
   ========================================================= */
   async function publishNews() {
     if (!internalNewsId) return;
 
-    if (!mediaId && !companyFull?.MEDIA_LOGO_RECTANGLE_ID) {
-      alert("Un visuel 16:9 est requis");
-      return;
+    if (newsType === "NEWS") {
+      if (!mediaId && !companyFull?.MEDIA_LOGO_RECTANGLE_ID) {
+        alert("Visuel requis pour une news");
+        return;
+      }
     }
 
     if (!publishAt) {
-      alert("Veuillez définir une date de publication");
+      alert("Date de publication requise");
       return;
     }
 
     setPublishing(true);
 
     try {
-      // 🔑 Conversion datetime-local -> ISO UTC
       const publishAtUTC = new Date(publishAt).toISOString();
 
       await api.post(`/news/publish/${internalNewsId}`, {
         publish_at: publishAtUTC,
       });
 
-      alert("News publiée");
+      alert("Publié");
       setStep("LINKEDIN");
-    } catch (e) {
-      console.error(e);
-      alert("❌ Erreur publication news");
+    } catch {
+      alert("Erreur publication");
     } finally {
       setPublishing(false);
     }
   }
 
-
   /* =========================================================
-     UI — STUDIO
+     UI
   ========================================================= */
   return (
     <div className="space-y-6">
-      {/* STEP 1 — SOURCE */}
+
+      {/* TYPE */}
+      <div className="border rounded p-4 bg-gray-50">
+        <label className="block font-medium mb-2">
+          Type de contenu
+        </label>
+
+        <select
+          value={newsType}
+          onChange={(e) =>
+            setNewsType(e.target.value as NewsType)
+          }
+          className="border rounded p-2"
+        >
+          <option value="NEWS">News</option>
+          <option value="BRIEF">Brève</option>
+        </select>
+      </div>
+
+      {/* SOURCE */}
       <details open={step === "SOURCE"} className="border rounded p-4">
         <summary
           className="font-semibold cursor-pointer"
@@ -287,7 +284,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
         />
       </details>
 
-      {/* STEP 2 — CONTENT */}
+      {/* CONTENT */}
       {isStepReached("CONTENT") && (
         <details open={step === "CONTENT"} className="border rounded p-4">
           <summary
@@ -318,8 +315,8 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </details>
       )}
 
-      {/* STEP 3 — VISUAL */}
-      {isStepReached("VISUAL") && (
+      {/* VISUAL — ONLY NEWS */}
+      {newsType === "NEWS" && isStepReached("VISUAL") && (
         <details open={step === "VISUAL"} className="border rounded p-4">
           <summary
             className="font-semibold cursor-pointer"
@@ -342,7 +339,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </details>
       )}
 
-      {/* STEP 4 — PREVIEW */}
+      {/* PREVIEW */}
       {isStepReached("PREVIEW") && (
         <details open={step === "PREVIEW"} className="border rounded p-4">
           <summary
@@ -361,7 +358,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </details>
       )}
 
-      {/* STEP 5 — PUBLISH */}
+      {/* PUBLISH */}
       {isStepReached("PUBLISH") && (
         <details open={step === "PUBLISH"} className="border rounded p-4">
           <summary
@@ -382,23 +379,22 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </details>
       )}
 
-      {/* STEP 6 — LINKEDIN */}
-      {isStepReached("LINKEDIN") && internalNewsId && (
-        <details open={step === "LINKEDIN"} className="border rounded p-4">
-          <summary
-            className="font-semibold cursor-pointer"
-            onClick={() => setStep("LINKEDIN")}
-          >
-            6. Post LinkedIn
-          </summary>
+      {/* LINKEDIN — NEWS ONLY */}
+      {newsType === "NEWS" &&
+        isStepReached("LINKEDIN") &&
+        internalNewsId && (
+          <details open className="border rounded p-4">
+            <summary className="font-semibold">
+              6. Post LinkedIn
+            </summary>
 
-          <NewsStepLinkedIn
-            newsId={internalNewsId}
-            title={title}
-            excerpt={excerpt}
-          />
-        </details>
-      )}
+            <NewsStepLinkedIn
+              newsId={internalNewsId}
+              title={title}
+              excerpt={excerpt}
+            />
+          </details>
+        )}
     </div>
   );
 }
