@@ -50,10 +50,6 @@ def serialize_row(row: dict) -> dict:
 # CREATE NEWS
 # ============================================================
 def create_news(data: NewsCreate) -> str:
-    """
-    Crée une NEWS ou une BRÈVE (sans publication).
-    """
-
     if not data.id_company:
         raise ValueError("ID_COMPANY obligatoire")
 
@@ -71,9 +67,8 @@ def create_news(data: NewsCreate) -> str:
         "STATUS": "DRAFT",
         "IS_ACTIVE": True,
 
-        # 🧭 TYPOLOGIE
+        # TYPOLOGIE
         "NEWS_TYPE": data.news_type,   # NEWS | BRIEF
-        "TYPE": data.type,             # partenariat | produit | client | ...
 
         # CONTENU
         "ID_COMPANY": data.id_company,
@@ -95,7 +90,6 @@ def create_news(data: NewsCreate) -> str:
     }]
 
     client = get_bigquery_client()
-
     client.load_table_from_json(
         row,
         TABLE_NEWS,
@@ -117,6 +111,7 @@ def create_news(data: NewsCreate) -> str:
         )
 
     return news_id
+
 
 
 # ============================================================
@@ -201,7 +196,6 @@ def list_news():
 
             -- Typologie
             n.NEWS_TYPE,   -- NEWS | BRIEF
-            n.TYPE,        -- partenariat | produit | ...
 
             -- Contenu
             n.TITLE,
@@ -256,6 +250,7 @@ def list_news():
     return query_bq(sql)
 
 
+
 # ============================================================
 # UPDATE NEWS
 # ============================================================
@@ -265,11 +260,14 @@ def update_news(id_news: str, data: NewsUpdate):
         "EXCERPT": data.excerpt,
         "BODY": data.body,
         "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
-        "HAS_VISUAL": bool(data.media_rectangle_id) if data.media_rectangle_id is not None else None,
+        "HAS_VISUAL": (
+            bool(data.media_rectangle_id)
+            if data.media_rectangle_id is not None
+            else None
+        ),
 
         # TYPOLOGIE
         "NEWS_TYPE": data.news_type,
-        "TYPE": data.type,
 
         "SOURCE_URL": data.source_url,
         "AUTHOR": data.author,
@@ -307,6 +305,7 @@ def update_news(id_news: str, data: NewsUpdate):
         )
 
     return True
+
 
 # ============================================================
 # ARCHIVE NEWS
