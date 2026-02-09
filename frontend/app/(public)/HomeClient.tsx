@@ -22,6 +22,8 @@ type NewsItem = {
   excerpt?: string | null;
   visual_rect_id?: string | null;
   published_at: string;
+
+  news_kind: "NEWS" | "BRIEF";
   company?: Company;
 };
 
@@ -32,6 +34,11 @@ type AnalysisItem = {
   published_at: string;
   topics?: string[];
 };
+
+type UnifiedItem =
+  | { type: "NEWS"; published_at: string; item: NewsItem }
+  | { type: "BRIEF"; published_at: string; item: NewsItem }
+  | { type: "ANALYSIS"; published_at: string; item: AnalysisItem };
 
 type Props = {
   news: NewsItem[];
@@ -44,9 +51,7 @@ type Props = {
 
 const PAGE_SIZE = 12;
 const MAX_ITEMS = 100;
-
-const BRIEF_START_INDEX = 6;   // à partir de la 7e carte
-const ANALYSIS_INSERT_INDEX = 10;
+const TOP_NEWS_COUNT = 6;
 
 /* =========================================================
    COMPONENT
@@ -58,57 +63,50 @@ export default function HomeClient({
 }: Props) {
   const { openRightDrawer } = useDrawer();
 
-  /* ---------------------------------------------------------
-     STATE — SCROLL
-  --------------------------------------------------------- */
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   /* ---------------------------------------------------------
-     TRI DES NEWS (DATE DESC)
+     1. TOP 6 — NEWS UNIQUEMENT
   --------------------------------------------------------- */
-  const sortedNews = [...news].sort(
-    (a, b) =>
-      new Date(b.published_at).getTime() -
-      new Date(a.published_at).getTime()
-  );
+  const topNews = [...news]
+    .filter((n) => n.news_kind === "NEWS")
+    .sort(
+      (a, b) =>
+        new Date(b.published_at).getTime() -
+        new Date(a.published_at).getTime()
+    )
+    .slice(0, TOP_NEWS_COUNT);
 
-  const featuredNews = sortedNews[0];
-  const otherNews = sortedNews.slice(1);
-
-  const visibleNews = otherNews.slice(
-    0,
-    Math.min(visibleCount, MAX_ITEMS)
-  );
+  const topNewsIds = new Set(topNews.map((n) => n.id));
 
   /* ---------------------------------------------------------
-     CONSTRUCTION DU FLUX
+     2. FLUX GLOBAL (NEWS / BRIEF / ANALYSIS)
+     - on enlève les NEWS déjà utilisées en top
+     - on trie par date
   --------------------------------------------------------- */
-  const mixedItems: Array<
-    | { type: "news"; item: NewsItem }
-    | { type: "brief"; item: NewsItem }
-    | { type: "analysis"; item: AnalysisItem }
-  > = [];
-
-  visibleNews.forEach((n, index) => {
-    if (index < BRIEF_START_INDEX) {
-      mixedItems.push({ type: "news", item: n });
-    } else {
-      mixedItems.push({ type: "brief", item: n });
-    }
-
-    if (
-      index === ANALYSIS_INSERT_INDEX &&
-      analyses.length > 0
-    ) {
-      mixedItems.push({
-        type: "analysis",
-        item: analyses[0], // V1 volontaire
-      });
-    }
-  });
+  const unifiedItems: UnifiedItem[] = [
+    ...news
+      .filter((n) => !topNewsIds.has(n.id))
+      .map((n) => ({
+        type: n.news_kind,
+        published_at: n.published_at,
+        item: n,
+      })),
+    ...analyses.map((a) => ({
+      type: "ANALYSIS" as const,
+      published_at: a.published_at,
+      item: a,
+    })),
+  ]
+    .sort(
+      (a, b) =>
+        new Date(b.published_at).getTime() -
+        new Date(a.published_at).getTime()
+    )
+    .slice(0, Math.min(visibleCount, MAX_ITEMS));
 
   /* ---------------------------------------------------------
-     SCROLL HANDLER
+     SCROLL
   --------------------------------------------------------- */
   useEffect(() => {
     function onScroll() {
@@ -143,34 +141,39 @@ export default function HomeClient({
         "
       >
         {/* =================================================
-            UNE — NEWS FEATURED
+            TOP 6 — NEWS ONLY
         ================================================= */}
-        {featuredNews && (
-          <div className="lg:col-span-2 lg:row-span-2">
+        {topNews.map((n, idx) => (
+          <div
+            key={`top-news-${n.id}`}
+            className={
+              idx === 0
+                ? "lg:col-span-2 lg:row-span-2"
+                : undefined
+            }
+          >
             <PartnerSignalCard
-              id={featuredNews.id}
-              title={featuredNews.title}
-              excerpt={featuredNews.excerpt}
-              visualRectId={featuredNews.visual_rect_id}
+              id={n.id}
+              title={n.title}
+              excerpt={n.excerpt}
+              visualRectId={n.visual_rect_id}
               companyVisualRectId={
-                featuredNews.company?.media_logo_rectangle_id
+                n.company?.media_logo_rectangle_id
               }
-              companyName={featuredNews.company?.name}
-              isPartner={
-                featuredNews.company?.is_partner === true
-              }
-              publishedAt={featuredNews.published_at}
+              companyName={n.company?.name}
+              isPartner={n.company?.is_partner === true}
+              publishedAt={n.published_at}
               openInDrawer
-              variant="featured"
+              variant={idx === 0 ? "featured" : undefined}
             />
           </div>
-        )}
+        ))}
 
         {/* =================================================
-            FLUX MIXTE
+            FLUX CHRONO MIXTE
         ================================================= */}
-        {mixedItems.map((entry, idx) => {
-          if (entry.type === "news") {
+        {unifiedItems.map((entry, idx) => {
+          if (entry.type === "NEWS") {
             const n = entry.item;
 
             return (
@@ -193,7 +196,7 @@ export default function HomeClient({
             );
           }
 
-          if (entry.type === "brief") {
+          if (entry.type === "BRIEF") {
             const b = entry.item;
 
             return (
@@ -211,7 +214,7 @@ export default function HomeClient({
 
           return (
             <AnalysisTeaserCard
-              key={`analysis-${a.id}`}
+              key={`analysis-${a.id}-${idx}`}
               id={a.id}
               title={a.title}
               excerpt={a.excerpt}
@@ -226,9 +229,6 @@ export default function HomeClient({
         })}
       </section>
 
-      {/* =====================================================
-          FIN DE FLUX
-      ===================================================== */}
       {visibleCount < MAX_ITEMS && (
         <div className="py-10 text-center text-sm text-gray-400">
           Chargement…
@@ -237,4 +237,3 @@ export default function HomeClient({
     </div>
   );
 }
-
