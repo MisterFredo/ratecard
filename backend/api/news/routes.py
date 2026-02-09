@@ -9,6 +9,7 @@ from api.news.models import (
 from core.news.service import (
     create_news,
     list_news,
+    list_news_types,
     get_news,
     update_news,
     archive_news,
