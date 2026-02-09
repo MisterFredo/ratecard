@@ -12,7 +12,18 @@ import PersonSelector, {
 
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
-type NewsType = "NEWS" | "BRIEF";
+type NewsKind = "NEWS" | "BRIEF";
+
+const NEWS_TYPE_OPTIONS = [
+  "ACQUISITION",
+  "CAS CLIENT",
+  "CORPORATE",
+  "EVENT",
+  "NOMINATION",
+  "PARTENARIAT",
+  "PRODUIT",
+  "THOUGHT LEADERSHIP",
+];
 
 type Props = {
   title: string;
@@ -23,7 +34,8 @@ type Props = {
   topics: any[];
   persons: ArticlePerson[];
 
-  newsType: NewsType;
+  newsKind: NewsKind;
+  newsType?: string | null;
 
   onChange: (d: {
     title?: string;
@@ -32,7 +44,8 @@ type Props = {
     company?: any | null;
     topics?: any[];
     persons?: ArticlePerson[];
-    newsType?: NewsType;
+    newsKind?: NewsKind;
+    newsType?: string | null;
   }) => void;
 
   onValidate: () => void;
@@ -46,6 +59,7 @@ export default function NewsStepContent({
   company,
   topics,
   persons,
+  newsKind,
   newsType,
   onChange,
   onValidate,
@@ -85,60 +99,76 @@ export default function NewsStepContent({
   --------------------------------------------------------- */
   return (
     <div className="space-y-6">
-      {/* =====================================================
-          TYPE DE CONTENU
-      ===================================================== */}
-      <div className="border rounded p-4 bg-gray-50">
-        <label className="block font-medium mb-2">
-          Type de contenu
+      {/* STRUCTURE ÉDITORIALE */}
+      <div>
+        <label className="block font-medium mb-1">
+          Format éditorial
         </label>
 
-        <div className="flex gap-6">
-          <label className="flex items-center gap-2 cursor-pointer">
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2">
             <input
               type="radio"
-              checked={newsType === "NEWS"}
+              checked={newsKind === "NEWS"}
               onChange={() =>
-                onChange({ newsType: "NEWS" })
+                onChange({ newsKind: "NEWS" })
               }
             />
-            <span className="font-medium">News</span>
+            <span>News</span>
           </label>
 
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center gap-2">
             <input
               type="radio"
-              checked={newsType === "BRIEF"}
+              checked={newsKind === "BRIEF"}
               onChange={() =>
-                onChange({ newsType: "BRIEF" })
+                onChange({ newsKind: "BRIEF" })
               }
             />
-            <span className="font-medium">Brève</span>
+            <span>Brève</span>
           </label>
         </div>
 
-        <p className="text-sm text-gray-500 mt-2">
-          {newsType === "BRIEF"
-            ? "Une brève est un signal court (titre + excerpt), sans article détaillé."
-            : "Une news est un contenu éditorial complet avec texte long et visuel."}
+        <p className="text-sm text-gray-500 mt-1">
+          Une brève est un signal court (titre + excerpt),
+          sans article détaillé.
         </p>
       </div>
 
-      {/* =====================================================
-          SOCIÉTÉ (OBLIGATOIRE)
-      ===================================================== */}
+      {/* CATÉGORIE MÉTIER (OPTIONNELLE) */}
+      <div>
+        <label className="block font-medium mb-1">
+          Catégorie (optionnel)
+        </label>
+
+        <select
+          className="w-full border rounded p-2"
+          value={newsType || ""}
+          onChange={(e) =>
+            onChange({
+              newsType: e.target.value || null,
+            })
+          }
+        >
+          <option value="">— Aucune catégorie —</option>
+          {NEWS_TYPE_OPTIONS.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* SOCIÉTÉ */}
       <CompanySelector
         values={company ? [company] : []}
         onChange={(items) => {
           onChange({ company: items[0] || null });
-          // reset personnes si la société change
           onChange({ persons: [] });
         }}
       />
 
-      {/* =====================================================
-          TITRE
-      ===================================================== */}
+      {/* TITRE */}
       <div>
         <label className="block font-medium mb-1">
           Titre *
@@ -153,9 +183,7 @@ export default function NewsStepContent({
         />
       </div>
 
-      {/* =====================================================
-          EXCERPT (OBLIGATOIRE)
-      ===================================================== */}
+      {/* EXCERPT */}
       <div>
         <label className="block font-medium mb-1">
           Excerpt *
@@ -167,17 +195,15 @@ export default function NewsStepContent({
             onChange({ excerpt: e.target.value })
           }
           placeholder={
-            newsType === "BRIEF"
+            newsKind === "BRIEF"
               ? "Texte court affiché tel quel dans les brèves"
-              : "Résumé court affiché sur la Home et les listes"
+              : "Résumé court pour la Home et les listes"
           }
         />
       </div>
 
-      {/* =====================================================
-          TEXTE LONG — UNIQUEMENT POUR NEWS
-      ===================================================== */}
-      {newsType === "NEWS" && (
+      {/* TEXTE LONG — NEWS UNIQUEMENT */}
+      {newsKind === "NEWS" && (
         <div>
           <label className="block font-medium mb-1">
             Texte
@@ -191,9 +217,7 @@ export default function NewsStepContent({
         </div>
       )}
 
-      {/* =====================================================
-          TOPICS
-      ===================================================== */}
+      {/* TOPICS */}
       <TopicSelector
         values={topics}
         onChange={(items) =>
@@ -201,9 +225,7 @@ export default function NewsStepContent({
         }
       />
 
-      {/* =====================================================
-          PERSONNES
-      ===================================================== */}
+      {/* PERSONNES */}
       <PersonSelector
         values={persons}
         persons={allPersons}
@@ -217,9 +239,7 @@ export default function NewsStepContent({
         }
       />
 
-      {/* =====================================================
-          ACTION
-      ===================================================== */}
+      {/* ACTION */}
       <div className="pt-4">
         <button
           onClick={onValidate}
