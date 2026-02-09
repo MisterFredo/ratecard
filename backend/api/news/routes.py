@@ -73,21 +73,14 @@ def list_route():
         raise HTTPException(400, "Erreur liste news")
 
 @router.get("/types")
-def list_news_types():
-    rows = query_bq(f"""
-        SELECT CODE, LABEL
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_TYPE`
-        WHERE IS_ACTIVE = TRUE
-        ORDER BY LABEL
-    """)
+def list_news_types_route():
+    try:
+        types = list_news_types()
+        return {"types": types}
 
-    return {
-        "types": [
-            {"code": r["CODE"], "label": r["LABEL"]}
-            for r in rows
-        ]
-    }
-
+    except Exception as e:
+        logger.exception("Erreur chargement NEWS_TYPE")
+        raise HTTPException(500, "Erreur chargement catégories éditoriales")
 
 
 # ============================================================
