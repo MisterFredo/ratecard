@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
-import AnalysisTeaserCard from "@/components/analysis/AnalysisTeaserCard";
 import BriefCard from "@/components/news/BriefCard";
+import AnalysisTeaserCard from "@/components/analysis/AnalysisTeaserCard";
 import { useDrawer } from "@/contexts/DrawerContext";
 
 /* =========================================================
@@ -23,9 +23,6 @@ type NewsItem = {
   visual_rect_id?: string | null;
   published_at: string;
   company?: Company;
-
-  // 🔑 distingue news “riche” vs brève
-  kind?: "news" | "brief";
 };
 
 type AnalysisItem = {
@@ -41,8 +38,13 @@ type Props = {
   analyses?: AnalysisItem[];
 };
 
+/* =========================================================
+   CONFIG
+========================================================= */
+
 const PAGE_SIZE = 12;
-const ANALYSIS_INSERT_INDEX = 5;
+const BRIEF_START_INDEX = 6; // 👉 à partir de la 7e carte
+const ANALYSIS_INSERT_INDEX = 10;
 
 /* =========================================================
    COMPONENT
@@ -60,7 +62,7 @@ export default function HomeClient({
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   /* ---------------------------------------------------------
-     TRI PAR DATE
+     TRI DES NEWS
   --------------------------------------------------------- */
   const sortedNews = [...news].sort(
     (a, b) =>
@@ -68,18 +70,12 @@ export default function HomeClient({
       new Date(a.published_at).getTime()
   );
 
-  const featuredNews = sortedNews.find(
-    (n) => n.kind !== "brief"
-  );
-
-  const otherNews = sortedNews.filter(
-    (n) => n.id !== featuredNews?.id
-  );
-
+  const featuredNews = sortedNews[0];
+  const otherNews = sortedNews.slice(1);
   const visibleNews = otherNews.slice(0, visibleCount);
 
   /* ---------------------------------------------------------
-     CONSTRUCTION DU FLUX MIXTE
+     CONSTRUCTION DU FLUX
   --------------------------------------------------------- */
   const mixedItems: Array<
     | { type: "news"; item: NewsItem }
@@ -88,10 +84,10 @@ export default function HomeClient({
   > = [];
 
   visibleNews.forEach((n, index) => {
-    if (n.kind === "brief") {
-      mixedItems.push({ type: "brief", item: n });
-    } else {
+    if (index < BRIEF_START_INDEX) {
       mixedItems.push({ type: "news", item: n });
+    } else {
+      mixedItems.push({ type: "brief", item: n });
     }
 
     if (
@@ -141,7 +137,7 @@ export default function HomeClient({
         "
       >
         {/* =================================================
-            UNE — NEWS RICHE UNIQUEMENT
+            UNE — NEWS FEATURED
         ================================================= */}
         {featuredNews && (
           <div className="lg:col-span-2 lg:row-span-2">
@@ -196,12 +192,12 @@ export default function HomeClient({
 
             return (
               <BriefCard
-                 key={`brief-${b.id}-${idx}`}
-                 id={b.id}
-                 title={b.title}
-                 excerpt={b.excerpt}
-                 publishedAt={b.published_at}
-               />
+                key={`brief-${b.id}-${idx}`}
+                id={b.id}
+                title={b.title}
+                excerpt={b.excerpt ?? ""}
+                publishedAt={b.published_at}
+              />
             );
           }
 
