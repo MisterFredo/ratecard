@@ -36,7 +36,6 @@ def create_route(data: NewsCreate):
     """
     Création d'une NEWS ou d'une BRÈVE.
     La différence est portée par :
-    - data.news_kind = "NEWS" | "BRIEF"
     - data.news_type = valeur métier optionnelle
     """
     try:
