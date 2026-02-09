@@ -60,6 +60,9 @@ def create_news(data: NewsCreate) -> str:
     if not data.title or not data.title.strip():
         raise ValueError("TITLE obligatoire")
 
+    if data.news_type not in ("NEWS", "BRIEF"):
+        raise ValueError("NEWS_TYPE invalide (NEWS | BRIEF)")
+
     news_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
 
@@ -68,18 +71,21 @@ def create_news(data: NewsCreate) -> str:
         "STATUS": "DRAFT",
         "IS_ACTIVE": True,
 
-        # 🆕 TYPE DE CONTENU
-        "NEWS_KIND": data.news_kind,   # "NEWS" | "BRIEF"
-        "NEWS_TYPE": data.news_type,   # ex: nomination, partenariat…
+        # 🧭 TYPOLOGIE
+        "NEWS_TYPE": data.news_type,   # NEWS | BRIEF
+        "TYPE": data.type,             # partenariat | produit | client | ...
 
+        # CONTENU
         "ID_COMPANY": data.id_company,
         "TITLE": data.title,
         "BODY": data.body,
         "EXCERPT": data.excerpt,
 
-        # VISUEL — uniquement pour NEWS
+        # VISUEL
         "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
+        "HAS_VISUAL": bool(data.media_rectangle_id),
 
+        # META
         "SOURCE_URL": data.source_url,
         "AUTHOR": data.author,
 
@@ -113,14 +119,10 @@ def create_news(data: NewsCreate) -> str:
     return news_id
 
 
-
 # ============================================================
 # GET ONE NEWS (ENRICHI, JSON-SAFE)
 # ============================================================
 def get_news(id_news: str):
-    # ----------------------------
-    # NEWS
-    # ----------------------------
     rows = query_bq(
         f"""
         SELECT *
@@ -136,9 +138,7 @@ def get_news(id_news: str):
 
     news = serialize_row(rows[0])
 
-    # ----------------------------
     # COMPANY
-    # ----------------------------
     company_rows = query_bq(
         f"""
         SELECT
@@ -153,25 +153,19 @@ def get_news(id_news: str):
     )
 
     if company_rows:
-        row = company_rows[0]
+        c = company_rows[0]
         news["company"] = {
-            "id_company": row["ID_COMPANY"],
-            "name": row["NAME"],
-            "media_logo_rectangle_id": row["MEDIA_LOGO_RECTANGLE_ID"],
-            "is_partner": bool(row["IS_PARTNER"]),
+            "id_company": c["ID_COMPANY"],
+            "name": c["NAME"],
+            "media_logo_rectangle_id": c["MEDIA_LOGO_RECTANGLE_ID"],
+            "is_partner": bool(c["IS_PARTNER"]),
         }
     else:
         news["company"] = None
 
-    # ----------------------------
-    # TOPICS (AVEC AXIS)
-    # ----------------------------
     news["topics"] = query_bq(
         f"""
-        SELECT
-            T.ID_TOPIC,
-            T.LABEL,
-            T.TOPIC_AXIS
+        SELECT T.ID_TOPIC, T.LABEL, T.TOPIC_AXIS
         FROM `{TABLE_NEWS_TOPIC}` NT
         JOIN `{TABLE_TOPIC}` T
           ON NT.ID_TOPIC = T.ID_TOPIC
@@ -180,14 +174,9 @@ def get_news(id_news: str):
         {"id": id_news},
     )
 
-    # ----------------------------
-    # PERSONS
-    # ----------------------------
     news["persons"] = query_bq(
         f"""
-        SELECT
-            P.ID_PERSON,
-            P.NAME
+        SELECT P.ID_PERSON, P.NAME
         FROM `{TABLE_NEWS_PERSON}` NP
         JOIN `{TABLE_PERSON}` P
           ON NP.ID_PERSON = P.ID_PERSON
@@ -201,14 +190,9 @@ def get_news(id_news: str):
 # ============================================================
 # LIST NEWS (ADMIN + PUBLIC)
 # ============================================================
-# ============================================================
-# LIST NEWS (ADMIN + PUBLIC)
-# ============================================================
 def list_news():
     """
-    Liste des news et brèves PUBLIQUES.
-    - NEWS_TYPE : news | brief
-    - TYPE      : partenariat | produit | client | corporate | etc.
+    Liste des NEWS et BRÈVES publiées.
     """
 
     sql = f"""
@@ -216,8 +200,8 @@ def list_news():
             n.ID_NEWS,
 
             -- Typologie
-            n.NEWS_TYPE,
-            n.TYPE,
+            n.NEWS_TYPE,   -- NEWS | BRIEF
+            n.TYPE,        -- partenariat | produit | ...
 
             -- Contenu
             n.TITLE,
@@ -271,22 +255,24 @@ def list_news():
 
     return query_bq(sql)
 
+
 # ============================================================
 # UPDATE NEWS
 # ============================================================
 def update_news(id_news: str, data: NewsUpdate):
     fields = {
         "TITLE": data.title,
-        "BODY": data.body,
         "EXCERPT": data.excerpt,
+        "BODY": data.body,
         "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
+        "HAS_VISUAL": bool(data.media_rectangle_id) if data.media_rectangle_id is not None else None,
+
+        # TYPOLOGIE
+        "NEWS_TYPE": data.news_type,
+        "TYPE": data.type,
+
         "SOURCE_URL": data.source_url,
         "AUTHOR": data.author,
-
-        # 🆕
-        "NEWS_KIND": data.news_kind,
-        "NEWS_TYPE": data.news_type,
-
         "UPDATED_AT": datetime.utcnow(),
     }
 
@@ -321,7 +307,6 @@ def update_news(id_news: str, data: NewsUpdate):
         )
 
     return True
-
 
 # ============================================================
 # ARCHIVE NEWS
@@ -360,22 +345,12 @@ def publish_news(
     id_news: str,
     published_at: Optional[str] = None,
 ):
-    """
-    Publie une news ou une brève à une date donnée.
-
-    Règles :
-    - EXCERPT obligatoire dans tous les cas
-    - VISUEL requis UNIQUEMENT pour les news (pas pour les brèves)
-    - la date choisie (passée / future) DOIT être respectée
-    - toutes les dates sont normalisées en UTC
-    """
-
     rows = query_bq(
         f"""
         SELECT
-            n.MEDIA_RECTANGLE_ID AS NEWS_RECT,
+            n.NEWS_TYPE,
             n.EXCERPT,
-            n.NEWS_FORMAT,
+            n.MEDIA_RECTANGLE_ID,
             c.MEDIA_LOGO_RECTANGLE_ID AS COMPANY_RECT
         FROM `{TABLE_NEWS}` n
         JOIN `{TABLE_COMPANY}` c
@@ -390,43 +365,22 @@ def publish_news(
 
     row = rows[0]
 
-    news_format = row.get("NEWS_FORMAT", "NEWS")
-
-    # ---------------------------------------------------------
-    # VALIDATIONS MÉTIER
-    # ---------------------------------------------------------
     if not row["EXCERPT"]:
         raise ValueError("Un excerpt est requis pour publier")
 
-    if news_format == "NEWS":
-        if not row["NEWS_RECT"] and not row["COMPANY_RECT"]:
-            raise ValueError(
-                "Un visuel rectangulaire est requis pour publier une news"
-            )
+    if row["NEWS_TYPE"] == "NEWS":
+        if not row["MEDIA_RECTANGLE_ID"] and not row["COMPANY_RECT"]:
+            raise ValueError("Un visuel est requis pour publier une news")
 
-    # ---------------------------------------------------------
-    # DATES — NORMALISATION UTC
-    # ---------------------------------------------------------
     now = datetime.now(timezone.utc)
 
     if published_at:
-        try:
-            publish_date = datetime.fromisoformat(published_at)
-
-            # datetime-local → datetime naïf → forcer UTC
-            if publish_date.tzinfo is None:
-                publish_date = publish_date.replace(
-                    tzinfo=timezone.utc
-                )
-
-        except ValueError:
-            raise ValueError("Format de date invalide")
+        publish_date = datetime.fromisoformat(published_at)
+        if publish_date.tzinfo is None:
+            publish_date = publish_date.replace(tzinfo=timezone.utc)
     else:
         publish_date = now
 
-    # ---------------------------------------------------------
-    # STATUT EN FONCTION DE LA DATE
-    # ---------------------------------------------------------
     status = "PUBLISHED" if publish_date <= now else "SCHEDULED"
 
     update_bq(
