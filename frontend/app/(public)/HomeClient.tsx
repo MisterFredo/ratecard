@@ -43,7 +43,9 @@ type Props = {
 ========================================================= */
 
 const PAGE_SIZE = 12;
-const BRIEF_START_INDEX = 6; // 👉 à partir de la 7e carte
+const MAX_ITEMS = 100;
+
+const BRIEF_START_INDEX = 6;   // à partir de la 7e carte
 const ANALYSIS_INSERT_INDEX = 10;
 
 /* =========================================================
@@ -57,12 +59,12 @@ export default function HomeClient({
   const { openRightDrawer } = useDrawer();
 
   /* ---------------------------------------------------------
-     STATE — SCROLL INFINI
+     STATE — SCROLL
   --------------------------------------------------------- */
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   /* ---------------------------------------------------------
-     TRI DES NEWS
+     TRI DES NEWS (DATE DESC)
   --------------------------------------------------------- */
   const sortedNews = [...news].sort(
     (a, b) =>
@@ -72,7 +74,11 @@ export default function HomeClient({
 
   const featuredNews = sortedNews[0];
   const otherNews = sortedNews.slice(1);
-  const visibleNews = otherNews.slice(0, visibleCount);
+
+  const visibleNews = otherNews.slice(
+    0,
+    Math.min(visibleCount, MAX_ITEMS)
+  );
 
   /* ---------------------------------------------------------
      CONSTRUCTION DU FLUX
@@ -96,7 +102,7 @@ export default function HomeClient({
     ) {
       mixedItems.push({
         type: "analysis",
-        item: analyses[0],
+        item: analyses[0], // V1 volontaire
       });
     }
   });
@@ -111,7 +117,7 @@ export default function HomeClient({
         document.body.offsetHeight - 300
       ) {
         setVisibleCount((prev) =>
-          Math.min(prev + PAGE_SIZE, otherNews.length)
+          Math.min(prev + PAGE_SIZE, MAX_ITEMS)
         );
       }
     }
@@ -119,7 +125,7 @@ export default function HomeClient({
     window.addEventListener("scroll", onScroll);
     return () =>
       window.removeEventListener("scroll", onScroll);
-  }, [otherNews.length]);
+  }, []);
 
   /* =========================================================
      RENDER
@@ -223,7 +229,7 @@ export default function HomeClient({
       {/* =====================================================
           FIN DE FLUX
       ===================================================== */}
-      {visibleCount < otherNews.length && (
+      {visibleCount < MAX_ITEMS && (
         <div className="py-10 text-center text-sm text-gray-400">
           Chargement…
         </div>
@@ -231,3 +237,4 @@ export default function HomeClient({
     </div>
   );
 }
+
