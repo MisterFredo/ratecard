@@ -5,14 +5,8 @@ type Props = {
   title: string;
   excerpt?: string;
   publishedAt: string;
-
-  // Accroche éditoriale
   topic?: string;
-
-  // Comportement
   mode?: "test" | "external";
-
-  // TEST uniquement (drawer Curator)
   onOpenTest?: (id: string) => void;
 };
 
@@ -31,15 +25,11 @@ export default function AnalysisTeaserCard({
       return;
     }
 
-    // MODE EXTERNAL — redirection Curator
     const curatorBase =
       process.env.NEXT_PUBLIC_CURATOR_URL ||
       "https://getcurator.ai";
 
-    window.open(
-      `${curatorBase}/analysis/${id}`,
-      "_blank"
-    );
+    window.open(`${curatorBase}/analysis/${id}`, "_blank");
   }
 
   return (
@@ -48,50 +38,46 @@ export default function AnalysisTeaserCard({
       className="
         cursor-pointer
         rounded-2xl
-        border border-dashed
-        bg-white
+        border border-dashed border-emerald-200
+        bg-emerald-50/40
         p-5
         transition
-        hover:border-gray-300
+        hover:border-emerald-300
+        hover:bg-emerald-50
         hover:shadow-sm
         flex flex-col
       "
     >
-      {/* =====================================================
-          META — DATE
-      ===================================================== */}
-      <div className="mb-2 text-xs text-gray-400">
+      {/* META */}
+      <div className="mb-2 text-xs text-emerald-700/70">
         Analyse •{" "}
         {new Date(publishedAt).toLocaleDateString("fr-FR")}
       </div>
 
-      {/* =====================================================
-          TITLE
-      ===================================================== */}
+      {/* TITLE */}
       <h3 className="text-base font-semibold text-gray-900 leading-snug">
         {title}
       </h3>
 
-      {/* =====================================================
-          EXCERPT
-      ===================================================== */}
+      {/* EXCERPT */}
       {excerpt && (
-        <p className="text-sm text-gray-600 mt-2 line-clamp-8">
+        <p className="text-sm text-gray-700 mt-2 line-clamp-8">
           {excerpt}
         </p>
       )}
 
-      {/* =====================================================
-          FOOTER — CONTEXTE
-      ===================================================== */}
+      {/* FOOTER */}
       <div className="mt-auto pt-4 flex items-center justify-between text-xs text-gray-500">
         {topic && (
-          <span className="inline-block px-2 py-0.5 rounded bg-ratecard-light">
+          <span className="
+            inline-block px-2 py-0.5 rounded
+            bg-emerald-100 text-emerald-800
+          ">
             {topic}
           </span>
         )}
 
-        <span className="italic">
+        <span className="italic text-emerald-700">
           Lire l’analyse →
         </span>
       </div>
