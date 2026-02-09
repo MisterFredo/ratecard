@@ -28,8 +28,8 @@ type Props = {
   persons: ArticlePerson[];
 
   // STRUCTURE
-  newsKind: "NEWS" | "BRIEF";      // ⬅️ STRUCTURE
-  newsType?: string | null;        // ⬅️ CATÉGORIE (BQ)
+  newsKind: "NEWS" | "BRIEF";      // STRUCTURE
+  newsType?: string | null;        // CATÉGORIE (BQ)
 
   onChange: (d: {
     title?: string;
@@ -88,15 +88,20 @@ export default function NewsStepContent({
 
   useEffect(() => {
     async function loadPersons() {
-      const res = await api.get("/person/list");
-      setAllPersons(
-        (res.persons || []).map((p: any) => ({
-          id_person: p.ID_PERSON,
-          name: p.NAME,
-          title: p.TITLE || "",
-          id_company: p.ID_COMPANY || null,
-        }))
-      );
+      try {
+        const res = await api.get("/person/list");
+        setAllPersons(
+          (res.persons || []).map((p: any) => ({
+            id_person: p.ID_PERSON,
+            name: p.NAME,
+            title: p.TITLE || "",
+            id_company: p.ID_COMPANY || null,
+          }))
+        );
+      } catch (e) {
+        console.error("Erreur chargement personnes", e);
+        setAllPersons([]);
+      }
     }
 
     loadPersons();
@@ -199,18 +204,25 @@ export default function NewsStepContent({
         />
       )}
 
+      {/* TOPICS */}
       <TopicSelector
         values={topics}
         onChange={(items) => onChange({ topics: items })}
       />
 
+      {/* PERSONNES */}
       <PersonSelector
         values={persons}
         persons={allPersons}
-        companyId={company?.id_company || null}
+        companyId={
+          company?.id_company ||
+          company?.ID_COMPANY ||
+          null
+        }
         onChange={(items) => onChange({ persons: items })}
       />
 
+      {/* ACTION */}
       <button
         onClick={onValidate}
         disabled={saving}
