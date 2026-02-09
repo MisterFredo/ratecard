@@ -1,22 +1,32 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Literal
 from datetime import datetime
 
 
 # ============================================================
-# CREATE NEWS
+# TYPES
+# ============================================================
+
+NewsType = Literal["NEWS", "BRIEF"]
+
+
+# ============================================================
+# CREATE NEWS / BRIEF
 # ============================================================
 class NewsCreate(BaseModel):
+    # TYPE DE CONTENU
+    news_type: NewsType = "NEWS"
+
     # SOCIÉTÉ (OBLIGATOIRE)
     id_company: str
 
     # CONTENU
     title: str
-    body: Optional[str] = None
     excerpt: Optional[str] = None
+    body: Optional[str] = None  # facultatif pour BRIEF
 
-    # VISUEL (OBLIGATOIRE)
-    media_rectangle_id: Optional[str] = None
+    # VISUEL
+    media_rectangle_id: Optional[str] = None  # requis uniquement pour NEWS
 
     # META
     source_url: Optional[str] = None
@@ -28,12 +38,15 @@ class NewsCreate(BaseModel):
 
 
 # ============================================================
-# UPDATE NEWS
+# UPDATE NEWS / BRIEF
 # ============================================================
 class NewsUpdate(BaseModel):
-    title: str
-    body: Optional[str] = None
+    # TYPE (modifiable si besoin)
+    news_type: Optional[NewsType] = None
+
+    title: Optional[str] = None
     excerpt: Optional[str] = None
+    body: Optional[str] = None
 
     media_rectangle_id: Optional[str] = None
 
@@ -43,12 +56,13 @@ class NewsUpdate(BaseModel):
     topics: Optional[List[str]] = []
     persons: Optional[List[str]] = []
 
+
 # ============================================================
-# PUBLISH NEWS
+# PUBLISH
 # ============================================================
 class NewsPublish(BaseModel):
     """
-    Payload de publication d'une news.
+    Payload de publication d'une news ou d'une brève.
     """
     publish_at: Optional[str] = None
 
@@ -60,9 +74,11 @@ class NewsOut(BaseModel):
     id_news: str
     status: str
 
+    news_type: NewsType
+
     title: str
-    body: Optional[str]
     excerpt: Optional[str]
+    body: Optional[str]
 
     published_at: Optional[datetime]
 
@@ -70,10 +86,11 @@ class NewsOut(BaseModel):
     topics: list = []
     persons: list = []
 
+
 # ============================================================
 # LINKEDIN — POST LIÉ À UNE NEWS
+# (BRIEF exclue plus tard côté logique métier)
 # ============================================================
-
 class NewsLinkedInPost(BaseModel):
     text: str
     mode: str  # "manual" | "ai"
@@ -82,4 +99,3 @@ class NewsLinkedInPost(BaseModel):
 class NewsLinkedInPostResponse(BaseModel):
     text: Optional[str] = None
     mode: Optional[str] = None
-
