@@ -64,8 +64,8 @@ def create_news(data: NewsCreate) -> str:
         # STRUCTURE
         "NEWS_KIND": data.news_type,   # NEWS | BRIEF
 
-        # CATÉGORIE MÉTIER
-        "NEWS_TYPE": data.type,        # partenariat | produit | ...
+        # CATÉGORIE ÉDITORIALE (gouvernée BQ)
+        "NEWS_TYPE": data.type,        # ACQUISITION / CORPORATE / ...
 
         # CONTENU
         "ID_COMPANY": data.id_company,
@@ -181,8 +181,8 @@ def list_news():
             -- STRUCTURE
             n.NEWS_KIND,     -- NEWS | BRIEF
 
-            -- CATÉGORIE MÉTIER
-            n.NEWS_TYPE,     -- partenariat | produit | ...
+            -- CATÉGORIE ÉDITORIALE
+            n.NEWS_TYPE,     -- ACQUISITION / CORPORATE / ...
 
             -- CONTENU
             n.TITLE,
