@@ -9,16 +9,30 @@ type NewsLite = {
   ID_NEWS: string;
   TITLE: string;
   EXCERPT?: string | null;
-
-  // 🧭 STRUCTURE
-  NEWS_TYPE: "NEWS" | "BRIEF";
-
   STATUS: string;
   PUBLISHED_AT?: string | null;
+
+  NEWS_TYPE?: "NEWS" | "BRIEF";
 
   ID_COMPANY: string;
   COMPANY_NAME: string;
 };
+
+function NewsTypeBadge({ type }: { type?: "NEWS" | "BRIEF" }) {
+  if (!type) return null;
+
+  return (
+    <span
+      className={`px-2 py-1 rounded text-xs font-medium ${
+        type === "BRIEF"
+          ? "bg-blue-100 text-blue-700"
+          : "bg-purple-100 text-purple-700"
+      }`}
+    >
+      {type === "BRIEF" ? "Brève" : "News"}
+    </span>
+  );
+}
 
 export default function NewsListPage() {
   const [news, setNews] = useState<NewsLite[]>([]);
@@ -63,14 +77,14 @@ export default function NewsListPage() {
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
-          News & Brèves
+          News & brèves
         </h1>
 
         <Link
           href="/admin/news/create"
           className="bg-ratecard-green text-white px-4 py-2 rounded shadow"
         >
-          + Nouvelle publication
+          + Nouveau contenu
         </Link>
       </div>
 
@@ -78,8 +92,8 @@ export default function NewsListPage() {
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="bg-gray-100 border-b text-left text-gray-700">
-            <th className="p-2">Type</th>
             <th className="p-2">Titre</th>
+            <th className="p-2">Type</th>
             <th className="p-2">Société</th>
             <th className="p-2">Statut</th>
             <th className="p-2">Publié le</th>
@@ -93,22 +107,14 @@ export default function NewsListPage() {
               key={n.ID_NEWS}
               className="border-b hover:bg-gray-50 transition"
             >
-              {/* TYPE : NEWS / BRIEF */}
-              <td className="p-2">
-                <span
-                  className={`px-2 py-1 rounded text-xs font-semibold ${
-                    n.NEWS_TYPE === "BRIEF"
-                      ? "bg-purple-100 text-purple-700"
-                      : "bg-blue-100 text-blue-700"
-                  }`}
-                >
-                  {n.NEWS_TYPE === "BRIEF" ? "Brève" : "News"}
-                </span>
-              </td>
-
               {/* TITRE */}
               <td className="p-2 font-medium">
                 {n.TITLE}
+              </td>
+
+              {/* TYPE : NEWS / BRÈVE */}
+              <td className="p-2">
+                <NewsTypeBadge type={n.NEWS_TYPE} />
               </td>
 
               {/* SOCIÉTÉ */}
@@ -141,7 +147,6 @@ export default function NewsListPage() {
               {/* ACTIONS */}
               <td className="p-2 text-right">
                 <div className="inline-flex items-center gap-3">
-                  {/* EDIT */}
                   <Link
                     href={`/admin/news/edit/${n.ID_NEWS}`}
                     className="text-ratecard-blue hover:text-ratecard-blue/80"
@@ -150,7 +155,6 @@ export default function NewsListPage() {
                     <Pencil size={16} />
                   </Link>
 
-                  {/* LINKEDIN */}
                   <Link
                     href={`/admin/news/edit/${n.ID_NEWS}?step=LINKEDIN`}
                     className="text-[#0A66C2] hover:opacity-80"
@@ -159,7 +163,6 @@ export default function NewsListPage() {
                     <Linkedin size={16} />
                   </Link>
 
-                  {/* DELETE */}
                   <button
                     onClick={() => deleteNews(n.ID_NEWS)}
                     className="text-red-600 hover:text-red-800"
@@ -178,7 +181,7 @@ export default function NewsListPage() {
                 colSpan={6}
                 className="p-4 text-center text-gray-500"
               >
-                Aucune publication pour le moment.
+                Aucun contenu pour le moment.
               </td>
             </tr>
           )}
