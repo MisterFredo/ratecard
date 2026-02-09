@@ -7,42 +7,44 @@ from datetime import datetime
 # CREATE NEWS / BRÈVE
 # ============================================================
 class NewsCreate(BaseModel):
+    # SOCIÉTÉ
     id_company: str
-
-    title: str
-    body: Optional[str] = None
-    excerpt: Optional[str] = None
-
-    # 🆕
-    news_type: str  # "NEWS" | "BRIEF"
-    type: Optional[str] = None  # "partenariat" | "produit" | ...
-
-    media_rectangle_id: Optional[str] = None
-    source_url: Optional[str] = None
-    author: Optional[str] = None
-
-    topics: Optional[List[str]] = []
-    persons: Optional[List[str]] = []
-
-
-
-# ============================================================
-# UPDATE NEWS / BRÈVE
-# ============================================================
-class NewsUpdate(BaseModel):
-    # TYPE
-    news_type: Optional[str] = None
-    is_brief: Optional[bool] = None
 
     # CONTENU
     title: str
     excerpt: Optional[str] = None
     body: Optional[str] = None
 
-    # VISUEL
-    media_rectangle_id: Optional[str] = None
+    # STRUCTURE ÉDITORIALE
+    news_type: str  # "NEWS" | "BRIEF"
 
-    # META
+    # CATÉGORIE MÉTIER
+    type: Optional[str] = None  # "partenariat" | "produit" | ...
+
+    # VISUEL / META
+    media_rectangle_id: Optional[str] = None
+    source_url: Optional[str] = None
+    author: Optional[str] = None
+
+    # ENRICHISSEMENTS
+    topics: Optional[List[str]] = []
+    persons: Optional[List[str]] = []
+
+# ============================================================
+# UPDATE NEWS / BRÈVE
+# ============================================================
+class NewsUpdate(BaseModel):
+    # STRUCTURE / CATÉGORIE
+    news_type: Optional[str] = None  # "NEWS" | "BRIEF"
+    type: Optional[str] = None
+
+    # CONTENU
+    title: str
+    excerpt: Optional[str] = None
+    body: Optional[str] = None
+
+    # VISUEL / META
+    media_rectangle_id: Optional[str] = None
     source_url: Optional[str] = None
     author: Optional[str] = None
 
@@ -65,9 +67,11 @@ class NewsOut(BaseModel):
     id_news: str
     status: str
 
-    news_type: Optional[str]
-    is_brief: bool
+    # STRUCTURE
+    news_type: Optional[str]  # "NEWS" | "BRIEF"
+    type: Optional[str]       # "partenariat" | ...
 
+    # CONTENU
     title: str
     excerpt: Optional[str]
     body: Optional[str]
@@ -77,7 +81,6 @@ class NewsOut(BaseModel):
     company: dict
     topics: list = []
     persons: list = []
-
 
 # ============================================================
 # LINKEDIN
