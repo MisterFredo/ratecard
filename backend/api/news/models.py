@@ -7,28 +7,23 @@ from datetime import datetime
 # CREATE NEWS / BRÈVE
 # ============================================================
 class NewsCreate(BaseModel):
-    # SOCIÉTÉ (OBLIGATOIRE)
     id_company: str
 
-    # TYPE ÉDITORIAL
-    news_type: Optional[str] = None      # ex: nomination, partenariat, produit…
-    is_brief: bool = False               # True = brève, False = news
-
-    # CONTENU
     title: str
+    body: Optional[str] = None
     excerpt: Optional[str] = None
-    body: Optional[str] = None            # facultatif si brève
 
-    # VISUEL (facultatif si brève)
+    # 🆕
+    news_type: str  # "NEWS" | "BRIEF"
+    type: Optional[str] = None  # "partenariat" | "produit" | ...
+
     media_rectangle_id: Optional[str] = None
-
-    # META
     source_url: Optional[str] = None
     author: Optional[str] = None
 
-    # ENRICHISSEMENTS
     topics: Optional[List[str]] = []
     persons: Optional[List[str]] = []
+
 
 
 # ============================================================
