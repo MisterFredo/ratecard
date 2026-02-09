@@ -50,7 +50,8 @@ def create_news(data: NewsCreate) -> str:
     if not data.title or not data.title.strip():
         raise ValueError("TITLE obligatoire")
 
-    if data.news_type not in ("NEWS", "BRIEF"):
+    # ✅ STRUCTURE
+    if data.news_kind not in ("NEWS", "BRIEF"):
         raise ValueError("NEWS_KIND invalide (NEWS | BRIEF)")
 
     news_id = str(uuid.uuid4())
@@ -61,17 +62,17 @@ def create_news(data: NewsCreate) -> str:
         "STATUS": "DRAFT",
         "IS_ACTIVE": True,
 
-        # STRUCTURE
-        "NEWS_KIND": data.news_type,   # NEWS | BRIEF
+        # ✅ STRUCTURE
+        "NEWS_KIND": data.news_kind,      # NEWS | BRIEF
 
-        # CATÉGORIE ÉDITORIALE (gouvernée BQ)
-        "NEWS_TYPE": data.type,        # ACQUISITION / CORPORATE / ...
+        # ✅ CATÉGORIE RÉDACTIONNELLE
+        "NEWS_TYPE": data.news_type,      # CORPORATE | PARTENAIRE | ...
 
         # CONTENU
         "ID_COMPANY": data.id_company,
         "TITLE": data.title,
         "EXCERPT": data.excerpt,
-        "BODY": data.body if data.news_type == "NEWS" else None,
+        "BODY": data.body if data.news_kind == "NEWS" else None,
 
         # VISUEL
         "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
@@ -240,9 +241,11 @@ def list_news():
 # ============================================================
 def update_news(id_news: str, data: NewsUpdate):
     fields = {
-        # STRUCTURE / CATÉGORIE
-        "NEWS_KIND": data.news_type,
-        "NEWS_TYPE": data.type,
+        # ✅ STRUCTURE
+        "NEWS_KIND": data.news_kind,
+
+        # ✅ CATÉGORIE RÉDACTIONNELLE
+        "NEWS_TYPE": data.news_type,
 
         # CONTENU
         "TITLE": data.title,
@@ -270,6 +273,7 @@ def update_news(id_news: str, data: NewsUpdate):
         where={"ID_NEWS": id_news},
     )
 
+    # relations (inchangées)
     client = get_bigquery_client()
 
     for table in (TABLE_NEWS_TOPIC, TABLE_NEWS_PERSON):
