@@ -12,11 +12,10 @@ import { Pencil, Trash2, Linkedin } from "lucide-react";
 type NewsLite = {
   ID_NEWS: string;
   TITLE: string;
-  EXCERPT?: string | null;
   STATUS: string;
   PUBLISHED_AT?: string | null;
 
-  // ✅ STRUCTURE (FORMAT)
+  // STRUCTURE (FORMAT)
   NEWS_KIND: "NEWS" | "BRIEF";
 
   ID_COMPANY: string;
@@ -103,7 +102,7 @@ export default function NewsListPage() {
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="bg-gray-100 border-b text-left text-gray-700">
-            <th className="p-2">Contenu</th>
+            <th className="p-2">Titre</th>
             <th className="p-2">Format</th>
             <th className="p-2">Société</th>
             <th className="p-2">Statut</th>
@@ -122,23 +121,9 @@ export default function NewsListPage() {
                   : "hover:bg-gray-50"
               }`}
             >
-              {/* TITRE + EXCERPT */}
-              <td className="p-2">
-                <div
-                  className={`font-medium ${
-                    n.NEWS_KIND === "BRIEF"
-                      ? "text-blue-900"
-                      : "text-gray-900"
-                  }`}
-                >
-                  {n.TITLE}
-                </div>
-
-                {n.NEWS_KIND === "NEWS" && n.EXCERPT && (
-                  <div className="text-xs text-gray-500 mt-1 line-clamp-2">
-                    {n.EXCERPT}
-                  </div>
-                )}
+              {/* TITRE */}
+              <td className="p-2 font-medium text-gray-900">
+                {n.TITLE}
               </td>
 
               {/* FORMAT */}
