@@ -35,7 +35,6 @@ export default function NewsStudio({ mode, newsId }: Props) {
      STATE — CORE
   ========================================================= */
   const [newsType, setNewsType] = useState<NewsType>("NEWS");
-  const [contentType, setContentType] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
@@ -102,7 +101,6 @@ export default function NewsStudio({ mode, newsId }: Props) {
         const n = res.news;
 
         setNewsType(n.NEWS_TYPE || "NEWS");
-        setContentType(n.TYPE || null);
 
         setTitle(n.TITLE || "");
         setExcerpt(n.EXCERPT || "");
@@ -111,8 +109,8 @@ export default function NewsStudio({ mode, newsId }: Props) {
         setCompany(
           n.company
             ? {
-                id_company: n.company.ID_COMPANY,
-                name: n.company.NAME,
+                id_company: n.company.id_company,
+                name: n.company.name,
               }
             : null
         );
@@ -132,7 +130,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
         }
       } catch (e) {
         console.error(e);
-        alert("Erreur chargement contenu");
+        alert("Erreur chargement news");
       }
     }
 
@@ -151,10 +149,16 @@ export default function NewsStudio({ mode, newsId }: Props) {
     const companyId =
       company.id_company || company.ID_COMPANY;
 
-    api
-      .get(`/company/${companyId}`)
-      .then((res) => setCompanyFull(res.company))
-      .catch(() => setCompanyFull(null));
+    async function loadCompany() {
+      try {
+        const res = await api.get(`/company/${companyId}`);
+        setCompanyFull(res.company);
+      } catch {
+        setCompanyFull(null);
+      }
+    }
+
+    loadCompany();
   }, [company]);
 
   /* =========================================================
@@ -171,6 +175,11 @@ export default function NewsStudio({ mode, newsId }: Props) {
       return;
     }
 
+    if (!excerpt.trim()) {
+      alert("Excerpt requis");
+      return;
+    }
+
     setSaving(true);
 
     const payload = {
@@ -178,10 +187,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
       title,
       excerpt,
       body: newsType === "BRIEF" ? null : body,
-
       news_type: newsType,
-      type: contentType,
-
       topics: topics.map((t) => t.id_topic),
       persons: persons.map((p) => p.id_person || p.ID_PERSON),
     };
@@ -197,7 +203,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
       setStep(newsType === "BRIEF" ? "PREVIEW" : "VISUAL");
     } catch (e) {
       console.error(e);
-      alert("Erreur sauvegarde");
+      alert("❌ Erreur sauvegarde");
     } finally {
       setSaving(false);
     }
@@ -209,27 +215,28 @@ export default function NewsStudio({ mode, newsId }: Props) {
   async function publishNews() {
     if (!internalNewsId) return;
 
-    if (
-      newsType === "NEWS" &&
-      !mediaId &&
-      !companyFull?.MEDIA_LOGO_RECTANGLE_ID
-    ) {
-      alert("Visuel requis pour une news");
-      return;
+    if (newsType === "NEWS") {
+      if (!mediaId && !companyFull?.MEDIA_LOGO_RECTANGLE_ID) {
+        alert("Visuel requis pour une news");
+        return;
+      }
     }
 
     if (!publishAt) {
-      alert("Date requise");
+      alert("Date de publication requise");
       return;
     }
 
     setPublishing(true);
 
     try {
+      const publishAtUTC = new Date(publishAt).toISOString();
+
       await api.post(`/news/publish/${internalNewsId}`, {
-        publish_at: new Date(publishAt).toISOString(),
+        publish_at: publishAtUTC,
       });
 
+      alert("Publié");
       setStep("LINKEDIN");
     } catch {
       alert("Erreur publication");
@@ -244,41 +251,12 @@ export default function NewsStudio({ mode, newsId }: Props) {
   return (
     <div className="space-y-6">
 
-      {/* TYPE */}
-      <div className="border rounded p-4 bg-gray-50 space-y-3">
-        <div>
-          <label className="block font-medium mb-1">
-            Nature du contenu
-          </label>
-          <select
-            value={newsType}
-            onChange={(e) =>
-              setNewsType(e.target.value as NewsType)
-            }
-            className="border rounded p-2"
-          >
-            <option value="NEWS">News</option>
-            <option value="BRIEF">Brève</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block font-medium mb-1">
-            Catégorie
-          </label>
-          <input
-            type="text"
-            className="border rounded p-2 w-full"
-            value={contentType || ""}
-            onChange={(e) => setContentType(e.target.value)}
-            placeholder="partenariat, produit, client…"
-          />
-        </div>
-      </div>
-
       {/* SOURCE */}
       <details open={step === "SOURCE"} className="border rounded p-4">
-        <summary className="font-semibold cursor-pointer">
+        <summary
+          className="font-semibold cursor-pointer"
+          onClick={() => setStep("SOURCE")}
+        >
           1. Source
         </summary>
 
@@ -296,7 +274,10 @@ export default function NewsStudio({ mode, newsId }: Props) {
       {/* CONTENT */}
       {isStepReached("CONTENT") && (
         <details open={step === "CONTENT"} className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
+          <summary
+            className="font-semibold cursor-pointer"
+            onClick={() => setStep("CONTENT")}
+          >
             2. Contenu
           </summary>
 
@@ -307,7 +288,9 @@ export default function NewsStudio({ mode, newsId }: Props) {
             company={company}
             topics={topics}
             persons={persons}
+            newsType={newsType}
             onChange={(d) => {
+              if (d.newsType) setNewsType(d.newsType);
               if (d.title !== undefined) setTitle(d.title);
               if (d.excerpt !== undefined) setExcerpt(d.excerpt);
               if (d.body !== undefined) setBody(d.body);
@@ -321,10 +304,13 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </details>
       )}
 
-      {/* VISUAL */}
+      {/* VISUAL — NEWS ONLY */}
       {newsType === "NEWS" && isStepReached("VISUAL") && (
         <details open={step === "VISUAL"} className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
+          <summary
+            className="font-semibold cursor-pointer"
+            onClick={() => setStep("VISUAL")}
+          >
             3. Visuel
           </summary>
 
@@ -345,7 +331,10 @@ export default function NewsStudio({ mode, newsId }: Props) {
       {/* PREVIEW */}
       {isStepReached("PREVIEW") && (
         <details open={step === "PREVIEW"} className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
+          <summary
+            className="font-semibold cursor-pointer"
+            onClick={() => setStep("PREVIEW")}
+          >
             4. Aperçu
           </summary>
 
@@ -361,7 +350,10 @@ export default function NewsStudio({ mode, newsId }: Props) {
       {/* PUBLISH */}
       {isStepReached("PUBLISH") && (
         <details open={step === "PUBLISH"} className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
+          <summary
+            className="font-semibold cursor-pointer"
+            onClick={() => setStep("PUBLISH")}
+          >
             5. Publication
           </summary>
 
@@ -376,7 +368,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </details>
       )}
 
-      {/* LINKEDIN */}
+      {/* LINKEDIN — NEWS ONLY */}
       {newsType === "NEWS" &&
         isStepReached("LINKEDIN") &&
         internalNewsId && (
@@ -395,4 +387,3 @@ export default function NewsStudio({ mode, newsId }: Props) {
     </div>
   );
 }
-
