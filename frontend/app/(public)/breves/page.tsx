@@ -6,11 +6,22 @@ import { useEffect, useState } from "react";
    TYPES
 ========================================================= */
 
+type Topic = {
+  label: string;
+  axis?: string;
+};
+
 type BriefItem = {
   id: string;
   title: string;
   excerpt?: string | null;
   published_at: string;
+
+  // badges
+  company?: string;
+  newsKind?: "NEWS" | "BRIEF";
+  newsType?: string | null;
+  topics?: Topic[];
 };
 
 /* =========================================================
@@ -23,6 +34,26 @@ const API_BASE =
 const PAGE_SIZE = 20;
 
 /* =========================================================
+   BADGES
+========================================================= */
+
+function Badge({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className: string;
+}) {
+  return (
+    <span
+      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${className}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+/* =========================================================
    PAGE — BRÈVES
 ========================================================= */
 
@@ -33,7 +64,6 @@ export default function BrevesPage() {
 
   /* ---------------------------------------------------------
      FETCH BRÈVES
-     (pour l’instant = news light côté API)
   --------------------------------------------------------- */
   useEffect(() => {
     setLoading(true);
@@ -41,19 +71,25 @@ export default function BrevesPage() {
     fetch(`${API_BASE}/news/list`, { cache: "no-store" })
       .then((r) => r.json())
       .then((json) => {
-        const items: BriefItem[] = (json.news || []).map((n: any) => ({
-          id: n.ID_NEWS,
-          title: n.TITLE,
-          excerpt: n.EXCERPT ?? null,
-          published_at: n.PUBLISHED_AT,
-        }));
+        const items: BriefItem[] = (json.news || [])
+          // on affiche surtout les BRÈVES,
+          // mais on ne bloque pas si une NEWS arrive
+          .map((n: any) => ({
+            id: n.ID_NEWS,
+            title: n.TITLE,
+            excerpt: n.EXCERPT ?? null,
+            published_at: n.PUBLISHED_AT,
 
-        // tri sécurité
-        items.sort(
-          (a, b) =>
-            new Date(b.published_at).getTime() -
-            new Date(a.published_at).getTime()
-        );
+            company: n.COMPANY_NAME,
+            newsKind: n.NEWS_KIND,
+            newsType: n.NEWS_TYPE ?? null,
+            topics: n.TOPICS || [],
+          }))
+          .sort(
+            (a, b) =>
+              new Date(b.published_at).getTime() -
+              new Date(a.published_at).getTime()
+          );
 
         setBreves(items);
       })
@@ -87,9 +123,7 @@ export default function BrevesPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
+      {/* HEADER */}
       <header className="mb-10">
         <h1 className="text-2xl font-semibold text-gray-900">
           Brèves du marché
@@ -99,9 +133,7 @@ export default function BrevesPage() {
         </p>
       </header>
 
-      {/* =====================================================
-          LISTE DES BRÈVES
-      ===================================================== */}
+      {/* LISTE */}
       <section className="space-y-8">
         {visibleBreves.map((b) => (
           <article
@@ -111,6 +143,48 @@ export default function BrevesPage() {
             {/* DATE */}
             <div className="text-xs text-gray-400 mb-1">
               {new Date(b.published_at).toLocaleDateString("fr-FR")}
+            </div>
+
+            {/* BADGES */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {/* SOCIÉTÉ */}
+              {b.company && (
+                <Badge className="bg-gray-100 text-gray-700">
+                  {b.company}
+                </Badge>
+              )}
+
+              {/* NEWS_KIND */}
+              {b.newsKind && (
+                <Badge
+                  className={
+                    b.newsKind === "BRIEF"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-purple-100 text-purple-700"
+                  }
+                >
+                  {b.newsKind === "BRIEF"
+                    ? "Brève"
+                    : "News"}
+                </Badge>
+              )}
+
+              {/* NEWS_TYPE */}
+              {b.newsType && (
+                <Badge className="bg-violet-100 text-violet-700">
+                  {b.newsType}
+                </Badge>
+              )}
+
+              {/* TOPICS */}
+              {b.topics?.map((t, i) => (
+                <Badge
+                  key={`${b.id}-topic-${i}`}
+                  className="bg-green-100 text-green-700"
+                >
+                  {t.label}
+                </Badge>
+              ))}
             </div>
 
             {/* TITLE */}
