@@ -21,29 +21,36 @@ from core.news.service import (
 from utils.llm import run_llm
 
 import logging
-logger = logging.getLogger(__name__)
+import json
+import re
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
-
 # ============================================================
-# CREATE NEWS
+# CREATE NEWS / BRÈVE
 # ============================================================
-
 
 @router.post("/create")
 def create_route(data: NewsCreate):
+    """
+    Création d'une NEWS ou d'une BRÈVE.
+    La différence est portée par :
+    - data.news_kind = "NEWS" | "BRIEF"
+    - data.news_type = valeur métier optionnelle
+    """
     try:
         news_id = create_news(data)
         return {"status": "ok", "id_news": news_id}
     except Exception as e:
         logger.exception("Erreur création news")
-        # ⚠️ temporaire : on renvoie le détail pour comprendre
         raise HTTPException(400, str(e))
+
 
 # ============================================================
 # LIST NEWS (ENRICHIE — VISUEL SOCIÉTÉ)
 # ============================================================
+
 @router.get("/list")
 def list_route():
     try:
@@ -52,7 +59,7 @@ def list_route():
         news = [
             {
                 **n,
-                # 🔑 ajout du visuel société pour fallback front
+                # fallback visuel société côté front
                 "COMPANY_MEDIA_LOGO_RECTANGLE_ID": n.get(
                     "MEDIA_LOGO_RECTANGLE_ID"
                 )
@@ -63,13 +70,14 @@ def list_route():
         return {"status": "ok", "news": news}
 
     except Exception:
+        logger.exception("Erreur liste news")
         raise HTTPException(400, "Erreur liste news")
 
 
+# ============================================================
+# GET ONE NEWS / BRÈVE
+# ============================================================
 
-# ============================================================
-# GET ONE NEWS
-# ============================================================
 @router.get("/{id_news}")
 def get_route(id_news: str):
     news = get_news(id_news)
@@ -79,31 +87,35 @@ def get_route(id_news: str):
 
 
 # ============================================================
-# UPDATE NEWS
+# UPDATE NEWS / BRÈVE
 # ============================================================
+
 @router.put("/update/{id_news}")
 def update_route(id_news: str, data: NewsUpdate):
     try:
         update_news(id_news, data)
         return {"status": "ok", "updated": True}
-    except Exception:
-        raise HTTPException(400, "Erreur mise à jour news")
+    except Exception as e:
+        logger.exception("Erreur mise à jour news")
+        raise HTTPException(400, str(e))
 
 
 # ============================================================
 # ARCHIVE NEWS
 # ============================================================
+
 @router.post("/archive/{id_news}")
 def archive_route(id_news: str):
     try:
         archive_news(id_news)
         return {"status": "ok", "archived": True}
     except Exception:
+        logger.exception("Erreur archivage news")
         raise HTTPException(400, "Erreur archivage news")
 
 
 # ============================================================
-# PUBLISH NEWS
+# PUBLISH NEWS / BRÈVE
 # ============================================================
 
 @router.post("/publish/{id_news}")
@@ -121,17 +133,16 @@ def publish_route(
             "published_status": status,
         }
     except Exception as e:
+        logger.exception("Erreur publication news")
         raise HTTPException(400, str(e))
 
 
 # ============================================================
-# IA — GENERATE NEWS (SOURCE → NEWS) — HTML ORIENTÉ (ROBUSTE)
+# IA — GENERATE NEWS (SOURCE → NEWS / BRÈVE)
 # ============================================================
+
 @router.post("/ai/generate")
 def ai_generate(payload: dict):
-    import json
-    import re
-
     source_text = payload.get("source_text")
     source_type = payload.get("source_type")
 
@@ -162,13 +173,12 @@ Retourne un objet JSON avec EXACTEMENT les clés suivantes :
 }}
 
 RÈGLES HTML POUR body_html
-- Utilise <p> pour chaque paragraphe
-- Utilise <ul><li> si une liste est pertinente
-- Utilise <strong> avec parcimonie
-- Utilise <h2> uniquement si vraiment utile (max 1)
+- <p> pour chaque paragraphe
+- <ul><li> si pertinent
+- <strong> avec parcimonie
+- <h2> max 1 si nécessaire
 - PAS de styles inline
 - PAS de <h1>
-- HTML simple et propre uniquement
 
 SOURCE ({source_type or "texte libre"}):
 {source_text}
@@ -176,46 +186,35 @@ SOURCE ({source_type or "texte libre"}):
 
     raw = run_llm(prompt)
 
-    title = ""
-    excerpt = ""
-    body = ""
+    if not raw:
+        return {
+            "status": "ok",
+            "news": {"title": "", "excerpt": "", "body": ""}
+        }
 
-    if raw:
-        try:
-            # ------------------------------------------------
-            # EXTRACTION DU JSON (ROBUSTE)
-            # ------------------------------------------------
-            match = re.search(r"\{[\s\S]*\}", raw)
-            if not match:
-                raise ValueError("JSON introuvable dans la réponse IA")
+    try:
+        match = re.search(r"\{[\s\S]*\}", raw)
+        if not match:
+            raise ValueError("JSON introuvable")
 
-            json_str = match.group(0)
+        data = json.loads(match.group(0))
 
-            data = json.loads(json_str)
+        return {
+            "status": "ok",
+            "news": {
+                "title": data.get("title", "").strip(),
+                "excerpt": data.get("excerpt", "").strip(),
+                "body": data.get("body_html", "").strip(),
+            },
+        }
 
-            title = data.get("title", "").strip()
-            excerpt = data.get("excerpt", "").strip()
-            body = data.get("body_html", "").strip()
+    except Exception:
+        logger.exception("Erreur parsing IA")
+        raise HTTPException(500, "Erreur parsing IA")
 
-        except Exception as e:
-            # Log utile pour debug
-            logger.exception("Erreur parsing IA")
-            raise HTTPException(
-                500,
-                "Erreur parsing IA (format JSON invalide)"
-            )
-
-    return {
-        "status": "ok",
-        "news": {
-            "title": title,
-            "excerpt": excerpt,
-            "body": body,
-        },
-    }
 
 # ============================================================
-# DELETE (ARCHIVE) NEWS
+# DELETE NEWS
 # ============================================================
 
 @router.delete("/{news_id}")
@@ -224,6 +223,7 @@ def delete_news_route(news_id: str):
         delete_news(news_id)
         return {"status": "ok"}
     except Exception as e:
+        logger.exception("Erreur suppression news")
         raise HTTPException(400, f"Erreur suppression news : {e}")
 
 
@@ -248,6 +248,7 @@ def get_linkedin_post_for_news(news_id: str):
         logger.exception("Erreur récupération post LinkedIn")
         raise HTTPException(500, "Erreur récupération post LinkedIn")
 
+
 # ============================================================
 # LINKEDIN — SAVE / UPDATE POST FOR NEWS
 # ============================================================
@@ -263,11 +264,8 @@ def save_linkedin_post_for_news(
             text=data.text,
             mode=data.mode,
         )
-
         return {"status": "ok"}
 
     except Exception:
         logger.exception("Erreur sauvegarde post LinkedIn")
         raise HTTPException(500, "Erreur sauvegarde post LinkedIn")
-
-
