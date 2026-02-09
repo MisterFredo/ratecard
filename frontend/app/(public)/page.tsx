@@ -37,6 +37,9 @@ export default async function HomePage() {
     visual_rect_id: n.VISUAL_RECT_ID ?? null,
     published_at: n.PUBLISHED_AT,
 
+    // 🔑 STRUCTURE ÉDITORIALE — OBLIGATOIRE
+    news_kind: n.NEWS_KIND as "NEWS" | "BRIEF",
+
     company: n.ID_COMPANY
       ? {
           id_company: n.ID_COMPANY,
@@ -51,7 +54,7 @@ export default async function HomePage() {
   /* -------------------------------------------------------
      ANALYSES — FLUX PUBLIC (TEASING)
      ⚠️ API PUBLIQUE UNIQUEMENT
- see: backend/api/public/routes.py
+     see: backend/api/public/routes.py
   ------------------------------------------------------- */
   let analyses: any[] = [];
 
