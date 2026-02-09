@@ -12,6 +12,8 @@ import PersonSelector, {
 
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
+type NewsType = "NEWS" | "BRIEF";
+
 type Props = {
   title: string;
   excerpt: string;
@@ -21,6 +23,8 @@ type Props = {
   topics: any[];
   persons: ArticlePerson[];
 
+  newsType?: NewsType;
+
   onChange: (d: {
     title?: string;
     excerpt?: string;
@@ -28,6 +32,7 @@ type Props = {
     company?: any | null;
     topics?: any[];
     persons?: ArticlePerson[];
+    newsType?: NewsType;
   }) => void;
 
   onValidate: () => void;
@@ -41,6 +46,7 @@ export default function NewsStepContent({
   company,
   topics,
   persons,
+  newsType = "NEWS",
   onChange,
   onValidate,
   saving,
@@ -79,24 +85,63 @@ export default function NewsStepContent({
   --------------------------------------------------------- */
   return (
     <div className="space-y-6">
+      {/* TYPE DE CONTENU */}
+      <div>
+        <label className="block font-medium mb-1">
+          Type de contenu
+        </label>
+
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              checked={newsType === "NEWS"}
+              onChange={() =>
+                onChange({ newsType: "NEWS" })
+              }
+            />
+            <span>News</span>
+          </label>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              checked={newsType === "BRIEF"}
+              onChange={() =>
+                onChange({ newsType: "BRIEF" })
+              }
+            />
+            <span>Brève</span>
+          </label>
+        </div>
+
+        <p className="text-sm text-gray-500 mt-1">
+          Une brève est un signal court (titre + excerpt),
+          sans article détaillé.
+        </p>
+      </div>
+
       {/* SOCIÉTÉ (OBLIGATOIRE) */}
       <CompanySelector
         values={company ? [company] : []}
         onChange={(items) => {
           onChange({ company: items[0] || null });
-          // reset des personnes si la société change
           onChange({ persons: [] });
         }}
       />
 
       {/* TITRE */}
       <div>
-        <label className="block font-medium mb-1">Titre *</label>
+        <label className="block font-medium mb-1">
+          Titre *
+        </label>
         <input
           type="text"
           className="w-full border rounded p-2"
           value={title}
-          onChange={(e) => onChange({ title: e.target.value })}
+          onChange={(e) =>
+            onChange({ title: e.target.value })
+          }
         />
       </div>
 
@@ -105,34 +150,44 @@ export default function NewsStepContent({
         <label className="block font-medium mb-1">
           Excerpt{" "}
           <span className="text-sm text-gray-500">
-            (2–3 phrases)
+            (obligatoire)
           </span>
         </label>
         <textarea
-          className="w-full border rounded p-2 h-20"
+          className="w-full border rounded p-2 h-24"
           value={excerpt}
-          onChange={(e) => onChange({ excerpt: e.target.value })}
-          placeholder="Résumé court qui apparaîtra sur la Home et les listes"
-        />
-      </div>
-
-      {/* TEXTE — HTML EDITOR */}
-      <div>
-        <label className="block font-medium mb-1">
-          Texte
-        </label>
-        <HtmlEditor
-          value={body}
-          onChange={(html) =>
-            onChange({ body: html })
+          onChange={(e) =>
+            onChange({ excerpt: e.target.value })
+          }
+          placeholder={
+            newsType === "BRIEF"
+              ? "Texte court affiché tel quel dans les brèves"
+              : "Résumé court pour la Home et les listes"
           }
         />
       </div>
 
-      {/* TOPICS (BADGES) */}
+      {/* TEXTE LONG — UNIQUEMENT POUR NEWS */}
+      {newsType === "NEWS" && (
+        <div>
+          <label className="block font-medium mb-1">
+            Texte
+          </label>
+          <HtmlEditor
+            value={body}
+            onChange={(html) =>
+              onChange({ body: html })
+            }
+          />
+        </div>
+      )}
+
+      {/* TOPICS */}
       <TopicSelector
         values={topics}
-        onChange={(items) => onChange({ topics: items })}
+        onChange={(items) =>
+          onChange({ topics: items })
+        }
       />
 
       {/* PERSONNES */}
@@ -162,5 +217,3 @@ export default function NewsStepContent({
     </div>
   );
 }
-
-
