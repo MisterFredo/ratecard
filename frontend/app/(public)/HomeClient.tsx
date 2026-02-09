@@ -196,11 +196,12 @@ export default function HomeClient({
 
             return (
               <BriefCard
-                key={`brief-${b.id}-${idx}`}
-                title={b.title}
-                excerpt={b.excerpt}
-                publishedAt={b.published_at}
-              />
+                 key={`brief-${b.id}-${idx}`}
+                 id={b.id}
+                 title={b.title}
+                 excerpt={b.excerpt}
+                 publishedAt={b.published_at}
+               />
             );
           }
 
