@@ -12,18 +12,22 @@ import PersonSelector, {
 
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
-type NewsKind = "NEWS" | "BRIEF";
+/* =========================================================
+   TYPES
+========================================================= */
 
-const NEWS_TYPE_OPTIONS = [
-  "ACQUISITION",
-  "CAS CLIENT",
-  "CORPORATE",
-  "EVENT",
-  "NOMINATION",
-  "PARTENARIAT",
-  "PRODUIT",
-  "THOUGHT LEADERSHIP",
-];
+type EditorialKind = "NEWS" | "BRIEF";
+
+type NewsType =
+  | "ACQUISITION"
+  | "CAS CLIENT"
+  | "CORPORATE"
+  | "EVENT"
+  | "NOMINATION"
+  | "PARTENARIAT"
+  | "PRODUIT"
+  | "THOUGHT LEADERSHIP"
+  | null;
 
 type Props = {
   title: string;
@@ -34,8 +38,8 @@ type Props = {
   topics: any[];
   persons: ArticlePerson[];
 
-  newsKind: NewsKind;
-  newsType?: string | null;
+  editorialKind: EditorialKind;
+  newsType: NewsType;
 
   onChange: (d: {
     title?: string;
@@ -44,13 +48,17 @@ type Props = {
     company?: any | null;
     topics?: any[];
     persons?: ArticlePerson[];
-    newsKind?: NewsKind;
-    newsType?: string | null;
+    editorialKind?: EditorialKind;
+    newsType?: NewsType;
   }) => void;
 
   onValidate: () => void;
   saving: boolean;
 };
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 export default function NewsStepContent({
   title,
@@ -59,7 +67,7 @@ export default function NewsStepContent({
   company,
   topics,
   persons,
-  newsKind,
+  editorialKind,
   newsType,
   onChange,
   onValidate,
@@ -69,7 +77,6 @@ export default function NewsStepContent({
      PERSONNES — chargées UNE FOIS
   --------------------------------------------------------- */
   const [allPersons, setAllPersons] = useState<PersonRef[]>([]);
-  const [loadingPersons, setLoadingPersons] = useState(true);
 
   useEffect(() => {
     async function loadPersons() {
@@ -83,11 +90,8 @@ export default function NewsStepContent({
             id_company: p.ID_COMPANY || null,
           }))
         );
-      } catch (e) {
-        console.error("Erreur chargement personnes", e);
+      } catch {
         setAllPersons([]);
-      } finally {
-        setLoadingPersons(false);
       }
     }
 
@@ -105,13 +109,13 @@ export default function NewsStepContent({
           Format éditorial
         </label>
 
-        <div className="flex gap-4">
+        <div className="flex gap-6">
           <label className="flex items-center gap-2">
             <input
               type="radio"
-              checked={newsKind === "NEWS"}
+              checked={editorialKind === "NEWS"}
               onChange={() =>
-                onChange({ newsKind: "NEWS" })
+                onChange({ editorialKind: "NEWS" })
               }
             />
             <span>News</span>
@@ -120,42 +124,44 @@ export default function NewsStepContent({
           <label className="flex items-center gap-2">
             <input
               type="radio"
-              checked={newsKind === "BRIEF"}
+              checked={editorialKind === "BRIEF"}
               onChange={() =>
-                onChange({ newsKind: "BRIEF" })
+                onChange({ editorialKind: "BRIEF" })
               }
             />
             <span>Brève</span>
           </label>
         </div>
-
-        <p className="text-sm text-gray-500 mt-1">
-          Une brève est un signal court (titre + excerpt),
-          sans article détaillé.
-        </p>
       </div>
 
-      {/* CATÉGORIE MÉTIER (OPTIONNELLE) */}
+      {/* NEWS_TYPE (CATÉGORIE MÉTIER) */}
       <div>
         <label className="block font-medium mb-1">
-          Catégorie (optionnel)
+          Type de news (optionnel)
         </label>
 
         <select
-          className="w-full border rounded p-2"
+          className="border rounded p-2 w-full"
           value={newsType || ""}
           onChange={(e) =>
             onChange({
-              newsType: e.target.value || null,
+              newsType: e.target.value
+                ? (e.target.value as NewsType)
+                : null,
             })
           }
         >
-          <option value="">— Aucune catégorie —</option>
-          {NEWS_TYPE_OPTIONS.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
+          <option value="">— Aucun —</option>
+          <option value="ACQUISITION">Acquisition</option>
+          <option value="CAS CLIENT">Cas client</option>
+          <option value="CORPORATE">Corporate</option>
+          <option value="EVENT">Event</option>
+          <option value="NOMINATION">Nomination</option>
+          <option value="PARTENARIAT">Partenariat</option>
+          <option value="PRODUIT">Produit</option>
+          <option value="THOUGHT LEADERSHIP">
+            Thought leadership
+          </option>
         </select>
       </div>
 
@@ -194,16 +200,11 @@ export default function NewsStepContent({
           onChange={(e) =>
             onChange({ excerpt: e.target.value })
           }
-          placeholder={
-            newsKind === "BRIEF"
-              ? "Texte court affiché tel quel dans les brèves"
-              : "Résumé court pour la Home et les listes"
-          }
         />
       </div>
 
-      {/* TEXTE LONG — NEWS UNIQUEMENT */}
-      {newsKind === "NEWS" && (
+      {/* TEXTE LONG — UNIQUEMENT NEWS */}
+      {editorialKind === "NEWS" && (
         <div>
           <label className="block font-medium mb-1">
             Texte
