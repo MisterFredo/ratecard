@@ -76,7 +76,7 @@ export default function AnalysisTeaserCard({
           EXCERPT
       ===================================================== */}
       {excerpt && (
-        <p className="text-sm text-gray-600 mt-2 line-clamp-6">
+        <p className="text-sm text-gray-600 mt-2 line-clamp-8">
           {excerpt}
         </p>
       )}
