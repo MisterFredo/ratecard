@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
@@ -10,19 +10,19 @@ class NewsCreate(BaseModel):
     # --------------------------------------------------------
     # SOCIÉTÉ
     # --------------------------------------------------------
-    id_company: str
+    id_company: str = Field(..., alias="idCompany")
 
     # --------------------------------------------------------
     # STRUCTURE ÉDITORIALE (FORMAT)
-    # --------------------------------------------------------
     # NEWS | BRIEF
-    news_kind: str
+    # --------------------------------------------------------
+    news_kind: str = Field(..., alias="newsKind")
 
     # --------------------------------------------------------
     # CATÉGORIE RÉDACTIONNELLE (GOUVERNÉE BQ)
     # ex: CORPORATE, PARTENAIRE, EVENT, etc.
     # --------------------------------------------------------
-    news_type: Optional[str] = None
+    news_type: Optional[str] = Field(None, alias="newsType")
 
     # --------------------------------------------------------
     # CONTENU
@@ -34,15 +34,21 @@ class NewsCreate(BaseModel):
     # --------------------------------------------------------
     # VISUEL / META
     # --------------------------------------------------------
-    media_rectangle_id: Optional[str] = None
-    source_url: Optional[str] = None
+    media_rectangle_id: Optional[str] = Field(
+        None, alias="mediaRectangleId"
+    )
+    source_url: Optional[str] = Field(None, alias="sourceUrl")
     author: Optional[str] = None
 
     # --------------------------------------------------------
     # ENRICHISSEMENTS
     # --------------------------------------------------------
-    topics: Optional[List[str]] = []
-    persons: Optional[List[str]] = []
+    topics: List[str] = []
+    persons: List[str] = []
+
+    class Config:
+        allow_population_by_field_name = True
+        extra = "forbid"
 
 
 # ============================================================
@@ -52,13 +58,12 @@ class NewsUpdate(BaseModel):
     # --------------------------------------------------------
     # STRUCTURE ÉDITORIALE
     # --------------------------------------------------------
-    # NEWS | BRIEF
-    news_kind: Optional[str] = None
+    news_kind: Optional[str] = Field(None, alias="newsKind")
 
     # --------------------------------------------------------
     # CATÉGORIE RÉDACTIONNELLE
     # --------------------------------------------------------
-    news_type: Optional[str] = None
+    news_type: Optional[str] = Field(None, alias="newsType")
 
     # --------------------------------------------------------
     # CONTENU
@@ -70,15 +75,21 @@ class NewsUpdate(BaseModel):
     # --------------------------------------------------------
     # VISUEL / META
     # --------------------------------------------------------
-    media_rectangle_id: Optional[str] = None
-    source_url: Optional[str] = None
+    media_rectangle_id: Optional[str] = Field(
+        None, alias="mediaRectangleId"
+    )
+    source_url: Optional[str] = Field(None, alias="sourceUrl")
     author: Optional[str] = None
 
     # --------------------------------------------------------
     # ENRICHISSEMENTS
     # --------------------------------------------------------
-    topics: Optional[List[str]] = []
-    persons: Optional[List[str]] = []
+    topics: List[str] = []
+    persons: List[str] = []
+
+    class Config:
+        allow_population_by_field_name = True
+        extra = "forbid"
 
 
 # ============================================================
