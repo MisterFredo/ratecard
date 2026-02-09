@@ -15,14 +15,13 @@ class NewsCreate(BaseModel):
     excerpt: Optional[str] = None
     body: Optional[str] = None
 
-    # STRUCTURE ÉDITORIALE
-    # NEWS = article éditorial complet
-    # BRIEF = signal court (titre + excerpt)
-    news_type: str  # "NEWS" | "BRIEF"
+    # STRUCTURE ÉDITORIALE (STRUCTURE FIXE)
+    # NEWS | BRIEF
+    news_kind: str
 
-    # CATÉGORIE MÉTIER
-    # ex: "partenariat" | "produit" | "client" | "corporate" | ...
-    type: Optional[str] = None
+    # CATÉGORIE MÉTIER (VALEURS BQ)
+    # ACQUISITION | CAS CLIENT | CORPORATE | EVENT | ...
+    news_type: Optional[str] = None
 
     # VISUEL / META
     media_rectangle_id: Optional[str] = None
@@ -39,10 +38,10 @@ class NewsCreate(BaseModel):
 # ============================================================
 class NewsUpdate(BaseModel):
     # STRUCTURE ÉDITORIALE
-    news_type: Optional[str] = None  # "NEWS" | "BRIEF"
+    news_kind: Optional[str] = None  # NEWS | BRIEF
 
     # CATÉGORIE MÉTIER
-    type: Optional[str] = None
+    news_type: Optional[str] = None
 
     # CONTENU
     title: str
@@ -74,8 +73,8 @@ class NewsOut(BaseModel):
     status: str
 
     # STRUCTURE
-    news_type: Optional[str]  # "NEWS" | "BRIEF"
-    type: Optional[str]       # "partenariat" | "produit" | ...
+    news_kind: Optional[str]   # NEWS | BRIEF
+    news_type: Optional[str]   # ACQUISITION | CORPORATE | ...
 
     # CONTENU
     title: str
