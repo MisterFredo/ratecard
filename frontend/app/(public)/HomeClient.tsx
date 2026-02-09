@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
 import BriefCard from "@/components/news/BriefCard";
 import AnalysisTeaserCard from "@/components/analysis/AnalysisTeaserCard";
@@ -23,7 +25,9 @@ type NewsItem = {
   visual_rect_id?: string | null;
   published_at: string;
 
+  // STRUCTURE
   news_kind: "NEWS" | "BRIEF";
+
   company?: Company;
 };
 
@@ -61,12 +65,16 @@ export default function HomeClient({
   news,
   analyses = [],
 }: Props) {
+  const router = useRouter();
   const { openRightDrawer } = useDrawer();
 
+  /* ---------------------------------------------------------
+     STATE — SCROLL
+  --------------------------------------------------------- */
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   /* ---------------------------------------------------------
-     1. TOP 6 — NEWS UNIQUEMENT
+     1. TOP 6 — NEWS UNIQUEMENT (PAR DATE)
   --------------------------------------------------------- */
   const topNews = [...news]
     .filter((n) => n.news_kind === "NEWS")
@@ -80,9 +88,8 @@ export default function HomeClient({
   const topNewsIds = new Set(topNews.map((n) => n.id));
 
   /* ---------------------------------------------------------
-     2. FLUX GLOBAL (NEWS / BRIEF / ANALYSIS)
-     - on enlève les NEWS déjà utilisées en top
-     - on trie par date
+     2. FLUX GLOBAL CHRONO (NEWS / BRIEF / ANALYSIS)
+     - on exclut les NEWS déjà affichées en top
   --------------------------------------------------------- */
   const unifiedItems: UnifiedItem[] = [
     ...news
@@ -106,7 +113,7 @@ export default function HomeClient({
     .slice(0, Math.min(visibleCount, MAX_ITEMS));
 
   /* ---------------------------------------------------------
-     SCROLL
+     SCROLL HANDLER
   --------------------------------------------------------- */
   useEffect(() => {
     function onScroll() {
@@ -206,6 +213,7 @@ export default function HomeClient({
                 title={b.title}
                 excerpt={b.excerpt ?? ""}
                 publishedAt={b.published_at}
+                onClick={() => router.push("/breves")}
               />
             );
           }
@@ -229,6 +237,9 @@ export default function HomeClient({
         })}
       </section>
 
+      {/* =====================================================
+          FIN DE FLUX
+      ===================================================== */}
       {visibleCount < MAX_ITEMS && (
         <div className="py-10 text-center text-sm text-gray-400">
           Chargement…
