@@ -1,58 +1,57 @@
 from pydantic import BaseModel
-from typing import Optional, List, Literal
+from typing import Optional, List
 from datetime import datetime
 
 
 # ============================================================
-# TYPES
-# ============================================================
-
-NewsType = Literal["NEWS", "BRIEF"]
-
-
-# ============================================================
-# CREATE NEWS / BRIEF
+# CREATE NEWS / BRÈVE
 # ============================================================
 class NewsCreate(BaseModel):
-    # TYPE DE CONTENU
-    news_type: NewsType = "NEWS"
-
     # SOCIÉTÉ (OBLIGATOIRE)
     id_company: str
+
+    # TYPE ÉDITORIAL
+    news_type: Optional[str] = None      # ex: nomination, partenariat, produit…
+    is_brief: bool = False               # True = brève, False = news
 
     # CONTENU
     title: str
     excerpt: Optional[str] = None
-    body: Optional[str] = None  # facultatif pour BRIEF
+    body: Optional[str] = None            # facultatif si brève
 
-    # VISUEL
-    media_rectangle_id: Optional[str] = None  # requis uniquement pour NEWS
+    # VISUEL (facultatif si brève)
+    media_rectangle_id: Optional[str] = None
 
     # META
     source_url: Optional[str] = None
     author: Optional[str] = None
 
-    # ENRICHISSEMENTS LÉGERS
+    # ENRICHISSEMENTS
     topics: Optional[List[str]] = []
     persons: Optional[List[str]] = []
 
 
 # ============================================================
-# UPDATE NEWS / BRIEF
+# UPDATE NEWS / BRÈVE
 # ============================================================
 class NewsUpdate(BaseModel):
-    # TYPE (modifiable si besoin)
-    news_type: Optional[NewsType] = None
+    # TYPE
+    news_type: Optional[str] = None
+    is_brief: Optional[bool] = None
 
-    title: Optional[str] = None
+    # CONTENU
+    title: str
     excerpt: Optional[str] = None
     body: Optional[str] = None
 
+    # VISUEL
     media_rectangle_id: Optional[str] = None
 
+    # META
     source_url: Optional[str] = None
     author: Optional[str] = None
 
+    # ENRICHISSEMENTS
     topics: Optional[List[str]] = []
     persons: Optional[List[str]] = []
 
@@ -61,9 +60,6 @@ class NewsUpdate(BaseModel):
 # PUBLISH
 # ============================================================
 class NewsPublish(BaseModel):
-    """
-    Payload de publication d'une news ou d'une brève.
-    """
     publish_at: Optional[str] = None
 
 
@@ -74,7 +70,8 @@ class NewsOut(BaseModel):
     id_news: str
     status: str
 
-    news_type: NewsType
+    news_type: Optional[str]
+    is_brief: bool
 
     title: str
     excerpt: Optional[str]
@@ -88,8 +85,7 @@ class NewsOut(BaseModel):
 
 
 # ============================================================
-# LINKEDIN — POST LIÉ À UNE NEWS
-# (BRIEF exclue plus tard côté logique métier)
+# LINKEDIN
 # ============================================================
 class NewsLinkedInPost(BaseModel):
     text: str
