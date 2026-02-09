@@ -78,7 +78,7 @@ export default function BriefCard({
           EXCERPT
       ===================================================== */}
       {excerpt && (
-        <p className="mt-3 text-sm text-gray-700 leading-relaxed line-clamp-4">
+        <p className="mt-3 text-sm text-gray-700 leading-relaxed line-clamp-8">
           {excerpt}
         </p>
       )}
