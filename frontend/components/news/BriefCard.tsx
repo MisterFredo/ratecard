@@ -5,6 +5,10 @@ type Props = {
   title: string;
   excerpt?: string | null;
   publishedAt: string;
+
+  // optionnel pour plus tard
+  typeLabel?: string; // ex: "Marché", "Client", "Nomination"
+  onClick?: (id: string) => void;
 };
 
 function isValidDate(value?: string) {
@@ -16,49 +20,73 @@ export default function BriefCard({
   title,
   excerpt,
   publishedAt,
+  typeLabel,
+  onClick,
 }: Props) {
-  function openBriefs() {
-    // V1 : page dédiée aux brèves (scroll infini)
-    window.location.href = `/briefs?from=${id}`;
+  function handleClick() {
+    onClick?.(id);
   }
 
   return (
     <article
-      onClick={openBriefs}
+      onClick={handleClick}
       className="
         cursor-pointer
         rounded-2xl
-        border border-dashed
-        bg-white
+        border border-gray-200
+        bg-gray-50
         p-5
         transition
-        hover:border-gray-300
+        hover:bg-white
         hover:shadow-sm
         flex flex-col
       "
     >
-      {/* META */}
-      {isValidDate(publishedAt) && (
-        <div className="mb-2 text-xs text-gray-400">
-          Brève •{" "}
-          {new Date(publishedAt).toLocaleDateString("fr-FR")}
-        </div>
-      )}
+      {/* =====================================================
+          META — DATE + TYPE
+      ===================================================== */}
+      <div className="mb-2 flex items-center gap-2 text-xs text-gray-400">
+        <span>Brève</span>
 
-      {/* TITRE */}
-      <h3 className="text-base font-semibold text-gray-900 leading-snug">
+        {typeLabel && (
+          <>
+            <span>•</span>
+            <span className="uppercase tracking-wide">
+              {typeLabel}
+            </span>
+          </>
+        )}
+
+        {isValidDate(publishedAt) && (
+          <>
+            <span>•</span>
+            <span>
+              {new Date(publishedAt).toLocaleDateString("fr-FR")}
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* =====================================================
+          TITLE
+      ===================================================== */}
+      <h3 className="text-sm font-semibold text-gray-900 leading-snug">
         {title}
       </h3>
 
-      {/* EXCERPT */}
+      {/* =====================================================
+          EXCERPT
+      ===================================================== */}
       {excerpt && (
-        <p className="mt-2 text-sm text-gray-600 line-clamp-4">
+        <p className="mt-3 text-sm text-gray-700 leading-relaxed line-clamp-4">
           {excerpt}
         </p>
       )}
 
-      {/* FOOTER */}
-      <div className="mt-auto pt-4 text-xs text-gray-500 italic">
+      {/* =====================================================
+          FOOTER
+      ===================================================== */}
+      <div className="mt-auto pt-4 text-xs text-gray-400 italic">
         Voir toutes les brèves →
       </div>
     </article>
