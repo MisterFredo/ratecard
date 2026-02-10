@@ -109,6 +109,24 @@ def update_route(id_news: str, data: NewsUpdate):
         logger.exception("Erreur mise à jour news")
         raise HTTPException(400, str(e))
 
+@router.get("/breves")
+def list_breves(
+    year: int,
+    limit: int = 20,
+    cursor: Optional[str] = None,
+):
+    items = list_breves_public(
+        year=year,
+        limit=limit,
+        cursor=cursor,
+    )
+
+    return {
+        "items": items,
+        "next_cursor": items[-1]["published_at"] if items else None,
+    }
+
+
 
 # ============================================================
 # ARCHIVE NEWS
