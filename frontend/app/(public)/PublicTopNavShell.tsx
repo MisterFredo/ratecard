@@ -19,10 +19,9 @@ export default function PublicTopNavShell({
 
   /* =====================================================
      NAV ITEMS — PUBLIC
-     (Curator débranché)
+     (News débranchée)
   ===================================================== */
   const navItems = [
-    { href: "/news", label: "News" },
     { href: "/breves", label: "Brèves" },
     { href: "/members", label: "Membres" },
     { href: "/events", label: "Événements" },
@@ -197,4 +196,3 @@ export default function PublicTopNavShell({
     </div>
   );
 }
-
