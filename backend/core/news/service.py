@@ -404,6 +404,91 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
 
     return status
 
+# ============================================================
+# LIST BRÈVES — PUBLIC (PAGINÉ / PAR ANNÉE)
+# ============================================================
+def list_breves_public(
+    year: int,
+    limit: int = 20,
+    cursor: Optional[str] = None,
+):
+    """
+    Retourne les BRÈVES publiées pour une année donnée,
+    paginées par date (cursor-based).
+    """
+
+    params = {
+        "year": year,
+        "limit": limit,
+    }
+
+    cursor_clause = ""
+    if cursor:
+        cursor_clause = "AND n.PUBLISHED_AT < @cursor"
+        params["cursor"] = cursor
+
+    sql = f"""
+        SELECT
+            n.ID_NEWS,
+            n.TITLE,
+            n.EXCERPT,
+            n.PUBLISHED_AT,
+
+            -- SOCIÉTÉ
+            c.NAME AS COMPANY_NAME,
+
+            -- CATÉGORIE
+            n.NEWS_TYPE,
+
+            -- TOPICS
+            T.TOPICS
+
+        FROM `{TABLE_NEWS}` n
+        JOIN `{TABLE_COMPANY}` c
+          ON n.ID_COMPANY = c.ID_COMPANY
+
+        LEFT JOIN (
+            SELECT
+                NT.ID_NEWS,
+                ARRAY_AGG(
+                    STRUCT(
+                        T.LABEL AS label,
+                        T.TOPIC_AXIS AS axis
+                    )
+                ) AS TOPICS
+            FROM `{TABLE_NEWS_TOPIC}` NT
+            JOIN `{TABLE_TOPIC}` T
+              ON NT.ID_TOPIC = T.ID_TOPIC
+            GROUP BY NT.ID_NEWS
+        ) T ON n.ID_NEWS = T.ID_NEWS
+
+        WHERE
+            n.NEWS_KIND = 'BRIEF'
+            AND n.STATUS = 'PUBLISHED'
+            AND n.PUBLISHED_AT IS NOT NULL
+            AND EXTRACT(YEAR FROM n.PUBLISHED_AT) = @year
+            {cursor_clause}
+
+        ORDER BY n.PUBLISHED_AT DESC
+        LIMIT @limit
+    """
+
+    rows = query_bq(sql, params)
+
+    return [
+        {
+            "id": r["ID_NEWS"],
+            "title": r["TITLE"],
+            "excerpt": r["EXCERPT"],
+            "published_at": r["PUBLISHED_AT"],
+            "company": r["COMPANY_NAME"],
+            "news_type": r["NEWS_TYPE"],
+            "topics": r.get("TOPICS") or [],
+        }
+        for r in rows
+    ]
+
+
 
 # ============================================================
 # LINKEDIN
