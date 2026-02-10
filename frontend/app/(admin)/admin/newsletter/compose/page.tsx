@@ -17,6 +17,7 @@ export type NewsItem = {
   excerpt?: string | null;
   visual_rect_id?: string | null;
   published_at: string;
+  news_kind: "NEWS" | "BRIEF";
 };
 
 export type AnalysisItem = {
@@ -37,13 +38,15 @@ export default function NewsletterComposePage() {
   const [analyses, setAnalyses] = useState<AnalysisItem[]>([]);
 
   const [selectedNewsIds, setSelectedNewsIds] = useState<string[]>([]);
-  const [selectedAnalysisIds, setSelectedAnalysisIds] = useState<string[]>([]);
+  const [selectedBriefIds, setSelectedBriefIds] = useState<string[]>([]);
+  const [selectedAnalysisIds, setSelectedAnalysisIds] =
+    useState<string[]>([]);
 
   /* -----------------------------------------------------
      FETCH SOURCES
   ----------------------------------------------------- */
   useEffect(() => {
-    // NEWS
+    // NEWS + BRÈVES
     fetch(`${API_BASE}/news/list`, { cache: "no-store" })
       .then((r) => r.json())
       .then((json) => {
@@ -53,13 +56,16 @@ export default function NewsletterComposePage() {
           excerpt: n.EXCERPT ?? null,
           visual_rect_id: n.VISUAL_RECT_ID ?? null,
           published_at: n.PUBLISHED_AT,
+          news_kind: n.NEWS_KIND,
         }));
 
         setNews(mapped);
       });
 
     // ANALYSES
-    fetch(`${API_BASE}/public/analysis/list`, { cache: "no-store" })
+    fetch(`${API_BASE}/public/analysis/list`, {
+      cache: "no-store",
+    })
       .then((r) => r.json())
       .then((json) => {
         setAnalyses(json.items || []);
@@ -67,15 +73,42 @@ export default function NewsletterComposePage() {
   }, []);
 
   /* -----------------------------------------------------
+     SPLIT NEWS / BRÈVES
+  ----------------------------------------------------- */
+  const newsItems = useMemo(
+    () => news.filter((n) => n.news_kind === "NEWS"),
+    [news]
+  );
+
+  const briefItems = useMemo(
+    () => news.filter((n) => n.news_kind === "BRIEF"),
+    [news]
+  );
+
+  /* -----------------------------------------------------
      SELECTED OBJECTS (ORDERED)
   ----------------------------------------------------- */
   const selectedNews = useMemo(
-    () => news.filter((n) => selectedNewsIds.includes(n.id)),
-    [news, selectedNewsIds]
+    () =>
+      newsItems.filter((n) =>
+        selectedNewsIds.includes(n.id)
+      ),
+    [newsItems, selectedNewsIds]
+  );
+
+  const selectedBriefes = useMemo(
+    () =>
+      briefItems.filter((b) =>
+        selectedBriefIds.includes(b.id)
+      ),
+    [briefItems, selectedBriefIds]
   );
 
   const selectedAnalyses = useMemo(
-    () => analyses.filter((a) => selectedAnalysisIds.includes(a.id)),
+    () =>
+      analyses.filter((a) =>
+        selectedAnalysisIds.includes(a.id)
+      ),
     [analyses, selectedAnalysisIds]
   );
 
@@ -99,14 +132,25 @@ export default function NewsletterComposePage() {
           />
         </section>
 
+        {/* NEWS */}
         <NewsletterSelector
           title="News partenaires"
-          items={news}
+          items={newsItems}
           selectedIds={selectedNewsIds}
           onChange={setSelectedNewsIds}
           labelKey="title"
         />
 
+        {/* BRÈVES */}
+        <NewsletterSelector
+          title="Brèves"
+          items={briefItems}
+          selectedIds={selectedBriefIds}
+          onChange={setSelectedBriefIds}
+          labelKey="title"
+        />
+
+        {/* ANALYSES */}
         <NewsletterSelector
           title="Analyses Ratecard"
           items={analyses}
@@ -120,8 +164,10 @@ export default function NewsletterComposePage() {
       <NewsletterPreview
         introText={introText}
         news={selectedNews}
+        breves={selectedBriefes}
         analyses={selectedAnalyses}
       />
     </div>
   );
 }
+
