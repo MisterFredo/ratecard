@@ -60,6 +60,9 @@ include_router("api.synthesis", "/api/synthesis", "SYNTHESIS")
 # --- FRONT PUBLIC (MEDIA)
 include_router("api.public", "/api/public", "PUBLIC")
 
+# --- ADMIN AUTH
+include_router("api.admin", "/api/admin", "ADMIN")
+
 # --- SUPPORT
 include_router("api.visuals", "/api/visuals", "VISUALS")
 
