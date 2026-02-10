@@ -52,7 +52,7 @@ function renderIntro(introText?: string) {
 }
 
 /* -------------------------
-   NEWS — CARDS VERTICALES
+   NEWS — CARDS
 ------------------------- */
 function renderNews(news: NewsItem[]) {
   if (news.length === 0) return "";
@@ -89,18 +89,12 @@ function renderNews(news: NewsItem[]) {
             ${
               n.visual_rect_id
                 ? `
-            <!-- IMAGE -->
             <tr>
               <td>
                 <img
                   src="${GCS_BASE_URL}/news/${n.visual_rect_id}"
                   alt="${escapeHtml(n.title)}"
-                  style="
-                    display:block;
-                    width:100%;
-                    max-width:100%;
-                    height:auto;
-                  "
+                  style="display:block;width:100%;height:auto;"
                 />
               </td>
             </tr>
@@ -108,13 +102,8 @@ function renderNews(news: NewsItem[]) {
                 : ""
             }
 
-            <!-- CONTENT -->
             <tr>
-              <td style="
-                padding:16px;
-                font-family:Arial,Helvetica,sans-serif;
-                color:#111827;
-              ">
+              <td style="padding:16px;font-family:Arial,Helvetica,sans-serif;">
                 <strong style="font-size:16px;line-height:22px;">
                   ${escapeHtml(n.title)}
                 </strong>
@@ -159,7 +148,71 @@ function renderNews(news: NewsItem[]) {
 }
 
 /* -------------------------
-   ANALYSES — BLOCS ÉDITO
+   BRÈVES — LISTE ÉDITORIALE
+------------------------- */
+function renderBreves(breves: NewsItem[]) {
+  if (breves.length === 0) return "";
+
+  return `
+    <tr>
+      <td style="
+        padding:32px 0 12px 0;
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:18px;
+        font-weight:bold;
+        color:#111827;
+      ">
+        Brèves du marché
+      </td>
+    </tr>
+
+    ${breves
+      .map(
+        (b) => `
+      <tr>
+        <td style="
+          padding:12px 0;
+          font-family:Arial,Helvetica,sans-serif;
+          border-bottom:1px solid #E5E7EB;
+        ">
+          <strong style="font-size:15px;line-height:21px;">
+            ${escapeHtml(b.title)}
+          </strong>
+
+          ${
+            b.excerpt
+              ? `<p style="
+                  margin:6px 0 10px 0;
+                  font-size:14px;
+                  line-height:20px;
+                  color:#374151;
+                ">
+                  ${escapeHtml(b.excerpt)}
+                </p>`
+              : ""
+          }
+
+          <a
+            href="${SITE_URL}/breves?breve_id=${b.id}"
+            style="
+              font-size:13px;
+              color:#2563EB;
+              text-decoration:none;
+              font-weight:bold;
+            "
+          >
+            Lire la brève →
+          </a>
+        </td>
+      </tr>
+    `
+      )
+      .join("")}
+  `;
+}
+
+/* -------------------------
+   ANALYSES — BLOCS
 ------------------------- */
 function renderAnalyses(analyses: AnalysisItem[]) {
   if (analyses.length === 0) return "";
@@ -173,7 +226,7 @@ function renderAnalyses(analyses: AnalysisItem[]) {
         font-weight:bold;
         color:#111827;
       ">
-        Analyses
+        Analyses Ratecard
       </td>
     </tr>
 
@@ -186,17 +239,10 @@ function renderAnalyses(analyses: AnalysisItem[]) {
             width="100%"
             cellpadding="0"
             cellspacing="0"
-            style="
-              background:#F9FAFB;
-              border-radius:8px;
-            "
+            style="background:#F9FAFB;border-radius:8px;"
           >
             <tr>
-              <td style="
-                padding:16px;
-                font-family:Arial,Helvetica,sans-serif;
-                color:#111827;
-              ">
+              <td style="padding:16px;font-family:Arial,Helvetica,sans-serif;">
                 <strong style="font-size:16px;line-height:22px;">
                   ${escapeHtml(a.title)}
                 </strong>
@@ -247,10 +293,12 @@ function renderAnalyses(analyses: AnalysisItem[]) {
 export default function NewsletterPreview({
   introText,
   news,
+  breves,
   analyses,
 }: {
   introText?: string;
   news: NewsItem[];
+  breves: NewsItem[];
   analyses: AnalysisItem[];
 }) {
   const html = useMemo(() => {
@@ -263,19 +311,15 @@ export default function NewsletterPreview({
   </head>
 
   <body style="margin:0;padding:0;background-color:#ffffff;">
-    <!-- OUTER -->
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr>
         <td align="center">
-
-          <!-- CONTAINER -->
           <table
             width="100%"
             cellpadding="0"
             cellspacing="0"
             style="max-width:600px;margin:0 auto;"
           >
-            <!-- LOGO -->
             <tr>
               <td style="padding:24px 0;">
                 <img
@@ -287,9 +331,8 @@ export default function NewsletterPreview({
             </tr>
 
             ${renderIntro(introText)}
-
             ${renderNews(news)}
-
+            ${renderBreves(breves)}
             ${renderAnalyses(analyses)}
 
           </table>
@@ -299,7 +342,7 @@ export default function NewsletterPreview({
   </body>
 </html>
     `;
-  }, [introText, news, analyses]);
+  }, [introText, news, breves, analyses]);
 
   function copyHtml() {
     navigator.clipboard.writeText(html);
