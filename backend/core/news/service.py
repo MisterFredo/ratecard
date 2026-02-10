@@ -413,8 +413,9 @@ def list_breves_public(
     cursor: Optional[str] = None,
 ):
     """
-    Retourne les BRÈVES publiées pour une année donnée,
-    paginées par date (cursor-based).
+    Retourne les contenus publiés (BRÈVES + NEWS)
+    rendus sous forme de brèves pour une année donnée,
+    paginés par date (cursor-based).
     """
 
     params = {
@@ -437,7 +438,7 @@ def list_breves_public(
             -- SOCIÉTÉ
             c.NAME AS COMPANY_NAME,
 
-            -- CATÉGORIE
+            -- CATÉGORIE ÉDITORIALE
             n.NEWS_TYPE,
 
             -- TOPICS
@@ -463,8 +464,7 @@ def list_breves_public(
         ) T ON n.ID_NEWS = T.ID_NEWS
 
         WHERE
-            n.NEWS_KIND = 'BRIEF'
-            AND n.STATUS = 'PUBLISHED'
+            n.STATUS = 'PUBLISHED'
             AND n.PUBLISHED_AT IS NOT NULL
             AND EXTRACT(YEAR FROM n.PUBLISHED_AT) = @year
             {cursor_clause}
@@ -487,7 +487,6 @@ def list_breves_public(
         }
         for r in rows
     ]
-
 
 
 # ============================================================
