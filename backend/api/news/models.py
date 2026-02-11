@@ -79,7 +79,7 @@ class NewsUpdate(BaseModel):
     persons: Optional[List[str]] = None
 
     class Config:
-        extra = "forbid"
+        extra = "ignore"
 
 
 # ============================================================
