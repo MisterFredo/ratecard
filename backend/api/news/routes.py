@@ -11,7 +11,6 @@ from core.news.service import (
     create_news,
     list_news,
     list_news_types,
-    list_news_paginated,
     list_breves_public,
     get_news,
     update_news,
@@ -55,15 +54,9 @@ def create_route(data: NewsCreate):
 # ============================================================
 
 @router.get("/list")
-def list_route(
-    limit: int = 50,
-    offset: int = 0,
-):
+def list_route():
     try:
-        rows = list_news_paginated(
-            limit=limit,
-            offset=offset,
-        )
+        rows = list_news()
 
         news = [
             {
@@ -76,17 +69,11 @@ def list_route(
             for n in rows
         ]
 
-        return {
-            "status": "ok",
-            "news": news,
-            "limit": limit,
-            "offset": offset,
-        }
+        return {"status": "ok", "news": news}
 
     except Exception:
         logger.exception("Erreur liste news")
         raise HTTPException(400, "Erreur liste news")
-
 
 @router.get("/types")
 def list_news_types_route():
