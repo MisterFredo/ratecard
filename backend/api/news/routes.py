@@ -197,7 +197,7 @@ Retourne un objet JSON avec EXACTEMENT les clés suivantes :
 
 {{
   "title": "Titre factuel et informatif",
-  "excerpt": "Synthèse courte (2–3 phrases, ~300 caractères)",
+  "excerpt": "Synthèse courte (3-4 phrases, ~400 caractères)",
   "body_html": "<p>Corps de la news en HTML.</p>"
 }}
 
