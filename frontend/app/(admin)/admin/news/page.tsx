@@ -49,7 +49,6 @@ function NewsKindBadge({ kind }: { kind: "NEWS" | "BRIEF" }) {
 export default function NewsListPage() {
   const [news, setNews] = useState<NewsLite[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [page, setPage] = useState(0);
 
   async function load(currentPage: number) {
@@ -57,7 +56,9 @@ export default function NewsListPage() {
 
     try {
       const res = await api.get(
-        `/news/list?limit=${PAGE_SIZE}&offset=${currentPage * PAGE_SIZE}`
+        `/news/admin/list?limit=${PAGE_SIZE}&offset=${
+          currentPage * PAGE_SIZE
+        }`
       );
 
       setNews(res.news || []);
