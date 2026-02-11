@@ -11,6 +11,7 @@ from core.news.service import (
     create_news,
     list_news,
     list_news_types,
+    list_news_admin,
     list_breves_public,
     get_news,
     update_news,
