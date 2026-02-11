@@ -495,20 +495,39 @@ def list_news_admin(limit: int = 50, offset: int = 0):
             n.TITLE,
             n.STATUS,
             n.PUBLISHED_AT,
+            n.CREATED_AT,
             n.NEWS_KIND,
             c.NAME AS COMPANY_NAME
+
         FROM `{TABLE_NEWS}` n
         JOIN `{TABLE_COMPANY}` c
           ON n.ID_COMPANY = c.ID_COMPANY
-        ORDER BY n.CREATED_AT DESC
+
+        ORDER BY
+            -- 1️⃣ Priorité aux statuts (publié > draft > autres)
+            CASE n.STATUS
+                WHEN 'PUBLISHED' THEN 1
+                WHEN 'DRAFT' THEN 2
+                ELSE 3
+            END,
+
+            -- 2️⃣ Date de publication (les plus récentes en haut)
+            IFNULL(n.PUBLISHED_AT, TIMESTAMP("1970-01-01")) DESC,
+
+            -- 3️⃣ Sinon fallback sur date de création
+            n.CREATED_AT DESC
+
         LIMIT @limit
         OFFSET @offset
     """
 
-    return query_bq(sql, {
-        "limit": limit,
-        "offset": offset,
-    })
+    return query_bq(
+        sql,
+        {
+            "limit": limit,
+            "offset": offset,
+        },
+    )
 
 
 
