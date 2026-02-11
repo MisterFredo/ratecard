@@ -488,6 +488,34 @@ def list_breves_public(
         for r in rows
     ]
 
+def list_news_paginated(
+    limit: int = 50,
+    offset: int = 0,
+):
+    sql = f"""
+        SELECT
+            n.ID_NEWS,
+            n.NEWS_KIND,
+            n.TITLE,
+            n.STATUS,
+            n.PUBLISHED_AT,
+            c.NAME AS COMPANY_NAME
+        FROM `{TABLE_NEWS}` n
+        JOIN `{TABLE_COMPANY}` c
+          ON n.ID_COMPANY = c.ID_COMPANY
+        ORDER BY n.CREATED_AT DESC
+        LIMIT @limit
+        OFFSET @offset
+    """
+
+    rows = query_bq(sql, {
+        "limit": limit,
+        "offset": offset,
+    })
+
+    return rows
+
+
 
 # ============================================================
 # LINKEDIN
