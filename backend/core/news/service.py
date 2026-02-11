@@ -504,15 +504,16 @@ def list_news_admin(limit: int = 50, offset: int = 0):
           ON n.ID_COMPANY = c.ID_COMPANY
 
         ORDER BY
-            -- 1️⃣ Priorité aux statuts (publié > draft > autres)
+            
+            -- 1️⃣ Date de publication (les plus récentes en haut)
+            IFNULL(n.PUBLISHED_AT, TIMESTAMP("1970-01-01")) DESC,
+
+            -- 2️⃣ Priorité aux statuts (publié > draft > autres)
             CASE n.STATUS
                 WHEN 'PUBLISHED' THEN 1
                 WHEN 'DRAFT' THEN 2
                 ELSE 3
             END,
-
-            -- 2️⃣ Date de publication (les plus récentes en haut)
-            IFNULL(n.PUBLISHED_AT, TIMESTAMP("1970-01-01")) DESC,
 
             -- 3️⃣ Sinon fallback sur date de création
             n.CREATED_AT DESC
