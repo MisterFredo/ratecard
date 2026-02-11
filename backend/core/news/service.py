@@ -499,7 +499,8 @@ def list_news_paginated(
             n.TITLE,
             n.STATUS,
             n.PUBLISHED_AT,
-            c.NAME AS COMPANY_NAME
+            c.NAME AS COMPANY_NAME,
+            c.MEDIA_LOGO_RECTANGLE_ID
         FROM `{TABLE_NEWS}` n
         JOIN `{TABLE_COMPANY}` c
           ON n.ID_COMPANY = c.ID_COMPANY
@@ -508,13 +509,10 @@ def list_news_paginated(
         OFFSET @offset
     """
 
-    rows = query_bq(sql, {
+    return query_bq(sql, {
         "limit": limit,
         "offset": offset,
     })
-
-    return rows
-
 
 
 # ============================================================
