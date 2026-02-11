@@ -55,18 +55,13 @@ class NewsUpdate(BaseModel):
     # --------------------------------------------------------
     # STRUCTURE ÉDITORIALE
     # --------------------------------------------------------
-    # NEWS | BRIEF
     news_kind: Optional[str] = None
-
-    # --------------------------------------------------------
-    # CATÉGORIE RÉDACTIONNELLE
-    # --------------------------------------------------------
     news_type: Optional[str] = None
 
     # --------------------------------------------------------
     # CONTENU
     # --------------------------------------------------------
-    title: str
+    title: Optional[str] = None
     excerpt: Optional[str] = None
     body: Optional[str] = None
 
@@ -78,10 +73,10 @@ class NewsUpdate(BaseModel):
     author: Optional[str] = None
 
     # --------------------------------------------------------
-    # ENRICHISSEMENTS (IDs UNIQUEMENT)
+    # ENRICHISSEMENTS (OPTIONAL POUR CONTRÔLE FIN)
     # --------------------------------------------------------
-    topics: List[str] = Field(default_factory=list)
-    persons: List[str] = Field(default_factory=list)
+    topics: Optional[List[str]] = None
+    persons: Optional[List[str]] = None
 
     class Config:
         extra = "forbid"
@@ -101,30 +96,25 @@ class NewsOut(BaseModel):
     id_news: str
     status: str
 
-    # --------------------------------------------------------
     # STRUCTURE
-    # --------------------------------------------------------
-    news_kind: Optional[str]      # NEWS | BRIEF
-    news_type: Optional[str]      # CORPORATE | PARTENAIRE | ...
+    news_kind: Optional[str]
+    news_type: Optional[str]
 
-    # --------------------------------------------------------
     # CONTENU
-    # --------------------------------------------------------
     title: str
     excerpt: Optional[str]
     body: Optional[str]
 
-    # --------------------------------------------------------
     # PUBLICATION
-    # --------------------------------------------------------
     published_at: Optional[datetime]
 
-    # --------------------------------------------------------
     # RELATIONS
-    # --------------------------------------------------------
     company: dict
-    topics: list = []
-    persons: list = []
+    topics: List[dict] = Field(default_factory=list)
+    persons: List[dict] = Field(default_factory=list)
+
+    class Config:
+        extra = "ignore"
 
 
 # ============================================================
