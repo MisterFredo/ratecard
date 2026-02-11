@@ -75,6 +75,18 @@ def list_route():
         logger.exception("Erreur liste news")
         raise HTTPException(400, "Erreur liste news")
 
+@router.get("/admin/list")
+def list_admin_route(
+    limit: int = 50,
+    offset: int = 0,
+):
+    try:
+        rows = list_news_admin(limit=limit, offset=offset)
+        return {"status": "ok", "news": rows}
+    except Exception:
+        logger.exception("Erreur liste admin news")
+        raise HTTPException(400, "Erreur liste admin news")
+
 
 @router.get("/types")
 def list_news_types_route():
