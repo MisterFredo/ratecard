@@ -54,9 +54,15 @@ def create_route(data: NewsCreate):
 # ============================================================
 
 @router.get("/list")
-def list_route():
+def list_route(
+    limit: int = 50,
+    offset: int = 0,
+):
     try:
-        rows = list_news()
+        rows = list_news_paginated(
+            limit=limit,
+            offset=offset,
+        )
 
         news = [
             {
@@ -69,11 +75,17 @@ def list_route():
             for n in rows
         ]
 
-        return {"status": "ok", "news": news}
+        return {
+            "status": "ok",
+            "news": news,
+            "limit": limit,
+            "offset": offset,
+        }
 
     except Exception:
         logger.exception("Erreur liste news")
         raise HTTPException(400, "Erreur liste news")
+
 
 @router.get("/types")
 def list_news_types_route():
