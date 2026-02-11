@@ -75,6 +75,7 @@ def list_route():
         logger.exception("Erreur liste news")
         raise HTTPException(400, "Erreur liste news")
 
+
 @router.get("/types")
 def list_news_types_route():
     try:
