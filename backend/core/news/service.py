@@ -530,6 +530,30 @@ def list_news_admin(limit: int = 50, offset: int = 0):
         },
     )
 
+def get_news_admin_stats():
+    sql = f"""
+        SELECT
+            COUNT(*) AS TOTAL,
+
+            COUNTIF(STATUS = 'PUBLISHED') AS TOTAL_PUBLISHED,
+            COUNTIF(STATUS = 'DRAFT') AS TOTAL_DRAFT,
+
+            COUNTIF(NEWS_KIND = 'NEWS') AS TOTAL_NEWS,
+            COUNTIF(NEWS_KIND = 'BRIEF') AS TOTAL_BRIEVES,
+
+            COUNTIF(
+                STATUS = 'PUBLISHED'
+                AND EXTRACT(YEAR FROM PUBLISHED_AT) = EXTRACT(YEAR FROM CURRENT_TIMESTAMP())
+            ) AS TOTAL_PUBLISHED_THIS_YEAR
+
+        FROM `{TABLE_NEWS}`
+    """
+
+    rows = query_bq(sql)
+
+    return rows[0] if rows else {}
+
+
 
 
 # ============================================================
