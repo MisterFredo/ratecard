@@ -18,7 +18,7 @@ type NewsLite = {
   COMPANY_NAME: string;
 };
 
-type NewsStats = {
+type Stats = {
   total: number;
   published: number;
   drafts: number;
@@ -57,7 +57,7 @@ function NewsKindBadge({ kind }: { kind: "NEWS" | "BRIEF" }) {
 
 export default function NewsListPage() {
   const [news, setNews] = useState<NewsLite[]>([]);
-  const [stats, setStats] = useState<NewsStats | null>(null);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
 
@@ -82,11 +82,7 @@ export default function NewsListPage() {
   }
 
   async function deleteNews(id: string) {
-    const confirmed = confirm(
-      "Supprimer définitivement ce contenu ?"
-    );
-
-    if (!confirmed) return;
+    if (!confirm("Supprimer définitivement ce contenu ?")) return;
 
     try {
       await api.delete(`/news/${id}`);
@@ -123,32 +119,14 @@ export default function NewsListPage() {
         </Link>
       </div>
 
-      {/* =====================================================
-         STATS ADMIN
-      ===================================================== */}
+      {/* STATS */}
       {stats && (
-        <div className="grid grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <StatCard label="Total" value={stats.total} />
-          <StatCard
-            label="Publiés"
-            value={stats.published}
-            className="bg-green-50"
-          />
-          <StatCard
-            label="Drafts"
-            value={stats.drafts}
-            className="bg-yellow-50"
-          />
-          <StatCard
-            label="News"
-            value={stats.news}
-            className="bg-purple-50"
-          />
-          <StatCard
-            label="Brèves"
-            value={stats.breves}
-            className="bg-blue-50"
-          />
+          <StatCard label="Publiés" value={stats.published} green />
+          <StatCard label="Drafts" value={stats.drafts} yellow />
+          <StatCard label="News" value={stats.news} purple />
+          <StatCard label="Brèves" value={stats.breves} blue />
           <StatCard
             label="Publiés (année)"
             value={stats.published_year}
@@ -183,22 +161,18 @@ export default function NewsListPage() {
                       : "hover:bg-gray-50"
                   }`}
                 >
-                  {/* TITRE */}
                   <td className="p-2 font-medium text-gray-900">
                     {n.TITLE}
                   </td>
 
-                  {/* FORMAT */}
                   <td className="p-2">
                     <NewsKindBadge kind={n.NEWS_KIND} />
                   </td>
 
-                  {/* SOCIÉTÉ */}
                   <td className="p-2 text-gray-600">
                     {n.COMPANY_NAME}
                   </td>
 
-                  {/* STATUT */}
                   <td className="p-2">
                     <span
                       className={`px-2 py-1 rounded text-xs font-medium ${
@@ -213,7 +187,6 @@ export default function NewsListPage() {
                     </span>
                   </td>
 
-                  {/* DATE */}
                   <td className="p-2">
                     {n.PUBLISHED_AT
                       ? new Date(n.PUBLISHED_AT).toLocaleDateString(
@@ -222,13 +195,11 @@ export default function NewsListPage() {
                       : "—"}
                   </td>
 
-                  {/* ACTIONS — FIX INLINE */}
                   <td className="p-2 text-right">
-                    <div className="inline-flex items-center gap-3">
+                    <div className="flex items-center justify-end gap-3 whitespace-nowrap">
                       <Link
                         href={`/admin/news/edit/${n.ID_NEWS}`}
                         className="text-ratecard-blue hover:text-ratecard-blue/80"
-                        title="Modifier"
                       >
                         <Pencil size={16} />
                       </Link>
@@ -237,7 +208,6 @@ export default function NewsListPage() {
                         <Link
                           href={`/admin/news/edit/${n.ID_NEWS}?step=LINKEDIN`}
                           className="text-[#0A66C2] hover:opacity-80"
-                          title="Post LinkedIn"
                         >
                           <Linkedin size={16} />
                         </Link>
@@ -246,7 +216,6 @@ export default function NewsListPage() {
                       <button
                         onClick={() => deleteNews(n.ID_NEWS)}
                         className="text-red-600 hover:text-red-800"
-                        title="Supprimer"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -303,20 +272,33 @@ export default function NewsListPage() {
 function StatCard({
   label,
   value,
-  className = "",
+  green,
+  yellow,
+  purple,
+  blue,
 }: {
   label: string;
   value: number;
-  className?: string;
+  green?: boolean;
+  yellow?: boolean;
+  purple?: boolean;
+  blue?: boolean;
 }) {
+  const color =
+    green
+      ? "bg-green-100 text-green-700"
+      : yellow
+      ? "bg-yellow-100 text-yellow-700"
+      : purple
+      ? "bg-purple-100 text-purple-700"
+      : blue
+      ? "bg-blue-100 text-blue-700"
+      : "bg-gray-100 text-gray-700";
+
   return (
-    <div className={`p-4 rounded border bg-gray-50 ${className}`}>
-      <div className="text-xs text-gray-500 uppercase tracking-wide">
-        {label}
-      </div>
-      <div className="text-2xl font-semibold text-gray-900">
-        {value}
-      </div>
+    <div className={`p-4 rounded-lg ${color}`}>
+      <div className="text-xs uppercase opacity-70">{label}</div>
+      <div className="text-2xl font-semibold">{value}</div>
     </div>
   );
 }
