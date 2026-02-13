@@ -18,6 +18,7 @@ from core.news.service import (
     archive_news,
     publish_news,
     delete_news,
+    get_news_admin_stats,
     get_news_linkedin_post,
     save_news_linkedin_post,
 )
@@ -268,6 +269,15 @@ def delete_news_route(news_id: str):
     except Exception as e:
         logger.exception("Erreur suppression news")
         raise HTTPException(400, f"Erreur suppression news : {e}")
+
+@router.get("/admin/stats")
+def news_admin_stats_route():
+    try:
+        stats = get_news_admin_stats()
+        return {"status": "ok", "stats": stats}
+    except Exception:
+        logger.exception("Erreur stats admin news")
+        raise HTTPException(400, "Erreur stats news")
 
 
 # ============================================================
