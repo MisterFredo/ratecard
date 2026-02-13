@@ -18,15 +18,20 @@ type NewsLite = {
   COMPANY_NAME: string;
 };
 
-/* =========================================================
-   CONFIG
-========================================================= */
+type NewsStats = {
+  TOTAL: number;
+  TOTAL_PUBLISHED: number;
+  TOTAL_DRAFT: number;
+  TOTAL_NEWS: number;
+  TOTAL_BRIEVES: number;
+  TOTAL_PUBLISHED_THIS_YEAR: number;
+};
+
+/* ========================================================= */
 
 const PAGE_SIZE = 50;
 
-/* =========================================================
-   BADGE — FORMAT
-========================================================= */
+/* ========================================================= */
 
 function NewsKindBadge({ kind }: { kind: "NEWS" | "BRIEF" }) {
   return (
@@ -42,12 +47,11 @@ function NewsKindBadge({ kind }: { kind: "NEWS" | "BRIEF" }) {
   );
 }
 
-/* =========================================================
-   PAGE
-========================================================= */
+/* ========================================================= */
 
 export default function NewsListPage() {
   const [news, setNews] = useState<NewsLite[]>([]);
+  const [stats, setStats] = useState<NewsStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
 
@@ -55,13 +59,17 @@ export default function NewsListPage() {
     setLoading(true);
 
     try {
-      const res = await api.get(
-        `/news/admin/list?limit=${PAGE_SIZE}&offset=${
-          currentPage * PAGE_SIZE
-        }`
-      );
+      const [listRes, statsRes] = await Promise.all([
+        api.get(
+          `/news/admin/list?limit=${PAGE_SIZE}&offset=${
+            currentPage * PAGE_SIZE
+          }`
+        ),
+        api.get("/news/admin/stats"),
+      ]);
 
-      setNews(res.news || []);
+      setNews(listRes.news || []);
+      setStats(statsRes.stats || null);
     } catch (e) {
       console.error(e);
       alert("Erreur chargement news");
@@ -71,11 +79,7 @@ export default function NewsListPage() {
   }
 
   async function deleteNews(id: string) {
-    const confirmed = confirm(
-      "Supprimer définitivement ce contenu ?"
-    );
-
-    if (!confirmed) return;
+    if (!confirm("Supprimer définitivement ce contenu ?")) return;
 
     try {
       await api.delete(`/news/${id}`);
@@ -92,9 +96,7 @@ export default function NewsListPage() {
 
   const hasNext = news.length === PAGE_SIZE;
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
+  /* ========================================================= */
 
   return (
     <div className="space-y-8">
@@ -111,6 +113,21 @@ export default function NewsListPage() {
           + Nouveau contenu
         </Link>
       </div>
+
+      {/* ================= STATS ================= */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+          <StatCard label="Total" value={stats.TOTAL} />
+          <StatCard label="Publiés" value={stats.TOTAL_PUBLISHED} green />
+          <StatCard label="Drafts" value={stats.TOTAL_DRAFT} yellow />
+          <StatCard label="News" value={stats.TOTAL_NEWS} purple />
+          <StatCard label="Brèves" value={stats.TOTAL_BRIEVES} blue />
+          <StatCard
+            label="Publiés (année)"
+            value={stats.TOTAL_PUBLISHED_THIS_YEAR}
+          />
+        </div>
+      )}
 
       {loading && <div>Chargement…</div>}
 
@@ -131,26 +148,14 @@ export default function NewsListPage() {
 
             <tbody>
               {news.map((n) => (
-                <tr
-                  key={n.ID_NEWS}
-                  className={`border-b transition ${
-                    n.NEWS_KIND === "BRIEF"
-                      ? "bg-blue-50/40 hover:bg-blue-50"
-                      : "hover:bg-gray-50"
-                  }`}
-                >
-                  <td className="p-2 font-medium text-gray-900">
-                    {n.TITLE}
-                  </td>
-
+                <tr key={n.ID_NEWS} className="border-b hover:bg-gray-50">
+                  <td className="p-2 font-medium">{n.TITLE}</td>
                   <td className="p-2">
                     <NewsKindBadge kind={n.NEWS_KIND} />
                   </td>
-
                   <td className="p-2 text-gray-600">
                     {n.COMPANY_NAME}
                   </td>
-
                   <td className="p-2">
                     <span
                       className={`px-2 py-1 rounded text-xs font-medium ${
@@ -164,57 +169,30 @@ export default function NewsListPage() {
                       {n.STATUS}
                     </span>
                   </td>
-
                   <td className="p-2">
                     {n.PUBLISHED_AT
-                      ? new Date(n.PUBLISHED_AT).toLocaleDateString(
-                          "fr-FR"
-                        )
+                      ? new Date(n.PUBLISHED_AT).toLocaleDateString("fr-FR")
                       : "—"}
                   </td>
+                  <td className="p-2 text-right space-x-3">
+                    <Link href={`/admin/news/edit/${n.ID_NEWS}`}>
+                      <Pencil size={16} />
+                    </Link>
 
-                  <td className="p-2 text-right">
-                    <div className="inline-flex items-center gap-3">
+                    {n.NEWS_KIND === "NEWS" && (
                       <Link
-                        href={`/admin/news/edit/${n.ID_NEWS}`}
-                        className="text-ratecard-blue hover:text-ratecard-blue/80"
-                        title="Modifier"
+                        href={`/admin/news/edit/${n.ID_NEWS}?step=LINKEDIN`}
                       >
-                        <Pencil size={16} />
+                        <Linkedin size={16} />
                       </Link>
+                    )}
 
-                      {n.NEWS_KIND === "NEWS" && (
-                        <Link
-                          href={`/admin/news/edit/${n.ID_NEWS}?step=LINKEDIN`}
-                          className="text-[#0A66C2] hover:opacity-80"
-                          title="Post LinkedIn"
-                        >
-                          <Linkedin size={16} />
-                        </Link>
-                      )}
-
-                      <button
-                        onClick={() => deleteNews(n.ID_NEWS)}
-                        className="text-red-600 hover:text-red-800"
-                        title="Supprimer"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                    <button onClick={() => deleteNews(n.ID_NEWS)}>
+                      <Trash2 size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}
-
-              {news.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="p-4 text-center text-gray-500"
-                  >
-                    Aucun contenu.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
 
@@ -242,6 +220,53 @@ export default function NewsListPage() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/* ========================================================= */
+
+function StatCard({
+  label,
+  value,
+  green,
+  yellow,
+  purple,
+  blue,
+}: {
+  label: string;
+  value: number;
+  green?: boolean;
+  yellow?: boolean;
+  purple?: boolean;
+  blue?: boolean;
+}) {
+  let bg = "bg-white";
+  let text = "text-gray-800";
+
+  if (green) {
+    bg = "bg-green-50";
+    text = "text-green-700";
+  }
+  if (yellow) {
+    bg = "bg-yellow-50";
+    text = "text-yellow-700";
+  }
+  if (purple) {
+    bg = "bg-purple-50";
+    text = "text-purple-700";
+  }
+  if (blue) {
+    bg = "bg-blue-50";
+    text = "text-blue-700";
+  }
+
+  return (
+    <div className={`${bg} rounded-lg p-4 border`}>
+      <div className="text-xs text-gray-500">{label}</div>
+      <div className={`text-2xl font-semibold ${text}`}>
+        {value}
+      </div>
     </div>
   );
 }
