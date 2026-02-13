@@ -18,24 +18,20 @@ type NewsLite = {
   COMPANY_NAME: string;
 };
 
-type Stats = {
-  total: number;
-  published: number;
-  drafts: number;
-  news: number;
-  breves: number;
-  published_year: number;
+type NewsStats = {
+  TOTAL: number;
+  TOTAL_PUBLISHED: number;
+  TOTAL_DRAFT: number;
+  TOTAL_NEWS: number;
+  TOTAL_BRIEVES: number;
+  TOTAL_PUBLISHED_THIS_YEAR: number;
 };
 
-/* =========================================================
-   CONFIG
-========================================================= */
+/* ========================================================= */
 
 const PAGE_SIZE = 50;
 
-/* =========================================================
-   BADGE — FORMAT
-========================================================= */
+/* ========================================================= */
 
 function NewsKindBadge({ kind }: { kind: "NEWS" | "BRIEF" }) {
   return (
@@ -51,13 +47,11 @@ function NewsKindBadge({ kind }: { kind: "NEWS" | "BRIEF" }) {
   );
 }
 
-/* =========================================================
-   PAGE
-========================================================= */
+/* ========================================================= */
 
 export default function NewsListPage() {
   const [news, setNews] = useState<NewsLite[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [stats, setStats] = useState<NewsStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
 
@@ -65,14 +59,17 @@ export default function NewsListPage() {
     setLoading(true);
 
     try {
-      const res = await api.get(
-        `/news/admin/list?limit=${PAGE_SIZE}&offset=${
-          currentPage * PAGE_SIZE
-        }`
-      );
+      const [listRes, statsRes] = await Promise.all([
+        api.get(
+          `/news/admin/list?limit=${PAGE_SIZE}&offset=${
+            currentPage * PAGE_SIZE
+          }`
+        ),
+        api.get("/news/admin/stats"),
+      ]);
 
-      setNews(res.news || []);
-      setStats(res.stats || null);
+      setNews(listRes.news || []);
+      setStats(statsRes.stats || null);
     } catch (e) {
       console.error(e);
       alert("Erreur chargement news");
@@ -99,9 +96,7 @@ export default function NewsListPage() {
 
   const hasNext = news.length === PAGE_SIZE;
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
+  /* ========================================================= */
 
   return (
     <div className="space-y-8">
@@ -119,17 +114,17 @@ export default function NewsListPage() {
         </Link>
       </div>
 
-      {/* STATS */}
+      {/* ================= STATS ================= */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-          <StatCard label="Total" value={stats.total} />
-          <StatCard label="Publiés" value={stats.published} green />
-          <StatCard label="Drafts" value={stats.drafts} yellow />
-          <StatCard label="News" value={stats.news} purple />
-          <StatCard label="Brèves" value={stats.breves} blue />
+          <StatCard label="Total" value={stats.TOTAL} />
+          <StatCard label="Publiés" value={stats.TOTAL_PUBLISHED} green />
+          <StatCard label="Drafts" value={stats.TOTAL_DRAFT} yellow />
+          <StatCard label="News" value={stats.TOTAL_NEWS} purple />
+          <StatCard label="Brèves" value={stats.TOTAL_BRIEVES} blue />
           <StatCard
             label="Publiés (année)"
-            value={stats.published_year}
+            value={stats.TOTAL_PUBLISHED_THIS_YEAR}
           />
         </div>
       )}
@@ -153,17 +148,8 @@ export default function NewsListPage() {
 
             <tbody>
               {news.map((n) => (
-                <tr
-                  key={n.ID_NEWS}
-                  className={`border-b transition ${
-                    n.NEWS_KIND === "BRIEF"
-                      ? "bg-blue-50/40 hover:bg-blue-50"
-                      : "hover:bg-gray-50"
-                  }`}
-                >
-                  <td className="p-2 font-medium text-gray-900">
-                    {n.TITLE}
-                  </td>
+                <tr key={n.ID_NEWS} className="border-b hover:bg-gray-50">
+                  <td className="p-2 font-medium">{n.TITLE}</td>
 
                   <td className="p-2">
                     <NewsKindBadge kind={n.NEWS_KIND} />
@@ -189,51 +175,32 @@ export default function NewsListPage() {
 
                   <td className="p-2">
                     {n.PUBLISHED_AT
-                      ? new Date(n.PUBLISHED_AT).toLocaleDateString(
-                          "fr-FR"
-                        )
+                      ? new Date(n.PUBLISHED_AT).toLocaleDateString("fr-FR")
                       : "—"}
                   </td>
 
+                  {/* ✅ CORRECTION ICI UNIQUEMENT */}
                   <td className="p-2 text-right">
                     <div className="flex items-center justify-end gap-3 whitespace-nowrap">
-                      <Link
-                        href={`/admin/news/edit/${n.ID_NEWS}`}
-                        className="text-ratecard-blue hover:text-ratecard-blue/80"
-                      >
+                      <Link href={`/admin/news/edit/${n.ID_NEWS}`}>
                         <Pencil size={16} />
                       </Link>
 
                       {n.NEWS_KIND === "NEWS" && (
                         <Link
                           href={`/admin/news/edit/${n.ID_NEWS}?step=LINKEDIN`}
-                          className="text-[#0A66C2] hover:opacity-80"
                         >
                           <Linkedin size={16} />
                         </Link>
                       )}
 
-                      <button
-                        onClick={() => deleteNews(n.ID_NEWS)}
-                        className="text-red-600 hover:text-red-800"
-                      >
+                      <button onClick={() => deleteNews(n.ID_NEWS)}>
                         <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
                 </tr>
               ))}
-
-              {news.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="p-4 text-center text-gray-500"
-                  >
-                    Aucun contenu.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
 
@@ -265,9 +232,7 @@ export default function NewsListPage() {
   );
 }
 
-/* =========================================================
-   STAT CARD COMPONENT
-========================================================= */
+/* ========================================================= */
 
 function StatCard({
   label,
@@ -284,21 +249,32 @@ function StatCard({
   purple?: boolean;
   blue?: boolean;
 }) {
-  const color =
-    green
-      ? "bg-green-100 text-green-700"
-      : yellow
-      ? "bg-yellow-100 text-yellow-700"
-      : purple
-      ? "bg-purple-100 text-purple-700"
-      : blue
-      ? "bg-blue-100 text-blue-700"
-      : "bg-gray-100 text-gray-700";
+  let bg = "bg-white";
+  let text = "text-gray-800";
+
+  if (green) {
+    bg = "bg-green-50";
+    text = "text-green-700";
+  }
+  if (yellow) {
+    bg = "bg-yellow-50";
+    text = "text-yellow-700";
+  }
+  if (purple) {
+    bg = "bg-purple-50";
+    text = "text-purple-700";
+  }
+  if (blue) {
+    bg = "bg-blue-50";
+    text = "text-blue-700";
+  }
 
   return (
-    <div className={`p-4 rounded-lg ${color}`}>
-      <div className="text-xs uppercase opacity-70">{label}</div>
-      <div className="text-2xl font-semibold">{value}</div>
+    <div className={`${bg} rounded-lg p-4 border`}>
+      <div className="text-xs text-gray-500">{label}</div>
+      <div className={`text-2xl font-semibold ${text}`}>
+        {value}
+      </div>
     </div>
   );
 }
