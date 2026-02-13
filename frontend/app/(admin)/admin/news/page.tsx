@@ -19,19 +19,23 @@ type NewsLite = {
 };
 
 type NewsStats = {
-  TOTAL: number;
-  TOTAL_PUBLISHED: number;
-  TOTAL_DRAFT: number;
-  TOTAL_NEWS: number;
-  TOTAL_BRIEVES: number;
-  TOTAL_PUBLISHED_THIS_YEAR: number;
+  total: number;
+  published: number;
+  drafts: number;
+  news: number;
+  breves: number;
+  published_year: number;
 };
 
-/* ========================================================= */
+/* =========================================================
+   CONFIG
+========================================================= */
 
 const PAGE_SIZE = 50;
 
-/* ========================================================= */
+/* =========================================================
+   BADGE — FORMAT
+========================================================= */
 
 function NewsKindBadge({ kind }: { kind: "NEWS" | "BRIEF" }) {
   return (
@@ -47,7 +51,9 @@ function NewsKindBadge({ kind }: { kind: "NEWS" | "BRIEF" }) {
   );
 }
 
-/* ========================================================= */
+/* =========================================================
+   PAGE
+========================================================= */
 
 export default function NewsListPage() {
   const [news, setNews] = useState<NewsLite[]>([]);
@@ -59,17 +65,14 @@ export default function NewsListPage() {
     setLoading(true);
 
     try {
-      const [listRes, statsRes] = await Promise.all([
-        api.get(
-          `/news/admin/list?limit=${PAGE_SIZE}&offset=${
-            currentPage * PAGE_SIZE
-          }`
-        ),
-        api.get("/news/admin/stats"),
-      ]);
+      const res = await api.get(
+        `/news/admin/list?limit=${PAGE_SIZE}&offset=${
+          currentPage * PAGE_SIZE
+        }`
+      );
 
-      setNews(listRes.news || []);
-      setStats(statsRes.stats || null);
+      setNews(res.news || []);
+      setStats(res.stats || null);
     } catch (e) {
       console.error(e);
       alert("Erreur chargement news");
@@ -79,7 +82,11 @@ export default function NewsListPage() {
   }
 
   async function deleteNews(id: string) {
-    if (!confirm("Supprimer définitivement ce contenu ?")) return;
+    const confirmed = confirm(
+      "Supprimer définitivement ce contenu ?"
+    );
+
+    if (!confirmed) return;
 
     try {
       await api.delete(`/news/${id}`);
@@ -96,7 +103,9 @@ export default function NewsListPage() {
 
   const hasNext = news.length === PAGE_SIZE;
 
-  /* ========================================================= */
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <div className="space-y-8">
@@ -114,17 +123,35 @@ export default function NewsListPage() {
         </Link>
       </div>
 
-      {/* ================= STATS ================= */}
+      {/* =====================================================
+         STATS ADMIN
+      ===================================================== */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-          <StatCard label="Total" value={stats.TOTAL} />
-          <StatCard label="Publiés" value={stats.TOTAL_PUBLISHED} green />
-          <StatCard label="Drafts" value={stats.TOTAL_DRAFT} yellow />
-          <StatCard label="News" value={stats.TOTAL_NEWS} purple />
-          <StatCard label="Brèves" value={stats.TOTAL_BRIEVES} blue />
+        <div className="grid grid-cols-6 gap-4">
+          <StatCard label="Total" value={stats.total} />
+          <StatCard
+            label="Publiés"
+            value={stats.published}
+            className="bg-green-50"
+          />
+          <StatCard
+            label="Drafts"
+            value={stats.drafts}
+            className="bg-yellow-50"
+          />
+          <StatCard
+            label="News"
+            value={stats.news}
+            className="bg-purple-50"
+          />
+          <StatCard
+            label="Brèves"
+            value={stats.breves}
+            className="bg-blue-50"
+          />
           <StatCard
             label="Publiés (année)"
-            value={stats.TOTAL_PUBLISHED_THIS_YEAR}
+            value={stats.published_year}
           />
         </div>
       )}
@@ -148,14 +175,30 @@ export default function NewsListPage() {
 
             <tbody>
               {news.map((n) => (
-                <tr key={n.ID_NEWS} className="border-b hover:bg-gray-50">
-                  <td className="p-2 font-medium">{n.TITLE}</td>
+                <tr
+                  key={n.ID_NEWS}
+                  className={`border-b transition ${
+                    n.NEWS_KIND === "BRIEF"
+                      ? "bg-blue-50/40 hover:bg-blue-50"
+                      : "hover:bg-gray-50"
+                  }`}
+                >
+                  {/* TITRE */}
+                  <td className="p-2 font-medium text-gray-900">
+                    {n.TITLE}
+                  </td>
+
+                  {/* FORMAT */}
                   <td className="p-2">
                     <NewsKindBadge kind={n.NEWS_KIND} />
                   </td>
+
+                  {/* SOCIÉTÉ */}
                   <td className="p-2 text-gray-600">
                     {n.COMPANY_NAME}
                   </td>
+
+                  {/* STATUT */}
                   <td className="p-2">
                     <span
                       className={`px-2 py-1 rounded text-xs font-medium ${
@@ -169,30 +212,59 @@ export default function NewsListPage() {
                       {n.STATUS}
                     </span>
                   </td>
+
+                  {/* DATE */}
                   <td className="p-2">
                     {n.PUBLISHED_AT
-                      ? new Date(n.PUBLISHED_AT).toLocaleDateString("fr-FR")
+                      ? new Date(n.PUBLISHED_AT).toLocaleDateString(
+                          "fr-FR"
+                        )
                       : "—"}
                   </td>
-                  <td className="p-2 text-right space-x-3">
-                    <Link href={`/admin/news/edit/${n.ID_NEWS}`}>
-                      <Pencil size={16} />
-                    </Link>
 
-                    {n.NEWS_KIND === "NEWS" && (
+                  {/* ACTIONS — FIX INLINE */}
+                  <td className="p-2 text-right">
+                    <div className="inline-flex items-center gap-3">
                       <Link
-                        href={`/admin/news/edit/${n.ID_NEWS}?step=LINKEDIN`}
+                        href={`/admin/news/edit/${n.ID_NEWS}`}
+                        className="text-ratecard-blue hover:text-ratecard-blue/80"
+                        title="Modifier"
                       >
-                        <Linkedin size={16} />
+                        <Pencil size={16} />
                       </Link>
-                    )}
 
-                    <button onClick={() => deleteNews(n.ID_NEWS)}>
-                      <Trash2 size={16} />
-                    </button>
+                      {n.NEWS_KIND === "NEWS" && (
+                        <Link
+                          href={`/admin/news/edit/${n.ID_NEWS}?step=LINKEDIN`}
+                          className="text-[#0A66C2] hover:opacity-80"
+                          title="Post LinkedIn"
+                        >
+                          <Linkedin size={16} />
+                        </Link>
+                      )}
+
+                      <button
+                        onClick={() => deleteNews(n.ID_NEWS)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
+
+              {news.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="p-4 text-center text-gray-500"
+                  >
+                    Aucun contenu.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
 
@@ -224,47 +296,25 @@ export default function NewsListPage() {
   );
 }
 
-/* ========================================================= */
+/* =========================================================
+   STAT CARD COMPONENT
+========================================================= */
 
 function StatCard({
   label,
   value,
-  green,
-  yellow,
-  purple,
-  blue,
+  className = "",
 }: {
   label: string;
   value: number;
-  green?: boolean;
-  yellow?: boolean;
-  purple?: boolean;
-  blue?: boolean;
+  className?: string;
 }) {
-  let bg = "bg-white";
-  let text = "text-gray-800";
-
-  if (green) {
-    bg = "bg-green-50";
-    text = "text-green-700";
-  }
-  if (yellow) {
-    bg = "bg-yellow-50";
-    text = "text-yellow-700";
-  }
-  if (purple) {
-    bg = "bg-purple-50";
-    text = "text-purple-700";
-  }
-  if (blue) {
-    bg = "bg-blue-50";
-    text = "text-blue-700";
-  }
-
   return (
-    <div className={`${bg} rounded-lg p-4 border`}>
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className={`text-2xl font-semibold ${text}`}>
+    <div className={`p-4 rounded border bg-gray-50 ${className}`}>
+      <div className="text-xs text-gray-500 uppercase tracking-wide">
+        {label}
+      </div>
+      <div className="text-2xl font-semibold text-gray-900">
         {value}
       </div>
     </div>
