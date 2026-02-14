@@ -4,6 +4,9 @@ import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
+import Underline from "@tiptap/extension-underline";
+import TextAlign from "@tiptap/extension-text-align";
+
 import "@/components/admin/tiptap.css";
 
 type Props = {
@@ -16,20 +19,25 @@ export default function HtmlEditor({ value, onChange }: Props) {
     extensions: [
       StarterKit.configure({
         heading: {
-          levels: [2],
+          levels: [2], // 🔒 uniquement H2
         },
         codeBlock: false,
         blockquote: false,
         horizontalRule: false,
       }),
 
-      // ✅ EXTENSION LINK
+      Underline,
+
       Link.configure({
-        openOnClick: false, // important en édition
+        openOnClick: false,
         HTMLAttributes: {
-          rel: "noopener noreferrer",
           target: "_blank",
+          rel: "noopener noreferrer",
         },
+      }),
+
+      TextAlign.configure({
+        types: ["heading", "paragraph"],
       }),
     ],
 
@@ -41,6 +49,9 @@ export default function HtmlEditor({ value, onChange }: Props) {
     },
   });
 
+  /* ---------------------------------------------------------
+     SYNC EXTERNE
+  --------------------------------------------------------- */
   useEffect(() => {
     if (!editor) return;
 
@@ -61,32 +72,27 @@ export default function HtmlEditor({ value, onChange }: Props) {
     };
   }
 
-  // 🔗 Ajouter / modifier lien
   function setLink() {
     if (!editor) return;
 
     const previousUrl = editor.getAttributes("link").href;
-    const url = window.prompt("URL du lien :", previousUrl || "");
+    const url = window.prompt("URL du lien", previousUrl || "https://");
 
-    if (url === null) return; // cancel
+    if (url === null) return;
 
     if (url === "") {
       editor.chain().focus().unsetLink().run();
       return;
     }
 
-    editor
-      .chain()
-      .focus()
-      .extendMarkRange("link")
-      .setLink({ href: url })
-      .run();
+    editor.chain().focus().setLink({ href: url }).run();
   }
 
   return (
     <div className="border rounded p-2 bg-white">
       {/* TOOLBAR */}
-      <div className="flex gap-2 border-b pb-2 mb-3 text-sm flex-wrap">
+      <div className="flex flex-wrap gap-2 border-b pb-2 mb-3 text-sm">
+        {/* BOLD */}
         <button
           onClick={safe(() => editor.chain().focus().toggleBold().run())}
           className="px-2 py-1 border rounded hover:bg-gray-100"
@@ -94,6 +100,7 @@ export default function HtmlEditor({ value, onChange }: Props) {
           <b>B</b>
         </button>
 
+        {/* ITALIC */}
         <button
           onClick={safe(() => editor.chain().focus().toggleItalic().run())}
           className="px-2 py-1 border rounded hover:bg-gray-100"
@@ -101,6 +108,15 @@ export default function HtmlEditor({ value, onChange }: Props) {
           <i>I</i>
         </button>
 
+        {/* UNDERLINE */}
+        <button
+          onClick={safe(() => editor.chain().focus().toggleUnderline().run())}
+          className="px-2 py-1 border rounded hover:bg-gray-100"
+        >
+          U
+        </button>
+
+        {/* H2 */}
         <button
           onClick={safe(() =>
             editor.chain().focus().toggleHeading({ level: 2 }).run()
@@ -110,36 +126,51 @@ export default function HtmlEditor({ value, onChange }: Props) {
           H2
         </button>
 
+        {/* LIST */}
         <button
-          onClick={safe(() =>
-            editor.chain().focus().toggleBulletList().run()
-          )}
+          onClick={safe(() => editor.chain().focus().toggleBulletList().run())}
           className="px-2 py-1 border rounded hover:bg-gray-100"
         >
           • Liste
         </button>
 
-        {/* 🔗 BOUTON LIEN */}
+        {/* ALIGN LEFT */}
+        <button
+          onClick={safe(() =>
+            editor.chain().focus().setTextAlign("left").run()
+          )}
+          className="px-2 py-1 border rounded hover:bg-gray-100"
+        >
+          ⬅
+        </button>
+
+        {/* ALIGN CENTER */}
+        <button
+          onClick={safe(() =>
+            editor.chain().focus().setTextAlign("center").run()
+          )}
+          className="px-2 py-1 border rounded hover:bg-gray-100"
+        >
+          ⬌
+        </button>
+
+        {/* ALIGN RIGHT */}
+        <button
+          onClick={safe(() =>
+            editor.chain().focus().setTextAlign("right").run()
+          )}
+          className="px-2 py-1 border rounded hover:bg-gray-100"
+        >
+          ➡
+        </button>
+
+        {/* LINK */}
         <button
           onClick={setLink}
-          className={`px-2 py-1 border rounded hover:bg-gray-100 ${
-            editor.isActive("link") ? "bg-blue-100" : ""
-          }`}
+          className="px-2 py-1 border rounded hover:bg-gray-100"
         >
           🔗 Lien
         </button>
-
-        {/* ❌ Supprimer lien */}
-        {editor.isActive("link") && (
-          <button
-            onClick={safe(() =>
-              editor.chain().focus().unsetLink().run()
-            )}
-            className="px-2 py-1 border rounded hover:bg-gray-100"
-          >
-            ❌ Retirer lien
-          </button>
-        )}
       </div>
 
       {/* EDITOR */}
