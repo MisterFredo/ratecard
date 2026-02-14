@@ -15,6 +15,7 @@ type NewsLite = {
   STATUS: string;
   PUBLISHED_AT?: string | null;
   NEWS_KIND: "NEWS" | "BRIEF";
+  NEWS_TYPE?: string | null;
   COMPANY_NAME: string;
 };
 
@@ -55,16 +56,26 @@ export default function NewsListPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
 
+  // 🔎 FILTRES
+  const [filterType, setFilterType] = useState("");
+  const [filterKind, setFilterKind] = useState("");
+  const [filterCompany, setFilterCompany] = useState("");
+
   async function load(currentPage: number) {
     setLoading(true);
 
     try {
+      const params = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        offset: String(currentPage * PAGE_SIZE),
+      });
+
+      if (filterType) params.append("news_type", filterType);
+      if (filterKind) params.append("news_kind", filterKind);
+      if (filterCompany) params.append("company", filterCompany);
+
       const [listRes, statsRes] = await Promise.all([
-        api.get(
-          `/news/admin/list?limit=${PAGE_SIZE}&offset=${
-            currentPage * PAGE_SIZE
-          }`
-        ),
+        api.get(`/news/admin/list?${params.toString()}`),
         api.get("/news/admin/stats"),
       ]);
 
@@ -92,7 +103,7 @@ export default function NewsListPage() {
 
   useEffect(() => {
     load(page);
-  }, [page]);
+  }, [page, filterType, filterKind, filterCompany]);
 
   const hasNext = news.length === PAGE_SIZE;
 
@@ -129,6 +140,54 @@ export default function NewsListPage() {
         </div>
       )}
 
+      {/* ================= FILTRES ================= */}
+      <div className="flex flex-wrap gap-4 bg-gray-50 p-4 rounded border text-sm">
+        <select
+          value={filterType}
+          onChange={(e) => {
+            setPage(0);
+            setFilterType(e.target.value);
+          }}
+          className="border px-3 py-2 rounded"
+        >
+          <option value="">Tous les types</option>
+          <option value="ACQUISITION">ACQUISITION</option>
+          <option value="CAS CLIENT">CAS CLIENT</option>
+          <option value="CORPORATE">CORPORATE</option>
+          <option value="DATA">DATA</option>
+          <option value="EVENT">EVENT</option>
+          <option value="NOMINATION">NOMINATION</option>
+          <option value="PARTENARIAT">PARTENARIAT</option>
+          <option value="PRODUIT">PRODUIT</option>
+          <option value="THOUGHT LEADERSHIP">THOUGHT LEADERSHIP</option>
+          <option value="AUTRES">AUTRES</option>
+        </select>
+
+        <select
+          value={filterKind}
+          onChange={(e) => {
+            setPage(0);
+            setFilterKind(e.target.value);
+          }}
+          className="border px-3 py-2 rounded"
+        >
+          <option value="">Tous les formats</option>
+          <option value="NEWS">NEWS</option>
+          <option value="BRIEF">BRIEF</option>
+        </select>
+
+        <input
+          type="text"
+          placeholder="Filtrer par société..."
+          value={filterCompany}
+          onChange={(e) => {
+            setPage(0);
+            setFilterCompany(e.target.value);
+          }}
+          className="border px-3 py-2 rounded"
+        />
+      </div>
+
       {loading && <div>Chargement…</div>}
 
       {!loading && (
@@ -138,6 +197,7 @@ export default function NewsListPage() {
             <thead>
               <tr className="bg-gray-100 border-b text-left text-gray-700">
                 <th className="p-2">Titre</th>
+                <th className="p-2">Type</th>
                 <th className="p-2">Format</th>
                 <th className="p-2">Société</th>
                 <th className="p-2">Statut</th>
@@ -150,6 +210,10 @@ export default function NewsListPage() {
               {news.map((n) => (
                 <tr key={n.ID_NEWS} className="border-b hover:bg-gray-50">
                   <td className="p-2 font-medium">{n.TITLE}</td>
+
+                  <td className="p-2 text-gray-600">
+                    {n.NEWS_TYPE || "—"}
+                  </td>
 
                   <td className="p-2">
                     <NewsKindBadge kind={n.NEWS_KIND} />
@@ -179,7 +243,6 @@ export default function NewsListPage() {
                       : "—"}
                   </td>
 
-                  {/* ✅ CORRECTION ICI UNIQUEMENT */}
                   <td className="p-2 text-right">
                     <div className="flex items-center justify-end gap-3 whitespace-nowrap">
                       <Link href={`/admin/news/edit/${n.ID_NEWS}`}>
