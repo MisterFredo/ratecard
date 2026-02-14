@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
 import "@/components/admin/tiptap.css";
 
 type Props = {
@@ -15,25 +16,31 @@ export default function HtmlEditor({ value, onChange }: Props) {
     extensions: [
       StarterKit.configure({
         heading: {
-          levels: [2], // 🔒 uniquement H2 (pas de H1)
+          levels: [2],
         },
         codeBlock: false,
         blockquote: false,
         horizontalRule: false,
       }),
+
+      // ✅ EXTENSION LINK
+      Link.configure({
+        openOnClick: false, // important en édition
+        HTMLAttributes: {
+          rel: "noopener noreferrer",
+          target: "_blank",
+        },
+      }),
     ],
+
     content: value || "<p></p>",
+
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       onChange(html === "<p></p>" ? "" : html);
     },
   });
 
-  /* ---------------------------------------------------------
-     SYNC EXTERNE (IMPORTANT)
-     Si la valeur change depuis le parent (IA, load, reset),
-     on met à jour le contenu de l’éditeur.
-  --------------------------------------------------------- */
   useEffect(() => {
     if (!editor) return;
 
@@ -54,10 +61,32 @@ export default function HtmlEditor({ value, onChange }: Props) {
     };
   }
 
+  // 🔗 Ajouter / modifier lien
+  function setLink() {
+    if (!editor) return;
+
+    const previousUrl = editor.getAttributes("link").href;
+    const url = window.prompt("URL du lien :", previousUrl || "");
+
+    if (url === null) return; // cancel
+
+    if (url === "") {
+      editor.chain().focus().unsetLink().run();
+      return;
+    }
+
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange("link")
+      .setLink({ href: url })
+      .run();
+  }
+
   return (
     <div className="border rounded p-2 bg-white">
       {/* TOOLBAR */}
-      <div className="flex gap-2 border-b pb-2 mb-3 text-sm">
+      <div className="flex gap-2 border-b pb-2 mb-3 text-sm flex-wrap">
         <button
           onClick={safe(() => editor.chain().focus().toggleBold().run())}
           className="px-2 py-1 border rounded hover:bg-gray-100"
@@ -82,11 +111,35 @@ export default function HtmlEditor({ value, onChange }: Props) {
         </button>
 
         <button
-          onClick={safe(() => editor.chain().focus().toggleBulletList().run())}
+          onClick={safe(() =>
+            editor.chain().focus().toggleBulletList().run()
+          )}
           className="px-2 py-1 border rounded hover:bg-gray-100"
         >
           • Liste
         </button>
+
+        {/* 🔗 BOUTON LIEN */}
+        <button
+          onClick={setLink}
+          className={`px-2 py-1 border rounded hover:bg-gray-100 ${
+            editor.isActive("link") ? "bg-blue-100" : ""
+          }`}
+        >
+          🔗 Lien
+        </button>
+
+        {/* ❌ Supprimer lien */}
+        {editor.isActive("link") && (
+          <button
+            onClick={safe(() =>
+              editor.chain().focus().unsetLink().run()
+            )}
+            className="px-2 py-1 border rounded hover:bg-gray-100"
+          >
+            ❌ Retirer lien
+          </button>
+        )}
       </div>
 
       {/* EDITOR */}
