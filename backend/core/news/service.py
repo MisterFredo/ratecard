@@ -488,7 +488,43 @@ def list_breves_public(
         for r in rows
     ]
 
-def list_news_admin(limit: int = 50, offset: int = 0):
+def list_news_admin(
+    limit: int = 50,
+    offset: int = 0,
+    news_type: str | None = None,
+    news_kind: str | None = None,
+    company: str | None = None,
+):
+    where_clauses = []
+    params = {
+        "limit": limit,
+        "offset": offset,
+    }
+
+    # ---------------------------
+    # FILTRES
+    # ---------------------------
+
+    if news_type:
+        where_clauses.append("n.NEWS_TYPE = @news_type")
+        params["news_type"] = news_type
+
+    if news_kind:
+        where_clauses.append("n.NEWS_KIND = @news_kind")
+        params["news_kind"] = news_kind
+
+    if company:
+        where_clauses.append("LOWER(c.NAME) LIKE LOWER(@company)")
+        params["company"] = f"%{company}%"
+
+    where_sql = ""
+    if where_clauses:
+        where_sql = "WHERE " + " AND ".join(where_clauses)
+
+    # ---------------------------
+    # QUERY
+    # ---------------------------
+
     sql = f"""
         SELECT
             n.ID_NEWS,
@@ -497,11 +533,14 @@ def list_news_admin(limit: int = 50, offset: int = 0):
             n.PUBLISHED_AT,
             n.CREATED_AT,
             n.NEWS_KIND,
+            n.NEWS_TYPE,
             c.NAME AS COMPANY_NAME
 
         FROM `{TABLE_NEWS}` n
         JOIN `{TABLE_COMPANY}` c
           ON n.ID_COMPANY = c.ID_COMPANY
+
+        {where_sql}
 
         ORDER BY
             
@@ -522,13 +561,8 @@ def list_news_admin(limit: int = 50, offset: int = 0):
         OFFSET @offset
     """
 
-    return query_bq(
-        sql,
-        {
-            "limit": limit,
-            "offset": offset,
-        },
-    )
+    return query_bq(sql, params)
+
 
 def get_news_admin_stats():
     sql = f"""
