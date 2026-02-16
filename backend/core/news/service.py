@@ -451,21 +451,17 @@ def search_breves_public(
     cursor: Optional[str] = None,
 ):
     """
-    Version propre basée sur vues matérialisées.
-    Multi-select AND logique.
+    Version clean basée sur vues matérialisées.
     """
 
+    # =====================================================
+    # WHERE dynamique
+    # =====================================================
+
     params = {"limit": limit}
-    where_clauses = [
-        "STATUS = 'PUBLISHED'",
-        "PUBLISHED_AT IS NOT NULL",
-        "PUBLISHED_AT <= CURRENT_TIMESTAMP()",
-    ]
+    where_clauses = ["STATUS = 'PUBLISHED'"]
 
-    # =====================================================
-    # FILTER TOPICS (ARRAY<STRUCT>)
-    # =====================================================
-
+    # MULTI TOPICS
     if topics:
         where_clauses.append("""
             EXISTS (
@@ -474,28 +470,19 @@ def search_breves_public(
                 WHERE t.id_topic IN UNNEST(@topics)
             )
         """)
-        params["topics"] = topics  # ARRAY<STRING>
+        params["topics"] = topics
 
-    # =====================================================
-    # FILTER NEWS TYPES (ARRAY<STRING>)
-    # =====================================================
-
+    # MULTI TYPES
     if news_types:
         where_clauses.append("NEWS_TYPE IN UNNEST(@news_types)")
         params["news_types"] = news_types
 
-    # =====================================================
-    # FILTER COMPANIES (ARRAY<STRING>)
-    # =====================================================
-
+    # MULTI COMPANIES
     if companies:
         where_clauses.append("ID_COMPANY IN UNNEST(@companies)")
         params["companies"] = companies
 
-    # =====================================================
-    # CURSOR PAGINATION
-    # =====================================================
-
+    # CURSOR
     if cursor:
         where_clauses.append("PUBLISHED_AT < @cursor")
         params["cursor"] = cursor
@@ -503,7 +490,7 @@ def search_breves_public(
     where_sql = " AND ".join(where_clauses)
 
     # =====================================================
-    # 1️⃣ ITEMS
+    # ITEMS
     # =====================================================
 
     sql_items = f"""
@@ -529,11 +516,11 @@ def search_breves_public(
                 "name": r["COMPANY_NAME"],
                 "is_partner": bool(r["IS_PARTNER"]),
             },
-            "topics": r["TOPICS"] or [],
+            "topics": r.get("TOPICS", []),
         })
 
     # =====================================================
-    # 2️⃣ SPONSORISED (même filtres)
+    # SPONSORISED
     # =====================================================
 
     sql_sponsorised = f"""
@@ -560,69 +547,29 @@ def search_breves_public(
                 "name": r["COMPANY_NAME"],
                 "is_partner": True,
             },
-            "topics": r["TOPICS"] or [],
+            "topics": r.get("TOPICS", []),
         })
 
     # =====================================================
-    # 3️⃣ GLOBAL STATS
+    # GLOBAL STATS
     # =====================================================
 
-    global_stats = query_bq("""
-        SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_GLOBAL`
-    """)[0]
+    global_rows = query_bq(
+        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_GLOBAL`"
+    )
 
-    # =====================================================
-    # 4️⃣ TYPES STATS
-    # =====================================================
-
-    types_stats = query_bq("""
-        SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE`
-        ORDER BY TOTAL DESC
-    """)
-
-    # =====================================================
-    # 5️⃣ TOPICS STATS
-    # =====================================================
-
-    topics_stats = query_bq("""
-        SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TOPIC`
-        ORDER BY TOTAL DESC
-    """)
-
-    # =====================================================
-    # 6️⃣ COMPANIES STATS
-    # =====================================================
-
-    top_companies = query_bq("""
-        SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_COMPANY`
-        ORDER BY TOTAL DESC
-        LIMIT 100
-    """)
-
-    # =====================================================
-    # RETURN
-    # =====================================================
-
-    return {
-        "total_count": global_stats["TOTAL"],
-        "last_7_days": global_stats["LAST_7_DAYS"],
-        "last_30_days": global_stats["LAST_30_DAYS"],
-        "items": items,
-        "sponsorised": sponsorised,
-        "topics_stats": topics_stats,
-        "types_stats": types_stats,
-        "top_companies": top_companies,
+    global_stats = global_rows[0] if global_rows else {
+        "TOTAL": 0,
+        "LAST_7_DAYS": 0,
+        "LAST_30_DAYS": 0,
     }
-types_rows = query_bq(
-        """
-        SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE`
-        ORDER BY TOTAL DESC
-        """
+
+    # =====================================================
+    # TYPES STATS
+    # =====================================================
+
+    types_rows = query_bq(
+        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE` ORDER BY TOTAL DESC"
     )
 
     types_stats = [
@@ -634,15 +581,11 @@ types_rows = query_bq(
     ]
 
     # =====================================================
-    # 5️⃣ TOPICS STATS
+    # TOPICS STATS
     # =====================================================
 
     topics_rows = query_bq(
-        """
-        SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TOPIC`
-        ORDER BY TOTAL DESC
-        """
+        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TOPIC` ORDER BY TOTAL DESC"
     )
 
     topics_stats = [
@@ -655,16 +598,11 @@ types_rows = query_bq(
     ]
 
     # =====================================================
-    # 6️⃣ TOP COMPANIES
+    # COMPANY STATS
     # =====================================================
 
-    companies_rows = query_bq(
-        """
-        SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_COMPANY`
-        ORDER BY TOTAL DESC
-        LIMIT 20
-        """
+    company_rows = query_bq(
+        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_COMPANY` ORDER BY TOTAL DESC"
     )
 
     top_companies = [
@@ -674,17 +612,17 @@ types_rows = query_bq(
             "is_partner": bool(r["IS_PARTNER"]),
             "total_count": r["TOTAL"],
         }
-        for r in companies_rows
+        for r in company_rows
     ]
 
     # =====================================================
-    # RETURN STRUCTURÉ
+    # RETURN
     # =====================================================
 
     return {
-        "total_count": global_stats["TOTAL"],
-        "last_7_days": global_stats["LAST_7_DAYS"],
-        "last_30_days": global_stats["LAST_30_DAYS"],
+        "total_count": global_stats.get("TOTAL", 0),
+        "last_7_days": global_stats.get("LAST_7_DAYS", 0),
+        "last_30_days": global_stats.get("LAST_30_DAYS", 0),
         "items": items,
         "sponsorised": sponsorised,
         "topics_stats": topics_stats,
