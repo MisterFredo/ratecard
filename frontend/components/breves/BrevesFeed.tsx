@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useDrawer } from "@/contexts/DrawerContext";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -19,6 +20,7 @@ type BreveItem = {
   excerpt?: string;
   published_at: string;
   news_type?: string;
+  news_kind?: string; // 🔑 AJOUT
   company: {
     id_company: string;
     name: string;
@@ -31,6 +33,7 @@ export default function BrevesFeed() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const observerRef = useRef<HTMLDivElement | null>(null);
+  const { openRightDrawer } = useDrawer();
 
   const [items, setItems] = useState<BreveItem[]>([]);
   const [sponsorised, setSponsorised] = useState<BreveItem[]>([]);
@@ -227,13 +230,27 @@ export default function BrevesFeed() {
                 </button>
               </div>
 
-              {/* TITLE */}
-              <h2
-                onClick={() => toggleItem(b.id)}
-                className="text-[15px] font-medium leading-snug cursor-pointer hover:text-gray-900 transition"
-              >
-                {b.title}
-              </h2>
+              {/* TITLE + ACTION */}
+              <div className="flex items-start justify-between gap-4">
+                <h2
+                  onClick={() => toggleItem(b.id)}
+                  className="text-[15px] font-medium leading-snug cursor-pointer hover:text-gray-900 transition"
+                >
+                  {b.title}
+                </h2>
+
+                {b.news_kind === "NEWS" && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openRightDrawer("news", b.id, "silent");
+                    }}
+                    className="text-xs text-gray-400 hover:text-black transition whitespace-nowrap"
+                  >
+                    Voir détail →
+                  </button>
+                )}
+              </div>
 
               {/* TAGS */}
               {b.topics && b.topics.length > 0 && (
