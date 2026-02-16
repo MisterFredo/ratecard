@@ -556,14 +556,6 @@ def search_breves_public(
 # ============================================================
 
 def get_breves_stats_public():
-    """
-    Retourne uniquement les stats.
-    Aucun flux ici.
-    """
-
-    # =====================================================
-    # GLOBAL
-    # =====================================================
 
     global_rows = query_bq("""
         SELECT *
@@ -572,77 +564,65 @@ def get_breves_stats_public():
 
     if global_rows:
         g = global_rows[0]
-        total_count = g.get("total", 0) or 0
-        last_7 = g.get("last_7_days", 0) or 0
-        last_30 = g.get("last_30_days", 0) or 0
+        total_count = g.get("TOTAL", 0) or 0
+        last_7 = g.get("LAST_7_DAYS", 0) or 0
+        last_30 = g.get("LAST_30_DAYS", 0) or 0
     else:
         total_count = 0
         last_7 = 0
         last_30 = 0
 
-    # =====================================================
-    # TYPES
-    # =====================================================
-
     types_rows = query_bq("""
         SELECT *
         FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE`
-        ORDER BY total DESC
+        ORDER BY TOTAL DESC
     """)
 
     types_stats = [
         {
-            "news_type": r.get("news_type"),
-            "total": r.get("total", 0) or 0,
-            "last_7_days": r.get("last_7_days", 0) or 0,
-            "last_30_days": r.get("last_30_days", 0) or 0,
+            "news_type": r.get("NEWS_TYPE"),
+            "total": r.get("TOTAL", 0) or 0,
+            "last_7_days": r.get("LAST_7_DAYS", 0) or 0,
+            "last_30_days": r.get("LAST_30_DAYS", 0) or 0,
         }
         for r in types_rows
     ]
 
-    # =====================================================
-    # TOPICS
-    # =====================================================
-
     topics_rows = query_bq("""
         SELECT *
         FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TOPIC`
-        ORDER BY total DESC
+        ORDER BY TOTAL DESC
     """)
 
     topics_stats = [
         {
-            "id_topic": r.get("id_topic"),
-            "label": r.get("label"),
-            "total": r.get("total", 0) or 0,
-            "last_7_days": r.get("last_7_days", 0) or 0,
-            "last_30_days": r.get("last_30_days", 0) or 0,
+            "id_topic": r.get("ID_TOPIC"),
+            "label": r.get("LABEL"),
+            "total": r.get("TOTAL", 0) or 0,
+            "last_7_days": r.get("LAST_7_DAYS", 0) or 0,
+            "last_30_days": r.get("LAST_30_DAYS", 0) or 0,
         }
         for r in topics_rows
-        if r.get("id_topic") and r.get("label")
+        if r.get("ID_TOPIC") and r.get("LABEL")
     ]
-
-    # =====================================================
-    # COMPANIES
-    # =====================================================
 
     company_rows = query_bq("""
         SELECT *
         FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_COMPANY`
-        ORDER BY total DESC
+        ORDER BY TOTAL DESC
     """)
 
     top_companies = [
         {
-            "id_company": r.get("id_company"),
-            "name": r.get("name"),
-            "is_partner": bool(r.get("is_partner")),
-            "total": r.get("total", 0) or 0,
-            "last_7_days": r.get("last_7_days", 0) or 0,
-            "last_30_days": r.get("last_30_days", 0) or 0,
+            "id_company": r.get("ID_COMPANY"),
+            "name": r.get("NAME"),
+            "is_partner": bool(r.get("IS_PARTNER")),
+            "total": r.get("TOTAL", 0) or 0,
+            "last_7_days": r.get("LAST_7_DAYS", 0) or 0,
+            "last_30_days": r.get("LAST_30_DAYS", 0) or 0,
         }
         for r in company_rows
-        if r.get("id_company") and r.get("name")
+        if r.get("ID_COMPANY") and r.get("NAME")
     ]
 
     return {
@@ -653,7 +633,6 @@ def get_breves_stats_public():
         "types_stats": types_stats,
         "top_companies": top_companies,
     }
-
 
 
 
