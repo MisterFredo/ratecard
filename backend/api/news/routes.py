@@ -13,6 +13,7 @@ from core.news.service import (
     list_news_types,
     list_news_admin,
     list_breves_public,
+    search_breves_public,
     get_news,
     update_news,
     archive_news,
