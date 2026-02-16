@@ -1,32 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Period } from "@/app/breves/page";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-
-type CompanyMover = {
-  id_company: string;
-  name: string;
-  total: number;
-  last_7_days: number;
-  last_30_days: number;
-};
 
 type StatsResponse = {
   total_count: number;
   last_7_days: number;
   last_30_days: number;
-  top_companies: CompanyMover[];
 };
 
-export default function BrevesHeaderStats() {
-  const [stats, setStats] = useState<StatsResponse>({
-    total_count: 0,
-    last_7_days: 0,
-    last_30_days: 0,
-    top_companies: [],
-  });
+export default function BrevesHeaderStats({
+  selectedPeriod,
+  onChangePeriod,
+}: {
+  selectedPeriod: Period;
+  onChangePeriod: (p: Period) => void;
+}) {
+  const [stats, setStats] =
+    useState<StatsResponse | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -34,134 +28,89 @@ export default function BrevesHeaderStats() {
         `${API_BASE}/news/breves/stats`,
         { cache: "no-store" }
       );
-
       if (!res.ok) return;
-
       const json = await res.json();
       setStats(json);
     }
-
     load();
   }, []);
 
-  const movers7 = [...stats.top_companies]
-    .sort((a, b) => b.last_7_days - a.last_7_days)
-    .slice(0, 3);
+  if (!stats) return null;
 
-  const movers30 = [...stats.top_companies]
-    .sort((a, b) => b.last_30_days - a.last_30_days)
-    .slice(0, 3);
+  const mainValue =
+    selectedPeriod === "total"
+      ? stats.total_count
+      : selectedPeriod === "7d"
+      ? stats.last_7_days
+      : stats.last_30_days;
 
   return (
-    <section className="border-b border-black pb-12 mb-12">
+    <section className="border-b pb-6">
 
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-end">
 
-        {/* LEFT — TITLE */}
-        <div className="max-w-xl">
-          <h1 className="text-4xl font-serif leading-tight">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">
             Signaux marché
           </h1>
-          <p className="text-sm text-gray-600 mt-4">
-            Lecture structurée des annonces, mouvements et arbitrages
-            du marché.
-          </p>
+
+          <div className="flex gap-6 mt-4 text-xs uppercase tracking-wider">
+
+            <SwapButton
+              label="Total"
+              active={selectedPeriod === "total"}
+              onClick={() =>
+                onChangePeriod("total")
+              }
+            />
+
+            <SwapButton
+              label="7 jours"
+              active={selectedPeriod === "7d"}
+              onClick={() =>
+                onChangePeriod("7d")
+              }
+            />
+
+            <SwapButton
+              label="30 jours"
+              active={selectedPeriod === "30d"}
+              onClick={() =>
+                onChangePeriod("30d")
+              }
+            />
+
+          </div>
         </div>
 
-        {/* RIGHT — CORE STATS */}
-        <div className="flex gap-16 text-right">
-          <StatBlock
-            label="Total"
-            value={stats.total_count}
-          />
-          <StatBlock
-            label="7 jours"
-            value={stats.last_7_days}
-            highlight
-          />
-          <StatBlock
-            label="30 jours"
-            value={stats.last_30_days}
-          />
+        <div className="text-5xl font-serif tracking-tight">
+          {mainValue}
         </div>
-      </div>
-
-      {/* MOVERS SECTION */}
-      <div className="mt-10 grid grid-cols-2 gap-16 text-sm">
-
-        <MoversBlock
-          title="Plus actifs — 7 jours"
-          movers={movers7}
-          period="last_7_days"
-        />
-
-        <MoversBlock
-          title="Plus actifs — 30 jours"
-          movers={movers30}
-          period="last_30_days"
-        />
 
       </div>
     </section>
   );
 }
 
-function StatBlock({
+function SwapButton({
   label,
-  value,
-  highlight = false,
+  active,
+  onClick,
 }: {
   label: string;
-  value: number;
-  highlight?: boolean;
+  active: boolean;
+  onClick: () => void;
 }) {
   return (
-    <div>
-      <div
-        className={`text-4xl font-serif ${
-          highlight ? "text-red-600" : ""
-        }`}
-      >
-        {value}
-      </div>
-      <div className="text-xs uppercase tracking-wider text-gray-500 mt-1">
-        {label}
-      </div>
-    </div>
+    <button
+      onClick={onClick}
+      className={`pb-1 border-b ${
+        active
+          ? "border-black text-black"
+          : "border-transparent text-gray-400"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
-
-function MoversBlock({
-  title,
-  movers,
-  period,
-}: {
-  title: string;
-  movers: any[];
-  period: "last_7_days" | "last_30_days";
-}) {
-  return (
-    <div>
-      <h3 className="uppercase text-xs tracking-wider text-gray-500 mb-4">
-        {title}
-      </h3>
-
-      <div className="space-y-2">
-        {movers.map((m) => (
-          <div
-            key={m.id_company}
-            className="flex justify-between border-b pb-2"
-          >
-            <span className="font-medium">
-              {m.name}
-            </span>
-            <span className="font-serif">
-              {m[period]}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
