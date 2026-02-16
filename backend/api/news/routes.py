@@ -139,6 +139,20 @@ def get_route(id_news: str):
         raise HTTPException(404, "News introuvable")
     return {"status": "ok", "news": news}
 
+# ============================================================
+# GET BREVES POUR ANALYSES
+# ============================================================
+
+@router.get("/breves/search", response_model=BrevesSearchResponse)
+def search_breves(
+    topic: Optional[str] = None,
+    news_type: Optional[str] = None,
+    company: Optional[str] = None,
+    limit: int = Query(20, ge=1, le=50),
+    cursor: Optional[str] = None,
+):
+
+
 
 # ============================================================
 # UPDATE NEWS / BRÈVE
