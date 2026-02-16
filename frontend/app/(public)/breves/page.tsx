@@ -9,22 +9,14 @@ export default function BrevesPage() {
   return (
     <div className="min-h-screen bg-white">
 
-      {/* LIVE STRIP */}
       <BrevesLiveBar />
 
-      <div className="max-w-6xl mx-auto px-8 py-8">
+      <div className="max-w-6xl mx-auto px-8 py-10 space-y-10">
 
-        {/* HEADER */}
-        <div className="mb-8">
-          <BrevesHeaderStats />
-        </div>
+        <BrevesHeaderStats />
 
-        {/* FILTERS */}
-        <div className="mb-6">
-          <BrevesFilters />
-        </div>
+        <BrevesFilters />
 
-        {/* FEED */}
         <BrevesFeed />
 
       </div>
