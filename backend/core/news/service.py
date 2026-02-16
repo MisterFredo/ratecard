@@ -443,9 +443,6 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
 # SEARCH BRÈVES — PUBLIC (MOTEUR STRUCTURÉ)
 # ============================================================
 
-from typing import Optional, List
-
-
 def search_breves_public(
     topics: Optional[List[str]] = None,
     news_types: Optional[List[str]] = None,
@@ -454,14 +451,9 @@ def search_breves_public(
     cursor: Optional[str] = None,
 ):
     """
-    Version clean basée sur vues matérialisées.
-    Aucune jointure dynamique.
+    Version propre basée sur vues matérialisées.
     Multi-select AND logique.
     """
-
-    # =====================================================
-    # WHERE dynamique
-    # =====================================================
 
     params = {"limit": limit}
     where_clauses = [
@@ -470,38 +462,40 @@ def search_breves_public(
         "PUBLISHED_AT <= CURRENT_TIMESTAMP()",
     ]
 
-    # -------------------------
-    # MULTI TOPICS
-    # -------------------------
+    # =====================================================
+    # FILTER TOPICS (ARRAY<STRUCT>)
+    # =====================================================
+
     if topics:
-        where_clauses.append(
-            """
+        where_clauses.append("""
             EXISTS (
                 SELECT 1
                 FROM UNNEST(TOPICS) t
                 WHERE t.id_topic IN UNNEST(@topics)
             )
-            """
-        )
-        params["topics"] = topics
+        """)
+        params["topics"] = topics  # ARRAY<STRING>
 
-    # -------------------------
-    # MULTI TYPES
-    # -------------------------
+    # =====================================================
+    # FILTER NEWS TYPES (ARRAY<STRING>)
+    # =====================================================
+
     if news_types:
         where_clauses.append("NEWS_TYPE IN UNNEST(@news_types)")
         params["news_types"] = news_types
 
-    # -------------------------
-    # MULTI COMPANIES
-    # -------------------------
+    # =====================================================
+    # FILTER COMPANIES (ARRAY<STRING>)
+    # =====================================================
+
     if companies:
         where_clauses.append("ID_COMPANY IN UNNEST(@companies)")
         params["companies"] = companies
 
-    # -------------------------
-    # CURSOR
-    # -------------------------
+    # =====================================================
+    # CURSOR PAGINATION
+    # =====================================================
+
     if cursor:
         where_clauses.append("PUBLISHED_AT < @cursor")
         params["cursor"] = cursor
@@ -522,8 +516,9 @@ def search_breves_public(
 
     rows = query_bq(sql_items, params)
 
-    items = [
-        {
+    items = []
+    for r in rows:
+        items.append({
             "id": r["ID_NEWS"],
             "title": r["TITLE"],
             "excerpt": r["EXCERPT"],
@@ -535,12 +530,10 @@ def search_breves_public(
                 "is_partner": bool(r["IS_PARTNER"]),
             },
             "topics": r["TOPICS"] or [],
-        }
-        for r in rows
-    ]
+        })
 
     # =====================================================
-    # 2️⃣ SPONSORISED (FILTRÉS)
+    # 2️⃣ SPONSORISED (même filtres)
     # =====================================================
 
     sql_sponsorised = f"""
@@ -554,8 +547,9 @@ def search_breves_public(
 
     sponsor_rows = query_bq(sql_sponsorised, params)
 
-    sponsorised = [
-        {
+    sponsorised = []
+    for r in sponsor_rows:
+        sponsorised.append({
             "id": r["ID_NEWS"],
             "title": r["TITLE"],
             "excerpt": r["EXCERPT"],
@@ -567,29 +561,63 @@ def search_breves_public(
                 "is_partner": True,
             },
             "topics": r["TOPICS"] or [],
-        }
-        for r in sponsor_rows
-    ]
+        })
 
     # =====================================================
     # 3️⃣ GLOBAL STATS
     # =====================================================
 
-    global_rows = query_bq(
-        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_GLOBAL`"
-    )
-
-    global_stats = global_rows[0] if global_rows else {
-        "TOTAL": 0,
-        "LAST_7_DAYS": 0,
-        "LAST_30_DAYS": 0,
-    }
+    global_stats = query_bq("""
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_GLOBAL`
+    """)[0]
 
     # =====================================================
     # 4️⃣ TYPES STATS
     # =====================================================
 
-    types_rows = query_bq(
+    types_stats = query_bq("""
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE`
+        ORDER BY TOTAL DESC
+    """)
+
+    # =====================================================
+    # 5️⃣ TOPICS STATS
+    # =====================================================
+
+    topics_stats = query_bq("""
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TOPIC`
+        ORDER BY TOTAL DESC
+    """)
+
+    # =====================================================
+    # 6️⃣ COMPANIES STATS
+    # =====================================================
+
+    top_companies = query_bq("""
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_COMPANY`
+        ORDER BY TOTAL DESC
+        LIMIT 100
+    """)
+
+    # =====================================================
+    # RETURN
+    # =====================================================
+
+    return {
+        "total_count": global_stats["TOTAL"],
+        "last_7_days": global_stats["LAST_7_DAYS"],
+        "last_30_days": global_stats["LAST_30_DAYS"],
+        "items": items,
+        "sponsorised": sponsorised,
+        "topics_stats": topics_stats,
+        "types_stats": types_stats,
+        "top_companies": top_companies,
+    }
+types_rows = query_bq(
         """
         SELECT *
         FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE`
