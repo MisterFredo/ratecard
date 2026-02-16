@@ -12,12 +12,19 @@ export default function BrevesPage() {
       {/* LIVE STRIP */}
       <BrevesLiveBar />
 
-      <div className="max-w-6xl mx-auto px-8 py-10 space-y-10">
+      <div className="max-w-6xl mx-auto px-8 py-8">
 
-        <BrevesHeaderStats />
+        {/* HEADER */}
+        <div className="mb-8">
+          <BrevesHeaderStats />
+        </div>
 
-        <BrevesFilters />
+        {/* FILTERS */}
+        <div className="mb-6">
+          <BrevesFilters />
+        </div>
 
+        {/* FEED */}
         <BrevesFeed />
 
       </div>
