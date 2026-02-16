@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
-from typing import Optional
+from typing import Optional, List
 
 from api.news.models import (
     NewsCreate,
@@ -137,9 +137,9 @@ def list_companies_route():
 
 @router.get("/breves/search", response_model=BrevesSearchResponse)
 def search_breves_route(
-    topic: Optional[str] = None,
-    news_type: Optional[str] = None,
-    company: Optional[str] = None,
+    topics: Optional[List[str]] = Query(None),
+    news_types: Optional[List[str]] = Query(None),
+    companies: Optional[List[str]] = Query(None),
     limit: int = Query(20, ge=1, le=50),
     cursor: Optional[str] = None,
 ):
