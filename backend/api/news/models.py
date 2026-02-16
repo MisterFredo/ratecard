@@ -85,10 +85,8 @@ class BreveOut(BaseModel):
     excerpt: Optional[str]
     published_at: datetime
     news_type: Optional[str]
-
     company: CompanyMini
-    topics: List[TopicMini] = Field(default_factory=list)
-
+    topics: List[TopicMini]
 
 # ============================================================
 # STATS — PAGE BRÈVES
