@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 const API_BASE =
@@ -30,6 +30,7 @@ type BreveItem = {
 export default function BrevesFeed() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const observerRef = useRef<HTMLDivElement | null>(null);
 
   const [items, setItems] = useState<BreveItem[]>([]);
   const [sponsorised, setSponsorised] = useState<BreveItem[]>([]);
@@ -104,6 +105,10 @@ export default function BrevesFeed() {
     setLoading(false);
   }
 
+  /* ===============================
+     RESET ON FILTER CHANGE
+  =============================== */
+
   useEffect(() => {
     setItems([]);
     setCursor(null);
@@ -111,6 +116,27 @@ export default function BrevesFeed() {
     load(true);
     // eslint-disable-next-line
   }, [searchParams.toString()]);
+
+  /* ===============================
+     INFINITE SCROLL (REAL ONE)
+  =============================== */
+
+  useEffect(() => {
+    if (!observerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          load();
+        }
+      },
+      { threshold: 1 }
+    );
+
+    observer.observe(observerRef.current);
+
+    return () => observer.disconnect();
+  }, [cursor, hasMore]);
 
   function toggleItem(id: string) {
     setOpenItems((prev) =>
@@ -121,33 +147,43 @@ export default function BrevesFeed() {
   }
 
   return (
-    <section className="space-y-16">
+    <section className="space-y-10">
 
       {/* ============================= */}
       {/* SPONSORISED */}
       {/* ============================= */}
       {sponsorised.length > 0 && (
-        <div className="border border-black p-8 bg-white">
-          <div className="text-xs uppercase tracking-widest text-red-600 mb-6">
-            Visibilité partenaires
+        <div className="border border-green-200 bg-green-50/40 p-6 rounded-md">
+
+          <div className="text-xs uppercase tracking-widest text-green-700 mb-4">
+            Actualités membres
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6">
             {sponsorised.map((b) => (
-              <article key={b.id} className="space-y-3">
+              <article key={b.id} className="space-y-2">
+
                 <div className="text-xs text-gray-500">
                   {new Date(b.published_at).toLocaleDateString("fr-FR")}
                 </div>
 
-                <h3 className="font-semibold leading-snug">
+                <h3 className="font-semibold leading-snug text-sm">
                   {b.title}
                 </h3>
 
-                {b.excerpt && (
-                  <p className="text-sm text-gray-600">
-                    {b.excerpt}
-                  </p>
+                {b.topics?.length && (
+                  <div className="flex flex-wrap gap-1">
+                    {b.topics.map((t) => (
+                      <span
+                        key={t.id_topic}
+                        className="text-[10px] bg-green-100 text-green-700 px-2 py-[2px] rounded"
+                      >
+                        {t.label}
+                      </span>
+                    ))}
+                  </div>
                 )}
+
               </article>
             ))}
           </div>
@@ -157,60 +193,62 @@ export default function BrevesFeed() {
       {/* ============================= */}
       {/* MAIN FEED */}
       {/* ============================= */}
-      <div className="border-t border-black pt-10 space-y-12">
+      <div className="border-t border-gray-200 pt-6 space-y-8">
 
         {items.map((b) => {
           const isOpen = openItems.includes(b.id);
 
           return (
-            <article key={b.id} className="border-b pb-8">
+            <article key={b.id} className="border-b border-gray-100 pb-6">
 
               {/* META */}
-              <div className="flex justify-between text-xs text-gray-500 mb-3">
+              <div className="flex justify-between text-[11px] text-gray-400 mb-2">
                 <span>
                   {new Date(b.published_at).toLocaleDateString("fr-FR")}
                 </span>
 
                 {b.news_type && (
-                  <span className="uppercase tracking-wider">
+                  <span className="uppercase tracking-wider text-gray-500">
                     {b.news_type}
                   </span>
                 )}
               </div>
 
               {/* TAGS */}
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-wrap gap-2 mb-3">
 
-                {/* Company */}
                 <button
                   onClick={() =>
                     updateFilters("companies", b.company.id_company)
                   }
-                  className="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
+                  className={`text-[11px] px-2 py-1 rounded transition
+                    ${
+                      b.company.is_partner
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
                 >
                   {b.company.name}
                 </button>
 
-                {/* Type */}
                 {b.news_type && (
                   <button
                     onClick={() =>
                       updateFilters("news_types", b.news_type!)
                     }
-                    className="px-2 py-1 text-xs bg-violet-100 text-violet-700 rounded"
+                    className="text-[11px] px-2 py-1 bg-violet-100 text-violet-700 rounded"
                   >
                     {b.news_type}
                   </button>
                 )}
 
-                {/* Topics */}
                 {b.topics?.map((t) => (
                   <button
                     key={t.id_topic}
                     onClick={() =>
                       updateFilters("topics", t.id_topic)
                     }
-                    className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded"
+                    className="text-[11px] px-2 py-1 bg-green-100 text-green-700 rounded"
                   >
                     {t.label}
                   </button>
@@ -220,14 +258,14 @@ export default function BrevesFeed() {
               {/* TITLE */}
               <h2
                 onClick={() => toggleItem(b.id)}
-                className="text-xl font-semibold leading-snug cursor-pointer hover:underline"
+                className="text-lg font-semibold leading-snug cursor-pointer hover:text-green-700 transition"
               >
                 {b.title}
               </h2>
 
               {/* EXCERPT */}
               {isOpen && b.excerpt && (
-                <p className="mt-4 text-sm text-gray-700 leading-relaxed">
+                <p className="mt-3 text-sm text-gray-600 leading-relaxed max-w-3xl">
                   {b.excerpt}
                 </p>
               )}
@@ -241,7 +279,11 @@ export default function BrevesFeed() {
           </div>
         )}
 
+        {/* Observer target */}
+        {hasMore && <div ref={observerRef} className="h-6" />}
+
       </div>
     </section>
   );
 }
+
