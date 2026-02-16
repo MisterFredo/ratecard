@@ -5,20 +5,28 @@ import { useEffect, useState } from "react";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
+export type Period = "total" | "7d" | "30d";
+
 type StatsResponse = {
   total_count: number;
   last_7_days: number;
   last_30_days: number;
 };
 
-export default function BrevesHeaderStats() {
+type Props = {
+  selectedPeriod: Period;
+  onChangePeriod: (p: Period) => void;
+};
+
+export default function BrevesHeaderStats({
+  selectedPeriod,
+  onChangePeriod,
+}: Props) {
   const [stats, setStats] = useState<StatsResponse>({
     total_count: 0,
     last_7_days: 0,
     last_30_days: 0,
   });
-
-  const [mode, setMode] = useState<"total" | "7d" | "30d">("7d");
 
   useEffect(() => {
     async function load() {
@@ -36,57 +44,70 @@ export default function BrevesHeaderStats() {
     load();
   }, []);
 
-  const value =
-    mode === "total"
-      ? stats.total_count
-      : mode === "7d"
-      ? stats.last_7_days
-      : stats.last_30_days;
-
   return (
-    <section className="border-b pb-8">
+    <section className="border-b border-gray-200 pb-4">
 
-      <div className="flex justify-between items-end">
+      <div className="flex justify-between items-center text-xs uppercase tracking-widest text-gray-500">
 
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Signaux marché
-          </h1>
-          <p className="text-sm text-gray-500 mt-2">
-            Lecture structurée des mouvements du secteur
-          </p>
+        <div className="flex gap-6">
+
+          <StatItem
+            label="Total"
+            value={stats.total_count}
+            active={selectedPeriod === "total"}
+            onClick={() => onChangePeriod("total")}
+          />
+
+          <StatItem
+            label="7J"
+            value={stats.last_7_days}
+            active={selectedPeriod === "7d"}
+            onClick={() => onChangePeriod("7d")}
+          />
+
+          <StatItem
+            label="30J"
+            value={stats.last_30_days}
+            active={selectedPeriod === "30d"}
+            onClick={() => onChangePeriod("30d")}
+          />
+
         </div>
 
-        {/* SWITCH */}
-        <div className="flex gap-6 text-xs uppercase tracking-wider">
-          <button
-            onClick={() => setMode("total")}
-            className={mode === "total" ? "underline" : ""}
-          >
-            Total
-          </button>
-
-          <button
-            onClick={() => setMode("7d")}
-            className={mode === "7d" ? "underline" : ""}
-          >
-            7 jours
-          </button>
-
-          <button
-            onClick={() => setMode("30d")}
-            className={mode === "30d" ? "underline" : ""}
-          >
-            30 jours
-          </button>
+        <div className="text-[11px] tracking-wide text-gray-400">
+          Market monitoring · Ratecard
         </div>
 
-      </div>
-
-      <div className="mt-6 text-4xl font-serif">
-        {value}
       </div>
 
     </section>
+  );
+}
+
+function StatItem({
+  label,
+  value,
+  active,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex gap-2 items-baseline transition ${
+        active
+          ? "text-black font-semibold"
+          : "text-gray-400 hover:text-black"
+      }`}
+    >
+      <span>{label}</span>
+      <span className="font-medium text-sm">
+        {value}
+      </span>
+    </button>
   );
 }
