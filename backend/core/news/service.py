@@ -450,13 +450,6 @@ def search_breves_public(
     limit: int = 20,
     cursor: Optional[str] = None,
 ):
-    """
-    Moteur principal de la page Brèves :
-    - Filtres AND
-    - Pas de filtre date
-    - Sponsorisation filtrée
-    - Stats dynamiques
-    """
 
     params = {"limit": limit}
     where_clauses = [
@@ -464,10 +457,6 @@ def search_breves_public(
         "n.PUBLISHED_AT IS NOT NULL",
         "n.PUBLISHED_AT <= CURRENT_TIMESTAMP()",
     ]
-
-    # ---------------------------
-    # FILTRES
-    # ---------------------------
 
     if topic:
         where_clauses.append("NT.ID_TOPIC = @topic")
@@ -482,13 +471,13 @@ def search_breves_public(
         params["company"] = company
 
     if cursor:
-        where_clauses.append("n.PUBLISHED_AT < @cursor")
+        where_clauses.append("n.PUBLISHED_AT < TIMESTAMP(@cursor)")
         params["cursor"] = cursor
 
     where_sql = " AND ".join(where_clauses)
 
     # =========================================================
-    # 1️⃣ FLUX PRINCIPAL
+    # 1️⃣ ITEMS
     # =========================================================
 
     sql_items = f"""
@@ -504,17 +493,18 @@ def search_breves_public(
             c.IS_PARTNER,
 
             ARRAY_AGG(
-                STRUCT(
-                    t.ID_TOPIC AS id_topic,
-                    t.LABEL AS label,
-                    t.TOPIC_AXIS AS axis
+                IF(t.ID_TOPIC IS NULL, NULL,
+                    STRUCT(
+                        t.ID_TOPIC AS id_topic,
+                        t.LABEL AS label,
+                        t.TOPIC_AXIS AS axis
+                    )
                 )
             ) AS TOPICS
 
         FROM `{TABLE_NEWS}` n
         JOIN `{TABLE_COMPANY}` c
           ON n.ID_COMPANY = c.ID_COMPANY
-
         LEFT JOIN `{TABLE_NEWS_TOPIC}` NT
           ON n.ID_NEWS = NT.ID_NEWS
         LEFT JOIN `{TABLE_TOPIC}` t
@@ -536,10 +526,15 @@ def search_breves_public(
         LIMIT @limit
     """
 
-    items_rows = query_bq(sql_items, params)
+    rows = query_bq(sql_items, params)
 
-    items = [
-        {
+    items = []
+    for r in rows:
+        topics_clean = [
+            t for t in (r["TOPICS"] or []) if t is not None
+        ]
+
+        items.append({
             "id": r["ID_NEWS"],
             "title": r["TITLE"],
             "excerpt": r["EXCERPT"],
@@ -550,10 +545,8 @@ def search_breves_public(
                 "name": r["COMPANY_NAME"],
                 "is_partner": bool(r["IS_PARTNER"]),
             },
-            "topics": r["TOPICS"] or [],
-        }
-        for r in items_rows
-    ]
+            "topics": topics_clean,
+        })
 
     # =========================================================
     # 2️⃣ TOTAL COUNT
@@ -571,61 +564,15 @@ def search_breves_public(
     total_count = count_rows[0]["TOTAL"] if count_rows else 0
 
     # =========================================================
-    # 3️⃣ SPONSORISÉS (FILTRÉS)
+    # 3️⃣ SPONSORISED (filtrés)
     # =========================================================
-
-    sql_sponsorised = f"""
-        SELECT
-            n.ID_NEWS,
-            n.TITLE,
-            n.EXCERPT,
-            n.PUBLISHED_AT,
-            n.NEWS_TYPE,
-            c.ID_COMPANY,
-            c.NAME AS COMPANY_NAME
-
-        FROM `{TABLE_NEWS}` n
-        JOIN `{TABLE_COMPANY}` c
-          ON n.ID_COMPANY = c.ID_COMPANY
-        LEFT JOIN `{TABLE_NEWS_TOPIC}` NT
-          ON n.ID_NEWS = NT.ID_NEWS
-
-        WHERE {where_sql}
-          AND c.IS_PARTNER = TRUE
-
-        GROUP BY
-            n.ID_NEWS,
-            n.TITLE,
-            n.EXCERPT,
-            n.PUBLISHED_AT,
-            n.NEWS_TYPE,
-            c.ID_COMPANY,
-            c.NAME
-
-        ORDER BY n.PUBLISHED_AT DESC
-        LIMIT 3
-    """
-
-    sponsor_rows = query_bq(sql_sponsorised, params)
 
     sponsorised = [
-        {
-            "id": r["ID_NEWS"],
-            "title": r["TITLE"],
-            "excerpt": r["EXCERPT"],
-            "published_at": r["PUBLISHED_AT"],
-            "news_type": r["NEWS_TYPE"],
-            "company": {
-                "id_company": r["ID_COMPANY"],
-                "name": r["COMPANY_NAME"],
-                "is_partner": True,
-            },
-        }
-        for r in sponsor_rows
-    ]
+        i for i in items if i["company"]["is_partner"]
+    ][:3]
 
     # =========================================================
-    # 4️⃣ STATS TOPICS (DYNAMIQUES)
+    # 4️⃣ TOPICS STATS
     # =========================================================
 
     sql_topics = f"""
@@ -643,16 +590,25 @@ def search_breves_public(
         ORDER BY TOTAL DESC
     """
 
-    topics_stats = query_bq(sql_topics, params)
+    topics_rows = query_bq(sql_topics, params)
+
+    topics_stats = [
+        {
+            "id_topic": r["ID_TOPIC"],
+            "label": r["LABEL"],
+            "total_count": r["TOTAL"],
+        }
+        for r in topics_rows
+    ]
 
     # =========================================================
-    # 5️⃣ STATS TYPES (DYNAMIQUES)
+    # 5️⃣ TYPES STATS
     # =========================================================
 
     sql_types = f"""
         SELECT
             n.NEWS_TYPE,
-            COUNT(*) AS TOTAL
+            COUNT(DISTINCT n.ID_NEWS) AS TOTAL
         FROM `{TABLE_NEWS}` n
         LEFT JOIN `{TABLE_NEWS_TOPIC}` NT
           ON n.ID_NEWS = NT.ID_NEWS
@@ -661,13 +617,21 @@ def search_breves_public(
         ORDER BY TOTAL DESC
     """
 
-    types_stats = query_bq(sql_types, params)
+    types_rows = query_bq(sql_types, params)
+
+    types_stats = [
+        {
+            "news_type": r["NEWS_TYPE"],
+            "total_count": r["TOTAL"],
+        }
+        for r in types_rows
+    ]
 
     # =========================================================
-    # 6️⃣ TOP COMPANIES (GLOBAL)
+    # 6️⃣ TOP COMPANIES GLOBAL
     # =========================================================
 
-    sql_top_companies = f"""
+    sql_companies = f"""
         SELECT
             c.ID_COMPANY,
             c.NAME,
@@ -684,10 +648,20 @@ def search_breves_public(
         LIMIT 5
     """
 
-    top_companies = query_bq(sql_top_companies)
+    company_rows = query_bq(sql_companies)
+
+    top_companies = [
+        {
+            "id_company": r["ID_COMPANY"],
+            "name": r["NAME"],
+            "is_partner": bool(r["IS_PARTNER"]),
+            "total_count": r["TOTAL"],
+        }
+        for r in company_rows
+    ]
 
     # =========================================================
-    # RETURN STRUCTURÉ
+    # RETURN FINAL STRUCTURE
     # =========================================================
 
     return {
@@ -698,6 +672,7 @@ def search_breves_public(
         "types_stats": types_stats,
         "top_companies": top_companies,
     }
+
 
 
 # ============================================================
