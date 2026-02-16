@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
+
 from api.news.models import (
     NewsCreate,
     NewsUpdate,
@@ -8,6 +9,7 @@ from api.news.models import (
     NewsLinkedInPostResponse,
     BrevesSearchResponse,
 )
+
 from core.news.service import (
     create_news,
     list_news,
@@ -34,17 +36,13 @@ import re
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+
 # ============================================================
 # CREATE NEWS / BRÈVE
 # ============================================================
 
 @router.post("/create")
 def create_route(data: NewsCreate):
-    """
-    Création d'une NEWS ou d'une BRÈVE.
-    La différence est portée par :
-    - data.news_type = valeur métier optionnelle
-    """
     try:
         news_id = create_news(data)
         return {"status": "ok", "id_news": news_id}
@@ -54,7 +52,7 @@ def create_route(data: NewsCreate):
 
 
 # ============================================================
-# LIST NEWS (ENRICHIE — VISUEL SOCIÉTÉ)
+# LIST NEWS PUBLIC
 # ============================================================
 
 @router.get("/list")
@@ -65,7 +63,6 @@ def list_route():
         news = [
             {
                 **n,
-                # fallback visuel société côté front
                 "COMPANY_MEDIA_LOGO_RECTANGLE_ID": n.get(
                     "MEDIA_LOGO_RECTANGLE_ID"
                 )
@@ -78,6 +75,11 @@ def list_route():
     except Exception:
         logger.exception("Erreur liste news")
         raise HTTPException(400, "Erreur liste news")
+
+
+# ============================================================
+# LIST ADMIN
+# ============================================================
 
 @router.get("/admin/list")
 def list_admin_route(
@@ -101,16 +103,52 @@ def list_admin_route(
         raise HTTPException(400, "Erreur liste admin news")
 
 
+# ============================================================
+# NEWS TYPES
+# ============================================================
 
 @router.get("/types")
 def list_news_types_route():
     try:
         types = list_news_types()
         return {"types": types}
-
-    except Exception as e:
+    except Exception:
         logger.exception("Erreur chargement NEWS_TYPE")
         raise HTTPException(500, "Erreur chargement catégories éditoriales")
+
+
+# ============================================================
+# SEARCH BRÈVES — PUBLIC (MOTEUR STRUCTURÉ)
+# IMPORTANT: placé AVANT /{id_news}
+# ============================================================
+
+@router.get("/breves/search", response_model=BrevesSearchResponse)
+def search_breves_route(
+    topic: Optional[str] = None,
+    news_type: Optional[str] = None,
+    company: Optional[str] = None,
+    limit: int = Query(20, ge=1, le=50),
+    cursor: Optional[str] = None,
+):
+    try:
+        data = search_breves_public(
+            topic=topic,
+            news_type=news_type,
+            company=company,
+            limit=limit,
+            cursor=cursor,
+        )
+
+        return data
+
+    except Exception:
+        logger.exception("Erreur search brèves")
+        raise HTTPException(400, "Erreur recherche brèves")
+
+
+# ============================================================
+# LIST BRÈVES LEGACY (SI CONSERVÉ)
+# ============================================================
 
 @router.get("/breves")
 def list_breves(
@@ -131,7 +169,7 @@ def list_breves(
 
 
 # ============================================================
-# GET ONE NEWS / BRÈVE
+# GET ONE NEWS
 # ============================================================
 
 @router.get("/{id_news}")
@@ -141,46 +179,9 @@ def get_route(id_news: str):
         raise HTTPException(404, "News introuvable")
     return {"status": "ok", "news": news}
 
-# ============================================================
-# SEARCH BRÈVES — PUBLIC (MOTEUR STRUCTURÉ)
-# ============================================================
-
-@router.get("/breves/search", response_model=BrevesSearchResponse)
-def search_breves_route(
-    topic: Optional[str] = None,
-    news_type: Optional[str] = None,
-    company: Optional[str] = None,
-    limit: int = Query(20, ge=1, le=50),
-    cursor: Optional[str] = None,
-):
-    """
-    Page Brèves version moteur :
-    - Filtres AND (topic / type / company)
-    - Pas de filtre date
-    - Sponsorisation filtrée
-    - Stats dynamiques
-    """
-
-    try:
-        data = search_breves_public(
-            topic=topic,
-            news_type=news_type,
-            company=company,
-            limit=limit,
-            cursor=cursor,
-        )
-
-        return data
-
-    except Exception:
-        logger.exception("Erreur search brèves")
-        raise HTTPException(400, "Erreur recherche brèves")
-
-
-
 
 # ============================================================
-# UPDATE NEWS / BRÈVE
+# UPDATE
 # ============================================================
 
 @router.put("/update/{id_news}")
@@ -194,7 +195,7 @@ def update_route(id_news: str, data: NewsUpdate):
 
 
 # ============================================================
-# ARCHIVE NEWS
+# ARCHIVE
 # ============================================================
 
 @router.post("/archive/{id_news}")
@@ -208,14 +209,11 @@ def archive_route(id_news: str):
 
 
 # ============================================================
-# PUBLISH NEWS / BRÈVE
+# PUBLISH
 # ============================================================
 
 @router.post("/publish/{id_news}")
-def publish_route(
-    id_news: str,
-    data: NewsPublish,
-):
+def publish_route(id_news: str, data: NewsPublish):
     try:
         status = publish_news(
             id_news=id_news,
@@ -231,7 +229,7 @@ def publish_route(
 
 
 # ============================================================
-# IA — GENERATE NEWS (SOURCE → NEWS / BRÈVE)
+# IA GENERATE
 # ============================================================
 
 @router.post("/ai/generate")
@@ -244,46 +242,16 @@ def ai_generate(payload: dict):
 
     prompt = f"""
 Tu es l’assistant éditorial de Ratecard.
-
-OBJECTIF
-Transformer une source brute en NEWS PARTENAIRE.
-
-RÈGLES ÉDITORIALES
-- Ton neutre, factuel, professionnel
-- PAS d’analyse
-- PAS d’opinion
-- PAS de jargon marketing
-- PAS de superlatifs
-- Style journalistique sobre
-
-FORMAT DE SORTIE (OBLIGATOIRE)
-Retourne un objet JSON avec EXACTEMENT les clés suivantes :
-
-{{
-  "title": "Titre factuel et informatif",
-  "excerpt": "Synthèse courte (3-4 phrases, ~400 caractères)",
-  "body_html": "<p>Corps de la news en HTML.</p>"
-}}
-
-RÈGLES HTML POUR body_html
-- <p> pour chaque paragraphe
-- <ul><li> si pertinent
-- <strong> avec parcimonie
-- <h2> max 1 si nécessaire
-- PAS de styles inline
-- PAS de <h1>
-
-SOURCE ({source_type or "texte libre"}):
+Objectif : transformer une source brute en news factuelle.
+Retourne un JSON strict avec title, excerpt, body_html.
+Source:
 {source_text}
 """
 
     raw = run_llm(prompt)
 
     if not raw:
-        return {
-            "status": "ok",
-            "news": {"title": "", "excerpt": "", "body": ""}
-        }
+        return {"status": "ok", "news": {"title": "", "excerpt": "", "body": ""}}
 
     try:
         match = re.search(r"\{[\s\S]*\}", raw)
@@ -307,7 +275,7 @@ SOURCE ({source_type or "texte libre"}):
 
 
 # ============================================================
-# DELETE NEWS
+# DELETE
 # ============================================================
 
 @router.delete("/{news_id}")
@@ -318,6 +286,11 @@ def delete_news_route(news_id: str):
     except Exception as e:
         logger.exception("Erreur suppression news")
         raise HTTPException(400, f"Erreur suppression news : {e}")
+
+
+# ============================================================
+# ADMIN STATS
+# ============================================================
 
 @router.get("/admin/stats")
 def news_admin_stats_route():
@@ -330,7 +303,7 @@ def news_admin_stats_route():
 
 
 # ============================================================
-# LINKEDIN — GET POST FOR NEWS
+# LINKEDIN GET
 # ============================================================
 
 @router.get("/{news_id}/linkedin", response_model=NewsLinkedInPostResponse)
@@ -352,14 +325,11 @@ def get_linkedin_post_for_news(news_id: str):
 
 
 # ============================================================
-# LINKEDIN — SAVE / UPDATE POST FOR NEWS
+# LINKEDIN SAVE
 # ============================================================
 
 @router.post("/{news_id}/linkedin")
-def save_linkedin_post_for_news(
-    news_id: str,
-    data: NewsLinkedInPost,
-):
+def save_linkedin_post_for_news(news_id: str, data: NewsLinkedInPost):
     try:
         save_news_linkedin_post(
             news_id=news_id,
@@ -367,7 +337,6 @@ def save_linkedin_post_for_news(
             mode=data.mode,
         )
         return {"status": "ok"}
-
     except Exception:
         logger.exception("Erreur sauvegarde post LinkedIn")
         raise HTTPException(500, "Erreur sauvegarde post LinkedIn")
