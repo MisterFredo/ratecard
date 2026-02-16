@@ -443,13 +443,6 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
 # SEARCH BRÈVES — PUBLIC (MOTEUR STRUCTURÉ)
 # ============================================================
 
-from typing import Optional, List
-from utils.bigquery_utils import query_bq
-
-
-DATASET = "adex-5555.RATECARD_PROD"
-
-
 def search_breves_public(
     topics: Optional[List[str]] = None,
     news_types: Optional[List[str]] = None,
@@ -457,210 +450,138 @@ def search_breves_public(
     limit: int = 20,
     cursor: Optional[str] = None,
 ):
-    """
-    Moteur principal page Signaux / Brèves.
-    Basé exclusivement sur vues matérialisées.
-    Multi-filtres AND.
-    """
-
-    # =====================================================
-    # WHERE dynamique
-    # =====================================================
-
     params = {"limit": limit}
-    where_clauses = [
-        "STATUS = 'PUBLISHED'",
-        "PUBLISHED_AT IS NOT NULL",
-        "PUBLISHED_AT <= CURRENT_TIMESTAMP()",
-    ]
+    where_clauses = ["status = 'PUBLISHED'"]
 
-    # MULTI TOPICS
     if topics:
         where_clauses.append("""
             EXISTS (
                 SELECT 1
-                FROM UNNEST(TOPICS) t
+                FROM UNNEST(topics) t
                 WHERE t.id_topic IN UNNEST(@topics)
             )
         """)
         params["topics"] = topics
 
-    # MULTI TYPES
     if news_types:
-        where_clauses.append("NEWS_TYPE IN UNNEST(@news_types)")
+        where_clauses.append("news_type IN UNNEST(@news_types)")
         params["news_types"] = news_types
 
-    # MULTI COMPANIES
     if companies:
-        where_clauses.append("ID_COMPANY IN UNNEST(@companies)")
+        where_clauses.append("id_company IN UNNEST(@companies)")
         params["companies"] = companies
 
-    # CURSOR PAGINATION
     if cursor:
-        where_clauses.append("PUBLISHED_AT < @cursor")
+        where_clauses.append("published_at < @cursor")
         params["cursor"] = cursor
 
     where_sql = " AND ".join(where_clauses)
 
-    # =====================================================
-    # 1️⃣ ITEMS
-    # =====================================================
+    # ================= ITEMS =================
 
     sql_items = f"""
         SELECT *
-        FROM `{DATASET}.V_NEWS_ENRICHED`
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_ENRICHED`
         WHERE {where_sql}
-        ORDER BY PUBLISHED_AT DESC
+        ORDER BY published_at DESC
         LIMIT @limit
     """
 
     rows = query_bq(sql_items, params)
 
-    items = []
-    for r in rows:
-        items.append({
-            "id": r["ID_NEWS"],
-            "title": r["TITLE"],
-            "excerpt": r.get("EXCERPT"),
-            "published_at": r["PUBLISHED_AT"],
-            "news_type": r.get("NEWS_TYPE"),
+    items = [
+        {
+            "id": r["id_news"],
+            "title": r["title"],
+            "excerpt": r["excerpt"],
+            "published_at": r["published_at"],
+            "news_type": r["news_type"],
             "company": {
-                "id_company": r["ID_COMPANY"],
-                "name": r["COMPANY_NAME"],
-                "is_partner": bool(r["IS_PARTNER"]),
+                "id_company": r["id_company"],
+                "name": r["company_name"],
+                "is_partner": bool(r["is_partner"]),
             },
-            "topics": r.get("TOPICS", []),
-        })
+            "topics": r.get("topics", []),
+        }
+        for r in rows
+    ]
 
-    # =====================================================
-    # 2️⃣ SPONSORISED
-    # =====================================================
+    # ================= SPONSORISED =================
 
     sql_sponsorised = f"""
         SELECT *
-        FROM `{DATASET}.V_NEWS_ENRICHED`
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_ENRICHED`
         WHERE {where_sql}
-          AND IS_PARTNER = TRUE
-        ORDER BY PUBLISHED_AT DESC
+          AND is_partner = TRUE
+        ORDER BY published_at DESC
         LIMIT 3
     """
 
     sponsor_rows = query_bq(sql_sponsorised, params)
 
-    sponsorised = []
-    for r in sponsor_rows:
-        sponsorised.append({
-            "id": r["ID_NEWS"],
-            "title": r["TITLE"],
-            "excerpt": r.get("EXCERPT"),
-            "published_at": r["PUBLISHED_AT"],
-            "news_type": r.get("NEWS_TYPE"),
+    sponsorised = [
+        {
+            "id": r["id_news"],
+            "title": r["title"],
+            "excerpt": r["excerpt"],
+            "published_at": r["published_at"],
+            "news_type": r["news_type"],
             "company": {
-                "id_company": r["ID_COMPANY"],
-                "name": r["COMPANY_NAME"],
+                "id_company": r["id_company"],
+                "name": r["company_name"],
                 "is_partner": True,
             },
-            "topics": r.get("TOPICS", []),
-        })
+            "topics": r.get("topics", []),
+        }
+        for r in sponsor_rows
+    ]
 
-    # =====================================================
-    # 3️⃣ GLOBAL STATS
-    # =====================================================
+    # ================= GLOBAL =================
 
     global_rows = query_bq(
-        f"SELECT * FROM `{DATASET}.V_NEWS_STATS_GLOBAL`"
+        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_GLOBAL`"
     )
 
     global_stats = global_rows[0] if global_rows else {
-        "TOTAL": 0,
-        "LAST_7_DAYS": 0,
-        "LAST_30_DAYS": 0,
+        "total": 0,
+        "last_7_days": 0,
+        "last_30_days": 0,
     }
 
-    # =====================================================
-    # 4️⃣ TYPES STATS
-    # =====================================================
+    # ================= TYPES =================
 
     types_rows = query_bq(
-        f"""
-        SELECT *
-        FROM `{DATASET}.V_NEWS_STATS_TYPE`
-        ORDER BY TOTAL DESC
-        """
+        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE` ORDER BY total DESC"
     )
 
-    types_stats = [
-        {
-            "news_type": r.get("NEWS_TYPE"),
-            "total": r["TOTAL"],
-            "last_7_days": r["LAST_7_DAYS"],
-            "last_30_days": r["LAST_30_DAYS"],
-        }
-        for r in types_rows
-    ]
+    types_stats = types_rows
 
-    # =====================================================
-    # 5️⃣ TOPICS STATS
-    # =====================================================
+    # ================= TOPICS =================
 
     topics_rows = query_bq(
-        f"""
-        SELECT *
-        FROM `{DATASET}.V_NEWS_STATS_TOPIC`
-        ORDER BY TOTAL DESC
-        """
+        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TOPIC` ORDER BY total DESC"
     )
 
-    topics_stats = [
-        {
-            "id_topic": r["ID_TOPIC"],
-            "label": r["LABEL"],
-            "total": r["TOTAL"],
-            "last_7_days": r["LAST_7_DAYS"],
-            "last_30_days": r["LAST_30_DAYS"],
-        }
-        for r in topics_rows
-    ]
+    topics_stats = topics_rows
 
-    # =====================================================
-    # 6️⃣ COMPANY STATS
-    # =====================================================
+    # ================= COMPANIES =================
 
     company_rows = query_bq(
-        f"""
-        SELECT *
-        FROM `{DATASET}.V_NEWS_STATS_COMPANY`
-        ORDER BY TOTAL DESC
-        """
+        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_COMPANY` ORDER BY total DESC"
     )
 
-    top_companies = [
-        {
-            "id_company": r["ID_COMPANY"],
-            "name": r["COMPANY_NAME"],
-            "is_partner": bool(r["IS_PARTNER"]),
-            "total": r["TOTAL"],
-            "last_7_days": r["LAST_7_DAYS"],
-            "last_30_days": r["LAST_30_DAYS"],
-        }
-        for r in company_rows
-    ]
-
-    # =====================================================
-    # RETURN FINAL
-    # =====================================================
+    top_companies = company_rows
 
     return {
-        "total_count": global_stats.get("TOTAL", 0),
-        "last_7_days": global_stats.get("LAST_7_DAYS", 0),
-        "last_30_days": global_stats.get("LAST_30_DAYS", 0),
+        "total_count": global_stats["total"],
+        "last_7_days": global_stats["last_7_days"],
+        "last_30_days": global_stats["last_30_days"],
         "items": items,
         "sponsorised": sponsorised,
         "topics_stats": topics_stats,
         "types_stats": types_stats,
         "top_companies": top_companies,
     }
-
 
 # ============================================================
 # LIST ALL COMPANIES — PUBLIC (FOR FILTER PANEL)
