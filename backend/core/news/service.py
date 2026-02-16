@@ -451,92 +451,53 @@ def search_breves_public(
     cursor: Optional[str] = None,
 ):
     """
-    Moteur principal de la page Brèves :
-    - Filtres AND
-    - Pas de filtre date
-    - Sponsorisation filtrée
-    - Stats dynamiques
+    Version clean basée sur vues matérialisées.
+    Aucune jointure dynamique.
     """
 
-    params = {"limit": limit}
+    # =====================================================
+    # WHERE dynamique
+    # =====================================================
 
-    where_clauses = [
-        "n.STATUS = 'PUBLISHED'",
-        "n.PUBLISHED_AT IS NOT NULL",
-        "n.PUBLISHED_AT <= CURRENT_TIMESTAMP()",
-    ]
+    params = {"limit": limit}
+    where_clauses = ["STATUS = 'PUBLISHED'"]
 
     if topic:
-        where_clauses.append("NT.ID_TOPIC = @topic")
+        where_clauses.append(
+            "EXISTS (SELECT 1 FROM UNNEST(TOPICS) t WHERE t.id_topic = @topic)"
+        )
         params["topic"] = topic
 
     if news_type:
-        where_clauses.append("n.NEWS_TYPE = @news_type")
+        where_clauses.append("NEWS_TYPE = @news_type")
         params["news_type"] = news_type
 
     if company:
-        where_clauses.append("n.ID_COMPANY = @company")
+        where_clauses.append("ID_COMPANY = @company")
         params["company"] = company
 
     if cursor:
-        where_clauses.append("n.PUBLISHED_AT < @cursor")
+        where_clauses.append("PUBLISHED_AT < @cursor")
         params["cursor"] = cursor
 
     where_sql = " AND ".join(where_clauses)
 
-    # =========================================================
-    # 1️⃣ FLUX PRINCIPAL
-    # =========================================================
+    # =====================================================
+    # 1️⃣ ITEMS
+    # =====================================================
 
     sql_items = f"""
-        SELECT
-            n.ID_NEWS,
-            n.TITLE,
-            n.EXCERPT,
-            n.PUBLISHED_AT,
-            n.NEWS_TYPE,
-
-            c.ID_COMPANY,
-            c.NAME AS COMPANY_NAME,
-            c.IS_PARTNER,
-
-            ARRAY_AGG(
-                STRUCT(
-                    t.ID_TOPIC AS id_topic,
-                    t.LABEL AS label,
-                    t.TOPIC_AXIS AS axis
-                )
-            ) AS TOPICS
-
-        FROM `{TABLE_NEWS}` n
-        JOIN `{TABLE_COMPANY}` c
-          ON n.ID_COMPANY = c.ID_COMPANY
-
-        LEFT JOIN `{TABLE_NEWS_TOPIC}` NT
-          ON n.ID_NEWS = NT.ID_NEWS
-        LEFT JOIN `{TABLE_TOPIC}` t
-          ON NT.ID_TOPIC = t.ID_TOPIC
-
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_ENRICHED`
         WHERE {where_sql}
-
-        GROUP BY
-            n.ID_NEWS,
-            n.TITLE,
-            n.EXCERPT,
-            n.PUBLISHED_AT,
-            n.NEWS_TYPE,
-            c.ID_COMPANY,
-            c.NAME,
-            c.IS_PARTNER
-
-        ORDER BY n.PUBLISHED_AT DESC
+        ORDER BY PUBLISHED_AT DESC
         LIMIT @limit
     """
 
-    items_rows = query_bq(sql_items, params)
+    rows = query_bq(sql_items, params)
 
     items = []
-    for r in items_rows:
+    for r in rows:
         items.append({
             "id": r["ID_NEWS"],
             "title": r["TITLE"],
@@ -551,44 +512,16 @@ def search_breves_public(
             "topics": r["TOPICS"] or [],
         })
 
-    # =========================================================
-    # 2️⃣ TOTAL COUNT
-    # =========================================================
-
-    sql_count = f"""
-        SELECT COUNT(DISTINCT n.ID_NEWS) AS TOTAL
-        FROM `{TABLE_NEWS}` n
-        LEFT JOIN `{TABLE_NEWS_TOPIC}` NT
-          ON n.ID_NEWS = NT.ID_NEWS
-        WHERE {where_sql}
-    """
-
-    count_rows = query_bq(sql_count, params)
-    total_count = count_rows[0]["TOTAL"] if count_rows else 0
-
-    # =========================================================
-    # 3️⃣ SPONSORISÉS
-    # =========================================================
+    # =====================================================
+    # 2️⃣ SPONSORISED
+    # =====================================================
 
     sql_sponsorised = f"""
-        SELECT
-            n.ID_NEWS,
-            n.TITLE,
-            n.EXCERPT,
-            n.PUBLISHED_AT,
-            n.NEWS_TYPE,
-            c.ID_COMPANY,
-            c.NAME AS COMPANY_NAME,
-            c.IS_PARTNER
-
-        FROM `{TABLE_NEWS}` n
-        JOIN `{TABLE_COMPANY}` c
-          ON n.ID_COMPANY = c.ID_COMPANY
-
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_ENRICHED`
         WHERE {where_sql}
-          AND c.IS_PARTNER = TRUE
-
-        ORDER BY n.PUBLISHED_AT DESC
+          AND IS_PARTNER = TRUE
+        ORDER BY PUBLISHED_AT DESC
         LIMIT 3
     """
 
@@ -607,104 +540,51 @@ def search_breves_public(
                 "name": r["COMPANY_NAME"],
                 "is_partner": True,
             },
-            "topics": [],
+            "topics": r["TOPICS"] or [],
         })
 
-    # =========================================================
-    # 4️⃣ STATS TOPICS
-    # =========================================================
+    # =====================================================
+    # 3️⃣ GLOBAL STATS
+    # =====================================================
 
-    sql_topics = f"""
-        SELECT
-            t.ID_TOPIC,
-            t.LABEL,
-            COUNT(DISTINCT n.ID_NEWS) AS TOTAL
-        FROM `{TABLE_NEWS}` n
-        JOIN `{TABLE_NEWS_TOPIC}` NT
-          ON n.ID_NEWS = NT.ID_NEWS
-        JOIN `{TABLE_TOPIC}` t
-          ON NT.ID_TOPIC = t.ID_TOPIC
-        WHERE {where_sql}
-        GROUP BY t.ID_TOPIC, t.LABEL
-        ORDER BY TOTAL DESC
-    """
+    global_stats = query_bq(
+        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_GLOBAL`"
+    )[0]
 
-    topics_rows = query_bq(sql_topics, params)
+    # =====================================================
+    # 4️⃣ TYPES STATS
+    # =====================================================
 
-    topics_stats = [
-        {
-            "id_topic": r["ID_TOPIC"],
-            "label": r["LABEL"],
-            "total_count": r["TOTAL"],
-        }
-        for r in topics_rows
-    ]
+    types_stats = query_bq(
+        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE` ORDER BY TOTAL DESC"
+    )
 
-    # =========================================================
-    # 5️⃣ STATS TYPES
-    # =========================================================
+    # =====================================================
+    # 5️⃣ TOPICS STATS
+    # =====================================================
 
-    sql_types = f"""
-        SELECT
-            n.NEWS_TYPE,
-            COUNT(*) AS TOTAL
-        FROM `{TABLE_NEWS}` n
-        WHERE {where_sql}
-        GROUP BY n.NEWS_TYPE
-        ORDER BY TOTAL DESC
-    """
+    topics_stats = query_bq(
+        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TOPIC` ORDER BY TOTAL DESC"
+    )
 
-    types_rows = query_bq(sql_types, params)
+    # =====================================================
+    # 6️⃣ COMPANY STATS
+    # =====================================================
 
-    types_stats = [
-        {
-            "news_type": r["NEWS_TYPE"],
-            "total_count": r["TOTAL"],
-        }
-        for r in types_rows
-    ]
+    top_companies = query_bq(
+        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_COMPANY` LIMIT 20"
+    )
 
-    # =========================================================
-    # 6️⃣ TOP COMPANIES (GLOBAL)
-    # =========================================================
-
-    sql_top_companies = f"""
-        SELECT
-            c.ID_COMPANY,
-            c.NAME,
-            c.IS_PARTNER,
-            COUNT(n.ID_NEWS) AS TOTAL
-        FROM `{TABLE_NEWS}` n
-        JOIN `{TABLE_COMPANY}` c
-          ON n.ID_COMPANY = c.ID_COMPANY
-        WHERE
-            n.STATUS = 'PUBLISHED'
-            AND n.PUBLISHED_AT IS NOT NULL
-        GROUP BY c.ID_COMPANY, c.NAME, c.IS_PARTNER
-        ORDER BY TOTAL DESC
-        LIMIT 5
-    """
-
-    companies_rows = query_bq(sql_top_companies)
-
-    top_companies = [
-        {
-            "id_company": r["ID_COMPANY"],
-            "name": r["NAME"],
-            "is_partner": bool(r["IS_PARTNER"]),
-            "total_count": r["TOTAL"],
-        }
-        for r in companies_rows
-    ]
-
-    # =========================================================
-    # RETURN FINAL
-    # =========================================================
+    # =====================================================
+    # RETURN CLEAN
+    # =====================================================
 
     return {
-        "total_count": total_count,
-        "sponsorised": sponsorised,
+        "total_count": global_stats["TOTAL"],
+        "last_7_days": global_stats["LAST_7_DAYS"],
+        "last_30_days": global_stats["LAST_30_DAYS"],
         "items": items,
+        "sponsorised": sponsorised,
         "topics_stats": topics_stats,
         "types_stats": types_stats,
         "top_companies": top_companies,
