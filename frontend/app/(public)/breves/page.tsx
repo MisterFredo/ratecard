@@ -1,27 +1,37 @@
 "use client";
 
+import { useState } from "react";
+import BrevesLiveBar from "@/components/breves/BrevesLiveBar";
 import BrevesHeaderStats from "@/components/breves/BrevesHeaderStats";
-import BrevesCompaniesPanel from "@/components/breves/BrevesCompaniesPanel";
+import BrevesFilters from "@/components/breves/BrevesFilters";
 import BrevesFeed from "@/components/breves/BrevesFeed";
 
+export type Period = "total" | "7d" | "30d";
+
 export default function BrevesPage() {
+  const [selectedPeriod, setSelectedPeriod] =
+    useState<Period>("7d");
+
   return (
-    <div className="min-h-screen bg-[#f7f4ef] text-black">
+    <div className="min-h-screen bg-white">
 
-      <div className="max-w-6xl mx-auto px-8 py-16">
+      {/* LIVE STRIP */}
+      <BrevesLiveBar selectedPeriod={selectedPeriod} />
 
-        {/* HEADER — MARKET OVERVIEW */}
-        <BrevesHeaderStats />
+      <div className="max-w-6xl mx-auto px-8 py-10 space-y-10">
 
-        {/* ACTEURS DU MARCHÉ */}
-        <BrevesCompaniesPanel />
+        <BrevesHeaderStats
+          selectedPeriod={selectedPeriod}
+          onChangePeriod={setSelectedPeriod}
+        />
 
-        {/* FLUX PRINCIPAL */}
+        <BrevesFilters
+          selectedPeriod={selectedPeriod}
+        />
+
         <BrevesFeed />
 
       </div>
-
     </div>
   );
 }
-
