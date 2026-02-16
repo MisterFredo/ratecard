@@ -15,6 +15,7 @@ from core.news.service import (
     list_news,
     list_news_types,
     list_news_admin,
+    list_companies_public,
     list_breves_public,
     search_breves_public,
     get_news,
@@ -116,6 +117,18 @@ def list_news_types_route():
         logger.exception("Erreur chargement NEWS_TYPE")
         raise HTTPException(500, "Erreur chargement catégories éditoriales")
 
+# ============================================================
+# LIST ALL COMPANIES — PUBLIC
+# ============================================================
+
+@router.get("/companies")
+def list_companies_route():
+    try:
+        data = list_companies_public()
+        return {"companies": data}
+    except Exception:
+        logger.exception("Erreur liste sociétés public")
+        raise HTTPException(400, "Erreur liste sociétés")
 
 # ============================================================
 # SEARCH BRÈVES — PUBLIC (MOTEUR STRUCTURÉ)
