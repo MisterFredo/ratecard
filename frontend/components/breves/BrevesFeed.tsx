@@ -147,7 +147,7 @@ export default function BrevesFeed() {
       {/* ============================= */}
       {/* ACTUALITÉS MEMBRES */}
       {/* ============================= */}
-      {sponsorised.length > 0 && (
+      { sponsorised.length > 0 && (
         <div className="border border-gray-200 rounded-md p-4">
 
           <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-3">
@@ -155,59 +155,52 @@ export default function BrevesFeed() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-4">
-            {sponsorised.map((b) => {
-              const isOpen = openItems.includes(b.id);
+            {sponsorised.map((b) => (
+              <article key={b.id} className="space-y-1.5">
 
-              return (
-                <article key={b.id} className="space-y-1.5">
+                <div className="text-[11px] text-gray-400">
+                  {new Date(b.published_at).toLocaleDateString("fr-FR")}
+                </div>
 
-                  <div className="text-[11px] text-gray-400">
-                    {new Date(b.published_at).toLocaleDateString("fr-FR")}
-                  </div>
+                <div
+                  className={`text-[11px] uppercase tracking-wide ${
+                    b.company.is_partner
+                      ? "text-emerald-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {b.company.name}
+                </div>
 
-                  <div
-                    className={`text-[11px] uppercase tracking-wide ${
-                      b.company.is_partner
-                        ? "text-emerald-600"
-                        : "text-gray-500"
-                    }`}
+                <h3 className="text-sm font-medium leading-snug">
+                  {b.title}
+                </h3>
+
+                {/* 🔥 EXCERPT TOUJOURS VISIBLE */}
+                {b.excerpt && (
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    {b.excerpt}
+                  </p>
+                )}
+
+                {/* 🔥 Bouton détail si NEWS */}
+                {b.news_kind === "NEWS" && (
+                  <button
+                    onClick={() =>
+                      openRightDrawer("news", b.id, "silent")
+                    }
+                    className="text-[11px] font-medium text-gray-400 hover:text-gray-900 transition"
                   >
-                    {b.company.name}
-                  </div>
+                    Voir le détail →
+                  </button>
+                )}
 
-                  <h3
-                    onClick={() => toggleItem(b.id)}
-                    className="text-sm font-medium leading-snug cursor-pointer hover:text-black transition"
-                  >
-                    {b.title}
-                  </h3>
-
-                  {isOpen && b.excerpt && (
-                    <div className="space-y-1">
-                      <p className="text-xs text-gray-600 leading-relaxed">
-                        {b.excerpt}
-                      </p>
-
-                      {b.news_kind === "NEWS" && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openRightDrawer("news", b.id, "silent");
-                          }}
-                          className="text-[11px] font-medium text-gray-400 hover:text-gray-900 transition"
-                        >
-                          Voir le détail →
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                </article>
-              );
-            })}
+              </article>
+            ))}
           </div>
         </div>
       )}
+
 
       {/* ============================= */}
       {/* MAIN FEED */}
