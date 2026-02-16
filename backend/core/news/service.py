@@ -641,17 +641,17 @@ def search_breves_public(
     # =====================================================
     # RETURN
     # =====================================================
-
     return {
-        "total_count": total_count,
-        "last_7_days": last_7,
-        "last_30_days": last_30,
+        "total_count": global_stats.get("TOTAL", 0),
+        "last_7_days": global_stats.get("LAST_7_DAYS", 0),
+        "last_30_days": global_stats.get("LAST_30_DAYS", 0),
         "items": items,
         "sponsorised": sponsorised,
         "topics_stats": topics_stats,
         "types_stats": types_stats,
         "top_companies": top_companies,
     }
+
 
 
 
