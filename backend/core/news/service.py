@@ -581,11 +581,14 @@ def search_breves_public(
 
     types_stats = [
         {
-            "news_type": r["news_type"],
-            "total": r["total"],
+            "news_type": r["NEWS_TYPE"],
+            "total": r["TOTAL"],
+            "last_7_days": r["LAST_7_DAYS"],
+            "last_30_days": r["LAST_30_DAYS"],
         }
         for r in types_rows
     ]
+
 
     # =====================================================
     # TOPICS STATS
