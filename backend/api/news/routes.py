@@ -133,7 +133,7 @@ def list_companies_route():
         raise HTTPException(400, "Erreur liste sociétés")
 
 # ============================================================
-# SEARCH SIGNAUX — FLUX UNIQUEMENT
+# SEARCH BREVES — FLUX UNIQUEMENT
 # ============================================================
 
 @router.get("/breves/search", response_model=BrevesSearchResponse)
