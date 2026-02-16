@@ -443,6 +443,10 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
 # SEARCH SIGNAUX — FLUX UNIQUEMENT
 # ============================================================
 
+from typing import Optional, List
+from utils.bigquery_utils import query_bq
+
+
 def search_breves_public(
     topics: Optional[List[str]] = None,
     news_types: Optional[List[str]] = None,
@@ -451,21 +455,30 @@ def search_breves_public(
     cursor: Optional[str] = None,
 ):
     """
-    Retourne uniquement le flux + sponsorisé.
-    Aucune stat ici.
+    Retourne uniquement :
+    - le flux principal (items)
+    - les actualités partenaires (sponsorised)
+
+    Aucun calcul de stats ici.
     """
 
     params = {"limit": limit}
     where_clauses = ["status = 'PUBLISHED'"]
 
+    # =====================================================
+    # FILTRES
+    # =====================================================
+
     if topics:
-        where_clauses.append("""
+        where_clauses.append(
+            """
             EXISTS (
                 SELECT 1
                 FROM UNNEST(topics) t
                 WHERE t.id_topic IN UNNEST(@topics)
             )
-        """)
+            """
+        )
         params["topics"] = topics
 
     if news_types:
@@ -487,7 +500,17 @@ def search_breves_public(
     # =====================================================
 
     sql_items = f"""
-        SELECT *
+        SELECT
+            id_news,
+            title,
+            excerpt,
+            published_at,
+            news_type,
+            news_kind,
+            id_company,
+            company_name,
+            is_partner,
+            topics
         FROM `adex-5555.RATECARD_PROD.V_NEWS_ENRICHED`
         WHERE {where_sql}
         ORDER BY published_at DESC
@@ -503,6 +526,7 @@ def search_breves_public(
             "excerpt": r.get("excerpt"),
             "published_at": r.get("published_at"),
             "news_type": r.get("news_type"),
+            "news_kind": r.get("news_kind"),  # 🔑 IMPORTANT
             "company": {
                 "id_company": r.get("id_company"),
                 "name": r.get("company_name"),
@@ -514,11 +538,21 @@ def search_breves_public(
     ]
 
     # =====================================================
-    # SPONSORISED
+    # SPONSORISED (PARTENAIRES UNIQUEMENT)
     # =====================================================
 
     sql_sponsorised = f"""
-        SELECT *
+        SELECT
+            id_news,
+            title,
+            excerpt,
+            published_at,
+            news_type,
+            news_kind,
+            id_company,
+            company_name,
+            is_partner,
+            topics
         FROM `adex-5555.RATECARD_PROD.V_NEWS_ENRICHED`
         WHERE {where_sql}
           AND is_partner = TRUE
@@ -535,6 +569,7 @@ def search_breves_public(
             "excerpt": r.get("excerpt"),
             "published_at": r.get("published_at"),
             "news_type": r.get("news_type"),
+            "news_kind": r.get("news_kind"),  # 🔑 IMPORTANT
             "company": {
                 "id_company": r.get("id_company"),
                 "name": r.get("company_name"),
@@ -549,6 +584,7 @@ def search_breves_public(
         "items": items,
         "sponsorised": sponsorised,
     }
+
 
 
 # ============================================================
