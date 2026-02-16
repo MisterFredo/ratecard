@@ -1,24 +1,27 @@
 "use client";
 
 import BrevesHeaderStats from "@/components/breves/BrevesHeaderStats";
-import BrevesFilters from "@/components/breves/BrevesFilters";
+import BrevesCompaniesPanel from "@/components/breves/BrevesCompaniesPanel";
 import BrevesFeed from "@/components/breves/BrevesFeed";
 
 export default function BrevesPage() {
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-6xl mx-auto px-8 py-14 space-y-14">
+    <div className="min-h-screen bg-[#f7f4ef] text-black">
 
-        {/* HEADER MARKET STYLE */}
+      <div className="max-w-6xl mx-auto px-8 py-16">
+
+        {/* HEADER — MARKET OVERVIEW */}
         <BrevesHeaderStats />
 
-        {/* FILTER BAR */}
-        <BrevesFilters />
+        {/* ACTEURS DU MARCHÉ */}
+        <BrevesCompaniesPanel />
 
-        {/* MAIN FEED */}
+        {/* FLUX PRINCIPAL */}
         <BrevesFeed />
 
       </div>
+
     </div>
   );
 }
+
