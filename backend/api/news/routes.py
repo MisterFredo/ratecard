@@ -6,6 +6,7 @@ from api.news.models import (
     NewsLinkedInPost,
     NewsPublish,
     NewsLinkedInPostResponse,
+    BrevesSearchResponse,
 )
 from core.news.service import (
     create_news,
