@@ -35,9 +35,9 @@ type TypeStat = {
 };
 
 type StatsResponse = {
-  top_companies: CompanyStat[];
-  top_topics: TopicStat[];
-  top_types: TypeStat[];
+  top_companies?: CompanyStat[];
+  topics_stats?: TopicStat[];
+  types_stats?: TypeStat[];
 };
 
 /* ===============================
@@ -56,11 +56,7 @@ export default function BrevesFilters() {
     "companies" | "topics" | "types"
   >("companies");
 
-  const [stats, setStats] = useState<StatsResponse>({
-    top_companies: [],
-    top_topics: [],
-    top_types: [],
-  });
+  const [stats, setStats] = useState<StatsResponse>({});
 
   const [openOthers, setOpenOthers] = useState(false);
 
@@ -120,12 +116,11 @@ export default function BrevesFilters() {
     return (
       <button
         onClick={() => setMode(value)}
-        className={`text-xs uppercase tracking-wider transition
-          ${
-            active
-              ? "text-black font-semibold"
-              : "text-gray-400 hover:text-black"
-          }`}
+        className={`text-xs uppercase tracking-wider transition ${
+          active
+            ? "text-black font-semibold"
+            : "text-gray-400 hover:text-black"
+        }`}
       >
         {label}
       </button>
@@ -133,26 +128,30 @@ export default function BrevesFilters() {
   }
 
   /* ===============================
-     DERIVED DATA
+     DERIVED DATA (SAFE)
   ================================ */
 
+  const companies = stats.top_companies ?? [];
+  const topics = stats.topics_stats ?? [];
+  const types = stats.types_stats ?? [];
+
   const sortedCompanies = useMemo(() => {
-    return [...stats.top_companies].sort(
+    return [...companies].sort(
       (a, b) => (b as any)[mode] - (a as any)[mode]
     );
-  }, [stats.top_companies, mode]);
+  }, [companies, mode]);
 
   const sortedTopics = useMemo(() => {
-    return [...stats.top_topics].sort(
+    return [...topics].sort(
       (a, b) => (b as any)[mode] - (a as any)[mode]
     );
-  }, [stats.top_topics, mode]);
+  }, [topics, mode]);
 
   const sortedTypes = useMemo(() => {
-    return [...stats.top_types].sort(
+    return [...types].sort(
       (a, b) => (b as any)[mode] - (a as any)[mode]
     );
-  }, [stats.top_types, mode]);
+  }, [types, mode]);
 
   const members = sortedCompanies.filter((c) => c.is_partner);
   const others = sortedCompanies.filter((c) => !c.is_partner);
@@ -192,31 +191,27 @@ export default function BrevesFilters() {
           <SwitchButton value="last_7_days" label="7j" />
           <SwitchButton value="last_30_days" label="30j" />
         </div>
-
       </div>
 
       {/* ================= ACTEURS ================= */}
       {axis === "companies" && (
-        <div className="space-y-5">
+        <div className="space-y-4">
 
           {members.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {members.map((c) => {
-                const active = selectedCompanies.includes(
-                  c.id_company
-                );
+                const active = selectedCompanies.includes(c.id_company);
                 return (
                   <button
                     key={c.id_company}
                     onClick={() =>
                       toggleFilter("companies", c.id_company)
                     }
-                    className={`px-3 py-1 text-xs rounded-full transition
-                      ${
-                        active
-                          ? "bg-green-600 text-white"
-                          : "bg-green-100 text-green-700"
-                      }`}
+                    className={`px-3 py-1 text-xs rounded-full transition ${
+                      active
+                        ? "bg-green-600 text-white"
+                        : "bg-green-100 text-green-700"
+                    }`}
                   >
                     {c.name} {(c as any)[mode]}
                   </button>
@@ -237,21 +232,18 @@ export default function BrevesFilters() {
           {openOthers && (
             <div className="grid md:grid-cols-3 gap-3 text-sm">
               {others.map((c) => {
-                const active = selectedCompanies.includes(
-                  c.id_company
-                );
+                const active = selectedCompanies.includes(c.id_company);
                 return (
                   <button
                     key={c.id_company}
                     onClick={() =>
                       toggleFilter("companies", c.id_company)
                     }
-                    className={`flex justify-between border-b pb-1 transition
-                      ${
-                        active
-                          ? "text-black font-semibold"
-                          : "text-gray-600 hover:text-black"
-                      }`}
+                    className={`flex justify-between border-b pb-1 transition ${
+                      active
+                        ? "text-black font-semibold"
+                        : "text-gray-600 hover:text-black"
+                    }`}
                   >
                     <span>{c.name}</span>
                     <span>{(c as any)[mode]}</span>
@@ -267,21 +259,18 @@ export default function BrevesFilters() {
       {axis === "topics" && (
         <div className="flex flex-wrap gap-2">
           {sortedTopics.slice(0, 20).map((t) => {
-            const active = selectedTopics.includes(
-              t.id_topic
-            );
+            const active = selectedTopics.includes(t.id_topic);
             return (
               <button
                 key={t.id_topic}
                 onClick={() =>
                   toggleFilter("topics", t.id_topic)
                 }
-                className={`px-3 py-1 text-xs rounded-full transition
-                  ${
-                    active
-                      ? "bg-black text-white"
-                      : "bg-gray-100 hover:bg-gray-200"
-                  }`}
+                className={`px-3 py-1 text-xs rounded-full transition ${
+                  active
+                    ? "bg-black text-white"
+                    : "bg-gray-100 hover:bg-gray-200"
+                }`}
               >
                 {t.label} {(t as any)[mode]}
               </button>
@@ -294,21 +283,18 @@ export default function BrevesFilters() {
       {axis === "types" && (
         <div className="flex flex-wrap gap-2">
           {sortedTypes.map((t) => {
-            const active = selectedTypes.includes(
-              t.news_type
-            );
+            const active = selectedTypes.includes(t.news_type);
             return (
               <button
                 key={t.news_type}
                 onClick={() =>
                   toggleFilter("news_types", t.news_type)
                 }
-                className={`px-3 py-1 text-xs rounded-full transition
-                  ${
-                    active
-                      ? "bg-violet-600 text-white"
-                      : "bg-violet-100 text-violet-700"
-                  }`}
+                className={`px-3 py-1 text-xs rounded-full transition ${
+                  active
+                    ? "bg-violet-600 text-white"
+                    : "bg-violet-100 text-violet-700"
+                }`}
               >
                 {t.news_type} {(t as any)[mode]}
               </button>
@@ -316,7 +302,6 @@ export default function BrevesFilters() {
           })}
         </div>
       )}
-
     </section>
   );
 }
