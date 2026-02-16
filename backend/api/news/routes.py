@@ -132,12 +132,11 @@ def list_companies_route():
         raise HTTPException(400, "Erreur liste sociétés")
 
 # ============================================================
-# SEARCH BRÈVES — PUBLIC (MOTEUR STRUCTURÉ)
-# IMPORTANT: placé AVANT /{id_news}
+# SEARCH SIGNAUX — FLUX UNIQUEMENT
 # ============================================================
 
-@router.get("/breves/search", response_model=BrevesSearchResponse)
-def search_breves_route(
+@router.get("/signaux/search", response_model=BrevesSearchResponse)
+def search_signaux_route(
     topics: Optional[List[str]] = Query(default=None),
     news_types: Optional[List[str]] = Query(default=None),
     companies: Optional[List[str]] = Query(default=None),
@@ -145,7 +144,7 @@ def search_breves_route(
     cursor: Optional[str] = None,
 ):
     try:
-        data = search_breves_public(
+        data = search_breves_public(   # ⚠️ version FLUX uniquement
             topics=topics,
             news_types=news_types,
             companies=companies,
@@ -153,10 +152,29 @@ def search_breves_route(
             cursor=cursor,
         )
 
+        return {
+            "total_count": data.get("total_count", 0),
+            "sponsorised": data.get("sponsorised", []),
+            "items": data.get("items", []),
+        }
+
+    except Exception as e:
+        logger.exception("Erreur search signaux")
+        raise HTTPException(400, str(e))
+
+# ============================================================
+# SIGNAUX STATS — FILTRES UNIQUEMENT
+# ============================================================
+
+@router.get("/signaux/stats", response_model=BrevesStatsResponse)
+def signaux_stats_route():
+    try:
+        data = get_breves_stats_public()  # ← nouveau service dédié
+
         return data
 
     except Exception as e:
-        logger.exception("Erreur search brèves")
+        logger.exception("Erreur stats signaux")
         raise HTTPException(400, str(e))
 
 
