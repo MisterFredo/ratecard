@@ -623,9 +623,11 @@ def search_breves_public(
     top_companies = [
         {
             "id_company": r["id_company"],
-            "name": r["company_name"],   # ← aligné avec vue
+            "name": r["name"],
             "is_partner": bool(r["is_partner"]),
             "total": r["total"],
+            "last_7_days": r["last_7_days"],
+            "last_30_days": r["last_30_days"],
         }
         for r in company_rows
     ]
