@@ -22,7 +22,7 @@ export default function PublicTopNavShell({
      (News débranchée)
   ===================================================== */
   const navItems = [
-    { href: "/breves", label: "Brèves" },
+    { href: "/breves", label: "News" },
     { href: "/members", label: "Membres" },
     { href: "/events", label: "Événements" },
     { href: "/membership", label: "Membership" },
