@@ -53,7 +53,12 @@ class NewsCreate(BaseModel):
 # ============================================================
 class NewsUpdate(BaseModel):
     # --------------------------------------------------------
-    # STRUCTURE ÉDITORIALE
+    # SOCIÉTÉ
+    # --------------------------------------------------------
+    id_company: Optional[str] = None
+
+    # --------------------------------------------------------
+    # STRUCTURE
     # --------------------------------------------------------
     news_kind: Optional[str] = None
     news_type: Optional[str] = None
@@ -73,13 +78,14 @@ class NewsUpdate(BaseModel):
     author: Optional[str] = None
 
     # --------------------------------------------------------
-    # ENRICHISSEMENTS (OPTIONAL POUR CONTRÔLE FIN)
+    # RELATIONS
     # --------------------------------------------------------
     topics: Optional[List[str]] = None
     persons: Optional[List[str]] = None
 
     class Config:
         extra = "ignore"
+
 
 
 # ============================================================
