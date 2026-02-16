@@ -1,24 +1,14 @@
 "use client";
 
-import BrevesLiveBar from "@/components/breves/BrevesLiveBar";
-import BrevesHeaderStats from "@/components/breves/BrevesHeaderStats";
-import BrevesFilters from "@/components/breves/BrevesFilters";
+import BrevesSwitcher from "@/components/breves/BrevesSwitcher";
 import BrevesFeed from "@/components/breves/BrevesFeed";
 
 export default function BrevesPage() {
   return (
     <div className="min-h-screen bg-white">
-
-      <BrevesLiveBar />
-
-      <div className="max-w-6xl mx-auto px-8 py-10 space-y-10">
-
-        <BrevesHeaderStats />
-
-        <BrevesFilters />
-
+      <div className="max-w-6xl mx-auto px-8 py-8 space-y-8">
+        <BrevesSwitcher />
         <BrevesFeed />
-
       </div>
     </div>
   );
