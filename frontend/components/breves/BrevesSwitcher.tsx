@@ -31,6 +31,9 @@ type TypeStat = {
 };
 
 type StatsResponse = {
+  total_count: number;
+  last_7_days: number;
+  last_30_days: number;
   top_companies: CompanyStat[];
   topics_stats: TopicStat[];
   types_stats: TypeStat[];
@@ -45,8 +48,12 @@ export default function BrevesSwitcher() {
 
   const [mode, setMode] = useState<Mode>("actors");
   const [period, setPeriod] = useState<Period>("7d");
+  const [openOthers, setOpenOthers] = useState(false);
 
   const [stats, setStats] = useState<StatsResponse>({
+    total_count: 0,
+    last_7_days: 0,
+    last_30_days: 0,
     top_companies: [],
     topics_stats: [],
     types_stats: [],
@@ -89,6 +96,10 @@ export default function BrevesSwitcher() {
     router.push(`/breves?${params.toString()}`);
   }
 
+  const selectedCompanies = searchParams.getAll("companies");
+  const selectedTopics = searchParams.getAll("topics");
+  const selectedTypes = searchParams.getAll("news_types");
+
   const sortedActors = useMemo(
     () =>
       [...stats.top_companies].sort(
@@ -96,6 +107,9 @@ export default function BrevesSwitcher() {
       ),
     [stats, period]
   );
+
+  const members = sortedActors.filter((c) => c.is_partner);
+  const others = sortedActors.filter((c) => !c.is_partner);
 
   const sortedTopics = useMemo(
     () =>
@@ -113,100 +127,153 @@ export default function BrevesSwitcher() {
     [stats, period]
   );
 
-  const selectedCompanies = searchParams.getAll("companies");
-  const selectedTopics = searchParams.getAll("topics");
-  const selectedTypes = searchParams.getAll("news_types");
-
   return (
-    <section className="border-b border-gray-200 pb-4 space-y-6">
+    <section className="border-b border-gray-200 pb-4 space-y-4">
 
-      {/* TOP BAR */}
-      <div className="flex justify-between items-center">
+      {/* ===================== */}
+      {/* GLOBAL STATS */}
+      {/* ===================== */}
+      <div className="flex justify-between items-center text-sm">
 
-        <div className="flex gap-6 text-sm font-medium">
-          <ModeButton active={mode === "actors"} onClick={() => setMode("actors")}>
-            Acteurs
-          </ModeButton>
-          <ModeButton active={mode === "topics"} onClick={() => setMode("topics")}>
-            Thématiques
-          </ModeButton>
-          <ModeButton active={mode === "types"} onClick={() => setMode("types")}>
-            Types
-          </ModeButton>
+        <div className="text-gray-600">
+          <span className="font-semibold text-black">
+            {stats.total_count}
+          </span>{" "}
+          signaux au total
         </div>
 
-        <div className="flex gap-4 text-xs uppercase tracking-wide">
-          <PeriodButton active={period === "total"} onClick={() => setPeriod("total")}>
-            Total
-          </PeriodButton>
-          <PeriodButton active={period === "30d"} onClick={() => setPeriod("30d")}>
-            30j
-          </PeriodButton>
-          <PeriodButton active={period === "7d"} onClick={() => setPeriod("7d")}>
-            7j
-          </PeriodButton>
+        <div className="flex gap-6 text-xs uppercase tracking-wide">
+
+          <button
+            onClick={() => setPeriod("total")}
+            className={`transition ${
+              period === "total"
+                ? "text-black font-semibold"
+                : "text-gray-400 hover:text-black"
+            }`}
+          >
+            Total ({stats.total_count})
+          </button>
+
+          <button
+            onClick={() => setPeriod("30d")}
+            className={`transition ${
+              period === "30d"
+                ? "text-black font-semibold"
+                : "text-gray-400 hover:text-black"
+            }`}
+          >
+            30j ({stats.last_30_days})
+          </button>
+
+          <button
+            onClick={() => setPeriod("7d")}
+            className={`transition ${
+              period === "7d"
+                ? "text-black font-semibold"
+                : "text-gray-400 hover:text-black"
+            }`}
+          >
+            7j ({stats.last_7_days})
+          </button>
         </div>
       </div>
 
+      {/* ===================== */}
+      {/* AXIS SWITCH */}
+      {/* ===================== */}
+      <div className="flex gap-6 text-sm font-medium">
+        <ModeButton active={mode === "actors"} onClick={() => setMode("actors")}>
+          Acteurs
+        </ModeButton>
+        <ModeButton active={mode === "topics"} onClick={() => setMode("topics")}>
+          Thématiques
+        </ModeButton>
+        <ModeButton active={mode === "types"} onClick={() => setMode("types")}>
+          Types
+        </ModeButton>
+      </div>
+
+      {/* ===================== */}
       {/* FILTER LIST */}
-      <div className="flex flex-wrap gap-2">
+      {/* ===================== */}
+      <div className="space-y-3">
 
-        {mode === "actors" &&
-          sortedActors.slice(0, 20).map((c) => {
-            const active = selectedCompanies.includes(c.id_company);
-            return (
-              <button
-                key={c.id_company}
-                onClick={() => toggleFilter("companies", c.id_company)}
-                className={`px-3 py-1 text-xs rounded border transition
-                  ${
-                    active
-                      ? "bg-black text-white border-black"
-                      : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-                  }`}
-              >
-                {c.name}
-                <span className="ml-2 font-semibold">
-                  {periodValue(c)}
-                </span>
-              </button>
-            );
-          })}
+        {/* ACTORS */}
+        {mode === "actors" && (
+          <>
+            {/* PARTNERS FIRST */}
+            <div className="flex flex-wrap gap-2">
+              {members.map((c) => {
+                const active = selectedCompanies.includes(c.id_company);
+                return (
+                  <button
+                    key={c.id_company}
+                    onClick={() => toggleFilter("companies", c.id_company)}
+                    className={`px-3 py-1 text-xs rounded border transition
+                      ${
+                        active
+                          ? "bg-black text-white border-black"
+                          : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
+                      }`}
+                  >
+                    <span className="font-medium">
+                      {c.name}
+                    </span>
+                    <span className="ml-2 font-semibold">
+                      {periodValue(c)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-        {mode === "topics" &&
-          sortedTopics.slice(0, 20).map((t) => {
-            const active = selectedTopics.includes(t.id_topic);
-            return (
-              <button
-                key={t.id_topic}
-                onClick={() => toggleFilter("topics", t.id_topic)}
-                className={`px-3 py-1 text-xs rounded border transition
-                  ${
-                    active
-                      ? "bg-black text-white border-black"
-                      : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-                  }`}
-              >
-                {t.label}
-                <span className="ml-2 font-semibold">
-                  {periodValue(t)}
-                </span>
-              </button>
-            );
-          })}
+            {/* OTHER ACTORS */}
+            <button
+              onClick={() => setOpenOthers(!openOthers)}
+              className="text-xs uppercase tracking-wide text-gray-400 hover:text-black"
+            >
+              {openOthers
+                ? "Masquer autres acteurs"
+                : "Afficher autres acteurs"}
+            </button>
 
-        {mode === "types" &&
-          sortedTypes
-            .filter((t) => t.news_type)
-            .slice(0, 15)
-            .map((t) => {
-              const active = selectedTypes.includes(t.news_type!);
+            {openOthers && (
+              <div className="grid md:grid-cols-3 gap-3 text-sm">
+                {others.map((c) => {
+                  const active = selectedCompanies.includes(c.id_company);
+                  return (
+                    <button
+                      key={c.id_company}
+                      onClick={() =>
+                        toggleFilter("companies", c.id_company)
+                      }
+                      className={`flex justify-between border-b pb-1 transition
+                        ${
+                          active
+                            ? "text-black font-semibold"
+                            : "text-gray-600 hover:text-black"
+                        }`}
+                    >
+                      <span>{c.name}</span>
+                      <span>{periodValue(c)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* TOPICS */}
+        {mode === "topics" && (
+          <div className="flex flex-wrap gap-2">
+            {sortedTopics.slice(0, 20).map((t) => {
+              const active = selectedTopics.includes(t.id_topic);
               return (
                 <button
-                  key={t.news_type!}
-                  onClick={() =>
-                    toggleFilter("news_types", t.news_type!)
-                  }
+                  key={t.id_topic}
+                  onClick={() => toggleFilter("topics", t.id_topic)}
                   className={`px-3 py-1 text-xs rounded border transition
                     ${
                       active
@@ -214,13 +281,46 @@ export default function BrevesSwitcher() {
                         : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
                     }`}
                 >
-                  {t.news_type}
+                  {t.label}
                   <span className="ml-2 font-semibold">
                     {periodValue(t)}
                   </span>
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {/* TYPES */}
+        {mode === "types" && (
+          <div className="flex flex-wrap gap-2">
+            {sortedTypes
+              .filter((t) => t.news_type)
+              .slice(0, 15)
+              .map((t) => {
+                const active = selectedTypes.includes(t.news_type!);
+                return (
+                  <button
+                    key={t.news_type!}
+                    onClick={() =>
+                      toggleFilter("news_types", t.news_type!)
+                    }
+                    className={`px-3 py-1 text-xs rounded border transition
+                      ${
+                        active
+                          ? "bg-black text-white border-black"
+                          : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
+                      }`}
+                    >
+                      {t.news_type}
+                      <span className="ml-2 font-semibold">
+                        {periodValue(t)}
+                      </span>
+                    </button>
+                  );
+                })}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -233,21 +333,6 @@ function ModeButton({ children, active, onClick }: any) {
       className={`transition ${
         active
           ? "text-black"
-          : "text-gray-400 hover:text-black"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function PeriodButton({ children, active, onClick }: any) {
-  return (
-    <button
-      onClick={onClick}
-      className={`transition ${
-        active
-          ? "text-black font-semibold"
           : "text-gray-400 hover:text-black"
       }`}
     >
