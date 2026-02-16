@@ -142,17 +142,40 @@ def get_route(id_news: str):
     return {"status": "ok", "news": news}
 
 # ============================================================
-# GET BREVES POUR ANALYSES
+# SEARCH BRÈVES — PUBLIC (MOTEUR STRUCTURÉ)
 # ============================================================
 
 @router.get("/breves/search", response_model=BrevesSearchResponse)
-def search_breves(
+def search_breves_route(
     topic: Optional[str] = None,
     news_type: Optional[str] = None,
     company: Optional[str] = None,
     limit: int = Query(20, ge=1, le=50),
     cursor: Optional[str] = None,
 ):
+    """
+    Page Brèves version moteur :
+    - Filtres AND (topic / type / company)
+    - Pas de filtre date
+    - Sponsorisation filtrée
+    - Stats dynamiques
+    """
+
+    try:
+        data = search_breves_public(
+            topic=topic,
+            news_type=news_type,
+            company=company,
+            limit=limit,
+            cursor=cursor,
+        )
+
+        return data
+
+    except Exception:
+        logger.exception("Erreur search brèves")
+        raise HTTPException(400, "Erreur recherche brèves")
+
 
 
 
