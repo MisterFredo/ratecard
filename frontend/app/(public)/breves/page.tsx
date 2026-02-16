@@ -7,16 +7,34 @@ import { useSearchParams, useRouter } from "next/navigation";
    TYPES
 ========================================================= */
 
-type Topic = {
+type TopicStat = {
   id_topic: string;
   label: string;
-  axis?: string;
+  total_count: number;
+};
+
+type TypeStat = {
+  news_type?: string | null;
+  total_count: number;
+};
+
+type CompanyStat = {
+  id_company: string;
+  name: string;
+  is_partner: boolean;
+  total_count: number;
 };
 
 type Company = {
   id_company: string;
   name: string;
   is_partner?: boolean;
+};
+
+type Topic = {
+  id_topic: string;
+  label: string;
+  axis?: string;
 };
 
 type BreveItem = {
@@ -29,48 +47,35 @@ type BreveItem = {
   topics?: Topic[];
 };
 
-type CompanyStat = {
-  ID_COMPANY: string;
-  NAME: string;
-  IS_PARTNER: boolean;
-  TOTAL: number;
-};
-
-/* =========================================================
-   CONFIG
-========================================================= */
+/* ========================================================= */
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 const PAGE_SIZE = 20;
 
-/* =========================================================
-   BADGE
-========================================================= */
+/* ========================================================= */
 
-function Badge({
-  children,
-  className,
+function StatButton({
+  label,
+  count,
   onClick,
 }: {
-  children: React.ReactNode;
-  className: string;
-  onClick?: () => void;
+  label: string;
+  count: number;
+  onClick: () => void;
 }) {
   return (
-    <span
+    <button
       onClick={onClick}
-      className={`inline-block px-2 py-0.5 rounded text-xs font-medium cursor-pointer ${className}`}
+      className="text-sm text-gray-700 hover:underline"
     >
-      {children}
-    </span>
+      {label} ({count})
+    </button>
   );
 }
 
-/* =========================================================
-   PAGE — BRÈVES (MOTEUR)
-========================================================= */
+/* ========================================================= */
 
 export default function BrevesPage() {
   const searchParams = useSearchParams();
@@ -82,16 +87,21 @@ export default function BrevesPage() {
 
   const [items, setItems] = useState<BreveItem[]>([]);
   const [sponsorised, setSponsorised] = useState<BreveItem[]>([]);
+
+  const [topicsStats, setTopicsStats] = useState<TopicStat[]>([]);
+  const [typesStats, setTypesStats] = useState<TypeStat[]>([]);
   const [topCompanies, setTopCompanies] = useState<CompanyStat[]>([]);
+
   const [totalCount, setTotalCount] = useState<number>(0);
 
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      FETCH
-  --------------------------------------------------------- */
+  ========================================================= */
+
   async function loadBreves(reset = false) {
     if (loading || (!hasMore && !reset)) return;
 
@@ -106,52 +116,46 @@ export default function BrevesPage() {
     if (company) params.append("company", company);
     if (!reset && cursor) params.append("cursor", cursor);
 
-    try {
-      const res = await fetch(
-        `${API_BASE}/news/breves/search?${params.toString()}`,
-        { cache: "no-store" }
-      );
+    const res = await fetch(
+      `${API_BASE}/news/breves/search?${params.toString()}`,
+      { cache: "no-store" }
+    );
 
-      const json = await res.json();
+    const json = await res.json();
 
-      const newItems = json.items || [];
+    const newItems = json.items || [];
 
-      if (reset) {
-        setItems(newItems);
-        setSponsorised(json.sponsorised || []);
-        setTopCompanies(json.top_companies || []);
-        setTotalCount(json.total_count || 0);
-      } else {
-        setItems((prev) => [...prev, ...newItems]);
-      }
-
-      if (newItems.length < PAGE_SIZE) {
-        setHasMore(false);
-        setCursor(null);
-      } else {
-        setCursor(newItems[newItems.length - 1].published_at);
-      }
-    } catch (e) {
-      console.error("Erreur chargement brèves", e);
-    } finally {
-      setLoading(false);
+    if (reset) {
+      setItems(newItems);
+      setSponsorised(json.sponsorised || []);
+      setTopicsStats(json.topics_stats || []);
+      setTypesStats(json.types_stats || []);
+      setTopCompanies(json.top_companies || []);
+      setTotalCount(json.total_count || 0);
+    } else {
+      setItems((prev) => [...prev, ...newItems]);
     }
+
+    if (newItems.length < PAGE_SIZE) {
+      setHasMore(false);
+      setCursor(null);
+    } else {
+      setCursor(newItems[newItems.length - 1].published_at);
+    }
+
+    setLoading(false);
   }
 
-  /* ---------------------------------------------------------
-     RELOAD ON FILTER CHANGE
-  --------------------------------------------------------- */
+  /* ========================================================= */
+
   useEffect(() => {
     setItems([]);
     setCursor(null);
     setHasMore(true);
     loadBreves(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, [topic, newsType, company]);
 
-  /* ---------------------------------------------------------
-     SCROLL INFINI
-  --------------------------------------------------------- */
   useEffect(() => {
     function onScroll() {
       if (
@@ -171,12 +175,10 @@ export default function BrevesPage() {
   ========================================================= */
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
+    <div className="max-w-3xl mx-auto px-4 py-10 space-y-12">
 
-      {/* =====================================================
-          CONTEXTE
-      ===================================================== */}
-      <header className="mb-8 space-y-2">
+      {/* ================= CONTEXTE ================= */}
+      <header>
         <h1 className="text-xl font-semibold text-gray-900">
           {topic || newsType || company || "Marché AdTech / Retail Media"}
         </h1>
@@ -185,36 +187,75 @@ export default function BrevesPage() {
         </p>
       </header>
 
-      {/* =====================================================
-          TOP SOCIÉTÉS
-      ===================================================== */}
-      {topCompanies.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-sm font-semibold text-gray-700 mb-2">
-            Acteurs les plus actifs
+      {/* ================= TYPES ================= */}
+      {typesStats.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">
+            Types
           </h2>
 
-          <div className="flex flex-wrap gap-3">
-            {topCompanies.map((c) => (
-              <button
-                key={c.ID_COMPANY}
+          <div className="flex flex-wrap gap-4">
+            {typesStats.map((t) => (
+              <StatButton
+                key={t.news_type || "null"}
+                label={t.news_type || "Autre"}
+                count={t.total_count}
                 onClick={() =>
-                  router.push(`/breves?company=${c.ID_COMPANY}`)
+                  router.push(`/breves?news_type=${t.news_type}`)
                 }
-                className="text-sm text-gray-700 hover:underline"
-              >
-                {c.NAME} ({c.TOTAL})
-              </button>
+              />
             ))}
           </div>
         </section>
       )}
 
-      {/* =====================================================
-          SPONSORISATION
-      ===================================================== */}
+      {/* ================= TOPICS ================= */}
+      {topicsStats.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">
+            Thématiques
+          </h2>
+
+          <div className="flex flex-wrap gap-4">
+            {topicsStats.slice(0, 12).map((t) => (
+              <StatButton
+                key={t.id_topic}
+                label={t.label}
+                count={t.total_count}
+                onClick={() =>
+                  router.push(`/breves?topic=${t.id_topic}`)
+                }
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ================= ACTEURS ================= */}
+      {topCompanies.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">
+            Acteurs les plus actifs
+          </h2>
+
+          <div className="flex flex-wrap gap-4">
+            {topCompanies.map((c) => (
+              <StatButton
+                key={c.id_company}
+                label={c.name}
+                count={c.total_count}
+                onClick={() =>
+                  router.push(`/breves?company=${c.id_company}`)
+                }
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ================= SPONSORISÉS ================= */}
       {sponsorised.length > 0 && (
-        <section className="mb-10">
+        <section>
           <h2 className="text-sm font-semibold text-gray-700 mb-4">
             Visibilité partenaires
           </h2>
@@ -239,48 +280,12 @@ export default function BrevesPage() {
         </section>
       )}
 
-      {/* =====================================================
-          FLUX PRINCIPAL
-      ===================================================== */}
+      {/* ================= FLUX ================= */}
       <section className="space-y-8">
         {items.map((b) => (
           <article key={b.id} className="border-b pb-6">
             <div className="text-xs text-gray-400 mb-1">
               {new Date(b.published_at).toLocaleDateString("fr-FR")}
-            </div>
-
-            <div className="flex flex-wrap gap-2 mb-2">
-              <Badge
-                className="bg-gray-100 text-gray-700"
-                onClick={() =>
-                  router.push(`/breves?company=${b.company.id_company}`)
-                }
-              >
-                {b.company.name}
-              </Badge>
-
-              {b.news_type && (
-                <Badge
-                  className="bg-violet-100 text-violet-700"
-                  onClick={() =>
-                    router.push(`/breves?news_type=${b.news_type}`)
-                  }
-                >
-                  {b.news_type}
-                </Badge>
-              )}
-
-              {b.topics?.map((t) => (
-                <Badge
-                  key={t.id_topic}
-                  className="bg-green-100 text-green-700"
-                  onClick={() =>
-                    router.push(`/breves?topic=${t.id_topic}`)
-                  }
-                >
-                  {t.label}
-                </Badge>
-              ))}
             </div>
 
             <h2 className="text-base font-semibold text-gray-900">
@@ -298,12 +303,6 @@ export default function BrevesPage() {
         {loading && (
           <div className="text-center text-sm text-gray-400">
             Chargement…
-          </div>
-        )}
-
-        {!loading && items.length === 0 && (
-          <div className="text-center text-sm text-gray-400">
-            Aucun signal trouvé.
           </div>
         )}
       </section>
