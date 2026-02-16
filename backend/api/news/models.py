@@ -9,7 +9,7 @@ from datetime import datetime
 
 class NewsCreate(BaseModel):
     id_company: str
-    news_kind: str  # NEWS | BRIEF
+    news_kind: str  # "NEWS" | "BRIEF"
     news_type: Optional[str] = None
 
     title: str
@@ -60,7 +60,7 @@ class NewsPublish(BaseModel):
 
 
 # ============================================================
-# STRUCTURES SIMPLIFIÉES — PAGE BRÈVES
+# MINI STRUCTURES — PAGE SIGNaux / BRÈVES
 # ============================================================
 
 class CompanyMini(BaseModel):
@@ -70,13 +70,13 @@ class CompanyMini(BaseModel):
 
 
 class TopicMini(BaseModel):
-    id_topic: Optional[str] = None
+    id_topic: str
     label: str
     axis: Optional[str] = None
 
 
 # ============================================================
-# OUT — VERSION BRÈVE
+# OUT — VERSION LISTING BRÈVES
 # ============================================================
 
 class BreveOut(BaseModel):
@@ -91,7 +91,7 @@ class BreveOut(BaseModel):
 
 
 # ============================================================
-# STATS — PAGE BRÈVES
+# STATS — PAGE SIGNaux
 # ============================================================
 
 class BreveCompanyStat(BaseModel):
@@ -99,21 +99,27 @@ class BreveCompanyStat(BaseModel):
     name: str
     is_partner: bool
     total: int
+    last_7_days: int
+    last_30_days: int
 
 
 class BreveTopicStat(BaseModel):
     id_topic: str
     label: str
     total: int
+    last_7_days: int
+    last_30_days: int
 
 
 class BreveTypeStat(BaseModel):
     news_type: Optional[str] = None
     total: int
+    last_7_days: int
+    last_30_days: int
 
 
 # ============================================================
-# RESPONSE — PAGE BRÈVES
+# RESPONSE — PAGE SIGNaux
 # ============================================================
 
 class BrevesSearchResponse(BaseModel):
@@ -130,7 +136,7 @@ class BrevesSearchResponse(BaseModel):
 
 
 # ============================================================
-# NEWS TYPE (RÉFÉRENTIEL)
+# NEWS TYPE — RÉFÉRENTIEL
 # ============================================================
 
 class NewsTypeOut(BaseModel):
@@ -154,3 +160,4 @@ class NewsLinkedInPost(BaseModel):
 class NewsLinkedInPostResponse(BaseModel):
     text: Optional[str] = None
     mode: Optional[str] = None
+
