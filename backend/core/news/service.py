@@ -590,6 +590,40 @@ def search_breves_public(
         "top_companies": top_companies,
     }
 
+# ============================================================
+# LIST ALL COMPANIES — PUBLIC (FOR FILTER PANEL)
+# ============================================================
+
+def list_companies_public():
+    sql = f"""
+        SELECT
+            c.ID_COMPANY,
+            c.NAME,
+            c.IS_PARTNER,
+            COUNT(n.ID_NEWS) AS TOTAL_COUNT
+        FROM `{TABLE_NEWS}` n
+        JOIN `{TABLE_COMPANY}` c
+          ON n.ID_COMPANY = c.ID_COMPANY
+        WHERE
+            n.STATUS = 'PUBLISHED'
+            AND n.PUBLISHED_AT IS NOT NULL
+        GROUP BY c.ID_COMPANY, c.NAME, c.IS_PARTNER
+        ORDER BY TOTAL_COUNT DESC
+    """
+
+    rows = query_bq(sql)
+
+    return [
+        {
+            "id_company": r["ID_COMPANY"],
+            "name": r["NAME"],
+            "is_partner": bool(r["IS_PARTNER"]),
+            "total_count": r["TOTAL_COUNT"],
+        }
+        for r in rows
+    ]
+
+
 
 # ============================================================
 # LIST BRÈVES — PUBLIC (PAGINÉ / PAR ANNÉE)
