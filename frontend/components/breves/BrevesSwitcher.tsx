@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Period } from "@/components/breves/BrevesHeaderStats";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -38,16 +37,15 @@ type StatsResponse = {
 };
 
 type Mode = "actors" | "topics" | "types";
+type PeriodMode = "total" | "7d" | "30d";
 
-type Props = {
-  selectedPeriod: Period;
-};
-
-export default function BrevesSwitcher({ selectedPeriod }: Props) {
+export default function BrevesSwitcher() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const [mode, setMode] = useState<Mode>("actors");
+  const [period, setPeriod] = useState<PeriodMode>("7d");
+
   const [stats, setStats] = useState<StatsResponse>({
     top_companies: [],
     topics_stats: [],
@@ -70,8 +68,8 @@ export default function BrevesSwitcher({ selectedPeriod }: Props) {
   }, []);
 
   function periodValue(obj: any) {
-    if (selectedPeriod === "7d") return obj.last_7_days;
-    if (selectedPeriod === "30d") return obj.last_30_days;
+    if (period === "7d") return obj.last_7_days;
+    if (period === "30d") return obj.last_30_days;
     return obj.total;
   }
 
@@ -98,34 +96,52 @@ export default function BrevesSwitcher({ selectedPeriod }: Props) {
     return [...stats.top_companies].sort(
       (a, b) => periodValue(b) - periodValue(a)
     );
-  }, [stats, selectedPeriod]);
+  }, [stats, period]);
 
   const sortedTopics = useMemo(() => {
     return [...stats.topics_stats].sort(
       (a, b) => periodValue(b) - periodValue(a)
     );
-  }, [stats, selectedPeriod]);
+  }, [stats, period]);
 
   const sortedTypes = useMemo(() => {
     return [...stats.types_stats].sort(
       (a, b) => periodValue(b) - periodValue(a)
     );
-  }, [stats, selectedPeriod]);
+  }, [stats, period]);
 
   return (
     <section className="border-b border-gray-200 pb-6">
 
-      {/* MODE SWITCH */}
-      <div className="flex gap-8 text-xs uppercase tracking-wider mb-6">
-        <ModeButton active={mode === "actors"} onClick={() => setMode("actors")}>
-          Acteurs
-        </ModeButton>
-        <ModeButton active={mode === "topics"} onClick={() => setMode("topics")}>
-          Topics
-        </ModeButton>
-        <ModeButton active={mode === "types"} onClick={() => setMode("types")}>
-          Types
-        </ModeButton>
+      {/* TOP BAR */}
+      <div className="flex justify-between items-center mb-6">
+
+        {/* MODE SWITCH */}
+        <div className="flex gap-8 text-xs uppercase tracking-wider">
+          <ModeButton active={mode === "actors"} onClick={() => setMode("actors")}>
+            Acteurs
+          </ModeButton>
+          <ModeButton active={mode === "topics"} onClick={() => setMode("topics")}>
+            Topics
+          </ModeButton>
+          <ModeButton active={mode === "types"} onClick={() => setMode("types")}>
+            Types
+          </ModeButton>
+        </div>
+
+        {/* PERIOD SWITCH */}
+        <div className="flex gap-6 text-xs uppercase tracking-wider">
+          <PeriodButton active={period === "total"} onClick={() => setPeriod("total")}>
+            Total
+          </PeriodButton>
+          <PeriodButton active={period === "7d"} onClick={() => setPeriod("7d")}>
+            7j
+          </PeriodButton>
+          <PeriodButton active={period === "30d"} onClick={() => setPeriod("30d")}>
+            30j
+          </PeriodButton>
+        </div>
+
       </div>
 
       {/* CONTENT */}
@@ -143,8 +159,8 @@ export default function BrevesSwitcher({ selectedPeriod }: Props) {
                     : "border-gray-200 bg-gray-100 hover:bg-gray-200"
                 }`}
             >
-              {c.name}{" "}
-              <span className="ml-1 font-semibold">
+              {c.name}
+              <span className="ml-2 font-semibold">
                 {periodValue(c)}
               </span>
             </button>
@@ -157,8 +173,8 @@ export default function BrevesSwitcher({ selectedPeriod }: Props) {
               onClick={() => toggleFilter("topics", t.id_topic)}
               className="px-3 py-1 text-xs rounded-full border border-green-200 bg-green-50"
             >
-              {t.label}{" "}
-              <span className="ml-1 font-semibold">
+              {t.label}
+              <span className="ml-2 font-semibold">
                 {periodValue(t)}
               </span>
             </button>
@@ -170,14 +186,14 @@ export default function BrevesSwitcher({ selectedPeriod }: Props) {
             .slice(0, 15)
             .map((t) => (
               <button
-                key={t.news_type}
+                key={t.news_type!}
                 onClick={() =>
                   toggleFilter("news_types", t.news_type!)
                 }
                 className="px-3 py-1 text-xs rounded-full border border-violet-200 bg-violet-50"
               >
-                {t.news_type}{" "}
-                <span className="ml-1 font-semibold">
+                {t.news_type}
+                <span className="ml-2 font-semibold">
                   {periodValue(t)}
                 </span>
               </button>
@@ -190,6 +206,29 @@ export default function BrevesSwitcher({ selectedPeriod }: Props) {
 }
 
 function ModeButton({
+  children,
+  active,
+  onClick,
+}: {
+  children: React.ReactNode;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`transition ${
+        active
+          ? "text-black font-semibold"
+          : "text-gray-400 hover:text-black"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function PeriodButton({
   children,
   active,
   onClick,
