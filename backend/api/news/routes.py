@@ -164,19 +164,19 @@ def search_breves_route(
         raise HTTPException(400, str(e))
 
 # ============================================================
-# SIGNAUX STATS — FILTRES UNIQUEMENT
+# STATS BRÈVES — FILTRES UNIQUEMENT
 # ============================================================
 
-@router.get("/signaux/stats", response_model=BrevesStatsResponse)
-def signaux_stats_route():
+@router.get("/breves/stats", response_model=BrevesStatsResponse)
+def breves_stats_route():
     try:
-        data = get_breves_stats_public()  # ← nouveau service dédié
-
+        data = get_breves_stats_public()
         return data
 
     except Exception as e:
-        logger.exception("Erreur stats signaux")
+        logger.exception("Erreur stats brèves")
         raise HTTPException(400, str(e))
+
 
 
 
