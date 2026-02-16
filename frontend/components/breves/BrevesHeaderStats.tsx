@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Period } from "@/app/breves/page";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -12,15 +11,14 @@ type StatsResponse = {
   last_30_days: number;
 };
 
-export default function BrevesHeaderStats({
-  selectedPeriod,
-  onChangePeriod,
-}: {
-  selectedPeriod: Period;
-  onChangePeriod: (p: Period) => void;
-}) {
-  const [stats, setStats] =
-    useState<StatsResponse | null>(null);
+export default function BrevesHeaderStats() {
+  const [stats, setStats] = useState<StatsResponse>({
+    total_count: 0,
+    last_7_days: 0,
+    last_30_days: 0,
+  });
+
+  const [mode, setMode] = useState<"total" | "7d" | "30d">("7d");
 
   useEffect(() => {
     async function load() {
@@ -28,24 +26,25 @@ export default function BrevesHeaderStats({
         `${API_BASE}/news/breves/stats`,
         { cache: "no-store" }
       );
+
       if (!res.ok) return;
+
       const json = await res.json();
       setStats(json);
     }
+
     load();
   }, []);
 
-  if (!stats) return null;
-
-  const mainValue =
-    selectedPeriod === "total"
+  const value =
+    mode === "total"
       ? stats.total_count
-      : selectedPeriod === "7d"
+      : mode === "7d"
       ? stats.last_7_days
       : stats.last_30_days;
 
   return (
-    <section className="border-b pb-6">
+    <section className="border-b pb-8">
 
       <div className="flex justify-between items-end">
 
@@ -53,64 +52,41 @@ export default function BrevesHeaderStats({
           <h1 className="text-3xl font-semibold tracking-tight">
             Signaux marché
           </h1>
-
-          <div className="flex gap-6 mt-4 text-xs uppercase tracking-wider">
-
-            <SwapButton
-              label="Total"
-              active={selectedPeriod === "total"}
-              onClick={() =>
-                onChangePeriod("total")
-              }
-            />
-
-            <SwapButton
-              label="7 jours"
-              active={selectedPeriod === "7d"}
-              onClick={() =>
-                onChangePeriod("7d")
-              }
-            />
-
-            <SwapButton
-              label="30 jours"
-              active={selectedPeriod === "30d"}
-              onClick={() =>
-                onChangePeriod("30d")
-              }
-            />
-
-          </div>
+          <p className="text-sm text-gray-500 mt-2">
+            Lecture structurée des mouvements du secteur
+          </p>
         </div>
 
-        <div className="text-5xl font-serif tracking-tight">
-          {mainValue}
+        {/* SWITCH */}
+        <div className="flex gap-6 text-xs uppercase tracking-wider">
+          <button
+            onClick={() => setMode("total")}
+            className={mode === "total" ? "underline" : ""}
+          >
+            Total
+          </button>
+
+          <button
+            onClick={() => setMode("7d")}
+            className={mode === "7d" ? "underline" : ""}
+          >
+            7 jours
+          </button>
+
+          <button
+            onClick={() => setMode("30d")}
+            className={mode === "30d" ? "underline" : ""}
+          >
+            30 jours
+          </button>
         </div>
 
       </div>
-    </section>
-  );
-}
 
-function SwapButton({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`pb-1 border-b ${
-        active
-          ? "border-black text-black"
-          : "border-transparent text-gray-400"
-      }`}
-    >
-      {label}
-    </button>
+      <div className="mt-6 text-4xl font-serif">
+        {value}
+      </div>
+
+    </section>
   );
 }
