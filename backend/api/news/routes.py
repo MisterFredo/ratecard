@@ -137,26 +137,27 @@ def list_companies_route():
 
 @router.get("/breves/search", response_model=BrevesSearchResponse)
 def search_breves_route(
-    topics: Optional[List[str]] = Query(None),
-    news_types: Optional[List[str]] = Query(None),
-    companies: Optional[List[str]] = Query(None),
+    topics: Optional[List[str]] = Query(default=None),
+    news_types: Optional[List[str]] = Query(default=None),
+    companies: Optional[List[str]] = Query(default=None),
     limit: int = Query(20, ge=1, le=50),
     cursor: Optional[str] = None,
 ):
     try:
         data = search_breves_public(
-            topic=topic,
-            news_type=news_type,
-            company=company,
+            topics=topics,
+            news_types=news_types,
+            companies=companies,
             limit=limit,
             cursor=cursor,
         )
 
         return data
 
-    except Exception:
+    except Exception as e:
         logger.exception("Erreur search brèves")
-        raise HTTPException(400, "Erreur recherche brèves")
+        raise HTTPException(400, str(e))
+
 
 
 # ============================================================
