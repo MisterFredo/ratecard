@@ -20,7 +20,7 @@ type BreveItem = {
   excerpt?: string;
   published_at: string;
   news_type?: string;
-  news_kind?: string; // 🔑 AJOUT
+  news_kind?: string;
   company: {
     id_company: string;
     name: string;
@@ -155,34 +155,50 @@ export default function BrevesFeed() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-4">
-            {sponsorised.map((b) => (
-              <article key={b.id} className="space-y-1.5">
+            {sponsorised.map((b) => {
+              const isOpen = openItems.includes(b.id);
 
-                <div className="text-[11px] text-gray-400">
-                  {new Date(b.published_at).toLocaleDateString("fr-FR")}
-                </div>
+              return (
+                <article key={b.id} className="space-y-1.5">
 
-                <div
-                  className={`text-[11px] uppercase tracking-wide ${
-                    b.company.is_partner
-                      ? "text-emerald-600"
-                      : "text-gray-500"
-                  }`}
-                >
-                  {b.company.name}
-                </div>
+                  <div className="text-[11px] text-gray-400">
+                    {new Date(b.published_at).toLocaleDateString("fr-FR")}
+                  </div>
 
-                <h3 className="text-sm font-medium leading-snug">
-                  {b.title}
-                </h3>
+                  <div className="text-[11px] uppercase tracking-wide text-gray-500">
+                    {b.company.name}
+                  </div>
 
-                {b.excerpt && (
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    {b.excerpt}
-                  </p>
-                )}
-              </article>
-            ))}
+                  <h3
+                    onClick={() => toggleItem(b.id)}
+                    className="text-sm font-medium leading-snug cursor-pointer hover:text-black transition"
+                  >
+                    {b.title}
+                  </h3>
+
+                  {isOpen && b.excerpt && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        {b.excerpt}
+                      </p>
+
+                      {b.news_kind === "NEWS" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openRightDrawer("news", b.id, "silent");
+                          }}
+                          className="text-[11px] font-medium text-gray-400 hover:text-gray-900 transition"
+                        >
+                          Voir le détail →
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                </article>
+              );
+            })}
           </div>
         </div>
       )}
@@ -220,37 +236,19 @@ export default function BrevesFeed() {
                   onClick={() =>
                     updateFilters("companies", b.company.id_company)
                   }
-                  className={`text-xs font-medium transition ${
-                    b.company.is_partner
-                      ? "text-emerald-600 hover:text-emerald-700"
-                      : "text-gray-700 hover:text-black"
-                  }`}
+                  className="text-xs font-medium text-gray-700 hover:text-black transition"
                 >
                   {b.company.name}
                 </button>
               </div>
 
-              {/* TITLE + ACTION */}
-              <div className="flex items-start justify-between gap-4">
-                <h2
-                  onClick={() => toggleItem(b.id)}
-                  className="text-[15px] font-medium leading-snug cursor-pointer hover:text-gray-900 transition"
-                >
-                  {b.title}
-                </h2>
-
-                {b.news_kind === "NEWS" && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openRightDrawer("news", b.id, "silent");
-                    }}
-                    className="text-xs text-gray-400 hover:text-black transition whitespace-nowrap"
-                  >
-                    Voir détail →
-                  </button>
-                )}
-              </div>
+              {/* TITLE */}
+              <h2
+                onClick={() => toggleItem(b.id)}
+                className="text-[15px] font-medium leading-snug cursor-pointer hover:text-gray-900 transition"
+              >
+                {b.title}
+              </h2>
 
               {/* TAGS */}
               {b.topics && b.topics.length > 0 && (
@@ -271,10 +269,27 @@ export default function BrevesFeed() {
 
               {/* EXCERPT */}
               {isOpen && b.excerpt && (
-                <p className="mt-2 text-sm text-gray-600 leading-relaxed max-w-3xl">
-                  {b.excerpt}
-                </p>
+                <div className="mt-2 space-y-2 max-w-3xl">
+
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    {b.excerpt}
+                  </p>
+
+                  {b.news_kind === "NEWS" && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openRightDrawer("news", b.id, "silent");
+                      }}
+                      className="text-[11px] font-medium text-gray-400 hover:text-gray-900 transition"
+                    >
+                      Voir le détail →
+                    </button>
+                  )}
+
+                </div>
               )}
+
             </article>
           );
         })}
