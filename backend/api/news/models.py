@@ -87,6 +87,7 @@ class BreveOut(BaseModel):
     excerpt: Optional[str] = None
     published_at: datetime
     news_type: Optional[str] = None
+    news_kind: Optional[str] = None  # 🔥 AJOUT ICI
 
     company: CompanyMini
     topics: List[TopicMini] = Field(default_factory=list)
