@@ -136,8 +136,8 @@ def list_companies_route():
 # SEARCH SIGNAUX — FLUX UNIQUEMENT
 # ============================================================
 
-@router.get("/signaux/search", response_model=BrevesSearchResponse)
-def search_signaux_route(
+@router.get("/breves/search", response_model=BrevesSearchResponse)
+def search_breves_route(
     topics: Optional[List[str]] = Query(default=None),
     news_types: Optional[List[str]] = Query(default=None),
     companies: Optional[List[str]] = Query(default=None),
