@@ -262,45 +262,69 @@ def list_news_types():
 # UPDATE NEWS / BRÈVE
 # ============================================================
 def update_news(id_news: str, data: NewsUpdate):
-    fields = {
-        # ✅ STRUCTURE
-        "NEWS_KIND": data.news_kind,
 
-        # ✅ CATÉGORIE RÉDACTIONNELLE
-        "NEWS_TYPE": data.news_type,
+    fields = {}
 
-        # CONTENU
-        "TITLE": data.title,
-        "EXCERPT": data.excerpt,
-        "BODY": data.body,
+    # -------------------------
+    # STRUCTURE
+    # -------------------------
+    if data.news_kind is not None:
+        fields["NEWS_KIND"] = data.news_kind
 
-        # VISUEL
-        "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
-        "HAS_VISUAL": (
-            bool(data.media_rectangle_id)
-            if data.media_rectangle_id is not None
-            else None
-        ),
+    if data.news_type is not None:
+        fields["NEWS_TYPE"] = data.news_type
 
-        # META
-        "SOURCE_URL": data.source_url,
-        "AUTHOR": data.author,
+    if data.id_company is not None:
+        fields["ID_COMPANY"] = data.id_company
 
-        "UPDATED_AT": datetime.utcnow(),
-    }
+    # -------------------------
+    # CONTENU
+    # -------------------------
+    if data.title is not None:
+        fields["TITLE"] = data.title
 
-    update_bq(
-        table=TABLE_NEWS,
-        fields={k: v for k, v in fields.items() if v is not None},
-        where={"ID_NEWS": id_news},
-    )
+    if data.excerpt is not None:
+        fields["EXCERPT"] = data.excerpt
 
-    # relations (inchangées)
+    if data.body is not None:
+        fields["BODY"] = data.body
+
+    # -------------------------
+    # VISUEL
+    # -------------------------
+    if data.media_rectangle_id is not None:
+        fields["MEDIA_RECTANGLE_ID"] = data.media_rectangle_id
+        fields["HAS_VISUAL"] = bool(data.media_rectangle_id)
+
+    # -------------------------
+    # META
+    # -------------------------
+    if data.source_url is not None:
+        fields["SOURCE_URL"] = data.source_url
+
+    if data.author is not None:
+        fields["AUTHOR"] = data.author
+
+    fields["UPDATED_AT"] = datetime.utcnow()
+
+    # -------------------------
+    # UPDATE SQL
+    # -------------------------
+    if fields:
+        update_bq(
+            table=TABLE_NEWS,
+            fields=fields,
+            where={"ID_NEWS": id_news},
+        )
+
+    # -------------------------
+    # RELATIONS — uniquement si envoyées
+    # -------------------------
     client = get_bigquery_client()
 
-    for table in (TABLE_NEWS_TOPIC, TABLE_NEWS_PERSON):
+    if data.topics is not None:
         client.query(
-            f"DELETE FROM `{table}` WHERE ID_NEWS = @id",
+            f"DELETE FROM `{TABLE_NEWS_TOPIC}` WHERE ID_NEWS = @id",
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
                     bigquery.ScalarQueryParameter("id", "STRING", id_news)
@@ -308,19 +332,30 @@ def update_news(id_news: str, data: NewsUpdate):
             ),
         ).result()
 
-    if data.topics:
-        insert_bq(
-            TABLE_NEWS_TOPIC,
-            [{"ID_NEWS": id_news, "ID_TOPIC": tid} for tid in data.topics],
-        )
+        if data.topics:
+            insert_bq(
+                TABLE_NEWS_TOPIC,
+                [{"ID_NEWS": id_news, "ID_TOPIC": tid} for tid in data.topics],
+            )
 
-    if data.persons:
-        insert_bq(
-            TABLE_NEWS_PERSON,
-            [{"ID_NEWS": id_news, "ID_PERSON": pid} for pid in data.persons],
-        )
+    if data.persons is not None:
+        client.query(
+            f"DELETE FROM `{TABLE_NEWS_PERSON}` WHERE ID_NEWS = @id",
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("id", "STRING", id_news)
+                ]
+            ),
+        ).result()
+
+        if data.persons:
+            insert_bq(
+                TABLE_NEWS_PERSON,
+                [{"ID_NEWS": id_news, "ID_PERSON": pid} for pid in data.persons],
+            )
 
     return True
+
 
 
 # ============================================================
