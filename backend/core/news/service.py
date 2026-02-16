@@ -443,6 +443,13 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
 # SEARCH BRÈVES — PUBLIC (MOTEUR STRUCTURÉ)
 # ============================================================
 
+from typing import Optional, List
+from utils.bigquery_utils import query_bq
+
+
+DATASET = "adex-5555.RATECARD_PROD"
+
+
 def search_breves_public(
     topics: Optional[List[str]] = None,
     news_types: Optional[List[str]] = None,
@@ -451,9 +458,9 @@ def search_breves_public(
     cursor: Optional[str] = None,
 ):
     """
-    Version clean basée sur vues matérialisées.
-    Multi-filtres.
-    Compatible models v2.
+    Moteur principal page Signaux / Brèves.
+    Basé exclusivement sur vues matérialisées.
+    Multi-filtres AND.
     """
 
     # =====================================================
@@ -488,7 +495,7 @@ def search_breves_public(
         where_clauses.append("ID_COMPANY IN UNNEST(@companies)")
         params["companies"] = companies
 
-    # CURSOR
+    # CURSOR PAGINATION
     if cursor:
         where_clauses.append("PUBLISHED_AT < @cursor")
         params["cursor"] = cursor
@@ -496,12 +503,12 @@ def search_breves_public(
     where_sql = " AND ".join(where_clauses)
 
     # =====================================================
-    # ITEMS
+    # 1️⃣ ITEMS
     # =====================================================
 
     sql_items = f"""
         SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_ENRICHED`
+        FROM `{DATASET}.V_NEWS_ENRICHED`
         WHERE {where_sql}
         ORDER BY PUBLISHED_AT DESC
         LIMIT @limit
@@ -509,30 +516,29 @@ def search_breves_public(
 
     rows = query_bq(sql_items, params)
 
-    items = [
-        {
+    items = []
+    for r in rows:
+        items.append({
             "id": r["ID_NEWS"],
             "title": r["TITLE"],
-            "excerpt": r["EXCERPT"],
+            "excerpt": r.get("EXCERPT"),
             "published_at": r["PUBLISHED_AT"],
-            "news_type": r["NEWS_TYPE"],
+            "news_type": r.get("NEWS_TYPE"),
             "company": {
                 "id_company": r["ID_COMPANY"],
                 "name": r["COMPANY_NAME"],
                 "is_partner": bool(r["IS_PARTNER"]),
             },
             "topics": r.get("TOPICS", []),
-        }
-        for r in rows
-    ]
+        })
 
     # =====================================================
-    # SPONSORISED
+    # 2️⃣ SPONSORISED
     # =====================================================
 
     sql_sponsorised = f"""
         SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_ENRICHED`
+        FROM `{DATASET}.V_NEWS_ENRICHED`
         WHERE {where_sql}
           AND IS_PARTNER = TRUE
         ORDER BY PUBLISHED_AT DESC
@@ -541,52 +547,51 @@ def search_breves_public(
 
     sponsor_rows = query_bq(sql_sponsorised, params)
 
-    sponsorised = [
-        {
+    sponsorised = []
+    for r in sponsor_rows:
+        sponsorised.append({
             "id": r["ID_NEWS"],
             "title": r["TITLE"],
-            "excerpt": r["EXCERPT"],
+            "excerpt": r.get("EXCERPT"),
             "published_at": r["PUBLISHED_AT"],
-            "news_type": r["NEWS_TYPE"],
+            "news_type": r.get("NEWS_TYPE"),
             "company": {
                 "id_company": r["ID_COMPANY"],
                 "name": r["COMPANY_NAME"],
                 "is_partner": True,
             },
             "topics": r.get("TOPICS", []),
-        }
-        for r in sponsor_rows
-    ]
+        })
 
     # =====================================================
-    # GLOBAL STATS (filtrées !)
+    # 3️⃣ GLOBAL STATS
     # =====================================================
 
-    sql_global = f"""
-        SELECT
-            COUNT(*) AS TOTAL,
-            COUNTIF(PUBLISHED_AT >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)) AS LAST_7_DAYS,
-            COUNTIF(PUBLISHED_AT >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)) AS LAST_30_DAYS
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_ENRICHED`
-        WHERE {where_sql}
-    """
+    global_rows = query_bq(
+        f"SELECT * FROM `{DATASET}.V_NEWS_STATS_GLOBAL`"
+    )
 
-    global_rows = query_bq(sql_global, params)
-    global_stats = global_rows[0] if global_rows else {}
+    global_stats = global_rows[0] if global_rows else {
+        "TOTAL": 0,
+        "LAST_7_DAYS": 0,
+        "LAST_30_DAYS": 0,
+    }
 
     # =====================================================
-    # TYPES STATS
+    # 4️⃣ TYPES STATS
     # =====================================================
 
-    types_rows = query_bq("""
+    types_rows = query_bq(
+        f"""
         SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE`
+        FROM `{DATASET}.V_NEWS_STATS_TYPE`
         ORDER BY TOTAL DESC
-    """)
+        """
+    )
 
     types_stats = [
         {
-            "news_type": r["NEWS_TYPE"],
+            "news_type": r.get("NEWS_TYPE"),
             "total": r["TOTAL"],
             "last_7_days": r["LAST_7_DAYS"],
             "last_30_days": r["LAST_30_DAYS"],
@@ -595,19 +600,21 @@ def search_breves_public(
     ]
 
     # =====================================================
-    # TOPICS STATS
+    # 5️⃣ TOPICS STATS
     # =====================================================
 
-    topics_rows = query_bq("""
+    topics_rows = query_bq(
+        f"""
         SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TOPIC`
+        FROM `{DATASET}.V_NEWS_STATS_TOPIC`
         ORDER BY TOTAL DESC
-    """)
+        """
+    )
 
     topics_stats = [
         {
-            "id_topic": r["id_topic"],  # ⚠️ minuscule d'après ta sortie
-            "label": r["label"],
+            "id_topic": r["ID_TOPIC"],
+            "label": r["LABEL"],
             "total": r["TOTAL"],
             "last_7_days": r["LAST_7_DAYS"],
             "last_30_days": r["LAST_30_DAYS"],
@@ -616,19 +623,21 @@ def search_breves_public(
     ]
 
     # =====================================================
-    # COMPANY STATS
+    # 6️⃣ COMPANY STATS
     # =====================================================
 
-    company_rows = query_bq("""
+    company_rows = query_bq(
+        f"""
         SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_COMPANY`
+        FROM `{DATASET}.V_NEWS_STATS_COMPANY`
         ORDER BY TOTAL DESC
-    """)
+        """
+    )
 
     top_companies = [
         {
             "id_company": r["ID_COMPANY"],
-            "name": r["NAME"],
+            "name": r["COMPANY_NAME"],
             "is_partner": bool(r["IS_PARTNER"]),
             "total": r["TOTAL"],
             "last_7_days": r["LAST_7_DAYS"],
@@ -638,7 +647,7 @@ def search_breves_public(
     ]
 
     # =====================================================
-    # RETURN
+    # RETURN FINAL
     # =====================================================
 
     return {
