@@ -6,6 +6,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
+/* ===============================
+   TYPES
+================================ */
+
 type CompanyStat = {
   id_company: string;
   name: string;
@@ -15,26 +19,58 @@ type CompanyStat = {
   last_30_days: number;
 };
 
+type TopicStat = {
+  id_topic: string;
+  label: string;
+  total: number;
+  last_7_days: number;
+  last_30_days: number;
+};
+
+type TypeStat = {
+  news_type: string;
+  total: number;
+  last_7_days: number;
+  last_30_days: number;
+};
+
 type StatsResponse = {
   top_companies: CompanyStat[];
+  top_topics: TopicStat[];
+  top_types: TypeStat[];
 };
+
+/* ===============================
+   COMPONENT
+================================ */
 
 export default function BrevesFilters() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [companies, setCompanies] = useState<CompanyStat[]>([]);
   const [mode, setMode] = useState<
     "total" | "last_7_days" | "last_30_days"
   >("last_7_days");
 
-  const [open, setOpen] = useState(false);
+  const [axis, setAxis] = useState<
+    "companies" | "topics" | "types"
+  >("companies");
+
+  const [stats, setStats] = useState<StatsResponse>({
+    top_companies: [],
+    top_topics: [],
+    top_types: [],
+  });
+
+  const [openOthers, setOpenOthers] = useState(false);
 
   const selectedCompanies = searchParams.getAll("companies");
+  const selectedTopics = searchParams.getAll("topics");
+  const selectedTypes = searchParams.getAll("news_types");
 
-  /* =========================================================
-     FETCH STATS
-  ========================================================= */
+  /* ===============================
+     FETCH
+  ================================ */
 
   useEffect(() => {
     async function load() {
@@ -42,56 +78,35 @@ export default function BrevesFilters() {
         `${API_BASE}/news/breves/stats`,
         { cache: "no-store" }
       );
-
       if (!res.ok) return;
-
-      const json: StatsResponse = await res.json();
-      setCompanies(json.top_companies || []);
+      const json = await res.json();
+      setStats(json);
     }
-
     load();
   }, []);
 
-  /* =========================================================
-     SPLIT MEMBERS / OTHERS
-  ========================================================= */
+  /* ===============================
+     HELPERS
+  ================================ */
 
-  const members = useMemo(
-    () => companies.filter((c) => c.is_partner),
-    [companies]
-  );
-
-  const others = useMemo(() => {
-    const list = companies.filter((c) => !c.is_partner);
-
-    return [...list].sort(
-      (a, b) => (b as any)[mode] - (a as any)[mode]
-    );
-  }, [companies, mode]);
-
-  /* =========================================================
-     TOGGLE FILTER
-  ========================================================= */
-
-  function toggleCompany(id: string) {
+  function toggleFilter(
+    key: "companies" | "topics" | "news_types",
+    value: string
+  ) {
     const params = new URLSearchParams(searchParams.toString());
-    const current = params.getAll("companies");
+    const current = params.getAll(key);
 
-    if (current.includes(id)) {
-      params.delete("companies");
+    if (current.includes(value)) {
+      params.delete(key);
       current
-        .filter((c) => c !== id)
-        .forEach((c) => params.append("companies", c));
+        .filter((c) => c !== value)
+        .forEach((c) => params.append(key, c));
     } else {
-      params.append("companies", id);
+      params.append(key, value);
     }
 
     router.push(`/breves?${params.toString()}`);
   }
-
-  /* =========================================================
-     UI HELPERS
-  ========================================================= */
 
   function SwitchButton({
     value,
@@ -117,103 +132,190 @@ export default function BrevesFilters() {
     );
   }
 
-  /* =========================================================
+  /* ===============================
+     DERIVED DATA
+  ================================ */
+
+  const sortedCompanies = useMemo(() => {
+    return [...stats.top_companies].sort(
+      (a, b) => (b as any)[mode] - (a as any)[mode]
+    );
+  }, [stats.top_companies, mode]);
+
+  const sortedTopics = useMemo(() => {
+    return [...stats.top_topics].sort(
+      (a, b) => (b as any)[mode] - (a as any)[mode]
+    );
+  }, [stats.top_topics, mode]);
+
+  const sortedTypes = useMemo(() => {
+    return [...stats.top_types].sort(
+      (a, b) => (b as any)[mode] - (a as any)[mode]
+    );
+  }, [stats.top_types, mode]);
+
+  const members = sortedCompanies.filter((c) => c.is_partner);
+  const others = sortedCompanies.filter((c) => !c.is_partner);
+
+  /* ===============================
      RENDER
-  ========================================================= */
+  ================================ */
 
   return (
-    <section className="border-b pb-10 mb-10">
+    <section className="border-b border-gray-200 pb-6 mb-6 space-y-6">
 
-      {/* HEADER BAR */}
-      <div className="flex justify-between items-center mb-6">
+      {/* AXIS SWITCH */}
+      <div className="flex justify-between items-center">
 
-        <h2 className="text-sm font-medium tracking-wide text-gray-700">
-          Acteurs
-        </h2>
+        <div className="flex gap-8 text-sm font-medium">
+          {["companies", "topics", "types"].map((a) => (
+            <button
+              key={a}
+              onClick={() => setAxis(a as any)}
+              className={`transition ${
+                axis === a
+                  ? "text-black"
+                  : "text-gray-400 hover:text-black"
+              }`}
+            >
+              {a === "companies"
+                ? "Acteurs"
+                : a === "topics"
+                ? "Thématiques"
+                : "Types"}
+            </button>
+          ))}
+        </div>
 
         <div className="flex gap-6">
           <SwitchButton value="total" label="Total" />
           <SwitchButton value="last_7_days" label="7j" />
           <SwitchButton value="last_30_days" label="30j" />
         </div>
+
       </div>
 
-      {/* MEMBERS */}
-      {members.length > 0 && (
-        <div className="mb-6">
+      {/* ================= ACTEURS ================= */}
+      {axis === "companies" && (
+        <div className="space-y-5">
 
-          <h3 className="text-xs uppercase tracking-wider text-gray-400 mb-3">
-            Actualités membres
-          </h3>
-
-          <div className="flex flex-wrap gap-3">
-            {members.map((c) => {
-              const active = selectedCompanies.includes(
-                c.id_company
-              );
-
-              return (
-                <button
-                  key={c.id_company}
-                  onClick={() => toggleCompany(c.id_company)}
-                  className={`px-3 py-1.5 text-xs rounded-full transition
-                    ${
-                      active
-                        ? "bg-black text-white"
-                        : "bg-gray-100 hover:bg-gray-200"
+          {members.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {members.map((c) => {
+                const active = selectedCompanies.includes(
+                  c.id_company
+                );
+                return (
+                  <button
+                    key={c.id_company}
+                    onClick={() =>
+                      toggleFilter("companies", c.id_company)
                     }
-                  `}
-                >
-                  {c.name}{" "}
-                  <span className="font-serif ml-1">
-                    {(c as any)[mode]}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                    className={`px-3 py-1 text-xs rounded-full transition
+                      ${
+                        active
+                          ? "bg-green-600 text-white"
+                          : "bg-green-100 text-green-700"
+                      }`}
+                  >
+                    {c.name} {(c as any)[mode]}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <button
+            onClick={() => setOpenOthers(!openOthers)}
+            className="text-xs uppercase tracking-wider text-gray-400 hover:text-black"
+          >
+            {openOthers
+              ? "Masquer autres acteurs"
+              : "Afficher autres acteurs"}
+          </button>
+
+          {openOthers && (
+            <div className="grid md:grid-cols-3 gap-3 text-sm">
+              {others.map((c) => {
+                const active = selectedCompanies.includes(
+                  c.id_company
+                );
+                return (
+                  <button
+                    key={c.id_company}
+                    onClick={() =>
+                      toggleFilter("companies", c.id_company)
+                    }
+                    className={`flex justify-between border-b pb-1 transition
+                      ${
+                        active
+                          ? "text-black font-semibold"
+                          : "text-gray-600 hover:text-black"
+                      }`}
+                  >
+                    <span>{c.name}</span>
+                    <span>{(c as any)[mode]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
-      {/* OTHERS ACCORDION */}
-      <div>
+      {/* ================= TOPICS ================= */}
+      {axis === "topics" && (
+        <div className="flex flex-wrap gap-2">
+          {sortedTopics.slice(0, 20).map((t) => {
+            const active = selectedTopics.includes(
+              t.id_topic
+            );
+            return (
+              <button
+                key={t.id_topic}
+                onClick={() =>
+                  toggleFilter("topics", t.id_topic)
+                }
+                className={`px-3 py-1 text-xs rounded-full transition
+                  ${
+                    active
+                      ? "bg-black text-white"
+                      : "bg-gray-100 hover:bg-gray-200"
+                  }`}
+              >
+                {t.label} {(t as any)[mode]}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
-        <button
-          onClick={() => setOpen(!open)}
-          className="text-xs uppercase tracking-wider text-gray-500 hover:text-black transition"
-        >
-          {open ? "Masquer autres acteurs" : "Afficher autres acteurs"}
-        </button>
-
-        {open && (
-          <div className="mt-6 grid md:grid-cols-2 gap-x-12 gap-y-3 text-sm">
-            {others.map((c) => {
-              const active = selectedCompanies.includes(
-                c.id_company
-              );
-
-              return (
-                <button
-                  key={c.id_company}
-                  onClick={() => toggleCompany(c.id_company)}
-                  className={`flex justify-between border-b pb-2 transition
-                    ${
-                      active
-                        ? "text-black font-semibold"
-                        : "text-gray-600 hover:text-black"
-                    }
-                  `}
-                >
-                  <span>{c.name}</span>
-                  <span className="font-serif">
-                    {(c as any)[mode]}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      {/* ================= TYPES ================= */}
+      {axis === "types" && (
+        <div className="flex flex-wrap gap-2">
+          {sortedTypes.map((t) => {
+            const active = selectedTypes.includes(
+              t.news_type
+            );
+            return (
+              <button
+                key={t.news_type}
+                onClick={() =>
+                  toggleFilter("news_types", t.news_type)
+                }
+                className={`px-3 py-1 text-xs rounded-full transition
+                  ${
+                    active
+                      ? "bg-violet-600 text-white"
+                      : "bg-violet-100 text-violet-700"
+                  }`}
+              >
+                {t.news_type} {(t as any)[mode]}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
     </section>
   );
