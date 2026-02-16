@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List
 from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
