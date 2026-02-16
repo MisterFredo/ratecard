@@ -105,10 +105,7 @@ export default function BrevesFeed() {
     setLoading(false);
   }
 
-  /* ===============================
-     RESET ON FILTER CHANGE
-  =============================== */
-
+  /* RESET ON FILTER CHANGE */
   useEffect(() => {
     setItems([]);
     setCursor(null);
@@ -117,10 +114,7 @@ export default function BrevesFeed() {
     // eslint-disable-next-line
   }, [searchParams.toString()]);
 
-  /* ===============================
-     INFINITE SCROLL (REAL ONE)
-  =============================== */
-
+  /* INFINITE SCROLL */
   useEffect(() => {
     if (!observerRef.current) return;
 
@@ -147,41 +141,38 @@ export default function BrevesFeed() {
   }
 
   return (
-    <section className="space-y-10">
+    <section className="space-y-8">
 
       {/* ============================= */}
-      {/* SPONSORISED */}
+      {/* ACTUALITÉS MEMBRES */}
       {/* ============================= */}
       {sponsorised.length > 0 && (
-        <div className="border border-green-200 bg-green-50/40 p-6 rounded-md">
+        <div className="border border-gray-200 p-5 rounded-md">
 
-          <div className="text-xs uppercase tracking-widest text-green-700 mb-4">
+          <div className="text-xs uppercase tracking-wide text-gray-500 mb-4">
             Actualités membres
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-5">
             {sponsorised.map((b) => (
               <article key={b.id} className="space-y-2">
 
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-400">
                   {new Date(b.published_at).toLocaleDateString("fr-FR")}
                 </div>
 
-                <h3 className="font-semibold leading-snug text-sm">
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">
+                  {b.company.name}
+                </div>
+
+                <h3 className="text-sm font-medium leading-snug">
                   {b.title}
                 </h3>
 
-                {b.topics?.length && (
-                  <div className="flex flex-wrap gap-1">
-                    {b.topics.map((t) => (
-                      <span
-                        key={t.id_topic}
-                        className="text-[10px] bg-green-100 text-green-700 px-2 py-[2px] rounded"
-                      >
-                        {t.label}
-                      </span>
-                    ))}
-                  </div>
+                {b.excerpt && (
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    {b.excerpt}
+                  </p>
                 )}
 
               </article>
@@ -193,13 +184,16 @@ export default function BrevesFeed() {
       {/* ============================= */}
       {/* MAIN FEED */}
       {/* ============================= */}
-      <div className="border-t border-gray-200 pt-6 space-y-8">
+      <div className="border-t border-gray-200 pt-6 space-y-6">
 
         {items.map((b) => {
           const isOpen = openItems.includes(b.id);
 
           return (
-            <article key={b.id} className="border-b border-gray-100 pb-6">
+            <article
+              key={b.id}
+              className="border-b border-gray-100 pb-5"
+            >
 
               {/* META */}
               <div className="flex justify-between text-[11px] text-gray-400 mb-2">
@@ -208,62 +202,50 @@ export default function BrevesFeed() {
                 </span>
 
                 {b.news_type && (
-                  <span className="uppercase tracking-wider text-gray-500">
+                  <span className="uppercase tracking-wide text-gray-500">
                     {b.news_type}
                   </span>
                 )}
               </div>
 
-              {/* TAGS */}
-              <div className="flex flex-wrap gap-2 mb-3">
-
+              {/* COMPANY */}
+              <div className="mb-1">
                 <button
                   onClick={() =>
                     updateFilters("companies", b.company.id_company)
                   }
-                  className={`text-[11px] px-2 py-1 rounded transition
-                    ${
-                      b.company.is_partner
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
+                  className="text-xs font-medium text-gray-700 hover:text-black transition"
                 >
                   {b.company.name}
                 </button>
-
-                {b.news_type && (
-                  <button
-                    onClick={() =>
-                      updateFilters("news_types", b.news_type!)
-                    }
-                    className="text-[11px] px-2 py-1 bg-violet-100 text-violet-700 rounded"
-                  >
-                    {b.news_type}
-                  </button>
-                )}
-
-                {b.topics?.map((t) => (
-                  <button
-                    key={t.id_topic}
-                    onClick={() =>
-                      updateFilters("topics", t.id_topic)
-                    }
-                    className="text-[11px] px-2 py-1 bg-green-100 text-green-700 rounded"
-                  >
-                    {t.label}
-                  </button>
-                ))}
               </div>
 
               {/* TITLE */}
               <h2
                 onClick={() => toggleItem(b.id)}
-                className="text-lg font-semibold leading-snug cursor-pointer hover:text-green-700 transition"
+                className="text-base font-medium leading-snug cursor-pointer hover:text-black transition"
               >
                 {b.title}
               </h2>
 
-              {/* EXCERPT */}
+              {/* TAGS */}
+              {b.topics && b.topics.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {b.topics.map((t) => (
+                    <button
+                      key={t.id_topic}
+                      onClick={() =>
+                        updateFilters("topics", t.id_topic)
+                      }
+                      className="text-[11px] px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition"
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* EXCERPT (toggle) */}
               {isOpen && b.excerpt && (
                 <p className="mt-3 text-sm text-gray-600 leading-relaxed max-w-3xl">
                   {b.excerpt}
@@ -279,11 +261,8 @@ export default function BrevesFeed() {
           </div>
         )}
 
-        {/* Observer target */}
         {hasMore && <div ref={observerRef} className="h-6" />}
-
       </div>
     </section>
   );
 }
-
