@@ -443,6 +443,9 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
 # SEARCH BRÈVES — PUBLIC (MOTEUR STRUCTURÉ)
 # ============================================================
 
+from typing import Optional, List
+
+
 def search_breves_public(
     topics: Optional[List[str]] = None,
     news_types: Optional[List[str]] = None,
@@ -453,6 +456,7 @@ def search_breves_public(
     """
     Version clean basée sur vues matérialisées.
     Aucune jointure dynamique.
+    Multi-select AND logique.
     """
 
     # =====================================================
@@ -460,22 +464,44 @@ def search_breves_public(
     # =====================================================
 
     params = {"limit": limit}
-    where_clauses = ["STATUS = 'PUBLISHED'"]
+    where_clauses = [
+        "STATUS = 'PUBLISHED'",
+        "PUBLISHED_AT IS NOT NULL",
+        "PUBLISHED_AT <= CURRENT_TIMESTAMP()",
+    ]
 
-    if topic:
+    # -------------------------
+    # MULTI TOPICS
+    # -------------------------
+    if topics:
         where_clauses.append(
-            "EXISTS (SELECT 1 FROM UNNEST(TOPICS) t WHERE t.id_topic = @topic)"
+            """
+            EXISTS (
+                SELECT 1
+                FROM UNNEST(TOPICS) t
+                WHERE t.id_topic IN UNNEST(@topics)
+            )
+            """
         )
-        params["topic"] = topic
+        params["topics"] = topics
 
-    if news_type:
-        where_clauses.append("NEWS_TYPE = @news_type")
-        params["news_type"] = news_type
+    # -------------------------
+    # MULTI TYPES
+    # -------------------------
+    if news_types:
+        where_clauses.append("NEWS_TYPE IN UNNEST(@news_types)")
+        params["news_types"] = news_types
 
-    if company:
-        where_clauses.append("ID_COMPANY = @company")
-        params["company"] = company
+    # -------------------------
+    # MULTI COMPANIES
+    # -------------------------
+    if companies:
+        where_clauses.append("ID_COMPANY IN UNNEST(@companies)")
+        params["companies"] = companies
 
+    # -------------------------
+    # CURSOR
+    # -------------------------
     if cursor:
         where_clauses.append("PUBLISHED_AT < @cursor")
         params["cursor"] = cursor
@@ -496,9 +522,8 @@ def search_breves_public(
 
     rows = query_bq(sql_items, params)
 
-    items = []
-    for r in rows:
-        items.append({
+    items = [
+        {
             "id": r["ID_NEWS"],
             "title": r["TITLE"],
             "excerpt": r["EXCERPT"],
@@ -510,10 +535,12 @@ def search_breves_public(
                 "is_partner": bool(r["IS_PARTNER"]),
             },
             "topics": r["TOPICS"] or [],
-        })
+        }
+        for r in rows
+    ]
 
     # =====================================================
-    # 2️⃣ SPONSORISED
+    # 2️⃣ SPONSORISED (FILTRÉS)
     # =====================================================
 
     sql_sponsorised = f"""
@@ -527,9 +554,8 @@ def search_breves_public(
 
     sponsor_rows = query_bq(sql_sponsorised, params)
 
-    sponsorised = []
-    for r in sponsor_rows:
-        sponsorised.append({
+    sponsorised = [
+        {
             "id": r["ID_NEWS"],
             "title": r["TITLE"],
             "excerpt": r["EXCERPT"],
@@ -541,42 +567,90 @@ def search_breves_public(
                 "is_partner": True,
             },
             "topics": r["TOPICS"] or [],
-        })
+        }
+        for r in sponsor_rows
+    ]
 
     # =====================================================
     # 3️⃣ GLOBAL STATS
     # =====================================================
 
-    global_stats = query_bq(
+    global_rows = query_bq(
         "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_GLOBAL`"
-    )[0]
+    )
+
+    global_stats = global_rows[0] if global_rows else {
+        "TOTAL": 0,
+        "LAST_7_DAYS": 0,
+        "LAST_30_DAYS": 0,
+    }
 
     # =====================================================
     # 4️⃣ TYPES STATS
     # =====================================================
 
-    types_stats = query_bq(
-        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE` ORDER BY TOTAL DESC"
+    types_rows = query_bq(
+        """
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE`
+        ORDER BY TOTAL DESC
+        """
     )
+
+    types_stats = [
+        {
+            "news_type": r["NEWS_TYPE"],
+            "total_count": r["TOTAL"],
+        }
+        for r in types_rows
+    ]
 
     # =====================================================
     # 5️⃣ TOPICS STATS
     # =====================================================
 
-    topics_stats = query_bq(
-        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TOPIC` ORDER BY TOTAL DESC"
+    topics_rows = query_bq(
+        """
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TOPIC`
+        ORDER BY TOTAL DESC
+        """
     )
 
+    topics_stats = [
+        {
+            "id_topic": r["ID_TOPIC"],
+            "label": r["LABEL"],
+            "total_count": r["TOTAL"],
+        }
+        for r in topics_rows
+    ]
+
     # =====================================================
-    # 6️⃣ COMPANY STATS
+    # 6️⃣ TOP COMPANIES
     # =====================================================
 
-    top_companies = query_bq(
-        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_COMPANY` LIMIT 20"
+    companies_rows = query_bq(
+        """
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_COMPANY`
+        ORDER BY TOTAL DESC
+        LIMIT 20
+        """
     )
 
+    top_companies = [
+        {
+            "id_company": r["ID_COMPANY"],
+            "name": r["NAME"],
+            "is_partner": bool(r["IS_PARTNER"]),
+            "total_count": r["TOTAL"],
+        }
+        for r in companies_rows
+    ]
+
     # =====================================================
-    # RETURN CLEAN
+    # RETURN STRUCTURÉ
     # =====================================================
 
     return {
@@ -589,6 +663,7 @@ def search_breves_public(
         "types_stats": types_stats,
         "top_companies": top_companies,
     }
+
 
 # ============================================================
 # LIST ALL COMPANIES — PUBLIC (FOR FILTER PANEL)
