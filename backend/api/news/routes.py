@@ -8,6 +8,7 @@ from api.news.models import (
     NewsPublish,
     NewsLinkedInPostResponse,
     BrevesSearchResponse,
+    BrevesStatsResponse,
 )
 
 from core.news.service import (
