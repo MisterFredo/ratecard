@@ -1,3 +1,5 @@
+# backend/api/news/models.py
+
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
@@ -60,7 +62,7 @@ class NewsPublish(BaseModel):
 
 
 # ============================================================
-# MINI STRUCTURES — PAGE SIGNaux / BRÈVES
+# MINI STRUCTURES — PAGE SIGNAUX
 # ============================================================
 
 class CompanyMini(BaseModel):
@@ -76,7 +78,7 @@ class TopicMini(BaseModel):
 
 
 # ============================================================
-# OUT — VERSION LISTING BRÈVES
+# OUT — VERSION LISTING (FLUX UNIQUEMENT)
 # ============================================================
 
 class BreveOut(BaseModel):
@@ -91,7 +93,7 @@ class BreveOut(BaseModel):
 
 
 # ============================================================
-# STATS — PAGE SIGNaux
+# STATS — PAGE SIGNAUX
 # ============================================================
 
 class BreveCompanyStat(BaseModel):
@@ -118,18 +120,24 @@ class BreveTypeStat(BaseModel):
     last_30_days: int
 
 
-
 # ============================================================
-# RESPONSE — PAGE SIGNaux
+# RESPONSE — SEARCH (FLUX UNIQUEMENT)
 # ============================================================
 
 class BrevesSearchResponse(BaseModel):
     total_count: int
-    last_7_days: int
-    last_30_days: int
-
     sponsorised: List[BreveOut] = Field(default_factory=list)
     items: List[BreveOut] = Field(default_factory=list)
+
+
+# ============================================================
+# RESPONSE — STATS (FILTRES UNIQUEMENT)
+# ============================================================
+
+class BrevesStatsResponse(BaseModel):
+    total_count: int
+    last_7_days: int
+    last_30_days: int
 
     topics_stats: List[BreveTopicStat] = Field(default_factory=list)
     types_stats: List[BreveTypeStat] = Field(default_factory=list)
@@ -161,4 +169,3 @@ class NewsLinkedInPost(BaseModel):
 class NewsLinkedInPostResponse(BaseModel):
     text: Optional[str] = None
     mode: Optional[str] = None
-
