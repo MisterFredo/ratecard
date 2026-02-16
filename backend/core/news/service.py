@@ -444,9 +444,9 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
 # ============================================================
 
 def search_breves_public(
-    topics: Optional[List[str]] = Query(None),
-    news_types: Optional[List[str]] = Query(None),
-    companies: Optional[List[str]] = Query(None),
+    topics: Optional[List[str]] = None,
+    news_types: Optional[List[str]] = None,
+    companies: Optional[List[str]] = None,
     limit: int = 20,
     cursor: Optional[str] = None,
 ):
