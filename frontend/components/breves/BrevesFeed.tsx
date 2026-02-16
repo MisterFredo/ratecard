@@ -174,7 +174,7 @@ export default function BrevesFeed() {
                 </h3>
 
                 {b.excerpt && (
-                  <p className="text-xs text-gray-600 leading-relaxed line-clamp-4">
+                  <p className="text-xs text-gray-600 leading-relaxed">
                     {b.excerpt}
                   </p>
                 )}
