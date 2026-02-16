@@ -581,10 +581,10 @@ def search_breves_public(
 
     types_stats = [
         {
-            "news_type": r["NEWS_TYPE"],
-            "total": r["TOTAL"],
-            "last_7_days": r["LAST_7_DAYS"],
-            "last_30_days": r["LAST_30_DAYS"],
+            "news_type": r.get("NEWS_TYPE"),
+            "total": r.get("TOTAL", 0),
+            "last_7_days": r.get("LAST_7_DAYS", 0),
+            "last_30_days": r.get("LAST_30_DAYS", 0),
         }
         for r in types_rows
     ]
@@ -604,9 +604,11 @@ def search_breves_public(
 
     topics_stats = [
         {
-            "id_topic": r["id_topic"],
-            "label": r["label"],
-            "total": r["total"],
+            "id_topic": r.get("ID_TOPIC"),
+            "label": r.get("LABEL"),
+            "total": r.get("TOTAL", 0),
+            "last_7_days": r.get("LAST_7_DAYS", 0),
+            "last_30_days": r.get("LAST_30_DAYS", 0),
         }
         for r in topics_rows
     ]
@@ -625,15 +627,16 @@ def search_breves_public(
 
     top_companies = [
         {
-            "id_company": r["id_company"],
-            "name": r["name"],
-            "is_partner": bool(r["is_partner"]),
-            "total": r["total"],
-            "last_7_days": r["last_7_days"],
-            "last_30_days": r["last_30_days"],
+            "id_company": r.get("ID_COMPANY"),
+            "name": r.get("NAME"),
+            "is_partner": bool(r.get("IS_PARTNER")),
+            "total": r.get("TOTAL", 0),
+            "last_7_days": r.get("LAST_7_DAYS", 0),
+            "last_30_days": r.get("LAST_30_DAYS", 0),
         }
         for r in company_rows
     ]
+
 
     # =====================================================
     # RETURN FINAL
