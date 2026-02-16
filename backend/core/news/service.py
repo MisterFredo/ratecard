@@ -440,6 +440,267 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
     return status
 
 # ============================================================
+# SEARCH BRÈVES — PUBLIC (MOTEUR STRUCTURÉ)
+# ============================================================
+
+def search_breves_public(
+    topic: Optional[str] = None,
+    news_type: Optional[str] = None,
+    company: Optional[str] = None,
+    limit: int = 20,
+    cursor: Optional[str] = None,
+):
+    """
+    Moteur principal de la page Brèves :
+    - Filtres AND
+    - Pas de filtre date
+    - Sponsorisation filtrée
+    - Stats dynamiques
+    """
+
+    params = {"limit": limit}
+    where_clauses = [
+        "n.STATUS = 'PUBLISHED'",
+        "n.PUBLISHED_AT IS NOT NULL",
+        "n.PUBLISHED_AT <= CURRENT_TIMESTAMP()",
+    ]
+
+    # ---------------------------
+    # FILTRES
+    # ---------------------------
+
+    if topic:
+        where_clauses.append("NT.ID_TOPIC = @topic")
+        params["topic"] = topic
+
+    if news_type:
+        where_clauses.append("n.NEWS_TYPE = @news_type")
+        params["news_type"] = news_type
+
+    if company:
+        where_clauses.append("n.ID_COMPANY = @company")
+        params["company"] = company
+
+    if cursor:
+        where_clauses.append("n.PUBLISHED_AT < @cursor")
+        params["cursor"] = cursor
+
+    where_sql = " AND ".join(where_clauses)
+
+    # =========================================================
+    # 1️⃣ FLUX PRINCIPAL
+    # =========================================================
+
+    sql_items = f"""
+        SELECT
+            n.ID_NEWS,
+            n.TITLE,
+            n.EXCERPT,
+            n.PUBLISHED_AT,
+            n.NEWS_TYPE,
+
+            c.ID_COMPANY,
+            c.NAME AS COMPANY_NAME,
+            c.IS_PARTNER,
+
+            ARRAY_AGG(
+                STRUCT(
+                    t.ID_TOPIC AS id_topic,
+                    t.LABEL AS label,
+                    t.TOPIC_AXIS AS axis
+                )
+            ) AS TOPICS
+
+        FROM `{TABLE_NEWS}` n
+        JOIN `{TABLE_COMPANY}` c
+          ON n.ID_COMPANY = c.ID_COMPANY
+
+        LEFT JOIN `{TABLE_NEWS_TOPIC}` NT
+          ON n.ID_NEWS = NT.ID_NEWS
+        LEFT JOIN `{TABLE_TOPIC}` t
+          ON NT.ID_TOPIC = t.ID_TOPIC
+
+        WHERE {where_sql}
+
+        GROUP BY
+            n.ID_NEWS,
+            n.TITLE,
+            n.EXCERPT,
+            n.PUBLISHED_AT,
+            n.NEWS_TYPE,
+            c.ID_COMPANY,
+            c.NAME,
+            c.IS_PARTNER
+
+        ORDER BY n.PUBLISHED_AT DESC
+        LIMIT @limit
+    """
+
+    items_rows = query_bq(sql_items, params)
+
+    items = [
+        {
+            "id": r["ID_NEWS"],
+            "title": r["TITLE"],
+            "excerpt": r["EXCERPT"],
+            "published_at": r["PUBLISHED_AT"],
+            "news_type": r["NEWS_TYPE"],
+            "company": {
+                "id_company": r["ID_COMPANY"],
+                "name": r["COMPANY_NAME"],
+                "is_partner": bool(r["IS_PARTNER"]),
+            },
+            "topics": r["TOPICS"] or [],
+        }
+        for r in items_rows
+    ]
+
+    # =========================================================
+    # 2️⃣ TOTAL COUNT
+    # =========================================================
+
+    sql_count = f"""
+        SELECT COUNT(DISTINCT n.ID_NEWS) AS TOTAL
+        FROM `{TABLE_NEWS}` n
+        LEFT JOIN `{TABLE_NEWS_TOPIC}` NT
+          ON n.ID_NEWS = NT.ID_NEWS
+        WHERE {where_sql}
+    """
+
+    count_rows = query_bq(sql_count, params)
+    total_count = count_rows[0]["TOTAL"] if count_rows else 0
+
+    # =========================================================
+    # 3️⃣ SPONSORISÉS (FILTRÉS)
+    # =========================================================
+
+    sql_sponsorised = f"""
+        SELECT
+            n.ID_NEWS,
+            n.TITLE,
+            n.EXCERPT,
+            n.PUBLISHED_AT,
+            n.NEWS_TYPE,
+            c.ID_COMPANY,
+            c.NAME AS COMPANY_NAME
+
+        FROM `{TABLE_NEWS}` n
+        JOIN `{TABLE_COMPANY}` c
+          ON n.ID_COMPANY = c.ID_COMPANY
+        LEFT JOIN `{TABLE_NEWS_TOPIC}` NT
+          ON n.ID_NEWS = NT.ID_NEWS
+
+        WHERE {where_sql}
+          AND c.IS_PARTNER = TRUE
+
+        GROUP BY
+            n.ID_NEWS,
+            n.TITLE,
+            n.EXCERPT,
+            n.PUBLISHED_AT,
+            n.NEWS_TYPE,
+            c.ID_COMPANY,
+            c.NAME
+
+        ORDER BY n.PUBLISHED_AT DESC
+        LIMIT 3
+    """
+
+    sponsor_rows = query_bq(sql_sponsorised, params)
+
+    sponsorised = [
+        {
+            "id": r["ID_NEWS"],
+            "title": r["TITLE"],
+            "excerpt": r["EXCERPT"],
+            "published_at": r["PUBLISHED_AT"],
+            "news_type": r["NEWS_TYPE"],
+            "company": {
+                "id_company": r["ID_COMPANY"],
+                "name": r["COMPANY_NAME"],
+                "is_partner": True,
+            },
+        }
+        for r in sponsor_rows
+    ]
+
+    # =========================================================
+    # 4️⃣ STATS TOPICS (DYNAMIQUES)
+    # =========================================================
+
+    sql_topics = f"""
+        SELECT
+            t.ID_TOPIC,
+            t.LABEL,
+            COUNT(DISTINCT n.ID_NEWS) AS TOTAL
+        FROM `{TABLE_NEWS}` n
+        JOIN `{TABLE_NEWS_TOPIC}` NT
+          ON n.ID_NEWS = NT.ID_NEWS
+        JOIN `{TABLE_TOPIC}` t
+          ON NT.ID_TOPIC = t.ID_TOPIC
+        WHERE {where_sql}
+        GROUP BY t.ID_TOPIC, t.LABEL
+        ORDER BY TOTAL DESC
+    """
+
+    topics_stats = query_bq(sql_topics, params)
+
+    # =========================================================
+    # 5️⃣ STATS TYPES (DYNAMIQUES)
+    # =========================================================
+
+    sql_types = f"""
+        SELECT
+            n.NEWS_TYPE,
+            COUNT(*) AS TOTAL
+        FROM `{TABLE_NEWS}` n
+        LEFT JOIN `{TABLE_NEWS_TOPIC}` NT
+          ON n.ID_NEWS = NT.ID_NEWS
+        WHERE {where_sql}
+        GROUP BY n.NEWS_TYPE
+        ORDER BY TOTAL DESC
+    """
+
+    types_stats = query_bq(sql_types, params)
+
+    # =========================================================
+    # 6️⃣ TOP COMPANIES (GLOBAL)
+    # =========================================================
+
+    sql_top_companies = f"""
+        SELECT
+            c.ID_COMPANY,
+            c.NAME,
+            c.IS_PARTNER,
+            COUNT(n.ID_NEWS) AS TOTAL
+        FROM `{TABLE_NEWS}` n
+        JOIN `{TABLE_COMPANY}` c
+          ON n.ID_COMPANY = c.ID_COMPANY
+        WHERE
+            n.STATUS = 'PUBLISHED'
+            AND n.PUBLISHED_AT IS NOT NULL
+        GROUP BY c.ID_COMPANY, c.NAME, c.IS_PARTNER
+        ORDER BY TOTAL DESC
+        LIMIT 5
+    """
+
+    top_companies = query_bq(sql_top_companies)
+
+    # =========================================================
+    # RETURN STRUCTURÉ
+    # =========================================================
+
+    return {
+        "total_count": total_count,
+        "items": items,
+        "sponsorised": sponsorised,
+        "topics_stats": topics_stats,
+        "types_stats": types_stats,
+        "top_companies": top_companies,
+    }
+
+
+# ============================================================
 # LIST BRÈVES — PUBLIC (PAGINÉ / PAR ANNÉE)
 # ============================================================
 def list_breves_public(
