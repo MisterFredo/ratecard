@@ -122,6 +122,44 @@ class NewsOut(BaseModel):
     class Config:
         extra = "ignore"
 
+# ============================================================
+# BRÈVES — PAGE SEARCH RESPONSE
+# ============================================================
+
+class BreveCompanyStat(BaseModel):
+    id_company: str
+    name: str
+    is_partner: bool
+    total_count: int
+
+
+class BreveTopicStat(BaseModel):
+    code: str
+    label: str
+    total_count: int
+
+
+class BreveTypeStat(BaseModel):
+    code: str
+    label: str
+    total_count: int
+
+
+class BrevesSearchResponse(BaseModel):
+    total_count: int
+
+    # Sponsorisation filtrée
+    sponsorised: List[NewsOut] = []
+
+    # Flux principal
+    items: List[NewsOut] = []
+
+    # Statistiques pour affichage
+    topics_stats: List[BreveTopicStat] = []
+    types_stats: List[BreveTypeStat] = []
+    top_companies: List[BreveCompanyStat] = []
+
+
 
 # ============================================================
 # NEWS TYPE (RÉFÉRENTIEL GOUVERNÉ)
