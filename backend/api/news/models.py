@@ -6,41 +6,20 @@ from datetime import datetime
 # ============================================================
 # CREATE NEWS / BRÈVE
 # ============================================================
+
 class NewsCreate(BaseModel):
-    # --------------------------------------------------------
-    # SOCIÉTÉ
-    # --------------------------------------------------------
     id_company: str
-
-    # --------------------------------------------------------
-    # STRUCTURE ÉDITORIALE (FORMAT)
-    # --------------------------------------------------------
-    # NEWS | BRIEF
-    news_kind: str
-
-    # --------------------------------------------------------
-    # CATÉGORIE RÉDACTIONNELLE (GOUVERNÉE BQ)
-    # ex: CORPORATE, PARTENAIRE, EVENT, etc.
-    # --------------------------------------------------------
+    news_kind: str  # NEWS | BRIEF
     news_type: Optional[str] = None
 
-    # --------------------------------------------------------
-    # CONTENU
-    # --------------------------------------------------------
     title: str
     excerpt: Optional[str] = None
     body: Optional[str] = None
 
-    # --------------------------------------------------------
-    # VISUEL / META
-    # --------------------------------------------------------
     media_rectangle_id: Optional[str] = None
     source_url: Optional[str] = None
     author: Optional[str] = None
 
-    # --------------------------------------------------------
-    # ENRICHISSEMENTS (IDs UNIQUEMENT)
-    # --------------------------------------------------------
     topics: List[str] = Field(default_factory=list)
     persons: List[str] = Field(default_factory=list)
 
@@ -51,35 +30,20 @@ class NewsCreate(BaseModel):
 # ============================================================
 # UPDATE NEWS / BRÈVE
 # ============================================================
-class NewsUpdate(BaseModel):
-    # --------------------------------------------------------
-    # SOCIÉTÉ
-    # --------------------------------------------------------
-    id_company: Optional[str] = None
 
-    # --------------------------------------------------------
-    # STRUCTURE
-    # --------------------------------------------------------
+class NewsUpdate(BaseModel):
+    id_company: Optional[str] = None
     news_kind: Optional[str] = None
     news_type: Optional[str] = None
 
-    # --------------------------------------------------------
-    # CONTENU
-    # --------------------------------------------------------
     title: Optional[str] = None
     excerpt: Optional[str] = None
     body: Optional[str] = None
 
-    # --------------------------------------------------------
-    # VISUEL / META
-    # --------------------------------------------------------
     media_rectangle_id: Optional[str] = None
     source_url: Optional[str] = None
     author: Optional[str] = None
 
-    # --------------------------------------------------------
-    # RELATIONS
-    # --------------------------------------------------------
     topics: Optional[List[str]] = None
     persons: Optional[List[str]] = None
 
@@ -87,43 +51,47 @@ class NewsUpdate(BaseModel):
         extra = "ignore"
 
 
-
 # ============================================================
 # PUBLISH
 # ============================================================
+
 class NewsPublish(BaseModel):
     publish_at: Optional[str] = None
 
 
 # ============================================================
-# OUT — NEWS / BRÈVE (ADMIN / API)
+# STRUCTURES SIMPLIFIÉES POUR PAGE BRÈVES
 # ============================================================
-class NewsOut(BaseModel):
-    id_news: str
-    status: str
 
-    # STRUCTURE
-    news_kind: Optional[str]
-    news_type: Optional[str]
+class CompanyMini(BaseModel):
+    id_company: str
+    name: str
+    is_partner: bool
 
-    # CONTENU
+
+class TopicMini(BaseModel):
+    id_topic: Optional[str] = None
+    label: str
+    axis: Optional[str] = None
+
+
+# ============================================================
+# OUT — VERSION BRÈVE (MOTEUR)
+# ============================================================
+
+class BreveOut(BaseModel):
+    id: str
     title: str
     excerpt: Optional[str]
-    body: Optional[str]
+    published_at: datetime
+    news_type: Optional[str]
 
-    # PUBLICATION
-    published_at: Optional[datetime]
+    company: CompanyMini
+    topics: List[TopicMini] = Field(default_factory=list)
 
-    # RELATIONS
-    company: dict
-    topics: List[dict] = Field(default_factory=list)
-    persons: List[dict] = Field(default_factory=list)
-
-    class Config:
-        extra = "ignore"
 
 # ============================================================
-# BRÈVES — PAGE SEARCH RESPONSE
+# STATS — PAGE BRÈVES
 # ============================================================
 
 class BreveCompanyStat(BaseModel):
@@ -134,36 +102,35 @@ class BreveCompanyStat(BaseModel):
 
 
 class BreveTopicStat(BaseModel):
-    code: str
+    id_topic: str
     label: str
     total_count: int
 
 
 class BreveTypeStat(BaseModel):
-    code: str
-    label: str
+    news_type: Optional[str]
     total_count: int
 
+
+# ============================================================
+# RESPONSE — PAGE BRÈVES
+# ============================================================
 
 class BrevesSearchResponse(BaseModel):
     total_count: int
 
-    # Sponsorisation filtrée
-    sponsorised: List[NewsOut] = []
+    sponsorised: List[BreveOut] = Field(default_factory=list)
+    items: List[BreveOut] = Field(default_factory=list)
 
-    # Flux principal
-    items: List[NewsOut] = []
-
-    # Statistiques pour affichage
-    topics_stats: List[BreveTopicStat] = []
-    types_stats: List[BreveTypeStat] = []
-    top_companies: List[BreveCompanyStat] = []
-
+    topics_stats: List[BreveTopicStat] = Field(default_factory=list)
+    types_stats: List[BreveTypeStat] = Field(default_factory=list)
+    top_companies: List[BreveCompanyStat] = Field(default_factory=list)
 
 
 # ============================================================
-# NEWS TYPE (RÉFÉRENTIEL GOUVERNÉ)
+# NEWS TYPE (RÉFÉRENTIEL)
 # ============================================================
+
 class NewsTypeOut(BaseModel):
     code: str
     label: str
@@ -176,9 +143,10 @@ class NewsTypeListResponse(BaseModel):
 # ============================================================
 # LINKEDIN
 # ============================================================
+
 class NewsLinkedInPost(BaseModel):
     text: str
-    mode: str  # "manual" | "ai"
+    mode: str
 
 
 class NewsLinkedInPostResponse(BaseModel):
