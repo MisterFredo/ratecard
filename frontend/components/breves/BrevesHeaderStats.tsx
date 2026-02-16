@@ -5,28 +5,22 @@ import { useEffect, useState } from "react";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-export type Period = "total" | "7d" | "30d";
-
 type StatsResponse = {
   total_count: number;
   last_7_days: number;
   last_30_days: number;
 };
 
-type Props = {
-  selectedPeriod: Period;
-  onChangePeriod: (p: Period) => void;
-};
+type Mode = "total" | "7d" | "30d";
 
-export default function BrevesHeaderStats({
-  selectedPeriod,
-  onChangePeriod,
-}: Props) {
+export default function BrevesHeaderStats() {
   const [stats, setStats] = useState<StatsResponse>({
     total_count: 0,
     last_7_days: 0,
     last_30_days: 0,
   });
+
+  const [mode, setMode] = useState<Mode>("7d");
 
   useEffect(() => {
     async function load() {
@@ -54,22 +48,22 @@ export default function BrevesHeaderStats({
           <StatItem
             label="Total"
             value={stats.total_count}
-            active={selectedPeriod === "total"}
-            onClick={() => onChangePeriod("total")}
+            active={mode === "total"}
+            onClick={() => setMode("total")}
           />
 
           <StatItem
             label="7J"
             value={stats.last_7_days}
-            active={selectedPeriod === "7d"}
-            onClick={() => onChangePeriod("7d")}
+            active={mode === "7d"}
+            onClick={() => setMode("7d")}
           />
 
           <StatItem
             label="30J"
             value={stats.last_30_days}
-            active={selectedPeriod === "30d"}
-            onClick={() => onChangePeriod("30d")}
+            active={mode === "30d"}
+            onClick={() => setMode("30d")}
           />
 
         </div>
