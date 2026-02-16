@@ -35,37 +35,69 @@ export default function BrevesLiveBar() {
   }, []);
 
   return (
-    <div className="border-b bg-neutral-50">
-      <div className="max-w-6xl mx-auto px-8 py-3 flex justify-between text-xs tracking-wide text-gray-600">
+    <div className="border-b border-gray-200 bg-white">
+      <div className="max-w-6xl mx-auto px-8 py-2 flex items-center justify-between text-[11px] tracking-wide text-gray-500">
 
-        <div className="flex gap-8">
-          <span>
-            TOTAL&nbsp;
-            <strong className="text-black">
-              {stats.total_count}
-            </strong>
-          </span>
+        {/* LEFT — LIVE METRICS */}
+        <div className="flex items-center gap-6">
 
-          <span>
-            7J&nbsp;
-            <strong className="text-black">
-              {stats.last_7_days}
-            </strong>
-          </span>
+          <LiveMetric
+            label="Total"
+            value={stats.total_count}
+          />
 
-          <span>
-            30J&nbsp;
-            <strong className="text-black">
-              {stats.last_30_days}
-            </strong>
-          </span>
+          <LiveMetric
+            label="7j"
+            value={stats.last_7_days}
+            highlight
+          />
+
+          <LiveMetric
+            label="30j"
+            value={stats.last_30_days}
+          />
+
         </div>
 
-        <div className="text-gray-400">
-          Market monitoring · Ratecard
+        {/* RIGHT — SIGNATURE */}
+        <div className="flex items-center gap-2 text-gray-400">
+
+          <span className="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse" />
+
+          <span className="uppercase tracking-widest">
+            Live monitoring
+          </span>
+
         </div>
 
       </div>
     </div>
+  );
+}
+
+/* ========================= */
+
+function LiveMetric({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: number;
+  highlight?: boolean;
+}) {
+  return (
+    <span className="flex items-center gap-2">
+      <span className="uppercase text-gray-400">
+        {label}
+      </span>
+      <strong
+        className={`font-medium ${
+          highlight ? "text-green-700" : "text-black"
+        }`}
+      >
+        {value}
+      </strong>
+    </span>
   );
 }
