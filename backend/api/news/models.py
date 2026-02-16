@@ -60,7 +60,7 @@ class NewsPublish(BaseModel):
 
 
 # ============================================================
-# STRUCTURES SIMPLIFIÉES POUR PAGE BRÈVES
+# STRUCTURES SIMPLIFIÉES — PAGE BRÈVES
 # ============================================================
 
 class CompanyMini(BaseModel):
@@ -76,17 +76,19 @@ class TopicMini(BaseModel):
 
 
 # ============================================================
-# OUT — VERSION BRÈVE (MOTEUR)
+# OUT — VERSION BRÈVE
 # ============================================================
 
 class BreveOut(BaseModel):
     id: str
     title: str
-    excerpt: Optional[str]
+    excerpt: Optional[str] = None
     published_at: datetime
-    news_type: Optional[str]
+    news_type: Optional[str] = None
+
     company: CompanyMini
-    topics: List[TopicMini]
+    topics: List[TopicMini] = Field(default_factory=list)
+
 
 # ============================================================
 # STATS — PAGE BRÈVES
@@ -96,18 +98,18 @@ class BreveCompanyStat(BaseModel):
     id_company: str
     name: str
     is_partner: bool
-    total_count: int
+    total: int
 
 
 class BreveTopicStat(BaseModel):
     id_topic: str
     label: str
-    total_count: int
+    total: int
 
 
 class BreveTypeStat(BaseModel):
-    news_type: Optional[str]
-    total_count: int
+    news_type: Optional[str] = None
+    total: int
 
 
 # ============================================================
@@ -116,6 +118,8 @@ class BreveTypeStat(BaseModel):
 
 class BrevesSearchResponse(BaseModel):
     total_count: int
+    last_7_days: int
+    last_30_days: int
 
     sponsorised: List[BreveOut] = Field(default_factory=list)
     items: List[BreveOut] = Field(default_factory=list)
@@ -144,7 +148,7 @@ class NewsTypeListResponse(BaseModel):
 
 class NewsLinkedInPost(BaseModel):
     text: str
-    mode: str
+    mode: str  # "manual" | "ai"
 
 
 class NewsLinkedInPostResponse(BaseModel):
