@@ -1,14 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 /* =========================================================
    TYPES
 ========================================================= */
 
 type Topic = {
+  id_topic: string;
   label: string;
   axis?: string;
+};
+
+type Company = {
+  id_company: string;
+  name: string;
+  is_partner?: boolean;
 };
 
 type BreveItem = {
@@ -16,10 +24,16 @@ type BreveItem = {
   title: string;
   excerpt?: string | null;
   published_at: string;
-
-  company?: string;
   news_type?: string | null;
+  company: Company;
   topics?: Topic[];
+};
+
+type CompanyStat = {
+  ID_COMPANY: string;
+  NAME: string;
+  IS_PARTNER: boolean;
+  TOTAL: number;
 };
 
 /* =========================================================
@@ -30,7 +44,6 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 const PAGE_SIZE = 20;
-const YEARS = [2022, 2023, 2024, 2025, 2026];
 
 /* =========================================================
    BADGE
@@ -39,13 +52,16 @@ const YEARS = [2022, 2023, 2024, 2025, 2026];
 function Badge({
   children,
   className,
+  onClick,
 }: {
   children: React.ReactNode;
   className: string;
+  onClick?: () => void;
 }) {
   return (
     <span
-      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${className}`}
+      onClick={onClick}
+      className={`inline-block px-2 py-0.5 rounded text-xs font-medium cursor-pointer ${className}`}
     >
       {children}
     </span>
@@ -53,14 +69,23 @@ function Badge({
 }
 
 /* =========================================================
-   PAGE — BRÈVES
+   PAGE — BRÈVES (MOTEUR)
 ========================================================= */
 
 export default function BrevesPage() {
-  const [year, setYear] = useState<number>(2025);
-  const [items, setItems] = useState<BreveItem[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
+  const topic = searchParams.get("topic");
+  const newsType = searchParams.get("news_type");
+  const company = searchParams.get("company");
+
+  const [items, setItems] = useState<BreveItem[]>([]);
+  const [sponsorised, setSponsorised] = useState<BreveItem[]>([]);
+  const [topCompanies, setTopCompanies] = useState<CompanyStat[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+
+  const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
@@ -73,34 +98,38 @@ export default function BrevesPage() {
     setLoading(true);
 
     const params = new URLSearchParams({
-      year: String(year),
       limit: String(PAGE_SIZE),
     });
 
-    if (!reset && cursor) {
-      params.append("cursor", cursor);
-    }
+    if (topic) params.append("topic", topic);
+    if (newsType) params.append("news_type", newsType);
+    if (company) params.append("company", company);
+    if (!reset && cursor) params.append("cursor", cursor);
 
     try {
       const res = await fetch(
-        `${API_BASE}/news/breves?${params.toString()}`,
+        `${API_BASE}/news/breves/search?${params.toString()}`,
         { cache: "no-store" }
       );
+
       const json = await res.json();
 
-      const newItems: BreveItem[] = json.items || [];
+      const newItems = json.items || [];
 
-      setItems((prev) =>
-        reset ? newItems : [...prev, ...newItems]
-      );
+      if (reset) {
+        setItems(newItems);
+        setSponsorised(json.sponsorised || []);
+        setTopCompanies(json.top_companies || []);
+        setTotalCount(json.total_count || 0);
+      } else {
+        setItems((prev) => [...prev, ...newItems]);
+      }
 
       if (newItems.length < PAGE_SIZE) {
         setHasMore(false);
         setCursor(null);
       } else {
-        setCursor(
-          newItems[newItems.length - 1].published_at
-        );
+        setCursor(newItems[newItems.length - 1].published_at);
       }
     } catch (e) {
       console.error("Erreur chargement brèves", e);
@@ -110,7 +139,7 @@ export default function BrevesPage() {
   }
 
   /* ---------------------------------------------------------
-     INIT / YEAR CHANGE
+     RELOAD ON FILTER CHANGE
   --------------------------------------------------------- */
   useEffect(() => {
     setItems([]);
@@ -118,7 +147,7 @@ export default function BrevesPage() {
     setHasMore(true);
     loadBreves(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year]);
+  }, [topic, newsType, company]);
 
   /* ---------------------------------------------------------
      SCROLL INFINI
@@ -143,84 +172,121 @@ export default function BrevesPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
-      <header className="mb-8 space-y-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Brèves du marché
-          </h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Panorama chronologique de l’actualité AdTech /
-            Retail Media.
-          </p>
-        </div>
 
-        {/* ANNÉES */}
-        <div className="flex gap-2 flex-wrap">
-          {YEARS.map((y) => (
-            <button
-              key={y}
-              onClick={() => setYear(y)}
-              className={`px-3 py-1 rounded-full text-sm border transition ${
-                y === year
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-              }`}
-            >
-              {y}
-            </button>
-          ))}
-        </div>
+      {/* =====================================================
+          CONTEXTE
+      ===================================================== */}
+      <header className="mb-8 space-y-2">
+        <h1 className="text-xl font-semibold text-gray-900">
+          {topic || newsType || company || "Marché AdTech / Retail Media"}
+        </h1>
+        <p className="text-sm text-gray-600">
+          {totalCount} signaux
+        </p>
       </header>
 
       {/* =====================================================
-          LISTE DES BRÈVES
+          TOP SOCIÉTÉS
+      ===================================================== */}
+      {topCompanies.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-gray-700 mb-2">
+            Acteurs les plus actifs
+          </h2>
+
+          <div className="flex flex-wrap gap-3">
+            {topCompanies.map((c) => (
+              <button
+                key={c.ID_COMPANY}
+                onClick={() =>
+                  router.push(`/breves?company=${c.ID_COMPANY}`)
+                }
+                className="text-sm text-gray-700 hover:underline"
+              >
+                {c.NAME} ({c.TOTAL})
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* =====================================================
+          SPONSORISATION
+      ===================================================== */}
+      {sponsorised.length > 0 && (
+        <section className="mb-10">
+          <h2 className="text-sm font-semibold text-gray-700 mb-4">
+            Visibilité partenaires
+          </h2>
+
+          <div className="space-y-6">
+            {sponsorised.map((b) => (
+              <article key={b.id} className="border-b pb-4">
+                <div className="text-xs text-gray-400 mb-1">
+                  {new Date(b.published_at).toLocaleDateString("fr-FR")}
+                </div>
+                <h3 className="text-sm font-semibold text-gray-900">
+                  {b.title}
+                </h3>
+                {b.excerpt && (
+                  <p className="mt-1 text-sm text-gray-700">
+                    {b.excerpt}
+                  </p>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* =====================================================
+          FLUX PRINCIPAL
       ===================================================== */}
       <section className="space-y-8">
         {items.map((b) => (
-          <article
-            key={b.id}
-            className="border-b pb-6 last:border-b-0"
-          >
-            {/* DATE */}
+          <article key={b.id} className="border-b pb-6">
             <div className="text-xs text-gray-400 mb-1">
-              {new Date(b.published_at).toLocaleDateString(
-                "fr-FR"
-              )}
+              {new Date(b.published_at).toLocaleDateString("fr-FR")}
             </div>
 
-            {/* BADGES */}
             <div className="flex flex-wrap gap-2 mb-2">
-              {b.company && (
-                <Badge className="bg-gray-100 text-gray-700">
-                  {b.company}
-                </Badge>
-              )}
+              <Badge
+                className="bg-gray-100 text-gray-700"
+                onClick={() =>
+                  router.push(`/breves?company=${b.company.id_company}`)
+                }
+              >
+                {b.company.name}
+              </Badge>
 
               {b.news_type && (
-                <Badge className="bg-violet-100 text-violet-700">
+                <Badge
+                  className="bg-violet-100 text-violet-700"
+                  onClick={() =>
+                    router.push(`/breves?news_type=${b.news_type}`)
+                  }
+                >
                   {b.news_type}
                 </Badge>
               )}
 
-              {b.topics?.map((t, i) => (
+              {b.topics?.map((t) => (
                 <Badge
-                  key={`${b.id}-topic-${i}`}
+                  key={t.id_topic}
                   className="bg-green-100 text-green-700"
+                  onClick={() =>
+                    router.push(`/breves?topic=${t.id_topic}`)
+                  }
                 >
                   {t.label}
                 </Badge>
               ))}
             </div>
 
-            {/* TITLE */}
             <h2 className="text-base font-semibold text-gray-900">
               {b.title}
             </h2>
 
-            {/* EXCERPT */}
             {b.excerpt && (
               <p className="mt-2 text-sm text-gray-700 leading-relaxed">
                 {b.excerpt}
@@ -229,7 +295,6 @@ export default function BrevesPage() {
           </article>
         ))}
 
-        {/* STATES */}
         {loading && (
           <div className="text-center text-sm text-gray-400">
             Chargement…
@@ -238,13 +303,7 @@ export default function BrevesPage() {
 
         {!loading && items.length === 0 && (
           <div className="text-center text-sm text-gray-400">
-            Aucune brève pour {year}.
-          </div>
-        )}
-
-        {!loading && !hasMore && items.length > 0 && (
-          <div className="text-center text-sm text-gray-400 pt-6">
-            Fin des brèves {year}
+            Aucun signal trouvé.
           </div>
         )}
       </section>
