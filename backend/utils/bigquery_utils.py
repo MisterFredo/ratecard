@@ -52,26 +52,58 @@ def _infer_type(value):
 def query_bq(sql: str, params: dict = None) -> list[dict]:
     """
     Exécute une requête SELECT sur BigQuery.
-    params = {"nom": valeur} -> ScalarQueryParameter auto-générés.
-    Retourne une liste de dictionnaires.
+    Supporte automatiquement les paramètres ARRAY.
     """
     client = get_bigquery_client()
 
     job_config = None
+
     if params:
-        job_config = bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ScalarQueryParameter(
-                    name,
-                    _infer_type(value),
-                    value
+        query_parameters = []
+
+        for name, value in params.items():
+
+            # 🔥 CAS ARRAY (LIST)
+            if isinstance(value, list):
+                if len(value) == 0:
+                    # BigQuery n'aime pas les arrays vides
+                    continue
+
+                query_parameters.append(
+                    bigquery.ArrayQueryParameter(
+                        name,
+                        "STRING",  # tes filtres sont des STRING
+                        value
+                    )
                 )
-                for name, value in params.items()
-            ]
+
+            # 🔥 CAS INT
+            elif isinstance(value, int):
+                query_parameters.append(
+                    bigquery.ScalarQueryParameter(
+                        name,
+                        "INT64",
+                        value
+                    )
+                )
+
+            # 🔥 CAS AUTRES (STRING, TIMESTAMP, etc.)
+            else:
+                query_parameters.append(
+                    bigquery.ScalarQueryParameter(
+                        name,
+                        _infer_type(value),
+                        value
+                    )
+                )
+
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=query_parameters
         )
 
     job = client.query(sql, job_config=job_config)
     return [dict(row) for row in job.result()]
+
 
 
 # ---------------------------------------------------------
