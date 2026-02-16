@@ -450,9 +450,19 @@ def search_breves_public(
     limit: int = 20,
     cursor: Optional[str] = None,
 ):
+    """
+    Version propre basée sur vues matérialisées.
+    Toutes les colonnes BQ sont en lowercase.
+    """
+
+    # =====================================================
+    # WHERE dynamique
+    # =====================================================
+
     params = {"limit": limit}
     where_clauses = ["status = 'PUBLISHED'"]
 
+    # MULTI TOPICS
     if topics:
         where_clauses.append("""
             EXISTS (
@@ -463,21 +473,26 @@ def search_breves_public(
         """)
         params["topics"] = topics
 
+    # MULTI TYPES
     if news_types:
         where_clauses.append("news_type IN UNNEST(@news_types)")
         params["news_types"] = news_types
 
+    # MULTI COMPANIES
     if companies:
         where_clauses.append("id_company IN UNNEST(@companies)")
         params["companies"] = companies
 
+    # CURSOR
     if cursor:
         where_clauses.append("published_at < @cursor")
         params["cursor"] = cursor
 
     where_sql = " AND ".join(where_clauses)
 
-    # ================= ITEMS =================
+    # =====================================================
+    # ITEMS
+    # =====================================================
 
     sql_items = f"""
         SELECT *
@@ -506,7 +521,9 @@ def search_breves_public(
         for r in rows
     ]
 
-    # ================= SPONSORISED =================
+    # =====================================================
+    # SPONSORISED
+    # =====================================================
 
     sql_sponsorised = f"""
         SELECT *
@@ -536,7 +553,9 @@ def search_breves_public(
         for r in sponsor_rows
     ]
 
-    # ================= GLOBAL =================
+    # =====================================================
+    # GLOBAL STATS
+    # =====================================================
 
     global_rows = query_bq(
         "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_GLOBAL`"
@@ -548,40 +567,84 @@ def search_breves_public(
         "last_30_days": 0,
     }
 
-    # ================= TYPES =================
+    # =====================================================
+    # TYPES STATS
+    # =====================================================
 
     types_rows = query_bq(
-        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE` ORDER BY total DESC"
+        """
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE`
+        ORDER BY total DESC
+        """
     )
 
-    types_stats = types_rows
+    types_stats = [
+        {
+            "news_type": r["news_type"],
+            "total": r["total"],
+        }
+        for r in types_rows
+    ]
 
-    # ================= TOPICS =================
+    # =====================================================
+    # TOPICS STATS
+    # =====================================================
 
     topics_rows = query_bq(
-        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TOPIC` ORDER BY total DESC"
+        """
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TOPIC`
+        ORDER BY total DESC
+        """
     )
 
-    topics_stats = topics_rows
+    topics_stats = [
+        {
+            "id_topic": r["id_topic"],
+            "label": r["label"],
+            "total": r["total"],
+        }
+        for r in topics_rows
+    ]
 
-    # ================= COMPANIES =================
+    # =====================================================
+    # COMPANY STATS
+    # =====================================================
 
     company_rows = query_bq(
-        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_COMPANY` ORDER BY total DESC"
+        """
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_COMPANY`
+        ORDER BY total DESC
+        """
     )
 
-    top_companies = company_rows
+    top_companies = [
+        {
+            "id_company": r["id_company"],
+            "name": r["company_name"],   # ← aligné avec vue
+            "is_partner": bool(r["is_partner"]),
+            "total": r["total"],
+        }
+        for r in company_rows
+    ]
+
+    # =====================================================
+    # RETURN FINAL
+    # =====================================================
 
     return {
-        "total_count": global_stats["total"],
-        "last_7_days": global_stats["last_7_days"],
-        "last_30_days": global_stats["last_30_days"],
+        "total_count": global_stats.get("total", 0),
+        "last_7_days": global_stats.get("last_7_days", 0),
+        "last_30_days": global_stats.get("last_30_days", 0),
         "items": items,
         "sponsorised": sponsorised,
         "topics_stats": topics_stats,
         "types_stats": types_stats,
         "top_companies": top_companies,
     }
+
 
 # ============================================================
 # LIST ALL COMPANIES — PUBLIC (FOR FILTER PANEL)
