@@ -165,7 +165,13 @@ export default function BrevesFeed() {
                     {new Date(b.published_at).toLocaleDateString("fr-FR")}
                   </div>
 
-                  <div className="text-[11px] uppercase tracking-wide text-gray-500">
+                  <div
+                    className={`text-[11px] uppercase tracking-wide ${
+                      b.company.is_partner
+                        ? "text-emerald-600"
+                        : "text-gray-500"
+                    }`}
+                  >
                     {b.company.name}
                   </div>
 
@@ -236,7 +242,11 @@ export default function BrevesFeed() {
                   onClick={() =>
                     updateFilters("companies", b.company.id_company)
                   }
-                  className="text-xs font-medium text-gray-700 hover:text-black transition"
+                  className={`text-xs font-medium transition ${
+                    b.company.is_partner
+                      ? "text-emerald-600 hover:text-emerald-700"
+                      : "text-gray-700 hover:text-black"
+                  }`}
                 >
                   {b.company.name}
                 </button>
