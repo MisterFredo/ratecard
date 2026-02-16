@@ -19,6 +19,7 @@ from core.news.service import (
     list_companies_public,
     list_breves_public,
     search_breves_public,
+    get_breves_stats_public,
     get_news,
     update_news,
     archive_news,
