@@ -443,10 +443,6 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
 # SEARCH SIGNAUX — FLUX UNIQUEMENT
 # ============================================================
 
-from typing import Optional, List
-from utils.bigquery_utils import query_bq
-
-
 def search_breves_public(
     topics: Optional[List[str]] = None,
     news_types: Optional[List[str]] = None,
