@@ -581,13 +581,14 @@ def search_breves_public(
 
     types_stats = [
         {
-            "news_type": r.get("NEWS_TYPE"),
-            "total": r.get("TOTAL", 0),
-            "last_7_days": r.get("LAST_7_DAYS", 0),
-            "last_30_days": r.get("LAST_30_DAYS", 0),
+            "news_type": r.get("news_type"),
+            "total": r.get("total", 0),
+            "last_7_days": r.get("last_7_days", 0),
+            "last_30_days": r.get("last_30_days", 0),
         }
         for r in types_rows
     ]
+
 
 
     # =====================================================
@@ -604,14 +605,16 @@ def search_breves_public(
 
     topics_stats = [
         {
-            "id_topic": r.get("ID_TOPIC"),
-            "label": r.get("LABEL"),
-            "total": r.get("TOTAL", 0),
-            "last_7_days": r.get("LAST_7_DAYS", 0),
-            "last_30_days": r.get("LAST_30_DAYS", 0),
+            "id_topic": r.get("id_topic"),
+            "label": r.get("label"),
+            "total": r.get("total", 0),
+            "last_7_days": r.get("last_7_days", 0),
+            "last_30_days": r.get("last_30_days", 0),
         }
         for r in topics_rows
+        if r.get("id_topic") and r.get("label")
     ]
+
 
     # =====================================================
     # COMPANY STATS
@@ -627,15 +630,17 @@ def search_breves_public(
 
     top_companies = [
         {
-            "id_company": r.get("ID_COMPANY"),
-            "name": r.get("NAME"),
-            "is_partner": bool(r.get("IS_PARTNER")),
-            "total": r.get("TOTAL", 0),
-            "last_7_days": r.get("LAST_7_DAYS", 0),
-            "last_30_days": r.get("LAST_30_DAYS", 0),
+            "id_company": r.get("id_company"),
+            "name": r.get("name"),
+            "is_partner": bool(r.get("is_partner")),
+            "total": r.get("total", 0),
+            "last_7_days": r.get("last_7_days", 0),
+            "last_30_days": r.get("last_30_days", 0),
         }
         for r in company_rows
+        if r.get("id_company") and r.get("name")
     ]
+
 
 
     # =====================================================
