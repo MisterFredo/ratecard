@@ -440,7 +440,7 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
     return status
 
 # ============================================================
-# SEARCH BRÈVES — PUBLIC (MOTEUR STRUCTURÉ)
+# SEARCH SIGNAUX — FLUX UNIQUEMENT
 # ============================================================
 
 def search_breves_public(
@@ -451,14 +451,9 @@ def search_breves_public(
     cursor: Optional[str] = None,
 ):
     """
-    Version stable et tolérante.
-    Colonnes BQ attendues en lowercase.
-    Aucun champ None renvoyé vers le response_model.
+    Retourne uniquement le flux + sponsorisé.
+    Aucune stat ici.
     """
-
-    # =====================================================
-    # WHERE dynamique
-    # =====================================================
 
     params = {"limit": limit}
     where_clauses = ["status = 'PUBLISHED'"]
@@ -501,9 +496,8 @@ def search_breves_public(
 
     rows = query_bq(sql_items, params)
 
-    items = []
-    for r in rows:
-        items.append({
+    items = [
+        {
             "id": r.get("id_news"),
             "title": r.get("title"),
             "excerpt": r.get("excerpt"),
@@ -515,7 +509,9 @@ def search_breves_public(
                 "is_partner": bool(r.get("is_partner")),
             },
             "topics": r.get("topics", []) or [],
-        })
+        }
+        for r in rows
+    ]
 
     # =====================================================
     # SPONSORISED
@@ -532,9 +528,8 @@ def search_breves_public(
 
     sponsor_rows = query_bq(sql_sponsorised, params)
 
-    sponsorised = []
-    for r in sponsor_rows:
-        sponsorised.append({
+    sponsorised = [
+        {
             "id": r.get("id_news"),
             "title": r.get("title"),
             "excerpt": r.get("excerpt"),
@@ -546,15 +541,34 @@ def search_breves_public(
                 "is_partner": True,
             },
             "topics": r.get("topics", []) or [],
-        })
+        }
+        for r in sponsor_rows
+    ]
+
+    return {
+        "items": items,
+        "sponsorised": sponsorised,
+    }
+
+
+# ============================================================
+# SIGNAUX STATS — STATS UNIQUEMENT
+# ============================================================
+
+def get_breves_stats_public():
+    """
+    Retourne uniquement les stats.
+    Aucun flux ici.
+    """
 
     # =====================================================
-    # GLOBAL STATS
+    # GLOBAL
     # =====================================================
 
-    global_rows = query_bq(
-        "SELECT * FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_GLOBAL`"
-    )
+    global_rows = query_bq("""
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_GLOBAL`
+    """)
 
     if global_rows:
         g = global_rows[0]
@@ -567,7 +581,7 @@ def search_breves_public(
         last_30 = 0
 
     # =====================================================
-    # TYPES STATS
+    # TYPES
     # =====================================================
 
     types_rows = query_bq("""
@@ -576,17 +590,18 @@ def search_breves_public(
         ORDER BY total DESC
     """)
 
-    types_stats = []
-    for r in types_rows:
-        types_stats.append({
+    types_stats = [
+        {
             "news_type": r.get("news_type"),
             "total": r.get("total", 0) or 0,
             "last_7_days": r.get("last_7_days", 0) or 0,
             "last_30_days": r.get("last_30_days", 0) or 0,
-        })
+        }
+        for r in types_rows
+    ]
 
     # =====================================================
-    # TOPICS STATS
+    # TOPICS
     # =====================================================
 
     topics_rows = query_bq("""
@@ -595,24 +610,20 @@ def search_breves_public(
         ORDER BY total DESC
     """)
 
-    topics_stats = []
-    for r in topics_rows:
-        id_topic = r.get("id_topic")
-        label = r.get("label")
-
-        if not id_topic or not label:
-            continue
-
-        topics_stats.append({
-            "id_topic": id_topic,
-            "label": label,
+    topics_stats = [
+        {
+            "id_topic": r.get("id_topic"),
+            "label": r.get("label"),
             "total": r.get("total", 0) or 0,
             "last_7_days": r.get("last_7_days", 0) or 0,
             "last_30_days": r.get("last_30_days", 0) or 0,
-        })
+        }
+        for r in topics_rows
+        if r.get("id_topic") and r.get("label")
+    ]
 
     # =====================================================
-    # COMPANY STATS
+    # COMPANIES
     # =====================================================
 
     company_rows = query_bq("""
@@ -621,32 +632,23 @@ def search_breves_public(
         ORDER BY total DESC
     """)
 
-    top_companies = []
-    for r in company_rows:
-        id_company = r.get("id_company")
-        name = r.get("name")
-
-        if not id_company or not name:
-            continue
-
-        top_companies.append({
-            "id_company": id_company,
-            "name": name,
+    top_companies = [
+        {
+            "id_company": r.get("id_company"),
+            "name": r.get("name"),
             "is_partner": bool(r.get("is_partner")),
             "total": r.get("total", 0) or 0,
             "last_7_days": r.get("last_7_days", 0) or 0,
             "last_30_days": r.get("last_30_days", 0) or 0,
-        })
+        }
+        for r in company_rows
+        if r.get("id_company") and r.get("name")
+    ]
 
-    # =====================================================
-    # RETURN
-    # =====================================================
     return {
-        "total_count": global_stats.get("TOTAL", 0),
-        "last_7_days": global_stats.get("LAST_7_DAYS", 0),
-        "last_30_days": global_stats.get("LAST_30_DAYS", 0),
-        "items": items,
-        "sponsorised": sponsorised,
+        "total_count": total_count,
+        "last_7_days": last_7,
+        "last_30_days": last_30,
         "topics_stats": topics_stats,
         "types_stats": types_stats,
         "top_companies": top_companies,
