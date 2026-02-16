@@ -36,7 +36,7 @@ export default function BrevesFeed() {
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [openIds, setOpenIds] = useState<string[]>([]);
+  const [openItems, setOpenItems] = useState<string[]>([]);
 
   const selectedTopics = searchParams.getAll("topics");
   const selectedTypes = searchParams.getAll("news_types");
@@ -61,14 +61,6 @@ export default function BrevesFeed() {
     router.push(`/breves?${params.toString()}`);
   }
 
-  function toggleExcerpt(id: string) {
-    setOpenIds((prev) =>
-      prev.includes(id)
-        ? prev.filter((i) => i !== id)
-        : [...prev, id]
-    );
-  }
-
   async function load(reset = false) {
     if (loading || (!hasMore && !reset)) return;
 
@@ -78,15 +70,9 @@ export default function BrevesFeed() {
       limit: String(PAGE_SIZE),
     });
 
-    selectedTopics.forEach((t) =>
-      params.append("topics", t)
-    );
-    selectedTypes.forEach((t) =>
-      params.append("news_types", t)
-    );
-    selectedCompanies.forEach((c) =>
-      params.append("companies", c)
-    );
+    selectedTopics.forEach((t) => params.append("topics", t));
+    selectedTypes.forEach((t) => params.append("news_types", t));
+    selectedCompanies.forEach((c) => params.append("companies", c));
 
     if (!reset && cursor) {
       params.append("cursor", cursor);
@@ -98,22 +84,21 @@ export default function BrevesFeed() {
     );
 
     const json = await res.json();
-    const newItems = json.items || [];
 
     if (reset) {
-      setItems(newItems);
+      setItems(json.items || []);
       setSponsorised(json.sponsorised || []);
     } else {
-      setItems((prev) => [...prev, ...newItems]);
+      setItems((prev) => [...prev, ...(json.items || [])]);
     }
+
+    const newItems = json.items || [];
 
     if (newItems.length < PAGE_SIZE) {
       setHasMore(false);
       setCursor(null);
     } else {
-      setCursor(
-        newItems[newItems.length - 1].published_at
-      );
+      setCursor(newItems[newItems.length - 1].published_at);
     }
 
     setLoading(false);
@@ -121,153 +106,142 @@ export default function BrevesFeed() {
 
   useEffect(() => {
     setItems([]);
-    setSponsorised([]);
     setCursor(null);
     setHasMore(true);
     load(true);
     // eslint-disable-next-line
   }, [searchParams.toString()]);
 
+  function toggleItem(id: string) {
+    setOpenItems((prev) =>
+      prev.includes(id)
+        ? prev.filter((i) => i !== id)
+        : [...prev, id]
+    );
+  }
+
   return (
-    <section className="space-y-12 border-t pt-12">
+    <section className="space-y-16">
 
-      {/* =======================================================
-          SPONSORISED — 3 EN TÊTE
-      ======================================================== */}
+      {/* ============================= */}
+      {/* SPONSORISED */}
+      {/* ============================= */}
       {sponsorised.length > 0 && (
-        <div className="space-y-8">
-          {sponsorised.map((b) => (
-            <article
-              key={b.id}
-              className="border-l-4 border-black pl-6"
-            >
-              <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">
-                Partenaire •{" "}
-                {new Date(
-                  b.published_at
-                ).toLocaleDateString("fr-FR")}
-              </div>
+        <div className="border border-black p-8 bg-white">
+          <div className="text-xs uppercase tracking-widest text-red-600 mb-6">
+            Visibilité partenaires
+          </div>
 
-              <h2 className="text-xl font-serif leading-snug">
-                {b.title}
-              </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {sponsorised.map((b) => (
+              <article key={b.id} className="space-y-3">
+                <div className="text-xs text-gray-500">
+                  {new Date(b.published_at).toLocaleDateString("fr-FR")}
+                </div>
 
-              {b.excerpt && (
-                <p className="mt-3 text-sm text-gray-700 max-w-2xl">
-                  {b.excerpt}
-                </p>
-              )}
+                <h3 className="font-semibold leading-snug">
+                  {b.title}
+                </h3>
 
-              <TagsRow
-                b={b}
-                updateFilters={updateFilters}
-              />
-            </article>
-          ))}
+                {b.excerpt && (
+                  <p className="text-sm text-gray-600">
+                    {b.excerpt}
+                  </p>
+                )}
+              </article>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* =======================================================
-          FLUX NORMAL
-      ======================================================== */}
+      {/* ============================= */}
+      {/* MAIN FEED */}
+      {/* ============================= */}
+      <div className="border-t border-black pt-10 space-y-12">
 
-      <div className="space-y-10">
         {items.map((b) => {
-          const isOpen = openIds.includes(b.id);
+          const isOpen = openItems.includes(b.id);
 
           return (
-            <article
-              key={b.id}
-              className="border-b pb-6"
-            >
-              <div className="text-xs text-gray-500 mb-2">
-                {new Date(
-                  b.published_at
-                ).toLocaleDateString("fr-FR")}
+            <article key={b.id} className="border-b pb-8">
+
+              {/* META */}
+              <div className="flex justify-between text-xs text-gray-500 mb-3">
+                <span>
+                  {new Date(b.published_at).toLocaleDateString("fr-FR")}
+                </span>
+
+                {b.news_type && (
+                  <span className="uppercase tracking-wider">
+                    {b.news_type}
+                  </span>
+                )}
               </div>
 
+              {/* TAGS */}
+              <div className="flex flex-wrap gap-2 mb-4">
+
+                {/* Company */}
+                <button
+                  onClick={() =>
+                    updateFilters("companies", b.company.id_company)
+                  }
+                  className="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
+                >
+                  {b.company.name}
+                </button>
+
+                {/* Type */}
+                {b.news_type && (
+                  <button
+                    onClick={() =>
+                      updateFilters("news_types", b.news_type!)
+                    }
+                    className="px-2 py-1 text-xs bg-violet-100 text-violet-700 rounded"
+                  >
+                    {b.news_type}
+                  </button>
+                )}
+
+                {/* Topics */}
+                {b.topics?.map((t) => (
+                  <button
+                    key={t.id_topic}
+                    onClick={() =>
+                      updateFilters("topics", t.id_topic)
+                    }
+                    className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded"
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* TITLE */}
               <h2
-                onClick={() => toggleExcerpt(b.id)}
-                className="text-lg font-serif cursor-pointer leading-snug"
+                onClick={() => toggleItem(b.id)}
+                className="text-xl font-semibold leading-snug cursor-pointer hover:underline"
               >
                 {b.title}
               </h2>
 
+              {/* EXCERPT */}
               {isOpen && b.excerpt && (
-                <p className="mt-3 text-sm text-gray-700 max-w-2xl">
+                <p className="mt-4 text-sm text-gray-700 leading-relaxed">
                   {b.excerpt}
                 </p>
               )}
-
-              <TagsRow
-                b={b}
-                updateFilters={updateFilters}
-              />
             </article>
           );
         })}
+
+        {loading && (
+          <div className="text-center text-sm text-gray-400">
+            Chargement…
+          </div>
+        )}
+
       </div>
-
-      {loading && (
-        <div className="text-center text-sm text-gray-400">
-          Chargement…
-        </div>
-      )}
     </section>
-  );
-}
-
-/* ============================================================
-   TAGS
-============================================================ */
-
-function TagsRow({
-  b,
-  updateFilters,
-}: {
-  b: BreveItem;
-  updateFilters: Function;
-}) {
-  return (
-    <div className="flex flex-wrap gap-2 mt-4 text-xs">
-
-      {/* SOCIÉTÉ */}
-      <button
-        onClick={() =>
-          updateFilters(
-            "companies",
-            b.company.id_company
-          )
-        }
-        className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded"
-      >
-        {b.company.name}
-      </button>
-
-      {/* TYPE */}
-      {b.news_type && (
-        <button
-          onClick={() =>
-            updateFilters("news_types", b.news_type!)
-          }
-          className="px-2 py-1 bg-violet-100 text-violet-700 rounded"
-        >
-          {b.news_type}
-        </button>
-      )}
-
-      {/* TOPICS */}
-      {b.topics?.map((t) => (
-        <button
-          key={t.id_topic}
-          onClick={() =>
-            updateFilters("topics", t.id_topic)
-          }
-          className="px-2 py-1 bg-green-100 text-green-700 rounded"
-        >
-          {t.label}
-        </button>
-      ))}
-    </div>
   );
 }
