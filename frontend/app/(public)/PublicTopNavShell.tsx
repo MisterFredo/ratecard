@@ -14,7 +14,6 @@ export default function PublicTopNavShell({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // ✅ On utilise la bonne fonction
   const { openNewsletterDrawer } = useDrawer();
 
   function isActive(path: string) {
@@ -71,7 +70,7 @@ export default function PublicTopNavShell({
             </nav>
           </div>
 
-          {/* RIGHT — ACTIONS */}
+          {/* RIGHT — ACTIONS DESKTOP */}
           <div className="hidden md:flex items-center gap-4">
             {/* Newsletter → Drawer */}
             <button
@@ -87,7 +86,7 @@ export default function PublicTopNavShell({
               <Mail size={16} />
             </button>
 
-            {/* LinkedIn → URL externe */}
+            {/* LinkedIn */}
             <a
               href="https://www.linkedin.com/company/ratecard-adnovia/"
               target="_blank"
@@ -162,12 +161,12 @@ export default function PublicTopNavShell({
               })}
             </nav>
 
-            {/* ACTIONS */}
+            {/* ACTIONS MOBILE */}
             <div className="mt-auto p-6 border-t space-y-4 text-sm">
               <button
                 onClick={() => {
-                  openNewsletterDrawer("silent");
                   setMobileOpen(false);
+                  openNewsletterDrawer("silent");
                 }}
                 className="flex items-center gap-2 text-ratecard-blue"
               >
@@ -200,3 +199,4 @@ export default function PublicTopNavShell({
     </div>
   );
 }
+
