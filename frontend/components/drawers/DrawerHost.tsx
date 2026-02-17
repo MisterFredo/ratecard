@@ -33,7 +33,7 @@ export default function DrawerHost() {
       )}
 
       {/* =========================================
-          DRAWER DROITE — NEWS
+          DRAWER DROITE — NEWS (PUBLIC)
       ========================================= */}
       {rightDrawer.type === "news" && rightDrawer.id && (
         <NewsDrawer
@@ -43,23 +43,20 @@ export default function DrawerHost() {
       )}
 
       {/* =========================================
-          DRAWER DROITE — ANALYSIS
+          DRAWER DROITE — ANALYSIS (ADMIN)
       ========================================= */}
       {rightDrawer.type === "analysis" && rightDrawer.id && (
         <AnalysisDrawerAdmin
-          id={rightDrawer.id}
+          contentId={rightDrawer.id}
           onClose={closeRightDrawer}
         />
       )}
 
       {/* =========================================
           DRAWER DROITE — NEWSLETTER
-          (pas d'id nécessaire)
       ========================================= */}
       {rightDrawer.type === "newsletter" && (
-        <NewsletterDrawer
-          onClose={closeRightDrawer}
-        />
+        <NewsletterDrawer />
       )}
     </>
   );
