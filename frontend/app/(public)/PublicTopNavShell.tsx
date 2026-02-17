@@ -13,7 +13,9 @@ export default function PublicTopNavShell({
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { openRightDrawer } = useDrawer();
+
+  // ✅ On utilise la bonne fonction
+  const { openNewsletterDrawer } = useDrawer();
 
   function isActive(path: string) {
     return pathname === path || pathname.startsWith(`${path}/`);
@@ -73,9 +75,7 @@ export default function PublicTopNavShell({
           <div className="hidden md:flex items-center gap-4">
             {/* Newsletter → Drawer */}
             <button
-              onClick={() =>
-                openRightDrawer("newsletter", null, "silent")
-              }
+              onClick={() => openNewsletterDrawer("silent")}
               className="
                 px-3 py-1.5 rounded-full
                 text-ratecard-blue
@@ -166,8 +166,8 @@ export default function PublicTopNavShell({
             <div className="mt-auto p-6 border-t space-y-4 text-sm">
               <button
                 onClick={() => {
+                  openNewsletterDrawer("silent");
                   setMobileOpen(false);
-                  openRightDrawer("newsletter", null, "silent");
                 }}
                 className="flex items-center gap-2 text-ratecard-blue"
               >
