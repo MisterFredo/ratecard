@@ -408,9 +408,9 @@ def subscribe_newsletter(payload: NewsletterSubscribeRequest):
         data = {
             "email": payload.email,
             "attributes": {
-                "FIRSTNAME": payload.first_name,
-                "LASTNAME": payload.last_name,
-                "COMPANY": payload.company,
+                "PRENOM": payload.first_name,
+                "NOM": payload.last_name,
+                "SOCIETE": payload.company,
             },
             "listIds": [
                 int(BREVO_LIST_ID_MAIN),
