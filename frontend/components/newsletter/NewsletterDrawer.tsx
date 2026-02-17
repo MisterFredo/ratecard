@@ -38,7 +38,7 @@ export default function NewsletterDrawer({ onClose }: Props) {
 
     try {
       const res = await fetch(
-        `${API_BASE}/newsletter/subscribe`,
+        `${API_BASE}/public/newsletter/subscribe`,
         {
           method: "POST",
           headers: {
