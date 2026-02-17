@@ -33,8 +33,12 @@ type DrawerContextType = {
   ) => void;
 
   openRightDrawer: (
-    type: "news" | "analysis" | "newsletter",
-    id: string | null,
+    type: "news" | "analysis",
+    id: string,
+    mode?: DrawerMode
+  ) => void;
+
+  openNewsletterDrawer: (
     mode?: DrawerMode
   ) => void;
 
@@ -74,6 +78,7 @@ export function DrawerProvider({
   /* -----------------------------
      OPEN / CLOSE — LEFT
   ----------------------------- */
+
   function openLeftDrawer(
     type: "member",
     id: string,
@@ -89,12 +94,23 @@ export function DrawerProvider({
   /* -----------------------------
      OPEN / CLOSE — RIGHT
   ----------------------------- */
+
   function openRightDrawer(
-    type: "news" | "analysis" | "newsletter",
-    id: string | null,
+    type: "news" | "analysis",
+    id: string,
     mode: DrawerMode = "silent"
   ) {
     setRightDrawer({ type, id, mode });
+  }
+
+  function openNewsletterDrawer(
+    mode: DrawerMode = "silent"
+  ) {
+    setRightDrawer({
+      type: "newsletter",
+      id: null,
+      mode,
+    });
   }
 
   function closeRightDrawer() {
@@ -108,6 +124,7 @@ export function DrawerProvider({
         rightDrawer,
         openLeftDrawer,
         openRightDrawer,
+        openNewsletterDrawer,
         closeLeftDrawer,
         closeRightDrawer,
       }}
