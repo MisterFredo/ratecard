@@ -56,7 +56,9 @@ export default function DrawerHost() {
           DRAWER DROITE — NEWSLETTER
       ========================================= */}
       {rightDrawer.type === "newsletter" && (
-        <NewsletterDrawer />
+        <NewsletterDrawer
+          onClose={closeRightDrawer}
+        />
       )}
     </>
   );
