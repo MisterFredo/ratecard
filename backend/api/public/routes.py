@@ -1,5 +1,8 @@
 from fastapi import APIRouter, HTTPException
 import logging
+import os
+import requests
+
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 
@@ -15,6 +18,8 @@ from api.public.models import (
     PublicMembersResponse,
     PublicMemberResponse,
     LinkedInGenerateRequest,
+    NewsletterSubscribeRequest,      # ✅ AJOUT
+    NewsletterSubscribeResponse,     # ✅ AJOUT
 )
 
 from core.news.service import list_news
@@ -24,6 +29,7 @@ from core.linkedin.generate_post import generate_linkedin_post
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
 
 
 # ============================================================
@@ -376,3 +382,50 @@ def get_member(id_company: str):
             500,
             "Erreur récupération membre"
         )
+
+# ============================================================
+# NEWSLETTER — SUBSCRIBE (BREVO)
+# ============================================================
+
+@router.post(
+    "/newsletter/subscribe",
+    response_model=NewsletterSubscribeResponse
+)
+def subscribe_newsletter(payload: NewsletterSubscribeRequest):
+    """
+    Inscrit un email à la liste Newsletter Brevo.
+    """
+    try:
+        BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+        BREVO_LIST_ID = os.getenv("BREVO_LIST_ID")
+
+        if not BREVO_API_KEY or not BREVO_LIST_ID:
+            raise HTTPException(500, "Brevo non configuré")
+
+        url = "https://api.brevo.com/v3/contacts"
+
+        data = {
+            "email": payload.email,
+            "listIds": [int(BREVO_LIST_ID)],
+            "updateEnabled": True,
+        }
+
+        headers = {
+            "api-key": BREVO_API_KEY,
+            "Content-Type": "application/json",
+        }
+
+        response = requests.post(url, json=data, headers=headers)
+
+        if response.status_code not in (200, 201):
+            logger.error(response.text)
+            raise HTTPException(400, "Erreur inscription newsletter")
+
+        return NewsletterSubscribeResponse(success=True)
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Erreur newsletter subscribe")
+        raise HTTPException(500, "Erreur inscription newsletter")
+
