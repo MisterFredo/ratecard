@@ -407,12 +407,18 @@ def subscribe_newsletter(payload: NewsletterSubscribeRequest):
 
         data = {
             "email": payload.email,
+            "attributes": {
+                "FIRSTNAME": payload.first_name,
+                "LASTNAME": payload.last_name,
+                "COMPANY": payload.company,
+            },
             "listIds": [
                 int(BREVO_LIST_ID_MAIN),
                 int(BREVO_LIST_ID_PARTNERS),
             ],
             "updateEnabled": True,
         }
+
 
         headers = {
             "api-key": BREVO_API_KEY,
