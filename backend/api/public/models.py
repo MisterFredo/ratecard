@@ -1,7 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import datetime
-
 
 # =======================================================
 # HOME — NEWS (CARTES)
@@ -153,11 +152,12 @@ class PublicMemberResponse(BaseModel):
 # NEWSLETTER — SUBSCRIBE
 # =======================================================
 
-from pydantic import EmailStr
-
-
 class NewsletterSubscribeRequest(BaseModel):
     email: EmailStr
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    company: Optional[str] = None
+    topics: Optional[List[str]] = None
 
 
 class NewsletterSubscribeResponse(BaseModel):
