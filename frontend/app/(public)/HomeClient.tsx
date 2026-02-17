@@ -25,7 +25,6 @@ type NewsItem = {
   visual_rect_id?: string | null;
   published_at: string;
 
-  // STRUCTURE
   news_kind: "NEWS" | "BRIEF";
 
   company?: Company;
@@ -68,13 +67,10 @@ export default function HomeClient({
   const router = useRouter();
   const { openRightDrawer } = useDrawer();
 
-  /* ---------------------------------------------------------
-     STATE — SCROLL
-  --------------------------------------------------------- */
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   /* ---------------------------------------------------------
-     1. TOP 6 — NEWS UNIQUEMENT (PAR DATE)
+     TOP 6 — NEWS UNIQUEMENT
   --------------------------------------------------------- */
   const topNews = [...news]
     .filter((n) => n.news_kind === "NEWS")
@@ -88,8 +84,7 @@ export default function HomeClient({
   const topNewsIds = new Set(topNews.map((n) => n.id));
 
   /* ---------------------------------------------------------
-     2. FLUX GLOBAL CHRONO (NEWS / BRIEF / ANALYSIS)
-     - on exclut les NEWS déjà affichées en top
+     FLUX GLOBAL CHRONO
   --------------------------------------------------------- */
   const unifiedItems: UnifiedItem[] = [
     ...news
@@ -138,6 +133,9 @@ export default function HomeClient({
 
   return (
     <div className="max-w-6xl mx-auto px-4">
+      {/* =================================================
+          GRID
+      ================================================= */}
       <section
         className="
           grid grid-cols-1
@@ -147,9 +145,7 @@ export default function HomeClient({
           auto-rows-[340px]
         "
       >
-        {/* =================================================
-            TOP 6 — NEWS ONLY
-        ================================================= */}
+        {/* TOP 6 — NEWS */}
         {topNews.map((n, idx) => (
           <div
             key={`top-news-${n.id}`}
@@ -176,9 +172,7 @@ export default function HomeClient({
           </div>
         ))}
 
-        {/* =================================================
-            FLUX CHRONO MIXTE
-        ================================================= */}
+        {/* FLUX MIXTE */}
         {unifiedItems.map((entry, idx) => {
           if (entry.type === "NEWS") {
             const n = entry.item;
@@ -235,6 +229,41 @@ export default function HomeClient({
             />
           );
         })}
+      </section>
+
+      {/* =====================================================
+          NEWSLETTER CTA
+      ===================================================== */}
+      <section className="mt-20 mb-16">
+        <div className="border border-gray-200 rounded-2xl bg-white px-8 py-12 text-center">
+          <p className="text-xs uppercase tracking-wide text-gray-500 mb-3">
+            Newsletter
+          </p>
+
+          <h3 className="text-xl font-medium text-gray-900 mb-3">
+            La lecture du marché, une fois par semaine.
+          </h3>
+
+          <p className="text-sm text-gray-500 mb-6 max-w-xl mx-auto">
+            Signaux partenaires, analyses stratégiques et synthèse
+            de l’écosystème Retail Media & AdTech.
+          </p>
+
+          <button
+            onClick={() => router.push("/newsletter")}
+            className="
+              px-6 py-2.5
+              rounded-full
+              bg-ratecard-blue
+              text-white
+              text-sm
+              hover:opacity-90
+              transition
+            "
+          >
+            S’inscrire
+          </button>
+        </div>
       </section>
 
       {/* =====================================================
