@@ -250,16 +250,7 @@ export default function HomeClient({
           </p>
 
           <button
-            onClick={() => router.push("/newsletter")}
-            className="
-              px-6 py-2.5
-              rounded-full
-              bg-ratecard-blue
-              text-white
-              text-sm
-              hover:opacity-90
-              transition
-            "
+            onClick={() => openNewsletterDrawer("silent")}
           >
             S’inscrire
           </button>
