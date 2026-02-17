@@ -12,7 +12,7 @@ import {
 ========================================================= */
 
 type DrawerTypeLeft = "member" | null;
-type DrawerTypeRight = "news" | "analysis" | null;
+type DrawerTypeRight = "news" | "analysis" | "newsletter" | null;
 
 type DrawerMode = "silent" | "route";
 
@@ -33,8 +33,8 @@ type DrawerContextType = {
   ) => void;
 
   openRightDrawer: (
-    type: "news" | "analysis",
-    id: string,
+    type: "news" | "analysis" | "newsletter",
+    id: string | null,
     mode?: DrawerMode
   ) => void;
 
@@ -90,8 +90,8 @@ export function DrawerProvider({
      OPEN / CLOSE — RIGHT
   ----------------------------- */
   function openRightDrawer(
-    type: "news" | "analysis",
-    id: string,
+    type: "news" | "analysis" | "newsletter",
+    id: string | null,
     mode: DrawerMode = "silent"
   ) {
     setRightDrawer({ type, id, mode });
