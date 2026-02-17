@@ -11,7 +11,11 @@ type Props = {
 };
 
 export default function NewsletterDrawer({ onClose }: Props) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
@@ -28,6 +32,9 @@ export default function NewsletterDrawer({ onClose }: Props) {
       setSuccess(false);
       setError(false);
       setEmail("");
+      setFirstName("");
+      setLastName("");
+      setCompany("");
     }, 250);
   }
 
@@ -44,7 +51,12 @@ export default function NewsletterDrawer({ onClose }: Props) {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({
+            email,
+            first_name: firstName,
+            last_name: lastName,
+            company,
+          }),
         }
       );
 
@@ -52,6 +64,9 @@ export default function NewsletterDrawer({ onClose }: Props) {
 
       setSuccess(true);
       setEmail("");
+      setFirstName("");
+      setLastName("");
+      setCompany("");
     } catch {
       setError(true);
     }
@@ -107,28 +122,77 @@ export default function NewsletterDrawer({ onClose }: Props) {
 
               <button
                 onClick={close}
-                className="
-                  text-sm
-                  text-ratecard-blue
-                  hover:underline
-                "
+                className="text-sm text-ratecard-blue hover:underline"
               >
                 Fermer
               </button>
             </div>
           ) : (
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-4"
-            >
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* PRÉNOM */}
+              <input
+                type="text"
+                required
+                placeholder="Prénom"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="
+                  w-full
+                  border border-gray-300
+                  rounded-lg
+                  px-4 py-3
+                  text-sm
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-ratecard-blue/30
+                "
+              />
+
+              {/* NOM */}
+              <input
+                type="text"
+                required
+                placeholder="Nom"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="
+                  w-full
+                  border border-gray-300
+                  rounded-lg
+                  px-4 py-3
+                  text-sm
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-ratecard-blue/30
+                "
+              />
+
+              {/* SOCIÉTÉ */}
+              <input
+                type="text"
+                required
+                placeholder="Société"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                className="
+                  w-full
+                  border border-gray-300
+                  rounded-lg
+                  px-4 py-3
+                  text-sm
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-ratecard-blue/30
+                "
+              />
+
+              {/* EMAIL */}
               <input
                 type="email"
                 required
-                placeholder="Votre email"
+                placeholder="Email professionnel"
                 value={email}
-                onChange={(e) =>
-                  setEmail(e.target.value)
-                }
+                onChange={(e) => setEmail(e.target.value)}
                 className="
                   w-full
                   border border-gray-300
@@ -155,9 +219,7 @@ export default function NewsletterDrawer({ onClose }: Props) {
                   transition
                 "
               >
-                {loading
-                  ? "Inscription..."
-                  : "S'inscrire"}
+                {loading ? "Inscription..." : "S'inscrire"}
               </button>
 
               {error && (
