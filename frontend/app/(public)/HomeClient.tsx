@@ -65,7 +65,7 @@ export default function HomeClient({
   analyses = [],
 }: Props) {
   const router = useRouter();
-  const { openRightDrawer } = useDrawer();
+  const { openNewsletterDrawer, openRightDrawer } = useDrawer();
 
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
