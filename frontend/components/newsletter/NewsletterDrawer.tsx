@@ -1,15 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { X } from "lucide-react";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-export default function NewsletterDrawer() {
+type Props = {
+  onClose?: () => void;
+};
+
+export default function NewsletterDrawer({ onClose }: Props) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setIsOpen(true));
+  }, []);
+
+  function close() {
+    setIsOpen(false);
+    setTimeout(() => {
+      onClose?.();
+      setSuccess(false);
+      setError(false);
+      setEmail("");
+    }, 250);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -17,13 +37,16 @@ export default function NewsletterDrawer() {
     setError(false);
 
     try {
-      const res = await fetch(`${API_BASE}/newsletter/subscribe`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
+      const res = await fetch(
+        `${API_BASE}/newsletter/subscribe`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        }
+      );
 
       if (!res.ok) throw new Error();
 
@@ -37,54 +60,115 @@ export default function NewsletterDrawer() {
   }
 
   return (
-    <div className="max-w-md mx-auto py-16 px-6">
-      <h2 className="text-2xl font-semibold mb-4">
-        Recevoir les lectures Ratecard
-      </h2>
+    <div className="fixed inset-0 z-[100] flex">
+      {/* OVERLAY */}
+      <div
+        className="absolute inset-0 bg-black/40 transition-opacity"
+        onClick={close}
+      />
 
-      <p className="text-sm text-gray-600 mb-8">
-        Analyses, signaux marché et synthèses exclusives.
-      </p>
+      {/* DRAWER RIGHT */}
+      <aside
+        className={`
+          relative ml-auto w-full md:w-[520px]
+          bg-white shadow-xl overflow-y-auto
+          transform transition-transform duration-300 ease-out
+          ${isOpen ? "translate-x-0" : "translate-x-full"}
+        `}
+      >
+        {/* HEADER */}
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-5 flex items-start justify-between">
+          <div className="space-y-1 max-w-sm">
+            <p className="text-xs uppercase tracking-wide text-gray-400">
+              Newsletter
+            </p>
 
-      {success ? (
-        <div className="text-green-600 text-sm">
-          Merci — vous êtes inscrit.
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            required
-            placeholder="Votre email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
-          />
+            <h2 className="text-xl font-semibold text-gray-900">
+              Recevoir les lectures Ratecard
+            </h2>
+          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="
-              w-full
-              bg-ratecard-blue
-              text-white
-              rounded-lg
-              py-2
-              text-sm
-              hover:opacity-90
-              transition
-            "
-          >
-            {loading ? "Inscription..." : "S'inscrire"}
+          <button onClick={close} aria-label="Fermer">
+            <X size={18} />
           </button>
+        </div>
 
-          {error && (
-            <div className="text-red-500 text-xs">
-              Une erreur est survenue.
+        {/* CONTENT */}
+        <div className="px-6 py-10">
+          <p className="text-sm text-gray-600 mb-8">
+            Analyses, signaux marché et synthèses exclusives.
+          </p>
+
+          {success ? (
+            <div className="space-y-4">
+              <div className="text-green-600 text-sm">
+                Merci — vous êtes inscrit.
+              </div>
+
+              <button
+                onClick={close}
+                className="
+                  text-sm
+                  text-ratecard-blue
+                  hover:underline
+                "
+              >
+                Fermer
+              </button>
             </div>
+          ) : (
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-4"
+            >
+              <input
+                type="email"
+                required
+                placeholder="Votre email"
+                value={email}
+                onChange={(e) =>
+                  setEmail(e.target.value)
+                }
+                className="
+                  w-full
+                  border border-gray-300
+                  rounded-lg
+                  px-4 py-3
+                  text-sm
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-ratecard-blue/30
+                "
+              />
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="
+                  w-full
+                  bg-ratecard-blue
+                  text-white
+                  rounded-lg
+                  py-3
+                  text-sm
+                  hover:opacity-90
+                  transition
+                "
+              >
+                {loading
+                  ? "Inscription..."
+                  : "S'inscrire"}
+              </button>
+
+              {error && (
+                <div className="text-red-500 text-xs">
+                  Une erreur est survenue.
+                </div>
+              )}
+            </form>
           )}
-        </form>
-      )}
+        </div>
+      </aside>
     </div>
   );
 }
