@@ -148,3 +148,18 @@ class PublicMemberResponse(BaseModel):
     description: Optional[str] = None
     media_logo_rectangle_id: Optional[str] = None
     news: List[PublicMemberNewsItem]
+
+# =======================================================
+# NEWSLETTER — SUBSCRIBE
+# =======================================================
+
+from pydantic import EmailStr
+
+
+class NewsletterSubscribeRequest(BaseModel):
+    email: EmailStr
+
+
+class NewsletterSubscribeResponse(BaseModel):
+    success: bool
+
