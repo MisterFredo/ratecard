@@ -121,6 +121,7 @@ export default function PublicTopNavShell({
       {mobileOpen && (
         <div className="fixed inset-0 z-50 bg-black/40">
           <aside className="absolute left-0 top-0 h-full w-4/5 max-w-xs bg-white flex flex-col">
+            {/* HEADER */}
             <div className="flex items-center justify-between p-4 border-b">
               <img
                 src="/assets/brand/ratecard-logo.jpeg"
@@ -136,6 +137,7 @@ export default function PublicTopNavShell({
               </button>
             </div>
 
+            {/* NAV */}
             <nav className="flex flex-col gap-4 p-6 text-base font-medium">
               {navItems.map((item) => {
                 const active = isActive(item.href);
@@ -164,8 +166,8 @@ export default function PublicTopNavShell({
             <div className="mt-auto p-6 border-t space-y-4 text-sm">
               <button
                 onClick={() => {
-                  openRightDrawer("newsletter", null, "silent");
                   setMobileOpen(false);
+                  openRightDrawer("newsletter", null, "silent");
                 }}
                 className="flex items-center gap-2 text-ratecard-blue"
               >
@@ -198,4 +200,3 @@ export default function PublicTopNavShell({
     </div>
   );
 }
-
