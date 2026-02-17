@@ -6,7 +6,7 @@ import { useDrawer } from "@/contexts/DrawerContext";
 import MemberDrawer from "@/components/drawers/MemberDrawer";
 import NewsDrawer from "@/components/drawers/NewsDrawer";
 import NewsletterDrawer from "@/components/newsletter/NewsletterDrawer";
-import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
+import AnalysisDrawerAdmin from "@/components/drawers/AnalysisDrawerAdmin";
 
 /* =========================================================
    HOST — RENDU CENTRALISÉ DES DRAWERS
@@ -46,7 +46,7 @@ export default function DrawerHost() {
           DRAWER DROITE — ANALYSIS
       ========================================= */}
       {rightDrawer.type === "analysis" && rightDrawer.id && (
-        <AnalysisDrawer
+        <AnalysisDrawerAdmin
           id={rightDrawer.id}
           onClose={closeRightDrawer}
         />
