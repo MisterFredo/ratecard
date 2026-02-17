@@ -18,8 +18,6 @@ type NewsData = {
   excerpt?: string | null;
   body?: string | null;
   published_at: string;
-
-  // 🔑 VISUEL NEWS — ID UNIQUEMENT
   visual_rect_id?: string | null;
 
   company: {
@@ -51,16 +49,11 @@ export default function NewsDrawer({ id, onClose }: Props) {
   const [data, setData] = useState<NewsData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  /* ---------------------------------------------------------
-     FERMETURE DU DRAWER (DROITE)
-     → dépend du mode d’ouverture
-  --------------------------------------------------------- */
   function close() {
     setIsOpen(false);
     onClose?.();
     closeRightDrawer();
 
-    // 🔑 nettoyage URL uniquement si ouverture pilotée par la route
     if (
       rightDrawer.mode === "route" &&
       pathname.startsWith("/news")
@@ -69,20 +62,12 @@ export default function NewsDrawer({ id, onClose }: Props) {
     }
   }
 
-  /* ---------------------------------------------------------
-     OUVERTURE PARTENAIRE (DRAWER GAUCHE)
-     → AU-DESSUS, SANS NAVIGATION
-  --------------------------------------------------------- */
   function openPartner(e: React.MouseEvent) {
     e.stopPropagation();
     if (!data?.company?.id_company) return;
-
     openLeftDrawer("member", data.company.id_company, "silent");
   }
 
-  /* ---------------------------------------------------------
-     CHARGEMENT DE LA NEWS
-  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       try {
@@ -99,9 +84,6 @@ export default function NewsDrawer({ id, onClose }: Props) {
 
   if (!data) return null;
 
-  /* ---------------------------------------------------------
-     VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
-  --------------------------------------------------------- */
   const visualSrc = data.visual_rect_id
     ? `${GCS_BASE_URL}/news/${data.visual_rect_id}`
     : data.company?.media_logo_rectangle_id
@@ -116,7 +98,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
         onClick={close}
       />
 
-      {/* DRAWER — DROITE */}
+      {/* DRAWER */}
       <aside
         className={`
           relative ml-auto w-full md:w-[760px]
@@ -128,7 +110,6 @@ export default function NewsDrawer({ id, onClose }: Props) {
         {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 flex items-start justify-between">
           <div className="space-y-1 max-w-xl">
-            {/* TAG PARTENAIRE — TOUJOURS VISIBLE */}
             <button
               onClick={openPartner}
               className="text-xs uppercase tracking-wide text-gray-400 hover:text-ratecard-blue"
@@ -150,30 +131,23 @@ export default function NewsDrawer({ id, onClose }: Props) {
           </button>
         </div>
 
-        {/* VISUEL — HERO */}
+        {/* HERO */}
         {visualSrc && (
           <img
             src={visualSrc}
             alt={data.title}
-            className="
-              w-full
-              h-auto
-              max-h-[340px]
-              object-cover
-            "
+            className="w-full h-auto max-h-[340px] object-cover"
           />
         )}
 
         {/* CONTENT */}
         <div className="px-5 py-6 space-y-8">
-          {/* EXCERPT */}
           {data.excerpt && (
             <p className="text-base font-medium text-gray-800 max-w-2xl">
               {data.excerpt}
             </p>
           )}
 
-          {/* BODY */}
           {data.body && (
             <div
               className="
@@ -193,6 +167,36 @@ export default function NewsDrawer({ id, onClose }: Props) {
             />
           )}
 
+          {/* =====================================================
+              CTA NEWSLETTER
+          ===================================================== */}
+          <div className="border border-gray-200 rounded-xl bg-gray-50 p-6 text-center space-y-3">
+            <p className="text-xs uppercase tracking-wide text-gray-500">
+              Newsletter
+            </p>
+
+            <p className="text-sm text-gray-800 font-medium">
+              Recevez chaque semaine la lecture stratégique
+              du marché.
+            </p>
+
+            <button
+              onClick={() => router.push("/newsletter")}
+              className="
+                inline-block
+                px-5 py-2
+                rounded-full
+                bg-ratecard-blue
+                text-white
+                text-sm
+                hover:opacity-90
+                transition
+              "
+            >
+              S’inscrire
+            </button>
+          </div>
+
           {/* FOOTER */}
           <div className="pt-4 border-t border-gray-200">
             <p className="text-xs text-gray-400">
@@ -205,4 +209,3 @@ export default function NewsDrawer({ id, onClose }: Props) {
     </div>
   );
 }
-
