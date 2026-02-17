@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Linkedin, Mail, Menu, X } from "lucide-react";
+import { useDrawer } from "@/contexts/DrawerContext";
 
 export default function PublicTopNavShell({
   children,
@@ -12,15 +13,12 @@ export default function PublicTopNavShell({
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { openRightDrawer } = useDrawer();
 
   function isActive(path: string) {
     return pathname === path || pathname.startsWith(`${path}/`);
   }
 
-  /* =====================================================
-     NAV ITEMS — PUBLIC
-     (News débranchée)
-  ===================================================== */
   const navItems = [
     { href: "/breves", label: "News" },
     { href: "/members", label: "Membres" },
@@ -34,13 +32,11 @@ export default function PublicTopNavShell({
           TOP NAV
       ===================================================== */}
       <header className="sticky top-0 z-40 bg-white border-b">
-        {/* Liseré */}
         <div className="h-1 bg-ratecard-blue" />
 
         <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-          {/* LEFT — LOGO + NAV */}
+          {/* LEFT */}
           <div className="flex items-center gap-10">
-            {/* LOGO */}
             <Link href="/" className="flex items-center">
               <img
                 src="/assets/brand/ratecard-logo.jpeg"
@@ -49,7 +45,6 @@ export default function PublicTopNavShell({
               />
             </Link>
 
-            {/* DESKTOP NAV */}
             <nav className="hidden md:flex items-center gap-2 text-sm font-medium">
               {navItems.map((item) => {
                 const active = isActive(item.href);
@@ -76,8 +71,11 @@ export default function PublicTopNavShell({
 
           {/* RIGHT — ACTIONS */}
           <div className="hidden md:flex items-center gap-4">
-            <Link
-              href="/newsletter"
+            {/* Newsletter → Drawer */}
+            <button
+              onClick={() =>
+                openRightDrawer("newsletter", null, "silent")
+              }
               className="
                 px-3 py-1.5 rounded-full
                 text-ratecard-blue
@@ -87,10 +85,13 @@ export default function PublicTopNavShell({
               aria-label="Newsletter"
             >
               <Mail size={16} />
-            </Link>
+            </button>
 
-            <Link
-              href="/linkedin"
+            {/* LinkedIn → URL externe */}
+            <a
+              href="https://www.linkedin.com/company/ratecard-adnovia/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="
                 px-3 py-1.5 rounded-full
                 text-ratecard-blue
@@ -100,7 +101,7 @@ export default function PublicTopNavShell({
               aria-label="LinkedIn"
             >
               <Linkedin size={16} />
-            </Link>
+            </a>
           </div>
 
           {/* MOBILE BURGER */}
@@ -120,7 +121,6 @@ export default function PublicTopNavShell({
       {mobileOpen && (
         <div className="fixed inset-0 z-50 bg-black/40">
           <aside className="absolute left-0 top-0 h-full w-4/5 max-w-xs bg-white flex flex-col">
-            {/* HEADER */}
             <div className="flex items-center justify-between p-4 border-b">
               <img
                 src="/assets/brand/ratecard-logo.jpeg"
@@ -136,7 +136,6 @@ export default function PublicTopNavShell({
               </button>
             </div>
 
-            {/* NAV */}
             <nav className="flex flex-col gap-4 p-6 text-base font-medium">
               {navItems.map((item) => {
                 const active = isActive(item.href);
@@ -163,23 +162,26 @@ export default function PublicTopNavShell({
 
             {/* ACTIONS */}
             <div className="mt-auto p-6 border-t space-y-4 text-sm">
-              <Link
-                href="/newsletter"
-                onClick={() => setMobileOpen(false)}
+              <button
+                onClick={() => {
+                  openRightDrawer("newsletter", null, "silent");
+                  setMobileOpen(false);
+                }}
                 className="flex items-center gap-2 text-ratecard-blue"
               >
                 <Mail size={16} />
                 Newsletter
-              </Link>
+              </button>
 
-              <Link
-                href="/linkedin"
-                onClick={() => setMobileOpen(false)}
+              <a
+                href="https://www.linkedin.com/company/ratecard-adnovia/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-2 text-ratecard-blue"
               >
                 <Linkedin size={16} />
                 LinkedIn
-              </Link>
+              </a>
             </div>
           </aside>
         </div>
@@ -196,3 +198,4 @@ export default function PublicTopNavShell({
     </div>
   );
 }
+
