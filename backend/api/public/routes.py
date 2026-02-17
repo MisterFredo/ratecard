@@ -393,20 +393,24 @@ def get_member(id_company: str):
 )
 def subscribe_newsletter(payload: NewsletterSubscribeRequest):
     """
-    Inscrit un email à la liste Newsletter Brevo.
+    Inscrit un email aux listes Newsletter Brevo (main + partners).
     """
     try:
         BREVO_API_KEY = os.getenv("BREVO_API_KEY")
-        BREVO_LIST_ID = os.getenv("BREVO_LIST_ID")
+        BREVO_LIST_ID_MAIN = os.getenv("BREVO_LIST_ID_MAIN")
+        BREVO_LIST_ID_PARTNERS = os.getenv("BREVO_LIST_ID_PARTNERS")
 
-        if not BREVO_API_KEY or not BREVO_LIST_ID:
+        if not BREVO_API_KEY or not BREVO_LIST_ID_MAIN or not BREVO_LIST_ID_PARTNERS:
             raise HTTPException(500, "Brevo non configuré")
 
         url = "https://api.brevo.com/v3/contacts"
 
         data = {
             "email": payload.email,
-            "listIds": [int(BREVO_LIST_ID)],
+            "listIds": [
+                int(BREVO_LIST_ID_MAIN),
+                int(BREVO_LIST_ID_PARTNERS),
+            ],
             "updateEnabled": True,
         }
 
@@ -428,4 +432,3 @@ def subscribe_newsletter(payload: NewsletterSubscribeRequest):
     except Exception:
         logger.exception("Erreur newsletter subscribe")
         raise HTTPException(500, "Erreur inscription newsletter")
-
