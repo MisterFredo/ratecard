@@ -99,7 +99,7 @@ export default function NewsletterDrawer({ onClose }: Props) {
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900">
-              Recevoir les lectures Ratecard
+              Recevoir les Newsletters Ratecard
             </h2>
           </div>
 
