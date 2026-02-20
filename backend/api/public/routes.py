@@ -225,34 +225,7 @@ def list_public_analyses():
         raise HTTPException(500, "Erreur récupération analyses")
 
 
-# ============================================================
-# LINKEDIN — GÉNÉRATION POST IA
-# ============================================================
-@router.post("/linkedin/generate")
-def generate_linkedin_post_route(payload: LinkedInGenerateRequest):
-    """
-    Génère un texte LinkedIn à partir de sources News / Analyses.
-    Retourne toujours une string (vide si échec).
-    """
-    try:
-        text = generate_linkedin_post(
-            sources=[s.dict() for s in payload.sources]
-        )
 
-        return {
-            "text": text or ""
-        }
-
-    except Exception:
-        logger.exception("Erreur génération post LinkedIn")
-        return {
-            "text": ""
-        }
-
-from api.public.models import (
-    PublicMembersResponse,
-    PublicMemberResponse,
-)
 
 # ============================================================
 # MEMBERS — LISTE DES PARTENAIRES
