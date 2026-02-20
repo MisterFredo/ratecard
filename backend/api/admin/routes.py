@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Response
+from core.digest.service import search_digest
 
 router = APIRouter()
 
@@ -31,3 +32,17 @@ def admin_logout(response: Response):
         path="/",
     )
     return {"status": "ok"}
+
+# ============================================================
+# DIGEST SEARCH
+# ============================================================
+
+@router.post("/digest/search")
+def admin_digest_search(payload: dict):
+
+    return search_digest(
+        topics=payload.get("topics"),
+        companies=payload.get("companies"),
+        news_types=payload.get("news_types"),
+        period_days=payload.get("period_days"),
+    )
