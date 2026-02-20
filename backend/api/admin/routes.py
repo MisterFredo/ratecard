@@ -51,9 +51,9 @@ def admin_digest_search(payload: dict):
         topics=payload.get("topics"),
         companies=payload.get("companies"),
         news_types=payload.get("news_types"),
-        period_days=payload.get("period_days"),
+        limit=payload.get("limit", 20),
+        cursor=payload.get("cursor"),
     )
-
 # ============================================================
 # DIGEST TEMPLATES
 # ============================================================
