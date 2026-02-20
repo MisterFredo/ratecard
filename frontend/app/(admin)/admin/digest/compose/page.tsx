@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import NewsletterSelector from "@/components/newsletter/NewsletterSelector";
 import NewsletterPreview from "@/components/newsletter/NewsletterPreview";
+import ClientNewsletterPreview from "@/components/newsletter/ClientNewsletterPreview";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
