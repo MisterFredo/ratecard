@@ -23,9 +23,9 @@ export default function ClientNewsletterPreview({
   analyses,
 }: {
   introText?: string;
-  news: NewsItem[];
-  breves: NewsItem[];
-  analyses: AnalysisItem[];
+  news: NewsletterNewsItem[];
+  breves: NewsletterNewsItem[];
+  analyses: NewsletterAnalysisItem[];
 }) {
   const html = useMemo(() => {
     return `
