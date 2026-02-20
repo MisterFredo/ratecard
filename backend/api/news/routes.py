@@ -339,6 +339,51 @@ def news_admin_stats_route():
         logger.exception("Erreur stats admin news")
         raise HTTPException(400, "Erreur stats news")
 
+# ============================================================
+# LINKEDIN GENERATE (ONE NEWS)
+# ============================================================
+
+@router.post("/{news_id}/linkedin/generate")
+def generate_linkedin_post_for_news(news_id: str):
+    try:
+        news = get_news(news_id)
+
+        if not news:
+            raise HTTPException(404, "News introuvable")
+
+        title = news.get("TITLE") or ""
+        excerpt = news.get("EXCERPT") or ""
+
+        if not title.strip():
+            raise HTTPException(400, "Titre manquant")
+
+        prompt = f"""
+Tu rédiges un post LinkedIn factuel à partir d’une seule actualité.
+
+RÈGLES STRICTES :
+- Strictement basé sur le titre et l’excerpt fournis.
+- Aucun ajout d'information.
+- Ton neutre et professionnel.
+- Pas de hashtags.
+- Pas d’emojis.
+- Paragraphes courts.
+- 500 à 900 caractères.
+
+Titre :
+{title}
+
+Excerpt :
+{excerpt}
+"""
+
+        text = run_llm(prompt)
+
+        return {"text": text.strip() if text else ""}
+
+    except Exception as e:
+        logger.exception("Erreur génération LinkedIn")
+        raise HTTPException(500, f"Erreur génération LinkedIn : {e}")
+
 
 # ============================================================
 # LINKEDIN GET
