@@ -306,6 +306,12 @@ export default function DigestPage() {
         breves={selectedBriefs}
         analyses={selectedAnalyses}
       />
+      <ClientNewsletterPreview
+        introText={introText}
+        news={selectedNews}
+        breves={selectedBriefs}
+        analyses={selectedAnalyses}
+      />
 
     </div>
   );
