@@ -114,6 +114,8 @@ def _search_news_digest(
             excerpt,
             published_at,
             news_type,
+            news_kind,
+            visual_rect_id,
             id_company,
             company_name,
             is_partner,
@@ -132,6 +134,8 @@ def _search_news_digest(
             "excerpt": r.get("excerpt"),
             "published_at": r.get("published_at"),
             "news_type": r.get("news_type"),
+            "news_kind": r.get("news_kind"),
+            "visual_rect_id": r.get("visual_rect_id"),  # 🔥 CRUCIAL
             "company": {
                 "id_company": r.get("id_company"),
                 "name": r.get("company_name"),
@@ -141,7 +145,6 @@ def _search_news_digest(
         }
         for r in rows
     ]
-
 
 # ============================================================
 # ANALYSES
