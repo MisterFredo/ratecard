@@ -68,14 +68,15 @@ export default function NewsStepLinkedIn({
   }
 
   /* ---------------------------------------------------------
-     GENERATE WITH AI (ONE SOURCE)
+     GENERATE WITH AI (ONE NEWS)
   --------------------------------------------------------- */
   async function generateWithAI() {
     setGenerating(true);
 
     try {
       const res = await api.post(
-        `/news/${newsId}/linkedin/generate`
+        `/news/${newsId}/linkedin/generate`,
+        {} // ⚠️ body requis par le wrapper api.post
       );
 
       if (res?.text) {
