@@ -2,9 +2,9 @@
 
 import { useMemo } from "react";
 import type {
-  NewsItem,
-  AnalysisItem,
-} from "@/app/(admin)/admin/newsletter/compose/page";
+  NewsletterNewsItem,
+  NewsletterAnalysisItem,
+} from "@/types/newsletter";
 
 /* =========================================================
    CONFIG
