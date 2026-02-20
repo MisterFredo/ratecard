@@ -181,7 +181,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
             </p>
 
             <button
-              onClick={() => router.push("/newsletter")}
+              onClick={() => openNewsletterDrawer("silent")}
               className="
                 inline-block
                 px-5 py-2
