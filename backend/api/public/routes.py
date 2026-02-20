@@ -25,6 +25,7 @@ from api.public.models import (
 from core.news.service import list_news
 from core.content.service import list_contents
 from core.event.service import list_home_events, list_event_contents
+from core.linkedin.generate_post import generate_linkedin_post
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
