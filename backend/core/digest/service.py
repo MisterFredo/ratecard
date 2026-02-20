@@ -1,0 +1,221 @@
+from typing import Optional, List, Dict, Any
+from datetime import datetime
+from google.cloud import bigquery
+
+from config import BQ_PROJECT, BQ_DATASET
+from utils.bigquery_utils import query_bq
+
+
+# ============================================================
+# TABLES / VIEWS
+# ============================================================
+
+VIEW_NEWS_ENRICHED = f"{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED"
+
+TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
+TABLE_CONTENT_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC"
+TABLE_CONTENT_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY"
+TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
+TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
+
+
+# ============================================================
+# PUBLIC API
+# ============================================================
+
+def search_digest(
+    topics: Optional[List[str]] = None,
+    companies: Optional[List[str]] = None,
+    news_types: Optional[List[str]] = None,
+    period_days: Optional[int] = None,
+) -> Dict[str, Any]:
+
+    news = _search_news_digest(
+        topics=topics,
+        companies=companies,
+        news_types=news_types,
+        period_days=period_days,
+        news_kind="NEWS",
+    )
+
+    breves = _search_news_digest(
+        topics=topics,
+        companies=companies,
+        news_types=news_types,
+        period_days=period_days,
+        news_kind="BRIEF",
+    )
+
+    analyses = _search_analyses_digest(
+        topics=topics,
+        companies=companies,
+        period_days=period_days,
+    )
+
+    return {
+        "news": news,
+        "breves": breves,
+        "analyses": analyses,
+    }
+
+
+# ============================================================
+# NEWS / BRÈVES
+# ============================================================
+
+def _search_news_digest(
+    topics: Optional[List[str]],
+    companies: Optional[List[str]],
+    news_types: Optional[List[str]],
+    period_days: Optional[int],
+    news_kind: str,
+):
+
+    where_clauses = [
+        "status = 'PUBLISHED'",
+        "published_at IS NOT NULL",
+        f"news_kind = '{news_kind}'",
+    ]
+
+    params = {}
+
+    if topics:
+        where_clauses.append(
+            """
+            EXISTS (
+                SELECT 1
+                FROM UNNEST(topics) t
+                WHERE t.id_topic IN UNNEST(@topics)
+            )
+            """
+        )
+        params["topics"] = topics
+
+    if companies:
+        where_clauses.append("id_company IN UNNEST(@companies)")
+        params["companies"] = companies
+
+    if news_types:
+        where_clauses.append("news_type IN UNNEST(@news_types)")
+        params["news_types"] = news_types
+
+    if period_days:
+        where_clauses.append(
+            "published_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @period_days DAY)"
+        )
+        params["period_days"] = period_days
+
+    where_sql = " AND ".join(where_clauses)
+
+    sql = f"""
+        SELECT
+            id_news,
+            title,
+            excerpt,
+            published_at,
+            news_type,
+            id_company,
+            company_name,
+            is_partner,
+            topics
+        FROM `{VIEW_NEWS_ENRICHED}`
+        WHERE {where_sql}
+        ORDER BY published_at DESC
+    """
+
+    rows = query_bq(sql, params)
+
+    return [
+        {
+            "id": r.get("id_news"),
+            "title": r.get("title"),
+            "excerpt": r.get("excerpt"),
+            "published_at": r.get("published_at"),
+            "news_type": r.get("news_type"),
+            "company": {
+                "id_company": r.get("id_company"),
+                "name": r.get("company_name"),
+                "is_partner": bool(r.get("is_partner")),
+            },
+            "topics": r.get("topics") or [],
+        }
+        for r in rows
+    ]
+
+
+# ============================================================
+# ANALYSES
+# ============================================================
+
+def _search_analyses_digest(
+    topics: Optional[List[str]],
+    companies: Optional[List[str]],
+    period_days: Optional[int],
+):
+
+    where_clauses = [
+        "C.STATUS = 'PUBLISHED'",
+        "C.IS_ACTIVE = TRUE",
+        "C.PUBLISHED_AT IS NOT NULL",
+    ]
+
+    params = {}
+
+    if period_days:
+        where_clauses.append(
+            "C.PUBLISHED_AT >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @period_days DAY)"
+        )
+        params["period_days"] = period_days
+
+    if topics:
+        where_clauses.append(
+            """
+            EXISTS (
+                SELECT 1
+                FROM `{TABLE_CONTENT_TOPIC}` CT
+                WHERE CT.ID_CONTENT = C.ID_CONTENT
+                  AND CT.ID_TOPIC IN UNNEST(@topics)
+            )
+            """
+        )
+        params["topics"] = topics
+
+    if companies:
+        where_clauses.append(
+            """
+            EXISTS (
+                SELECT 1
+                FROM `{TABLE_CONTENT_COMPANY}` CC
+                WHERE CC.ID_CONTENT = C.ID_CONTENT
+                  AND CC.ID_COMPANY IN UNNEST(@companies)
+            )
+            """
+        )
+        params["companies"] = companies
+
+    where_sql = " AND ".join(where_clauses)
+
+    sql = f"""
+        SELECT
+            C.ID_CONTENT,
+            C.ANGLE_TITLE,
+            C.ANGLE_SIGNAL,
+            C.EXCERPT,
+            C.PUBLISHED_AT
+        FROM `{TABLE_CONTENT}` C
+        WHERE {where_sql}
+        ORDER BY C.PUBLISHED_AT DESC
+    """
+
+    rows = query_bq(sql, params)
+
+    return [
+        {
+            "id": r.get("ID_CONTENT"),
+            "title": r.get("ANGLE_TITLE"),
+            "signal": r.get("ANGLE_SIGNAL"),
+            "excerpt": r.get("EXCERPT"),
+            "published_at": r.get("PUBLISHED_AT"),
+        }
+        for r in rows
+    ]
