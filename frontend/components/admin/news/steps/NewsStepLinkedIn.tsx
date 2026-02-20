@@ -74,15 +74,9 @@ export default function NewsStepLinkedIn({
     setGenerating(true);
 
     try {
-      const res = await api.post("/public/linkedin/generate", {
-        sources: [
-          {
-            type: "news",
-            title,
-            excerpt,
-          },
-        ],
-      });
+      const res = await api.post(
+        `/news/${newsId}/linkedin/generate`
+      );
 
       if (res?.text) {
         setText(res.text);
