@@ -63,28 +63,29 @@ export default function DigestPage() {
   }, []);
 
   /* -----------------------------------------------------
-     SEARCH
+     SEARCH (MODEL OR GLOBAL)
   ----------------------------------------------------- */
   async function handleSearch() {
-    if (!selectedModelId) return;
-
-    const model = models.find(
-      (m) => m.id_template === selectedModelId
-    );
-    if (!model) return;
-
     setLoading(true);
 
     try {
+      const model = models.find(
+        (m) => m.id_template === selectedModelId
+      );
+
+      const topics = model?.topics ?? undefined;
+      const companies = model?.companies ?? undefined;
+      const news_types = model?.news_types ?? undefined;
+
       const res = await fetch(
         `${API_BASE}/admin/digest/search`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            topics: model.topics,
-            companies: model.companies,
-            news_types: model.news_types,
+            topics,
+            companies,
+            news_types,
             limit: 20,
           }),
         }
@@ -102,6 +103,7 @@ export default function DigestPage() {
         null;
 
       setCursor(lastDate);
+
       setHasMore(
         (json.news?.length || 0) === 20 ||
           (json.breves?.length || 0) === 20
@@ -119,12 +121,15 @@ export default function DigestPage() {
      LOAD MORE
   ----------------------------------------------------- */
   async function handleLoadMore() {
-    if (!cursor || !selectedModelId) return;
+    if (!cursor) return;
 
     const model = models.find(
       (m) => m.id_template === selectedModelId
     );
-    if (!model) return;
+
+    const topics = model?.topics ?? undefined;
+    const companies = model?.companies ?? undefined;
+    const news_types = model?.news_types ?? undefined;
 
     setLoadingMore(true);
 
@@ -135,9 +140,9 @@ export default function DigestPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            topics: model.topics,
-            companies: model.companies,
-            news_types: model.news_types,
+            topics,
+            companies,
+            news_types,
             limit: 20,
             cursor,
           }),
@@ -160,6 +165,7 @@ export default function DigestPage() {
         null;
 
       setCursor(lastDate);
+
       setHasMore(
         newNews.length === 20 || newBreves.length === 20
       );
@@ -201,7 +207,7 @@ export default function DigestPage() {
           Digest
         </h1>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
           <select
             value={selectedModelId}
             onChange={(e) =>
@@ -209,7 +215,7 @@ export default function DigestPage() {
             }
             className="border rounded px-3 py-2 text-sm"
           >
-            <option value="">Choisir un modèle</option>
+            <option value="">Flux global (sans modèle)</option>
             {models.map((m) => (
               <option
                 key={m.id_template}
