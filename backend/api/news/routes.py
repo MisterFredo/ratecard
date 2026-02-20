@@ -357,17 +357,36 @@ def generate_linkedin_post_for_news(news_id: str):
         if not title.strip():
             raise HTTPException(400, "Titre manquant")
 
-        prompt = f"""
-Tu rédiges un post LinkedIn factuel à partir d’une seule actualité.
+        site_url = "https://ratecard-frontend.onrender.com"
+        news_url = f"{site_url}/news?news_id={news_id}"
 
-RÈGLES STRICTES :
+        prompt = f"""
+Tu rédiges un post LinkedIn structuré et engageant à partir d’une seule actualité.
+
+OBJECTIF :
+Créer un post lisible au scroll, factuel, dynamique,
+sans ton commercial ni exagération.
+
+RÈGLES ABSOLUES :
 - Strictement basé sur le titre et l’excerpt fournis.
 - Aucun ajout d'information.
-- Ton neutre et professionnel.
+- Aucun chiffre ou fait inventé.
 - Pas de hashtags.
 - Pas d’emojis.
+- Pas de superlatifs creux (ex: "majeur", "ambitieux", "clé", "stratégique" sans justification).
 - Paragraphes courts.
-- 500 à 900 caractères.
+- Style direct, clair, orienté signal marché.
+
+STRUCTURE OBLIGATOIRE :
+
+1) Première ligne = phrase courte et forte issue du titre (hook).
+2) Une phrase de contexte.
+3) 2 à 4 lignes courtes mettant en évidence le signal principal.
+4) Une phrase de mise en perspective factuelle (tendance, logique marché).
+5) Ligne finale obligatoire :
+Lire la news complète : {news_url}
+
+Longueur cible : 600 à 1 000 caractères.
 
 Titre :
 {title}
@@ -383,7 +402,6 @@ Excerpt :
     except Exception as e:
         logger.exception("Erreur génération LinkedIn")
         raise HTTPException(500, f"Erreur génération LinkedIn : {e}")
-
 
 # ============================================================
 # LINKEDIN GET
