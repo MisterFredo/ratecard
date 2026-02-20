@@ -1,5 +1,4 @@
 from typing import Optional, List, Dict, Any
-from datetime import datetime
 from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
@@ -15,8 +14,6 @@ VIEW_NEWS_ENRICHED = f"{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED"
 TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
 TABLE_CONTENT_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC"
 TABLE_CONTENT_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY"
-TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
-TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 
 
 # ============================================================
@@ -27,14 +24,16 @@ def search_digest(
     topics: Optional[List[str]] = None,
     companies: Optional[List[str]] = None,
     news_types: Optional[List[str]] = None,
-    period_days: Optional[int] = None,
+    limit: int = 20,
+    cursor: Optional[str] = None,
 ) -> Dict[str, Any]:
 
     news = _search_news_digest(
         topics=topics,
         companies=companies,
         news_types=news_types,
-        period_days=period_days,
+        limit=limit,
+        cursor=cursor,
         news_kind="NEWS",
     )
 
@@ -42,14 +41,16 @@ def search_digest(
         topics=topics,
         companies=companies,
         news_types=news_types,
-        period_days=period_days,
+        limit=limit,
+        cursor=cursor,
         news_kind="BRIEF",
     )
 
     analyses = _search_analyses_digest(
         topics=topics,
         companies=companies,
-        period_days=period_days,
+        limit=limit,
+        cursor=cursor,
     )
 
     return {
@@ -67,7 +68,8 @@ def _search_news_digest(
     topics: Optional[List[str]],
     companies: Optional[List[str]],
     news_types: Optional[List[str]],
-    period_days: Optional[int],
+    limit: int,
+    cursor: Optional[str],
     news_kind: str,
 ):
 
@@ -77,7 +79,9 @@ def _search_news_digest(
         f"news_kind = '{news_kind}'",
     ]
 
-    params = {}
+    params = {
+        "limit": limit
+    }
 
     if topics:
         where_clauses.append(
@@ -99,11 +103,9 @@ def _search_news_digest(
         where_clauses.append("news_type IN UNNEST(@news_types)")
         params["news_types"] = news_types
 
-    if period_days:
-        where_clauses.append(
-            "published_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @period_days DAY)"
-        )
-        params["period_days"] = period_days
+    if cursor:
+        where_clauses.append("published_at < @cursor")
+        params["cursor"] = cursor
 
     where_sql = " AND ".join(where_clauses)
 
@@ -123,6 +125,7 @@ def _search_news_digest(
         FROM `{VIEW_NEWS_ENRICHED}`
         WHERE {where_sql}
         ORDER BY published_at DESC
+        LIMIT @limit
     """
 
     rows = query_bq(sql, params)
@@ -135,7 +138,7 @@ def _search_news_digest(
             "published_at": r.get("published_at"),
             "news_type": r.get("news_type"),
             "news_kind": r.get("news_kind"),
-            "visual_rect_id": r.get("visual_rect_id"),  # 🔥 CRUCIAL
+            "visual_rect_id": r.get("visual_rect_id"),
             "company": {
                 "id_company": r.get("id_company"),
                 "name": r.get("company_name"),
@@ -146,6 +149,7 @@ def _search_news_digest(
         for r in rows
     ]
 
+
 # ============================================================
 # ANALYSES
 # ============================================================
@@ -153,7 +157,8 @@ def _search_news_digest(
 def _search_analyses_digest(
     topics: Optional[List[str]],
     companies: Optional[List[str]],
-    period_days: Optional[int],
+    limit: int,
+    cursor: Optional[str],
 ):
 
     where_clauses = [
@@ -162,17 +167,13 @@ def _search_analyses_digest(
         "C.PUBLISHED_AT IS NOT NULL",
     ]
 
-    params = {}
-
-    if period_days:
-        where_clauses.append(
-            "C.PUBLISHED_AT >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @period_days DAY)"
-        )
-        params["period_days"] = period_days
+    params = {
+        "limit": limit
+    }
 
     if topics:
         where_clauses.append(
-            """
+            f"""
             EXISTS (
                 SELECT 1
                 FROM `{TABLE_CONTENT_TOPIC}` CT
@@ -185,7 +186,7 @@ def _search_analyses_digest(
 
     if companies:
         where_clauses.append(
-            """
+            f"""
             EXISTS (
                 SELECT 1
                 FROM `{TABLE_CONTENT_COMPANY}` CC
@@ -196,18 +197,22 @@ def _search_analyses_digest(
         )
         params["companies"] = companies
 
+    if cursor:
+        where_clauses.append("C.PUBLISHED_AT < @cursor")
+        params["cursor"] = cursor
+
     where_sql = " AND ".join(where_clauses)
 
     sql = f"""
         SELECT
             C.ID_CONTENT,
             C.ANGLE_TITLE,
-            C.ANGLE_SIGNAL,
             C.EXCERPT,
             C.PUBLISHED_AT
         FROM `{TABLE_CONTENT}` C
         WHERE {where_sql}
         ORDER BY C.PUBLISHED_AT DESC
+        LIMIT @limit
     """
 
     rows = query_bq(sql, params)
@@ -216,7 +221,6 @@ def _search_analyses_digest(
         {
             "id": r.get("ID_CONTENT"),
             "title": r.get("ANGLE_TITLE"),
-            "signal": r.get("ANGLE_SIGNAL"),
             "excerpt": r.get("EXCERPT"),
             "published_at": r.get("PUBLISHED_AT"),
         }
