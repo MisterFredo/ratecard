@@ -47,7 +47,7 @@ export default function BrevesSwitcher() {
   const router = useRouter();
 
   const [mode, setMode] = useState<Mode>("actors");
-  const [period, setPeriod] = useState<Period>("7d");
+  const [period, setPeriod] = useState<Period>("30d");
   const [openOthers, setOpenOthers] = useState(false);
 
   const [stats, setStats] = useState<StatsResponse>({
