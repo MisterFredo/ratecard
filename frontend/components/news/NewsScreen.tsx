@@ -47,7 +47,7 @@ type NewsItem = {
 ========================================================= */
 
 async function fetchNews(): Promise<NewsItemRaw[]> {
-  const res = await fetch(`${API_BASE}/news/list`, {
+  const res = await fetch(`${API_BASE}/news/list?kind=NEWS`, {
     cache: "no-store",
   });
 
