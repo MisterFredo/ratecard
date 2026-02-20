@@ -44,10 +44,15 @@ export default function NewsDrawer({ id, onClose }: Props) {
     rightDrawer,
     openLeftDrawer,
     closeRightDrawer,
+    openNewsletterDrawer,
   } = useDrawer();
 
   const [data, setData] = useState<NewsData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+
+  /* =========================================================
+     CLOSE
+  ========================================================= */
 
   function close() {
     setIsOpen(false);
@@ -62,11 +67,19 @@ export default function NewsDrawer({ id, onClose }: Props) {
     }
   }
 
+  /* =========================================================
+     OPEN PARTNER (LEFT DRAWER)
+  ========================================================= */
+
   function openPartner(e: React.MouseEvent) {
     e.stopPropagation();
     if (!data?.company?.id_company) return;
     openLeftDrawer("member", data.company.id_company, "silent");
   }
+
+  /* =========================================================
+     LOAD DATA
+  ========================================================= */
 
   useEffect(() => {
     async function load() {
@@ -84,11 +97,19 @@ export default function NewsDrawer({ id, onClose }: Props) {
 
   if (!data) return null;
 
+  /* =========================================================
+     VISUAL
+  ========================================================= */
+
   const visualSrc = data.visual_rect_id
     ? `${GCS_BASE_URL}/news/${data.visual_rect_id}`
     : data.company?.media_logo_rectangle_id
     ? `${GCS_BASE_URL}/companies/${data.company.media_logo_rectangle_id}`
     : null;
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <div className="fixed inset-0 z-[100] flex">
@@ -181,7 +202,10 @@ export default function NewsDrawer({ id, onClose }: Props) {
             </p>
 
             <button
-              onClick={() => openNewsletterDrawer("silent")}
+              onClick={() => {
+                closeRightDrawer();
+                openNewsletterDrawer("silent");
+              }}
               className="
                 inline-block
                 px-5 py-2
