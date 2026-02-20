@@ -9,8 +9,6 @@ import {
   CalendarDays,
   Layers,
   Newspaper,
-  FileStack,
-  SlidersHorizontal,
   Mail,
   Share2,
 } from "lucide-react";
@@ -22,9 +20,6 @@ export default function AdminShell({
 }) {
   const pathname = usePathname();
 
-  /* =========================================================
-     ACTIVE STATE — STRICT ROUTE MATCHING
-  ========================================================= */
   function isActive(href: string) {
     if (!pathname) return false;
     return pathname === href || pathname.startsWith(href + "/");
@@ -32,26 +27,18 @@ export default function AdminShell({
 
   const navItems = [
     { href: "/admin/content", label: "Analyses", icon: Layers },
-    { href: "/admin/synthesis", label: "Synthèses", icon: FileStack },
-    {
-      href: "/admin/synthesis/models",
-      label: "Modèles",
-      icon: SlidersHorizontal,
-      subtle: true,
-    },
+
     { href: "/admin/news", label: "News", icon: Newspaper },
 
-    // LINKEDIN — POSTS QUOTIDIENS
     {
       href: "/admin/linkedin/compose",
       label: "LinkedIn",
       icon: Share2,
     },
 
-    // NEWSLETTER — COMPOSITION HEBDO
     {
-      href: "/admin/newsletter/compose",
-      label: "Newsletter",
+      href: "/admin/digest/compose",
+      label: "Digest",
       icon: Mail,
     },
 
@@ -66,7 +53,9 @@ export default function AdminShell({
       {/* ===== SIDEBAR ===== */}
       <aside className="w-64 bg-ratecard-blue text-white p-6 space-y-10 flex flex-col">
         <div>
-          <h1 className="text-xl font-semibold">Ratecard Admin</h1>
+          <h1 className="text-xl font-semibold">
+            Ratecard Admin
+          </h1>
           <p className="text-xs opacity-80 mt-1">
             Gestion éditoriale
           </p>
@@ -83,7 +72,6 @@ export default function AdminShell({
                 href={item.href}
                 className={`
                   flex items-center gap-2 px-3 py-2 rounded
-                  ${item.subtle ? "ml-6 text-xs opacity-80" : ""}
                   ${
                     active
                       ? "bg-white text-ratecard-blue font-semibold"
@@ -91,7 +79,7 @@ export default function AdminShell({
                   }
                 `}
               >
-                <Icon size={item.subtle ? 14 : 18} />
+                <Icon size={18} />
                 <span>{item.label}</span>
               </Link>
             );
