@@ -59,9 +59,13 @@ def create_route(data: NewsCreate):
 # ============================================================
 
 @router.get("/list")
-def list_route():
+def list_route(kind: str | None = None):
     try:
-        rows = list_news()
+        # Sécurité minimale : on autorise seulement NEWS ou BRIEF
+        if kind and kind not in ["NEWS", "BRIEF"]:
+            raise HTTPException(400, "Invalid news kind")
+
+        rows = list_news(kind)
 
         news = [
             {
