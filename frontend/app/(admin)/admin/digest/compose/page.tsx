@@ -4,14 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import NewsletterSelector from "@/components/newsletter/NewsletterSelector";
 import NewsletterPreview from "@/components/newsletter/NewsletterPreview";
 import ClientNewsletterPreview from "@/components/newsletter/ClientNewsletterPreview";
+import { api } from "@/lib/api";
 
 import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
 } from "@/types/newsletter";
-
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 /* =========================================================
    TYPES
@@ -55,11 +53,16 @@ export default function DigestPage() {
      LOAD MODELS
   ----------------------------------------------------- */
   useEffect(() => {
-    fetch(`${API_BASE}/admin/digest/template`)
-      .then((r) => r.json())
-      .then((data) => {
+    async function loadTemplates() {
+      try {
+        const data = await api.get("/admin/digest/template");
         setModels(data || []);
-      });
+      } catch (e) {
+        console.error("Erreur chargement modèles", e);
+      }
+    }
+
+    loadTemplates();
   }, []);
 
   /* -----------------------------------------------------
@@ -77,21 +80,12 @@ export default function DigestPage() {
       const companies = model?.companies ?? undefined;
       const news_types = model?.news_types ?? undefined;
 
-      const res = await fetch(
-        `${API_BASE}/admin/digest/search`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            topics,
-            companies,
-            news_types,
-            limit: 20,
-          }),
-        }
-      );
-
-      const json = await res.json();
+      const json = await api.post("/admin/digest/search", {
+        topics,
+        companies,
+        news_types,
+        limit: 20,
+      });
 
       setNews(json.news || []);
       setBreves(json.breves || []);
@@ -106,12 +100,14 @@ export default function DigestPage() {
 
       setHasMore(
         (json.news?.length || 0) === 20 ||
-          (json.breves?.length || 0) === 20
+        (json.breves?.length || 0) === 20
       );
 
       setSelectedNewsIds([]);
       setSelectedBriefIds([]);
       setSelectedAnalysisIds([]);
+    } catch (e) {
+      console.error("Erreur search digest", e);
     } finally {
       setLoading(false);
     }
@@ -134,22 +130,13 @@ export default function DigestPage() {
     setLoadingMore(true);
 
     try {
-      const res = await fetch(
-        `${API_BASE}/admin/digest/search`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            topics,
-            companies,
-            news_types,
-            limit: 20,
-            cursor,
-          }),
-        }
-      );
-
-      const json = await res.json();
+      const json = await api.post("/admin/digest/search", {
+        topics,
+        companies,
+        news_types,
+        limit: 20,
+        cursor,
+      });
 
       const newNews = json.news || [];
       const newBreves = json.breves || [];
@@ -169,6 +156,8 @@ export default function DigestPage() {
       setHasMore(
         newNews.length === 20 || newBreves.length === 20
       );
+    } catch (e) {
+      console.error("Erreur load more", e);
     } finally {
       setLoadingMore(false);
     }
