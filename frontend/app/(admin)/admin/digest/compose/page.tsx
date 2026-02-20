@@ -5,6 +5,11 @@ import NewsletterSelector from "@/components/newsletter/NewsletterSelector";
 import NewsletterPreview from "@/components/newsletter/NewsletterPreview";
 import ClientNewsletterPreview from "@/components/newsletter/ClientNewsletterPreview";
 
+import type {
+  NewsletterNewsItem,
+  NewsletterAnalysisItem,
+} from "@/types/newsletter";
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -20,22 +25,6 @@ type DigestModel = {
   news_types: string[];
 };
 
-type NewsItem = {
-  id: string;
-  title: string;
-  excerpt?: string;
-  published_at?: string;
-  news_kind: "NEWS" | "BRIEF";
-  visual_rect_id?: string;
-};
-
-type AnalysisItem = {
-  id: string;
-  title: string;
-  excerpt?: string;
-  published_at?: string;
-};
-
 /* =========================================================
    PAGE
 ========================================================= */
@@ -47,9 +36,10 @@ export default function DigestPage() {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [breves, setBreves] = useState<NewsItem[]>([]);
-  const [analyses, setAnalyses] = useState<AnalysisItem[]>([]);
+  const [news, setNews] = useState<NewsletterNewsItem[]>([]);
+  const [breves, setBreves] = useState<NewsletterNewsItem[]>([]);
+  const [analyses, setAnalyses] =
+    useState<NewsletterAnalysisItem[]>([]);
 
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -114,7 +104,7 @@ export default function DigestPage() {
       setCursor(lastDate);
       setHasMore(
         (json.news?.length || 0) === 20 ||
-        (json.breves?.length || 0) === 20
+          (json.breves?.length || 0) === 20
       );
 
       setSelectedNewsIds([]);
@@ -170,7 +160,9 @@ export default function DigestPage() {
         null;
 
       setCursor(lastDate);
-      setHasMore(newNews.length === 20 || newBreves.length === 20);
+      setHasMore(
+        newNews.length === 20 || newBreves.length === 20
+      );
     } finally {
       setLoadingMore(false);
     }
@@ -203,7 +195,6 @@ export default function DigestPage() {
 
   return (
     <div className="space-y-12">
-
       {/* HEADER */}
       <div className="space-y-4">
         <h1 className="text-lg font-semibold">
@@ -211,7 +202,6 @@ export default function DigestPage() {
         </h1>
 
         <div className="flex gap-4">
-
           <select
             value={selectedModelId}
             onChange={(e) =>
@@ -237,13 +227,11 @@ export default function DigestPage() {
           >
             {loading ? "Recherche…" : "Rechercher"}
           </button>
-
         </div>
       </div>
 
       {/* SELECTORS */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-
         <NewsletterSelector
           title="News"
           items={news}
@@ -267,7 +255,6 @@ export default function DigestPage() {
           onChange={setSelectedAnalysisIds}
           labelKey="title"
         />
-
       </div>
 
       {hasMore && (
@@ -306,13 +293,13 @@ export default function DigestPage() {
         breves={selectedBriefs}
         analyses={selectedAnalyses}
       />
+
       <ClientNewsletterPreview
         introText={introText}
         news={selectedNews}
         breves={selectedBriefs}
         analyses={selectedAnalyses}
       />
-
     </div>
   );
 }
