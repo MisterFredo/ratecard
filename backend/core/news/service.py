@@ -174,37 +174,27 @@ def get_news(id_news: str):
 # ============================================================
 # LIST NEWS / BRÈVES (PUBLIC)
 # ============================================================
-def list_news():
+def list_news(news_kind: str | None = None):
+    where_kind = ""
+    if news_kind:
+        where_kind = f"AND n.NEWS_KIND = '{news_kind}'"
+
     sql = f"""
         SELECT
             n.ID_NEWS,
-
-            -- STRUCTURE
-            n.NEWS_KIND,     -- NEWS | BRIEF
-
-            -- CATÉGORIE ÉDITORIALE
-            n.NEWS_TYPE,     -- ACQUISITION / CORPORATE / ...
-
-            -- CONTENU
+            n.NEWS_KIND,
+            n.NEWS_TYPE,
             n.TITLE,
             n.EXCERPT,
             n.BODY,
-
-            -- PUBLICATION
             n.STATUS,
             n.PUBLISHED_AT,
-
-            -- VISUEL
             n.MEDIA_RECTANGLE_ID AS VISUAL_RECT_ID,
             n.HAS_VISUAL,
-
-            -- SOCIÉTÉ
             c.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
             c.MEDIA_LOGO_RECTANGLE_ID,
             c.IS_PARTNER,
-
-            -- TOPICS
             T.TOPICS
 
         FROM `{TABLE_NEWS}` n
@@ -230,11 +220,12 @@ def list_news():
             n.STATUS = 'PUBLISHED'
             AND n.PUBLISHED_AT IS NOT NULL
             AND n.PUBLISHED_AT <= CURRENT_TIMESTAMP()
+            {where_kind}
 
         ORDER BY n.PUBLISHED_AT DESC
     """
-    return query_bq(sql)
 
+    return query_bq(sql)
 # ============================================================
 # NEWS TYPES (RÉFÉRENTIEL ÉDITORIAL)
 # ============================================================
