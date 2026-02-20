@@ -3,9 +3,9 @@
 import { useMemo } from "react";
 
 import type {
-  NewsItem,
-  AnalysisItem,
-} from "@/app/(admin)/admin/digest/compose/page";
+  NewsletterNewsItem,
+  NewsletterAnalysisItem,
+} from "@/types/newsletter";
 
 import { SITE_URL } from "@/lib/site";
 
