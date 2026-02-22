@@ -406,58 +406,50 @@ def generate_linkedin_post_for_news(news_id: str):
 
         title = news.get("TITLE") or ""
         excerpt = news.get("EXCERPT") or ""
-        company_name = news.get("COMPANY_NAME") or ""
+
+        # ✅ Récupération correcte de la société
+        company_name = ""
+        if news.get("company") and news["company"].get("name"):
+            company_name = news["company"]["name"]
 
         if not title.strip():
             raise HTTPException(400, "Titre manquant")
 
-        # URL dynamique (prod propre)
         site_url = os.getenv("PUBLIC_SITE_URL", "https://ratecard.fr")
         news_url = f"{site_url}/news?news_id={news_id}"
 
         prompt = f"""
 Tu es l’éditeur LinkedIn de Ratecard.
-Ratecard décrypte les signaux du marché AdTech, Retail Media et transformation marketing.
 
 MISSION :
-Rédiger un post LinkedIn analytique et structuré à partir d’une actualité.
-Le ton doit être sobre, factuel, orienté signal marché.
+Rédiger un post analytique basé strictement sur l’actualité fournie.
 
-RÈGLES ABSOLUES :
-- Strictement basé sur les informations fournies.
-- Aucun ajout d’information.
+RÈGLES :
+- Strictement basé sur les informations ci-dessous.
+- Aucun ajout.
 - Aucun chiffre inventé.
 - Pas de hashtags.
 - Pas d’emojis.
-- Pas de ton promotionnel.
-- Pas de superlatifs creux.
-- Paragraphes courts.
-- Style clair, professionnel, précis.
-- Si une société est fournie, elle doit être citée explicitement.
-
-OBJECTIF ÉDITORIAL :
-Mettre en évidence le signal.
-Expliquer ce que cela révèle du marché.
-Rester analytique, jamais commercial.
+- Ton analytique et factuel.
 
 STRUCTURE OBLIGATOIRE :
 
-1) Première ligne = hook analytique court (reprend ou reformule le signal clé).
+1) Hook analytique court.
 2) Mention explicite de la société si présente.
-3) Décryptage du signal (2 à 4 phrases courtes).
+3) Décryptage du signal (2 à 4 phrases).
 4) Mise en perspective marché.
 5) Ligne finale obligatoire :
 Lire la news complète : {news_url}
 
 Longueur cible : 700 à 1 100 caractères.
 
-Société :
+SOCIÉTÉ :
 {company_name}
 
-Titre :
+TITRE :
 {title}
 
-Excerpt :
+EXCERPT :
 {excerpt}
 """
 
@@ -468,28 +460,6 @@ Excerpt :
     except Exception as e:
         logger.exception("Erreur génération LinkedIn")
         raise HTTPException(500, f"Erreur génération LinkedIn : {e}")
-
-# ============================================================
-# LINKEDIN GET
-# ============================================================
-
-@router.get("/{news_id}/linkedin", response_model=NewsLinkedInPostResponse)
-def get_linkedin_post_for_news(news_id: str):
-    try:
-        post = get_news_linkedin_post(news_id)
-
-        if not post:
-            return NewsLinkedInPostResponse()
-
-        return NewsLinkedInPostResponse(
-            text=post.get("TEXT"),
-            mode=post.get("MODE"),
-        )
-
-    except Exception:
-        logger.exception("Erreur récupération post LinkedIn")
-        raise HTTPException(500, "Erreur récupération post LinkedIn")
-
 
 # ============================================================
 # LINKEDIN SAVE
