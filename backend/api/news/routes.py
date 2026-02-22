@@ -207,18 +207,6 @@ def list_breves(
 
 
 # ============================================================
-# GET ONE NEWS
-# ============================================================
-
-@router.get("/{id_news}")
-def get_route(id_news: str):
-    news = get_news(id_news)
-    if not news:
-        raise HTTPException(404, "News introuvable")
-    return {"status": "ok", "news": news}
-
-
-# ============================================================
 # UPDATE
 # ============================================================
 
@@ -505,3 +493,15 @@ def save_linkedin_post_for_news(news_id: str, data: NewsLinkedInPost):
     except Exception:
         logger.exception("Erreur sauvegarde post LinkedIn")
         raise HTTPException(500, "Erreur sauvegarde post LinkedIn")
+
+
+# ============================================================
+# GET ONE NEWS
+# ============================================================
+
+@router.get("/{id_news}")
+def get_route(id_news: str):
+    news = get_news(id_news)
+    if not news:
+        raise HTTPException(404, "News introuvable")
+    return {"status": "ok", "news": news}
