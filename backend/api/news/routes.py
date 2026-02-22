@@ -273,25 +273,89 @@ def publish_route(id_news: str, data: NewsPublish):
 @router.post("/ai/generate")
 def ai_generate(payload: dict):
     source_text = payload.get("source_text")
-    source_type = payload.get("source_type")
+    source_type = payload.get("source_type")  # conservé si utile plus tard
 
     if not source_text or not source_text.strip():
         raise HTTPException(400, "Source manquante")
 
     prompt = f"""
-Tu es l’assistant éditorial de Ratecard.
-Objectif : transformer une source brute en news factuelle.
-Retourne un JSON strict avec title, excerpt, body_html.
-Source:
+Tu es l’assistant éditorial de Ratecard, média spécialisé AdTech, Retail Media et transformation marketing.
+
+MISSION :
+Transformer une source brute (post, communiqué, interview, article, note interne, transcription, etc.) 
+en une news éditoriale factuelle, claire et structurée en français professionnel.
+
+RÈGLES ABSOLUES :
+- Strictement basé sur la source fournie.
+- Aucun ajout d'information non présente dans la source.
+- Aucun chiffre inventé.
+- Aucun ton promotionnel ou commercial.
+- Pas d’exagération.
+- Pas d’opinion.
+- Pas de reformulation marketing.
+- Style journalistique sobre, précis et synthétique.
+- Français professionnel irréprochable.
+
+OBJECTIF ÉDITORIAL :
+Mettre en évidence le signal marché.
+Clarifier l’annonce.
+Donner du contexte implicite si présent dans la source.
+Rendre la lecture fluide et structurée.
+
+FORMAT DE SORTIE :
+Retourne uniquement un JSON strict valide, sans texte autour, avec :
+
+{{
+  "title": "...",
+  "excerpt": "...",
+  "body_html": "..."
+}}
+
+CONTRAINTES :
+
+TITLE
+- 70 à 120 caractères
+- Informatif et factuel
+- Sans point d’exclamation
+- Sans superlatif
+- Doit refléter le signal principal
+
+EXCERPT
+- 2 à 3 phrases maximum
+- Résume l’annonce
+- Met en évidence l’enjeu
+
+BODY_HTML
+- 3 à 6 paragraphes
+- Paragraphes courts
+- Structure logique :
+    1. Annonce principale
+    2. Détails clés
+    3. Éléments factuels importants (si présents)
+    4. Mise en perspective factuelle si possible
+- Utiliser <p> pour les paragraphes
+- Aucun style inline
+- Aucun emoji
+- Aucun hashtag
+
+SOURCE :
 {source_text}
 """
 
     raw = run_llm(prompt)
 
     if not raw:
-        return {"status": "ok", "news": {"title": "", "excerpt": "", "body": ""}}
+        return {
+            "status": "ok",
+            "news": {
+                "title": "",
+                "excerpt": "",
+                "body": "",
+            },
+        }
 
     try:
+        # Extraction stricte du JSON
         match = re.search(r"\{[\s\S]*\}", raw)
         if not match:
             raise ValueError("JSON introuvable")
@@ -301,9 +365,9 @@ Source:
         return {
             "status": "ok",
             "news": {
-                "title": data.get("title", "").strip(),
-                "excerpt": data.get("excerpt", "").strip(),
-                "body": data.get("body_html", "").strip(),
+                "title": (data.get("title") or "").strip(),
+                "excerpt": (data.get("excerpt") or "").strip(),
+                "body": (data.get("body_html") or "").strip(),
             },
         }
 
