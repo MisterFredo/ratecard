@@ -35,6 +35,7 @@ from utils.llm import run_llm
 import logging
 import json
 import re
+import os
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
