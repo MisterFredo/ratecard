@@ -392,7 +392,7 @@ def news_admin_stats_route():
         raise HTTPException(400, "Erreur stats news")
 
 # ============================================================
-# LINKEDIN GENERATE (ONE NEWS)
+# LINKEDIN GENERATE (ONE NEWS) — VERSION RATECARD
 # ============================================================
 
 @router.post("/{news_id}/linkedin/generate")
@@ -405,40 +405,53 @@ def generate_linkedin_post_for_news(news_id: str):
 
         title = news.get("TITLE") or ""
         excerpt = news.get("EXCERPT") or ""
+        company_name = news.get("COMPANY_NAME") or ""
 
         if not title.strip():
             raise HTTPException(400, "Titre manquant")
 
-        site_url = "https://ratecard-frontend.onrender.com"
+        # URL dynamique (prod propre)
+        site_url = os.getenv("PUBLIC_SITE_URL", "https://ratecard.fr")
         news_url = f"{site_url}/news?news_id={news_id}"
 
         prompt = f"""
-Tu rédiges un post LinkedIn structuré et engageant à partir d’une seule actualité.
+Tu es l’éditeur LinkedIn de Ratecard.
+Ratecard décrypte les signaux du marché AdTech, Retail Media et transformation marketing.
 
-OBJECTIF :
-Créer un post lisible au scroll, factuel, dynamique,
-sans ton commercial ni exagération.
+MISSION :
+Rédiger un post LinkedIn analytique et structuré à partir d’une actualité.
+Le ton doit être sobre, factuel, orienté signal marché.
 
 RÈGLES ABSOLUES :
-- Strictement basé sur le titre et l’excerpt fournis.
-- Aucun ajout d'information.
-- Aucun chiffre ou fait inventé.
+- Strictement basé sur les informations fournies.
+- Aucun ajout d’information.
+- Aucun chiffre inventé.
 - Pas de hashtags.
 - Pas d’emojis.
-- Pas de superlatifs creux (ex: "majeur", "ambitieux", "clé", "stratégique" sans justification).
+- Pas de ton promotionnel.
+- Pas de superlatifs creux.
 - Paragraphes courts.
-- Style direct, clair, orienté signal marché.
+- Style clair, professionnel, précis.
+- Si une société est fournie, elle doit être citée explicitement.
+
+OBJECTIF ÉDITORIAL :
+Mettre en évidence le signal.
+Expliquer ce que cela révèle du marché.
+Rester analytique, jamais commercial.
 
 STRUCTURE OBLIGATOIRE :
 
-1) Première ligne = phrase courte et forte issue du titre (hook).
-2) Une phrase de contexte.
-3) 2 à 4 lignes courtes mettant en évidence le signal principal.
-4) Une phrase de mise en perspective factuelle (tendance, logique marché).
+1) Première ligne = hook analytique court (reprend ou reformule le signal clé).
+2) Mention explicite de la société si présente.
+3) Décryptage du signal (2 à 4 phrases courtes).
+4) Mise en perspective marché.
 5) Ligne finale obligatoire :
 Lire la news complète : {news_url}
 
-Longueur cible : 600 à 1 000 caractères.
+Longueur cible : 700 à 1 100 caractères.
+
+Société :
+{company_name}
 
 Titre :
 {title}
