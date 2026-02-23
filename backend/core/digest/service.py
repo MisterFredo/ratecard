@@ -26,6 +26,7 @@ def search_digest(
     news_types: Optional[List[str]] = None,
     limit: int = 20,
     cursor: Optional[str] = None,
+    period: Optional[str] = "total",
 ) -> Dict[str, Any]:
 
     news = _search_news_digest(
@@ -35,6 +36,7 @@ def search_digest(
         limit=limit,
         cursor=cursor,
         news_kind="NEWS",
+        period=period,
     )
 
     breves = _search_news_digest(
@@ -44,6 +46,7 @@ def search_digest(
         limit=limit,
         cursor=cursor,
         news_kind="BRIEF",
+        period=period,
     )
 
     analyses = _search_analyses_digest(
@@ -51,6 +54,7 @@ def search_digest(
         companies=companies,
         limit=limit,
         cursor=cursor,
+        period=period,
     )
 
     return {
@@ -71,6 +75,7 @@ def _search_news_digest(
     limit: int,
     cursor: Optional[str],
     news_kind: str,
+    period: Optional[str],
 ):
 
     where_clauses = [
@@ -107,6 +112,15 @@ def _search_news_digest(
         where_clauses.append("published_at < @cursor")
         params["cursor"] = cursor
 
+    # Period filter
+    if period == "7d":
+        where_clauses.append(
+            "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
+        )
+    elif period == "30d":
+        where_clauses.append(
+            "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
+        )
     where_sql = " AND ".join(where_clauses)
 
     sql = f"""
@@ -158,6 +172,7 @@ def _search_analyses_digest(
     companies: Optional[List[str]],
     limit: int,
     cursor: Optional[str],
+    period: Optional[str],
 ):
 
     where_clauses = [
@@ -199,6 +214,16 @@ def _search_analyses_digest(
     if cursor:
         where_clauses.append("C.PUBLISHED_AT < @cursor")
         params["cursor"] = cursor
+
+    # Period filter
+    if period == "7d":
+        where_clauses.append(
+            "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
+        )
+    elif period == "30d":
+        where_clauses.append(
+            "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
+        )
 
     where_sql = " AND ".join(where_clauses)
 
