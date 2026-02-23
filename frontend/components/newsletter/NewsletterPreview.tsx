@@ -6,9 +6,7 @@ import type {
   NewsletterAnalysisItem,
 } from "@/types/newsletter";
 
-/* =========================================================
-   CONFIG
-========================================================= */
+/* ========================================================= */
 
 const PUBLIC_SITE_URL = "https://ratecard.fr";
 const GCS_BASE_URL =
@@ -47,199 +45,48 @@ function formatDate(date?: string) {
   });
 }
 
-/* =========================================================
-   BLOCKS
-========================================================= */
+/* ========================================================= */
 
-function renderIntro(introText?: string) {
-  if (!introText) return "";
+type EditorialBlock =
+  | (NewsletterNewsItem & { __type: "news" | "breve" })
+  | (NewsletterAnalysisItem & {
+      __type: "analysis";
+    });
 
-  return `
-  <tr>
-    <td style="
-      padding:0 0 30px 0;
-      font-family:Arial,Helvetica,sans-serif;
-      font-size:15px;
-      line-height:22px;
-      color:#111827;
-    ">
-      ${escapeHtml(introText).replace(/\n/g, "<br/>")}
-    </td>
-  </tr>`;
-}
+/* ========================================================= */
 
-/* ------------------ NEWS ------------------ */
+function renderEditorialBlock(item: EditorialBlock) {
+  const isAnalysis = item.__type === "analysis";
+  const isBreve = item.__type === "breve";
+  const isNews = item.__type === "news";
 
-function renderNews(news: NewsletterNewsItem[]) {
-  if (!news.length) return "";
-
-  const items = news
-    .map((n) => {
-      const imageUrl = resolveImageUrl(
-        n.visual_rect_id,
-        n.company_visual_rect_id
-      );
-
-      const metaParts = [
-        n.company?.name,
-        n.news_type,
-        formatDate(n.published_at),
-      ].filter(Boolean);
-
-      return `
+  if (isAnalysis) {
+    return `
       <tr>
-        <td style="padding:22px 0;border-bottom:1px solid #E5E7EB;">
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-
-              ${
-                imageUrl
-                  ? `
-              <td width="120" valign="top" style="padding-right:16px;">
-                <img
-                  src="${imageUrl}"
-                  width="120"
-                  style="display:block;width:120px;height:auto;border-radius:6px;"
-                />
-              </td>`
-                  : ""
-              }
-
-              <td valign="top" style="font-family:Arial,Helvetica,sans-serif;">
-
-                <div style="
-                  font-size:12px;
-                  color:#6B7280;
-                  margin-bottom:6px;
-                ">
-                  ${escapeHtml(metaParts.join(" • "))}
-                </div>
-
-                <div style="
-                  font-size:16px;
-                  font-weight:bold;
-                  line-height:22px;
-                  color:#111827;
-                  margin-bottom:6px;
-                ">
-                  ${escapeHtml(n.title)}
-                </div>
-
-                ${
-                  n.excerpt
-                    ? `<div style="
-                        font-size:14px;
-                        line-height:20px;
-                        color:#374151;
-                        margin-bottom:10px;
-                      ">
-                        ${escapeHtml(n.excerpt)}
-                      </div>`
-                    : ""
-                }
-
-                <a href="${PUBLIC_SITE_URL}/news?news_id=${n.id}"
-                   style="
-                     font-size:13px;
-                     color:#2563EB;
-                     text-decoration:none;
-                     font-weight:bold;
-                   ">
-                  Lire →
-                </a>
-
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>`;
-    })
-    .join("");
-
-  return `
-  <tr>
-    <td style="
-      padding:30px 0 12px 0;
-      font-family:Arial,Helvetica,sans-serif;
-      font-size:18px;
-      font-weight:bold;
-      color:#111827;
-    ">
-      Actualités
-    </td>
-  </tr>
-  ${items}`;
-}
-
-/* ------------------ BREVES ------------------ */
-
-function renderBreves(breves: NewsletterNewsItem[]) {
-  if (!breves.length) return "";
-
-  const items = breves
-    .map(
-      (b) => `
-      <tr>
-        <td style="padding:14px 0;border-bottom:1px solid #F3F4F6;">
-          <div style="font-size:14px;font-weight:bold;color:#111827;">
-            ${escapeHtml(b.title)}
+        <td style="padding:26px 0;border-bottom:1px solid #E5E7EB;">
+          <div style="
+            font-size:16px;
+            font-weight:bold;
+            color:#111827;
+            margin-bottom:6px;
+          ">
+            ${escapeHtml(item.title)}
           </div>
 
           ${
-            b.excerpt
-              ? `<div style="font-size:13px;color:#6B7280;margin-top:4px;">
-                  ${escapeHtml(b.excerpt)}
-                </div>`
+            item.excerpt
+              ? `<div style="
+                  font-size:14px;
+                  line-height:20px;
+                  color:#374151;
+                  margin-bottom:8px;
+                ">
+                ${escapeHtml(item.excerpt)}
+              </div>`
               : ""
           }
 
-          <a href="${PUBLIC_SITE_URL}/breves?breve_id=${b.id}"
-             style="font-size:12px;color:#2563EB;text-decoration:none;">
-            Lire →
-          </a>
-        </td>
-      </tr>`
-    )
-    .join("");
-
-  return `
-  <tr>
-    <td style="
-      padding:32px 0 12px 0;
-      font-family:Arial,Helvetica,sans-serif;
-      font-size:18px;
-      font-weight:bold;
-      color:#111827;
-    ">
-      Brèves
-    </td>
-  </tr>
-  ${items}`;
-}
-
-/* ------------------ ANALYSES ------------------ */
-
-function renderAnalyses(analyses: NewsletterAnalysisItem[]) {
-  if (!analyses.length) return "";
-
-  const items = analyses
-    .map(
-      (a) => `
-      <tr>
-        <td style="padding:22px 0;border-bottom:1px solid #E5E7EB;">
-          <div style="font-size:16px;font-weight:bold;color:#111827;">
-            ${escapeHtml(a.title)}
-          </div>
-
-          ${
-            a.excerpt
-              ? `<div style="font-size:14px;color:#374151;margin:6px 0 8px 0;">
-                  ${escapeHtml(a.excerpt)}
-                </div>`
-              : ""
-          }
-
-          <a href="${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}"
+          <a href="${PUBLIC_SITE_URL}/analysis?analysis_id=${item.id}"
              style="
                font-size:13px;
                font-weight:bold;
@@ -249,23 +96,99 @@ function renderAnalyses(analyses: NewsletterAnalysisItem[]) {
             Lire l’analyse →
           </a>
         </td>
-      </tr>`
-    )
-    .join("");
+      </tr>
+    `;
+  }
+
+  const imageUrl = resolveImageUrl(
+    (item as any).visual_rect_id,
+    (item as any).company_visual_rect_id
+  );
+
+  const metaParts = [
+    (item as any).company?.name,
+    (item as any).news_type,
+    formatDate((item as any).published_at),
+  ].filter(Boolean);
 
   return `
-  <tr>
-    <td style="
-      padding:36px 0 12px 0;
-      font-family:Arial,Helvetica,sans-serif;
-      font-size:18px;
-      font-weight:bold;
-      color:#111827;
-    ">
-      Analyses Ratecard
-    </td>
-  </tr>
-  ${items}`;
+    <tr>
+      <td style="padding:24px 0;border-bottom:1px solid #E5E7EB;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+
+            ${
+              imageUrl && !isBreve
+                ? `
+              <td width="120" valign="top" style="padding-right:16px;">
+                <img
+                  src="${imageUrl}"
+                  width="120"
+                  style="display:block;width:120px;height:auto;border-radius:6px;"
+                />
+              </td>`
+                : ""
+            }
+
+            <td valign="top" style="font-family:Arial,Helvetica,sans-serif;">
+
+              ${
+                metaParts.length
+                  ? `<div style="
+                      font-size:12px;
+                      color:#6B7280;
+                      margin-bottom:6px;
+                    ">
+                      ${escapeHtml(
+                        metaParts.join(" • ")
+                      )}
+                    </div>`
+                  : ""
+              }
+
+              <div style="
+                font-size:16px;
+                font-weight:bold;
+                line-height:22px;
+                color:#111827;
+                margin-bottom:6px;
+              ">
+                ${escapeHtml(item.title)}
+              </div>
+
+              ${
+                item.excerpt
+                  ? `<div style="
+                      font-size:14px;
+                      line-height:20px;
+                      color:#374151;
+                      margin-bottom:8px;
+                    ">
+                    ${escapeHtml(item.excerpt)}
+                  </div>`
+                  : ""
+              }
+
+              <a href="${
+                isBreve
+                  ? `${PUBLIC_SITE_URL}/breves?breve_id=${item.id}`
+                  : `${PUBLIC_SITE_URL}/news?news_id=${item.id}`
+              }"
+                 style="
+                   font-size:13px;
+                   color:#2563EB;
+                   text-decoration:none;
+                   font-weight:bold;
+                 ">
+                Lire →
+              </a>
+
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  `;
 }
 
 /* ========================================================= */
@@ -281,6 +204,30 @@ export default function NewsletterPreview({
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
 }) {
+  const editorialFlow: EditorialBlock[] =
+    useMemo(() => {
+      const mappedNews = news.map((n) => ({
+        ...n,
+        __type: "news" as const,
+      }));
+
+      const mappedBreves = breves.map((b) => ({
+        ...b,
+        __type: "breve" as const,
+      }));
+
+      const mappedAnalyses = analyses.map((a) => ({
+        ...a,
+        __type: "analysis" as const,
+      }));
+
+      return [
+        ...mappedNews,
+        ...mappedBreves,
+        ...mappedAnalyses,
+      ];
+    }, [news, breves, analyses]);
+
   const html = useMemo(() => {
     return `
 <!DOCTYPE html>
@@ -304,10 +251,30 @@ export default function NewsletterPreview({
 </td>
 </tr>
 
-${renderIntro(introText)}
-${renderNews(news)}
-${renderBreves(breves)}
-${renderAnalyses(analyses)}
+${
+  introText
+    ? `
+<tr>
+<td style="
+  padding-bottom:30px;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:15px;
+  line-height:22px;
+  color:#111827;
+">
+${escapeHtml(introText).replace(
+  /\n/g,
+  "<br/>"
+)}
+</td>
+</tr>
+`
+    : ""
+}
+
+${editorialFlow
+  .map((item) => renderEditorialBlock(item))
+  .join("")}
 
 </table>
 </td>
@@ -316,7 +283,7 @@ ${renderAnalyses(analyses)}
 </body>
 </html>
 `;
-  }, [introText, news, breves, analyses]);
+  }, [introText, editorialFlow]);
 
   function copyHtml() {
     navigator.clipboard.writeText(html);
@@ -342,7 +309,7 @@ ${renderAnalyses(analyses)}
         <iframe
           title="Newsletter preview"
           srcDoc={html}
-          className="w-full h-[820px]"
+          className="w-full h-[850px]"
         />
       </div>
     </section>
