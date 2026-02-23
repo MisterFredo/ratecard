@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import NewsletterSelector from "@/components/newsletter/NewsletterSelector";
-import NewsletterPreview from "@/components/newsletter/NewsletterPreview";
-import ClientNewsletterPreview from "@/components/newsletter/ClientNewsletterPreview";
 import { api } from "@/lib/api";
+
+import DigestSidebar from "@/components/newsletter/DigestSidebar";
+import DigestPreviewPanel from "@/components/newsletter/DigestPreviewPanel";
 
 import type {
   NewsletterNewsItem,
@@ -28,12 +28,21 @@ type DigestModel = {
 ========================================================= */
 
 export default function DigestPage() {
+  /* -----------------------------
+     MODELS (optionnel / presets)
+  ----------------------------- */
   const [models, setModels] = useState<DigestModel[]>([]);
   const [selectedModelId, setSelectedModelId] = useState("");
 
+  /* -----------------------------
+     LOADING
+  ----------------------------- */
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  /* -----------------------------
+     DATA
+  ----------------------------- */
   const [news, setNews] = useState<NewsletterNewsItem[]>([]);
   const [breves, setBreves] = useState<NewsletterNewsItem[]>([]);
   const [analyses, setAnalyses] =
@@ -42,6 +51,9 @@ export default function DigestPage() {
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
 
+  /* -----------------------------
+     SELECTION
+  ----------------------------- */
   const [selectedNewsIds, setSelectedNewsIds] = useState<string[]>([]);
   const [selectedBriefIds, setSelectedBriefIds] = useState<string[]>([]);
   const [selectedAnalysisIds, setSelectedAnalysisIds] =
@@ -49,9 +61,10 @@ export default function DigestPage() {
 
   const [introText, setIntroText] = useState("");
 
-  /* -----------------------------------------------------
-     LOAD MODELS
-  ----------------------------------------------------- */
+  /* =========================================================
+     LOAD MODELS (OPTIONAL PRESETS)
+  ========================================================= */
+
   useEffect(() => {
     async function loadTemplates() {
       try {
@@ -65,9 +78,10 @@ export default function DigestPage() {
     loadTemplates();
   }, []);
 
-  /* -----------------------------------------------------
-     SEARCH (MODEL OR GLOBAL)
-  ----------------------------------------------------- */
+  /* =========================================================
+     SEARCH
+  ========================================================= */
+
   async function handleSearch() {
     setLoading(true);
 
@@ -100,7 +114,7 @@ export default function DigestPage() {
 
       setHasMore(
         (json.news?.length || 0) === 20 ||
-        (json.breves?.length || 0) === 20
+          (json.breves?.length || 0) === 20
       );
 
       setSelectedNewsIds([]);
@@ -113,9 +127,10 @@ export default function DigestPage() {
     }
   }
 
-  /* -----------------------------------------------------
+  /* =========================================================
      LOAD MORE
-  ----------------------------------------------------- */
+  ========================================================= */
+
   async function handleLoadMore() {
     if (!cursor) return;
 
@@ -163,16 +178,17 @@ export default function DigestPage() {
     }
   }
 
-  /* -----------------------------------------------------
-     SELECTED ITEMS
-  ----------------------------------------------------- */
+  /* =========================================================
+     DERIVED SELECTED ITEMS
+  ========================================================= */
+
   const selectedNews = useMemo(
     () => news.filter((n) => selectedNewsIds.includes(n.id)),
     [news, selectedNewsIds]
   );
 
   const selectedBriefs = useMemo(
-    () => breves.filter((n) => selectedBriefIds.includes(n.id)),
+    () => breves.filter((b) => selectedBriefIds.includes(b.id)),
     [breves, selectedBriefIds]
   );
 
@@ -185,116 +201,47 @@ export default function DigestPage() {
   );
 
   /* =========================================================
-     RENDER
+     LAYOUT
   ========================================================= */
 
   return (
-    <div className="space-y-12">
-      {/* HEADER */}
-      <div className="space-y-4">
-        <h1 className="text-lg font-semibold">
-          Digest
-        </h1>
+    <div className="h-[calc(100vh-120px)]">
+      <div className="grid grid-cols-[420px_1fr] h-full gap-8">
 
-        <div className="flex gap-4 items-center">
-          <select
-            value={selectedModelId}
-            onChange={(e) =>
-              setSelectedModelId(e.target.value)
-            }
-            className="border rounded px-3 py-2 text-sm"
-          >
-            <option value="">Flux global (sans modèle)</option>
-            {models.map((m) => (
-              <option
-                key={m.id_template}
-                value={m.id_template}
-              >
-                {m.name}
-              </option>
-            ))}
-          </select>
+        <DigestSidebar
+          models={models}
+          selectedModelId={selectedModelId}
+          setSelectedModelId={setSelectedModelId}
+          onSearch={handleSearch}
+          loading={loading}
 
-          <button
-            onClick={handleSearch}
-            disabled={loading}
-            className="bg-black text-white text-sm rounded px-4 py-2"
-          >
-            {loading ? "Recherche…" : "Rechercher"}
-          </button>
-        </div>
+          news={news}
+          breves={breves}
+          analyses={analyses}
+
+          selectedNewsIds={selectedNewsIds}
+          setSelectedNewsIds={setSelectedNewsIds}
+          selectedBriefIds={selectedBriefIds}
+          setSelectedBriefIds={setSelectedBriefIds}
+          selectedAnalysisIds={selectedAnalysisIds}
+          setSelectedAnalysisIds={setSelectedAnalysisIds}
+
+          introText={introText}
+          setIntroText={setIntroText}
+
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          onLoadMore={handleLoadMore}
+        />
+
+        <DigestPreviewPanel
+          introText={introText}
+          news={selectedNews}
+          breves={selectedBriefs}
+          analyses={selectedAnalyses}
+        />
+
       </div>
-
-      {/* SELECTORS */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-        <NewsletterSelector
-          title="News"
-          items={news}
-          selectedIds={selectedNewsIds}
-          onChange={setSelectedNewsIds}
-          labelKey="title"
-        />
-
-        <NewsletterSelector
-          title="Brèves"
-          items={breves}
-          selectedIds={selectedBriefIds}
-          onChange={setSelectedBriefIds}
-          labelKey="title"
-        />
-
-        <NewsletterSelector
-          title="Analyses"
-          items={analyses}
-          selectedIds={selectedAnalysisIds}
-          onChange={setSelectedAnalysisIds}
-          labelKey="title"
-        />
-      </div>
-
-      {hasMore && (
-        <div className="text-center">
-          <button
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-            className="px-4 py-2 border rounded text-sm"
-          >
-            {loadingMore
-              ? "Chargement…"
-              : "Charger plus"}
-          </button>
-        </div>
-      )}
-
-      {/* INTRO */}
-      <div className="space-y-3">
-        <h2 className="text-sm font-semibold">
-          Introduction
-        </h2>
-        <textarea
-          className="w-full border rounded p-3 min-h-[120px]"
-          value={introText}
-          onChange={(e) =>
-            setIntroText(e.target.value)
-          }
-          placeholder="Introduction de la newsletter..."
-        />
-      </div>
-
-      {/* PREVIEW */}
-      <NewsletterPreview
-        introText={introText}
-        news={selectedNews}
-        breves={selectedBriefs}
-        analyses={selectedAnalyses}
-      />
-
-      <ClientNewsletterPreview
-        introText={introText}
-        news={selectedNews}
-        breves={selectedBriefs}
-        analyses={selectedAnalyses}
-      />
     </div>
   );
 }
