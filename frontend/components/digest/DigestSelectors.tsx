@@ -3,6 +3,7 @@
 import NewsletterSelector from "@/components/newsletter/NewsletterSelector";
 import type {
   NewsletterNewsItem,
+  HeaderConfig,
   NewsletterAnalysisItem,
 } from "@/types/newsletter";
 
