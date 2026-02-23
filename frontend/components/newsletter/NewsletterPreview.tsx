@@ -14,7 +14,7 @@ import { SITE_URL } from "@/lib/site";
 const LOGO_URL = `${SITE_URL}/assets/brand/ratecard-logo.jpeg`;
 
 const GCS_BASE_URL =
-  "https://storage.googleapis.com/ratecard-media";
+  process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 /* =========================================================
    UTILS
