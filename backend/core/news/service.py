@@ -43,6 +43,7 @@ def serialize_row(row: dict) -> dict:
 # ============================================================
 # CREATE NEWS / BRÈVE
 # ============================================================
+
 def create_news(data: NewsCreate) -> str:
     if not data.id_company:
         raise ValueError("ID_COMPANY obligatoire")
@@ -57,16 +58,52 @@ def create_news(data: NewsCreate) -> str:
     news_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
 
+    client = get_bigquery_client()
+
+    # ============================================================
+    # 🔥 FALLBACK VISUEL SOCIÉTÉ
+    # ============================================================
+
+    media_id = data.media_rectangle_id
+
+    if not media_id:
+        query = f"""
+            SELECT MEDIA_LOGO_RECTANGLE_ID
+            FROM `{TABLE_COMPANY}`
+            WHERE ID_COMPANY = @company_id
+            LIMIT 1
+        """
+
+        job = client.query(
+            query,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter(
+                        "company_id", "STRING", data.id_company
+                    )
+                ]
+            )
+        )
+
+        result = list(job.result())
+
+        if result and result[0].MEDIA_LOGO_RECTANGLE_ID:
+            media_id = result[0].MEDIA_LOGO_RECTANGLE_ID
+
+    # ============================================================
+    # INSERT NEWS
+    # ============================================================
+
     row = [{
         "ID_NEWS": news_id,
         "STATUS": "DRAFT",
         "IS_ACTIVE": True,
 
-        # ✅ STRUCTURE
-        "NEWS_KIND": data.news_kind,      # NEWS | BRIEF
+        # STRUCTURE
+        "NEWS_KIND": data.news_kind,  # NEWS | BRIEF
 
-        # ✅ CATÉGORIE RÉDACTIONNELLE
-        "NEWS_TYPE": data.news_type,      # CORPORATE | PARTENAIRE | ...
+        # CATÉGORIE RÉDACTIONNELLE
+        "NEWS_TYPE": data.news_type,
 
         # CONTENU
         "ID_COMPANY": data.id_company,
@@ -74,9 +111,9 @@ def create_news(data: NewsCreate) -> str:
         "EXCERPT": data.excerpt,
         "BODY": data.body if data.news_kind == "NEWS" else None,
 
-        # VISUEL
-        "MEDIA_RECTANGLE_ID": data.media_rectangle_id,
-        "HAS_VISUAL": bool(data.media_rectangle_id),
+        # VISUEL (toujours rempli après fallback)
+        "MEDIA_RECTANGLE_ID": media_id,
+        "HAS_VISUAL": bool(media_id),
 
         # META
         "SOURCE_URL": data.source_url,
@@ -87,12 +124,17 @@ def create_news(data: NewsCreate) -> str:
         "UPDATED_AT": now,
     }]
 
-    client = get_bigquery_client()
     client.load_table_from_json(
         row,
         TABLE_NEWS,
-        job_config=bigquery.LoadJobConfig(write_disposition="WRITE_APPEND"),
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
     ).result()
+
+    # ============================================================
+    # RELATIONS
+    # ============================================================
 
     if data.topics:
         insert_bq(
@@ -107,8 +149,6 @@ def create_news(data: NewsCreate) -> str:
         )
 
     return news_id
-
-
 # ============================================================
 # GET ONE NEWS / BRÈVE
 # ============================================================
