@@ -419,10 +419,15 @@ def delete_news(news_id: str):
 # ============================================================
 # PUBLISH
 # ============================================================
+# ============================================================
+# PUBLISH
+# ============================================================
 def publish_news(id_news: str, published_at: Optional[str] = None):
+
     rows = query_bq(
         f"""
         SELECT
+            n.ID_COMPANY,
             n.NEWS_KIND,
             n.EXCERPT,
             n.MEDIA_RECTANGLE_ID,
@@ -443,16 +448,54 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
     if not row["EXCERPT"]:
         raise ValueError("Un excerpt est requis pour publier")
 
+    # ============================================================
+    # 🔥 VISUEL OBLIGATOIRE POUR NEWS
+    # ============================================================
+
     media_id = row["MEDIA_RECTANGLE_ID"]
-    company_rect = row["COMPANY_RECT"]
 
     if row["NEWS_KIND"] == "NEWS":
-        if not media_id and not company_rect:
-            raise ValueError("Un visuel est requis pour publier une news")
 
-    # 🔥 INJECTION STRUCTURELLE DU VISUEL SI ABSENT
-    if not media_id and company_rect:
-        media_id = company_rect
+        if not media_id:
+            company_rect = row["COMPANY_RECT"]
+
+            if not company_rect:
+                raise ValueError("Un visuel est requis pour publier une news")
+
+            # ====================================================
+            # COPIE PHYSIQUE DU LOGO SOCIÉTÉ VERS /news/
+            # ====================================================
+
+            bucket_name = "ratecard-media"  # adapte si besoin
+
+            storage_client = storage.Client()
+            bucket = storage_client.bucket(bucket_name)
+
+            source_blob = bucket.blob(f"companies/{company_rect}")
+
+            if not source_blob.exists():
+                raise ValueError("Logo société introuvable dans GCS")
+
+            new_filename = f"NEWS_{id_news}_rect.jpg"
+            destination_blob = bucket.blob(f"news/{new_filename}")
+
+            destination_blob.rewrite(source_blob)
+
+            # Mise à jour BQ avec le nouveau visuel
+            update_bq(
+                table=TABLE_NEWS,
+                fields={
+                    "MEDIA_RECTANGLE_ID": new_filename,
+                    "HAS_VISUAL": True,
+                },
+                where={"ID_NEWS": id_news},
+            )
+
+            media_id = new_filename
+
+    # ============================================================
+    # DATE & STATUS
+    # ============================================================
 
     now = datetime.now(timezone.utc)
 
@@ -469,8 +512,6 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
         table=TABLE_NEWS,
         fields={
             "STATUS": status,
-            "MEDIA_RECTANGLE_ID": media_id,
-            "HAS_VISUAL": bool(media_id),
             "PUBLISHED_AT": publish_date.isoformat(),
             "UPDATED_AT": now.isoformat(),
         },
