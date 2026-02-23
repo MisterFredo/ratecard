@@ -1,6 +1,10 @@
 "use client";
 
 import NewsletterSelector from "@/components/newsletter/NewsletterSelector";
+import type {
+  NewsletterNewsItem,
+  NewsletterAnalysisItem,
+} from "@/types/newsletter";
 
 type EditorialItem = {
   id: string;
@@ -23,8 +27,31 @@ export default function DigestSelectors({
   breves,
   analyses,
   editorialOrder,
-  toggleEditorialItem,
+  setEditorialOrder,
 }: Props) {
+
+  function toggleEditorialItem(
+    id: string,
+    type: EditorialItem["type"]
+  ) {
+    const exists = editorialOrder.find(
+      (item) => item.id === id && item.type === type
+    );
+
+    if (exists) {
+      setEditorialOrder((prev) =>
+        prev.filter(
+          (item) => !(item.id === id && item.type === type)
+        )
+      );
+    } else {
+      setEditorialOrder((prev) => [
+        ...prev,
+        { id, type },
+      ]);
+    }
+  }
+
   return (
     <div className="grid grid-cols-3 gap-10">
       <NewsletterSelector
