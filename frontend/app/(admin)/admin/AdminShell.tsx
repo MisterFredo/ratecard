@@ -37,7 +37,7 @@ export default function AdminShell({
     },
 
     {
-      href: "/admin/digest/compose",
+      href: "/admin/digest", // ✅ nouveau chemin
       label: "Digest",
       icon: Mail,
     },
