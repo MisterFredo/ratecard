@@ -32,17 +32,22 @@ function escapeHtml(text: string) {
 }
 
 /**
- * Résout dynamiquement le bon dossier GCS
- * selon le nom du fichier.
+ * EXACTEMENT la même logique que Home :
+ * priorité visuel NEWS → fallback SOCIÉTÉ
  */
-function resolveImageUrl(filename?: string | null) {
-  if (!filename) return null;
-
-  if (filename.startsWith("COMPANY_")) {
-    return `${GCS_BASE_URL}/companies/${filename}`;
+function resolveImageUrl(
+  visualRectId?: string | null,
+  companyVisualRectId?: string | null
+) {
+  if (visualRectId) {
+    return `${GCS_BASE_URL}/news/${visualRectId}`;
   }
 
-  return `${GCS_BASE_URL}/news/${filename}`;
+  if (companyVisualRectId) {
+    return `${GCS_BASE_URL}/companies/${companyVisualRectId}`;
+  }
+
+  return null;
 }
 
 /* =========================================================
@@ -89,7 +94,10 @@ function renderNews(news: NewsletterNewsItem[]) {
 
     ${news
       .map((n) => {
-        const imageUrl = resolveImageUrl(n.visual_rect_id);
+        const imageUrl = resolveImageUrl(
+          n.visual_rect_id,
+          n.company_visual_rect_id
+        );
 
         return `
       <tr>
@@ -178,7 +186,8 @@ function renderBreves(breves: NewsletterNewsItem[]) {
         </td>
       </tr>`
       )
-      .join("")}
+      .join("")
+    )}
   `;
 }
 
@@ -225,7 +234,8 @@ function renderAnalyses(analyses: NewsletterAnalysisItem[]) {
         </td>
       </tr>`
       )
-      .join("")}
+      .join("")
+    )}
   `;
 }
 
