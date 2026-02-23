@@ -11,6 +11,15 @@ import { SITE_URL } from "@/lib/site";
 
 /* ========================================================= */
 
+type HeaderConfig = {
+  title: string;
+  subtitle: string;
+  imageUrl: string;
+  mode: "ratecard" | "client";
+};
+
+/* ========================================================= */
+
 function escapeHtml(text: string) {
   return text
     .replace(/&/g, "&amp;")
@@ -29,11 +38,13 @@ function formatDate(date?: string) {
 /* ========================================================= */
 
 export default function ClientNewsletterPreview({
+  headerConfig,
   introText,
   news,
   breves,
   analyses,
 }: {
+  headerConfig: HeaderConfig;
   introText?: string;
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
@@ -47,6 +58,44 @@ export default function ClientNewsletterPreview({
   line-height:20px;
   color:#111827;
 ">
+
+  ${
+    headerConfig.imageUrl
+      ? `
+      <div style="margin-bottom:24px;">
+        <img 
+          src="${headerConfig.imageUrl}" 
+          alt="" 
+          style="max-width:100%;height:auto;border-radius:4px;"
+        />
+      </div>
+      `
+      : ""
+  }
+
+  ${
+    headerConfig.title
+      ? `
+      <h2 style="margin:0 0 6px 0;">
+        ${escapeHtml(headerConfig.title)}
+      </h2>
+      `
+      : ""
+  }
+
+  ${
+    headerConfig.subtitle
+      ? `
+      <div style="
+        font-size:13px;
+        color:#6B7280;
+        margin-bottom:24px;
+      ">
+        ${escapeHtml(headerConfig.subtitle)}
+      </div>
+      `
+      : ""
+  }
 
   ${
     introText
@@ -180,7 +229,7 @@ export default function ClientNewsletterPreview({
 
 </div>
 `;
-  }, [introText, news, breves, analyses]);
+  }, [headerConfig, introText, news, breves, analyses]);
 
   function copyHtml() {
     navigator.clipboard.writeText(html);
