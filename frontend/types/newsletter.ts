@@ -3,8 +3,19 @@ export type NewsletterNewsItem = {
   title: string;
   excerpt?: string;
   published_at: string;
-  news_kind: "NEWS" | "BRIEF";
-  visual_rect_id?: string;
+  news_type?: string;
+  news_kind?: string;
+
+  visual_rect_id?: string | null;
+  company_visual_rect_id?: string | null;
+
+  company?: {
+    id_company: string;
+    name: string;
+    is_partner: boolean;
+  };
+
+  topics?: any[];
 };
 
 export type NewsletterAnalysisItem = {
