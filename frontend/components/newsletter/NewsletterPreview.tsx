@@ -17,218 +17,206 @@ const LOGO_URL =
 
 /* ========================================================= */
 
+type HeaderConfig = {
+  title: string;
+  subtitle?: string;
+  coverImageUrl?: string;
+  mode: "ratecard" | "client";
+};
+
+type Props = {
+  headerConfig?: HeaderConfig;
+  introText?: string;
+  news: NewsletterNewsItem[];
+  breves: NewsletterNewsItem[];
+  analyses: NewsletterAnalysisItem[];
+};
+
+/* ========================================================= */
+
 function escapeHtml(text: string) {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-function resolveImageUrl(
-  visualRectId?: string | null,
-  companyVisualRectId?: string | null
-) {
-  if (visualRectId) {
-    return `${GCS_BASE_URL}/news/${visualRectId}`;
-  }
-  if (companyVisualRectId) {
-    return `${GCS_BASE_URL}/companies/${companyVisualRectId}`;
-  }
-  return null;
-}
-
-function formatDate(date?: string) {
-  if (!date) return "";
-  return new Date(date).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-  });
-}
-
-/* ========================================================= */
-
-type EditorialBlock =
-  | (NewsletterNewsItem & { __type: "news" | "breve" })
-  | (NewsletterAnalysisItem & {
-      __type: "analysis";
-    });
-
-/* ========================================================= */
-
-function renderEditorialBlock(item: EditorialBlock) {
-  const isAnalysis = item.__type === "analysis";
-  const isBreve = item.__type === "breve";
-  const isNews = item.__type === "news";
-
-  if (isAnalysis) {
-    return `
-      <tr>
-        <td style="padding:26px 0;border-bottom:1px solid #E5E7EB;">
-          <div style="
-            font-size:16px;
-            font-weight:bold;
-            color:#111827;
-            margin-bottom:6px;
-          ">
-            ${escapeHtml(item.title)}
-          </div>
-
-          ${
-            item.excerpt
-              ? `<div style="
-                  font-size:14px;
-                  line-height:20px;
-                  color:#374151;
-                  margin-bottom:8px;
-                ">
-                ${escapeHtml(item.excerpt)}
-              </div>`
-              : ""
-          }
-
-          <a href="${PUBLIC_SITE_URL}/analysis?analysis_id=${item.id}"
-             style="
-               font-size:13px;
-               font-weight:bold;
-               color:#111827;
-               text-decoration:none;
-             ">
-            Lire l’analyse →
-          </a>
-        </td>
-      </tr>
-    `;
-  }
-
-  const imageUrl = resolveImageUrl(
-    (item as any).visual_rect_id,
-    (item as any).company_visual_rect_id
-  );
-
-  const metaParts = [
-    (item as any).company?.name,
-    (item as any).news_type,
-    formatDate((item as any).published_at),
-  ].filter(Boolean);
-
-  return `
-    <tr>
-      <td style="padding:24px 0;border-bottom:1px solid #E5E7EB;">
-        <table width="100%" cellpadding="0" cellspacing="0">
-          <tr>
-
-            ${
-              imageUrl && !isBreve
-                ? `
-              <td width="120" valign="top" style="padding-right:16px;">
-                <img
-                  src="${imageUrl}"
-                  width="120"
-                  style="display:block;width:120px;height:auto;border-radius:6px;"
-                />
-              </td>`
-                : ""
-            }
-
-            <td valign="top" style="font-family:Arial,Helvetica,sans-serif;">
-
-              ${
-                metaParts.length
-                  ? `<div style="
-                      font-size:12px;
-                      color:#6B7280;
-                      margin-bottom:6px;
-                    ">
-                      ${escapeHtml(
-                        metaParts.join(" • ")
-                      )}
-                    </div>`
-                  : ""
-              }
-
-              <div style="
-                font-size:16px;
-                font-weight:bold;
-                line-height:22px;
-                color:#111827;
-                margin-bottom:6px;
-              ">
-                ${escapeHtml(item.title)}
-              </div>
-
-              ${
-                item.excerpt
-                  ? `<div style="
-                      font-size:14px;
-                      line-height:20px;
-                      color:#374151;
-                      margin-bottom:8px;
-                    ">
-                    ${escapeHtml(item.excerpt)}
-                  </div>`
-                  : ""
-              }
-
-              <a href="${
-                isBreve
-                  ? `${PUBLIC_SITE_URL}/breves?breve_id=${item.id}`
-                  : `${PUBLIC_SITE_URL}/news?news_id=${item.id}`
-              }"
-                 style="
-                   font-size:13px;
-                   color:#2563EB;
-                   text-decoration:none;
-                   font-weight:bold;
-                 ">
-                Lire →
-              </a>
-
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  `;
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 /* ========================================================= */
 
 export default function NewsletterPreview({
+  headerConfig,
   introText,
   news,
   breves,
   analyses,
-}: {
-  introText?: string;
-  news: NewsletterNewsItem[];
-  breves: NewsletterNewsItem[];
-  analyses: NewsletterAnalysisItem[];
-}) {
-  const editorialFlow: EditorialBlock[] =
-    useMemo(() => {
-      const mappedNews = news.map((n) => ({
-        ...n,
-        __type: "news" as const,
-      }));
-
-      const mappedBreves = breves.map((b) => ({
-        ...b,
-        __type: "breve" as const,
-      }));
-
-      const mappedAnalyses = analyses.map((a) => ({
-        ...a,
-        __type: "analysis" as const,
-      }));
-
-      return [
-        ...mappedNews,
-        ...mappedBreves,
-        ...mappedAnalyses,
-      ];
-    }, [news, breves, analyses]);
-
+}: Props) {
   const html = useMemo(() => {
+    const headerBlock = `
+<tr>
+<td style="padding:24px 0 16px 0;">
+<img src="${LOGO_URL}" alt="Ratecard"
+     style="display:block;width:150px;height:auto;" />
+</td>
+</tr>
+
+<tr>
+<td style="padding-bottom:16px;font-family:Arial,Helvetica,sans-serif;">
+  <h1 style="margin:0;font-size:22px;color:#111827;">
+    ${escapeHtml(
+      headerConfig?.title ||
+        "Newsletter Ratecard"
+    )}
+  </h1>
+
+  ${
+    headerConfig?.subtitle
+      ? `<p style="margin:8px 0 0 0;font-size:14px;color:#6B7280;">
+          ${escapeHtml(
+            headerConfig.subtitle
+          )}
+        </p>`
+      : ""
+  }
+</td>
+</tr>
+
+${
+  headerConfig?.coverImageUrl
+    ? `
+<tr>
+<td style="padding-bottom:24px;">
+  <img src="${headerConfig.coverImageUrl}"
+       style="display:block;width:100%;height:auto;border-radius:8px;" />
+</td>
+</tr>`
+    : ""
+}
+`;
+
+    function renderIntro() {
+      if (!introText) return "";
+
+      return `
+<tr>
+<td style="padding:0 0 24px 0;
+           font-family:Arial,Helvetica,sans-serif;
+           font-size:15px;
+           line-height:22px;
+           color:#111827;">
+  ${escapeHtml(introText).replace(
+    /\n/g,
+    "<br/>"
+  )}
+</td>
+</tr>
+`;
+    }
+
+    function renderSectionTitle(label: string) {
+      return `
+<tr>
+<td style="padding:32px 0 12px 0;
+           font-size:18px;
+           font-weight:bold;
+           color:#111827;">
+  ${label}
+</td>
+</tr>
+`;
+    }
+
+    function renderNewsBlock() {
+      if (!news.length) return "";
+
+      return (
+        renderSectionTitle("Actualités") +
+        news
+          .map(
+            (n) => `
+<tr>
+<td style="padding:0 0 20px 0;">
+  <strong>${escapeHtml(
+    n.title
+  )}</strong>
+  ${
+    n.excerpt
+      ? `<p style="margin:6px 0 10px 0;
+                   font-size:14px;
+                   color:#374151;">
+           ${escapeHtml(n.excerpt)}
+         </p>`
+      : ""
+  }
+  <a href="${PUBLIC_SITE_URL}/news?news_id=${n.id}"
+     style="color:#2563EB;text-decoration:none;font-weight:bold;">
+    Lire l’article
+  </a>
+</td>
+</tr>`
+          )
+          .join("")
+      );
+    }
+
+    function renderBrevesBlock() {
+      if (!breves.length) return "";
+
+      return (
+        renderSectionTitle("Brèves") +
+        breves
+          .map(
+            (b) => `
+<tr>
+<td style="padding:0 0 16px 0;">
+  <strong>${escapeHtml(
+    b.title
+  )}</strong><br/>
+  <a href="${PUBLIC_SITE_URL}/breves?breve_id=${b.id}"
+     style="font-size:13px;color:#2563EB;">
+    Lire →
+  </a>
+</td>
+</tr>`
+          )
+          .join("")
+      );
+    }
+
+    function renderAnalysesBlock() {
+      if (!analyses.length) return "";
+
+      return (
+        renderSectionTitle("Analyses Ratecard") +
+        analyses
+          .map(
+            (a) => `
+<tr>
+<td style="padding:0 0 20px 0;">
+  <strong>${escapeHtml(
+    a.title
+  )}</strong>
+  ${
+    a.excerpt
+      ? `<p style="margin:6px 0 10px 0;
+                   font-size:14px;
+                   color:#374151;">
+           ${escapeHtml(a.excerpt)}
+         </p>`
+      : ""
+  }
+  <a href="${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}"
+     style="color:#111827;font-weight:bold;">
+    Lire l’analyse complète
+  </a>
+</td>
+</tr>`
+          )
+          .join("")
+      );
+    }
+
     return `
 <!DOCTYPE html>
 <html>
@@ -236,46 +224,17 @@ export default function NewsletterPreview({
 <meta charset="UTF-8" />
 <base target="_blank" />
 </head>
-<body style="margin:0;padding:0;background:#ffffff;">
+<body style="margin:0;padding:0;background-color:#ffffff;">
 <table width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td align="center">
 <table width="100%" cellpadding="0" cellspacing="0"
-  style="max-width:640px;margin:0 auto;padding:40px 20px;">
-
-<tr>
-<td style="padding-bottom:30px;">
-<img src="${LOGO_URL}"
-     width="150"
-     style="display:block;width:150px;height:auto;" />
-</td>
-</tr>
-
-${
-  introText
-    ? `
-<tr>
-<td style="
-  padding-bottom:30px;
-  font-family:Arial,Helvetica,sans-serif;
-  font-size:15px;
-  line-height:22px;
-  color:#111827;
-">
-${escapeHtml(introText).replace(
-  /\n/g,
-  "<br/>"
-)}
-</td>
-</tr>
-`
-    : ""
-}
-
-${editorialFlow
-  .map((item) => renderEditorialBlock(item))
-  .join("")}
-
+       style="max-width:600px;margin:0 auto;">
+${headerBlock}
+${renderIntro()}
+${renderNewsBlock()}
+${renderBrevesBlock()}
+${renderAnalysesBlock()}
 </table>
 </td>
 </tr>
@@ -283,7 +242,7 @@ ${editorialFlow
 </body>
 </html>
 `;
-  }, [introText, editorialFlow]);
+  }, [headerConfig, introText, news, breves, analyses]);
 
   function copyHtml() {
     navigator.clipboard.writeText(html);
@@ -292,24 +251,24 @@ ${editorialFlow
 
   return (
     <section className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">
           Preview newsletter
         </h2>
 
         <button
           onClick={copyHtml}
-          className="px-3 py-1.5 bg-gray-900 text-white rounded text-xs"
+          className="px-3 py-1.5 rounded-md bg-gray-900 text-white text-xs"
         >
-          Copier HTML
+          Copier le HTML
         </button>
       </div>
 
-      <div className="border rounded-lg overflow-hidden bg-white">
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
         <iframe
           title="Newsletter preview"
           srcDoc={html}
-          className="w-full h-[850px]"
+          className="w-full h-[760px]"
         />
       </div>
     </section>
