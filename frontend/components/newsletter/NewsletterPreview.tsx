@@ -31,10 +31,6 @@ function escapeHtml(text: string) {
     .replace(/'/g, "&#039;");
 }
 
-/**
- * EXACTEMENT la même logique que Home :
- * priorité visuel NEWS → fallback SOCIÉTÉ
- */
 function resolveImageUrl(
   visualRectId?: string | null,
   companyVisualRectId?: string | null
@@ -79,27 +75,14 @@ function renderIntro(introText?: string) {
 function renderNews(news: NewsletterNewsItem[]) {
   if (news.length === 0) return "";
 
-  return `
-    <tr>
-      <td style="
-        padding:24px 0 12px 0;
-        font-family:Arial,Helvetica,sans-serif;
-        font-size:18px;
-        font-weight:bold;
-        color:#111827;
-      ">
-        Actualités
-      </td>
-    </tr>
+  const items = news
+    .map((n) => {
+      const imageUrl = resolveImageUrl(
+        n.visual_rect_id,
+        n.company_visual_rect_id
+      );
 
-    ${news
-      .map((n) => {
-        const imageUrl = resolveImageUrl(
-          n.visual_rect_id,
-          n.company_visual_rect_id
-        );
-
-        return `
+      return `
       <tr>
         <td style="padding:0 0 24px 0;">
           <table width="100%" cellpadding="0" cellspacing="0"
@@ -145,8 +128,22 @@ function renderNews(news: NewsletterNewsItem[]) {
           </table>
         </td>
       </tr>`;
-      })
-      .join("")}
+    })
+    .join("");
+
+  return `
+    <tr>
+      <td style="
+        padding:24px 0 12px 0;
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:18px;
+        font-weight:bold;
+        color:#111827;
+      ">
+        Actualités
+      </td>
+    </tr>
+    ${items}
   `;
 }
 
@@ -157,16 +154,9 @@ function renderNews(news: NewsletterNewsItem[]) {
 function renderBreves(breves: NewsletterNewsItem[]) {
   if (breves.length === 0) return "";
 
-  return `
-    <tr>
-      <td style="padding:32px 0 12px 0;font-size:18px;font-weight:bold;color:#111827;">
-        Brèves du marché
-      </td>
-    </tr>
-
-    ${breves
-      .map(
-        (b) => `
+  const items = breves
+    .map(
+      (b) => `
       <tr>
         <td style="padding:12px 0;border-bottom:1px solid #E5E7EB;">
           <strong>${escapeHtml(b.title)}</strong>
@@ -185,9 +175,16 @@ function renderBreves(breves: NewsletterNewsItem[]) {
           </a>
         </td>
       </tr>`
-      )
-      .join("")
-    )}
+    )
+    .join("");
+
+  return `
+    <tr>
+      <td style="padding:32px 0 12px 0;font-size:18px;font-weight:bold;color:#111827;">
+        Brèves du marché
+      </td>
+    </tr>
+    ${items}
   `;
 }
 
@@ -198,16 +195,9 @@ function renderBreves(breves: NewsletterNewsItem[]) {
 function renderAnalyses(analyses: NewsletterAnalysisItem[]) {
   if (analyses.length === 0) return "";
 
-  return `
-    <tr>
-      <td style="padding:32px 0 12px 0;font-size:18px;font-weight:bold;color:#111827;">
-        Analyses Ratecard
-      </td>
-    </tr>
-
-    ${analyses
-      .map(
-        (a) => `
+  const items = analyses
+    .map(
+      (a) => `
       <tr>
         <td style="padding:0 0 20px 0;">
           <table width="100%" cellpadding="0" cellspacing="0"
@@ -233,9 +223,16 @@ function renderAnalyses(analyses: NewsletterAnalysisItem[]) {
           </table>
         </td>
       </tr>`
-      )
-      .join("")
-    )}
+    )
+    .join("");
+
+  return `
+    <tr>
+      <td style="padding:32px 0 12px 0;font-size:18px;font-weight:bold;color:#111827;">
+        Analyses Ratecard
+      </td>
+    </tr>
+    ${items}
   `;
 }
 
