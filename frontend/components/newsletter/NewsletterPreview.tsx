@@ -11,7 +11,9 @@ import type {
 ========================================================= */
 
 import { SITE_URL } from "@/lib/site";
+
 const LOGO_URL = `${SITE_URL}/assets/brand/ratecard-logo.jpeg`;
+const DEFAULT_NEWS_VISUAL = `${SITE_URL}/assets/default/news-default.jpg`;
 
 const GCS_BASE_URL =
   process.env.NEXT_PUBLIC_GCS_BASE_URL!;
@@ -77,7 +79,7 @@ function renderNews(news: NewsletterNewsItem[]) {
             ? `${GCS_BASE_URL}/news/${n.visual_rect_id}`
             : n.company_visual_rect_id
             ? `${GCS_BASE_URL}/companies/${n.company_visual_rect_id}`
-            : null;
+            : DEFAULT_NEWS_VISUAL;
 
         return `
       <tr>
@@ -85,9 +87,6 @@ function renderNews(news: NewsletterNewsItem[]) {
           <table width="100%" cellpadding="0" cellspacing="0"
             style="border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;">
 
-            ${
-              imageUrl
-                ? `
             <tr>
               <td>
                 <img
@@ -96,9 +95,7 @@ function renderNews(news: NewsletterNewsItem[]) {
                   style="display:block;width:100%;height:auto;"
                 />
               </td>
-            </tr>`
-                : ""
-            }
+            </tr>
 
             <tr>
               <td style="padding:16px;font-family:Arial,Helvetica,sans-serif;">
