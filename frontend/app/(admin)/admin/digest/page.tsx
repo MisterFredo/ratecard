@@ -1,19 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import DigestHeaderConfig from "@/components/digest/DigestHeaderConfig";
-import DigestSearchBar from "@/components/digest/DigestSearchBar";
+import { useMemo, useState } from "react";
+import DigestEngine from "@/components/digest/DigestEngine";
 import DigestSelectors from "@/components/digest/DigestSelectors";
 import DigestEditorialFlow from "@/components/digest/DigestEditorialFlow";
-import DigestIntroBlock from "@/components/digest/DigestIntroBlock";
+import DigestHeaderConfig from "@/components/digest/DigestHeaderConfig";
 import NewsletterPreview from "@/components/newsletter/NewsletterPreview";
 import ClientNewsletterPreview from "@/components/newsletter/ClientNewsletterPreview";
 import { api } from "@/lib/api";
-
 import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
 } from "@/types/newsletter";
+import type { SelectOption } from "@/components/ui/SearchableMultiSelect";
 
 /* ========================================================= */
 
@@ -23,28 +22,31 @@ type EditorialItem = {
 };
 
 export default function DigestPage() {
+  /* ==============================
+     LOADING
+  ============================== */
+
   const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+
+  /* ==============================
+     DATA
+  ============================== */
 
   const [news, setNews] = useState<NewsletterNewsItem[]>([]);
   const [breves, setBreves] = useState<NewsletterNewsItem[]>([]);
   const [analyses, setAnalyses] =
     useState<NewsletterAnalysisItem[]>([]);
 
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
-
   /* ==============================
-     FILTER STATE
+     FILTER STATE (Multi)
   ============================== */
 
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([
-    "NEWS",
-    "BRIEF",
-    "ANALYSIS",
-  ]);
+  const [selectedTopics, setSelectedTopics] =
+    useState<SelectOption[]>([]);
+  const [selectedCompanies, setSelectedCompanies] =
+    useState<SelectOption[]>([]);
+  const [selectedTypes, setSelectedTypes] =
+    useState<SelectOption[]>([]);
 
   /* ==============================
      HEADER CONFIG
@@ -65,32 +67,22 @@ export default function DigestPage() {
      SEARCH
   ========================================================= */
 
-  async function handleSearch() {
+  async function handleSearch(filters: {
+    topics: string[];
+    companies: string[];
+    news_types: string[];
+  }) {
     setLoading(true);
 
     try {
       const json = await api.post("/admin/digest/search", {
-        topics: selectedTopics,
-        companies: selectedCompanies,
-        news_types: selectedTypes,
+        ...filters,
         limit: 20,
       });
 
       setNews(json.news || []);
       setBreves(json.breves || []);
       setAnalyses(json.analyses || []);
-
-      const lastDate =
-        json.news?.at(-1)?.published_at ||
-        json.breves?.at(-1)?.published_at ||
-        null;
-
-      setCursor(lastDate);
-
-      setHasMore(
-        (json.news?.length || 0) === 20 ||
-          (json.breves?.length || 0) === 20
-      );
 
       setEditorialOrder([]);
     } catch (e) {
@@ -123,27 +115,26 @@ export default function DigestPage() {
 
   return (
     <div className="space-y-12">
-
       <h1 className="text-lg font-semibold">
         Digest
       </h1>
 
-      {/* FILTER ENGINE */}
-      <DigestFilters
-        topics={[]}          {/* À connecter à ton référentiel */}
-        companies={[]}       {/* idem */}
-        types={["NEWS", "BRIEF", "ANALYSIS"]}
+      {/* =========================
+          FILTER ENGINE (NEW)
+      ========================= */}
+      <DigestEngine
         selectedTopics={selectedTopics}
+        setSelectedTopics={setSelectedTopics}
         selectedCompanies={selectedCompanies}
+        setSelectedCompanies={setSelectedCompanies}
         selectedTypes={selectedTypes}
-        onChangeTopics={setSelectedTopics}
-        onChangeCompanies={setSelectedCompanies}
-        onChangeTypes={setSelectedTypes}
+        setSelectedTypes={setSelectedTypes}
         onSearch={handleSearch}
-        loading={loading}
       />
 
-      {/* SELECTORS */}
+      {/* =========================
+          SELECTORS
+      ========================= */}
       <DigestSelectors
         news={news}
         breves={breves}
@@ -152,7 +143,9 @@ export default function DigestPage() {
         setEditorialOrder={setEditorialOrder}
       />
 
-      {/* EDITORIAL FLOW */}
+      {/* =========================
+          EDITORIAL FLOW
+      ========================= */}
       <DigestEditorialFlow
         editorialOrder={editorialOrder}
         news={news}
@@ -161,13 +154,17 @@ export default function DigestPage() {
         setEditorialOrder={setEditorialOrder}
       />
 
-      {/* HEADER */}
+      {/* =========================
+          HEADER
+      ========================= */}
       <DigestHeaderConfig
         headerConfig={headerConfig}
         setHeaderConfig={setHeaderConfig}
       />
 
-      {/* INTRO */}
+      {/* =========================
+          INTRO
+      ========================= */}
       <div className="space-y-3">
         <h2 className="text-sm font-semibold">
           Introduction
@@ -181,7 +178,9 @@ export default function DigestPage() {
         />
       </div>
 
-      {/* PREVIEWS */}
+      {/* =========================
+          PREVIEWS
+      ========================= */}
       <NewsletterPreview
         headerConfig={headerConfig}
         introText={introText}
