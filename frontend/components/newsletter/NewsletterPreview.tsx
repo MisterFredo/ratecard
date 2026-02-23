@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type {
   NewsletterNewsItem,
+  HeaderConfig,
   NewsletterAnalysisItem,
 } from "@/types/newsletter";
 
@@ -16,13 +17,6 @@ const LOGO_URL =
   `${GCS_BASE_URL}/brand/ratecard-logo.jpeg`;
 
 /* ========================================================= */
-
-type HeaderConfig = {
-  title: string;
-  subtitle?: string;
-  imageUrl?: string;
-  mode: "ratecard" | "client";
-};
 
 type Props = {
   headerConfig: HeaderConfig;
