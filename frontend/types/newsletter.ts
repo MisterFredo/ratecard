@@ -18,6 +18,13 @@ export type NewsletterNewsItem = {
   topics?: any[];
 };
 
+export type HeaderConfig = {
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  mode: "ratecard" | "client";
+};
+
 export type NewsletterAnalysisItem = {
   id: string;
   title: string;
