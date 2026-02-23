@@ -127,7 +127,7 @@ export default function DigestPage() {
         Digest
       </h1>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[440px_1fr] gap-14 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] gap-14 items-start">
 
         {/* =========================================
             LEFT — ÉDITION
