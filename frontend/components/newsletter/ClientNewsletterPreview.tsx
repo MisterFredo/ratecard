@@ -4,19 +4,11 @@ import { useMemo } from "react";
 
 import type {
   NewsletterNewsItem,
+  HeaderConfig,
   NewsletterAnalysisItem,
 } from "@/types/newsletter";
 
 import { SITE_URL } from "@/lib/site";
-
-/* ========================================================= */
-
-type HeaderConfig = {
-  title: string;
-  subtitle: string;
-  imageUrl: string;
-  mode: "ratecard" | "client";
-};
 
 /* ========================================================= */
 
