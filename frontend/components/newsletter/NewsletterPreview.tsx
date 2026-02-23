@@ -29,6 +29,17 @@ function escapeHtml(text: string) {
     .replace(/'/g, "&#039;");
 }
 
+/* 🔥 FIX VISUELS (news + fallback société) */
+function getVisualUrl(filename?: string | null) {
+  if (!filename) return null;
+
+  const folder = filename.startsWith("COMPANY_")
+    ? "companies"
+    : "news";
+
+  return `${GCS_BASE_URL}/${folder}/${filename}`;
+}
+
 /* =========================================================
    BLOCKS
 ========================================================= */
@@ -71,20 +82,22 @@ function renderNews(news: NewsletterNewsItem[]) {
     </tr>
 
     ${news
-      .map(
-        (n) => `
+      .map((n) => {
+        const imageUrl = getVisualUrl(n.visual_rect_id);
+
+        return `
       <tr>
         <td style="padding:0 0 24px 0;">
           <table width="100%" cellpadding="0" cellspacing="0"
             style="border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;">
 
             ${
-              n.visual_rect_id
+              imageUrl
                 ? `
             <tr>
               <td>
                 <img
-                  src="${GCS_BASE_URL}/news/${n.visual_rect_id}"
+                  src="${imageUrl}"
                   alt="${escapeHtml(n.title)}"
                   style="display:block;width:100%;height:auto;"
                 />
@@ -116,8 +129,8 @@ function renderNews(news: NewsletterNewsItem[]) {
             </tr>
           </table>
         </td>
-      </tr>`
-      )
+      </tr>`;
+      })
       .join("")}
   `;
 }
