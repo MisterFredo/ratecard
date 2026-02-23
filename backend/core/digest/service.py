@@ -138,17 +138,12 @@ def _search_news_digest(
             "published_at": r.get("published_at"),
             "news_type": r.get("news_type"),
             "news_kind": r.get("news_kind"),
-
-            # 🔥 Deux champs distincts (comme la Home)
-            "visual_rect_id": r.get("news_visual_rect_id"),
-            "company_visual_rect_id": r.get("company_visual_rect_id"),
-
+            "visual_rect_id": r.get("visual_rect_id"),
             "company": {
                 "id_company": r.get("id_company"),
                 "name": r.get("company_name"),
                 "is_partner": bool(r.get("is_partner")),
             },
-
             "topics": r.get("topics") or [],
         }
         for r in rows
