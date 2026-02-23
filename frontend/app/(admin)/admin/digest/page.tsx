@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import NewsletterSelector from "@/components/newsletter/NewsletterSelector";
+import NewsletterPreview from "@/components/newsletter/NewsletterPreview";
+import ClientNewsletterPreview from "@/components/newsletter/ClientNewsletterPreview";
 import { api } from "@/lib/api";
-
-import DigestSidebar from "@/components/newsletter/DigestSidebar";
-import DigestPreviewPanel from "@/components/newsletter/DigestPreviewPanel";
 
 import type {
   NewsletterNewsItem,
@@ -23,26 +23,20 @@ type DigestModel = {
   news_types: string[];
 };
 
-/* =========================================================
-   PAGE
-========================================================= */
+type EditorialItem = {
+  id: string;
+  type: "news" | "breve" | "analysis";
+};
+
+/* ========================================================= */
 
 export default function DigestPage() {
-  /* -----------------------------
-     MODELS (optionnel / presets)
-  ----------------------------- */
   const [models, setModels] = useState<DigestModel[]>([]);
   const [selectedModelId, setSelectedModelId] = useState("");
 
-  /* -----------------------------
-     LOADING
-  ----------------------------- */
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  /* -----------------------------
-     DATA
-  ----------------------------- */
   const [news, setNews] = useState<NewsletterNewsItem[]>([]);
   const [breves, setBreves] = useState<NewsletterNewsItem[]>([]);
   const [analyses, setAnalyses] =
@@ -51,19 +45,14 @@ export default function DigestPage() {
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
 
-  /* -----------------------------
-     SELECTION
-  ----------------------------- */
-  const [selectedNewsIds, setSelectedNewsIds] = useState<string[]>([]);
-  const [selectedBriefIds, setSelectedBriefIds] = useState<string[]>([]);
-  const [selectedAnalysisIds, setSelectedAnalysisIds] =
-    useState<string[]>([]);
+  const [editorialOrder, setEditorialOrder] =
+    useState<EditorialItem[]>([]);
 
   const [introText, setIntroText] = useState("");
 
-  /* =========================================================
-     LOAD MODELS (OPTIONAL PRESETS)
-  ========================================================= */
+  /* -----------------------------------------------------
+     LOAD MODELS
+  ----------------------------------------------------- */
 
   useEffect(() => {
     async function loadTemplates() {
@@ -78,9 +67,9 @@ export default function DigestPage() {
     loadTemplates();
   }, []);
 
-  /* =========================================================
+  /* -----------------------------------------------------
      SEARCH
-  ========================================================= */
+  ----------------------------------------------------- */
 
   async function handleSearch() {
     setLoading(true);
@@ -117,9 +106,7 @@ export default function DigestPage() {
           (json.breves?.length || 0) === 20
       );
 
-      setSelectedNewsIds([]);
-      setSelectedBriefIds([]);
-      setSelectedAnalysisIds([]);
+      setEditorialOrder([]);
     } catch (e) {
       console.error("Erreur search digest", e);
     } finally {
@@ -127,9 +114,9 @@ export default function DigestPage() {
     }
   }
 
-  /* =========================================================
+  /* -----------------------------------------------------
      LOAD MORE
-  ========================================================= */
+  ----------------------------------------------------- */
 
   async function handleLoadMore() {
     if (!cursor) return;
@@ -169,7 +156,8 @@ export default function DigestPage() {
       setCursor(lastDate);
 
       setHasMore(
-        newNews.length === 20 || newBreves.length === 20
+        newNews.length === 20 ||
+          newBreves.length === 20
       );
     } catch (e) {
       console.error("Erreur load more", e);
@@ -178,70 +166,263 @@ export default function DigestPage() {
     }
   }
 
-  /* =========================================================
-     DERIVED SELECTED ITEMS
-  ========================================================= */
+  /* -----------------------------------------------------
+     EDITORIAL TOGGLE
+  ----------------------------------------------------- */
 
-  const selectedNews = useMemo(
-    () => news.filter((n) => selectedNewsIds.includes(n.id)),
-    [news, selectedNewsIds]
-  );
+  function toggleEditorialItem(
+    id: string,
+    type: EditorialItem["type"]
+  ) {
+    const exists = editorialOrder.find(
+      (item) =>
+        item.id === id && item.type === type
+    );
 
-  const selectedBriefs = useMemo(
-    () => breves.filter((b) => selectedBriefIds.includes(b.id)),
-    [breves, selectedBriefIds]
-  );
+    if (exists) {
+      setEditorialOrder((prev) =>
+        prev.filter(
+          (item) =>
+            !(item.id === id && item.type === type)
+        )
+      );
+    } else {
+      setEditorialOrder((prev) => [
+        ...prev,
+        { id, type },
+      ]);
+    }
+  }
 
-  const selectedAnalyses = useMemo(
-    () =>
-      analyses.filter((a) =>
-        selectedAnalysisIds.includes(a.id)
-      ),
-    [analyses, selectedAnalysisIds]
-  );
+  function moveUp(index: number) {
+    if (index === 0) return;
 
-  /* =========================================================
-     LAYOUT
-  ========================================================= */
+    setEditorialOrder((prev) => {
+      const updated = [...prev];
+      [updated[index - 1], updated[index]] = [
+        updated[index],
+        updated[index - 1],
+      ];
+      return updated;
+    });
+  }
+
+  function moveDown(index: number) {
+    if (index === editorialOrder.length - 1)
+      return;
+
+    setEditorialOrder((prev) => {
+      const updated = [...prev];
+      [updated[index + 1], updated[index]] = [
+        updated[index],
+        updated[index + 1],
+      ];
+      return updated;
+    });
+  }
+
+  function removeItem(index: number) {
+    setEditorialOrder((prev) =>
+      prev.filter((_, i) => i !== index)
+    );
+  }
+
+  /* -----------------------------------------------------
+     MAP EDITORIAL FLOW
+  ----------------------------------------------------- */
+
+  const editorialNews = editorialOrder
+    .filter((i) => i.type === "news")
+    .map((i) => news.find((n) => n.id === i.id))
+    .filter(Boolean) as NewsletterNewsItem[];
+
+  const editorialBreves = editorialOrder
+    .filter((i) => i.type === "breve")
+    .map((i) => breves.find((b) => b.id === i.id))
+    .filter(Boolean) as NewsletterNewsItem[];
+
+  const editorialAnalyses = editorialOrder
+    .filter((i) => i.type === "analysis")
+    .map((i) => analyses.find((a) => a.id === i.id))
+    .filter(Boolean) as NewsletterAnalysisItem[];
+
+  /* ========================================================= */
 
   return (
-    <div className="h-[calc(100vh-120px)]">
-      <div className="grid grid-cols-[420px_1fr] h-full gap-8">
+    <div className="space-y-12">
+      {/* HEADER */}
+      <div className="space-y-4">
+        <h1 className="text-lg font-semibold">
+          Digest
+        </h1>
 
-        <DigestSidebar
-          models={models}
-          selectedModelId={selectedModelId}
-          setSelectedModelId={setSelectedModelId}
-          onSearch={handleSearch}
-          loading={loading}
+        <div className="flex gap-4 items-center">
+          <select
+            value={selectedModelId}
+            onChange={(e) =>
+              setSelectedModelId(e.target.value)
+            }
+            className="border rounded px-3 py-2 text-sm"
+          >
+            <option value="">
+              Flux global (sans modèle)
+            </option>
+            {models.map((m) => (
+              <option
+                key={m.id_template}
+                value={m.id_template}
+              >
+                {m.name}
+              </option>
+            ))}
+          </select>
 
-          news={news}
-          breves={breves}
-          analyses={analyses}
-
-          selectedNewsIds={selectedNewsIds}
-          setSelectedNewsIds={setSelectedNewsIds}
-          selectedBriefIds={selectedBriefIds}
-          setSelectedBriefIds={setSelectedBriefIds}
-          selectedAnalysisIds={selectedAnalysisIds}
-          setSelectedAnalysisIds={setSelectedAnalysisIds}
-
-          introText={introText}
-          setIntroText={setIntroText}
-
-          hasMore={hasMore}
-          loadingMore={loadingMore}
-          onLoadMore={handleLoadMore}
-        />
-
-        <DigestPreviewPanel
-          introText={introText}
-          news={selectedNews}
-          breves={selectedBriefs}
-          analyses={selectedAnalyses}
-        />
-
+          <button
+            onClick={handleSearch}
+            disabled={loading}
+            className="bg-black text-white text-sm rounded px-4 py-2"
+          >
+            {loading ? "Recherche…" : "Rechercher"}
+          </button>
+        </div>
       </div>
+
+      {/* SELECTORS */}
+      <div className="grid grid-cols-3 gap-10">
+        <NewsletterSelector
+          title="News"
+          items={news}
+          selectedIds={editorialOrder
+            .filter((i) => i.type === "news")
+            .map((i) => i.id)}
+          onChange={(ids) =>
+            ids.forEach((id) =>
+              toggleEditorialItem(id, "news")
+            )
+          }
+        />
+
+        <NewsletterSelector
+          title="Brèves"
+          items={breves}
+          selectedIds={editorialOrder
+            .filter((i) => i.type === "breve")
+            .map((i) => i.id)}
+          onChange={(ids) =>
+            ids.forEach((id) =>
+              toggleEditorialItem(id, "breve")
+            )
+          }
+        />
+
+        <NewsletterSelector
+          title="Analyses"
+          items={analyses}
+          selectedIds={editorialOrder
+            .filter((i) => i.type === "analysis")
+            .map((i) => i.id)}
+          onChange={(ids) =>
+            ids.forEach((id) =>
+              toggleEditorialItem(id, "analysis")
+            )
+          }
+        />
+      </div>
+
+      {/* FLUX EDITORIAL */}
+      <section className="space-y-4">
+        <h2 className="text-sm font-semibold">
+          Flux éditorial
+        </h2>
+
+        <div className="border rounded-lg bg-white divide-y">
+          {editorialOrder.map((item, index) => {
+            const source =
+              item.type === "news"
+                ? news.find((n) => n.id === item.id)
+                : item.type === "breve"
+                ? breves.find((b) => b.id === item.id)
+                : analyses.find((a) => a.id === item.id);
+
+            if (!source) return null;
+
+            return (
+              <div
+                key={`${item.type}-${item.id}`}
+                className="flex items-center justify-between p-3"
+              >
+                <div className="text-sm">
+                  <span className="text-gray-400 uppercase text-xs mr-2">
+                    {item.type}
+                  </span>
+                  {source.title}
+                </div>
+
+                <div className="flex gap-2 text-xs">
+                  <button
+                    onClick={() => moveUp(index)}
+                    className="px-2 py-1 border rounded"
+                  >
+                    ↑
+                  </button>
+
+                  <button
+                    onClick={() => moveDown(index)}
+                    className="px-2 py-1 border rounded"
+                  >
+                    ↓
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      removeItem(index)
+                    }
+                    className="px-2 py-1 border rounded text-red-600"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {editorialOrder.length === 0 && (
+            <div className="p-4 text-sm text-gray-400 text-center">
+              Aucun élément sélectionné
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* INTRO */}
+      <div className="space-y-3">
+        <h2 className="text-sm font-semibold">
+          Introduction
+        </h2>
+        <textarea
+          className="w-full border rounded p-3 min-h-[120px]"
+          value={introText}
+          onChange={(e) =>
+            setIntroText(e.target.value)
+          }
+          placeholder="Introduction de la newsletter..."
+        />
+      </div>
+
+      {/* PREVIEWS */}
+      <NewsletterPreview
+        introText={introText}
+        news={editorialNews}
+        breves={editorialBreves}
+        analyses={editorialAnalyses}
+      />
+
+      <ClientNewsletterPreview
+        introText={introText}
+        news={editorialNews}
+        breves={editorialBreves}
+        analyses={editorialAnalyses}
+      />
     </div>
   );
 }
