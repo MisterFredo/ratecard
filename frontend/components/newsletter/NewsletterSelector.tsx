@@ -1,27 +1,36 @@
 "use client";
 
-type Props<T> = {
+import { useMemo } from "react";
+
+type BaseItem = {
+  id: string;
+  published_at?: string;
+  title?: string;
+  excerpt?: string;
+  company_name?: string;
+  news_type?: string;
+};
+
+type Props<T extends BaseItem> = {
   title: string;
   items: T[];
   selectedIds: string[];
   onChange: (ids: string[]) => void;
-
-  // champ principal à afficher (ex: title)
-  labelKey: keyof T;
-
-  // optionnel : sous-label (ex: type, date, format…)
-  metaKey?: keyof T;
 };
 
-export default function NewsletterSelector<
-  T extends { id: string }
->({
+function formatDate(date?: string) {
+  if (!date) return "";
+  return new Date(date).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
+export default function NewsletterSelector<T extends BaseItem>({
   title,
   items,
   selectedIds,
   onChange,
-  labelKey,
-  metaKey,
 }: Props<T>) {
   function toggle(id: string) {
     if (selectedIds.includes(id)) {
@@ -31,56 +40,84 @@ export default function NewsletterSelector<
     }
   }
 
+  // 🔥 Tri automatique par date décroissante
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      if (!a.published_at || !b.published_at) return 0;
+      return (
+        new Date(b.published_at).getTime() -
+        new Date(a.published_at).getTime()
+      );
+    });
+  }, [items]);
+
   return (
-    <section className="space-y-3">
-      <h2 className="text-sm font-semibold text-gray-900">
-        {title}
-      </h2>
+    <section className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-gray-900">
+          {title}
+        </h2>
 
-      <div className="max-h-[360px] overflow-y-auto border border-gray-200 rounded-lg divide-y bg-white">
-        {items.map((item) => {
-          const label = String(item[labelKey]);
-          const meta = metaKey
-            ? item[metaKey]
-              ? String(item[metaKey])
-              : null
-            : null;
+        <span className="text-xs text-gray-400">
+          {selectedIds.length} sélectionné(s)
+        </span>
+      </div>
 
+      <div className="h-[420px] overflow-y-auto border border-gray-200 rounded-lg bg-white divide-y">
+
+        {sortedItems.map((item) => {
           const checked = selectedIds.includes(item.id);
 
           return (
-            <label
+            <div
               key={item.id}
+              onClick={() => toggle(item.id)}
               className={`
-                flex items-start gap-3 p-3 text-sm cursor-pointer
-                transition
-                ${checked ? "bg-gray-50" : "hover:bg-gray-50"}
+                p-3 cursor-pointer transition
+                ${checked ? "bg-blue-50" : "hover:bg-gray-50"}
               `}
             >
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={() => toggle(item.id)}
-                className="mt-1"
-              />
+              <div className="flex items-start gap-3">
 
-              <div className="flex flex-col gap-0.5">
-                <span className="text-gray-800 leading-snug">
-                  {label}
-                </span>
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  readOnly
+                  className="mt-1"
+                />
 
-                {meta && (
-                  <span className="text-xs text-gray-400 uppercase tracking-wide">
-                    {meta}
-                  </span>
-                )}
+                <div className="flex flex-col gap-1 w-full">
+
+                  {/* META */}
+                  <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wide">
+                    {item.news_type && <span>{item.news_type}</span>}
+                    {item.company_name && <span>• {item.company_name}</span>}
+                    {item.published_at && (
+                      <span className="ml-auto">
+                        {formatDate(item.published_at)}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* TITLE */}
+                  <div className="text-sm font-medium text-gray-900 leading-snug">
+                    {item.title}
+                  </div>
+
+                  {/* EXCERPT */}
+                  {item.excerpt && (
+                    <div className="text-xs text-gray-500 line-clamp-2">
+                      {item.excerpt}
+                    </div>
+                  )}
+                </div>
               </div>
-            </label>
+            </div>
           );
         })}
 
         {items.length === 0 && (
-          <div className="p-3 text-sm text-gray-400">
+          <div className="p-4 text-sm text-gray-400 text-center">
             Aucun élément disponible
           </div>
         )}
