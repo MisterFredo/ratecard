@@ -1,11 +1,10 @@
 "use client";
 
-type HeaderConfig = {
-  title: string;
-  subtitle?: string;
-  coverImageUrl?: string;
-  mode: "ratecard" | "client";
-};
+import type {
+  NewsletterNewsItem,
+  HeaderConfig,
+  NewsletterAnalysisItem,
+} from "@/types/newsletter";
 
 type Props = {
   headerConfig: HeaderConfig;
