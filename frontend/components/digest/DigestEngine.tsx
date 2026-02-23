@@ -50,21 +50,21 @@ export default function DigestEngine({
 
         setTopicOptions(
           (t.topics || []).map((x: any) => ({
-            id: x.id_topic,
-            label: x.label,
+            id: x.ID_TOPIC,
+            label: x.LABEL,
           }))
         );
 
         setCompanyOptions(
           (c.companies || []).map((x: any) => ({
-            id: x.id_company,
-            label: x.name,
+            id: x.ID_COMPANY,
+            label: x.NAME,
           }))
         );
 
         setTypeOptions(
           (nt.types || []).map((x: any) => ({
-            id: x.code,
+              id: x.code,   // celui-là est déjà bon
             label: x.label,
           }))
         );
