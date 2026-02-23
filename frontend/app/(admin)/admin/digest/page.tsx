@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
-
+import { useEffect, useMemo, useState } from "react";
 import DigestHeaderConfig from "@/components/digest/DigestHeaderConfig";
 import DigestSearchBar from "@/components/digest/DigestSearchBar";
 import DigestSelectors from "@/components/digest/DigestSelectors";
 import DigestEditorialFlow from "@/components/digest/DigestEditorialFlow";
 import DigestIntroBlock from "@/components/digest/DigestIntroBlock";
-
 import NewsletterPreview from "@/components/newsletter/NewsletterPreview";
 import ClientNewsletterPreview from "@/components/newsletter/ClientNewsletterPreview";
+import { api } from "@/lib/api";
 
 import type {
   NewsletterNewsItem,
@@ -19,152 +17,92 @@ import type {
 
 /* ========================================================= */
 
-type DigestModel = {
-  id_template: string;
-  name: string;
-  topics: string[];
-  companies: string[];
-  news_types: string[];
-};
-
 type EditorialItem = {
   id: string;
   type: "news" | "breve" | "analysis";
 };
 
-type HeaderConfig = {
-  title: string;
-  subtitle?: string;
-  coverImageUrl?: string;
-  mode: "ratecard" | "client";
-};
-
-/* ========================================================= */
-
 export default function DigestPage() {
-  const [models, setModels] = useState<DigestModel[]>([]);
-  const [selectedModelId, setSelectedModelId] =
-    useState("");
-
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const [news, setNews] = useState<
-    NewsletterNewsItem[]
-  >([]);
-  const [breves, setBreves] = useState<
-    NewsletterNewsItem[]
-  >([]);
+  const [news, setNews] = useState<NewsletterNewsItem[]>([]);
+  const [breves, setBreves] = useState<NewsletterNewsItem[]>([]);
   const [analyses, setAnalyses] =
     useState<NewsletterAnalysisItem[]>([]);
 
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+
+  /* ==============================
+     FILTER STATE
+  ============================== */
+
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([
+    "NEWS",
+    "BRIEF",
+    "ANALYSIS",
+  ]);
+
+  /* ==============================
+     HEADER CONFIG
+  ============================== */
+
+  const [headerConfig, setHeaderConfig] = useState({
+    title: "Newsletter Ratecard",
+    subtitle: "",
+    imageUrl: "",
+    mode: "ratecard" as "ratecard" | "client",
+  });
+
+  const [introText, setIntroText] = useState("");
   const [editorialOrder, setEditorialOrder] =
     useState<EditorialItem[]>([]);
 
-  const [introText, setIntroText] = useState("");
-
-  const [headerConfig, setHeaderConfig] =
-    useState<HeaderConfig>({
-      title: "Newsletter Ratecard",
-      subtitle: "",
-      coverImageUrl: "",
-      mode: "ratecard",
-    });
-
-  /* ============================= */
-
-  useEffect(() => {
-    async function loadTemplates() {
-      const data = await api.get(
-        "/admin/digest/template"
-      );
-      setModels(data || []);
-    }
-    loadTemplates();
-  }, []);
+  /* =========================================================
+     SEARCH
+  ========================================================= */
 
   async function handleSearch() {
     setLoading(true);
 
     try {
-      const model = models.find(
-        (m) => m.id_template === selectedModelId
-      );
-
-      const json = await api.post(
-        "/admin/digest/search",
-        {
-          topics: model?.topics,
-          companies: model?.companies,
-          news_types: model?.news_types,
-          limit: 20,
-        }
-      );
+      const json = await api.post("/admin/digest/search", {
+        topics: selectedTopics,
+        companies: selectedCompanies,
+        news_types: selectedTypes,
+        limit: 20,
+      });
 
       setNews(json.news || []);
       setBreves(json.breves || []);
       setAnalyses(json.analyses || []);
+
+      const lastDate =
+        json.news?.at(-1)?.published_at ||
+        json.breves?.at(-1)?.published_at ||
+        null;
+
+      setCursor(lastDate);
+
+      setHasMore(
+        (json.news?.length || 0) === 20 ||
+          (json.breves?.length || 0) === 20
+      );
+
       setEditorialOrder([]);
+    } catch (e) {
+      console.error("Erreur search digest", e);
     } finally {
       setLoading(false);
     }
   }
 
-  function toggleEditorialItem(
-    id: string,
-    type: EditorialItem["type"]
-  ) {
-    const exists = editorialOrder.find(
-      (item) =>
-        item.id === id && item.type === type
-    );
-
-    if (exists) {
-      setEditorialOrder((prev) =>
-        prev.filter(
-          (item) =>
-            !(item.id === id && item.type === type)
-        )
-      );
-    } else {
-      setEditorialOrder((prev) => [
-        ...prev,
-        { id, type },
-      ]);
-    }
-  }
-
-  function moveUp(index: number) {
-    if (index === 0) return;
-
-    setEditorialOrder((prev) => {
-      const updated = [...prev];
-      [updated[index - 1], updated[index]] = [
-        updated[index],
-        updated[index - 1],
-      ];
-      return updated;
-    });
-  }
-
-  function moveDown(index: number) {
-    if (index === editorialOrder.length - 1)
-      return;
-
-    setEditorialOrder((prev) => {
-      const updated = [...prev];
-      [updated[index + 1], updated[index]] = [
-        updated[index],
-        updated[index + 1],
-      ];
-      return updated;
-    });
-  }
-
-  function removeItem(index: number) {
-    setEditorialOrder((prev) =>
-      prev.filter((_, i) => i !== index)
-    );
-  }
+  /* =========================================================
+     MAP EDITORIAL FLOW
+  ========================================================= */
 
   const editorialNews = editorialOrder
     .filter((i) => i.type === "news")
@@ -181,46 +119,69 @@ export default function DigestPage() {
     .map((i) => analyses.find((a) => a.id === i.id))
     .filter(Boolean) as NewsletterAnalysisItem[];
 
+  /* ========================================================= */
+
   return (
     <div className="space-y-12">
-      <DigestSearchBar
-        models={models}
-        selectedModelId={selectedModelId}
-        setSelectedModelId={setSelectedModelId}
-        handleSearch={handleSearch}
+
+      <h1 className="text-lg font-semibold">
+        Digest
+      </h1>
+
+      {/* FILTER ENGINE */}
+      <DigestFilters
+        topics={[]}          {/* À connecter à ton référentiel */}
+        companies={[]}       {/* idem */}
+        types={["NEWS", "BRIEF", "ANALYSIS"]}
+        selectedTopics={selectedTopics}
+        selectedCompanies={selectedCompanies}
+        selectedTypes={selectedTypes}
+        onChangeTopics={setSelectedTopics}
+        onChangeCompanies={setSelectedCompanies}
+        onChangeTypes={setSelectedTypes}
+        onSearch={handleSearch}
         loading={loading}
       />
 
-      <DigestHeaderConfig
-        headerConfig={headerConfig}
-        setHeaderConfig={setHeaderConfig}
-      />
-
+      {/* SELECTORS */}
       <DigestSelectors
         news={news}
         breves={breves}
         analyses={analyses}
         editorialOrder={editorialOrder}
-        toggleEditorialItem={
-          toggleEditorialItem
-        }
+        setEditorialOrder={setEditorialOrder}
       />
 
+      {/* EDITORIAL FLOW */}
       <DigestEditorialFlow
         editorialOrder={editorialOrder}
         news={news}
         breves={breves}
         analyses={analyses}
-        moveUp={moveUp}
-        moveDown={moveDown}
-        removeItem={removeItem}
+        setEditorialOrder={setEditorialOrder}
       />
 
-      <DigestIntroBlock
-        introText={introText}
-        setIntroText={setIntroText}
+      {/* HEADER */}
+      <DigestHeaderConfig
+        headerConfig={headerConfig}
+        setHeaderConfig={setHeaderConfig}
       />
 
+      {/* INTRO */}
+      <div className="space-y-3">
+        <h2 className="text-sm font-semibold">
+          Introduction
+        </h2>
+        <textarea
+          className="w-full border rounded p-3 min-h-[120px]"
+          value={introText}
+          onChange={(e) =>
+            setIntroText(e.target.value)
+          }
+        />
+      </div>
+
+      {/* PREVIEWS */}
       <NewsletterPreview
         headerConfig={headerConfig}
         introText={introText}
@@ -230,6 +191,7 @@ export default function DigestPage() {
       />
 
       <ClientNewsletterPreview
+        headerConfig={headerConfig}
         introText={introText}
         news={editorialNews}
         breves={editorialBreves}
