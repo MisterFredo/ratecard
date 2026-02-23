@@ -27,12 +27,26 @@ export type AnalysisItem = {
   published_at: string;
 };
 
+type HeaderConfig = {
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  mode: "ratecard" | "client";
+};
+
 /* =========================================================
    PAGE
 ========================================================= */
 
 export default function NewsletterComposePage() {
   const [introText, setIntroText] = useState("");
+
+  const [headerConfig] = useState<HeaderConfig>({
+    title: "Newsletter Ratecard",
+    subtitle: "",
+    imageUrl: "",
+    mode: "ratecard",
+  });
 
   const [news, setNews] = useState<NewsItem[]>([]);
   const [analyses, setAnalyses] = useState<AnalysisItem[]>([]);
@@ -46,7 +60,6 @@ export default function NewsletterComposePage() {
      FETCH SOURCES
   ----------------------------------------------------- */
   useEffect(() => {
-    // NEWS + BRÈVES
     fetch(`${API_BASE}/news/list`, { cache: "no-store" })
       .then((r) => r.json())
       .then((json) => {
@@ -62,7 +75,6 @@ export default function NewsletterComposePage() {
         setNews(mapped);
       });
 
-    // ANALYSES
     fetch(`${API_BASE}/public/analysis/list`, {
       cache: "no-store",
     })
@@ -86,7 +98,7 @@ export default function NewsletterComposePage() {
   );
 
   /* -----------------------------------------------------
-     SELECTED OBJECTS (ORDERED)
+     SELECTED OBJECTS
   ----------------------------------------------------- */
   const selectedNews = useMemo(
     () =>
@@ -132,7 +144,6 @@ export default function NewsletterComposePage() {
           />
         </section>
 
-        {/* NEWS */}
         <NewsletterSelector
           title="News partenaires"
           items={newsItems}
@@ -141,7 +152,6 @@ export default function NewsletterComposePage() {
           labelKey="title"
         />
 
-        {/* BRÈVES */}
         <NewsletterSelector
           title="Brèves"
           items={briefItems}
@@ -150,7 +160,6 @@ export default function NewsletterComposePage() {
           labelKey="title"
         />
 
-        {/* ANALYSES */}
         <NewsletterSelector
           title="Analyses Ratecard"
           items={analyses}
@@ -162,6 +171,7 @@ export default function NewsletterComposePage() {
 
       {/* RIGHT — PREVIEW */}
       <NewsletterPreview
+        headerConfig={headerConfig}
         introText={introText}
         news={selectedNews}
         breves={selectedBriefes}
