@@ -15,7 +15,6 @@ type Props = {
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
-
   setEditorialOrder: React.Dispatch<
     React.SetStateAction<EditorialItem[]>
   >;
@@ -26,10 +25,41 @@ export default function DigestEditorialFlow({
   news,
   breves,
   analyses,
-  moveUp,
-  moveDown,
-  removeItem,
+  setEditorialOrder,
 }: Props) {
+
+  function moveUp(index: number) {
+    if (index === 0) return;
+
+    setEditorialOrder((prev) => {
+      const updated = [...prev];
+      [updated[index - 1], updated[index]] = [
+        updated[index],
+        updated[index - 1],
+      ];
+      return updated;
+    });
+  }
+
+  function moveDown(index: number) {
+    if (index === editorialOrder.length - 1) return;
+
+    setEditorialOrder((prev) => {
+      const updated = [...prev];
+      [updated[index + 1], updated[index]] = [
+        updated[index],
+        updated[index + 1],
+      ];
+      return updated;
+    });
+  }
+
+  function removeItem(index: number) {
+    setEditorialOrder((prev) =>
+      prev.filter((_, i) => i !== index)
+    );
+  }
+
   return (
     <section className="space-y-4">
       <h2 className="text-sm font-semibold">
