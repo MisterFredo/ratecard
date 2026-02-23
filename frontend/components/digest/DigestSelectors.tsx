@@ -35,45 +35,87 @@ export default function DigestSelectors({
     type: EditorialItem["type"]
   ) {
     setEditorialOrder((prev) => {
-      // on garde les autres types
       const others = prev.filter((item) => item.type !== type);
-
-      // on reconstruit le type concerné
       const updated = ids.map((id) => ({ id, type }));
-
       return [...others, ...updated];
     });
   }
 
+  const newsSelected = editorialOrder.filter(i => i.type === "news").length;
+  const brevesSelected = editorialOrder.filter(i => i.type === "breve").length;
+  const analysesSelected = editorialOrder.filter(i => i.type === "analysis").length;
+
   return (
-    <div className="grid grid-cols-3 gap-10">
+    <div className="space-y-12">
 
-      <NewsletterSelector
-        title="News"
-        items={news}
-        selectedIds={editorialOrder
-          .filter((i) => i.type === "news")
-          .map((i) => i.id)}
-        onChange={(ids) => updateTypeSelection(ids, "news")}
-      />
+      {/* =========================
+          NEWS
+      ========================== */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold tracking-tight">
+            News
+          </h2>
+          <span className="text-xs text-gray-400">
+            {newsSelected} sélectionnée{newsSelected > 1 ? "s" : ""}
+          </span>
+        </div>
 
-      <NewsletterSelector
-        title="Brèves"
-        items={breves}
-        selectedIds={editorialOrder
-          .filter((i) => i.type === "breve")
-          .map((i) => i.id)}
-        onChange={(ids) => updateTypeSelection(ids, "breve")}
-      />
+        <NewsletterSelector
+          title=""
+          items={news}
+          selectedIds={editorialOrder
+            .filter((i) => i.type === "news")
+            .map((i) => i.id)}
+          onChange={(ids) => updateTypeSelection(ids, "news")}
+        />
+      </section>
 
-      <NewsletterSelector
-        title="Analyses"
-        items={analyses}
-        selectedIds={editorialOrder
-          .filter((i) => i.type === "analysis")
-          .map((i) => i.id)}
-        onChange={(ids) => updateTypeSelection(ids, "analysis")}
-      />
+      {/* =========================
+          BRÈVES
+      ========================== */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold tracking-tight">
+            Brèves
+          </h2>
+          <span className="text-xs text-gray-400">
+            {brevesSelected} sélectionnée{brevesSelected > 1 ? "s" : ""}
+          </span>
+        </div>
+
+        <NewsletterSelector
+          title=""
+          items={breves}
+          selectedIds={editorialOrder
+            .filter((i) => i.type === "breve")
+            .map((i) => i.id)}
+          onChange={(ids) => updateTypeSelection(ids, "breve")}
+        />
+      </section>
+
+      {/* =========================
+          ANALYSES
+      ========================== */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold tracking-tight">
+            Analyses
+          </h2>
+          <span className="text-xs text-gray-400">
+            {analysesSelected} sélectionnée{analysesSelected > 1 ? "s" : ""}
+          </span>
+        </div>
+
+        <NewsletterSelector
+          title=""
+          items={analyses}
+          selectedIds={editorialOrder
+            .filter((i) => i.type === "analysis")
+            .map((i) => i.id)}
+          onChange={(ids) => updateTypeSelection(ids, "analysis")}
+        />
+      </section>
 
     </div>
   );
