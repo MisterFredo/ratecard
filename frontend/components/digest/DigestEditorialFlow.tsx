@@ -1,5 +1,10 @@
 "use client";
 
+import type {
+  NewsletterNewsItem,
+  NewsletterAnalysisItem,
+} from "@/types/newsletter";
+
 type EditorialItem = {
   id: string;
   type: "news" | "breve" | "analysis";
@@ -7,12 +12,13 @@ type EditorialItem = {
 
 type Props = {
   editorialOrder: EditorialItem[];
-  news: any[];
-  breves: any[];
-  analyses: any[];
-  moveUp: (index: number) => void;
-  moveDown: (index: number) => void;
-  removeItem: (index: number) => void;
+  news: NewsletterNewsItem[];
+  breves: NewsletterNewsItem[];
+  analyses: NewsletterAnalysisItem[];
+
+  setEditorialOrder: React.Dispatch<
+    React.SetStateAction<EditorialItem[]>
+  >;
 };
 
 export default function DigestEditorialFlow({
