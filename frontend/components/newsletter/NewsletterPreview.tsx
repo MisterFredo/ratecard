@@ -29,17 +29,6 @@ function escapeHtml(text: string) {
     .replace(/'/g, "&#039;");
 }
 
-/* 🔥 FIX VISUELS (news + fallback société) */
-function getVisualUrl(filename?: string | null) {
-  if (!filename) return null;
-
-  const folder = filename.startsWith("COMPANY_")
-    ? "companies"
-    : "news";
-
-  return `${GCS_BASE_URL}/${folder}/${filename}`;
-}
-
 /* =========================================================
    BLOCKS
 ========================================================= */
@@ -83,7 +72,12 @@ function renderNews(news: NewsletterNewsItem[]) {
 
     ${news
       .map((n) => {
-        const imageUrl = getVisualUrl(n.visual_rect_id);
+        const imageUrl =
+          n.visual_rect_id
+            ? `${GCS_BASE_URL}/news/${n.visual_rect_id}`
+            : n.company_visual_rect_id
+            ? `${GCS_BASE_URL}/companies/${n.company_visual_rect_id}`
+            : null;
 
         return `
       <tr>
