@@ -13,7 +13,15 @@ import type {
    TYPES
 ========================================================= */
 
+type HeaderConfig = {
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  mode: "ratecard" | "client";
+};
+
 type Props = {
+  headerConfig: HeaderConfig;
   introText?: string;
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
@@ -25,6 +33,7 @@ type Props = {
 ========================================================= */
 
 export default function DigestPreviewPanel({
+  headerConfig,
   introText,
   news,
   breves,
@@ -79,6 +88,7 @@ export default function DigestPreviewPanel({
 
         {mode === "html" ? (
           <NewsletterPreview
+            headerConfig={headerConfig}
             introText={introText}
             news={news}
             breves={breves}
@@ -86,6 +96,7 @@ export default function DigestPreviewPanel({
           />
         ) : (
           <ClientNewsletterPreview
+            headerConfig={headerConfig}
             introText={introText}
             news={news}
             breves={breves}
