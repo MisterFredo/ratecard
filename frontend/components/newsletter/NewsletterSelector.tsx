@@ -6,7 +6,7 @@ type Props<T> = {
   selectedIds: string[];
   onChange: (ids: string[]) => void;
 
-  labelKey: keyof T;
+  labelKey?: keyof T;
   metaKey?: keyof T;
 };
 
@@ -38,8 +38,11 @@ export default function NewsletterSelector<
 
       <div className="max-h-[360px] overflow-y-auto border border-gray-200 rounded-lg divide-y bg-white">
         {items.map((item) => {
+          const resolvedLabelKey =
+            labelKey ?? ("title" as keyof T);
+
           const label = String(
-            item[labelKey]
+            item[resolvedLabelKey]
           );
 
           const meta =
