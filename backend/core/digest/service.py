@@ -118,7 +118,6 @@ def _search_news_digest(
             news_type,
             news_kind,
             visual_rect_id,
-            company_visual_rect_id, 
             id_company,
             company_name,
             is_partner,
@@ -140,7 +139,6 @@ def _search_news_digest(
             "news_type": r.get("news_type"),
             "news_kind": r.get("news_kind"),
             "visual_rect_id": r.get("visual_rect_id"),
-            "company_visual_rect_id": r.get("company_visual_rect_id"),
             "company": {
                 "id_company": r.get("id_company"),
                 "name": r.get("company_name"),
