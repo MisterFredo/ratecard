@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 
 # ------------------------------------------------------------
 # Permet d'importer utils / config
@@ -15,7 +16,7 @@ from google.cloud import storage
 from google.oauth2 import service_account
 
 from utils.bigquery_utils import query_bq, update_bq
-from config import BQ_PROJECT, BQ_DATASET, GOOGLE_CREDENTIALS_FILE
+from config import BQ_PROJECT, BQ_DATASET
 
 # ------------------------------------------------------------
 # CONFIG
@@ -30,15 +31,21 @@ print("Bucket:", bucket_name)
 print("--------------------------------------------------")
 
 # ------------------------------------------------------------
-# Auth GCS (même credentials que BigQuery)
+# AUTH (exactement comme BigQuery)
 # ------------------------------------------------------------
-credentials = service_account.Credentials.from_service_account_file(
-    GOOGLE_CREDENTIALS_FILE
-)
+credentials_path = os.environ.get("GOOGLE_CREDENTIALS_FILE")
+
+if not credentials_path:
+    raise ValueError("GOOGLE_CREDENTIALS_FILE non défini")
+
+with open(credentials_path, "r") as f:
+    info = json.load(f)
+
+credentials = service_account.Credentials.from_service_account_info(info)
 
 storage_client = storage.Client(
     credentials=credentials,
-    project=credentials.project_id,
+    project=info.get("project_id"),
 )
 
 bucket = storage_client.bucket(bucket_name)
@@ -83,10 +90,8 @@ for row in rows:
         new_filename = f"NEWS_{news_id}_rect.jpg"
         destination_blob = bucket.blob(f"news/{new_filename}")
 
-        # Copie physique
         destination_blob.rewrite(source_blob)
 
-        # Mise à jour BigQuery
         update_bq(
             table=TABLE_NEWS,
             fields={
