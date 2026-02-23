@@ -1,10 +1,6 @@
 "use client";
 
-import type {
-  NewsletterNewsItem,
-  HeaderConfig,
-  NewsletterAnalysisItem,
-} from "@/types/newsletter";
+import type { HeaderConfig } from "@/types/newsletter";
 
 type Props = {
   headerConfig: HeaderConfig;
@@ -24,6 +20,7 @@ export default function DigestHeaderConfig({
       </h2>
 
       <div className="grid grid-cols-2 gap-6">
+        {/* Titre */}
         <input
           type="text"
           placeholder="Titre newsletter"
@@ -37,10 +34,11 @@ export default function DigestHeaderConfig({
           className="border rounded px-3 py-2 text-sm"
         />
 
+        {/* Sous-titre */}
         <input
           type="text"
           placeholder="Sous-titre"
-          value={headerConfig.subtitle}
+          value={headerConfig.subtitle ?? ""}
           onChange={(e) =>
             setHeaderConfig((prev) => ({
               ...prev,
@@ -50,19 +48,21 @@ export default function DigestHeaderConfig({
           className="border rounded px-3 py-2 text-sm"
         />
 
+        {/* Image header */}
         <input
           type="text"
           placeholder="URL image header (optionnel)"
-          value={headerConfig.coverImageUrl}
+          value={headerConfig.imageUrl ?? ""}
           onChange={(e) =>
             setHeaderConfig((prev) => ({
               ...prev,
-              coverImageUrl: e.target.value,
+              imageUrl: e.target.value,
             }))
           }
           className="border rounded px-3 py-2 text-sm col-span-2"
         />
 
+        {/* Mode */}
         <select
           value={headerConfig.mode}
           onChange={(e) =>
