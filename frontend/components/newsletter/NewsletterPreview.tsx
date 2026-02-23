@@ -10,23 +10,10 @@ import type {
    CONFIG
 ========================================================= */
 
-/**
- * URL publique officielle du site
- * (jamais localhost pour une newsletter)
- */
 const PUBLIC_SITE_URL = "https://ratecard.fr";
 
-/**
- * Bucket GCS public (images newsletter)
- */
 const GCS_BASE_URL =
   "https://storage.googleapis.com/ratecard-media";
-
-/**
- * Fallback visuel par défaut (stocké dans GCS)
- */
-const DEFAULT_NEWS_VISUAL =
-  `${GCS_BASE_URL}/content/news-default.jpg`;
 
 const LOGO_URL =
   `${GCS_BASE_URL}/brand/ratecard-logo.jpeg`;
@@ -42,6 +29,20 @@ function escapeHtml(text: string) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+/**
+ * Résout dynamiquement le bon dossier GCS
+ * selon le nom du fichier.
+ */
+function resolveImageUrl(filename?: string | null) {
+  if (!filename) return null;
+
+  if (filename.startsWith("COMPANY_")) {
+    return `${GCS_BASE_URL}/companies/${filename}`;
+  }
+
+  return `${GCS_BASE_URL}/news/${filename}`;
 }
 
 /* =========================================================
@@ -67,7 +68,7 @@ function renderIntro(introText?: string) {
 }
 
 /* -------------------------
-   NEWS — CARDS
+   NEWS
 ------------------------- */
 
 function renderNews(news: NewsletterNewsItem[]) {
@@ -88,12 +89,7 @@ function renderNews(news: NewsletterNewsItem[]) {
 
     ${news
       .map((n) => {
-        const imageUrl =
-          n.visual_rect_id
-            ? `${GCS_BASE_URL}/news/${n.visual_rect_id}`
-            : n.company_visual_rect_id
-            ? `${GCS_BASE_URL}/companies/${n.company_visual_rect_id}`
-            : DEFAULT_NEWS_VISUAL;
+        const imageUrl = resolveImageUrl(n.visual_rect_id);
 
         return `
       <tr>
@@ -101,6 +97,9 @@ function renderNews(news: NewsletterNewsItem[]) {
           <table width="100%" cellpadding="0" cellspacing="0"
             style="border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;">
 
+            ${
+              imageUrl
+                ? `
             <tr>
               <td>
                 <img
@@ -109,7 +108,9 @@ function renderNews(news: NewsletterNewsItem[]) {
                   style="display:block;width:100%;height:auto;"
                 />
               </td>
-            </tr>
+            </tr>`
+                : ""
+            }
 
             <tr>
               <td style="padding:16px;font-family:Arial,Helvetica,sans-serif;">
