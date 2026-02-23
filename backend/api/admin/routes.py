@@ -47,12 +47,19 @@ def admin_logout(response: Response):
 @router.post("/digest/search")
 def admin_digest_search(payload: dict):
 
+    period = payload.get("period", "total")
+
+    # sécurité minimale
+    if period not in ("total", "30d", "7d"):
+        period = "total"
+
     return search_digest(
         topics=payload.get("topics"),
         companies=payload.get("companies"),
         news_types=payload.get("news_types"),
         limit=payload.get("limit", 20),
         cursor=payload.get("cursor"),
+        period=period,
     )
 # ============================================================
 # DIGEST TEMPLATES
