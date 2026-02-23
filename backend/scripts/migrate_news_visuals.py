@@ -1,3 +1,8 @@
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from google.cloud import storage
 from utils.bigquery_utils import query_bq, update_bq
 from config import BQ_PROJECT, BQ_DATASET
