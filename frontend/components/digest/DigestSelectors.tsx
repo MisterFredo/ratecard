@@ -3,7 +3,6 @@
 import NewsletterSelector from "@/components/newsletter/NewsletterSelector";
 import type {
   NewsletterNewsItem,
-  HeaderConfig,
   NewsletterAnalysisItem,
 } from "@/types/newsletter";
 
@@ -31,41 +30,31 @@ export default function DigestSelectors({
   setEditorialOrder,
 }: Props) {
 
-  function toggleEditorialItem(
-    id: string,
+  function updateTypeSelection(
+    ids: string[],
     type: EditorialItem["type"]
   ) {
-    const exists = editorialOrder.find(
-      (item) => item.id === id && item.type === type
-    );
+    setEditorialOrder((prev) => {
+      // on garde les autres types
+      const others = prev.filter((item) => item.type !== type);
 
-    if (exists) {
-      setEditorialOrder((prev) =>
-        prev.filter(
-          (item) => !(item.id === id && item.type === type)
-        )
-      );
-    } else {
-      setEditorialOrder((prev) => [
-        ...prev,
-        { id, type },
-      ]);
-    }
+      // on reconstruit le type concerné
+      const updated = ids.map((id) => ({ id, type }));
+
+      return [...others, ...updated];
+    });
   }
 
   return (
     <div className="grid grid-cols-3 gap-10">
+
       <NewsletterSelector
         title="News"
         items={news}
         selectedIds={editorialOrder
           .filter((i) => i.type === "news")
           .map((i) => i.id)}
-        onChange={(ids) =>
-          ids.forEach((id) =>
-            toggleEditorialItem(id, "news")
-          )
-        }
+        onChange={(ids) => updateTypeSelection(ids, "news")}
       />
 
       <NewsletterSelector
@@ -74,11 +63,7 @@ export default function DigestSelectors({
         selectedIds={editorialOrder
           .filter((i) => i.type === "breve")
           .map((i) => i.id)}
-        onChange={(ids) =>
-          ids.forEach((id) =>
-            toggleEditorialItem(id, "breve")
-          )
-        }
+        onChange={(ids) => updateTypeSelection(ids, "breve")}
       />
 
       <NewsletterSelector
@@ -87,12 +72,9 @@ export default function DigestSelectors({
         selectedIds={editorialOrder
           .filter((i) => i.type === "analysis")
           .map((i) => i.id)}
-        onChange={(ids) =>
-          ids.forEach((id) =>
-            toggleEditorialItem(id, "analysis")
-          )
-        }
+        onChange={(ids) => updateTypeSelection(ids, "analysis")}
       />
+
     </div>
   );
 }
