@@ -8,14 +8,14 @@ type EditorialItem = {
 };
 
 type Props = {
-  news: any[];
-  breves: any[];
-  analyses: any[];
+  news: NewsletterNewsItem[];
+  breves: NewsletterNewsItem[];
+  analyses: NewsletterAnalysisItem[];
+
   editorialOrder: EditorialItem[];
-  toggleEditorialItem: (
-    id: string,
-    type: EditorialItem["type"]
-  ) => void;
+  setEditorialOrder: React.Dispatch<
+    React.SetStateAction<EditorialItem[]>
+  >;
 };
 
 export default function DigestSelectors({
