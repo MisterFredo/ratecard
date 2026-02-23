@@ -10,13 +10,26 @@ import type {
    CONFIG
 ========================================================= */
 
-import { SITE_URL } from "@/lib/site";
+/**
+ * URL publique officielle du site
+ * (jamais localhost pour une newsletter)
+ */
+const PUBLIC_SITE_URL = "https://ratecard.fr";
 
-const LOGO_URL = `${SITE_URL}/assets/brand/ratecard-logo.jpeg`;
-const DEFAULT_NEWS_VISUAL = `${SITE_URL}/assets/default/news-default.jpg`;
-
+/**
+ * Bucket GCS public (images newsletter)
+ */
 const GCS_BASE_URL =
-  process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+  "https://storage.googleapis.com/ratecard-media";
+
+/**
+ * Fallback visuel par défaut (stocké dans GCS)
+ */
+const DEFAULT_NEWS_VISUAL =
+  `${GCS_BASE_URL}/content/news-default.jpg`;
+
+const LOGO_URL =
+  `${GCS_BASE_URL}/brand/ratecard-logo.jpeg`;
 
 /* =========================================================
    UTILS
@@ -56,6 +69,7 @@ function renderIntro(introText?: string) {
 /* -------------------------
    NEWS — CARDS
 ------------------------- */
+
 function renderNews(news: NewsletterNewsItem[]) {
   if (news.length === 0) return "";
 
@@ -112,12 +126,13 @@ function renderNews(news: NewsletterNewsItem[]) {
                 }
 
                 <a
-                  href="${SITE_URL}/news?news_id=${n.id}"
+                  href="${PUBLIC_SITE_URL}/news?news_id=${n.id}"
                   style="display:inline-block;padding:10px 18px;background:#2563EB;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:bold;">
                   Lire l’article
                 </a>
               </td>
             </tr>
+
           </table>
         </td>
       </tr>`;
@@ -129,6 +144,7 @@ function renderNews(news: NewsletterNewsItem[]) {
 /* -------------------------
    BRÈVES
 ------------------------- */
+
 function renderBreves(breves: NewsletterNewsItem[]) {
   if (breves.length === 0) return "";
 
@@ -145,6 +161,7 @@ function renderBreves(breves: NewsletterNewsItem[]) {
       <tr>
         <td style="padding:12px 0;border-bottom:1px solid #E5E7EB;">
           <strong>${escapeHtml(b.title)}</strong>
+
           ${
             b.excerpt
               ? `<p style="margin:6px 0 10px 0;font-size:14px;color:#374151;">
@@ -153,7 +170,7 @@ function renderBreves(breves: NewsletterNewsItem[]) {
               : ""
           }
 
-          <a href="${SITE_URL}/breves?breve_id=${b.id}"
+          <a href="${PUBLIC_SITE_URL}/breves?breve_id=${b.id}"
              style="font-size:13px;color:#2563EB;text-decoration:none;font-weight:bold;">
             Lire la brève →
           </a>
@@ -167,6 +184,7 @@ function renderBreves(breves: NewsletterNewsItem[]) {
 /* -------------------------
    ANALYSES
 ------------------------- */
+
 function renderAnalyses(analyses: NewsletterAnalysisItem[]) {
   if (analyses.length === 0) return "";
 
@@ -187,6 +205,7 @@ function renderAnalyses(analyses: NewsletterAnalysisItem[]) {
             <tr>
               <td style="padding:16px;">
                 <strong>${escapeHtml(a.title)}</strong>
+
                 ${
                   a.excerpt
                     ? `<p style="margin:8px 0 12px 0;font-size:14px;color:#374151;">
@@ -195,7 +214,7 @@ function renderAnalyses(analyses: NewsletterAnalysisItem[]) {
                     : ""
                 }
 
-                <a href="${SITE_URL}/analysis?analysis_id=${a.id}"
+                <a href="${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}"
                    style="display:inline-block;padding:10px 18px;background:#111827;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:bold;">
                   Lire l’analyse complète
                 </a>
