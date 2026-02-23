@@ -2,6 +2,7 @@
 
 import type {
   NewsletterNewsItem,
+  HeaderConfig,
   NewsletterAnalysisItem,
 } from "@/types/newsletter";
 
