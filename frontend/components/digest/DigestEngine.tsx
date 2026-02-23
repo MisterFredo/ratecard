@@ -6,6 +6,8 @@ import SearchableMultiSelect, {
   SelectOption,
 } from "@/components/ui/SearchableMultiSelect";
 
+/* ========================================================= */
+
 type Props = {
   selectedTopics: SelectOption[];
   setSelectedTopics: (values: SelectOption[]) => void;
@@ -23,6 +25,8 @@ type Props = {
   }) => void;
 };
 
+/* ========================================================= */
+
 export default function DigestEngine({
   selectedTopics,
   setSelectedTopics,
@@ -35,7 +39,6 @@ export default function DigestEngine({
   const [topicOptions, setTopicOptions] = useState<SelectOption[]>([]);
   const [companyOptions, setCompanyOptions] = useState<SelectOption[]>([]);
   const [typeOptions, setTypeOptions] = useState<SelectOption[]>([]);
-
   const [loading, setLoading] = useState(false);
 
   /* ---------------------------------------------------------
@@ -64,12 +67,15 @@ export default function DigestEngine({
 
         setTypeOptions(
           (nt.types || []).map((x: any) => ({
-              id: x.code,   // celui-là est déjà bon
+            id: x.code,
             label: x.label,
           }))
         );
       } catch (e) {
-        console.error("Erreur chargement référentiels Digest", e);
+        console.error(
+          "Erreur chargement référentiels Digest",
+          e
+        );
       }
     }
 
@@ -97,40 +103,61 @@ export default function DigestEngine({
      UI
   --------------------------------------------------------- */
   return (
-    <div className="space-y-6 border rounded-lg p-6 bg-white">
-      <h2 className="text-sm font-semibold">
-        Moteur éditorial
-      </h2>
+    <div className="bg-white border border-gray-200 rounded-xl px-6 py-5 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold tracking-tight text-gray-900">
+          Moteur éditorial
+        </h2>
+      </div>
 
-      <SearchableMultiSelect
-        label="Topics"
-        options={topicOptions}
-        values={selectedTopics}
-        onChange={setSelectedTopics}
-      />
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_1fr_auto] gap-6 items-end">
 
-      <SearchableMultiSelect
-        label="Sociétés"
-        options={companyOptions}
-        values={selectedCompanies}
-        onChange={setSelectedCompanies}
-      />
+        {/* TOPICS */}
+        <SearchableMultiSelect
+          label="Topics"
+          options={topicOptions}
+          values={selectedTopics}
+          onChange={setSelectedTopics}
+        />
 
-      <SearchableMultiSelect
-        label="Types"
-        options={typeOptions}
-        values={selectedTypes}
-        onChange={setSelectedTypes}
-      />
+        {/* SOCIÉTÉS */}
+        <SearchableMultiSelect
+          label="Sociétés"
+          options={companyOptions}
+          values={selectedCompanies}
+          onChange={setSelectedCompanies}
+        />
 
-      <div className="pt-2">
-        <button
-          onClick={handleSearch}
-          disabled={loading}
-          className="px-4 py-2 rounded bg-black text-white text-sm disabled:opacity-60"
-        >
-          {loading ? "Recherche…" : "Rechercher"}
-        </button>
+        {/* TYPES */}
+        <SearchableMultiSelect
+          label="Types"
+          options={typeOptions}
+          values={selectedTypes}
+          onChange={setSelectedTypes}
+        />
+
+        {/* BUTTON */}
+        <div className="flex justify-end">
+          <button
+            onClick={handleSearch}
+            disabled={loading}
+            className="
+              h-[42px]
+              px-6
+              rounded-lg
+              bg-black
+              text-white
+              text-sm
+              font-medium
+              transition
+              hover:bg-gray-800
+              disabled:opacity-50
+            "
+          >
+            {loading ? "Recherche…" : "Rechercher"}
+          </button>
+        </div>
+
       </div>
     </div>
   );
