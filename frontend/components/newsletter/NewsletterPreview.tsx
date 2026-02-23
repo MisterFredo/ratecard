@@ -82,49 +82,85 @@ function renderNews(news: NewsletterNewsItem[]) {
         n.company_visual_rect_id
       );
 
+      const metaParts = [
+        n.company?.name,
+        n.news_type,
+      ].filter(Boolean);
+
+      const meta = metaParts.length
+        ? `<div style="
+            font-size:12px;
+            color:#6B7280;
+            margin-bottom:6px;
+          ">
+            ${escapeHtml(metaParts.join(" • "))}
+          </div>`
+        : "";
+
       return `
       <tr>
-        <td style="padding:0 0 24px 0;">
-          <table width="100%" cellpadding="0" cellspacing="0"
-            style="border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;">
-
-            ${
-              imageUrl
-                ? `
+        <td style="padding:20px 0;border-bottom:1px solid #E5E7EB;">
+          <table width="100%" cellpadding="0" cellspacing="0">
             <tr>
-              <td>
+
+              ${
+                imageUrl
+                  ? `
+              <!-- IMAGE -->
+              <td width="140" valign="top" style="padding-right:16px;">
                 <img
                   src="${imageUrl}"
                   alt="${escapeHtml(n.title)}"
-                  style="display:block;width:100%;height:auto;"
+                  width="140"
+                  style="display:block;width:140px;height:auto;border-radius:6px;"
                 />
-              </td>
-            </tr>`
-                : ""
-            }
+              </td>`
+                  : ""
+              }
 
-            <tr>
-              <td style="padding:16px;font-family:Arial,Helvetica,sans-serif;">
-                <strong style="font-size:16px;line-height:22px;">
+              <!-- CONTENT -->
+              <td valign="top" style="font-family:Arial,Helvetica,sans-serif;">
+
+                ${meta}
+
+                <div style="
+                  font-size:16px;
+                  line-height:22px;
+                  font-weight:bold;
+                  color:#111827;
+                  margin-bottom:6px;
+                ">
                   ${escapeHtml(n.title)}
-                </strong>
+                </div>
 
                 ${
                   n.excerpt
-                    ? `<p style="margin:8px 0 12px 0;font-size:14px;line-height:20px;color:#374151;">
+                    ? `<div style="
+                        font-size:14px;
+                        line-height:20px;
+                        color:#374151;
+                        margin-bottom:10px;
+                      ">
                         ${escapeHtml(n.excerpt)}
-                      </p>`
+                      </div>`
                     : ""
                 }
 
                 <a
                   href="${PUBLIC_SITE_URL}/news?news_id=${n.id}"
-                  style="display:inline-block;padding:10px 18px;background:#2563EB;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:bold;">
-                  Lire l’article
+                  style="
+                    font-size:13px;
+                    color:#2563EB;
+                    text-decoration:none;
+                    font-weight:bold;
+                  "
+                >
+                  Lire l’article →
                 </a>
-              </td>
-            </tr>
 
+              </td>
+
+            </tr>
           </table>
         </td>
       </tr>`;
