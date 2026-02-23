@@ -443,9 +443,16 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
     if not row["EXCERPT"]:
         raise ValueError("Un excerpt est requis pour publier")
 
+    media_id = row["MEDIA_RECTANGLE_ID"]
+    company_rect = row["COMPANY_RECT"]
+
     if row["NEWS_KIND"] == "NEWS":
-        if not row["MEDIA_RECTANGLE_ID"] and not row["COMPANY_RECT"]:
+        if not media_id and not company_rect:
             raise ValueError("Un visuel est requis pour publier une news")
+
+    # 🔥 INJECTION STRUCTURELLE DU VISUEL SI ABSENT
+    if not media_id and company_rect:
+        media_id = company_rect
 
     now = datetime.now(timezone.utc)
 
@@ -462,6 +469,8 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
         table=TABLE_NEWS,
         fields={
             "STATUS": status,
+            "MEDIA_RECTANGLE_ID": media_id,
+            "HAS_VISUAL": bool(media_id),
             "PUBLISHED_AT": publish_date.isoformat(),
             "UPDATED_AT": now.isoformat(),
         },
@@ -469,7 +478,6 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
     )
 
     return status
-
 # ============================================================
 # SEARCH SIGNAUX — FLUX UNIQUEMENT
 # ============================================================
