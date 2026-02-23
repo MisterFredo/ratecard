@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 type Props<T> = {
   title: string;
@@ -36,15 +36,29 @@ export default function NewsletterSelector<
     [selectedIds, onChange]
   );
 
+  const selectedSet = useMemo(
+    () => new Set(selectedIds),
+    [selectedIds]
+  );
+
   return (
-    <section className="space-y-3">
+    <section className="space-y-4">
       <h2 className="text-sm font-semibold text-gray-900 tracking-tight">
         {title}
       </h2>
 
-      <div className="max-h-[380px] overflow-y-auto border border-gray-200 rounded-xl bg-white divide-y shadow-sm">
+      <div className="
+        max-h-[420px]
+        overflow-y-auto
+        border border-gray-200
+        rounded-2xl
+        bg-white
+        divide-y
+        shadow-sm
+      ">
+
         {items.length === 0 && (
-          <div className="p-4 text-sm text-gray-400">
+          <div className="px-5 py-6 text-sm text-gray-400">
             Aucun élément disponible
           </div>
         )}
@@ -60,37 +74,74 @@ export default function NewsletterSelector<
               ? String(item[metaKey])
               : null;
 
-          const checked = selectedIds.includes(item.id);
+          const checked = selectedSet.has(item.id);
 
           return (
             <div
               key={item.id}
               className={`
-                flex items-start gap-3 p-4 text-sm cursor-pointer
-                transition-all
-                ${checked ? "bg-gray-50" : "hover:bg-gray-50"}
+                group
+                flex items-start gap-4
+                px-5 py-4
+                text-sm
+                cursor-pointer
+                transition-all duration-150
+                ${
+                  checked
+                    ? "bg-gray-50"
+                    : "hover:bg-gray-50"
+                }
               `}
               onClick={() => toggle(item.id)}
             >
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={() => toggle(item.id)}
-                onClick={(e) => e.stopPropagation()}
-                className="mt-1 accent-black"
-              />
+              <div className="pt-1">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggle(item.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="
+                    h-4 w-4
+                    accent-black
+                    cursor-pointer
+                  "
+                />
+              </div>
 
-              <div className="flex flex-col gap-1">
-                <span className="text-gray-900 leading-snug font-medium">
+              <div className="flex-1 min-w-0 flex flex-col gap-1">
+                <span className="
+                  text-gray-900
+                  leading-relaxed
+                  font-medium
+                  break-words
+                ">
                   {label}
                 </span>
 
                 {meta && (
-                  <span className="text-xs text-gray-400 uppercase tracking-wide">
+                  <span className="
+                    text-xs
+                    text-gray-400
+                    uppercase
+                    tracking-wide
+                  ">
                     {meta}
                   </span>
                 )}
               </div>
+
+              {checked && (
+                <div className="
+                  text-[10px]
+                  font-semibold
+                  uppercase
+                  tracking-wide
+                  text-black
+                  opacity-60
+                ">
+                  ✓
+                </div>
+              )}
             </div>
           );
         })}
