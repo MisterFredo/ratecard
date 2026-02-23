@@ -6,19 +6,13 @@ import ClientNewsletterPreview from "./ClientNewsletterPreview";
 
 import type {
   NewsletterNewsItem,
+  HeaderConfig,
   NewsletterAnalysisItem,
 } from "@/types/newsletter";
 
 /* =========================================================
    TYPES
 ========================================================= */
-
-type HeaderConfig = {
-  title: string;
-  subtitle?: string;
-  imageUrl?: string;
-  mode: "ratecard" | "client";
-};
 
 type Props = {
   headerConfig: HeaderConfig;
