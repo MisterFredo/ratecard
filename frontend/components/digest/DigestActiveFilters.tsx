@@ -28,12 +28,12 @@ export default function DigestActiveFilters({
   if (!hasFilters) return null;
 
   return (
-    <div className="space-y-3 border rounded-lg p-4 bg-gray-50">
-      <p className="text-xs font-semibold text-gray-600 uppercase">
+    <div className="border border-gray-200 rounded-lg bg-gray-50 px-3 py-3 space-y-2">
+      <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
         Filtres actifs
       </p>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {topics.map((t) => (
           <Tag
             key={`topic-${t.id}`}
@@ -70,11 +70,28 @@ function Tag({
   onRemove: () => void;
 }) {
   return (
-    <span className="inline-flex items-center gap-2 px-3 py-1 bg-white border rounded-full text-xs">
-      {label}
+    <span
+      className="
+        inline-flex items-center gap-1
+        px-2 py-0.5
+        bg-white
+        border border-gray-200
+        rounded
+        text-[11px]
+        text-gray-700
+      "
+    >
+      <span className="truncate max-w-[140px]">
+        {label}
+      </span>
+
       <button
         onClick={onRemove}
-        className="text-gray-400 hover:text-gray-700"
+        className="
+          text-gray-400
+          hover:text-gray-700
+          text-[11px]
+        "
       >
         ×
       </button>
