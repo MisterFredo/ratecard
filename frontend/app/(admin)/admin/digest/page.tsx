@@ -6,6 +6,7 @@ import DigestSelectors from "@/components/digest/DigestSelectors";
 import DigestEditorialFlow from "@/components/digest/DigestEditorialFlow";
 import DigestHeaderConfig from "@/components/digest/DigestHeaderConfig";
 import DigestPreviewPanel from "@/components/newsletter/DigestPreviewPanel";
+import DigestTopicStats from "@/components/digest/DigestTopicStats";
 import { api } from "@/lib/api";
 
 import type {
@@ -14,24 +15,17 @@ import type {
 } from "@/types/newsletter";
 import type { SelectOption } from "@/components/ui/SearchableMultiSelect";
 
-/* ========================================================= */
-
 type EditorialItem = {
   id: string;
   type: "news" | "breve" | "analysis";
 };
 
-/* ========================================================= */
-
 export default function DigestPage() {
-  /* ==============================
-     STATE
-  ============================== */
-
   const [loading, setLoading] = useState(false);
 
   const [news, setNews] = useState<NewsletterNewsItem[]>([]);
-  const [breves, setBreves] = useState<NewsletterNewsItem[]>([]);
+  const [breves, setBreves] =
+    useState<NewsletterNewsItem[]>([]);
   const [analyses, setAnalyses] =
     useState<NewsletterAnalysisItem[]>([]);
 
@@ -42,21 +36,24 @@ export default function DigestPage() {
   const [selectedTypes, setSelectedTypes] =
     useState<SelectOption[]>([]);
 
-  const [headerConfig, setHeaderConfig] = useState({
-    title: "Newsletter Ratecard",
-    subtitle: "",
-    coverImageUrl: "",
-    mode: "ratecard" as "ratecard" | "client",
-  });
+  const [headerConfig, setHeaderConfig] =
+    useState({
+      title: "Newsletter Ratecard",
+      subtitle: "",
+      coverImageUrl: "",
+      mode: "ratecard" as "ratecard" | "client",
+      showTopicStats: false,
+    });
 
-  const [introText, setIntroText] = useState("");
+  const [introText, setIntroText] =
+    useState("");
 
   const [editorialOrder, setEditorialOrder] =
     useState<EditorialItem[]>([]);
 
-  /* =========================================================
+  /* ==============================
      SEARCH
-  ========================================================= */
+  ============================== */
 
   async function handleSearch(filters: {
     topics: string[];
@@ -67,16 +64,17 @@ export default function DigestPage() {
     setLoading(true);
 
     try {
-      const json = await api.post("/admin/digest/search", {
-        ...filters,
-        limit: 20,
-      });
+      const json = await api.post(
+        "/admin/digest/search",
+        {
+          ...filters,
+          limit: 20,
+        }
+      );
 
       setNews(json.news || []);
       setBreves(json.breves || []);
       setAnalyses(json.analyses || []);
-
-      // reset ordre éditorial après recherche
       setEditorialOrder([]);
     } catch (e) {
       console.error("Erreur search digest", e);
@@ -85,15 +83,17 @@ export default function DigestPage() {
     }
   }
 
-  /* =========================================================
+  /* ==============================
      MAP ORDER → DATA
-  ========================================================= */
+  ============================== */
 
   const editorialNews = useMemo(
     () =>
       editorialOrder
         .filter((i) => i.type === "news")
-        .map((i) => news.find((n) => n.id === i.id))
+        .map((i) =>
+          news.find((n) => n.id === i.id)
+        )
         .filter(Boolean) as NewsletterNewsItem[],
     [editorialOrder, news]
   );
@@ -102,7 +102,9 @@ export default function DigestPage() {
     () =>
       editorialOrder
         .filter((i) => i.type === "breve")
-        .map((i) => breves.find((b) => b.id === i.id))
+        .map((i) =>
+          breves.find((b) => b.id === i.id)
+        )
         .filter(Boolean) as NewsletterNewsItem[],
     [editorialOrder, breves]
   );
@@ -111,30 +113,54 @@ export default function DigestPage() {
     () =>
       editorialOrder
         .filter((i) => i.type === "analysis")
-        .map((i) => analyses.find((a) => a.id === i.id))
+        .map((i) =>
+          analyses.find((a) => a.id === i.id)
+        )
         .filter(Boolean) as NewsletterAnalysisItem[],
     [editorialOrder, analyses]
   );
 
-  /* =========================================================
+  /* ==============================
      LAYOUT
-  ========================================================= */
+  ============================== */
 
   return (
     <div className="space-y-5">
-
       <h1 className="text-xl font-semibold tracking-tight">
         Digest
       </h1>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] gap-8 items-start">
 
-        {/* =========================================
-            LEFT — ÉDITION
-        ========================================= */}
-        <div className="space-y-8">
+        {/* =========================
+           LEFT — ÉDITION
+        ========================= */}
+        <div className="space-y-6">
 
-          {/* MOTEUR */}
+          {/* CONFIG ÉDITORIALE */}
+          <DigestHeaderConfig
+            headerConfig={headerConfig}
+            setHeaderConfig={setHeaderConfig}
+          />
+
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold">
+              Introduction
+            </h2>
+
+            <textarea
+              className="w-full border border-gray-200 rounded-lg p-4 min-h-[120px] text-sm"
+              value={introText}
+              onChange={(e) =>
+                setIntroText(e.target.value)
+              }
+            />
+          </div>
+
+          {/* BAROMÈTRE 30 JOURS */}
+          <DigestTopicStats period={30} />
+
+          {/* MOTEUR DE RECHERCHE */}
           <DigestEngine
             selectedTopics={selectedTopics}
             setSelectedTopics={setSelectedTopics}
@@ -163,34 +189,12 @@ export default function DigestPage() {
             setEditorialOrder={setEditorialOrder}
           />
 
-          {/* HEADER */}
-          <DigestHeaderConfig
-            headerConfig={headerConfig}
-            setHeaderConfig={setHeaderConfig}
-          />
-
-          {/* INTRO */}
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold">
-              Introduction
-            </h2>
-
-            <textarea
-              className="w-full border border-gray-200 rounded-lg p-4 min-h-[120px] text-sm"
-              value={introText}
-              onChange={(e) =>
-                setIntroText(e.target.value)
-              }
-            />
-          </div>
-
         </div>
 
-        {/* =========================================
-            RIGHT — PREVIEW STICKY
-        ========================================= */}
+        {/* =========================
+           RIGHT — PREVIEW
+        ========================= */}
         <div className="sticky top-8 h-[calc(100vh-6rem)]">
-
           <DigestPreviewPanel
             headerConfig={headerConfig}
             introText={introText}
@@ -198,7 +202,6 @@ export default function DigestPage() {
             breves={editorialBreves}
             analyses={editorialAnalyses}
           />
-
         </div>
 
       </div>
