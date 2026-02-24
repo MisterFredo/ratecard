@@ -23,6 +23,9 @@ export type HeaderConfig = {
   subtitle?: string;
   imageUrl?: string;
   mode: "ratecard" | "client";
+
+  // 🔥 NOUVEAU
+  showTopicStats?: boolean;
 };
 
 export type NewsletterAnalysisItem = {
