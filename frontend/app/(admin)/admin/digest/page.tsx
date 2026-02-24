@@ -40,7 +40,7 @@ export default function DigestPage() {
     useState({
       title: "Newsletter Ratecard",
       subtitle: "",
-      coverImageUrl: "",
+      imageUrl: "",
       mode: "ratecard" as "ratecard" | "client",
       showTopicStats: false,
     });
@@ -50,10 +50,6 @@ export default function DigestPage() {
 
   const [editorialOrder, setEditorialOrder] =
     useState<EditorialItem[]>([]);
-
-  /* ==============================
-     SEARCH
-  ============================== */
 
   async function handleSearch(filters: {
     topics: string[];
@@ -82,10 +78,6 @@ export default function DigestPage() {
       setLoading(false);
     }
   }
-
-  /* ==============================
-     MAP ORDER → DATA
-  ============================== */
 
   const editorialNews = useMemo(
     () =>
@@ -120,10 +112,6 @@ export default function DigestPage() {
     [editorialOrder, analyses]
   );
 
-  /* ==============================
-     LAYOUT
-  ============================== */
-
   return (
     <div className="space-y-4">
       <h1 className="text-lg font-semibold tracking-tight">
@@ -132,44 +120,19 @@ export default function DigestPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_1fr] gap-6 items-start">
 
-        {/* =========================
-           LEFT — ÉDITION
-        ========================= */}
+        {/* LEFT */}
         <div className="space-y-5">
 
-          {/* CONFIG */}
           <DigestHeaderConfig
             headerConfig={headerConfig}
             setHeaderConfig={setHeaderConfig}
+            introText={introText}
+            setIntroText={setIntroText}
           />
 
-          {/* INTRO */}
-          <section className="space-y-2">
-            <h2 className="text-sm font-semibold tracking-tight">
-              Introduction
-            </h2>
-
-            <textarea
-              className="
-                w-full
-                border border-gray-200
-                rounded-lg
-                px-3 py-2
-                text-sm
-                min-h-[100px]
-                resize-y
-              "
-              value={introText}
-              onChange={(e) =>
-                setIntroText(e.target.value)
-              }
-            />
-          </section>
-
-          {/* BAROMÈTRE */}
+          {/* Toujours visible côté admin */}
           <DigestTopicStats period={30} />
 
-          {/* MOTEUR */}
           <DigestEngine
             selectedTopics={selectedTopics}
             setSelectedTopics={setSelectedTopics}
@@ -180,7 +143,6 @@ export default function DigestPage() {
             onSearch={handleSearch}
           />
 
-          {/* SÉLECTION */}
           <DigestSelectors
             news={news}
             breves={breves}
@@ -189,7 +151,6 @@ export default function DigestPage() {
             setEditorialOrder={setEditorialOrder}
           />
 
-          {/* FLUX */}
           <DigestEditorialFlow
             editorialOrder={editorialOrder}
             news={news}
@@ -200,9 +161,7 @@ export default function DigestPage() {
 
         </div>
 
-        {/* =========================
-           RIGHT — PREVIEW
-        ========================= */}
+        {/* RIGHT */}
         <div className="sticky top-6 h-[calc(100vh-4rem)] overflow-y-auto pr-1">
           <DigestPreviewPanel
             headerConfig={headerConfig}
