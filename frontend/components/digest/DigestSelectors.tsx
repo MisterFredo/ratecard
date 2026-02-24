@@ -46,12 +46,12 @@ export default function DigestSelectors({
   const analysesSelected = editorialOrder.filter(i => i.type === "analysis").length;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8">
 
       {/* =========================
           NEWS
       ========================== */}
-      <section className="space-y-4">
+      <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold tracking-tight">
             News
@@ -74,7 +74,7 @@ export default function DigestSelectors({
       {/* =========================
           BRÈVES
       ========================== */}
-      <section className="space-y-4">
+      <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold tracking-tight">
             Brèves
@@ -97,7 +97,7 @@ export default function DigestSelectors({
       {/* =========================
           ANALYSES
       ========================== */}
-      <section className="space-y-4">
+      <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold tracking-tight">
             Analyses
