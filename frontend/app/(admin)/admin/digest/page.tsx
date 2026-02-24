@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import DigestEngine from "@/components/digest/DigestEngine";
 import DigestSelectors from "@/components/digest/DigestSelectors";
 import DigestEditorialFlow from "@/components/digest/DigestEditorialFlow";
@@ -21,6 +21,11 @@ type EditorialItem = {
   type: "news" | "breve" | "analysis";
 };
 
+type TopicStat = {
+  label: string;
+  count: number;
+};
+
 export default function DigestPage() {
   const [loading, setLoading] = useState(false);
 
@@ -36,10 +41,6 @@ export default function DigestPage() {
   const [selectedTypes, setSelectedTypes] =
     useState<SelectOption[]>([]);
 
-  /* ==============================
-     HEADER CONFIG PROPRE
-  ============================== */
-
   const [headerConfig, setHeaderConfig] =
     useState<HeaderConfig>({
       title: "Newsletter Ratecard",
@@ -49,9 +50,37 @@ export default function DigestPage() {
     });
 
   const [introText, setIntroText] = useState("");
-
   const [editorialOrder, setEditorialOrder] =
     useState<EditorialItem[]>([]);
+
+  /* ==============================
+     BAROMÈTRE BACKEND (12 topics)
+  ============================== */
+
+  const [topicStats, setTopicStats] = useState<TopicStat[]>([]);
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const res = await api.get("/breves/stats");
+
+        const topics =
+          (res.topics_stats || [])
+            .map((t: any) => ({
+              label: t.label,
+              count: t.last_30_days ?? 0,
+            }))
+            .sort((a: TopicStat, b: TopicStat) => b.count - a.count);
+
+        setTopicStats(topics);
+
+      } catch (e) {
+        console.error("Erreur chargement baromètre", e);
+      }
+    }
+
+    loadStats();
+  }, []);
 
   /* ==============================
      SEARCH
@@ -144,7 +173,7 @@ export default function DigestPage() {
             setIntroText={setIntroText}
           />
 
-          {/* Toujours visible côté admin */}
+          {/* Visible en admin uniquement */}
           <DigestTopicStats period={30} />
 
           <DigestEngine
@@ -183,6 +212,7 @@ export default function DigestPage() {
             news={editorialNews}
             breves={editorialBreves}
             analyses={editorialAnalyses}
+            topicStats={topicStats} // 🔥 injecté ici
           />
         </div>
 
