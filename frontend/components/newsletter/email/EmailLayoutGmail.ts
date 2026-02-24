@@ -1,20 +1,29 @@
 export function EmailLayoutGmail(content: string) {
   return `
-<table width="100%" cellpadding="0" cellspacing="0">
-<tr>
-<td style="
-    padding:40px 48px;
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+</head>
+<body style="
+    margin:0;
+    padding:0;
+    background:#ffffff;
     font-family:Arial,Helvetica,sans-serif;
-    font-size:15px;
-    line-height:1.7;
     color:#111827;
-    background:#FFFFFF;
   ">
 
-  ${content}
+  <div style="
+      max-width:720px;
+      margin:0;
+      padding:0;
+    ">
 
-</td>
-</tr>
-</table>
+    ${content}
+
+  </div>
+
+</body>
+</html>
 `;
 }
