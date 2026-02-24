@@ -13,7 +13,8 @@ import { EmailAnalysesBlock } from "./EmailAnalysesBlock";
 
 type TopicStat = {
   label: string;
-  count: number;
+  last_30_days: number;
+  total: number;
 };
 
 type Props = {
