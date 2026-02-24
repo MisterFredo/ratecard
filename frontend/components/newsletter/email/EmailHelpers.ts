@@ -31,3 +31,46 @@ export function buildContentImageUrl(
   if (!visualRectId) return null;
   return `${GCS_BASE}/news/${visualRectId}`;
 }
+
+export function renderEmailTags({
+  topics = [],
+  companies = [],
+  styles = [],
+}: {
+  topics?: any[];
+  companies?: any[];
+  styles?: string[];
+}) {
+  const render = (label: string, bg: string, color: string) => `
+    <span style="
+      display:inline-block;
+      font-size:11px;
+      padding:4px 8px;
+      margin-right:6px;
+      margin-top:6px;
+      background:${bg};
+      color:${color};
+      border-radius:12px;
+      font-weight:500;
+    ">
+      ${label}
+    </span>
+  `;
+
+  const topicTags =
+    topics?.map((t: any) =>
+      render(t.label, "#F3F4F6", "#374151")
+    ) || [];
+
+  const companyTags =
+    companies?.map((c: any) =>
+      render(c.name, "#EEF2FF", "#3730A3")
+    ) || [];
+
+  const styleTags =
+    styles?.map((s: string) =>
+      render(s, "#111827", "#FFFFFF")
+    ) || [];
+
+  return [...styleTags, ...companyTags, ...topicTags].join("");
+}
