@@ -121,18 +121,18 @@ export default function DigestPage() {
   ========================================================= */
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
 
       <h1 className="text-xl font-semibold tracking-tight">
         Digest
       </h1>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] gap-14 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] gap-8 items-start">
 
         {/* =========================================
             LEFT — ÉDITION
         ========================================= */}
-        <div className="space-y-12">
+        <div className="space-y-8">
 
           {/* MOTEUR */}
           <DigestEngine
