@@ -36,14 +36,8 @@ export function buildEmail({
 
   const content = `
     ${EmailHeader(headerConfig, introText)}
-
-    ${
-      headerConfig.showTopicStats && topicStats.length
-        ? EmailStatsBlock(topicStats)
-        : ""
-    }
-
     ${EmailNewsBlock(news)}
+    ${EmailStatsBlock(topicStats)}
     ${EmailBrevesBlock(breves)}
     ${EmailAnalysesBlock(analyses)}
   `;
