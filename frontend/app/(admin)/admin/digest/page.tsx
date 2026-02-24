@@ -161,7 +161,7 @@ export default function DigestPage() {
         Digest
       </h1>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_1fr] gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_1.3fr] gap-6 items-start">
 
         {/* LEFT */}
         <div className="space-y-5">
@@ -205,7 +205,7 @@ export default function DigestPage() {
         </div>
 
         {/* RIGHT */}
-        <div className="sticky top-6 h-[calc(100vh-4rem)] overflow-y-auto pr-1">
+        <div className="sticky top-6 h-[calc(100vh-4rem)] overflow-y-auto pr-2">
           <DigestPreviewPanel
             headerConfig={headerConfig}
             introText={introText}
