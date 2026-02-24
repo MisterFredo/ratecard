@@ -1,4 +1,4 @@
-import { buildContentImageUrl } from "./helpers";
+import { buildContentImageUrl } from "./EmailHelpers";
 
 export function EmailBrevesBlock(breves: any[]) {
   if (!breves.length) return "";
