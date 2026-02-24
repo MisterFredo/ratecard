@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Linkedin, Mail, Menu, X } from "lucide-react";
 import { useDrawer } from "@/contexts/DrawerContext";
+import { trackEvent } from "@/lib/analytics";
 
 export default function PublicTopNavShell({
   children,
@@ -28,6 +29,37 @@ export default function PublicTopNavShell({
     { href: "/membership", label: "Membership" },
   ];
 
+  /* =====================================================
+     TRACK HELPERS
+  ===================================================== */
+
+  function trackNavClick(label: string, location: "desktop" | "mobile") {
+    trackEvent("menu_click", {
+      label,
+      location,
+    });
+  }
+
+  function trackNewsletterClick(location: "desktop" | "mobile") {
+    trackEvent("newsletter_cta_click", {
+      source: "top_nav",
+      location,
+    });
+  }
+
+  function trackLinkedinClick(location: "desktop" | "mobile") {
+    trackEvent("linkedin_click", {
+      source: "top_nav",
+      location,
+    });
+  }
+
+  function trackLogoClick() {
+    trackEvent("logo_click", {
+      location: "top_nav",
+    });
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* =====================================================
@@ -39,7 +71,11 @@ export default function PublicTopNavShell({
         <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           {/* LEFT */}
           <div className="flex items-center gap-10">
-            <Link href="/" className="flex items-center">
+            <Link
+              href="/"
+              onClick={trackLogoClick}
+              className="flex items-center"
+            >
               <img
                 src="/assets/brand/ratecard-logo.jpeg"
                 alt="Ratecard"
@@ -55,6 +91,9 @@ export default function PublicTopNavShell({
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={() =>
+                      trackNavClick(item.label, "desktop")
+                    }
                     className={`
                       px-3 py-1.5 rounded-full transition
                       ${
@@ -73,9 +112,11 @@ export default function PublicTopNavShell({
 
           {/* RIGHT — ACTIONS DESKTOP */}
           <div className="hidden md:flex items-center gap-4">
-            {/* Newsletter → Drawer */}
             <button
-              onClick={() => openNewsletterDrawer("silent")}
+              onClick={() => {
+                trackNewsletterClick("desktop");
+                openNewsletterDrawer("silent");
+              }}
               className="
                 px-3 py-1.5 rounded-full
                 text-ratecard-blue
@@ -87,11 +128,11 @@ export default function PublicTopNavShell({
               <Mail size={16} />
             </button>
 
-            {/* LinkedIn */}
             <a
               href="https://www.linkedin.com/company/ratecard-adnovia/"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackLinkedinClick("desktop")}
               className="
                 px-3 py-1.5 rounded-full
                 text-ratecard-blue
@@ -106,7 +147,10 @@ export default function PublicTopNavShell({
 
           {/* MOBILE BURGER */}
           <button
-            onClick={() => setMobileOpen(true)}
+            onClick={() => {
+              trackEvent("menu_open_mobile", {});
+              setMobileOpen(true);
+            }}
             className="md:hidden text-ratecard-blue"
             aria-label="Menu"
           >
@@ -121,7 +165,6 @@ export default function PublicTopNavShell({
       {mobileOpen && (
         <div className="fixed inset-0 z-50 bg-black/40">
           <aside className="absolute left-0 top-0 h-full w-4/5 max-w-xs bg-white flex flex-col">
-            {/* HEADER */}
             <div className="flex items-center justify-between p-4 border-b">
               <img
                 src="/assets/brand/ratecard-logo.jpeg"
@@ -137,7 +180,6 @@ export default function PublicTopNavShell({
               </button>
             </div>
 
-            {/* NAV */}
             <nav className="flex flex-col gap-4 p-6 text-base font-medium">
               {navItems.map((item) => {
                 const active = isActive(item.href);
@@ -146,7 +188,10 @@ export default function PublicTopNavShell({
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={() => setMobileOpen(false)}
+                    onClick={() => {
+                      trackNavClick(item.label, "mobile");
+                      setMobileOpen(false);
+                    }}
                     className={`
                       px-3 py-2 rounded-lg transition
                       ${
@@ -162,10 +207,10 @@ export default function PublicTopNavShell({
               })}
             </nav>
 
-            {/* ACTIONS MOBILE */}
             <div className="mt-auto p-6 border-t space-y-4 text-sm">
               <button
                 onClick={() => {
+                  trackNewsletterClick("mobile");
                   setMobileOpen(false);
                   openNewsletterDrawer("silent");
                 }}
@@ -179,6 +224,7 @@ export default function PublicTopNavShell({
                 href="https://www.linkedin.com/company/ratecard-adnovia/"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackLinkedinClick("mobile")}
                 className="flex items-center gap-2 text-ratecard-blue"
               >
                 <Linkedin size={16} />
@@ -200,4 +246,3 @@ export default function PublicTopNavShell({
     </div>
   );
 }
-
