@@ -26,7 +26,7 @@ export default function DigestTopicStats({
   useEffect(() => {
     async function loadStats() {
       try {
-        const data = await api.get("/breves/stats");
+        const data = await api.get("/news/breves/stats");
 
         const stats: TopicStat[] =
           data?.topics_stats || [];
