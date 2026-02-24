@@ -1,124 +1,118 @@
-import type { NewsletterNewsItem } from "@/types/newsletter";
-import { escapeHtml, formatDate } from "./EmailHelpers";
-import { EmailMetaRight } from "./EmailMetaRight";
+import { buildContentImageUrl } from "./helpers";
 
-const PUBLIC_SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://ratecard.fr";
-
-const GCS_BASE_URL =
-  process.env.NEXT_PUBLIC_GCS_BASE_URL ||
-  "https://storage.googleapis.com/ratecard-media";
-
-function buildContentImageUrl(filename?: string | null) {
-  if (!filename) return null;
-  if (filename.startsWith("http")) return filename;
-  return `${GCS_BASE_URL}/news/${filename}`;
-}
-
-function renderDivider() {
-  return `
-<tr>
-<td colspan="2" style="padding:20px 0;">
-  <div style="height:1px;background:#E5E7EB;"></div>
-</td>
-</tr>`;
-}
-
-function renderSectionTitle(label: string) {
-  return `
-<tr>
-<td colspan="2"
-    style="padding:30px 0 14px 0;
-           font-family:Arial,Helvetica,sans-serif;
-           font-size:15px;
-           font-weight:700;
-           text-transform:uppercase;
-           letter-spacing:0.6px;
-           color:#111827;">
-  ${label}
-</td>
-</tr>`;
-}
-
-export function EmailNewsBlock(news: NewsletterNewsItem[]) {
+export function EmailNewsBlock(news: any[]) {
   if (!news.length) return "";
 
-  return (
-    renderSectionTitle("Actualités") +
-    news
-      .map((n, index) => {
+  const rows = news
+    .map((n) => {
+      const imageUrl = buildContentImageUrl(n.visual_rect_id);
 
-        const imageUrl =
-          buildContentImageUrl(n.visual_rect_id);
+      const badges =
+        n.topics?.map(
+          (t: any) => `
+          <span style="
+              display:inline-block;
+              font-size:11px;
+              padding:2px 6px;
+              margin-right:4px;
+              margin-top:4px;
+              background:#F3F4F6;
+              color:#374151;
+              border-radius:4px;
+            ">
+            ${t.label}
+          </span>
+        `
+        ).join("") || "";
 
-        return `
+      return `
 <tr>
-<td colspan="2">
+<td colspan="2" style="
+    padding:28px 0;
+    border-bottom:1px solid #E5E7EB;
+    font-family:Arial,Helvetica,sans-serif;
+  ">
 
-<table width="100%" cellpadding="0" cellspacing="0">
-<tr>
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
 
-<td valign="top" style="padding-bottom:26px;">
+      <!-- IMAGE -->
+      <td width="160" valign="top" style="padding-right:20px;">
+        ${
+          imageUrl
+            ? `<img src="${imageUrl}" 
+                   width="140"
+                   style="display:block;border-radius:6px;" />`
+            : ""
+        }
+      </td>
 
-  ${
-    imageUrl
-      ? `<img src="${imageUrl}"
-           style="
-             display:block;
-             width:100%;
-             max-height:200px;
-             object-fit:cover;
-             margin-bottom:14px;
-           " />`
-      : ""
-  }
+      <!-- TEXT -->
+      <td valign="top">
 
-  <div style="font-size:12px;color:#6B7280;margin-bottom:6px;">
-    ${formatDate(n.published_at)}
-  </div>
+        <div style="
+            font-size:12px;
+            color:#6B7280;
+            margin-bottom:6px;
+          ">
+          ${new Date(n.published_at).toLocaleDateString("fr-FR")}
+        </div>
 
-  <div style="
-    font-size:17px;
-    font-weight:600;
-    color:#111827;
-    margin-bottom:8px;">
-    ${escapeHtml(n.title)}
-  </div>
-
-  ${
-    n.excerpt
-      ? `<div style="
-           font-size:14px;
-           line-height:21px;
-           color:#374151;
-           margin-bottom:12px;">
-           ${escapeHtml(n.excerpt)}
-         </div>`
-      : ""
-  }
-
-  <a href="${PUBLIC_SITE_URL}/news?news_id=${n.id}"
-     style="font-size:13px;
-            font-weight:600;
+        <div style="
+            font-size:18px;
+            font-weight:700;
             color:#111827;
-            text-decoration:none;
-            border-bottom:1px solid #111827;">
-    Lire l’article
-  </a>
+            margin-bottom:8px;
+            line-height:1.3;
+          ">
+          ${n.title}
+        </div>
+
+        ${badges}
+
+        ${
+          n.excerpt
+            ? `<div style="
+                font-size:14px;
+                color:#374151;
+                margin-top:10px;
+                line-height:1.5;
+              ">
+                ${n.excerpt}
+              </div>`
+            : ""
+        }
+
+      </td>
+
+    </tr>
+  </table>
 
 </td>
-
-${EmailMetaRight(n.topics, n.company, n.news_type)}
-
 </tr>
-</table>
+`;
+    })
+    .join("");
 
+  return `
+<tr>
+<td colspan="2" style="
+    padding-top:32px;
+    font-family:Arial,Helvetica,sans-serif;
+  ">
+  <div style="
+      font-size:13px;
+      font-weight:700;
+      letter-spacing:0.06em;
+      text-transform:uppercase;
+      color:#111827;
+      margin-bottom:12px;
+    ">
+    Actualités
+  </div>
 </td>
 </tr>
 
-${index !== news.length - 1 ? renderDivider() : ""}`;
-      })
-      .join("")
-  );
+${rows}
+`;
 }
