@@ -27,6 +27,9 @@ export default function NewsletterPreview({
   analyses,
   topicStats = [],
 }: Props) {
+  /* ======================================
+     BUILD HTML (BREVO VERSION)
+  ====================================== */
 
   const html = useMemo(() => {
     return buildEmail({
@@ -41,17 +44,20 @@ export default function NewsletterPreview({
 
   const hiddenRef = useRef<HTMLDivElement>(null);
 
-  /* ===============================
+  /* ======================================
      COPY RAW HTML (BREVO)
-  =============================== */
+  ====================================== */
+
   function copyHtml() {
     navigator.clipboard.writeText(html);
     alert("HTML copié pour Brevo.");
   }
 
-  /* ===============================
-     COPY RENDERED VERSION (GMAIL)
-  =============================== */
+  /* ======================================
+     COPY RENDERED VERSION (GMAIL TEMP)
+     (Encore version Brevo pour l’instant)
+  ====================================== */
+
   function copyForGmail() {
     if (!hiddenRef.current) return;
 
@@ -70,12 +76,16 @@ export default function NewsletterPreview({
     selection?.removeAllRanges();
     container.innerHTML = "";
 
-    alert("Version Gmail copiée.");
+    alert("Version copiée pour Gmail.");
   }
+
+  /* ======================================
+     RENDER
+  ====================================== */
 
   return (
     <section className="space-y-4">
-
+      {/* HEADER BAR */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">
           Preview newsletter
@@ -98,6 +108,7 @@ export default function NewsletterPreview({
         </div>
       </div>
 
+      {/* PREVIEW FRAME */}
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         <iframe
           title="Newsletter preview"
