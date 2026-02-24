@@ -7,15 +7,20 @@ type Props = {
   setHeaderConfig: React.Dispatch<
     React.SetStateAction<HeaderConfig>
   >;
+  introText: string;
+  setIntroText: (value: string) => void;
 };
 
 export default function DigestHeaderConfig({
   headerConfig,
   setHeaderConfig,
+  introText,
+  setIntroText,
 }: Props) {
   return (
-    <section className="border border-gray-200 rounded-lg bg-white p-4 space-y-4">
-      {/* Header section title */}
+    <section className="border border-gray-200 rounded-lg bg-white px-4 py-4 space-y-3">
+
+      {/* HEADER */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold tracking-tight">
           Configuration
@@ -33,11 +38,11 @@ export default function DigestHeaderConfig({
             }
             className="h-3 w-3"
           />
-          <span>Afficher le baromètre (30j)</span>
+          <span>Afficher baromètre (preview)</span>
         </div>
       </div>
 
-      {/* Grid fields */}
+      {/* GRID */}
       <div className="grid grid-cols-2 gap-3">
 
         {/* Titre */}
@@ -68,10 +73,10 @@ export default function DigestHeaderConfig({
           className="border border-gray-200 rounded px-3 py-1.5 text-sm"
         >
           <option value="ratecard">
-            Ratecard
+            Ratecard (branding)
           </option>
           <option value="client">
-            Client
+            Client (white label)
           </option>
         </select>
 
@@ -101,6 +106,24 @@ export default function DigestHeaderConfig({
             }))
           }
           className="border border-gray-200 rounded px-3 py-1.5 text-sm col-span-2"
+        />
+
+        {/* INTRODUCTION */}
+        <textarea
+          placeholder="Introduction de la newsletter..."
+          value={introText}
+          onChange={(e) =>
+            setIntroText(e.target.value)
+          }
+          className="
+            border border-gray-200
+            rounded
+            px-3 py-2
+            text-sm
+            min-h-[90px]
+            col-span-2
+            resize-y
+          "
         />
       </div>
     </section>
