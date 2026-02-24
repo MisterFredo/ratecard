@@ -2,6 +2,7 @@ import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
   HeaderConfig,
+  TopicStat,
 } from "@/types/newsletter";
 
 import { EmailLayout } from "./EmailLayout";
@@ -10,12 +11,6 @@ import { EmailStatsBlock } from "./EmailStatsBlock";
 import { EmailNewsBlock } from "./EmailNewsBlock";
 import { EmailBrevesBlock } from "./EmailBrevesBlock";
 import { EmailAnalysesBlock } from "./EmailAnalysesBlock";
-
-type TopicStat = {
-  label: string;
-  last_30_days: number;
-  total: number;
-};
 
 type Props = {
   headerConfig: HeaderConfig;
