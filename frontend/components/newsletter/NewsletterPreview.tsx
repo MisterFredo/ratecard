@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
+
 import { buildEmail } from "./email/buildEmail";
+import { buildEmailGmail } from "./email/buildEmailGmail";
 
 import type {
   NewsletterNewsItem,
@@ -28,10 +30,29 @@ export default function NewsletterPreview({
   topicStats = [],
 }: Props) {
   /* ======================================
-     BUILD HTML (BREVO VERSION)
+     MODE SWITCH
+  ====================================== */
+
+  const [mode, setMode] = useState<"brevo" | "gmail">(
+    "brevo"
+  );
+
+  /* ======================================
+     BUILD HTML (DYNAMIC)
   ====================================== */
 
   const html = useMemo(() => {
+    if (mode === "gmail") {
+      return buildEmailGmail({
+        headerConfig,
+        introText,
+        news,
+        breves,
+        analyses,
+        topicStats,
+      });
+    }
+
     return buildEmail({
       headerConfig,
       introText,
@@ -40,7 +61,15 @@ export default function NewsletterPreview({
       analyses,
       topicStats,
     });
-  }, [headerConfig, introText, news, breves, analyses, topicStats]);
+  }, [
+    mode,
+    headerConfig,
+    introText,
+    news,
+    breves,
+    analyses,
+    topicStats,
+  ]);
 
   const hiddenRef = useRef<HTMLDivElement>(null);
 
@@ -50,12 +79,15 @@ export default function NewsletterPreview({
 
   function copyHtml() {
     navigator.clipboard.writeText(html);
-    alert("HTML copié pour Brevo.");
+    alert(
+      mode === "gmail"
+        ? "HTML Gmail copié."
+        : "HTML Brevo copié."
+    );
   }
 
   /* ======================================
-     COPY RENDERED VERSION (GMAIL TEMP)
-     (Encore version Brevo pour l’instant)
+     COPY RENDERED VERSION (GMAIL)
   ====================================== */
 
   function copyForGmail() {
@@ -76,7 +108,7 @@ export default function NewsletterPreview({
     selection?.removeAllRanges();
     container.innerHTML = "";
 
-    alert("Version copiée pour Gmail.");
+    alert("Version collable Gmail copiée.");
   }
 
   /* ======================================
@@ -91,20 +123,48 @@ export default function NewsletterPreview({
           Preview newsletter
         </h2>
 
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
+          {/* MODE SWITCH */}
+          <div className="flex border rounded overflow-hidden text-xs">
+            <button
+              onClick={() => setMode("brevo")}
+              className={`px-3 py-1.5 ${
+                mode === "brevo"
+                  ? "bg-gray-900 text-white"
+                  : "bg-white text-gray-600"
+              }`}
+            >
+              Brevo
+            </button>
+
+            <button
+              onClick={() => setMode("gmail")}
+              className={`px-3 py-1.5 border-l ${
+                mode === "gmail"
+                  ? "bg-gray-900 text-white"
+                  : "bg-white text-gray-600"
+              }`}
+            >
+              Gmail
+            </button>
+          </div>
+
+          {/* ACTION BUTTONS */}
           <button
             onClick={copyHtml}
             className="px-3 py-1.5 rounded bg-gray-900 text-white text-xs"
           >
-            Copier HTML (Brevo)
+            Copier HTML
           </button>
 
-          <button
-            onClick={copyForGmail}
-            className="px-3 py-1.5 rounded bg-white border border-gray-300 text-xs"
-          >
-            Copier pour Gmail
-          </button>
+          {mode === "gmail" && (
+            <button
+              onClick={copyForGmail}
+              className="px-3 py-1.5 rounded bg-white border border-gray-300 text-xs"
+            >
+              Copier pour Gmail
+            </button>
+          )}
         </div>
       </div>
 
