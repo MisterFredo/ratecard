@@ -8,15 +8,19 @@ const PUBLIC_SITE_URL =
 function renderSectionTitle(label: string) {
   return `
 <tr>
-<td colspan="2"
-    style="padding:36px 0 16px 0;
-           font-family:Arial,Helvetica,sans-serif;
-           font-size:13px;
-           font-weight:700;
-           text-transform:uppercase;
-           letter-spacing:0.08em;
-           color:#111827;">
-  ${label}
+<td style="
+    padding:42px 0 18px 0;
+    font-family:Arial,Helvetica,sans-serif;
+  ">
+  <div style="
+      font-size:13px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+      color:#111827;
+    ">
+    ${label}
+  </div>
 </td>
 </tr>`;
 }
@@ -30,50 +34,58 @@ export function EmailAnalysesBlock(
     .map(
       (a) => `
 <tr>
-<td colspan="2" style="
-    padding:28px 0;
+<td style="
+    padding:34px 0;
     border-bottom:1px solid #E5E7EB;
     font-family:Arial,Helvetica,sans-serif;
   ">
 
-  <table width="100%" cellpadding="0" cellspacing="0">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
-
-      <!-- TEXT ONLY (premium editorial look) -->
       <td valign="top">
 
+        <!-- DATE -->
         <div style="
             font-size:12px;
             color:#6B7280;
-            margin-bottom:8px;
+            margin-bottom:10px;
           ">
           ${formatDate(a.published_at)}
         </div>
 
-        <div style="
-            font-size:20px;
-            font-weight:700;
-            color:#111827;
-            margin-bottom:10px;
-            line-height:1.3;
-          ">
-          ${escapeHtml(a.title)}
-        </div>
+        <!-- TITLE -->
+        <a href="${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}"
+           target="_blank"
+           style="text-decoration:none;color:#111827;">
+          <div style="
+              font-size:22px;
+              font-weight:700;
+              line-height:1.35;
+              margin-bottom:14px;
+            ">
+            ${escapeHtml(a.title)}
+          </div>
+        </a>
 
+        <!-- EXCERPT -->
         ${
           a.excerpt
-            ? `<div style="
-                font-size:15px;
-                line-height:1.6;
+            ? `
+            <div style="
+                font-size:16px;
+                line-height:1.7;
                 color:#374151;
-                margin-bottom:16px;
+                margin-bottom:20px;
               ">
                 ${escapeHtml(a.excerpt)}
-              </div>`
+              </div>
+            `
             : ""
         }
 
+        <!-- CTA -->
         <a href="${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}"
+           target="_blank"
            style="
               font-size:14px;
               font-weight:600;
@@ -86,7 +98,6 @@ export function EmailAnalysesBlock(
         </a>
 
       </td>
-
     </tr>
   </table>
 
