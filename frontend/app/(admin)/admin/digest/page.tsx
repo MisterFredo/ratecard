@@ -65,7 +65,8 @@ export default function DigestPage() {
           (res.topics_stats || [])
             .map((t: any) => ({
               label: t.label,
-              count: t.last_30_days ?? 0,
+              last_30_days: t.last_30_days ?? 0,
+              total: t.total ?? 0,
             }))
             .sort((a: TopicStat, b: TopicStat) => b.count - a.count);
 
