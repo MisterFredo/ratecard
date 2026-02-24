@@ -39,6 +39,7 @@ export function EmailBrevesBlock(breves: any[]) {
           <!-- IMAGE COLUMN -->
           <td
             valign="top"
+            align="center"
             class="stack-column"
             style="
               width:130px;
@@ -47,15 +48,17 @@ export function EmailBrevesBlock(breves: any[]) {
             "
           >
             <a href="${breveUrl}" target="_blank" style="text-decoration:none;">
-              <img src="${imageUrl}"
-                   alt=""
-                   style="
-                     display:block;
-                     width:100%;
-                     max-width:110px;
-                     height:auto;
-                     border-radius:8px;
-                   " />
+              <img 
+                src="${imageUrl}"
+                alt=""
+                class="responsive-img thumb-img"
+                style="
+                  display:block;
+                  width:100%;
+                  max-width:110px;
+                  border-radius:8px;
+                "
+              />
             </a>
           </td>
           `
@@ -71,6 +74,7 @@ export function EmailBrevesBlock(breves: any[]) {
         "
       >
 
+        <!-- TITLE -->
         <a href="${breveUrl}"
            target="_blank"
            style="text-decoration:none;color:#111827;">
@@ -84,10 +88,12 @@ export function EmailBrevesBlock(breves: any[]) {
           </div>
         </a>
 
+        <!-- TAGS -->
         <div style="margin-bottom:8px;">
           ${tags}
         </div>
 
+        <!-- EXCERPT -->
         ${
           b.excerpt
             ? `
@@ -103,7 +109,8 @@ export function EmailBrevesBlock(breves: any[]) {
             : ""
         }
 
-        <div style="margin-top:12px;">
+        <!-- CTA -->
+        <div style="margin-top:14px;">
           <a href="${breveUrl}"
              target="_blank"
              style="
@@ -139,7 +146,7 @@ export function EmailBrevesBlock(breves: any[]) {
       letter-spacing:0.08em;
       text-transform:uppercase;
       color:#111827;
-      margin-bottom:20px;
+      margin-bottom:22px;
     ">
     Brèves
   </div>
