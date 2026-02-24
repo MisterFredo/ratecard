@@ -6,8 +6,6 @@ import SearchableMultiSelect, {
   SelectOption,
 } from "@/components/ui/SearchableMultiSelect";
 
-/* ========================================================= */
-
 type Period = "total" | "30d" | "7d";
 
 type Props = {
@@ -28,8 +26,6 @@ type Props = {
   }) => void;
 };
 
-/* ========================================================= */
-
 export default function DigestEngine({
   selectedTopics,
   setSelectedTopics,
@@ -39,11 +35,16 @@ export default function DigestEngine({
   setSelectedTypes,
   onSearch,
 }: Props) {
-  const [topicOptions, setTopicOptions] = useState<SelectOption[]>([]);
-  const [companyOptions, setCompanyOptions] = useState<SelectOption[]>([]);
-  const [typeOptions, setTypeOptions] = useState<SelectOption[]>([]);
-  const [period, setPeriod] = useState<Period>("total");
-  const [loading, setLoading] = useState(false);
+  const [topicOptions, setTopicOptions] =
+    useState<SelectOption[]>([]);
+  const [companyOptions, setCompanyOptions] =
+    useState<SelectOption[]>([]);
+  const [typeOptions, setTypeOptions] =
+    useState<SelectOption[]>([]);
+  const [period, setPeriod] =
+    useState<Period>("total");
+  const [loading, setLoading] =
+    useState(false);
 
   /* ---------------------------------------------------------
      Load référentiels
@@ -95,8 +96,12 @@ export default function DigestEngine({
     try {
       await onSearch({
         topics: selectedTopics.map((t) => t.id),
-        companies: selectedCompanies.map((c) => c.id),
-        news_types: selectedTypes.map((t) => t.id),
+        companies: selectedCompanies.map(
+          (c) => c.id
+        ),
+        news_types: selectedTypes.map(
+          (t) => t.id
+        ),
         period,
       });
     } finally {
@@ -108,14 +113,14 @@ export default function DigestEngine({
      UI
   --------------------------------------------------------- */
   return (
-    <div className="bg-white border border-gray-200 rounded-xl px-6 py-5 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold tracking-tight text-gray-900">
+    <div className="bg-white border border-gray-200 rounded-lg px-4 py-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold tracking-tight">
           Moteur éditorial
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_1fr_auto_auto] gap-6 items-end">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_1fr_auto_auto] gap-3 items-end">
 
         {/* TOPICS */}
         <SearchableMultiSelect
@@ -141,53 +146,57 @@ export default function DigestEngine({
           onChange={setSelectedTypes}
         />
 
-        {/* PERIOD SELECTOR */}
-        <div className="flex gap-2">
-          {(["7d", "30d", "total"] as Period[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`
-                h-[42px]
-                px-4
-                rounded-lg
-                text-sm
-                transition
-                ${
-                  period === p
-                    ? "bg-black text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }
-              `}
-            >
-              {p === "7d"
-                ? "7j"
-                : p === "30d"
-                ? "30j"
-                : "Tout"}
-            </button>
-          ))}
+        {/* PERIOD */}
+        <div className="flex gap-1">
+          {(["7d", "30d", "total"] as Period[]).map(
+            (p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`
+                  h-8
+                  px-3
+                  rounded
+                  text-xs
+                  transition
+                  ${
+                    period === p
+                      ? "bg-black text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }
+                `}
+              >
+                {p === "7d"
+                  ? "7j"
+                  : p === "30d"
+                  ? "30j"
+                  : "Tout"}
+              </button>
+            )
+          )}
         </div>
 
-        {/* SEARCH BUTTON */}
+        {/* SEARCH */}
         <div className="flex justify-end">
           <button
             onClick={handleSearch}
             disabled={loading}
             className="
-              h-[42px]
-              px-6
-              rounded-lg
+              h-8
+              px-4
+              rounded
               bg-black
               text-white
-              text-sm
+              text-xs
               font-medium
               transition
               hover:bg-gray-800
               disabled:opacity-50
             "
           >
-            {loading ? "Recherche…" : "Rechercher"}
+            {loading
+              ? "Recherche…"
+              : "Rechercher"}
           </button>
         </div>
 
