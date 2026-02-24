@@ -15,16 +15,26 @@ export type NewsletterNewsItem = {
     is_partner: boolean;
   };
 
-  topics?: any[];
+  topics?: {
+    id_topic?: string;
+    label?: string;
+    LABEL?: string;
+  }[];
+};
+
+export type HeaderCompany = {
+  id_company: string;
+  name: string;
+  media_logo_rectangle_id?: string | null;
 };
 
 export type HeaderConfig = {
   title: string;
   subtitle?: string;
-  imageUrl?: string;
-  mode: "ratecard" | "client";
 
-  // 🔥 NOUVEAU
+  // Société sélectionnée pour le logo header
+  headerCompany?: HeaderCompany;
+
   showTopicStats?: boolean;
 };
 
