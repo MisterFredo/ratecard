@@ -14,12 +14,32 @@ export default function DigestHeaderConfig({
   setHeaderConfig,
 }: Props) {
   return (
-    <section className="space-y-4 border p-6 rounded bg-white">
-      <h2 className="text-sm font-semibold">
-        Configuration Header
-      </h2>
+    <section className="border border-gray-200 rounded-lg bg-white p-4 space-y-4">
+      {/* Header section title */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold tracking-tight">
+          Configuration
+        </h2>
 
-      <div className="grid grid-cols-2 gap-6">
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <input
+            type="checkbox"
+            checked={headerConfig.showTopicStats ?? false}
+            onChange={(e) =>
+              setHeaderConfig((prev) => ({
+                ...prev,
+                showTopicStats: e.target.checked,
+              }))
+            }
+            className="h-3 w-3"
+          />
+          <span>Afficher le baromètre (30j)</span>
+        </div>
+      </div>
+
+      {/* Grid fields */}
+      <div className="grid grid-cols-2 gap-3">
+
         {/* Titre */}
         <input
           type="text"
@@ -31,35 +51,7 @@ export default function DigestHeaderConfig({
               title: e.target.value,
             }))
           }
-          className="border rounded px-3 py-2 text-sm"
-        />
-
-        {/* Sous-titre */}
-        <input
-          type="text"
-          placeholder="Sous-titre"
-          value={headerConfig.subtitle ?? ""}
-          onChange={(e) =>
-            setHeaderConfig((prev) => ({
-              ...prev,
-              subtitle: e.target.value,
-            }))
-          }
-          className="border rounded px-3 py-2 text-sm"
-        />
-
-        {/* Image header */}
-        <input
-          type="text"
-          placeholder="URL image header (optionnel)"
-          value={headerConfig.imageUrl ?? ""}
-          onChange={(e) =>
-            setHeaderConfig((prev) => ({
-              ...prev,
-              imageUrl: e.target.value,
-            }))
-          }
-          className="border rounded px-3 py-2 text-sm col-span-2"
+          className="border border-gray-200 rounded px-3 py-1.5 text-sm"
         />
 
         {/* Mode */}
@@ -73,15 +65,43 @@ export default function DigestHeaderConfig({
                 | "client",
             }))
           }
-          className="border rounded px-3 py-2 text-sm"
+          className="border border-gray-200 rounded px-3 py-1.5 text-sm"
         >
           <option value="ratecard">
-            Mode Ratecard
+            Ratecard
           </option>
           <option value="client">
-            Mode Client
+            Client
           </option>
         </select>
+
+        {/* Sous-titre */}
+        <input
+          type="text"
+          placeholder="Sous-titre"
+          value={headerConfig.subtitle ?? ""}
+          onChange={(e) =>
+            setHeaderConfig((prev) => ({
+              ...prev,
+              subtitle: e.target.value,
+            }))
+          }
+          className="border border-gray-200 rounded px-3 py-1.5 text-sm col-span-2"
+        />
+
+        {/* Image header */}
+        <input
+          type="text"
+          placeholder="URL image header (optionnel)"
+          value={headerConfig.imageUrl ?? ""}
+          onChange={(e) =>
+            setHeaderConfig((prev) => ({
+              ...prev,
+              imageUrl: e.target.value,
+            }))
+          }
+          className="border border-gray-200 rounded px-3 py-1.5 text-sm col-span-2"
+        />
       </div>
     </section>
   );
