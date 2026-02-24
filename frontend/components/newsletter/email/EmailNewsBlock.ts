@@ -24,32 +24,52 @@ export function EmailNewsBlock(news: any[]) {
 
       return `
 <tr>
-<td colspan="2" style="
-    padding:32px 0;
+<td style="
+    padding:36px 0;
     border-bottom:1px solid #E5E7EB;
     font-family:Arial,Helvetica,sans-serif;
   ">
 
-  <table width="100%" cellpadding="0" cellspacing="0">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
 
-      <!-- IMAGE -->
-      <td width="150" valign="top" style="padding-right:22px;">
+      <!-- IMAGE COLUMN -->
+      <td
+        valign="top"
+        class="stack-column"
+        style="
+          width:160px;
+          padding-right:24px;
+          vertical-align:top;
+        "
+      >
         ${
           imageUrl
             ? `
             <a href="${newsUrl}" target="_blank" style="text-decoration:none;">
               <img src="${imageUrl}" 
-                   width="130"
-                   style="display:block;border-radius:8px;" />
+                   alt=""
+                   style="
+                     display:block;
+                     width:100%;
+                     max-width:150px;
+                     height:auto;
+                     border-radius:8px;
+                   " />
             </a>
             `
             : ""
         }
       </td>
 
-      <!-- TEXT -->
-      <td valign="top">
+      <!-- TEXT COLUMN -->
+      <td
+        valign="top"
+        class="stack-column"
+        style="
+          vertical-align:top;
+        "
+      >
 
         <div style="
             font-size:12px;
@@ -63,27 +83,31 @@ export function EmailNewsBlock(news: any[]) {
            target="_blank"
            style="text-decoration:none;color:#111827;">
           <div style="
-              font-size:19px;
+              font-size:20px;
               font-weight:700;
-              margin-bottom:10px;
+              margin-bottom:12px;
               line-height:1.35;
             ">
             ${escapeHtml(n.title)}
           </div>
         </a>
 
-        ${tags}
+        <div style="margin-bottom:8px;">
+          ${tags}
+        </div>
 
         ${
           n.excerpt
-            ? `<div style="
+            ? `
+            <div style="
                 font-size:15px;
                 color:#374151;
-                margin-top:14px;
+                margin-top:10px;
                 line-height:1.6;
               ">
                 ${escapeHtml(n.excerpt)}
-              </div>`
+              </div>
+            `
             : ""
         }
 
@@ -100,8 +124,8 @@ export function EmailNewsBlock(news: any[]) {
 
   return `
 <tr>
-<td colspan="2" style="
-    padding-top:36px;
+<td style="
+    padding-top:42px;
     font-family:Arial,Helvetica,sans-serif;
   ">
   <div style="
@@ -110,7 +134,7 @@ export function EmailNewsBlock(news: any[]) {
       letter-spacing:0.08em;
       text-transform:uppercase;
       color:#111827;
-      margin-bottom:16px;
+      margin-bottom:20px;
     ">
     Actualités
   </div>
