@@ -28,6 +28,12 @@ export type HeaderCompany = {
   media_logo_rectangle_id?: string | null;
 };
 
+export type TopicStat = {
+  label: string;
+  last_30_days: number;
+  total: number;
+};
+
 export type HeaderConfig = {
   title: string;
   subtitle?: string;
