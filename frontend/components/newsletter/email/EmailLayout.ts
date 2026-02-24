@@ -40,7 +40,7 @@ export function EmailLayout(content: string) {
     }
 
     .thumb-img {
-      max-width: 110px !important;
+      max-width: 220px !important;
       height: auto !important;
     }
   }
