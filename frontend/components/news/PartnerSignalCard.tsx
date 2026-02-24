@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useDrawer } from "@/contexts/DrawerContext";
+import { trackEvent } from "@/lib/analytics";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
@@ -11,8 +12,8 @@ type Props = {
   title: string;
   excerpt?: string | null;
 
-  visualRectId?: string | null;          // NEWS
-  companyVisualRectId?: string | null;   // FALLBACK SOCIÉTÉ
+  visualRectId?: string | null;
+  companyVisualRectId?: string | null;
 
   companyName?: string;
   isPartner?: boolean;
@@ -58,6 +59,18 @@ export default function PartnerSignalCard({
 
   function openNews() {
     if (fromInternalClick.current) return;
+
+    /* ===============================
+       TRACKING GA
+    =============================== */
+    trackEvent("open_news_drawer", {
+      news_id: id,
+      news_title: title,
+      company_name: companyName || null,
+      is_partner: isPartner,
+      variant: variant,
+      location: openInDrawer ? "drawer" : "public",
+    });
 
     openRightDrawer("news", id);
     router.replace(`${pathname}?news_id=${id}`, { scroll: false });
