@@ -15,6 +15,7 @@ import type {
   HeaderConfig,
   TopicStat,
 } from "@/types/newsletter";
+
 import type { SelectOption } from "@/components/ui/SearchableMultiSelect";
 
 type EditorialItem = {
