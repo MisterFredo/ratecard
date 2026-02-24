@@ -2,11 +2,17 @@
 
 import { useMemo, useRef } from "react";
 import { buildEmail } from "./email/buildEmail";
+
 import type {
   NewsletterNewsItem,
   HeaderConfig,
   NewsletterAnalysisItem,
 } from "@/types/newsletter";
+
+type TopicStat = {
+  label: string;
+  count: number;
+};
 
 type Props = {
   headerConfig: HeaderConfig;
@@ -14,6 +20,7 @@ type Props = {
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
+  topicStats?: TopicStat[];
 };
 
 export default function NewsletterPreview({
@@ -22,6 +29,7 @@ export default function NewsletterPreview({
   news,
   breves,
   analyses,
+  topicStats = [],
 }: Props) {
 
   const html = useMemo(() => {
@@ -31,22 +39,23 @@ export default function NewsletterPreview({
       news,
       breves,
       analyses,
+      topicStats,
     });
-  }, [headerConfig, introText, news, breves, analyses]);
+  }, [headerConfig, introText, news, breves, analyses, topicStats]);
 
   const hiddenRef = useRef<HTMLDivElement>(null);
 
-  /* ======================================
+  /* ===============================
      COPY RAW HTML (BREVO)
-  ====================================== */
+  =============================== */
   function copyHtml() {
     navigator.clipboard.writeText(html);
     alert("HTML copié pour Brevo.");
   }
 
-  /* ======================================
+  /* ===============================
      COPY RENDERED VERSION (GMAIL)
-  ====================================== */
+  =============================== */
   function copyForGmail() {
     if (!hiddenRef.current) return;
 
