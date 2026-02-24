@@ -48,7 +48,7 @@ export default function NewsletterSelector<
       </h2>
 
       <div className="
-        max-h-[420px]
+        max-h-[340px]
         overflow-y-auto
         border border-gray-200
         rounded-2xl
@@ -81,8 +81,8 @@ export default function NewsletterSelector<
               key={item.id}
               className={`
                 group
-                flex items-start gap-4
-                px-5 py-4
+                flex items-start gap-3
+                px-4 py-3
                 text-sm
                 cursor-pointer
                 transition-all duration-150
