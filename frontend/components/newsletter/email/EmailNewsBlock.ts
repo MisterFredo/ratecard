@@ -1,4 +1,4 @@
-import { buildContentImageUrl } from "./helpers";
+import { buildContentImageUrl } from "./EmailHelpers";
 
 export function EmailNewsBlock(news: any[]) {
   if (!news.length) return "";
