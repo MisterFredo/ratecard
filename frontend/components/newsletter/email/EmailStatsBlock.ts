@@ -1,10 +1,11 @@
 type TopicStat = {
   label: string;
-  count: number;
+  last_30_days: number;
+  total: number;
 };
 
 export function EmailStatsBlock(topicStats: TopicStat[]) {
-  if (!topicStats.length) return "";
+  if (!topicStats?.length) return "";
 
   const half = Math.ceil(topicStats.length / 2);
   const left = topicStats.slice(0, half);
@@ -20,12 +21,14 @@ export function EmailStatsBlock(topicStats: TopicStat[]) {
               font-size:14px;
               color:#111827;
               font-family:Arial,Helvetica,sans-serif;
+              line-height:1.6;
             ">
             <span style="font-weight:600;">
               ${t.label}
             </span>
+            : ${t.last_30_days}
             <span style="color:#6B7280;">
-              (${t.count})
+              (${t.total})
             </span>
           </td>
         </tr>
@@ -51,7 +54,10 @@ export function EmailStatsBlock(topicStats: TopicStat[]) {
       color:#111827;
       margin-bottom:18px;
     ">
-    Baromètre des sujets — 30 derniers jours
+    Baromètre des sujets — 
+    <span style="font-weight:400;text-transform:none;">
+      30 derniers jours
+    </span>
   </div>
 
   <table width="100%" cellpadding="0" cellspacing="0">
