@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-
 import type {
   NewsletterNewsItem,
   HeaderConfig,
@@ -10,6 +9,16 @@ import type {
 
 import { SITE_URL } from "@/lib/site";
 
+/* ========================================================= */
+/* ENV SAFE                                                  */
+/* ========================================================= */
+
+const GCS_BASE_URL =
+  process.env.NEXT_PUBLIC_GCS_BASE_URL ||
+  "https://storage.googleapis.com/ratecard-media";
+
+/* ========================================================= */
+/* HELPERS                                                   */
 /* ========================================================= */
 
 function escapeHtml(text: string) {
@@ -25,6 +34,14 @@ function formatDate(date?: string) {
     day: "2-digit",
     month: "long",
   });
+}
+
+function buildContentImageUrl(filename?: string | null) {
+  if (!filename) return null;
+
+  if (filename.startsWith("http")) return filename;
+
+  return `${GCS_BASE_URL}/content/${filename}`;
 }
 
 /* ========================================================= */
@@ -43,6 +60,11 @@ export default function ClientNewsletterPreview({
   analyses: NewsletterAnalysisItem[];
 }) {
   const html = useMemo(() => {
+
+    const headerImageUrl = buildContentImageUrl(
+      headerConfig.coverImageUrl || headerConfig.imageUrl
+    );
+
     return `
 <div style="
   font-family:Arial,Helvetica,sans-serif;
@@ -52,13 +74,13 @@ export default function ClientNewsletterPreview({
 ">
 
   ${
-    headerConfig.imageUrl
+    headerImageUrl
       ? `
-      <div style="margin-bottom:24px;">
+      <div style="margin-bottom:20px;">
         <img 
-          src="${headerConfig.imageUrl}" 
+          src="${headerImageUrl}" 
           alt="" 
-          style="max-width:100%;height:auto;border-radius:4px;"
+          style="max-width:100%;height:auto;"
         />
       </div>
       `
@@ -68,7 +90,7 @@ export default function ClientNewsletterPreview({
   ${
     headerConfig.title
       ? `
-      <h2 style="margin:0 0 6px 0;">
+      <h2 style="margin:0 0 4px 0;">
         ${escapeHtml(headerConfig.title)}
       </h2>
       `
@@ -81,7 +103,7 @@ export default function ClientNewsletterPreview({
       <div style="
         font-size:13px;
         color:#6B7280;
-        margin-bottom:24px;
+        margin-bottom:18px;
       ">
         ${escapeHtml(headerConfig.subtitle)}
       </div>
@@ -91,7 +113,7 @@ export default function ClientNewsletterPreview({
 
   ${
     introText
-      ? `<p style="margin-bottom:24px;">
+      ? `<p style="margin-bottom:20px;">
           ${escapeHtml(introText).replace(/\n/g, "<br/>")}
         </p>`
       : ""
@@ -100,10 +122,14 @@ export default function ClientNewsletterPreview({
   ${
     news.length
       ? `
-      <h3 style="margin:28px 0 12px 0;">Actualités</h3>
+      <h3 style="margin:24px 0 10px 0;">Actualités</h3>
 
       ${news
         .map((n) => {
+          const imageUrl = buildContentImageUrl(
+            n.visual_rect_id
+          );
+
           const metaParts = [
             n.company?.name,
             n.news_type,
@@ -111,7 +137,17 @@ export default function ClientNewsletterPreview({
           ].filter(Boolean);
 
           return `
-          <div style="margin-bottom:20px;">
+          <div style="margin-bottom:18px;">
+
+            ${
+              imageUrl
+                ? `<img src="${imageUrl}"
+                     style="max-width:100%;
+                            height:auto;
+                            margin-bottom:8px;" />`
+                : ""
+            }
+
             ${
               metaParts.length
                 ? `<div style="
@@ -154,12 +190,26 @@ export default function ClientNewsletterPreview({
   ${
     breves.length
       ? `
-      <h3 style="margin:32px 0 12px 0;">Brèves</h3>
+      <h3 style="margin:28px 0 10px 0;">Brèves</h3>
 
       ${breves
-        .map(
-          (b) => `
+        .map((b) => {
+          const imageUrl = buildContentImageUrl(
+            b.visual_rect_id
+          );
+
+          return `
           <div style="margin-bottom:16px;">
+
+            ${
+              imageUrl
+                ? `<img src="${imageUrl}"
+                     style="max-width:100%;
+                            height:auto;
+                            margin-bottom:6px;" />`
+                : ""
+            }
+
             <div style="font-weight:bold;">
               ${escapeHtml(b.title)}
             </div>
@@ -177,8 +227,8 @@ export default function ClientNewsletterPreview({
               Lire →
             </a>
           </div>
-        `
-        )
+        `;
+        })
         .join("")}
     `
       : ""
@@ -187,14 +237,14 @@ export default function ClientNewsletterPreview({
   ${
     analyses.length
       ? `
-      <h3 style="margin:32px 0 12px 0;">
+      <h3 style="margin:28px 0 10px 0;">
         Analyses Ratecard
       </h3>
 
       ${analyses
         .map(
           (a) => `
-          <div style="margin-bottom:20px;">
+          <div style="margin-bottom:18px;">
             <div style="font-weight:bold;">
               ${escapeHtml(a.title)}
             </div>
@@ -229,7 +279,7 @@ export default function ClientNewsletterPreview({
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       <div className="flex justify-between items-center">
         <h2 className="text-sm font-semibold">
           Version client
@@ -243,7 +293,7 @@ export default function ClientNewsletterPreview({
         </button>
       </div>
 
-      <div className="border rounded-lg p-5 bg-white text-sm">
+      <div className="border rounded-lg p-4 bg-white text-sm">
         <div dangerouslySetInnerHTML={{ __html: html }} />
       </div>
     </section>
