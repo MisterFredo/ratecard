@@ -5,14 +5,10 @@ import NewsletterPreview from "./NewsletterPreview";
 
 import type {
   NewsletterNewsItem,
-  HeaderConfig,
   NewsletterAnalysisItem,
+  HeaderConfig,
+  TopicStat,
 } from "@/types/newsletter";
-
-type TopicStat = {
-  label: string;
-  count: number;
-};
 
 type Props = {
   headerConfig: HeaderConfig;
