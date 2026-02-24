@@ -1,4 +1,8 @@
-import { buildContentImageUrl } from "./EmailHelpers";
+import { buildContentImageUrl, escapeHtml } from "./EmailHelpers";
+
+const PUBLIC_SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://ratecard.fr";
 
 export function EmailNewsBlock(news: any[]) {
   if (!news.length) return "";
@@ -6,6 +10,7 @@ export function EmailNewsBlock(news: any[]) {
   const rows = news
     .map((n) => {
       const imageUrl = buildContentImageUrl(n.visual_rect_id);
+      const newsUrl = `${PUBLIC_SITE_URL}/news?news_id=${n.id}`;
 
       const badges =
         n.topics?.map(
@@ -13,14 +18,15 @@ export function EmailNewsBlock(news: any[]) {
           <span style="
               display:inline-block;
               font-size:11px;
-              padding:2px 6px;
-              margin-right:4px;
-              margin-top:4px;
+              padding:3px 8px;
+              margin-right:6px;
+              margin-top:6px;
               background:#F3F4F6;
               color:#374151;
-              border-radius:4px;
+              border-radius:12px;
+              font-weight:500;
             ">
-            ${t.label}
+            ${escapeHtml(t.label)}
           </span>
         `
         ).join("") || "";
@@ -28,7 +34,7 @@ export function EmailNewsBlock(news: any[]) {
       return `
 <tr>
 <td colspan="2" style="
-    padding:28px 0;
+    padding:32px 0;
     border-bottom:1px solid #E5E7EB;
     font-family:Arial,Helvetica,sans-serif;
   ">
@@ -37,12 +43,16 @@ export function EmailNewsBlock(news: any[]) {
     <tr>
 
       <!-- IMAGE -->
-      <td width="160" valign="top" style="padding-right:20px;">
+      <td width="150" valign="top" style="padding-right:22px;">
         ${
           imageUrl
-            ? `<img src="${imageUrl}" 
-                   width="140"
-                   style="display:block;border-radius:6px;" />`
+            ? `
+            <a href="${newsUrl}" target="_blank" style="text-decoration:none;">
+              <img src="${imageUrl}" 
+                   width="130"
+                   style="display:block;border-radius:8px;" />
+            </a>
+            `
             : ""
         }
       </td>
@@ -53,32 +63,38 @@ export function EmailNewsBlock(news: any[]) {
         <div style="
             font-size:12px;
             color:#6B7280;
-            margin-bottom:6px;
+            margin-bottom:8px;
           ">
           ${new Date(n.published_at).toLocaleDateString("fr-FR")}
         </div>
 
-        <div style="
-            font-size:18px;
-            font-weight:700;
-            color:#111827;
-            margin-bottom:8px;
-            line-height:1.3;
-          ">
-          ${n.title}
-        </div>
+        <a href="${newsUrl}" 
+           target="_blank"
+           style="
+              text-decoration:none;
+              color:#111827;
+           ">
+          <div style="
+              font-size:19px;
+              font-weight:700;
+              margin-bottom:10px;
+              line-height:1.35;
+            ">
+            ${escapeHtml(n.title)}
+          </div>
+        </a>
 
         ${badges}
 
         ${
           n.excerpt
             ? `<div style="
-                font-size:14px;
+                font-size:15px;
                 color:#374151;
-                margin-top:10px;
-                line-height:1.5;
+                margin-top:12px;
+                line-height:1.6;
               ">
-                ${n.excerpt}
+                ${escapeHtml(n.excerpt)}
               </div>`
             : ""
         }
@@ -97,16 +113,16 @@ export function EmailNewsBlock(news: any[]) {
   return `
 <tr>
 <td colspan="2" style="
-    padding-top:32px;
+    padding-top:36px;
     font-family:Arial,Helvetica,sans-serif;
   ">
   <div style="
       font-size:13px;
       font-weight:700;
-      letter-spacing:0.06em;
+      letter-spacing:0.08em;
       text-transform:uppercase;
       color:#111827;
-      margin-bottom:12px;
+      margin-bottom:16px;
     ">
     Actualités
   </div>
