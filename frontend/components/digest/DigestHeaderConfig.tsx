@@ -27,6 +27,7 @@ export default function DigestHeaderConfig({
 }: Props) {
 
   const [companies, setCompanies] = useState<CompanyOption[]>([]);
+  const [loading, setLoading] = useState(true);
 
   /* =========================================
      LOAD COMPANIES
@@ -37,16 +38,38 @@ export default function DigestHeaderConfig({
       try {
         const res = await api.get("/company/list");
 
-        const mapped = (res.companies || []).map((c: any) => ({
-          id_company: c.ID_COMPANY,
-          name: c.NAME,
-          media_logo_rectangle_id: c.MEDIA_LOGO_RECTANGLE_ID,
-        }));
+        const mapped: CompanyOption[] = (res?.companies || []).map(
+          (c: {
+            ID_COMPANY: string;
+            NAME: string;
+            MEDIA_LOGO_RECTANGLE_ID?: string | null;
+          }) => ({
+            id_company: c.ID_COMPANY,
+            name: c.NAME,
+            media_logo_rectangle_id:
+              c.MEDIA_LOGO_RECTANGLE_ID ?? null,
+          })
+        );
 
         setCompanies(mapped);
 
+        // 🔥 Auto-select Ratecard si rien sélectionné
+        if (!headerConfig.headerCompany && mapped.length > 0) {
+          const ratecard =
+            mapped.find((c) =>
+              c.name.toLowerCase().includes("ratecard")
+            ) || mapped[0];
+
+          setHeaderConfig((prev) => ({
+            ...prev,
+            headerCompany: ratecard,
+          }));
+        }
+
       } catch (e) {
         console.error("Erreur chargement sociétés header", e);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -56,6 +79,16 @@ export default function DigestHeaderConfig({
   /* ========================================= */
 
   function handleCompanyChange(id: string) {
+
+    if (!id) {
+      // reset si vide
+      setHeaderConfig((prev) => ({
+        ...prev,
+        headerCompany: undefined,
+      }));
+      return;
+    }
+
     const company = companies.find(
       (c) => c.id_company === id
     );
@@ -64,12 +97,7 @@ export default function DigestHeaderConfig({
 
     setHeaderConfig((prev) => ({
       ...prev,
-      headerCompany: {
-        id_company: company.id_company,
-        name: company.name,
-        media_logo_rectangle_id:
-          company.media_logo_rectangle_id ?? null,
-      },
+      headerCompany: company,
     }));
   }
 
@@ -144,10 +172,13 @@ export default function DigestHeaderConfig({
             onChange={(e) =>
               handleCompanyChange(e.target.value)
             }
+            disabled={loading}
             className="border border-gray-200 rounded px-3 py-1.5 text-sm w-full"
           >
             <option value="">
-              Sélectionner une société
+              {loading
+                ? "Chargement..."
+                : "Sélectionner une société"}
             </option>
 
             {companies.map((company) => (
