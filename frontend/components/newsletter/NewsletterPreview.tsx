@@ -8,9 +8,15 @@ import type {
 } from "@/types/newsletter";
 
 /* ========================================================= */
+/* ENV SAFE CONSTANTS                                        */
+/* ========================================================= */
 
-const PUBLIC_SITE_URL = "https://ratecard.fr";
+const PUBLIC_SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://ratecard.fr";
+
 const GCS_BASE_URL =
+  process.env.NEXT_PUBLIC_GCS_BASE_URL ||
   "https://storage.googleapis.com/ratecard-media";
 
 const LOGO_URL =
@@ -38,6 +44,19 @@ function escapeHtml(text: string) {
 }
 
 /* ========================================================= */
+/* HELPERS                                                   */
+/* ========================================================= */
+
+function buildContentImageUrl(filename?: string | null) {
+  if (!filename) return null;
+
+  // si déjà URL absolue → on la garde
+  if (filename.startsWith("http")) return filename;
+
+  return `${GCS_BASE_URL}/content/${filename}`;
+}
+
+/* ========================================================= */
 
 export default function NewsletterPreview({
   headerConfig,
@@ -47,13 +66,19 @@ export default function NewsletterPreview({
   analyses,
 }: Props) {
   const html = useMemo(() => {
+
     /* ==============================================
        HEADER
     ============================================== */
 
+    const headerImageUrl =
+      headerConfig.coverImageUrl
+        ? buildContentImageUrl(headerConfig.coverImageUrl)
+        : null;
+
     const headerBlock = `
 <tr>
-<td style="padding:24px 0 16px 0;">
+<td style="padding:20px 0 12px 0;">
   ${
     headerConfig.mode === "ratecard"
       ? `<img src="${LOGO_URL}" alt="Ratecard"
@@ -64,18 +89,18 @@ export default function NewsletterPreview({
 </tr>
 
 <tr>
-<td style="padding-bottom:16px;
+<td style="padding-bottom:12px;
            font-family:Arial,Helvetica,sans-serif;">
   <h1 style="margin:0;
-             font-size:22px;
+             font-size:20px;
              color:#111827;">
     ${escapeHtml(headerConfig.title)}
   </h1>
 
   ${
     headerConfig.subtitle
-      ? `<p style="margin:8px 0 0 0;
-                  font-size:14px;
+      ? `<p style="margin:6px 0 0 0;
+                  font-size:13px;
                   color:#6B7280;">
           ${escapeHtml(headerConfig.subtitle)}
         </p>`
@@ -85,15 +110,14 @@ export default function NewsletterPreview({
 </tr>
 
 ${
-  headerConfig.imageUrl
+  headerImageUrl
     ? `
 <tr>
-<td style="padding-bottom:24px;">
-  <img src="${headerConfig.imageUrl}"
+<td style="padding-bottom:20px;">
+  <img src="${headerImageUrl}"
        style="display:block;
               width:100%;
-              height:auto;
-              border-radius:8px;" />
+              height:auto;" />
 </td>
 </tr>`
     : ""
@@ -109,15 +133,12 @@ ${
 
       return `
 <tr>
-<td style="padding:0 0 24px 0;
+<td style="padding:0 0 18px 0;
            font-family:Arial,Helvetica,sans-serif;
-           font-size:15px;
-           line-height:22px;
+           font-size:14px;
+           line-height:20px;
            color:#111827;">
-  ${escapeHtml(introText).replace(
-    /\n/g,
-    "<br/>"
-  )}
+  ${escapeHtml(introText).replace(/\n/g, "<br/>")}
 </td>
 </tr>
 `;
@@ -130,8 +151,8 @@ ${
     function renderSectionTitle(label: string) {
       return `
 <tr>
-<td style="padding:32px 0 12px 0;
-           font-size:18px;
+<td style="padding:24px 0 8px 0;
+           font-size:16px;
            font-weight:bold;
            color:#111827;">
   ${label}
@@ -150,18 +171,31 @@ ${
       return (
         renderSectionTitle("Actualités") +
         news
-          .map(
-            (n) => `
+          .map((n) => {
+            const imageUrl = buildContentImageUrl(
+              n.visual_rect_id
+            );
+
+            return `
 <tr>
-<td style="padding:0 0 20px 0;">
-  <strong>${escapeHtml(
-    n.title
-  )}</strong>
+<td style="padding:0 0 18px 0;">
+
+  ${
+    imageUrl
+      ? `<img src="${imageUrl}"
+           style="display:block;
+                  width:100%;
+                  height:auto;
+                  margin-bottom:10px;" />`
+      : ""
+  }
+
+  <strong>${escapeHtml(n.title)}</strong>
 
   ${
     n.excerpt
-      ? `<p style="margin:6px 0 10px 0;
-                   font-size:14px;
+      ? `<p style="margin:6px 0 8px 0;
+                   font-size:13px;
                    color:#374151;">
            ${escapeHtml(n.excerpt)}
          </p>`
@@ -174,15 +208,16 @@ ${
             font-weight:bold;">
     Lire l’article
   </a>
+
 </td>
-</tr>`
-          )
+</tr>`;
+          })
           .join("")
       );
     }
 
     /* ==============================================
-       BREVES
+       BRÈVES
     ============================================== */
 
     function renderBrevesBlock() {
@@ -194,10 +229,8 @@ ${
           .map(
             (b) => `
 <tr>
-<td style="padding:0 0 16px 0;">
-  <strong>${escapeHtml(
-    b.title
-  )}</strong><br/>
+<td style="padding:0 0 14px 0;">
+  <strong>${escapeHtml(b.title)}</strong><br/>
   <a href="${PUBLIC_SITE_URL}/breves?breve_id=${b.id}"
      style="font-size:13px;
             color:#2563EB;">
@@ -223,15 +256,13 @@ ${
           .map(
             (a) => `
 <tr>
-<td style="padding:0 0 20px 0;">
-  <strong>${escapeHtml(
-    a.title
-  )}</strong>
+<td style="padding:0 0 18px 0;">
+  <strong>${escapeHtml(a.title)}</strong>
 
   ${
     a.excerpt
-      ? `<p style="margin:6px 0 10px 0;
-                   font-size:14px;
+      ? `<p style="margin:6px 0 8px 0;
+                   font-size:13px;
                    color:#374151;">
            ${escapeHtml(a.excerpt)}
          </p>`
@@ -287,7 +318,7 @@ ${renderAnalysesBlock()}
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">
           Preview newsletter
@@ -305,7 +336,7 @@ ${renderAnalysesBlock()}
         <iframe
           title="Newsletter preview"
           srcDoc={html}
-          className="w-full h-[760px]"
+          className="w-full h-[720px]"
         />
       </div>
     </section>
