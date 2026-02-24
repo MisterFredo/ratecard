@@ -33,22 +33,20 @@ export function EmailBrevesBlock(breves: any[]) {
   <table width="100%" cellpadding="0" cellspacing="0">
     <tr>
 
-      <!-- IMAGE -->
-      <td width="110" valign="top" style="padding-right:20px;">
-        ${
-          imageUrl
-            ? `
+      ${
+        imageUrl
+          ? `
+          <td width="110" valign="top" style="padding-right:20px;">
             <a href="${breveUrl}" target="_blank" style="text-decoration:none;">
               <img src="${imageUrl}"
                    width="90"
                    style="display:block;border-radius:8px;" />
             </a>
-            `
-            : ""
-        }
-      </td>
+          </td>
+          `
+          : ""
+      }
 
-      <!-- TEXT -->
       <td valign="top">
 
         <a href="${breveUrl}"
@@ -64,20 +62,37 @@ export function EmailBrevesBlock(breves: any[]) {
           </div>
         </a>
 
-        ${tags}
+        <div style="margin-bottom:6px;">
+          ${tags}
+        </div>
 
         ${
           b.excerpt
-            ? `<div style="
+            ? `
+            <div style="
                 font-size:14px;
                 color:#374151;
-                margin-top:12px;
+                margin-top:10px;
                 line-height:1.6;
               ">
                 ${escapeHtml(b.excerpt)}
-              </div>`
+              </div>
+            `
             : ""
         }
+
+        <div style="margin-top:10px;">
+          <a href="${breveUrl}"
+             target="_blank"
+             style="
+                font-size:13px;
+                font-weight:600;
+                color:#111827;
+                text-decoration:none;
+             ">
+             Lire →
+          </a>
+        </div>
 
       </td>
 
@@ -110,25 +125,5 @@ export function EmailBrevesBlock(breves: any[]) {
 </tr>
 
 ${rows}
-
-<tr>
-<td colspan="2" style="
-    padding-top:20px;
-    font-family:Arial,Helvetica,sans-serif;
-  ">
-  <a href="${PUBLIC_SITE_URL}/breves"
-     target="_blank"
-     style="
-        font-size:14px;
-        font-weight:600;
-        color:#111827;
-        text-decoration:none;
-        border-bottom:1px solid #111827;
-        padding-bottom:2px;
-     ">
-     → Lire toutes les brèves
-  </a>
-</td>
-</tr>
 `;
 }
