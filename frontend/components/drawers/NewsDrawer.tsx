@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { X } from "lucide-react";
 import { useDrawer } from "@/contexts/DrawerContext";
+import { trackEvent } from "@/lib/analytics";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
@@ -74,6 +75,13 @@ export default function NewsDrawer({ id, onClose }: Props) {
   function openPartner(e: React.MouseEvent) {
     e.stopPropagation();
     if (!data?.company?.id_company) return;
+
+    trackEvent("open_partner_from_news", {
+      news_id: data.id_news,
+      company_id: data.company.id_company,
+      company_name: data.company.name,
+    });
+
     openLeftDrawer("member", data.company.id_company, "silent");
   }
 
@@ -86,6 +94,13 @@ export default function NewsDrawer({ id, onClose }: Props) {
       try {
         const res = await api.get(`/public/news/${id}`);
         setData(res);
+
+        trackEvent("view_news_drawer", {
+          news_id: res.id_news,
+          news_title: res.title,
+          company_name: res.company?.name || null,
+        });
+
         requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
         console.error(e);
@@ -203,6 +218,12 @@ export default function NewsDrawer({ id, onClose }: Props) {
 
             <button
               onClick={() => {
+                trackEvent("newsletter_cta_click", {
+                  source: "news_drawer",
+                  news_id: data.id_news,
+                  news_title: data.title,
+                });
+
                 closeRightDrawer();
                 openNewsletterDrawer("silent");
               }}
