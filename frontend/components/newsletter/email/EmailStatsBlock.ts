@@ -1,8 +1,9 @@
-type TopicStat = {
-  label: string;
-  last_30_days: number;
-  total: number;
-};
+import type {
+  NewsletterNewsItem,
+  NewsletterAnalysisItem,
+  HeaderConfig,
+  TopicStat,
+} from "@/types/newsletter";
 
 export function EmailStatsBlock(topicStats: TopicStat[]) {
   if (!topicStats?.length) return "";
