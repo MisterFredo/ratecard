@@ -1,82 +1,103 @@
-import type { NewsletterNewsItem } from "@/types/newsletter";
-import { escapeHtml, formatDate } from "./EmailHelpers";
-import { EmailMetaRight } from "./EmailMetaRight";
+import { buildContentImageUrl } from "./helpers";
 
-const PUBLIC_SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://ratecard.fr";
-
-function renderSectionTitle(label: string) {
-  return `
-<tr>
-<td colspan="2"
-    style="padding:30px 0 14px 0;
-           font-family:Arial,Helvetica,sans-serif;
-           font-size:15px;
-           font-weight:700;
-           text-transform:uppercase;
-           letter-spacing:0.6px;
-           color:#111827;">
-  ${label}
-</td>
-</tr>`;
-}
-
-export function EmailBrevesBlock(breves: NewsletterNewsItem[]) {
+export function EmailBrevesBlock(breves: any[]) {
   if (!breves.length) return "";
 
-  return (
-    renderSectionTitle("Brèves") +
-    breves
-      .map(
-        (b) => `
+  const rows = breves
+    .map((b) => {
+      const imageUrl = buildContentImageUrl(b.visual_rect_id);
+
+      return `
 <tr>
-<td colspan="2">
+<td colspan="2" style="
+    padding:24px 0;
+    border-bottom:1px solid #E5E7EB;
+    font-family:Arial,Helvetica,sans-serif;
+  ">
 
-<table width="100%" cellpadding="0" cellspacing="0">
-<tr>
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
 
-<td valign="top" style="padding-bottom:22px;">
+      <td width="120" valign="top" style="padding-right:16px;">
+        ${
+          imageUrl
+            ? `<img src="${imageUrl}"
+                   width="100"
+                   style="display:block;border-radius:6px;" />`
+            : ""
+        }
+      </td>
 
-  <div style="font-size:12px;color:#6B7280;margin-bottom:6px;">
-    ${formatDate(b.published_at)}
-  </div>
+      <td valign="top">
 
-  <div style="font-size:15px;font-weight:600;color:#111827;margin-bottom:6px;">
-    ${escapeHtml(b.title)}
-  </div>
-
-  ${
-    b.excerpt
-      ? `<div style="font-size:14px;line-height:20px;color:#374151;margin-bottom:8px;">
-           ${escapeHtml(b.excerpt)}
-         </div>`
-      : ""
-  }
-
-</td>
-
-${EmailMetaRight(b.topics, b.company, b.news_type)}
-
-</tr>
-</table>
-
-</td>
-</tr>`
-      )
-      .join("") +
-    `
-<tr>
-<td colspan="2" style="padding-top:6px;padding-bottom:26px;">
-  <a href="${PUBLIC_SITE_URL}/breves"
-     style="font-size:13px;
+        <div style="
+            font-size:13px;
             font-weight:600;
             color:#111827;
-            text-decoration:none;
-            border-bottom:1px solid #111827;">
-    Lire toutes les brèves
+            margin-bottom:6px;
+          ">
+          ${b.title}
+        </div>
+
+        ${
+          b.excerpt
+            ? `<div style="
+                font-size:14px;
+                color:#374151;
+                line-height:1.5;
+              ">
+                ${b.excerpt}
+              </div>`
+            : ""
+        }
+
+      </td>
+
+    </tr>
+  </table>
+
+</td>
+</tr>
+`;
+    })
+    .join("");
+
+  return `
+<tr>
+<td colspan="2" style="
+    padding-top:32px;
+    font-family:Arial,Helvetica,sans-serif;
+  ">
+  <div style="
+      font-size:13px;
+      font-weight:700;
+      letter-spacing:0.06em;
+      text-transform:uppercase;
+      color:#111827;
+      margin-bottom:12px;
+    ">
+    Brèves
+  </div>
+</td>
+</tr>
+
+${rows}
+
+<tr>
+<td colspan="2" style="
+    padding-top:16px;
+    font-family:Arial,Helvetica,sans-serif;
+  ">
+  <a href="https://ratecard.fr/breves"
+     style="
+        font-size:14px;
+        font-weight:600;
+        color:#111827;
+        text-decoration:none;
+     ">
+     → Lire toutes les brèves
   </a>
 </td>
-</tr>`
-  );
+</tr>
+`;
 }
