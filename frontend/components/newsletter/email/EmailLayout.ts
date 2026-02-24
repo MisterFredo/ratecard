@@ -8,15 +8,31 @@ export function EmailLayout(content: string) {
 <base target="_blank" />
 <style>
   @media only screen and (max-width: 600px) {
+
     .container {
       width: 100% !important;
-      padding: 0 16px !important;
+      max-width: 100% !important;
     }
+
     .mobile-padding {
-      padding: 0 16px !important;
+      padding-left: 16px !important;
+      padding-right: 16px !important;
     }
+
+    .stack-column {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      padding-right: 0 !important;
+    }
+
     .mobile-center {
       text-align: center !important;
+    }
+
+    img {
+      max-width: 100% !important;
+      height: auto !important;
     }
   }
 </style>
@@ -24,11 +40,11 @@ export function EmailLayout(content: string) {
 
 <body style="margin:0;padding:0;background:#F3F4F6;">
 
-  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#F3F4F6;">
     <tr>
       <td align="center">
 
-        <!-- OUTER CONTAINER -->
+        <!-- MAIN CONTAINER -->
         <table
           width="680"
           cellpadding="0"
@@ -45,7 +61,10 @@ export function EmailLayout(content: string) {
           <tr>
             <td
               class="mobile-padding"
-              style="padding:0 32px;"
+              style="
+                padding-left:32px;
+                padding-right:32px;
+              "
             >
 
               ${content}
@@ -58,6 +77,7 @@ export function EmailLayout(content: string) {
                       font-size:12px;
                       color:#9CA3AF;
                       font-family:Arial,Helvetica,sans-serif;
+                      line-height:1.5;
                     ">
                     © Ratecard – Lecture stratégique du marché
                   </td>
