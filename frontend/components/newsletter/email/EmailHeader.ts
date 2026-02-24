@@ -5,17 +5,23 @@ const GCS_BASE_URL =
   process.env.NEXT_PUBLIC_GCS_BASE_URL ||
   "https://storage.googleapis.com/ratecard-media";
 
-const LOGO_URL =
-  `${GCS_BASE_URL}/brand/ratecard-logo.jpeg`;
-
 export function EmailHeader(
   headerConfig: HeaderConfig,
   introText?: string
 ) {
+  const headerImage =
+    headerConfig.headerCompany?.media_logo_rectangle_id
+      ? `${GCS_BASE_URL}/companies/${headerConfig.headerCompany.media_logo_rectangle_id}`
+      : null;
+
   return `
 <tr>
 <td colspan="2" style="padding:32px 0 18px 0;">
-  <img src="${LOGO_URL}" style="width:150px;height:auto;" />
+  ${
+    headerImage
+      ? `<img src="${headerImage}" style="width:180px;height:auto;" />`
+      : ""
+  }
 </td>
 </tr>
 
@@ -28,6 +34,19 @@ export function EmailHeader(
   ${escapeHtml(headerConfig.title)}
 </td>
 </tr>
+
+${
+  headerConfig.subtitle
+    ? `<tr>
+<td colspan="2"
+    style="font-size:14px;
+           color:#6B7280;
+           padding-bottom:16px;">
+  ${escapeHtml(headerConfig.subtitle)}
+</td>
+</tr>`
+    : ""
+}
 
 ${
   introText
