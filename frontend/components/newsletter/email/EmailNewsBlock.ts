@@ -33,34 +33,37 @@ export function EmailNewsBlock(news: any[]) {
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
 
-      <!-- IMAGE COLUMN -->
-      <td
-        valign="top"
-        class="stack-column"
-        style="
-          width:160px;
-          padding-right:24px;
-          vertical-align:top;
-        "
-      >
-        ${
-          imageUrl
-            ? `
+      ${
+        imageUrl
+          ? `
+          <!-- IMAGE COLUMN -->
+          <td
+            valign="top"
+            align="center"
+            class="stack-column"
+            style="
+              width:160px;
+              padding-right:24px;
+              vertical-align:top;
+            "
+          >
             <a href="${newsUrl}" target="_blank" style="text-decoration:none;">
-              <img src="${imageUrl}" 
-                   alt=""
-                   style="
-                     display:block;
-                     width:100%;
-                     max-width:150px;
-                     height:auto;
-                     border-radius:8px;
-                   " />
+              <img 
+                src="${imageUrl}" 
+                alt=""
+                class="responsive-img thumb-img"
+                style="
+                  display:block;
+                  width:100%;
+                  max-width:150px;
+                  border-radius:8px;
+                " 
+              />
             </a>
-            `
-            : ""
-        }
-      </td>
+          </td>
+          `
+          : ""
+      }
 
       <!-- TEXT COLUMN -->
       <td
@@ -71,6 +74,7 @@ export function EmailNewsBlock(news: any[]) {
         "
       >
 
+        <!-- DATE -->
         <div style="
             font-size:12px;
             color:#6B7280;
@@ -79,6 +83,7 @@ export function EmailNewsBlock(news: any[]) {
           ${new Date(n.published_at).toLocaleDateString("fr-FR")}
         </div>
 
+        <!-- TITLE -->
         <a href="${newsUrl}" 
            target="_blank"
            style="text-decoration:none;color:#111827;">
@@ -92,10 +97,12 @@ export function EmailNewsBlock(news: any[]) {
           </div>
         </a>
 
-        <div style="margin-bottom:8px;">
+        <!-- TAGS -->
+        <div style="margin-bottom:10px;">
           ${tags}
         </div>
 
+        <!-- EXCERPT -->
         ${
           n.excerpt
             ? `
@@ -134,7 +141,7 @@ export function EmailNewsBlock(news: any[]) {
       letter-spacing:0.08em;
       text-transform:uppercase;
       color:#111827;
-      margin-bottom:20px;
+      margin-bottom:22px;
     ">
     Actualités
   </div>
