@@ -45,8 +45,8 @@ export default function DigestPreviewPanel({
       {/* =========================
           HEADER
       ========================== */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-white">
-        <h2 className="text-sm font-semibold">
+      <div className="flex items-center justify-between px-5 py-4 border-b bg-white">
+        <h2 className="text-sm font-semibold tracking-tight">
           Preview newsletter
         </h2>
 
@@ -58,7 +58,7 @@ export default function DigestPreviewPanel({
       {/* =========================
           BODY
       ========================== */}
-      <div className="flex-1 overflow-y-auto bg-gray-100 px-4 py-4">
+      <div className="flex-1 overflow-y-auto bg-white px-3 py-4">
 
         {isEmpty ? (
           <div className="h-full flex items-center justify-center text-center text-gray-400 text-sm">
@@ -72,7 +72,7 @@ export default function DigestPreviewPanel({
             </div>
           </div>
         ) : (
-          <div className="mx-auto max-w-[640px] bg-white shadow-sm border border-gray-200">
+          <div className="mx-auto w-full max-w-[820px]">
 
             <NewsletterPreview
               headerConfig={headerConfig}
