@@ -29,35 +29,54 @@ export default function DigestSelectors({
   editorialOrder,
   setEditorialOrder,
 }: Props) {
-
   function updateTypeSelection(
     ids: string[],
     type: EditorialItem["type"]
   ) {
     setEditorialOrder((prev) => {
-      const others = prev.filter((item) => item.type !== type);
-      const updated = ids.map((id) => ({ id, type }));
+      const others = prev.filter(
+        (item) => item.type !== type
+      );
+      const updated = ids.map((id) => ({
+        id,
+        type,
+      }));
       return [...others, ...updated];
     });
   }
 
-  const newsSelected = editorialOrder.filter(i => i.type === "news").length;
-  const brevesSelected = editorialOrder.filter(i => i.type === "breve").length;
-  const analysesSelected = editorialOrder.filter(i => i.type === "analysis").length;
+  const newsSelected = editorialOrder.filter(
+    (i) => i.type === "news"
+  ).length;
+
+  const brevesSelected = editorialOrder.filter(
+    (i) => i.type === "breve"
+  ).length;
+
+  const analysesSelected = editorialOrder.filter(
+    (i) => i.type === "analysis"
+  ).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
 
       {/* =========================
           NEWS
       ========================== */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold tracking-tight">
-            News
-          </h2>
-          <span className="text-xs text-gray-400">
-            {newsSelected} sélectionnée{newsSelected > 1 ? "s" : ""}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold tracking-tight">
+              News
+            </h2>
+            <span className="text-xs text-gray-400">
+              {news.length} résultats
+            </span>
+          </div>
+
+          <span className="text-xs font-medium text-gray-500">
+            {newsSelected} sélectionnée
+            {newsSelected > 1 ? "s" : ""}
           </span>
         </div>
 
@@ -67,20 +86,29 @@ export default function DigestSelectors({
           selectedIds={editorialOrder
             .filter((i) => i.type === "news")
             .map((i) => i.id)}
-          onChange={(ids) => updateTypeSelection(ids, "news")}
+          onChange={(ids) =>
+            updateTypeSelection(ids, "news")
+          }
         />
       </section>
 
       {/* =========================
           BRÈVES
       ========================== */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold tracking-tight">
-            Brèves
-          </h2>
-          <span className="text-xs text-gray-400">
-            {brevesSelected} sélectionnée{brevesSelected > 1 ? "s" : ""}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold tracking-tight">
+              Brèves
+            </h2>
+            <span className="text-xs text-gray-400">
+              {breves.length} résultats
+            </span>
+          </div>
+
+          <span className="text-xs font-medium text-gray-500">
+            {brevesSelected} sélectionnée
+            {brevesSelected > 1 ? "s" : ""}
           </span>
         </div>
 
@@ -90,20 +118,29 @@ export default function DigestSelectors({
           selectedIds={editorialOrder
             .filter((i) => i.type === "breve")
             .map((i) => i.id)}
-          onChange={(ids) => updateTypeSelection(ids, "breve")}
+          onChange={(ids) =>
+            updateTypeSelection(ids, "breve")
+          }
         />
       </section>
 
       {/* =========================
           ANALYSES
       ========================== */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold tracking-tight">
-            Analyses
-          </h2>
-          <span className="text-xs text-gray-400">
-            {analysesSelected} sélectionnée{analysesSelected > 1 ? "s" : ""}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold tracking-tight">
+              Analyses
+            </h2>
+            <span className="text-xs text-gray-400">
+              {analyses.length} résultats
+            </span>
+          </div>
+
+          <span className="text-xs font-medium text-gray-500">
+            {analysesSelected} sélectionnée
+            {analysesSelected > 1 ? "s" : ""}
           </span>
         </div>
 
@@ -113,7 +150,9 @@ export default function DigestSelectors({
           selectedIds={editorialOrder
             .filter((i) => i.type === "analysis")
             .map((i) => i.id)}
-          onChange={(ids) => updateTypeSelection(ids, "analysis")}
+          onChange={(ids) =>
+            updateTypeSelection(ids, "analysis")
+          }
         />
       </section>
 
