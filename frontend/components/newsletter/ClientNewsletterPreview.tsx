@@ -62,7 +62,7 @@ export default function ClientNewsletterPreview({
   const html = useMemo(() => {
 
     const headerImageUrl = buildContentImageUrl(
-      headerConfig.coverImageUrl || headerConfig.imageUrl
+      headerConfig.imageUrl
     );
 
     return `
