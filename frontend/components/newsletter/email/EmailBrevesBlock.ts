@@ -24,45 +24,67 @@ export function EmailBrevesBlock(breves: any[]) {
 
       return `
 <tr>
-<td colspan="2" style="
-    padding:28px 0;
+<td style="
+    padding:32px 0;
     border-bottom:1px solid #E5E7EB;
     font-family:Arial,Helvetica,sans-serif;
   ">
 
-  <table width="100%" cellpadding="0" cellspacing="0">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
 
       ${
         imageUrl
           ? `
-          <td width="110" valign="top" style="padding-right:20px;">
+          <!-- IMAGE COLUMN -->
+          <td
+            valign="top"
+            class="stack-column"
+            style="
+              width:130px;
+              padding-right:22px;
+              vertical-align:top;
+            "
+          >
             <a href="${breveUrl}" target="_blank" style="text-decoration:none;">
               <img src="${imageUrl}"
-                   width="90"
-                   style="display:block;border-radius:8px;" />
+                   alt=""
+                   style="
+                     display:block;
+                     width:100%;
+                     max-width:110px;
+                     height:auto;
+                     border-radius:8px;
+                   " />
             </a>
           </td>
           `
           : ""
       }
 
-      <td valign="top">
+      <!-- TEXT COLUMN -->
+      <td
+        valign="top"
+        class="stack-column"
+        style="
+          vertical-align:top;
+        "
+      >
 
         <a href="${breveUrl}"
            target="_blank"
            style="text-decoration:none;color:#111827;">
           <div style="
-              font-size:16px;
+              font-size:17px;
               font-weight:700;
-              margin-bottom:8px;
+              margin-bottom:10px;
               line-height:1.35;
             ">
             ${escapeHtml(b.title)}
           </div>
         </a>
 
-        <div style="margin-bottom:6px;">
+        <div style="margin-bottom:8px;">
           ${tags}
         </div>
 
@@ -70,7 +92,7 @@ export function EmailBrevesBlock(breves: any[]) {
           b.excerpt
             ? `
             <div style="
-                font-size:14px;
+                font-size:15px;
                 color:#374151;
                 margin-top:10px;
                 line-height:1.6;
@@ -81,7 +103,7 @@ export function EmailBrevesBlock(breves: any[]) {
             : ""
         }
 
-        <div style="margin-top:10px;">
+        <div style="margin-top:12px;">
           <a href="${breveUrl}"
              target="_blank"
              style="
@@ -107,8 +129,8 @@ export function EmailBrevesBlock(breves: any[]) {
 
   return `
 <tr>
-<td colspan="2" style="
-    padding-top:36px;
+<td style="
+    padding-top:40px;
     font-family:Arial,Helvetica,sans-serif;
   ">
   <div style="
@@ -117,7 +139,7 @@ export function EmailBrevesBlock(breves: any[]) {
       letter-spacing:0.08em;
       text-transform:uppercase;
       color:#111827;
-      margin-bottom:16px;
+      margin-bottom:20px;
     ">
     Brèves
   </div>
