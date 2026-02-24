@@ -16,3 +16,18 @@ export function formatDate(dateString?: string) {
     year: "numeric",
   });
 }
+
+/* ============================================================
+   IMAGE HELPER (ajouté)
+============================================================ */
+
+const GCS_BASE =
+  process.env.NEXT_PUBLIC_GCS_BASE_URL ||
+  "https://storage.googleapis.com/ratecard-media";
+
+export function buildContentImageUrl(
+  visualRectId?: string | null
+) {
+  if (!visualRectId) return null;
+  return `${GCS_BASE}/news/${visualRectId}`;
+}
