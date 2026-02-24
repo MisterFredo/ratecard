@@ -1,4 +1,5 @@
 import "./globals.css";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 export default function RootLayout({
   children,
@@ -8,6 +9,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="bg-white text-gray-900 antialiased">
+        <GoogleAnalytics />
         {children}
       </body>
     </html>
