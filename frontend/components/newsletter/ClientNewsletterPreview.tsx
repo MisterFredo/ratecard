@@ -41,7 +41,7 @@ function buildContentImageUrl(filename?: string | null) {
 
   if (filename.startsWith("http")) return filename;
 
-  return `${GCS_BASE_URL}/content/${filename}`;
+  return `${GCS_BASE_URL}/news/${filename}`;
 }
 
 /* ========================================================= */
