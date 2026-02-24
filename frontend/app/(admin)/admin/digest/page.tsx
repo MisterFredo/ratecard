@@ -13,17 +13,13 @@ import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
   HeaderConfig,
+  TopicStat,
 } from "@/types/newsletter";
 import type { SelectOption } from "@/components/ui/SearchableMultiSelect";
 
 type EditorialItem = {
   id: string;
   type: "news" | "breve" | "analysis";
-};
-
-type TopicStat = {
-  label: string;
-  count: number;
 };
 
 export default function DigestPage() {
