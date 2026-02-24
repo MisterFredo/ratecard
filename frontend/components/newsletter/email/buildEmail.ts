@@ -11,12 +11,18 @@ import { EmailNewsBlock } from "./EmailNewsBlock";
 import { EmailBrevesBlock } from "./EmailBrevesBlock";
 import { EmailAnalysesBlock } from "./EmailAnalysesBlock";
 
+type TopicStat = {
+  label: string;
+  count: number;
+};
+
 type Props = {
   headerConfig: HeaderConfig;
   introText?: string;
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
+  topicStats?: TopicStat[];
 };
 
 export function buildEmail({
@@ -25,11 +31,18 @@ export function buildEmail({
   news,
   breves,
   analyses,
+  topicStats = [],
 }: Props) {
 
   const content = `
     ${EmailHeader(headerConfig, introText)}
-    ${EmailStatsBlock()}
+
+    ${
+      headerConfig.showTopicStats && topicStats.length
+        ? EmailStatsBlock(topicStats)
+        : ""
+    }
+
     ${EmailNewsBlock(news)}
     ${EmailBrevesBlock(breves)}
     ${EmailAnalysesBlock(analyses)}
