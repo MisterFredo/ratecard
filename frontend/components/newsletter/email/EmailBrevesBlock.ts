@@ -1,4 +1,8 @@
-import { buildContentImageUrl, escapeHtml } from "./EmailHelpers";
+import {
+  buildContentImageUrl,
+  escapeHtml,
+  renderEmailTags,
+} from "./EmailHelpers";
 
 const PUBLIC_SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
@@ -11,6 +15,12 @@ export function EmailBrevesBlock(breves: any[]) {
     .map((b) => {
       const imageUrl = buildContentImageUrl(b.visual_rect_id);
       const breveUrl = `${PUBLIC_SITE_URL}/news?news_id=${b.id}`;
+
+      const tags = renderEmailTags({
+        topics: b.topics,
+        companies: b.companies || (b.company ? [b.company] : []),
+        styles: b.styles || (b.news_type ? [b.news_type] : []),
+      });
 
       return `
 <tr>
@@ -43,11 +53,7 @@ export function EmailBrevesBlock(breves: any[]) {
 
         <a href="${breveUrl}"
            target="_blank"
-           style="
-              text-decoration:none;
-              color:#111827;
-           ">
-
+           style="text-decoration:none;color:#111827;">
           <div style="
               font-size:16px;
               font-weight:700;
@@ -56,14 +62,16 @@ export function EmailBrevesBlock(breves: any[]) {
             ">
             ${escapeHtml(b.title)}
           </div>
-
         </a>
+
+        ${tags}
 
         ${
           b.excerpt
             ? `<div style="
                 font-size:14px;
                 color:#374151;
+                margin-top:12px;
                 line-height:1.6;
               ">
                 ${escapeHtml(b.excerpt)}
@@ -105,7 +113,7 @@ ${rows}
 
 <tr>
 <td colspan="2" style="
-    padding-top:18px;
+    padding-top:20px;
     font-family:Arial,Helvetica,sans-serif;
   ">
   <a href="${PUBLIC_SITE_URL}/breves"
