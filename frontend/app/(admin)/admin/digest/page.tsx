@@ -48,11 +48,11 @@ export default function DigestPage() {
 
   const [introText, setIntroText] = useState("");
   const [editorialOrder, setEditorialOrder] =
-    useState<EditorialItem[]>([]);
+    useState<EditorialItem[]>([];
 
-  /* ==============================
-     BAROMÈTRE BACKEND (12 topics)
-  ============================== */
+  /* =========================================
+     BAROMÈTRE — BACKEND (30 jours + total)
+  ========================================= */
 
   const [topicStats, setTopicStats] = useState<TopicStat[]>([]);
 
@@ -61,17 +61,18 @@ export default function DigestPage() {
       try {
         const res = await api.get("/news/breves/stats");
 
-        const topics =
-          (res.topics_stats || [])
-            .map((t: any) => ({
-              label: t.label,
-              last_30_days: t.last_30_days ?? 0,
-              total: t.total ?? 0,
-            }))
-            .sort((a: TopicStat, b: TopicStat) => b.count - a.count);
+        const topics: TopicStat[] = (res.topics_stats || [])
+          .map((t: any) => ({
+            label: t.label,
+            last_30_days: t.last_30_days ?? 0,
+            total: t.total ?? 0,
+          }))
+          .sort(
+            (a: TopicStat, b: TopicStat) =>
+              b.last_30_days - a.last_30_days
+          );
 
         setTopicStats(topics);
-
       } catch (e) {
         console.error("Erreur chargement baromètre", e);
       }
@@ -80,9 +81,9 @@ export default function DigestPage() {
     loadStats();
   }, []);
 
-  /* ==============================
+  /* =========================================
      SEARCH
-  ============================== */
+  ========================================= */
 
   async function handleSearch(filters: {
     topics: string[];
@@ -112,17 +113,15 @@ export default function DigestPage() {
     }
   }
 
-  /* ==============================
+  /* =========================================
      MAP ORDER → DATA
-  ============================== */
+  ========================================= */
 
   const editorialNews = useMemo(
     () =>
       editorialOrder
         .filter((i) => i.type === "news")
-        .map((i) =>
-          news.find((n) => n.id === i.id)
-        )
+        .map((i) => news.find((n) => n.id === i.id))
         .filter(Boolean) as NewsletterNewsItem[],
     [editorialOrder, news]
   );
@@ -131,9 +130,7 @@ export default function DigestPage() {
     () =>
       editorialOrder
         .filter((i) => i.type === "breve")
-        .map((i) =>
-          breves.find((b) => b.id === i.id)
-        )
+        .map((i) => breves.find((b) => b.id === i.id))
         .filter(Boolean) as NewsletterNewsItem[],
     [editorialOrder, breves]
   );
@@ -142,16 +139,14 @@ export default function DigestPage() {
     () =>
       editorialOrder
         .filter((i) => i.type === "analysis")
-        .map((i) =>
-          analyses.find((a) => a.id === i.id)
-        )
+        .map((i) => analyses.find((a) => a.id === i.id))
         .filter(Boolean) as NewsletterAnalysisItem[],
     [editorialOrder, analyses]
   );
 
-  /* ==============================
+  /* =========================================
      LAYOUT
-  ============================== */
+  ========================================= */
 
   return (
     <div className="space-y-4">
@@ -160,10 +155,8 @@ export default function DigestPage() {
       </h1>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_1.3fr] gap-6 items-start">
-
-        {/* LEFT */}
+        {/* LEFT PANEL */}
         <div className="space-y-5">
-
           <DigestHeaderConfig
             headerConfig={headerConfig}
             setHeaderConfig={setHeaderConfig}
@@ -171,7 +164,7 @@ export default function DigestPage() {
             setIntroText={setIntroText}
           />
 
-          {/* Visible en admin uniquement */}
+          {/* Visible admin uniquement */}
           <DigestTopicStats period={30} />
 
           <DigestEngine
@@ -199,10 +192,9 @@ export default function DigestPage() {
             analyses={analyses}
             setEditorialOrder={setEditorialOrder}
           />
-
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT PANEL */}
         <div className="sticky top-6 h-[calc(100vh-4rem)] overflow-y-auto pr-2">
           <DigestPreviewPanel
             headerConfig={headerConfig}
@@ -210,10 +202,9 @@ export default function DigestPage() {
             news={editorialNews}
             breves={editorialBreves}
             analyses={editorialAnalyses}
-            topicStats={topicStats} // 🔥 injecté ici
+            topicStats={topicStats}
           />
         </div>
-
       </div>
     </div>
   );
