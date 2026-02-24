@@ -10,8 +10,6 @@ import type {
   NewsletterAnalysisItem,
 } from "@/types/newsletter";
 
-/* ========================================================= */
-
 type Props = {
   headerConfig: HeaderConfig;
   introText?: string;
@@ -19,8 +17,6 @@ type Props = {
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
 };
-
-/* ========================================================= */
 
 export default function DigestPreviewPanel({
   headerConfig,
@@ -39,22 +35,19 @@ export default function DigestPreviewPanel({
   const isEmpty = totalItems === 0;
 
   return (
-    <div className="h-full flex flex-col rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden">
+    <div className="h-full flex flex-col border border-gray-200 rounded-lg bg-white overflow-hidden">
 
-      {/* =========================
-          HEADER
-      ========================== */}
-      <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
+      {/* HEADER */}
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-white">
 
-        {/* Tabs */}
-        <div className="flex bg-gray-100 rounded-lg p-1">
+        <div className="flex bg-gray-100 rounded p-1">
           <button
             onClick={() => setMode("html")}
             className={`
-              px-4 py-1.5 text-xs rounded-md transition
+              px-3 py-1 text-xs rounded transition
               ${
                 mode === "html"
-                  ? "bg-black text-white shadow-sm"
+                  ? "bg-black text-white"
                   : "text-gray-600 hover:bg-gray-200"
               }
             `}
@@ -65,10 +58,10 @@ export default function DigestPreviewPanel({
           <button
             onClick={() => setMode("client")}
             className={`
-              px-4 py-1.5 text-xs rounded-md transition
+              px-3 py-1 text-xs rounded transition
               ${
                 mode === "client"
-                  ? "bg-black text-white shadow-sm"
+                  ? "bg-black text-white"
                   : "text-gray-600 hover:bg-gray-200"
               }
             `}
@@ -77,45 +70,47 @@ export default function DigestPreviewPanel({
           </button>
         </div>
 
-        {/* Counter */}
-        <div className="text-xs text-gray-400 tracking-wide">
+        <div className="text-xs text-gray-400">
           {totalItems} élément{totalItems > 1 ? "s" : ""}
         </div>
       </div>
 
-      {/* =========================
-          BODY
-      ========================== */}
-      <div className="flex-1 overflow-y-auto bg-gray-50 p-6">
+      {/* BODY */}
+      <div className="flex-1 overflow-y-auto bg-gray-100 px-4 py-4">
 
         {isEmpty ? (
           <div className="h-full flex items-center justify-center text-center text-gray-400 text-sm">
-            <div className="space-y-2">
-              <div className="text-base font-medium text-gray-500">
+            <div className="space-y-1">
+              <div className="font-medium text-gray-500">
                 Aucune sélection
               </div>
               <div>
-                Sélectionnez des contenus à gauche pour
-                voir la preview en temps réel.
+                Sélectionnez des contenus à gauche.
               </div>
             </div>
           </div>
-        ) : mode === "html" ? (
-          <NewsletterPreview
-            headerConfig={headerConfig}
-            introText={introText}
-            news={news}
-            breves={breves}
-            analyses={analyses}
-          />
         ) : (
-          <ClientNewsletterPreview
-            headerConfig={headerConfig}
-            introText={introText}
-            news={news}
-            breves={breves}
-            analyses={analyses}
-          />
+          <div className="mx-auto max-w-[640px] bg-white shadow-sm border border-gray-200">
+
+            {mode === "html" ? (
+              <NewsletterPreview
+                headerConfig={headerConfig}
+                introText={introText}
+                news={news}
+                breves={breves}
+                analyses={analyses}
+              />
+            ) : (
+              <ClientNewsletterPreview
+                headerConfig={headerConfig}
+                introText={introText}
+                news={news}
+                breves={breves}
+                analyses={analyses}
+              />
+            )}
+
+          </div>
         )}
 
       </div>
