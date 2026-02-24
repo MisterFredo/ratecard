@@ -30,8 +30,17 @@ export function EmailLayout(content: string) {
       text-align: center !important;
     }
 
-    img {
-      max-width: 100% !important;
+    .responsive-img {
+      height: auto !important;
+    }
+
+    .logo-img {
+      max-width: 140px !important;
+      height: auto !important;
+    }
+
+    .thumb-img {
+      max-width: 110px !important;
       height: auto !important;
     }
   }
