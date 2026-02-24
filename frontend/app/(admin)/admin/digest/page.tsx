@@ -62,7 +62,7 @@ export default function DigestPage() {
   useEffect(() => {
     async function loadStats() {
       try {
-        const res = await api.get("/breves/stats");
+        const res = await api.get("/news/breves/stats");
 
         const topics =
           (res.topics_stats || [])
