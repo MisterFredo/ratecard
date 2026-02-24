@@ -12,6 +12,7 @@ import { api } from "@/lib/api";
 import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
+  HeaderConfig,
 } from "@/types/newsletter";
 import type { SelectOption } from "@/components/ui/SearchableMultiSelect";
 
@@ -24,8 +25,7 @@ export default function DigestPage() {
   const [loading, setLoading] = useState(false);
 
   const [news, setNews] = useState<NewsletterNewsItem[]>([]);
-  const [breves, setBreves] =
-    useState<NewsletterNewsItem[]>([]);
+  const [breves, setBreves] = useState<NewsletterNewsItem[]>([]);
   const [analyses, setAnalyses] =
     useState<NewsletterAnalysisItem[]>([]);
 
@@ -36,20 +36,26 @@ export default function DigestPage() {
   const [selectedTypes, setSelectedTypes] =
     useState<SelectOption[]>([]);
 
+  /* ==============================
+     HEADER CONFIG PROPRE
+  ============================== */
+
   const [headerConfig, setHeaderConfig] =
-    useState({
+    useState<HeaderConfig>({
       title: "Newsletter Ratecard",
       subtitle: "",
-      imageUrl: "",
-      mode: "ratecard" as "ratecard" | "client",
+      headerCompany: undefined,
       showTopicStats: false,
     });
 
-  const [introText, setIntroText] =
-    useState("");
+  const [introText, setIntroText] = useState("");
 
   const [editorialOrder, setEditorialOrder] =
     useState<EditorialItem[]>([]);
+
+  /* ==============================
+     SEARCH
+  ============================== */
 
   async function handleSearch(filters: {
     topics: string[];
@@ -78,6 +84,10 @@ export default function DigestPage() {
       setLoading(false);
     }
   }
+
+  /* ==============================
+     MAP ORDER → DATA
+  ============================== */
 
   const editorialNews = useMemo(
     () =>
@@ -111,6 +121,10 @@ export default function DigestPage() {
         .filter(Boolean) as NewsletterAnalysisItem[],
     [editorialOrder, analyses]
   );
+
+  /* ==============================
+     LAYOUT
+  ============================== */
 
   return (
     <div className="space-y-4">
