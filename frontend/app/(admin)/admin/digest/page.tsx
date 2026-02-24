@@ -125,42 +125,51 @@ export default function DigestPage() {
   ============================== */
 
   return (
-    <div className="space-y-5">
-      <h1 className="text-xl font-semibold tracking-tight">
+    <div className="space-y-4">
+      <h1 className="text-lg font-semibold tracking-tight">
         Digest
       </h1>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] gap-8 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_1fr] gap-6 items-start">
 
         {/* =========================
            LEFT — ÉDITION
         ========================= */}
-        <div className="space-y-6">
+        <div className="space-y-5">
 
-          {/* CONFIG ÉDITORIALE */}
+          {/* CONFIG */}
           <DigestHeaderConfig
             headerConfig={headerConfig}
             setHeaderConfig={setHeaderConfig}
           />
 
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold">
+          {/* INTRO */}
+          <section className="space-y-2">
+            <h2 className="text-sm font-semibold tracking-tight">
               Introduction
             </h2>
 
             <textarea
-              className="w-full border border-gray-200 rounded-lg p-4 min-h-[120px] text-sm"
+              className="
+                w-full
+                border border-gray-200
+                rounded-lg
+                px-3 py-2
+                text-sm
+                min-h-[100px]
+                resize-y
+              "
               value={introText}
               onChange={(e) =>
                 setIntroText(e.target.value)
               }
             />
-          </div>
+          </section>
 
-          {/* BAROMÈTRE 30 JOURS */}
+          {/* BAROMÈTRE */}
           <DigestTopicStats period={30} />
 
-          {/* MOTEUR DE RECHERCHE */}
+          {/* MOTEUR */}
           <DigestEngine
             selectedTopics={selectedTopics}
             setSelectedTopics={setSelectedTopics}
@@ -171,7 +180,7 @@ export default function DigestPage() {
             onSearch={handleSearch}
           />
 
-          {/* SÉLECTION CONTENU */}
+          {/* SÉLECTION */}
           <DigestSelectors
             news={news}
             breves={breves}
@@ -180,7 +189,7 @@ export default function DigestPage() {
             setEditorialOrder={setEditorialOrder}
           />
 
-          {/* ORDRE ÉDITORIAL */}
+          {/* FLUX */}
           <DigestEditorialFlow
             editorialOrder={editorialOrder}
             news={news}
@@ -194,7 +203,7 @@ export default function DigestPage() {
         {/* =========================
            RIGHT — PREVIEW
         ========================= */}
-        <div className="sticky top-8 h-[calc(100vh-6rem)]">
+        <div className="sticky top-6 h-[calc(100vh-4rem)] overflow-y-auto pr-1">
           <DigestPreviewPanel
             headerConfig={headerConfig}
             introText={introText}
