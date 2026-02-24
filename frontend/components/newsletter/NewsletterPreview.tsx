@@ -53,7 +53,7 @@ function buildContentImageUrl(filename?: string | null) {
   // si déjà URL absolue → on la garde
   if (filename.startsWith("http")) return filename;
 
-  return `${GCS_BASE_URL}/content/${filename}`;
+  return `${GCS_BASE_URL}/news/${filename}`;
 }
 
 /* ========================================================= */
