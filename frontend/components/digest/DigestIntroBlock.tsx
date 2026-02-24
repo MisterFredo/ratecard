@@ -10,19 +10,30 @@ export default function DigestIntroBlock({
   setIntroText,
 }: Props) {
   return (
-    <div className="space-y-3">
-      <h2 className="text-sm font-semibold">
+    <section className="space-y-2">
+      <h2 className="text-sm font-semibold tracking-tight">
         Introduction
       </h2>
 
       <textarea
-        className="w-full border rounded p-3 min-h-[120px]"
+        className="
+          w-full
+          border border-gray-200
+          rounded-lg
+          px-3 py-2
+          text-sm
+          min-h-[100px]
+          resize-y
+          focus:outline-none
+          focus:ring-1
+          focus:ring-black
+        "
         value={introText}
         onChange={(e) =>
           setIntroText(e.target.value)
         }
         placeholder="Introduction de la newsletter..."
       />
-    </div>
+    </section>
   );
 }
