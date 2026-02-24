@@ -1,4 +1,8 @@
-import { buildContentImageUrl, escapeHtml } from "./EmailHelpers";
+import {
+  buildContentImageUrl,
+  escapeHtml,
+  renderEmailTags,
+} from "./EmailHelpers";
 
 const PUBLIC_SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
@@ -12,24 +16,11 @@ export function EmailNewsBlock(news: any[]) {
       const imageUrl = buildContentImageUrl(n.visual_rect_id);
       const newsUrl = `${PUBLIC_SITE_URL}/news?news_id=${n.id}`;
 
-      const badges =
-        n.topics?.map(
-          (t: any) => `
-          <span style="
-              display:inline-block;
-              font-size:11px;
-              padding:3px 8px;
-              margin-right:6px;
-              margin-top:6px;
-              background:#F3F4F6;
-              color:#374151;
-              border-radius:12px;
-              font-weight:500;
-            ">
-            ${escapeHtml(t.label)}
-          </span>
-        `
-        ).join("") || "";
+      const tags = renderEmailTags({
+        topics: n.topics,
+        companies: n.companies || (n.company ? [n.company] : []),
+        styles: n.styles || (n.news_type ? [n.news_type] : []),
+      });
 
       return `
 <tr>
@@ -70,10 +61,7 @@ export function EmailNewsBlock(news: any[]) {
 
         <a href="${newsUrl}" 
            target="_blank"
-           style="
-              text-decoration:none;
-              color:#111827;
-           ">
+           style="text-decoration:none;color:#111827;">
           <div style="
               font-size:19px;
               font-weight:700;
@@ -84,14 +72,14 @@ export function EmailNewsBlock(news: any[]) {
           </div>
         </a>
 
-        ${badges}
+        ${tags}
 
         ${
           n.excerpt
             ? `<div style="
                 font-size:15px;
                 color:#374151;
-                margin-top:12px;
+                margin-top:14px;
                 line-height:1.6;
               ">
                 ${escapeHtml(n.excerpt)}
