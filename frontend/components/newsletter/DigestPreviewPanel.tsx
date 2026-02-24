@@ -9,12 +9,18 @@ import type {
   NewsletterAnalysisItem,
 } from "@/types/newsletter";
 
+type TopicStat = {
+  label: string;
+  count: number;
+};
+
 type Props = {
   headerConfig: HeaderConfig;
   introText?: string;
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
+  topicStats?: TopicStat[];
 };
 
 export default function DigestPreviewPanel({
@@ -23,6 +29,7 @@ export default function DigestPreviewPanel({
   news,
   breves,
   analyses,
+  topicStats = [],
 }: Props) {
 
   const totalItems = useMemo(
@@ -35,7 +42,9 @@ export default function DigestPreviewPanel({
   return (
     <div className="h-full flex flex-col border border-gray-200 rounded-lg bg-white overflow-hidden">
 
-      {/* HEADER */}
+      {/* =========================
+          HEADER
+      ========================== */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-white">
         <h2 className="text-sm font-semibold">
           Preview newsletter
@@ -46,7 +55,9 @@ export default function DigestPreviewPanel({
         </div>
       </div>
 
-      {/* BODY */}
+      {/* =========================
+          BODY
+      ========================== */}
       <div className="flex-1 overflow-y-auto bg-gray-100 px-4 py-4">
 
         {isEmpty ? (
@@ -62,13 +73,16 @@ export default function DigestPreviewPanel({
           </div>
         ) : (
           <div className="mx-auto max-w-[640px] bg-white shadow-sm border border-gray-200">
+
             <NewsletterPreview
               headerConfig={headerConfig}
               introText={introText}
               news={news}
               breves={breves}
               analyses={analyses}
+              topicStats={topicStats}
             />
+
           </div>
         )}
 
