@@ -48,7 +48,7 @@ export default function DigestPage() {
 
   const [introText, setIntroText] = useState("");
   const [editorialOrder, setEditorialOrder] =
-    useState<EditorialItem[]>([];
+    useState<EditorialItem[]>([]);
 
   /* =========================================
      BAROMÈTRE — BACKEND (30 jours + total)
