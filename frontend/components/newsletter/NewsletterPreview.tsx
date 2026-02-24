@@ -71,59 +71,57 @@ export default function NewsletterPreview({
        HEADER
     ============================================== */
 
-    const headerImageUrl =
-      headerConfig.coverImageUrl
-        ? buildContentImageUrl(headerConfig.coverImageUrl)
-        : null;
+    const headerImageUrl = buildContentImageUrl(
+      headerConfig.imageUrl
+    );
 
     const headerBlock = `
-<tr>
-<td style="padding:20px 0 12px 0;">
-  ${
-    headerConfig.mode === "ratecard"
-      ? `<img src="${LOGO_URL}" alt="Ratecard"
-           style="display:block;width:150px;height:auto;" />`
-      : ""
-  }
-</td>
-</tr>
+    <tr>
+    <td style="padding:20px 0 12px 0;">
+      ${
+        headerConfig.mode === "ratecard"
+          ? `<img src="${LOGO_URL}" alt="Ratecard"
+               style="display:block;width:150px;height:auto;" />`
+          : ""
+      }
+    </td>
+    </tr>
 
-<tr>
-<td style="padding-bottom:12px;
-           font-family:Arial,Helvetica,sans-serif;">
-  <h1 style="margin:0;
-             font-size:20px;
-             color:#111827;">
-    ${escapeHtml(headerConfig.title)}
-  </h1>
+    <tr>
+    <td style="padding-bottom:12px;
+               font-family:Arial,Helvetica,sans-serif;">
+      <h1 style="margin:0;
+                 font-size:20px;
+                 color:#111827;">
+        ${escapeHtml(headerConfig.title)}
+      </h1>
 
-  ${
-    headerConfig.subtitle
-      ? `<p style="margin:6px 0 0 0;
-                  font-size:13px;
-                  color:#6B7280;">
-          ${escapeHtml(headerConfig.subtitle)}
-        </p>`
-      : ""
-  }
-</td>
-</tr>
+      ${
+        headerConfig.subtitle
+          ? `<p style="margin:6px 0 0 0;
+                      font-size:13px;
+                      color:#6B7280;">
+              ${escapeHtml(headerConfig.subtitle)}
+            </p>`
+          : ""
+      }
+    </td>
+    </tr>
 
-${
-  headerImageUrl
-    ? `
-<tr>
-<td style="padding-bottom:20px;">
-  <img src="${headerImageUrl}"
-       style="display:block;
-              width:100%;
-              height:auto;" />
-</td>
-</tr>`
-    : ""
-}
-`;
-
+    ${
+      headerImageUrl
+        ? `
+    <tr>
+    <td style="padding-bottom:20px;">
+      <img src="${headerImageUrl}"
+           style="display:block;
+                  width:100%;
+                  height:auto;" />
+    </td>
+    </tr>`
+        : ""
+    }
+    `;
     /* ==============================================
        INTRO
     ============================================== */
