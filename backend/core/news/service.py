@@ -466,10 +466,6 @@ def delete_news(news_id: str):
     for q in queries:
         client.query(q, job_config=job_config).result()
 
-
-# ============================================================
-# PUBLISH
-# ============================================================
 # ============================================================
 # PUBLISH
 # ============================================================
@@ -496,53 +492,57 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
 
     row = rows[0]
 
+    # ============================================================
+    # VALIDATION MINIMALE
+    # ============================================================
+
     if not row["EXCERPT"]:
         raise ValueError("Un excerpt est requis pour publier")
 
-    # ============================================================
-    # 🔥 VISUEL OBLIGATOIRE POUR NEWS
-    # ============================================================
-
     media_id = row["MEDIA_RECTANGLE_ID"]
+    company_rect = row["COMPANY_RECT"]
 
-    if row["NEWS_KIND"] == "NEWS":
+    # ============================================================
+    # 🔥 NORMALISATION VISUEL (NEWS + BRÈVES)
+    # ============================================================
 
-        if not media_id:
-            company_rect = row["COMPANY_RECT"]
+    # Cas 1 : Aucun visuel → on utilise celui de la société
+    if not media_id:
+        if not company_rect:
+            raise ValueError("Un visuel est requis pour publier")
 
-            if not company_rect:
-                raise ValueError("Un visuel est requis pour publier une news")
+        media_id = company_rect
 
-            # ====================================================
-            # COPIE PHYSIQUE DU LOGO SOCIÉTÉ VERS /news/
-            # ====================================================
+    # Cas 2 : Si le visuel est un logo société → on duplique physiquement
+    if media_id.startswith("COMPANY_"):
 
-            bucket_name = "ratecard-media"  # adapte si besoin
+        bucket_name = "ratecard-media"
 
-            storage_client = storage.Client()
-            bucket = storage_client.bucket(bucket_name)
+        from google.cloud import storage
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
 
-            source_blob = bucket.blob(f"companies/{company_rect}")
+        source_blob = bucket.blob(f"companies/{media_id}")
 
-            if not source_blob.exists():
-                raise ValueError("Logo société introuvable dans GCS")
+        if not source_blob.exists():
+            raise ValueError("Logo société introuvable dans GCS")
 
-            new_filename = f"NEWS_{id_news}_rect.jpg"
-            destination_blob = bucket.blob(f"news/{new_filename}")
+        new_filename = f"NEWS_{id_news}_rect.jpg"
+        destination_blob = bucket.blob(f"news/{new_filename}")
 
-            destination_blob.rewrite(source_blob)
+        destination_blob.rewrite(source_blob)
 
-            # Mise à jour BQ avec le nouveau visuel
-            update_bq(
-                table=TABLE_NEWS,
-                fields={
-                    "MEDIA_RECTANGLE_ID": new_filename,
-                    "HAS_VISUAL": True,
-                },
-                where={"ID_NEWS": id_news},
-            )
+        # Mise à jour BQ avec le nouveau visuel
+        update_bq(
+            table=TABLE_NEWS,
+            fields={
+                "MEDIA_RECTANGLE_ID": new_filename,
+                "HAS_VISUAL": True,
+            },
+            where={"ID_NEWS": id_news},
+        )
 
-            media_id = new_filename
+        media_id = new_filename
 
     # ============================================================
     # DATE & STATUS
