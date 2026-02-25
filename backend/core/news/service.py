@@ -734,7 +734,11 @@ def search_breves_public(
 
 def get_breves_stats_public():
 
-    global_rows = query_bq("""
+    # =====================================================
+    # GLOBAL
+    # =====================================================
+
+    global_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_STATS_GLOBAL`
     """)
@@ -749,7 +753,11 @@ def get_breves_stats_public():
         last_7 = 0
         last_30 = 0
 
-    types_rows = query_bq("""
+    # =====================================================
+    # TYPES
+    # =====================================================
+
+    types_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_STATS_TYPE`
         ORDER BY TOTAL DESC
@@ -765,7 +773,11 @@ def get_breves_stats_public():
         for r in types_rows
     ]
 
-    topics_rows = query_bq("""
+    # =====================================================
+    # TOPICS
+    # =====================================================
+
+    topics_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_STATS_TOPIC`
         ORDER BY TOTAL DESC
@@ -783,7 +795,11 @@ def get_breves_stats_public():
         if r.get("ID_TOPIC") and r.get("LABEL")
     ]
 
-    company_rows = query_bq("""
+    # =====================================================
+    # COMPANIES
+    # =====================================================
+
+    company_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_STATS_COMPANY`
         ORDER BY TOTAL DESC
@@ -802,6 +818,10 @@ def get_breves_stats_public():
         if r.get("ID_COMPANY") and r.get("NAME")
     ]
 
+    # =====================================================
+    # RETURN
+    # =====================================================
+
     return {
         "total_count": total_count,
         "last_7_days": last_7,
@@ -810,7 +830,6 @@ def get_breves_stats_public():
         "types_stats": types_stats,
         "top_companies": top_companies,
     }
-
 
 
 # ============================================================
