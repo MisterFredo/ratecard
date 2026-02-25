@@ -64,7 +64,7 @@ export default function NewsStepVisual({
     setLoading(true);
 
     try {
-      const res = await api.post("/visuals/news/duplicate-company", {
+      const res = await api.post("/news/visual/duplicate-company", {
         id_news: newsId,
         company_media_id: companyMediaId,
       });
