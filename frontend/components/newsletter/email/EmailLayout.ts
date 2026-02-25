@@ -55,14 +55,14 @@ export function EmailLayout(content: string) {
 
         <!-- MAIN CONTAINER -->
         <table
-          width="640"
+          width="720"
           cellpadding="0"
           cellspacing="0"
           role="presentation"
           class="container"
           style="
             width:100%;
-            max-width:640px;
+            max-width:720px;
             margin:0 auto;
             background:#ffffff;
           "
@@ -71,8 +71,8 @@ export function EmailLayout(content: string) {
             <td
               class="mobile-padding"
               style="
-                padding-left:40px;
-                padding-right:40px;
+                padding-left:32px;
+                padding-right:32px;
               "
             >
 
@@ -82,7 +82,7 @@ export function EmailLayout(content: string) {
               <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
                 <tr>
                   <td style="
-                      padding:40px 0 30px 0;
+                      padding:36px 0 26px 0;
                       font-size:12px;
                       color:#9CA3AF;
                       font-family:Arial,Helvetica,sans-serif;
