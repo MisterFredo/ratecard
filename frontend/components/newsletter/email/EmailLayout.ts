@@ -55,14 +55,14 @@ export function EmailLayout(content: string) {
 
         <!-- MAIN CONTAINER -->
         <table
-          width="680"
+          width="640"
           cellpadding="0"
           cellspacing="0"
           role="presentation"
           class="container"
           style="
             width:100%;
-            max-width:680px;
+            max-width:640px;
             margin:0 auto;
             background:#ffffff;
           "
@@ -71,8 +71,8 @@ export function EmailLayout(content: string) {
             <td
               class="mobile-padding"
               style="
-                padding-left:32px;
-                padding-right:32px;
+                padding-left:40px;
+                padding-right:40px;
               "
             >
 
