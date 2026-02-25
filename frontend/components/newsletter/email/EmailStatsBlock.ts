@@ -46,64 +46,78 @@ export function EmailStatsBlock(topicStats: TopicStat[]) {
   return `
 <tr>
 <td style="
-    padding:56px 0 48px 0;
+    padding:64px 0;
     border-top:1px solid #F1F5F9;
     border-bottom:1px solid #F1F5F9;
     font-family:Arial,Helvetica,sans-serif;
   ">
 
-  <!-- TITLE -->
-  <div style="
-      font-size:12px;
-      font-weight:700;
-      letter-spacing:0.18em;
-      text-transform:uppercase;
-      color:#94A3B8;
-      margin-bottom:10px;
-    ">
-    Baromètre
-  </div>
-
-  <div style="
-      font-size:20px;
-      font-weight:700;
-      color:#0F172A;
-      margin-bottom:28px;
-    ">
-    Les sujets les plus actifs — 30 derniers jours
-  </div>
-
-  <!-- COLUMNS -->
+  <!-- OUTER WRAPPER -->
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
+      <td style="
+          background:#F8FAFC;
+          padding:36px 32px;
+          border-radius:12px;
+        ">
 
-      <td
-        valign="top"
-        class="stack-column"
-        style="
-          width:50%;
-          padding-right:28px;
-          vertical-align:top;
-        "
-      >
-        <table width="100%" cellpadding="0" cellspacing="0">
-          ${renderColumn(left)}
+        <!-- LABEL -->
+        <div style="
+            font-size:12px;
+            font-weight:700;
+            letter-spacing:0.18em;
+            text-transform:uppercase;
+            color:#94A3B8;
+            margin-bottom:10px;
+          ">
+          Baromètre
+        </div>
+
+        <!-- TITLE -->
+        <div style="
+            font-size:20px;
+            font-weight:700;
+            color:#0F172A;
+            margin-bottom:28px;
+          ">
+          Les sujets les plus actifs — 30 derniers jours
+        </div>
+
+        <!-- COLUMNS -->
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+          <tr>
+
+            <td
+              valign="top"
+              class="stack-column"
+              style="
+                width:50%;
+                padding-right:28px;
+                vertical-align:top;
+              "
+            >
+              <table width="100%" cellpadding="0" cellspacing="0">
+                ${renderColumn(left)}
+              </table>
+            </td>
+
+            <td
+              valign="top"
+              class="stack-column"
+              style="
+                width:50%;
+                vertical-align:top;
+              "
+            >
+              <table width="100%" cellpadding="0" cellspacing="0">
+                ${renderColumn(right)}
+              </table>
+            </td>
+
+          </tr>
         </table>
-      </td>
 
-      <td
-        valign="top"
-        class="stack-column"
-        style="
-          width:50%;
-          vertical-align:top;
-        "
-      >
-        <table width="100%" cellpadding="0" cellspacing="0">
-          ${renderColumn(right)}
-        </table>
       </td>
-
     </tr>
   </table>
 
