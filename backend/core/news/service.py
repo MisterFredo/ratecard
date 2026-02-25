@@ -506,21 +506,35 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
     # 🔥 NORMALISATION VISUEL (NEWS + BRÈVES)
     # ============================================================
 
-    # Cas 1 : Aucun visuel → on utilise celui de la société
+    # Cas 1 : Aucun visuel → fallback société
     if not media_id:
         if not company_rect:
             raise ValueError("Un visuel est requis pour publier")
-
         media_id = company_rect
 
-    # Cas 2 : Si le visuel est un logo société → on duplique physiquement
+    # Cas 2 : Si le visuel est un logo société → duplication physique
     if media_id.startswith("COMPANY_"):
 
-        bucket_name = "ratecard-media"
-
         from google.cloud import storage
-        storage_client = storage.Client()
-        bucket = storage_client.bucket(bucket_name)
+        from google.oauth2 import service_account
+        import os
+        import json
+
+        credentials_path = os.environ.get("GOOGLE_CREDENTIALS_FILE")
+        if not credentials_path:
+            raise ValueError("GOOGLE_CREDENTIALS_FILE non défini")
+
+        with open(credentials_path, "r") as f:
+            info = json.load(f)
+
+        credentials = service_account.Credentials.from_service_account_info(info)
+
+        storage_client = storage.Client(
+            credentials=credentials,
+            project=info.get("project_id"),
+        )
+
+        bucket = storage_client.bucket("ratecard-media")
 
         source_blob = bucket.blob(f"companies/{media_id}")
 
