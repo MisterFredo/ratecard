@@ -55,14 +55,9 @@ export default function PartnerSignalCard({
     ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
     : null;
 
-  const isCompanyFallback = !visualRectId && !!companyVisualRectId;
-
   function openNews() {
     if (fromInternalClick.current) return;
 
-    /* ===============================
-       TRACKING GA
-    =============================== */
     trackEvent("open_news_drawer", {
       news_id: id,
       news_title: title,
@@ -80,13 +75,13 @@ export default function PartnerSignalCard({
     ? "border-ratecard-blue"
     : "border-ratecard-border";
 
-  const imageClass =
-    "absolute inset-0 w-full h-full object-contain";
+  const imageClass = "max-h-[85%] max-w-[85%] object-contain";
 
   /* ========================================================
      DRAWER MODE
   ======================================================== */
   if (openInDrawer) {
+    /* ================= FEATURED ================= */
     if (isFeatured) {
       return (
         <article
@@ -98,7 +93,7 @@ export default function PartnerSignalCard({
             h-full grid grid-rows-[auto_1fr]
           `}
         >
-          <div className="relative h-44 w-full bg-white overflow-hidden flex items-center justify-center">
+          <div className="relative w-full aspect-[3/2] bg-white overflow-hidden flex items-center justify-center">
             {visualSrc ? (
               <img src={visualSrc} alt={title} className={imageClass} />
             ) : (
@@ -136,6 +131,7 @@ export default function PartnerSignalCard({
       );
     }
 
+    /* ================= STANDARD DRAWER CARD ================= */
     return (
       <article
         onClick={openNews}
@@ -146,7 +142,7 @@ export default function PartnerSignalCard({
           h-full flex flex-col
         `}
       >
-        <div className="relative h-40 w-full overflow-hidden bg-ratecard-light">
+        <div className="relative h-40 w-full bg-white overflow-hidden flex items-center justify-center">
           {visualSrc ? (
             <img src={visualSrc} alt={title} className={imageClass} />
           ) : (
@@ -196,7 +192,7 @@ export default function PartnerSignalCard({
         border ${borderClass}
       `}
     >
-      <div className="relative h-44 w-full bg-ratecard-light overflow-hidden">
+      <div className="relative h-44 w-full bg-white overflow-hidden flex items-center justify-center">
         {visualSrc ? (
           <img
             src={visualSrc}
