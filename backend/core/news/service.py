@@ -149,6 +149,57 @@ def create_news(data: NewsCreate) -> str:
         )
 
     return news_id
+
+# ============================================================
+# DUPLICATE COMPANY VISUAL FOR NEWS
+# ============================================================
+
+def duplicate_company_visual_for_news(id_news: str, company_media_id: str) -> str:
+    from google.cloud import storage
+    from google.oauth2 import service_account
+    import os
+    import json
+
+    if not company_media_id or not company_media_id.startswith("COMPANY_"):
+        raise ValueError("MEDIA société invalide")
+
+    credentials_path = os.environ.get("GOOGLE_CREDENTIALS_FILE")
+    if not credentials_path:
+        raise ValueError("GOOGLE_CREDENTIALS_FILE non défini")
+
+    with open(credentials_path, "r") as f:
+        info = json.load(f)
+
+    credentials = service_account.Credentials.from_service_account_info(info)
+
+    storage_client = storage.Client(
+        credentials=credentials,
+        project=info.get("project_id"),
+    )
+
+    bucket = storage_client.bucket("ratecard-media")
+
+    source_blob = bucket.blob(f"companies/{company_media_id}")
+
+    if not source_blob.exists():
+        raise ValueError("Fichier société introuvable")
+
+    new_filename = f"NEWS_{id_news}_rect.jpg"
+    destination_blob = bucket.blob(f"news/{new_filename}")
+
+    destination_blob.rewrite(source_blob)
+
+    # Update BQ
+    update_bq(
+        TABLE_NEWS,
+        fields={
+            "MEDIA_RECTANGLE_ID": new_filename,
+            "HAS_VISUAL": True,
+        },
+        where={"ID_NEWS": id_news},
+    )
+
+    return new_filename
 # ============================================================
 # GET ONE NEWS / BRÈVE
 # ============================================================
