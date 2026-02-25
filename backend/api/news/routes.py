@@ -18,6 +18,7 @@ from core.news.service import (
     list_news_admin,
     list_companies_public,
     list_breves_public,
+    duplicate_company_visual_for_news,
     search_breves_public,
     get_breves_stats_public,
     get_news,
@@ -52,6 +53,33 @@ def create_route(data: NewsCreate):
         return {"status": "ok", "id_news": news_id}
     except Exception as e:
         logger.exception("Erreur création news")
+        raise HTTPException(400, str(e))
+
+# ============================================================
+# DUPLICATE COMPANY VISUAL
+# ============================================================
+
+@router.post("/visual/duplicate-company")
+def duplicate_company_visual_route(payload: dict):
+    try:
+        id_news = payload.get("id_news")
+        company_media_id = payload.get("company_media_id")
+
+        if not id_news or not company_media_id:
+            raise HTTPException(400, "Paramètres manquants")
+
+        filename = duplicate_company_visual_for_news(
+            id_news=id_news,
+            company_media_id=company_media_id,
+        )
+
+        return {
+            "status": "ok",
+            "filename": filename,
+        }
+
+    except Exception as e:
+        logger.exception("Erreur duplication visuel société")
         raise HTTPException(400, str(e))
 
 
