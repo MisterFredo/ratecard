@@ -638,7 +638,7 @@ def search_breves_public(
             company_name,
             is_partner,
             topics
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_ENRICHED`
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED`
         WHERE {where_sql}
         ORDER BY published_at DESC
         LIMIT @limit
@@ -680,7 +680,7 @@ def search_breves_public(
             company_name,
             is_partner,
             topics
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_ENRICHED`
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED`
         WHERE {where_sql}
           AND is_partner = TRUE
         ORDER BY published_at DESC
@@ -722,7 +722,7 @@ def get_breves_stats_public():
 
     global_rows = query_bq("""
         SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_GLOBAL`
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_STATS_GLOBAL`
     """)
 
     if global_rows:
@@ -737,7 +737,7 @@ def get_breves_stats_public():
 
     types_rows = query_bq("""
         SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TYPE`
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_STATS_TYPE`
         ORDER BY TOTAL DESC
     """)
 
@@ -753,7 +753,7 @@ def get_breves_stats_public():
 
     topics_rows = query_bq("""
         SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_TOPIC`
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_STATS_TOPIC`
         ORDER BY TOTAL DESC
     """)
 
@@ -771,7 +771,7 @@ def get_breves_stats_public():
 
     company_rows = query_bq("""
         SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NEWS_STATS_COMPANY`
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_STATS_COMPANY`
         ORDER BY TOTAL DESC
     """)
 
