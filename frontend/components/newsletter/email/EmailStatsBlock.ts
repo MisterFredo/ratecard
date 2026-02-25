@@ -13,19 +13,26 @@ export function EmailStatsBlock(topicStats: TopicStat[]) {
         (t) => `
 <tr>
   <td style="
-      padding:6px 0;
-      font-size:15px;
+      padding:10px 0;
+      font-size:16px;
       font-family:Arial,Helvetica,sans-serif;
-      line-height:1.6;
-      color:#111827;
+      line-height:1.7;
+      color:#0F172A;
     ">
     <span style="font-weight:600;">
       ${t.label}
     </span>
-    : ${t.last_30_days}
     <span style="
-        color:#6B7280;
+        font-weight:600;
+        margin-left:6px;
+      ">
+      ${t.last_30_days}
+    </span>
+    <span style="
+        color:#94A3B8;
         font-weight:400;
+        margin-left:6px;
+        font-size:14px;
       ">
       (${t.total})
     </span>
@@ -39,29 +46,31 @@ export function EmailStatsBlock(topicStats: TopicStat[]) {
   return `
 <tr>
 <td style="
-    padding:42px 0 38px 0;
-    border-top:1px solid #E5E7EB;
-    border-bottom:1px solid #E5E7EB;
+    padding:56px 0 48px 0;
+    border-top:1px solid #F1F5F9;
+    border-bottom:1px solid #F1F5F9;
     font-family:Arial,Helvetica,sans-serif;
   ">
 
   <!-- TITLE -->
   <div style="
-      font-size:13px;
+      font-size:12px;
       font-weight:700;
-      letter-spacing:0.08em;
+      letter-spacing:0.18em;
       text-transform:uppercase;
-      color:#111827;
-      margin-bottom:20px;
+      color:#94A3B8;
+      margin-bottom:10px;
     ">
-    Baromètre des sujets — 
-    <span style="
-        font-weight:400;
-        text-transform:none;
-        color:#6B7280;
-      ">
-      30 derniers jours
-    </span>
+    Baromètre
+  </div>
+
+  <div style="
+      font-size:20px;
+      font-weight:700;
+      color:#0F172A;
+      margin-bottom:28px;
+    ">
+    Les sujets les plus actifs — 30 derniers jours
   </div>
 
   <!-- COLUMNS -->
@@ -73,7 +82,7 @@ export function EmailStatsBlock(topicStats: TopicStat[]) {
         class="stack-column"
         style="
           width:50%;
-          padding-right:24px;
+          padding-right:28px;
           vertical-align:top;
         "
       >
