@@ -80,9 +80,8 @@ export default function PartnerSignalCard({
     ? "border-ratecard-blue"
     : "border-ratecard-border";
 
-  const imageClass = isCompanyFallback
-    ? "absolute inset-0 w-full h-full object-contain p-8"
-    : "absolute inset-0 w-full h-full object-cover";
+  const imageClass =
+    "absolute inset-0 w-full h-full object-contain";
 
   /* ========================================================
      DRAWER MODE
@@ -99,7 +98,7 @@ export default function PartnerSignalCard({
             h-full grid grid-rows-[auto_1fr]
           `}
         >
-          <div className="relative h-44 w-full bg-ratecard-light overflow-hidden flex items-center justify-center">
+          <div className="relative h-44 w-full bg-white overflow-hidden flex items-center justify-center">
             {visualSrc ? (
               <img src={visualSrc} alt={title} className={imageClass} />
             ) : (
