@@ -13,13 +13,13 @@ export function EmailStatsBlock(topicStats: TopicStat[]) {
         (t) => `
 <tr>
   <td style="
-      padding:10px 0;
-      font-size:16px;
+      padding:8px 0;
+      font-size:15px;
       font-family:Arial,Helvetica,sans-serif;
-      line-height:1.7;
-      color:#0F172A;
+      line-height:1.6;
+      color:#1F2937;
     ">
-    <span style="font-weight:600;">
+    <span style="font-weight:500;">
       ${t.label}
     </span>
     <span style="
@@ -29,7 +29,7 @@ export function EmailStatsBlock(topicStats: TopicStat[]) {
       ${t.last_30_days}
     </span>
     <span style="
-        color:#94A3B8;
+        color:#9CA3AF;
         font-weight:400;
         margin-left:6px;
         font-size:14px;
@@ -46,39 +46,38 @@ export function EmailStatsBlock(topicStats: TopicStat[]) {
   return `
 <tr>
 <td style="
-    padding:64px 0;
+    padding:40px 0;
     border-top:1px solid #F1F5F9;
     border-bottom:1px solid #F1F5F9;
     font-family:Arial,Helvetica,sans-serif;
   ">
 
-  <!-- OUTER WRAPPER -->
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
       <td style="
           background:#F8FAFC;
-          padding:36px 32px;
-          border-radius:12px;
+          padding:26px 24px;
+          border-radius:8px;
         ">
 
         <!-- LABEL -->
         <div style="
-            font-size:12px;
-            font-weight:700;
-            letter-spacing:0.18em;
+            font-size:11px;
+            font-weight:600;
+            letter-spacing:0.16em;
             text-transform:uppercase;
             color:#94A3B8;
-            margin-bottom:10px;
+            margin-bottom:8px;
           ">
           Baromètre
         </div>
 
         <!-- TITLE -->
         <div style="
-            font-size:20px;
-            font-weight:700;
-            color:#0F172A;
-            margin-bottom:28px;
+            font-size:18px;
+            font-weight:600;
+            color:#111827;
+            margin-bottom:20px;
           ">
           Les sujets les plus actifs — 30 derniers jours
         </div>
@@ -92,7 +91,7 @@ export function EmailStatsBlock(topicStats: TopicStat[]) {
               class="stack-column"
               style="
                 width:50%;
-                padding-right:28px;
+                padding-right:20px;
                 vertical-align:top;
               "
             >
