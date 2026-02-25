@@ -25,8 +25,8 @@ export function EmailNewsBlock(news: any[]) {
       return `
 <tr>
 <td style="
-    padding:36px 0;
-    border-bottom:1px solid #E5E7EB;
+    padding:44px 0;
+    border-bottom:1px solid #F1F5F9;
     font-family:Arial,Helvetica,sans-serif;
   ">
 
@@ -42,8 +42,8 @@ export function EmailNewsBlock(news: any[]) {
             align="center"
             class="stack-column"
             style="
-              width:160px;
-              padding-right:24px;
+              width:190px;
+              padding-right:28px;
               vertical-align:top;
             "
           >
@@ -55,8 +55,8 @@ export function EmailNewsBlock(news: any[]) {
                 style="
                   display:block;
                   width:100%;
-                  max-width:150px;
-                  border-radius:8px;
+                  max-width:180px;
+                  border-radius:10px;
                 " 
               />
             </a>
@@ -77,8 +77,9 @@ export function EmailNewsBlock(news: any[]) {
         <!-- DATE -->
         <div style="
             font-size:12px;
-            color:#6B7280;
-            margin-bottom:8px;
+            color:#9CA3AF;
+            margin-bottom:10px;
+            letter-spacing:0.02em;
           ">
           ${new Date(n.published_at).toLocaleDateString("fr-FR")}
         </div>
@@ -86,11 +87,11 @@ export function EmailNewsBlock(news: any[]) {
         <!-- TITLE -->
         <a href="${newsUrl}" 
            target="_blank"
-           style="text-decoration:none;color:#111827;">
+           style="text-decoration:none;color:#0F172A;">
           <div style="
-              font-size:20px;
+              font-size:22px;
               font-weight:700;
-              margin-bottom:12px;
+              margin-bottom:14px;
               line-height:1.35;
             ">
             ${escapeHtml(n.title)}
@@ -98,7 +99,7 @@ export function EmailNewsBlock(news: any[]) {
         </a>
 
         <!-- TAGS -->
-        <div style="margin-bottom:10px;">
+        <div style="margin-bottom:14px;">
           ${tags}
         </div>
 
@@ -107,10 +108,9 @@ export function EmailNewsBlock(news: any[]) {
           n.excerpt
             ? `
             <div style="
-                font-size:15px;
-                color:#374151;
-                margin-top:10px;
-                line-height:1.6;
+                font-size:16px;
+                color:#334155;
+                line-height:1.7;
               ">
                 ${escapeHtml(n.excerpt)}
               </div>
@@ -132,16 +132,17 @@ export function EmailNewsBlock(news: any[]) {
   return `
 <tr>
 <td style="
-    padding-top:42px;
+    padding-top:56px;
+    padding-bottom:10px;
     font-family:Arial,Helvetica,sans-serif;
   ">
   <div style="
-      font-size:13px;
+      font-size:12px;
       font-weight:700;
-      letter-spacing:0.08em;
+      letter-spacing:0.18em;
       text-transform:uppercase;
-      color:#111827;
-      margin-bottom:22px;
+      color:#94A3B8;
+      margin-bottom:28px;
     ">
     Actualités
   </div>
