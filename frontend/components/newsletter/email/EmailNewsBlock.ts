@@ -133,6 +133,8 @@ export function EmailNewsBlock(news: any[]) {
 <tr>
 <td style="
     padding-top:42px;
+    padding-left:4px;
+    padding-right:4px;
     font-family:Arial,Helvetica,sans-serif;
   ">
   <div style="
