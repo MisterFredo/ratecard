@@ -338,7 +338,7 @@ TITLE
 - Doit refléter le signal principal
 
 EXCERPT
-- 2 à 3 phrases maximum
+- 3 phrases
 - Résume l’annonce
 - Met en évidence l’enjeu
 
