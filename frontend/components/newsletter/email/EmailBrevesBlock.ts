@@ -25,8 +25,8 @@ export function EmailBrevesBlock(breves: any[]) {
       return `
 <tr>
 <td style="
-    padding:36px 0;
-    border-bottom:1px solid #F1F5F9;
+    padding:32px 0;
+    border-bottom:1px solid #E5E7EB;
     font-family:Arial,Helvetica,sans-serif;
   ">
 
@@ -42,8 +42,8 @@ export function EmailBrevesBlock(breves: any[]) {
             align="center"
             class="stack-column"
             style="
-              width:150px;
-              padding-right:24px;
+              width:130px;
+              padding-right:22px;
               vertical-align:top;
             "
           >
@@ -55,8 +55,8 @@ export function EmailBrevesBlock(breves: any[]) {
                 style="
                   display:block;
                   width:100%;
-                  max-width:130px;
-                  border-radius:10px;
+                  max-width:110px;
+                  border-radius:8px;
                 "
               />
             </a>
@@ -69,25 +69,27 @@ export function EmailBrevesBlock(breves: any[]) {
       <td
         valign="top"
         class="stack-column"
-        style="vertical-align:top;"
+        style="
+          vertical-align:top;
+        "
       >
 
         <!-- TITLE -->
         <a href="${breveUrl}"
            target="_blank"
-           style="text-decoration:none;color:#0F172A;">
+           style="text-decoration:none;color:#111827;">
           <div style="
-              font-size:18px;
+              font-size:17px;
               font-weight:700;
-              margin-bottom:12px;
-              line-height:1.4;
+              margin-bottom:10px;
+              line-height:1.35;
             ">
             ${escapeHtml(b.title)}
           </div>
         </a>
 
         <!-- TAGS -->
-        <div style="margin-bottom:12px;">
+        <div style="margin-bottom:8px;">
           ${tags}
         </div>
 
@@ -97,8 +99,9 @@ export function EmailBrevesBlock(breves: any[]) {
             ? `
             <div style="
                 font-size:15px;
-                color:#334155;
-                line-height:1.65;
+                color:#374151;
+                margin-top:10px;
+                line-height:1.6;
               ">
                 ${escapeHtml(b.excerpt)}
               </div>
@@ -107,16 +110,16 @@ export function EmailBrevesBlock(breves: any[]) {
         }
 
         <!-- CTA -->
-        <div style="margin-top:16px;">
+        <div style="margin-top:14px;">
           <a href="${breveUrl}"
              target="_blank"
              style="
                 font-size:13px;
                 font-weight:600;
-                color:#2563EB;
+                color:#111827;
                 text-decoration:none;
              ">
-             Lire la brève →
+             Lire →
           </a>
         </div>
 
@@ -134,17 +137,16 @@ export function EmailBrevesBlock(breves: any[]) {
   return `
 <tr>
 <td style="
-    padding-top:52px;
-    padding-bottom:10px;
+    padding-top:40px;
     font-family:Arial,Helvetica,sans-serif;
   ">
   <div style="
-      font-size:12px;
+      font-size:13px;
       font-weight:700;
-      letter-spacing:0.18em;
+      letter-spacing:0.08em;
       text-transform:uppercase;
-      color:#94A3B8;
-      margin-bottom:26px;
+      color:#111827;
+      margin-bottom:22px;
     ">
     Brèves
   </div>
