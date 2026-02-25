@@ -7,10 +7,8 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 type Props = {
   newsId: string;
-
-  mediaId: string | null;              // VISUEL NEWS
-  companyMediaId?: string | null;       // FALLBACK SOCIÉTÉ
-
+  mediaId: string | null;
+  companyMediaId?: string | null;
   onUpdated: (mediaId: string) => void;
   onNext: () => void;
 };
@@ -60,6 +58,31 @@ export default function NewsStepVisual({
     setLoading(false);
   }
 
+  async function duplicateCompanyVisual() {
+    if (!companyMediaId) return;
+
+    setLoading(true);
+
+    try {
+      const res = await api.post("/visuals/news/duplicate-company", {
+        id_news: newsId,
+        company_media_id: companyMediaId,
+      });
+
+      if (res.status !== "ok" || !res.filename) {
+        throw new Error("Duplication échouée");
+      }
+
+      onUpdated(res.filename);
+      onNext();
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur duplication visuel société");
+    }
+
+    setLoading(false);
+  }
+
   const visualSrc = mediaId
     ? `${GCS_BASE_URL}/news/${mediaId}`
     : companyMediaId
@@ -77,7 +100,7 @@ export default function NewsStepVisual({
       <p className="text-sm text-gray-600">
         Vous pouvez utiliser un visuel spécifique à la news.
         <br />
-        À défaut, le visuel de la société sera utilisé automatiquement.
+        À défaut, le visuel de la société sera utilisé.
       </p>
 
       {loading && <p className="text-gray-500">Traitement…</p>}
@@ -88,7 +111,7 @@ export default function NewsStepVisual({
 
           {isCompanyFallback && (
             <div className="absolute bottom-2 right-2 text-xs text-gray-500 bg-white/80 px-2 py-1 rounded">
-              Visuel société (fallback)
+              Visuel société (à confirmer)
             </div>
           )}
         </div>
@@ -106,9 +129,24 @@ export default function NewsStepVisual({
         }
       />
 
-      <div className="pt-4">
+      <div className="pt-4 flex gap-3">
+        {isCompanyFallback && (
+          <button
+            onClick={duplicateCompanyVisual}
+            className="bg-gray-200 px-4 py-2 rounded"
+          >
+            Utiliser le visuel société
+          </button>
+        )}
+
         <button
-          onClick={onNext}
+          onClick={async () => {
+            if (isCompanyFallback) {
+              await duplicateCompanyVisual();
+            } else {
+              onNext();
+            }
+          }}
           disabled={!visualSrc}
           className="bg-ratecard-blue text-white px-4 py-2 rounded disabled:opacity-50"
         >
