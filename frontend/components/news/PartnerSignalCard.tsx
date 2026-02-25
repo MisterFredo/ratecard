@@ -81,7 +81,7 @@ export default function PartnerSignalCard({
     : "border-ratecard-border";
 
   const imageClass = isCompanyFallback
-    ? "absolute inset-0 w-full h-full object-contain p-2"
+    ? "max-h-[70%] max-w-[70%] object-contain"
     : "absolute inset-0 w-full h-full object-cover";
 
   /* ========================================================
@@ -99,7 +99,7 @@ export default function PartnerSignalCard({
             h-full grid grid-rows-[auto_1fr]
           `}
         >
-          <div className="relative w-full aspect-[3/2] overflow-hidden bg-ratecard-light">
+          <div className="relative h-44 w-full bg-ratecard-light overflow-hidden flex items-center justify-center">
             {visualSrc ? (
               <img src={visualSrc} alt={title} className={imageClass} />
             ) : (
