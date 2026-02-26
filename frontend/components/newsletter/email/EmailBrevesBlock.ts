@@ -109,20 +109,6 @@ export function EmailBrevesBlock(breves: any[]) {
             : ""
         }
 
-        <!-- CTA -->
-        <div style="margin-top:14px;">
-          <a href="${breveUrl}"
-             target="_blank"
-             style="
-                font-size:13px;
-                font-weight:600;
-                color:#111827;
-                text-decoration:none;
-             ">
-             Lire →
-          </a>
-        </div>
-
       </td>
 
     </tr>
