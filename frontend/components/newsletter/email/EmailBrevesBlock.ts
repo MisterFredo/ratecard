@@ -25,7 +25,7 @@ export function EmailBrevesBlock(breves: any[]) {
       return `
 <tr>
 <td style="
-    padding:32px 0;
+    padding:32px 16px;
     border-bottom:1px solid #E5E7EB;
     font-family:Arial,Helvetica,sans-serif;
   ">
@@ -42,23 +42,32 @@ export function EmailBrevesBlock(breves: any[]) {
             align="center"
             class="stack-column"
             style="
-              width:130px;
+              width:150px;
               padding-right:22px;
               vertical-align:top;
             "
           >
             <a href="${breveUrl}" target="_blank" style="text-decoration:none;">
-              <img 
-                src="${imageUrl}"
-                alt=""
-                class="responsive-img thumb-img"
-                style="
-                  display:block;
-                  width:100%;
-                  max-width:110px;
-                  border-radius:8px;
-                "
-              />
+              <div style="
+                width:130px;
+                height:95px;
+                background:#FFFFFF;
+                border:1px solid #F3F4F6;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+              ">
+                <img 
+                  src="${imageUrl}"
+                  alt=""
+                  style="
+                    max-width:85%;
+                    max-height:85%;
+                    height:auto;
+                    display:block;
+                  "
+                />
+              </div>
             </a>
           </td>
           `
@@ -69,9 +78,7 @@ export function EmailBrevesBlock(breves: any[]) {
       <td
         valign="top"
         class="stack-column"
-        style="
-          vertical-align:top;
-        "
+        style="vertical-align:top;"
       >
 
         <!-- TITLE -->
@@ -101,7 +108,7 @@ export function EmailBrevesBlock(breves: any[]) {
                 font-size:15px;
                 color:#374151;
                 margin-top:10px;
-                line-height:1.2;
+                line-height:1.4;
               ">
                 ${escapeHtml(b.excerpt)}
               </div>
