@@ -145,6 +145,20 @@ export default function DigestHeaderConfig({
           className="border border-gray-200 rounded px-3 py-1.5 text-sm col-span-2"
         />
 
+        {/* PÉRIODE */}
+        <input
+          type="text"
+          placeholder="Période (ex : semaine du 27 février 2026)"
+          value={headerConfig.period ?? ""}
+          onChange={(e) =>
+            setHeaderConfig((prev) => ({
+              ...prev,
+              period: e.target.value,
+            }))
+          }
+          className="border border-gray-200 rounded px-3 py-1.5 text-sm col-span-2"
+        />
+
         {/* SOUS-TITRE */}
         <input
           type="text"
