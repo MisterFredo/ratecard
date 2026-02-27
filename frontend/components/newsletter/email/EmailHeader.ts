@@ -10,17 +10,31 @@ export function EmailHeader(
       : null;
 
   return `
+<!-- TOP SIGNATURE BAR -->
+<tr>
+  <td colspan="2" style="
+      height:6px;
+      background:#84CC16;
+      line-height:6px;
+      font-size:0;
+    ">
+    &nbsp;
+  </td>
+</tr>
+
+<!-- HERO HEADER -->
 <tr>
 <td colspan="2" style="
-    padding:48px 32px 40px 32px;
+    padding:64px 40px 56px 40px;
     text-align:center;
     font-family:Arial,Helvetica,sans-serif;
-    background:#F9FAFB;
+    background:#FFFFFF;
+    border-bottom:1px solid #E5E7EB;
   ">
 
   ${
     logo
-      ? `<div style="margin-bottom:24px;">
+      ? `<div style="margin-bottom:36px;">
           <img 
             src="${logo}"
             width="170"
@@ -31,13 +45,31 @@ export function EmailHeader(
   }
 
   ${
+    headerConfig.subtitle
+      ? `<div style="
+          font-size:12px;
+          letter-spacing:0.18em;
+          text-transform:uppercase;
+          color:#6B7280;
+          margin-bottom:18px;
+          font-weight:600;
+        ">
+          ${headerConfig.subtitle}
+        </div>`
+      : ""
+  }
+
+  ${
     headerConfig.title
       ? `<div style="
-          font-size:26px;
+          font-size:34px;
           font-weight:700;
           color:#111827;
-          margin-bottom:16px;
-          line-height:1.3;
+          line-height:1.2;
+          margin-bottom:14px;
+          max-width:700px;
+          margin-left:auto;
+          margin-right:auto;
         ">
           ${headerConfig.title}
         </div>`
@@ -45,13 +77,15 @@ export function EmailHeader(
   }
 
   ${
-    headerConfig.subtitle
+    headerConfig.headerCompany?.period_label
       ? `<div style="
-          font-size:15px;
-          color:#6B7280;
-          margin-bottom:18px;
+          font-size:26px;
+          font-weight:700;
+          color:#84CC16;
+          line-height:1.3;
+          margin-bottom:10px;
         ">
-          ${headerConfig.subtitle}
+          ${headerConfig.headerCompany.period_label}
         </div>`
       : ""
   }
@@ -60,10 +94,10 @@ export function EmailHeader(
     introText
       ? `<div style="
           font-size:16px;
-          color:#374151;
-          line-height:1.6;
-          max-width:560px;
-          margin:0 auto;
+          color:#4B5563;
+          line-height:1.7;
+          max-width:580px;
+          margin:24px auto 0 auto;
           text-align:left;
         ">
           ${introText.replace(/\n/g, "<br/>")}
@@ -72,12 +106,6 @@ export function EmailHeader(
   }
 
 </td>
-</tr>
-
-<tr>
-<td colspan="2" style="
-    border-bottom:1px solid #E5E7EB;
-  "></td>
 </tr>
 `;
 }
