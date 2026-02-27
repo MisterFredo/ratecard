@@ -45,6 +45,7 @@ export default function DigestPage() {
   const [headerConfig, setHeaderConfig] =
     useState<HeaderConfig>({
       title: "Newsletter Ratecard",
+      subtitle: "",
       period: "",
       headerCompany: undefined,
       showTopicStats: false,
