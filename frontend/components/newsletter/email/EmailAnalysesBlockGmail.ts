@@ -21,78 +21,99 @@ export function EmailAnalysesBlockGmail(
   if (!analyses.length) return "";
 
   const rows = analyses
-    .map((a) => {
-      const analysisUrl =
-        `${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}`;
-
-      return `
-<div style="
-    margin-bottom:40px;
+    .map(
+      (a) => `
+<tr>
+<td style="
+    padding:34px 0;
+    border-bottom:1px solid #E5E7EB;
+    font-family:Arial,Helvetica,sans-serif;
   ">
 
-  <a href="${analysisUrl}"
-     target="_blank"
-     style="text-decoration:none;color:#111827;">
-    <div style="
-        font-size:18px;
-        font-weight:700;
-        margin-bottom:6px;
-        line-height:1.3;
-      ">
-      ${escapeHtml(a.title)}
-    </div>
-  </a>
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+    <tr>
+      <td valign="top" style="vertical-align:top;">
 
-  <div style="
-      font-size:13px;
-      color:#6B7280;
-      margin-bottom:10px;
-    ">
-    ${formatDate(a.published_at)}
-  </div>
+        <!-- DATE -->
+        <div style="
+            font-size:12px;
+            color:#6B7280;
+            margin-bottom:10px;
+          ">
+          ${formatDate(a.published_at)}
+        </div>
 
-  ${
-    a.excerpt
-      ? `
-      <div style="
-          font-size:15px;
-          color:#374151;
-          line-height:1.7;
-          margin-bottom:12px;
-        ">
-        ${escapeHtml(a.excerpt)}
-      </div>
-      `
-      : ""
-  }
+        <!-- TITLE -->
+        <a href="${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}"
+           target="_blank"
+           style="text-decoration:none;color:#111827;">
+          <div style="
+              font-size:22px;
+              font-weight:700;
+              line-height:1.35;
+              margin-bottom:14px;
+            ">
+            ${escapeHtml(a.title)}
+          </div>
+        </a>
 
-  <a href="${analysisUrl}"
-     target="_blank"
-     style="
-        font-size:14px;
-        font-weight:600;
-        color:#111827;
-        text-decoration:none;
-     ">
-     Lire l’analyse complète →
-  </a>
+        <!-- EXCERPT -->
+        ${
+          a.excerpt
+            ? `
+            <div style="
+                font-size:16px;
+                line-height:1.7;
+                color:#374151;
+                margin-bottom:20px;
+              ">
+                ${escapeHtml(a.excerpt)}
+              </div>
+            `
+            : ""
+        }
 
-</div>
-`;
-    })
+        <!-- CTA -->
+        <a href="${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}"
+           target="_blank"
+           style="
+              font-size:14px;
+              font-weight:600;
+              color:#111827;
+              text-decoration:none;
+              border-bottom:1px solid #111827;
+              padding-bottom:2px;
+           ">
+          Lire l’analyse complète
+        </a>
+
+      </td>
+    </tr>
+  </table>
+
+</td>
+</tr>
+`
+    )
     .join("");
 
   return `
-<div style="
-    font-size:13px;
-    font-weight:600;
-    color:#6B7280;
-    margin:48px 0 20px 0;
-    text-transform:uppercase;
-    letter-spacing:0.06em;
+<tr>
+<td style="
+    padding:42px 0 18px 0;
+    font-family:Arial,Helvetica,sans-serif;
   ">
-  Analyses
-</div>
+  <div style="
+      font-size:13px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+      color:#111827;
+    ">
+    Analyses
+  </div>
+</td>
+</tr>
 
 ${rows}
 `;
