@@ -124,8 +124,6 @@ export function EmailBrevesBlock(breves: any[]) {
 <tr>
 <td style="
     padding-top:40px;
-    padding-left:0px;
-    padding-right:0px;
     font-family:Arial,Helvetica,sans-serif;
   ">
   <div style="
