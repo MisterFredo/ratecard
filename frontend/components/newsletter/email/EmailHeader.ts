@@ -61,6 +61,7 @@ export function EmailHeader(
           line-height:1.6;
           max-width:560px;
           margin:0 auto;
+          text-align:left;
         ">
           ${introText.replace(/\n/g, "<br/>")}
         </div>`
