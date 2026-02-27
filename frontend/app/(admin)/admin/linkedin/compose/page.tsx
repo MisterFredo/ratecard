@@ -6,7 +6,8 @@ import NewsletterSelector from "@/components/newsletter/NewsletterSelector";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-const SITE_URL = "https://ratecard-frontend.onrender.com";
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://ratecard.fr";
 
 /* =========================================================
    UTILS — LINKEDIN FORMAT
