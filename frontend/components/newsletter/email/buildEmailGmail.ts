@@ -31,14 +31,29 @@ export function buildEmailGmail({
   topicStats = [],
 }: Props) {
 
-  const content = `
-    ${EmailHeaderGmail(headerConfig, introText)}
-    ${EmailNewsBlockGmail(news)}
-    ${EmailStatsBlockGmail(topicStats)}
-    ${EmailBrevesBlockGmail(breves)}
-    ${EmailAnalysesBlockGmail(analyses)}
-    ${EmailSignatureGmail()}
-  `;
+  const blocks = [
+    EmailHeaderGmail(headerConfig, introText),
 
-  return EmailLayoutGmail(content);
+    news.length > 0
+      ? EmailNewsBlockGmail(news)
+      : "",
+
+    topicStats.length > 0
+      ? EmailStatsBlockGmail(topicStats)
+      : "",
+
+    breves.length > 0
+      ? EmailBrevesBlockGmail(breves)
+      : "",
+
+    analyses.length > 0
+      ? EmailAnalysesBlockGmail(analyses)
+      : "",
+
+    EmailSignatureGmail(),
+  ]
+    .filter(Boolean)
+    .join("");
+
+  return EmailLayoutGmail(blocks);
 }
