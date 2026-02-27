@@ -38,15 +38,20 @@ export default function DigestPage() {
   const [selectedTypes, setSelectedTypes] =
     useState<SelectOption[]>([]);
 
+  /* =========================================
+     HEADER CONFIG — VERSION PROPRE
+  ========================================= */
+
   const [headerConfig, setHeaderConfig] =
     useState<HeaderConfig>({
       title: "Newsletter Ratecard",
-      subtitle: "",
+      period: "",
       headerCompany: undefined,
       showTopicStats: false,
     });
 
   const [introText, setIntroText] = useState("");
+
   const [editorialOrder, setEditorialOrder] =
     useState<EditorialItem[]>([]);
 
@@ -155,8 +160,10 @@ export default function DigestPage() {
       </h1>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_1.3fr] gap-6 items-start">
+
         {/* LEFT PANEL */}
         <div className="space-y-5">
+
           <DigestHeaderConfig
             headerConfig={headerConfig}
             setHeaderConfig={setHeaderConfig}
@@ -164,7 +171,6 @@ export default function DigestPage() {
             setIntroText={setIntroText}
           />
 
-          {/* Visible admin uniquement */}
           <DigestTopicStats period={30} />
 
           <DigestEngine
@@ -194,7 +200,7 @@ export default function DigestPage() {
           />
         </div>
 
-        {/* RIGHT PANEL */}
+        {/* RIGHT PANEL — PREVIEW */}
         <div className="sticky top-6 h-[calc(100vh-4rem)] overflow-y-auto pr-2">
           <DigestPreviewPanel
             headerConfig={headerConfig}
@@ -205,6 +211,7 @@ export default function DigestPage() {
             topicStats={topicStats}
           />
         </div>
+
       </div>
     </div>
   );
