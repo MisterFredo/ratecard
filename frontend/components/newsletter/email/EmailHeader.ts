@@ -30,7 +30,7 @@ export function EmailHeader(
   ${
     headerConfig.title
       ? `<div style="
-          font-size:24px;
+          font-size:20px;
           font-weight:700;
           color:#111827;
           margin-bottom:8px;
@@ -58,7 +58,7 @@ export function EmailHeader(
       ? `<div style="
           font-size:15px;
           color:#374151;
-          line-height:1.6;
+          line-height:1.4;
           max-width:560px;
           margin:0 auto;
           text-align:left;
