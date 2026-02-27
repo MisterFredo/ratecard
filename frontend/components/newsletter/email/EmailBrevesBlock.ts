@@ -133,6 +133,7 @@ export function EmailBrevesBlock(breves: any[]) {
       text-transform:uppercase;
       color:#111827;
       margin-bottom:22px;
+      padding-left:8px;
     ">
     Brèves
   </div>
