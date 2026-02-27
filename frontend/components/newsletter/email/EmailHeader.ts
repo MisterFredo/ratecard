@@ -22,7 +22,7 @@ export function EmailHeader(
   </td>
 </tr>
 
-<!-- HERO HEADER -->
+<!-- HERO -->
 <tr>
 <td colspan="2" style="
     padding:64px 40px 56px 40px;
@@ -66,7 +66,9 @@ export function EmailHeader(
           font-weight:700;
           color:#111827;
           line-height:1.2;
-          margin-bottom:14px;
+          margin-bottom:${
+            headerConfig.period ? "14px" : "0"
+          };
           max-width:700px;
           margin-left:auto;
           margin-right:auto;
@@ -77,7 +79,7 @@ export function EmailHeader(
   }
 
   ${
-    headerConfig.headerCompany?.period_label
+    headerConfig.period
       ? `<div style="
           font-size:26px;
           font-weight:700;
@@ -85,7 +87,7 @@ export function EmailHeader(
           line-height:1.3;
           margin-bottom:10px;
         ">
-          ${headerConfig.headerCompany.period_label}
+          ${headerConfig.period}
         </div>`
       : ""
   }
