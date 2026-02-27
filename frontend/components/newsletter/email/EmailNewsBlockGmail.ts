@@ -30,92 +30,133 @@ export function EmailNewsBlockGmail(
       });
 
       return `
-<div style="
-    margin-bottom:36px;
+<tr>
+<td style="
+    padding:36px 16px;
+    border-bottom:1px solid #E5E7EB;
+    font-family:Arial,Helvetica,sans-serif;
   ">
 
-  <table width="100%" cellpadding="0" cellspacing="0">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
 
       ${
         imageUrl
           ? `
-          <td width="100" valign="top" style="padding-right:16px;">
-            <a href="${newsUrl}" target="_blank">
-              <img src="${imageUrl}"
-                   width="90"
-                   style="display:block;border-radius:6px;" />
+          <!-- IMAGE COLUMN -->
+          <td
+            valign="top"
+            align="center"
+            style="
+              width:180px;
+              padding-right:24px;
+              vertical-align:top;
+            "
+          >
+            <a href="${newsUrl}" target="_blank" style="text-decoration:none;">
+              <div style="
+                width:160px;
+                height:120px;
+                background:#FFFFFF;
+                border:1px solid #F3F4F6;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+              ">
+                <img 
+                  src="${imageUrl}" 
+                  alt=""
+                  style="
+                    max-width:85%;
+                    max-height:85%;
+                    height:auto;
+                    display:block;
+                  "
+                />
+              </div>
             </a>
           </td>
           `
           : ""
       }
 
-      <td valign="top">
+      <!-- TEXT COLUMN -->
+      <td valign="top" style="vertical-align:top;">
 
-        <a href="${newsUrl}"
+        <!-- DATE -->
+        <div style="
+            font-size:12px;
+            color:#6B7280;
+            margin-bottom:8px;
+          ">
+          ${new Date(n.published_at).toLocaleDateString("fr-FR")}
+        </div>
+
+        <!-- TITLE -->
+        <a href="${newsUrl}" 
            target="_blank"
            style="text-decoration:none;color:#111827;">
           <div style="
-              font-size:17px;
-              font-weight:600;
-              margin-bottom:6px;
+              font-size:20px;
+              font-weight:700;
+              margin-bottom:12px;
               line-height:1.35;
             ">
             ${escapeHtml(n.title)}
           </div>
         </a>
 
-        <div style="margin-bottom:8px;">
+        <!-- TAGS -->
+        <div style="margin-bottom:10px;">
           ${tags}
         </div>
 
+        <!-- EXCERPT -->
         ${
           n.excerpt
             ? `
             <div style="
                 font-size:15px;
                 color:#374151;
-                line-height:1.6;
-                margin-bottom:8px;
+                margin-top:10px;
+                line-height:1.4;
               ">
-              ${escapeHtml(n.excerpt)}
-            </div>
+                ${escapeHtml(n.excerpt)}
+              </div>
             `
             : ""
         }
-
-        <a href="${newsUrl}"
-           target="_blank"
-           style="
-              font-size:14px;
-              color:#6B7280;
-              text-decoration:none;
-           ">
-          Lire l’article →
-        </a>
 
       </td>
 
     </tr>
   </table>
 
-</div>
+</td>
+</tr>
 `;
     })
     .join("");
 
   return `
-<div style="
-    font-size:13px;
-    font-weight:600;
-    color:#6B7280;
-    margin-bottom:20px;
-    text-transform:uppercase;
-    letter-spacing:0.06em;
+<tr>
+<td style="
+    padding-top:42px;
+    font-family:Arial,Helvetica,sans-serif;
   ">
-  Actualités
-</div>
+  <div style="
+      font-size:13px;
+      font-weight:700;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+      color:#111827;
+      margin-bottom:22px;
+      padding-left:8px;
+    ">
+    Actualités
+  </div>
+</td>
+</tr>
 
 ${rows}
 `;
