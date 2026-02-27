@@ -67,7 +67,7 @@ export function EmailHeader(
           color:#111827;
           line-height:1.2;
           margin-bottom:${
-            headerConfig.period ? "14px" : "0"
+            headerConfig.period ? "14px" : "18px"
           };
           max-width:700px;
           margin-left:auto;
@@ -81,7 +81,7 @@ export function EmailHeader(
   ${
     headerConfig.period
       ? `<div style="
-          font-size:26px;
+          font-size:24px;
           font-weight:700;
           color:#84CC16;
           line-height:1.3;
