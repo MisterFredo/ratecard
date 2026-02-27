@@ -24,7 +24,7 @@ type Props = {
 
 export function buildEmailGmail({
   headerConfig,
-  introText,
+  introText, // peut rester dans Props si utilisé ailleurs
   news,
   breves,
   analyses,
@@ -32,7 +32,7 @@ export function buildEmailGmail({
 }: Props) {
 
   const blocks = [
-    EmailHeaderGmail(headerConfig, introText),
+    EmailHeaderGmail(headerConfig),
 
     news.length > 0
       ? EmailNewsBlockGmail(news)
