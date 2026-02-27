@@ -30,7 +30,7 @@ export function EmailHeader(
   ${
     headerConfig.title
       ? `<div style="
-          font-size:28px;
+          font-size:24px;
           font-weight:700;
           color:#111827;
           margin-bottom:8px;
