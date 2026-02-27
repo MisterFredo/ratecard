@@ -38,6 +38,10 @@ export type HeaderConfig = {
   title: string;
   subtitle?: string;
 
+  // 👇 Nouveau champ pour séparer le titre principal
+  // de la période (ex: "semaine du 27 février 2026")
+  period?: string;
+
   // Société sélectionnée pour le logo header
   headerCompany?: HeaderCompany;
 
