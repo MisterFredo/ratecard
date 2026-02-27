@@ -15,7 +15,7 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 type MemberData = {
   id_company: string;
   name: string;
-  description?: string | null; // ⚠️ HTML
+  description?: string | null;
   media_logo_rectangle_id?: string | null;
   news: {
     id_news: string;
@@ -47,16 +47,15 @@ export default function MemberDrawer({ id, onClose }: Props) {
   const [data, setData] = useState<MemberData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  /* ---------------------------------------------------------
-     FERMETURE DU DRAWER (GAUCHE)
-     → dépend du mode d’ouverture
-  --------------------------------------------------------- */
+  /* =========================================================
+     CLOSE
+  ========================================================= */
+
   function close() {
     setIsOpen(false);
     onClose?.();
     closeLeftDrawer();
 
-    // 🔑 nettoyage URL uniquement si ouverture pilotée par la route
     if (
       leftDrawer.mode === "route" &&
       pathname.startsWith("/members")
@@ -65,9 +64,10 @@ export default function MemberDrawer({ id, onClose }: Props) {
     }
   }
 
-  /* ---------------------------------------------------------
-     CHARGEMENT PARTENAIRE
-  --------------------------------------------------------- */
+  /* =========================================================
+     LOAD DATA
+  ========================================================= */
+
   useEffect(() => {
     async function load() {
       try {
@@ -78,6 +78,7 @@ export default function MemberDrawer({ id, onClose }: Props) {
         console.error(e);
       }
     }
+
     load();
   }, [id]);
 
@@ -87,6 +88,10 @@ export default function MemberDrawer({ id, onClose }: Props) {
     ? `${GCS_BASE_URL}/companies/${data.media_logo_rectangle_id}`
     : null;
 
+  /* =========================================================
+     RENDER
+  ========================================================= */
+
   return (
     <div className="fixed inset-0 z-[90] flex">
       {/* OVERLAY */}
@@ -95,7 +100,7 @@ export default function MemberDrawer({ id, onClose }: Props) {
         onClick={close}
       />
 
-      {/* DRAWER GAUCHE */}
+      {/* DRAWER */}
       <aside
         className={`
           relative mr-auto w-full md:w-[760px]
@@ -110,26 +115,23 @@ export default function MemberDrawer({ id, onClose }: Props) {
             {data.name}
           </h1>
 
-          <button
-            onClick={close}
-            aria-label="Fermer"
-          >
+          <button onClick={close} aria-label="Fermer">
             <X size={18} />
           </button>
         </div>
 
         {/* =====================================================
-            HERO LOGO — PREMIUM
+            HERO LOGO — CLEAN CONTAINER
         ===================================================== */}
         {logoUrl && (
           <div className="w-full bg-white border-b border-gray-200 flex items-center justify-center overflow-hidden">
-             <div className="w-full max-w-[680px] h-[260px] flex items-center justify-center">
-               <img
-                 src={logoUrl}
-                 alt={data.name}
-                 className="max-h-[85%] max-w-[85%] object-contain"
-               />
-            />
+            <div className="w-full max-w-[680px] h-[260px] flex items-center justify-center">
+              <img
+                src={logoUrl}
+                alt={data.name}
+                className="max-h-[85%] max-w-[85%] object-contain"
+              />
+            </div>
           </div>
         )}
 
@@ -137,7 +139,7 @@ export default function MemberDrawer({ id, onClose }: Props) {
             CONTENT
         ===================================================== */}
         <div className="px-6 py-8 space-y-12">
-          {/* DESCRIPTION — HTML ÉDITORIAL */}
+          {/* DESCRIPTION */}
           {data.description && (
             <div
               className="
@@ -172,7 +174,7 @@ export default function MemberDrawer({ id, onClose }: Props) {
                       openRightDrawer(
                         "news",
                         n.id_news,
-                        "silent" // 🔑 ouverture AU-DESSUS, sans navigation
+                        "silent"
                       )
                     }
                     className="
@@ -204,4 +206,3 @@ export default function MemberDrawer({ id, onClose }: Props) {
     </div>
   );
 }
-
