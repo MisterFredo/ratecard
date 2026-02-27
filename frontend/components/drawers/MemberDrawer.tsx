@@ -122,16 +122,13 @@ export default function MemberDrawer({ id, onClose }: Props) {
             HERO LOGO — PREMIUM
         ===================================================== */}
         {logoUrl && (
-          <div className="bg-gray-50 border-b py-10 px-6 flex justify-center">
-            <img
-              src={logoUrl}
-              alt={data.name}
-              className="
-                max-h-[220px]
-                max-w-[420px]
-                w-full
-                object-contain
-              "
+          <div className="w-full bg-white border-b border-gray-200 flex items-center justify-center overflow-hidden">
+             <div className="w-full max-w-[680px] h-[260px] flex items-center justify-center">
+               <img
+                 src={logoUrl}
+                 alt={data.name}
+                 className="max-h-[85%] max-w-[85%] object-contain"
+               />
             />
           </div>
         )}
