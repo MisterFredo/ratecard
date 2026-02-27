@@ -30,92 +30,124 @@ export function EmailBrevesBlockGmail(
       });
 
       return `
-<div style="
-    margin-bottom:28px;
+<tr>
+<td style="
+    padding:32px 16px;
+    border-bottom:1px solid #E5E7EB;
+    font-family:Arial,Helvetica,sans-serif;
   ">
 
-  <table width="100%" cellpadding="0" cellspacing="0">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
 
       ${
         imageUrl
           ? `
-          <td width="85" valign="top" style="padding-right:14px;">
-            <a href="${breveUrl}" target="_blank">
-              <img src="${imageUrl}"
-                   width="75"
-                   style="display:block;border-radius:6px;" />
+          <!-- IMAGE COLUMN -->
+          <td
+            valign="top"
+            align="center"
+            style="
+              width:150px;
+              padding-right:22px;
+              vertical-align:top;
+            "
+          >
+            <a href="${breveUrl}" target="_blank" style="text-decoration:none;">
+              <div style="
+                width:130px;
+                height:95px;
+                background:#FFFFFF;
+                border:1px solid #F3F4F6;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+              ">
+                <img 
+                  src="${imageUrl}"
+                  alt=""
+                  style="
+                    max-width:85%;
+                    max-height:85%;
+                    height:auto;
+                    display:block;
+                  "
+                />
+              </div>
             </a>
           </td>
           `
           : ""
       }
 
-      <td valign="top">
+      <!-- TEXT COLUMN -->
+      <td valign="top" style="vertical-align:top;">
 
+        <!-- TITLE -->
         <a href="${breveUrl}"
            target="_blank"
            style="text-decoration:none;color:#111827;">
           <div style="
-              font-size:16px;
-              font-weight:600;
-              margin-bottom:6px;
+              font-size:17px;
+              font-weight:700;
+              margin-bottom:10px;
               line-height:1.35;
             ">
             ${escapeHtml(b.title)}
           </div>
         </a>
 
-        <div style="margin-bottom:6px;">
+        <!-- TAGS -->
+        <div style="margin-bottom:8px;">
           ${tags}
         </div>
 
+        <!-- EXCERPT -->
         ${
           b.excerpt
             ? `
             <div style="
-                font-size:14px;
+                font-size:15px;
                 color:#374151;
-                line-height:1.6;
-                margin-bottom:6px;
+                margin-top:10px;
+                line-height:1.4;
               ">
-              ${escapeHtml(b.excerpt)}
-            </div>
+                ${escapeHtml(b.excerpt)}
+              </div>
             `
             : ""
         }
-
-        <a href="${breveUrl}"
-           target="_blank"
-           style="
-              font-size:13px;
-              color:#6B7280;
-              text-decoration:none;
-           ">
-          Lire →
-        </a>
 
       </td>
 
     </tr>
   </table>
 
-</div>
+</td>
+</tr>
 `;
     })
     .join("");
 
   return `
-<div style="
-    font-size:13px;
-    font-weight:600;
-    color:#6B7280;
-    margin:36px 0 18px 0;
-    text-transform:uppercase;
-    letter-spacing:0.06em;
+<tr>
+<td style="
+    padding-top:40px;
+    font-family:Arial,Helvetica,sans-serif;
   ">
-  Brèves
-</div>
+  <div style="
+      font-size:13px;
+      font-weight:700;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+      color:#111827;
+      margin-bottom:22px;
+      padding-left:8px;
+    ">
+    Brèves
+  </div>
+</td>
+</tr>
 
 ${rows}
 `;
