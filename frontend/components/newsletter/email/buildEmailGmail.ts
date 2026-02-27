@@ -33,7 +33,7 @@ export function buildEmailGmail({
 
   const blocks = [
 
-    EmailHeaderGmail(headerConfig, introText),
+    EmailHeaderGmail(headerConfig),
 
     news.length > 0
       ? EmailNewsBlockGmail(news)
