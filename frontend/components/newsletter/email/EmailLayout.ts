@@ -71,8 +71,7 @@ export function EmailLayout(content: string) {
             <td
               class="mobile-padding"
               style="
-                padding-left:32px;
-                padding-right:32px;
+                padding: 24px 32px 0 32px;
               "
             >
 
