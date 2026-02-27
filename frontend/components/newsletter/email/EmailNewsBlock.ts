@@ -25,7 +25,7 @@ export function EmailNewsBlock(news: any[]) {
       return `
 <tr>
 <td style="
-    padding:36px 0;
+    padding:36px 16px;
     border-bottom:1px solid #E5E7EB;
     font-family:Arial,Helvetica,sans-serif;
   ">
