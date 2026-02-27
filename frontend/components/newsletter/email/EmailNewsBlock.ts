@@ -42,23 +42,32 @@ export function EmailNewsBlock(news: any[]) {
             align="center"
             class="stack-column"
             style="
-              width:160px;
+              width:180px;
               padding-right:24px;
               vertical-align:top;
             "
           >
             <a href="${newsUrl}" target="_blank" style="text-decoration:none;">
-              <img 
-                src="${imageUrl}" 
-                alt=""
-                class="responsive-img thumb-img"
-                style="
-                  display:block;
-                  width:100%;
-                  max-width:150px;
-                  border-radius:8px;
-                " 
-              />
+              <div style="
+                width:160px;
+                height:120px;
+                background:#FFFFFF;
+                border:1px solid #F3F4F6;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+              ">
+                <img 
+                  src="${imageUrl}" 
+                  alt=""
+                  style="
+                    max-width:85%;
+                    max-height:85%;
+                    height:auto;
+                    display:block;
+                  " 
+                />
+              </div>
             </a>
           </td>
           `
@@ -69,9 +78,7 @@ export function EmailNewsBlock(news: any[]) {
       <td
         valign="top"
         class="stack-column"
-        style="
-          vertical-align:top;
-        "
+        style="vertical-align:top;"
       >
 
         <!-- DATE -->
@@ -110,7 +117,7 @@ export function EmailNewsBlock(news: any[]) {
                 font-size:15px;
                 color:#374151;
                 margin-top:10px;
-                line-height:1.2;
+                line-height:1.4;
               ">
                 ${escapeHtml(n.excerpt)}
               </div>
