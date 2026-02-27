@@ -169,12 +169,16 @@ export default function NewsDrawer({ id, onClose }: Props) {
 
         {/* HERO */}
         {visualSrc && (
-          <img
-            src={visualSrc}
-            alt={data.title}
-            className="w-full h-auto max-h-[340px] object-cover"
-          />
-        )}
+          <div className="w-full bg-white flex items-center justify-center overflow-hidden border-b border-gray-200">
+             <div className="w-full max-w-[680px] h-[260px] flex items-center justify-center">
+               <img
+                 src={visualSrc}
+                 alt={data.title}
+                 className="max-h-[85%] max-w-[85%] object-contain"
+               />
+             </div>
+           </div>
+)}
 
         {/* CONTENT */}
         <div className="px-5 py-6 space-y-8">
