@@ -142,6 +142,7 @@ export function EmailNewsBlock(news: any[]) {
       text-transform:uppercase;
       color:#111827;
       margin-bottom:22px;
+      padding-left:8px;
     ">
     Actualités
   </div>
