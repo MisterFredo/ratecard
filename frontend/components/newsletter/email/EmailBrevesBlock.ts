@@ -101,7 +101,7 @@ export function EmailBrevesBlock(breves: any[]) {
                 font-size:15px;
                 color:#374151;
                 margin-top:10px;
-                line-height:1.6;
+                line-height:1.2;
               ">
                 ${escapeHtml(b.excerpt)}
               </div>
