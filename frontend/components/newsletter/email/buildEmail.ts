@@ -30,13 +30,25 @@ export function buildEmail({
   topicStats = [],
 }: Props) {
 
-  const content = `
-    ${EmailHeader(headerConfig, introText)}
-    ${EmailNewsBlock(news)}
-    ${EmailStatsBlock(topicStats)}
-    ${EmailBrevesBlock(breves)}
-    ${EmailAnalysesBlock(analyses)}
-  `;
+  const blocks = [
+    EmailHeader(headerConfig, introText),
 
-  return EmailLayout(content);
+    news.length > 0
+      ? EmailNewsBlock(news)
+      : "",
+
+    headerConfig.showTopicStats && topicStats.length > 0
+      ? EmailStatsBlock(topicStats)
+      : "",
+
+    breves.length > 0
+      ? EmailBrevesBlock(breves)
+      : "",
+
+    analyses.length > 0
+      ? EmailAnalysesBlock(analyses)
+      : "",
+  ].join("");
+
+  return EmailLayout(blocks);
 }
