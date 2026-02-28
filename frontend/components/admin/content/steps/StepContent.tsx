@@ -17,7 +17,6 @@ type Props = {
     topics: any[];
     events: any[];
     companies: any[];
-    persons: any[];
   };
 
   // CONTENU
@@ -68,7 +67,6 @@ export default function StepContent({
           topics: context.topics.map((t) => t.label),
           events: context.events.map((e) => e.label),
           companies: context.companies.map((c) => c.name),
-          persons: context.persons.map((p) => p.name),
         },
         angle_title: angle.angle_title,
         angle_signal: angle.angle_signal,
@@ -233,4 +231,3 @@ export default function StepContent({
     </div>
   );
 }
-
