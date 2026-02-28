@@ -47,24 +47,20 @@ export default function CompanySelector({ values, onChange }: Props) {
   }, []);
 
   /* ---------------------------------------------------------
-     HANDLE CHANGE
-     ⚠️ Règle métier : UNE seule société autorisée
+     HANDLE CHANGE — MULTI AUTORISÉ
   --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
-    if (selected.length === 0) {
+    if (!selected || selected.length === 0) {
       onChange([]);
       return;
     }
 
-    // On garde UNIQUEMENT la dernière société sélectionnée
-    const last = selected[selected.length - 1];
-
-    onChange([
-      {
-        id_company: last.id,
-        name: last.label,
-      },
-    ]);
+    onChange(
+      selected.map((item) => ({
+        id_company: item.id,
+        name: item.label,
+      }))
+    );
   }
 
   if (loading) {
@@ -77,8 +73,8 @@ export default function CompanySelector({ values, onChange }: Props) {
 
   return (
     <SearchableMultiSelect
-      label="Société"
-      placeholder="Rechercher une société…"
+      label="Sociétés"
+      placeholder="Rechercher une ou plusieurs sociétés…"
       options={options}
       values={values.map((v) => ({
         id: v.id_company,
