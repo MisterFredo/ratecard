@@ -33,7 +33,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [topics, setTopics] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
-  const [persons, setPersons] = useState<any[]>([]);
   const [contextValidated, setContextValidated] = useState(false);
 
   /* =========================================================
@@ -112,23 +111,18 @@ export default function ContentStudio({ mode, contentId }: Props) {
             label: t.LABEL,
           }))
         );
+
         setEvents(
           (c.events || []).map((e: any) => ({
             id_event: e.ID_EVENT,
             label: e.LABEL,
           }))
         );
+
         setCompanies(
           (c.companies || []).map((co: any) => ({
             id_company: co.ID_COMPANY,
             name: co.NAME,
-          }))
-        );
-        setPersons(
-          (c.persons || []).map((p: any) => ({
-            id_person: p.ID_PERSON,
-            name: p.NAME,
-            role: p.ROLE || "contributeur",
           }))
         );
 
@@ -162,12 +156,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
       return;
     }
 
-    if (
-      !topics.length &&
-      !events.length &&
-      !companies.length &&
-      !persons.length
-    ) {
+    if (!topics.length && !events.length && !companies.length) {
       alert("Au moins une entité est requise");
       return;
     }
@@ -189,10 +178,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
       topics: topics.map((t) => t.id_topic),
       events: events.map((e) => e.id_event),
       companies: companies.map((c) => c.id_company),
-      persons: persons.map((p) => ({
-        id_person: p.id_person,
-        role: p.role || "contributeur",
-      })),
 
       date_creation: dateCreation || null,
       date_import: dateImport,
@@ -258,22 +243,15 @@ export default function ContentStudio({ mode, contentId }: Props) {
           topics={topics}
           events={events}
           companies={companies}
-          persons={persons}
           dateCreation={dateCreation}
           onChangeDateCreation={setDateCreation}
           onChange={(d) => {
             if (d.topics) setTopics(d.topics);
             if (d.events) setEvents(d.events);
             if (d.companies) setCompanies(d.companies);
-            if (d.persons) setPersons(d.persons);
           }}
           onValidate={() => {
-            if (
-              !topics.length &&
-              !events.length &&
-              !companies.length &&
-              !persons.length
-            ) {
+            if (!topics.length && !events.length && !companies.length) {
               alert("Au moins une entité est requise");
               return;
             }
@@ -310,7 +288,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
           <StepAngles
             sourceType={sourceType}
             sourceText={sourceText}
-            context={{ topics, events, companies, persons }}
+            context={{ topics, events, companies }}
             onSelect={(angle) => {
               setSelectedAngle(angle);
               setStep("CONTENT");
@@ -330,7 +308,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
             angle={selectedAngle}
             sourceType={sourceType}
             sourceText={sourceText}
-            context={{ topics, events, companies, persons }}
+            context={{ topics, events, companies }}
 
             excerpt={excerpt}
             concept={concept}
