@@ -50,7 +50,11 @@ export default function StepPreview({
   }
 
   if (!content) {
-    return <div className="text-red-500">Aucun contenu à afficher.</div>;
+    return (
+      <div className="text-red-500">
+        Aucun contenu à afficher.
+      </div>
+    );
   }
 
   /* ---------------------------------------------------------
@@ -109,17 +113,6 @@ export default function StepPreview({
             <strong>Sociétés :</strong>{" "}
             {content.companies?.length
               ? content.companies.map((c: any) => c.NAME).join(", ")
-              : "—"}
-          </div>
-
-          <div>
-            <strong>Personnes :</strong>{" "}
-            {content.persons?.length
-              ? content.persons
-                  .map((p: any) =>
-                    `${p.NAME}${p.ROLE ? " (" + p.ROLE + ")" : ""}`
-                  )
-                  .join(", ")
               : "—"}
           </div>
         </div>
