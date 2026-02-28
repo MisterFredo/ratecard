@@ -2,8 +2,9 @@ import re
 from typing import Dict, Any
 from utils.llm import run_llm
 
+
 # ============================================================
-# IA CONTENT — SOURCE → CONTENT (VERSION BALISÉE)
+# IA CONTENT — SOURCE → CONTENT (VERSION STRUCTURÉE STRATÉGIQUE)
 # ============================================================
 def transform_source_to_content(
     source_type: str,
@@ -28,17 +29,18 @@ def transform_source_to_content(
     """
 
     prompt = f"""
-Tu es un assistant éditorial Ratecard.
+Tu es un assistant d’analyse stratégique pour Curator.
 
-Ta mission est d’aider un éditeur humain à produire un CONTENU ANALYTIQUE
-à partir d’une SOURCE et d’un ANGLE VALIDÉ.
+Ta mission est d’aider un éditeur humain à formaliser
+une THÈSE ANALYTIQUE exploitable dans un moteur aval.
 
 ⚠️ RÈGLES FONDAMENTALES :
 - Tu travailles STRICTEMENT à partir de la source fournie.
 - Tu n’inventes jamais de faits, chiffres ou citations.
 - Si une information n’est pas présente dans la source, tu écris "Aucun".
-- Tu écris en français, avec un ton clair, analytique et professionnel (B2B).
-- Tu n’écris pas un article final : tu aides un éditeur à travailler.
+- Tu écris en français, avec un ton analytique, structuré et B2B.
+- Tu ne rédiges pas un article média.
+- Tu formalises une position intellectuelle claire et comparable.
 
 ==================== ANGLE ====================
 Titre : {angle_title}
@@ -49,6 +51,17 @@ Type : {source_type}
 Texte :
 {source_text}
 
+==================== OBJECTIF ANALYTIQUE ====================
+
+Le développement doit explicitement :
+
+1. Identifier la TENSION centrale présente dans la source.
+2. Décrire le MÉCANISME à l’œuvre (ce qui change concrètement).
+3. Expliquer la CONSÉQUENCE logique si cette dynamique se poursuit.
+
+Tu ne dois pas extrapoler au-delà des éléments contenus dans la source.
+Toute projection doit être directement déduite du texte.
+
 ==================== FORMAT DE SORTIE ATTENDU ====================
 
 Tu dois produire un TEXTE STRUCTURÉ,
@@ -56,14 +69,17 @@ avec EXACTEMENT les sections suivantes,
 dans cet ordre, sans texte avant ni après :
 
 EXCERPT
-(1 à 2 phrases qui résument l’idée centrale du contenu.)
+(1 à 2 phrases synthétiques exprimant clairement la thèse.)
 
 CONCEPT
-(1 phrase unique qui formalise l’enjeu analytique principal.)
+(1 phrase unique, dense, qui formalise la tension centrale.)
 
 DEVELOPPEMENT
-(Texte structuré et dense qui développe le signal.
-Tu peux utiliser plusieurs paragraphes courts.)
+(Texte structuré en 3 blocs logiques :
+- Tension
+- Mécanisme
+- Conséquence
+Chaque bloc peut être développé en 1 ou 2 paragraphes courts.)
 
 CITATIONS
 (Liste des citations EXACTES présentes dans la source,
