@@ -4,17 +4,7 @@ from utils.llm import run_llm
 
 
 # ============================================================
-# ANGLE LENSES — points de vue éditoriaux
-# ============================================================
-ANGLE_LENSES = [
-    "interface et expérience utilisateur",
-    "attribution et mesure de la performance",
-    "donnée produit et compétitivité des marques",
-]
-
-
-# ============================================================
-# PROPOSE ANGLES — MULTI PASS IA
+# PROPOSE ANGLES — STRUCTURED STRATEGIC PASS
 # ============================================================
 def propose_angles(
     source_type: str,
@@ -22,33 +12,55 @@ def propose_angles(
     context: Dict[str, List[str]],
 ) -> List[Dict[str, str]]:
     """
-    Propose plusieurs angles mono-signal via appels IA successifs.
-    Jamais de retour vide si la source est non vide.
+    Génère de 1 à 3 angles éditoriaux maximum,
+    dérivés strictement des tensions internes de la source.
+
+    - Un seul appel LLM
+    - Pas de grille fixe
+    - Pas de production artificielle
     """
 
     if not isinstance(source_text, str) or not source_text.strip():
         return []
 
-    angles: List[Dict[str, str]] = []
+    prompt = f"""
+Tu es un analyste stratégique B2B spécialisé en Adtech,
+Retail Media et transformation digitale.
 
-    for lens in ANGLE_LENSES:
-        prompt = f"""
-Tu es un analyste éditorial spécialisé en contenus liés
-au marketing digital, à l’Adtech, au Martech et au Retail Media.
+OBJECTIF :
+Produire de 1 à 3 angles éditoriaux maximum,
+dérivés STRICTEMENT de la source fournie.
 
-À partir de la source ci-dessous, identifie UN SEUL angle éditorial,
-mono-signal, en te concentrant UNIQUEMENT sur le point de vue suivant. Ne propose pas systématiquement un angle qui commence par l'impact de ou l'importance de. :
+ÉTAPE 1 — Résumé factuel
+Résume en 5 points maximum les idées clés du texte.
 
-👉 {lens}
+ÉTAPE 2 — Tensions internes
+Identifie les tensions structurantes présentes
+dans le texte (oppositions, bascule de pouvoir,
+mutation métier, dépendance, etc.).
 
-Contraintes :
-- Un seul angle.
-- Ne fusionne pas plusieurs idées.
-- Ne reformule pas la source.
-- Ne produis aucun commentaire.
+ÉTAPE 3 — Angles éditoriaux
+Formule jusqu’à 3 angles distincts UNIQUEMENT si réellement différenciés.
 
-FORMAT ATTENDU :
+RÈGLES :
+- Ne produis pas artificiellement 3 angles.
+- Si la source est mono-thèse, propose un seul angle.
+- Chaque angle doit être autonome.
+- Pas de reformulation descriptive.
+- Pas d’extrapolation hors texte.
+- Ne commence pas systématiquement par “L’impact de” ou “L’importance de”.
 
+FORMAT EXACT :
+
+ANGLE
+Titre : ...
+Signal : ...
+
+ANGLE
+Titre : ...
+Signal : ...
+
+ANGLE
 Titre : ...
 Signal : ...
 
@@ -56,47 +68,52 @@ SOURCE :
 {source_text}
 """
 
-        raw = run_llm(prompt)
-        angle = parse_single_angle(raw)
-
-        if angle:
-            angles.append(angle)
+    raw = run_llm(prompt)
+    angles = parse_multiple_angles(raw)
 
     # ---------------------------------------------------------
-    # FALLBACK FINAL — continuité UX
+    # SÉCURITÉ : max 3 angles
     # ---------------------------------------------------------
-    if not angles:
-        return [{
-            "angle_title": source_text.strip().split("\n")[0][:120],
-            "angle_signal": source_text.strip()[:300],
-        }]
+    if angles:
+        return angles[:3]
 
-    return angles
+    # ---------------------------------------------------------
+    # FALLBACK UX
+    # ---------------------------------------------------------
+    return [{
+        "angle_title": source_text.strip().split("\n")[0][:120],
+        "angle_signal": source_text.strip()[:300],
+    }]
 
 
 # ============================================================
-# PARSE UN ANGLE UNIQUE (robuste)
+# PARSE MULTIPLE ANGLES (robuste)
 # ============================================================
-def parse_single_angle(text: str):
+def parse_multiple_angles(text: str) -> List[Dict[str, str]]:
     if not isinstance(text, str):
-        return None
+        return []
 
-    title_match = re.search(
-        r"Titre\s*:\s*(.+)",
-        text,
-        flags=re.IGNORECASE,
-    )
+    blocks = re.split(r"\bANGLE\b", text, flags=re.IGNORECASE)
 
-    signal_match = re.search(
-        r"Signal\s*:\s*(.+)",
-        text,
-        flags=re.IGNORECASE,
-    )
+    results = []
 
-    if title_match and signal_match:
-        return {
-            "angle_title": title_match.group(1).strip(),
-            "angle_signal": signal_match.group(1).strip(),
-        }
+    for block in blocks:
+        title_match = re.search(
+            r"Titre\s*:\s*(.+)",
+            block,
+            flags=re.IGNORECASE,
+        )
 
-    return None
+        signal_match = re.search(
+            r"Signal\s*:\s*(.+)",
+            block,
+            flags=re.IGNORECASE,
+        )
+
+        if title_match and signal_match:
+            results.append({
+                "angle_title": title_match.group(1).strip(),
+                "angle_signal": signal_match.group(1).strip(),
+            })
+
+    return results
