@@ -15,7 +15,6 @@ type Props = {
     topics: any[];
     events: any[];
     companies: any[];
-    persons: any[];
   };
   onSelect: (angle: Angle) => void;
 };
@@ -49,7 +48,6 @@ export default function StepAngles({
           topics: context.topics.map((t) => t.label),
           events: context.events.map((e) => e.label),
           companies: context.companies.map((c) => c.name),
-          persons: context.persons.map((p) => p.name),
         },
       });
 
