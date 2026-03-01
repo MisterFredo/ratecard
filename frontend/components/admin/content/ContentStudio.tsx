@@ -205,24 +205,19 @@ export default function ContentStudio({ mode, contentId }: Props) {
   ========================================================= */
   async function publishContent() {
     if (!internalContentId) return;
+    if (!publishAt) return alert("Date requise");
 
     setPublishing(true);
 
     try {
-      const publishAtUTC =
-        publishMode === "NOW"
-          ? new Date().toISOString()
-          : new Date(publishAt).toISOString();
-
       await api.post(`/content/publish/${internalContentId}`, {
-        mode: publishMode,
-        publish_at: publishAtUTC,
+        publish_at: new Date(publishAt).toISOString(),
       });
 
       alert("Contenu publié");
     } catch (e) {
       console.error(e);
-      alert("❌ Erreur publication contenu");
+      alert("Erreur publication");
     } finally {
       setPublishing(false);
     }
