@@ -216,13 +216,19 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
     try {
       if (publishMode === "NOW") {
-        // Publication immédiate
-        await api.post(`/content/publish/${internalContentId}`);
+        // Publication immédiate → on envoie body vide
+        await api.post(
+          `/content/publish/${internalContentId}`,
+          {}
+        );
       } else {
         // Publication planifiée (passée ou future)
-        await api.post(`/content/publish/${internalContentId}`, {
-          published_at: publishAt, // ⚠️ valeur brute du datetime-local
-        });
+        await api.post(
+          `/content/publish/${internalContentId}`,
+          {
+            published_at: publishAt, // valeur brute
+          }
+        );
       }
 
       alert("Contenu publié");
