@@ -5,12 +5,21 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { Pencil } from "lucide-react";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 type ContentLite = {
   ID_CONTENT: string;
   TITLE: string;
   STATUS: string;
   PUBLISHED_AT?: string | null;
+  DATE_CREATION?: string | null;
 };
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 export default function ContentListPage() {
   const [contents, setContents] = useState<ContentLite[]>([]);
@@ -40,6 +49,14 @@ export default function ContentListPage() {
   if (loading) return <div>Chargement…</div>;
 
   /* ---------------------------------------------------------
+     HELPERS
+  --------------------------------------------------------- */
+  function formatDate(value?: string | null) {
+    if (!value) return "—";
+    return new Date(value).toLocaleDateString("fr-FR");
+  }
+
+  /* ---------------------------------------------------------
      RENDER
   --------------------------------------------------------- */
   return (
@@ -64,6 +81,7 @@ export default function ContentListPage() {
           <tr className="bg-gray-100 border-b text-left text-gray-700">
             <th className="p-2">Titre</th>
             <th className="p-2">Statut</th>
+            <th className="p-2">Date contexte</th>
             <th className="p-2">Publié le</th>
             <th className="p-2 text-right">Actions</th>
           </tr>
@@ -95,11 +113,14 @@ export default function ContentListPage() {
                 </span>
               </td>
 
-              {/* DATE DE PUBLICATION */}
+              {/* DATE CONTEXTE (DATE_CREATION) */}
+              <td className="p-2 text-gray-600">
+                {formatDate(c.DATE_CREATION)}
+              </td>
+
+              {/* DATE PUBLICATION (PUBLISHED_AT) */}
               <td className="p-2">
-                {c.PUBLISHED_AT
-                  ? new Date(c.PUBLISHED_AT).toLocaleDateString("fr-FR")
-                  : "—"}
+                {formatDate(c.PUBLISHED_AT)}
               </td>
 
               {/* ACTIONS */}
