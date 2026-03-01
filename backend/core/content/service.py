@@ -560,7 +560,7 @@ def archive_content(id_content: str):
 # ============================================================
 def publish_content(
     id_content: str,
-    published_at: Optional[str] = None,
+    published_at: Optional[datetime] = None,
 ):
     """
     Publie un contenu analytique à une date donnée.
@@ -576,42 +576,33 @@ def publish_content(
     # ---------------------------------------------------------
     # AUCUNE DATE FOURNIE → PUBLICATION IMMÉDIATE
     # ---------------------------------------------------------
-    if not published_at:
+    if published_at is None:
         update_bq(
             table=TABLE_CONTENT,
             fields={
                 "STATUS": "PUBLISHED",
-                "PUBLISHED_AT": now.isoformat(),
+                "PUBLISHED_AT": now,
             },
             where={"ID_CONTENT": id_content},
         )
         return "PUBLISHED"
 
     # ---------------------------------------------------------
-    # DATE FOURNIE → PARSING + NORMALISATION
+    # NORMALISATION UTC
     # ---------------------------------------------------------
-    try:
-        publish_date = datetime.fromisoformat(published_at)
-
-        # datetime-local (front) → datetime naïf → UTC forcé
-        if publish_date.tzinfo is None:
-            publish_date = publish_date.replace(
-                tzinfo=timezone.utc
-            )
-
-    except ValueError:
-        raise ValueError("Format de date invalide")
+    if published_at.tzinfo is None:
+        published_at = published_at.replace(tzinfo=timezone.utc)
 
     # ---------------------------------------------------------
     # STATUT EN FONCTION DE LA DATE
     # ---------------------------------------------------------
-    status = "PUBLISHED" if publish_date <= now else "SCHEDULED"
+    status = "PUBLISHED" if published_at <= now else "SCHEDULED"
 
     update_bq(
         table=TABLE_CONTENT,
         fields={
             "STATUS": status,
-            "PUBLISHED_AT": publish_date.isoformat(),
+            "PUBLISHED_AT": published_at,
         },
         where={"ID_CONTENT": id_content},
     )
