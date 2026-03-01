@@ -205,14 +205,25 @@ export default function ContentStudio({ mode, contentId }: Props) {
   ========================================================= */
   async function publishContent() {
     if (!internalContentId) return;
-    if (!publishAt) return alert("Date requise");
+
+    // Sécurité : si planifié sans date → bloquer
+    if (publishMode === "SCHEDULE" && !publishAt) {
+      alert("Veuillez sélectionner une date de publication");
+      return;
+    }
 
     setPublishing(true);
 
     try {
-      await api.post(`/content/publish/${internalContentId}`, {
-        publish_at: new Date(publishAt).toISOString(),
-      });
+      if (publishMode === "NOW") {
+        // Publication immédiate
+        await api.post(`/content/publish/${internalContentId}`);
+      } else {
+        // Publication planifiée (passée ou future)
+        await api.post(`/content/publish/${internalContentId}`, {
+          published_at: publishAt, // ⚠️ valeur brute du datetime-local
+        });
+      }
 
       alert("Contenu publié");
     } catch (e) {
@@ -222,7 +233,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
       setPublishing(false);
     }
   }
-
   /* =========================================================
      UI
   ========================================================= */
