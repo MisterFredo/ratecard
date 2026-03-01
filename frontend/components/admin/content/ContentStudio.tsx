@@ -206,29 +206,23 @@ export default function ContentStudio({ mode, contentId }: Props) {
   async function publishContent() {
     if (!internalContentId) return;
 
-    // Sécurité : si planifié sans date → bloquer
-    if (publishMode === "SCHEDULE" && !publishAt) {
-      alert("Veuillez sélectionner une date de publication");
-      return;
-    }
-
     setPublishing(true);
 
     try {
       if (publishMode === "NOW") {
-        // Publication immédiate → on envoie body vide
-        await api.post(
-          `/content/publish/${internalContentId}`,
-          {}
-        );
+        await api.post(`/content/publish/${internalContentId}`, {
+          publish_at: null,
+        });
       } else {
-        // Publication planifiée (passée ou future)
-        await api.post(
-          `/content/publish/${internalContentId}`,
-          {
-            published_at: publishAt, // valeur brute
-          }
-        );
+        if (!publishAt) {
+          alert("Date requise");
+          setPublishing(false);
+          return;
+        }
+
+        await api.post(`/content/publish/${internalContentId}`, {
+          publish_at: new Date(publishAt).toISOString(),
+        });
       }
 
       alert("Contenu publié");
