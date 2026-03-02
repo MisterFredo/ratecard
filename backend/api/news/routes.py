@@ -338,9 +338,18 @@ TITLE
 - Doit refléter le signal principal
 
 EXCERPT
-- 3 phrases
-- Résume l’annonce
-- Met en évidence l’enjeu
+- 3 à 4 phrases
+- 300 à 500 caractères
+- Ne doit PAS répéter le titre
+- Doit contenir :
+    1. Le fait principal (qui fait quoi ?)
+    2. Le contexte immédiat (marché / produit / positionnement si présent)
+    3. L’élément différenciant ou stratégique mentionné dans la source
+    4. L’impact ou la conséquence implicite si identifiable dans le texte
+- Aucune phrase vide ou générique
+- Aucun adjectif promotionnel
+- Chaque phrase doit apporter une information nouvelle
+- Interdiction de reformuler la même idée deux fois
 
 BODY_HTML
 - 3 à 6 paragraphes
