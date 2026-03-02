@@ -6,11 +6,13 @@ import { api } from "@/lib/api";
 import { Pencil } from "lucide-react";
 
 type ConceptRow = {
-  ID_CONCEPT: string;
-  TITLE: string;
-  STATUS: "DRAFT" | "PUBLISHED";
-  VECTORISE?: boolean;
-  UPDATED_AT?: string;
+  id_concept: string;
+  title: string;
+  description?: string;
+  status: "DRAFT" | "PUBLISHED";
+  vectorise?: boolean;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export default function ConceptList() {
@@ -28,8 +30,9 @@ export default function ConceptList() {
       } catch (e) {
         console.error(e);
         alert("❌ Erreur chargement concepts");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
 
     load();
@@ -72,27 +75,30 @@ export default function ConceptList() {
           <tbody>
             {concepts.map((c) => (
               <tr
-                key={c.ID_CONCEPT}
+                key={c.id_concept}
                 className="border-t hover:bg-gray-50"
               >
+                {/* TITLE */}
                 <td className="p-3 font-medium">
-                  {c.TITLE}
+                  {c.title}
                 </td>
 
+                {/* STATUS */}
                 <td className="p-3">
                   <span
                     className={`px-2 py-1 rounded text-xs ${
-                      c.STATUS === "PUBLISHED"
+                      c.status === "PUBLISHED"
                         ? "bg-green-100 text-green-700"
                         : "bg-gray-200 text-gray-600"
                     }`}
                   >
-                    {c.STATUS}
+                    {c.status}
                   </span>
                 </td>
 
+                {/* VECTORISE */}
                 <td className="p-3">
-                  {c.VECTORISE ? (
+                  {c.vectorise ? (
                     <span className="text-green-600">
                       ✔
                     </span>
@@ -103,15 +109,17 @@ export default function ConceptList() {
                   )}
                 </td>
 
+                {/* UPDATED */}
                 <td className="p-3 text-gray-500">
-                  {c.UPDATED_AT
-                    ? new Date(c.UPDATED_AT).toLocaleDateString()
+                  {c.updated_at
+                    ? new Date(c.updated_at).toLocaleDateString()
                     : "-"}
                 </td>
 
+                {/* EDIT */}
                 <td className="p-3">
                   <Link
-                    href={`/admin/concept/edit/${c.ID_CONCEPT}`}
+                    href={`/admin/concept/edit/${c.id_concept}`}
                     className="text-blue-600 hover:text-blue-800"
                   >
                     <Pencil size={16} />
@@ -119,6 +127,17 @@ export default function ConceptList() {
                 </td>
               </tr>
             ))}
+
+            {concepts.length === 0 && (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="p-6 text-center text-gray-400"
+                >
+                  Aucun concept trouvé
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
