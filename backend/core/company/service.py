@@ -18,7 +18,7 @@ TABLE_COMPANY_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_METRICS"
 
 
 # ============================================================
-# CREATE COMPANY — DATA ONLY (LOAD JOB, NO STREAMING)
+# CREATE COMPANY — DATA ONLY
 # ============================================================
 def create_company(data: CompanyCreate) -> str:
     """
@@ -32,16 +32,10 @@ def create_company(data: CompanyCreate) -> str:
         "ID_COMPANY": company_id,
         "NAME": data.name,
         "DESCRIPTION": data.description or None,
-
-        # 🔑 UN SEUL VISUEL SOCIÉTÉ — NOM DE FICHIER GCS
         "MEDIA_LOGO_RECTANGLE_ID": None,
-
         "LINKEDIN_URL": data.linkedin_url or None,
         "WEBSITE_URL": data.website_url or None,
-
-        # PARTENAIRE
         "IS_PARTNER": bool(data.is_partner),
-
         "CREATED_AT": now,
         "UPDATED_AT": now,
         "IS_ACTIVE": True,
@@ -61,13 +55,12 @@ def create_company(data: CompanyCreate) -> str:
 
 
 # ============================================================
-# LIST COMPANIES (ADMIN / LISTING)
+# LIST COMPANIES (ADMIN / LISTING LIGHT)
 # ============================================================
 def list_companies():
     """
-    Liste des sociétés.
-    Le backend renvoie uniquement le nom du fichier GCS du logo.
-    L’URL est construite côté frontend.
+    Liste des sociétés (version légère pour listing admin).
+    Les blocs wiki ne sont pas chargés ici.
     """
     sql = f"""
         SELECT
@@ -80,6 +73,7 @@ def list_companies():
         FROM `{TABLE_COMPANY}` c
         LEFT JOIN `{TABLE_COMPANY_METRICS}` m
           ON m.ID_COMPANY = c.ID_COMPANY
+        WHERE c.IS_ACTIVE = TRUE
         ORDER BY NB_ANALYSES DESC, c.NAME ASC
     """
 
@@ -87,30 +81,29 @@ def list_companies():
 
     return [
         {
-            "ID_COMPANY": r["ID_COMPANY"],
-            "NAME": r["NAME"],
-            "IS_PARTNER": bool(r["IS_PARTNER"]),
-            "MEDIA_LOGO_RECTANGLE_ID": r["MEDIA_LOGO_RECTANGLE_ID"],
-            "NB_ANALYSES": r["NB_ANALYSES"],
-            "DELTA_30D": r["DELTA_30D"],
+            "id_company": r["ID_COMPANY"],
+            "name": r["NAME"],
+            "is_partner": bool(r["IS_PARTNER"]),
+            "media_logo_url": r["MEDIA_LOGO_RECTANGLE_ID"],
+            "nb_analyses": r["NB_ANALYSES"],
+            "delta_30d": r["DELTA_30D"],
         }
         for r in rows
     ]
 
 
 # ============================================================
-# GET ONE COMPANY (ADMIN / EDIT)
+# GET ONE COMPANY (DETAIL COMPLET)
 # ============================================================
 def get_company(company_id: str):
     """
-    Récupère une société par ID.
-    Aucun calcul d’URL image côté backend.
+    Récupère une société complète (inclut wiki).
     """
     sql = f"""
         SELECT
-            c.*
-        FROM `{TABLE_COMPANY}` c
-        WHERE c.ID_COMPANY = @id
+            *
+        FROM `{TABLE_COMPANY}`
+        WHERE ID_COMPANY = @id
         LIMIT 1
     """
 
@@ -119,12 +112,37 @@ def get_company(company_id: str):
     if not rows:
         return None
 
-    row = dict(rows[0])
+    r = rows[0]
 
-    # Normalisation bool pour le frontend
-    row["IS_PARTNER"] = bool(row.get("IS_PARTNER"))
+    return {
+        "id_company": r["ID_COMPANY"],
+        "name": r["NAME"],
 
-    return row
+        # --- Editorial ---
+        "description": r.get("DESCRIPTION"),
+
+        # --- Wiki ---
+        "wiki_description": r.get("WIKI_DESCRIPTION"),
+        "wiki_blocks": r.get("WIKI_BLOCKS"),
+        "wiki_source_id": r.get("WIKI_SOURCE_ID"),
+        "wiki_updated_at": r.get("WIKI_UPDATED_AT"),
+        "wiki_vectorised": r.get("WIKI_VECTORISED", False),
+
+        # --- Media ---
+        "media_logo_url": r.get("MEDIA_LOGO_RECTANGLE_ID"),
+
+        # --- Links ---
+        "linkedin_url": r.get("LINKEDIN_URL"),
+        "website_url": r.get("WEBSITE_URL"),
+
+        # --- Flags ---
+        "is_partner": bool(r.get("IS_PARTNER", False)),
+        "is_active": r.get("IS_ACTIVE", True),
+
+        # --- Dates ---
+        "created_at": r.get("CREATED_AT"),
+        "updated_at": r.get("UPDATED_AT"),
+    }
 
 
 # ============================================================
