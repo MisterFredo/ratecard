@@ -17,12 +17,21 @@ type ContentLite = {
   DATE_CREATION?: string | null;
 };
 
+type ContentStats = {
+  TOTAL: number;
+  TOTAL_PUBLISHED: number;
+  TOTAL_DRAFT: number;
+  TOTAL_PUBLISHED_THIS_YEAR: number;
+  TOTAL_PUBLISHED_THIS_MONTH: number;
+};
+
 /* =========================================================
    COMPONENT
 ========================================================= */
 
 export default function ContentListPage() {
   const [contents, setContents] = useState<ContentLite[]>([]);
+  const [stats, setStats] = useState<ContentStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   /* ---------------------------------------------------------
@@ -32,8 +41,13 @@ export default function ContentListPage() {
     setLoading(true);
 
     try {
-      const res = await api.get("/content/list");
-      setContents(res.contents || []);
+      const [listRes, statsRes] = await Promise.all([
+        api.get("/content/list"),
+        api.get("/content/admin/stats"),
+      ]);
+
+      setContents(listRes.contents || []);
+      setStats(statsRes.stats || null);
     } catch (e) {
       console.error(e);
       alert("Erreur chargement contenus");
@@ -75,6 +89,23 @@ export default function ContentListPage() {
         </Link>
       </div>
 
+      {/* ================= STATS ================= */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <StatCard label="Total" value={stats.TOTAL} />
+          <StatCard label="Publiés" value={stats.TOTAL_PUBLISHED} green />
+          <StatCard label="Drafts" value={stats.TOTAL_DRAFT} yellow />
+          <StatCard
+            label="Publiés (année)"
+            value={stats.TOTAL_PUBLISHED_THIS_YEAR}
+          />
+          <StatCard
+            label="Ce mois-ci"
+            value={stats.TOTAL_PUBLISHED_THIS_MONTH}
+          />
+        </div>
+      )}
+
       {/* TABLE */}
       <table className="w-full border-collapse text-sm">
         <thead>
@@ -113,12 +144,12 @@ export default function ContentListPage() {
                 </span>
               </td>
 
-              {/* DATE CONTEXTE (DATE_CREATION) */}
+              {/* DATE CONTEXTE */}
               <td className="p-2 text-gray-600">
                 {formatDate(c.DATE_CREATION)}
               </td>
 
-              {/* DATE PUBLICATION (PUBLISHED_AT) */}
+              {/* DATE PUBLICATION */}
               <td className="p-2">
                 {formatDate(c.PUBLISHED_AT)}
               </td>
@@ -137,6 +168,44 @@ export default function ContentListPage() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/* =========================================================
+   STAT CARD
+========================================================= */
+
+function StatCard({
+  label,
+  value,
+  green,
+  yellow,
+}: {
+  label: string;
+  value: number;
+  green?: boolean;
+  yellow?: boolean;
+}) {
+  let bg = "bg-white";
+  let text = "text-gray-800";
+
+  if (green) {
+    bg = "bg-green-50";
+    text = "text-green-700";
+  }
+
+  if (yellow) {
+    bg = "bg-yellow-50";
+    text = "text-yellow-700";
+  }
+
+  return (
+    <div className={`${bg} rounded-lg p-4 border`}>
+      <div className="text-xs text-gray-500">{label}</div>
+      <div className={`text-2xl font-semibold ${text}`}>
+        {value}
+      </div>
     </div>
   );
 }
