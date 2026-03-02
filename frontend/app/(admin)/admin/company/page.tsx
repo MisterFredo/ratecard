@@ -12,19 +12,17 @@ type CompanyRow = {
   name: string;
   media_logo_url?: string | null;
   is_partner?: boolean | null;
+  has_description?: boolean;
+  has_wiki?: boolean;
 };
 
 export default function CompanyList() {
   const [companies, setCompanies] = useState<CompanyRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* ---------------------------------------------------------
-     LOAD
-  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
-
       try {
         const rows: CompanyRow[] = await api.get("/company/list");
         setCompanies(rows || []);
@@ -39,9 +37,6 @@ export default function CompanyList() {
     load();
   }, []);
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
     <div className="space-y-8">
       <div className="flex justify-between">
@@ -69,6 +64,8 @@ export default function CompanyList() {
             <tr className="bg-gray-100 border-b text-left">
               <th className="p-2">Nom</th>
               <th className="p-2">Statut</th>
+              <th className="p-2">Description</th>
+              <th className="p-2">Wiki</th>
               <th className="p-2">Logo</th>
               <th className="p-2 text-right">Actions</th>
             </tr>
@@ -87,12 +84,8 @@ export default function CompanyList() {
                   key={c.id_company}
                   className="border-b hover:bg-gray-50"
                 >
-                  {/* NOM */}
-                  <td className="p-2 font-medium">
-                    {c.name}
-                  </td>
+                  <td className="p-2 font-medium">{c.name}</td>
 
-                  {/* STATUT */}
                   <td className="p-2">
                     {isPartner ? (
                       <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
@@ -105,7 +98,24 @@ export default function CompanyList() {
                     )}
                   </td>
 
-                  {/* LOGO */}
+                  {/* DESCRIPTION STATUS */}
+                  <td className="p-2">
+                    {c.has_description ? (
+                      <span className="text-green-600 font-semibold">✓</span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+
+                  {/* WIKI STATUS */}
+                  <td className="p-2">
+                    {c.has_wiki ? (
+                      <span className="text-blue-600 font-semibold">✓</span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+
                   <td className="p-2">
                     {rectUrl ? (
                       <img
@@ -118,7 +128,6 @@ export default function CompanyList() {
                     )}
                   </td>
 
-                  {/* ACTIONS */}
                   <td className="p-2 text-right">
                     <Link
                       href={`/admin/company/edit/${c.id_company}`}
