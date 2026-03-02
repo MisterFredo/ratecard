@@ -3,22 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import ConceptBlocksEditor, {
-  ConceptBlock,
-} from "@/components/admin/ConceptBlocksEditor";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 
 export default function CreateConcept() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [content, setContent] = useState("");
   const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">("DRAFT");
-
-  const [blocks, setBlocks] = useState<ConceptBlock[]>([
-    {
-      title: "Définition / Contexte",
-      icon: "📘",
-      content: "",
-    },
-  ]);
 
   const [loading, setLoading] = useState(false);
 
@@ -31,17 +22,8 @@ export default function CreateConcept() {
       return;
     }
 
-    if (!blocks.length) {
-      alert("Au moins un bloc est requis");
-      return;
-    }
-
-    const emptyBlock = blocks.find(
-      (b) => !b.title.trim() || !b.content.trim()
-    );
-
-    if (emptyBlock) {
-      alert("Tous les blocs doivent être complétés");
+    if (!content.trim()) {
+      alert("Le contenu est requis");
       return;
     }
 
@@ -51,7 +33,7 @@ export default function CreateConcept() {
       await api.post("/concept/create", {
         title,
         description: description || null,
-        blocks: JSON.stringify({ BLOCKS: blocks }),
+        content,
         status,
       });
 
@@ -60,14 +42,8 @@ export default function CreateConcept() {
       // reset form
       setTitle("");
       setDescription("");
+      setContent("");
       setStatus("DRAFT");
-      setBlocks([
-        {
-          title: "Définition / Contexte",
-          icon: "📘",
-          content: "",
-        },
-      ]);
     } catch (e) {
       console.error(e);
       alert("❌ Erreur création concept");
@@ -118,15 +94,15 @@ export default function CreateConcept() {
         />
       </div>
 
-      {/* BLOCKS EDITOR */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">
-          Blocs éditoriaux
-        </h2>
+      {/* CONTENT (HTML UNIQUE) */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">
+          Contenu complet
+        </label>
 
-        <ConceptBlocksEditor
-          value={blocks}
-          onChange={setBlocks}
+        <HtmlEditor
+          value={content}
+          onChange={setContent}
         />
       </div>
 
