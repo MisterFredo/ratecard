@@ -1,8 +1,12 @@
 from fastapi import APIRouter, HTTPException
+from typing import List
+
 from api.company.models import (
     CompanyCreate,
     CompanyUpdate,
+    CompanyOut,
 )
+
 from core.company.service import (
     create_company,
     list_companies,
@@ -34,14 +38,13 @@ def create_route(data: CompanyCreate):
 # ============================================================
 # LIST — liste des sociétés actives
 # ============================================================
-@router.get("/list")
+@router.get("/list", response_model=List[CompanyOut])
 def list_route():
     """
     Retourne la liste des sociétés actives.
     """
     try:
-        companies = list_companies()
-        return {"status": "ok", "companies": companies}
+        return list_companies()
     except Exception as e:
         raise HTTPException(400, f"Erreur liste sociétés : {e}")
 
@@ -49,7 +52,7 @@ def list_route():
 # ============================================================
 # GET ONE — récupération d'une société
 # ============================================================
-@router.get("/{id_company}")
+@router.get("/{id_company}", response_model=CompanyOut)
 def get_route(id_company: str):
     """
     Récupère une société par son ID.
@@ -58,7 +61,7 @@ def get_route(id_company: str):
     if not company:
         raise HTTPException(404, "Société introuvable")
 
-    return {"status": "ok", "company": company}
+    return company
 
 
 # ============================================================
@@ -68,10 +71,6 @@ def get_route(id_company: str):
 def update_route(id_company: str, data: CompanyUpdate):
     """
     Met à jour une société existante.
-
-    Peut inclure :
-    - données métier
-    - champs média (post-création)
     """
     try:
         updated = update_company(id_company, data)
