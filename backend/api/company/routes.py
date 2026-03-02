@@ -18,7 +18,7 @@ router = APIRouter()
 
 
 # ============================================================
-# CREATE — création d'une société (DATA ONLY)
+# CREATE — création d'une société
 # ============================================================
 @router.post("/create")
 def create_route(data: CompanyCreate):
@@ -33,13 +33,13 @@ def create_route(data: CompanyCreate):
 
 
 # ============================================================
-# LIST — liste des sociétés actives (LIGHT VERSION)
+# LIST — liste des sociétés actives (LIGHT)
 # ============================================================
 @router.get("/list")
 def list_route():
     """
     Retourne la liste des sociétés actives.
-    Version légère (sans wiki).
+    Version légère (pas de wiki).
     """
     try:
         return list_companies()
@@ -48,22 +48,30 @@ def list_route():
 
 
 # ============================================================
-# GET ONE — récupération d'une société (FULL)
+# GET ONE — récupération complète
 # ============================================================
 @router.get("/{id_company}", response_model=CompanyOut)
 def get_route(id_company: str):
     """
     Récupère une société complète par son ID.
+    Inclut wiki_content.
     """
-    company = get_company(id_company)
-    if not company:
-        raise HTTPException(404, "Société introuvable")
+    try:
+        company = get_company(id_company)
 
-    return company
+        if not company:
+            raise HTTPException(404, "Société introuvable")
+
+        return company
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Erreur récupération société : {e}")
 
 
 # ============================================================
-# UPDATE — mise à jour d'une société existante
+# UPDATE — mise à jour
 # ============================================================
 @router.put("/update/{id_company}")
 def update_route(id_company: str, data: CompanyUpdate):
@@ -72,6 +80,13 @@ def update_route(id_company: str, data: CompanyUpdate):
     """
     try:
         updated = update_company(id_company, data)
-        return {"status": "ok", "updated": updated}
+
+        if not updated:
+            raise HTTPException(404, "Société introuvable ou aucune modification")
+
+        return {"status": "ok", "updated": True}
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(400, f"Erreur mise à jour société : {e}")
