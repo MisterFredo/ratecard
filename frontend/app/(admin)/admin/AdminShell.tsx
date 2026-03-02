@@ -11,6 +11,7 @@ import {
   Newspaper,
   Mail,
   Share2,
+  BookOpen, // ✅ ajouté pour Concepts
 } from "lucide-react";
 
 export default function AdminShell({
@@ -37,14 +38,19 @@ export default function AdminShell({
     },
 
     {
-      href: "/admin/digest", // ✅ nouveau chemin
+      href: "/admin/digest",
       label: "Digest",
       icon: Mail,
     },
 
     { href: "/admin/company", label: "Sociétés", icon: Building2 },
     { href: "/admin/person", label: "Personnes", icon: UserCircle },
+
     { href: "/admin/topic", label: "Topics", icon: Tags },
+
+    // ✅ NOUVEAU
+    { href: "/admin/concept", label: "Concepts", icon: BookOpen },
+
     { href: "/admin/event", label: "Événements", icon: CalendarDays },
   ];
 
