@@ -9,12 +9,11 @@ from datetime import datetime
 class ConceptCreate(BaseModel):
     """
     Création d'un concept métier.
-
-    BLOCKS est stocké sous forme de string JSON.
+    Content = HTML complet.
     """
     title: str
     description: Optional[str] = None
-    blocks: str  # JSON stringifié
+    content: Optional[str] = None
 
     status: Optional[str] = "DRAFT"
     vectorise: Optional[bool] = False
@@ -29,7 +28,7 @@ class ConceptUpdate(BaseModel):
     """
     title: Optional[str] = None
     description: Optional[str] = None
-    blocks: Optional[str] = None
+    content: Optional[str] = None
 
     status: Optional[str] = None
     vectorise: Optional[bool] = None
@@ -40,12 +39,12 @@ class ConceptUpdate(BaseModel):
 # ============================================================
 class ConceptOut(BaseModel):
     """
-    Représentation 1:1 avec RATECARD_CONCEPT.
+    Représentation alignée avec RATECARD_CONCEPT simplifiée.
     """
     id_concept: str
     title: str
     description: Optional[str] = None
-    blocks: str
+    content: Optional[str] = None
 
     status: Optional[str] = None
     vectorise: Optional[bool] = False
