@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import ConceptBlocksEditor, {
-  ConceptBlock,
-} from "@/components/admin/ConceptBlocksEditor";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 
 export default function EditConcept({
   params,
@@ -19,9 +17,8 @@ export default function EditConcept({
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [content, setContent] = useState("");
   const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">("DRAFT");
-
-  const [blocks, setBlocks] = useState<ConceptBlock[]>([]);
 
   /* ---------------------------------------------------------
      LOAD
@@ -31,22 +28,12 @@ export default function EditConcept({
       setLoading(true);
 
       try {
-        const res = await api.get(`/concept/${id}`);
-        const concept = res.concept;
+        const concept = await api.get(`/concept/${id}`);
 
-        setTitle(concept.TITLE || "");
-        setDescription(concept.DESCRIPTION || "");
-        setStatus(concept.STATUS || "DRAFT");
-
-        if (concept.BLOCKS) {
-          try {
-            const parsed = JSON.parse(concept.BLOCKS);
-            setBlocks(parsed.BLOCKS || []);
-          } catch (e) {
-            console.error("Erreur parsing BLOCKS", e);
-            setBlocks([]);
-          }
-        }
+        setTitle(concept.title || "");
+        setDescription(concept.description || "");
+        setContent(concept.content || "");
+        setStatus(concept.status || "DRAFT");
       } catch (e) {
         console.error(e);
         alert("❌ Erreur chargement concept");
@@ -67,17 +54,8 @@ export default function EditConcept({
       return;
     }
 
-    if (!blocks.length) {
-      alert("Au moins un bloc est requis");
-      return;
-    }
-
-    const emptyBlock = blocks.find(
-      (b) => !b.title.trim() || !b.content.trim()
-    );
-
-    if (emptyBlock) {
-      alert("Tous les blocs doivent être complétés");
+    if (!content.trim()) {
+      alert("Le contenu est requis");
       return;
     }
 
@@ -87,7 +65,7 @@ export default function EditConcept({
       await api.put(`/concept/update/${id}`, {
         title,
         description: description || null,
-        blocks: JSON.stringify({ BLOCKS: blocks }),
+        content,
         status,
       });
 
@@ -141,15 +119,15 @@ export default function EditConcept({
         />
       </div>
 
-      {/* BLOCKS */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">
-          Blocs éditoriaux
-        </h2>
+      {/* CONTENT */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">
+          Contenu complet
+        </label>
 
-        <ConceptBlocksEditor
-          value={blocks}
-          onChange={setBlocks}
+        <HtmlEditor
+          value={content}
+          onChange={setContent}
         />
       </div>
 
