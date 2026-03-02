@@ -10,12 +10,6 @@ import HtmlEditor from "@/components/admin/HtmlEditor";
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 const COMPANY_MEDIA_PATH = "companies";
 
-type WikiBlock = {
-  title?: string;
-  icon?: string;
-  content?: string;
-};
-
 export default function EditCompany({ params }: { params: { id: string } }) {
   const { id } = params;
 
@@ -28,9 +22,8 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [isPartner, setIsPartner] = useState(false);
 
-  // --- WIKI ---
-  const [wikiDescription, setWikiDescription] = useState("");
-  const [wikiBlocks, setWikiBlocks] = useState<WikiBlock[]>([]);
+  // --- WIKI (BLOC UNIQUE) ---
+  const [wikiContent, setWikiContent] = useState("");
 
   // --- LOGO ---
   const [logoFilename, setLogoFilename] = useState<string | null>(null);
@@ -51,8 +44,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         setWebsiteUrl(c.website_url || "");
         setIsPartner(Boolean(c.is_partner));
 
-        setWikiDescription(c.wiki_description || "");
-        setWikiBlocks(c.wiki_blocks || []);
+        setWikiContent(c.wiki_content || "");
 
         setLogoFilename(c.media_logo_url || null);
       } catch (e) {
@@ -79,9 +71,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
         is_partner: isPartner,
-
-        wiki_description: wikiDescription || null,
-        wiki_blocks: wikiBlocks.length > 0 ? wikiBlocks : null,
+        wiki_content: wikiContent || null,
       });
 
       alert("Société modifiée");
@@ -127,75 +117,25 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         }}
       />
 
-      {/* DESCRIPTION */}
+      {/* DESCRIPTION COMMERCIALE */}
       <div className="space-y-2">
         <label className="block font-medium">
-          Description
-          <span className="ml-2 text-sm text-gray-500">
-            (contenu éditorial – HTML)
-          </span>
+          Description (commerciale)
         </label>
 
         <HtmlEditor value={description} onChange={setDescription} />
       </div>
 
       {/* WIKI */}
-      <div className="border-t pt-6 space-y-4">
-        <h2 className="text-lg font-semibold">Wiki (optionnel)</h2>
+      <div className="border-t pt-6 space-y-2">
+        <h2 className="text-lg font-semibold">
+          Wiki (connaissance interne / éditoriale)
+        </h2>
 
-        <textarea
-          className="w-full border p-2 rounded"
-          placeholder="Description wiki"
-          value={wikiDescription}
-          onChange={(e) => setWikiDescription(e.target.value)}
+        <HtmlEditor
+          value={wikiContent}
+          onChange={setWikiContent}
         />
-
-        {wikiBlocks.map((block, index) => (
-          <div key={index} className="border p-3 rounded space-y-2">
-            <input
-              className="w-full border p-2 rounded"
-              placeholder="Titre"
-              value={block.title || ""}
-              onChange={(e) => {
-                const copy = [...wikiBlocks];
-                copy[index].title = e.target.value;
-                setWikiBlocks(copy);
-              }}
-            />
-
-            <input
-              className="w-full border p-2 rounded"
-              placeholder="Icon (optionnel)"
-              value={block.icon || ""}
-              onChange={(e) => {
-                const copy = [...wikiBlocks];
-                copy[index].icon = e.target.value;
-                setWikiBlocks(copy);
-              }}
-            />
-
-            <textarea
-              className="w-full border p-2 rounded"
-              placeholder="Contenu"
-              value={block.content || ""}
-              onChange={(e) => {
-                const copy = [...wikiBlocks];
-                copy[index].content = e.target.value;
-                setWikiBlocks(copy);
-              }}
-            />
-          </div>
-        ))}
-
-        <button
-          type="button"
-          onClick={() =>
-            setWikiBlocks([...wikiBlocks, { title: "", content: "" }])
-          }
-          className="text-sm underline"
-        >
-          + Ajouter un bloc
-        </button>
       </div>
 
       {/* PARTNER */}
