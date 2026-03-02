@@ -1,6 +1,15 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
+
+
+# ============================================================
+# WIKI BLOCK STRUCTURE
+# ============================================================
+class WikiBlock(BaseModel):
+    title: Optional[str] = None
+    icon: Optional[str] = None
+    content: Optional[str] = None
 
 
 # ============================================================
@@ -48,7 +57,16 @@ class CompanyOut(BaseModel):
     """
     id_company: str
     name: str
+
+    # --- ÉDITORIAL RATECARD ---
     description: Optional[str] = None
+
+    # --- WIKI (connaissance structurée) ---
+    wiki_description: Optional[str] = None
+    wiki_blocks: Optional[List[WikiBlock]] = None
+    wiki_source_id: Optional[str] = None
+    wiki_updated_at: Optional[datetime] = None
+    wiki_vectorised: Optional[bool] = False
 
     # 🔑 LOGO — URL PUBLIQUE (source de vérité)
     media_logo_url: Optional[str] = None
@@ -61,6 +79,3 @@ class CompanyOut(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     is_active: bool = True
-
-
-
