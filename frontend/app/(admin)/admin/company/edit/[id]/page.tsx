@@ -10,6 +10,12 @@ import HtmlEditor from "@/components/admin/HtmlEditor";
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 const COMPANY_MEDIA_PATH = "companies";
 
+type WikiBlock = {
+  title?: string;
+  icon?: string;
+  content?: string;
+};
+
 export default function EditCompany({ params }: { params: { id: string } }) {
   const { id } = params;
 
@@ -20,10 +26,13 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   const [description, setDescription] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
-
   const [isPartner, setIsPartner] = useState(false);
 
-  // 🔑 LOGO — NOM DU FICHIER GCS
+  // --- WIKI ---
+  const [wikiDescription, setWikiDescription] = useState("");
+  const [wikiBlocks, setWikiBlocks] = useState<WikiBlock[]>([]);
+
+  // --- LOGO ---
   const [logoFilename, setLogoFilename] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
@@ -34,18 +43,18 @@ export default function EditCompany({ params }: { params: { id: string } }) {
       setLoading(true);
 
       try {
-        const res = await api.get(`/company/${id}`);
-        const c = res.company;
+        const c = await api.get(`/company/${id}`);
 
-        setName(c.NAME || "");
-        setDescription(c.DESCRIPTION || "");
-        setLinkedinUrl(c.LINKEDIN_URL || "");
-        setWebsiteUrl(c.WEBSITE_URL || "");
-        setIsPartner(Boolean(c.IS_PARTNER));
+        setName(c.name || "");
+        setDescription(c.description || "");
+        setLinkedinUrl(c.linkedin_url || "");
+        setWebsiteUrl(c.website_url || "");
+        setIsPartner(Boolean(c.is_partner));
 
-        setLogoFilename(
-          c.MEDIA_LOGO_RECTANGLE_ID || null
-        );
+        setWikiDescription(c.wiki_description || "");
+        setWikiBlocks(c.wiki_blocks || []);
+
+        setLogoFilename(c.media_logo_url || null);
       } catch (e) {
         console.error(e);
         alert("❌ Erreur chargement société");
@@ -70,6 +79,9 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
         is_partner: isPartner,
+
+        wiki_description: wikiDescription || null,
+        wiki_blocks: wikiBlocks.length > 0 ? wikiBlocks : null,
       });
 
       alert("Société modifiée");
@@ -82,7 +94,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   }
 
   /* ---------------------------------------------------------
-     URL LOGO (SOURCE DE VÉRITÉ FRONT)
+     URL LOGO
   --------------------------------------------------------- */
   const rectUrl = logoFilename
     ? `${GCS_BASE_URL}/${COMPANY_MEDIA_PATH}/${logoFilename}`
@@ -115,6 +127,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         }}
       />
 
+      {/* DESCRIPTION */}
       <div className="space-y-2">
         <label className="block font-medium">
           Description
@@ -123,12 +136,69 @@ export default function EditCompany({ params }: { params: { id: string } }) {
           </span>
         </label>
 
-        <HtmlEditor
-          value={description}
-          onChange={setDescription}
-        />
+        <HtmlEditor value={description} onChange={setDescription} />
       </div>
 
+      {/* WIKI */}
+      <div className="border-t pt-6 space-y-4">
+        <h2 className="text-lg font-semibold">Wiki (optionnel)</h2>
+
+        <textarea
+          className="w-full border p-2 rounded"
+          placeholder="Description wiki"
+          value={wikiDescription}
+          onChange={(e) => setWikiDescription(e.target.value)}
+        />
+
+        {wikiBlocks.map((block, index) => (
+          <div key={index} className="border p-3 rounded space-y-2">
+            <input
+              className="w-full border p-2 rounded"
+              placeholder="Titre"
+              value={block.title || ""}
+              onChange={(e) => {
+                const copy = [...wikiBlocks];
+                copy[index].title = e.target.value;
+                setWikiBlocks(copy);
+              }}
+            />
+
+            <input
+              className="w-full border p-2 rounded"
+              placeholder="Icon (optionnel)"
+              value={block.icon || ""}
+              onChange={(e) => {
+                const copy = [...wikiBlocks];
+                copy[index].icon = e.target.value;
+                setWikiBlocks(copy);
+              }}
+            />
+
+            <textarea
+              className="w-full border p-2 rounded"
+              placeholder="Contenu"
+              value={block.content || ""}
+              onChange={(e) => {
+                const copy = [...wikiBlocks];
+                copy[index].content = e.target.value;
+                setWikiBlocks(copy);
+              }}
+            />
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={() =>
+            setWikiBlocks([...wikiBlocks, { title: "", content: "" }])
+          }
+          className="text-sm underline"
+        >
+          + Ajouter un bloc
+        </button>
+      </div>
+
+      {/* PARTNER */}
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
@@ -153,10 +223,8 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         rectUrl={rectUrl}
         onUpdated={async () => {
           try {
-            const res = await api.get(`/company/${id}`);
-            setLogoFilename(
-              res.company?.MEDIA_LOGO_RECTANGLE_ID || null
-            );
+            const c = await api.get(`/company/${id}`);
+            setLogoFilename(c.media_logo_url || null);
           } catch (e) {
             console.error(e);
           }
