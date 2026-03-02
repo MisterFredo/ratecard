@@ -15,6 +15,7 @@ from core.content.service import (
     update_content,
     archive_content,
     publish_content,
+    get_content_stats,
 )
 
 from core.content.orchestration import (
@@ -52,6 +53,14 @@ def read_analysis(id_content: str):
         raise HTTPException(404, "Analyse introuvable")
 
     return content
+
+# ============================================================
+# CONTENT STATS (ADMIN)
+# ============================================================
+@router.get("/admin/stats")
+def stats_route():
+    stats = get_content_stats()
+    return {"status": "ok", "stats": stats}
 
 
 # ============================================================
