@@ -1,32 +1,15 @@
-# backend/api/company/models.py
-
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 
 
 # ============================================================
-# WIKI BLOCK STRUCTURE
-# ============================================================
-class WikiBlock(BaseModel):
-    """
-    Bloc structuré du wiki société.
-    Correspond exactement à :
-    ARRAY<STRUCT<title STRING, icon STRING, content STRING>>
-    """
-    title: Optional[str] = None
-    icon: Optional[str] = None
-    content: Optional[str] = None
-
-
-# ============================================================
-# CREATE — création d'une société (DATA ONLY)
+# CREATE — création d'une société
 # ============================================================
 class CompanyCreate(BaseModel):
     """
     Création d'une société.
     ⚠️ Aucun champ média ici.
-    ⚠️ Wiki optionnel (géré ensuite via update).
     """
     name: str
     description: Optional[str] = None
@@ -34,6 +17,7 @@ class CompanyCreate(BaseModel):
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
 
+    # Statut partenaire
     is_partner: Optional[bool] = False
 
 
@@ -43,11 +27,8 @@ class CompanyCreate(BaseModel):
 class CompanyUpdate(BaseModel):
     """
     Mise à jour des données métier.
-    ⚠️ Les visuels sont gérés exclusivement
-    via /visuals/company/*
+    Les visuels restent gérés via /visuals/company/*
     """
-
-    # --- ÉDITORIAL ---
     name: Optional[str] = None
     description: Optional[str] = None
 
@@ -56,11 +37,8 @@ class CompanyUpdate(BaseModel):
 
     is_partner: Optional[bool] = None
 
-    # --- WIKI (OPTIONNEL) ---
-    wiki_description: Optional[str] = None
-    wiki_blocks: Optional[List[WikiBlock]] = None
-    wiki_source_id: Optional[str] = None
-    wiki_vectorised: Optional[bool] = None
+    # --- Wiki (bloc unique) ---
+    wiki_content: Optional[str] = None
 
 
 # ============================================================
@@ -68,34 +46,33 @@ class CompanyUpdate(BaseModel):
 # ============================================================
 class CompanyOut(BaseModel):
     """
-    Représentation complète d'une société
-    consommable par le frontend.
+    Représentation d'une société consommable par le frontend.
     """
 
     id_company: str
     name: str
 
-    # --- ÉDITORIAL RATECARD ---
+    # --- Brand (éditorial Ratecard) ---
     description: Optional[str] = None
 
-    # --- WIKI (connaissance structurée) ---
-    wiki_description: Optional[str] = None
-    wiki_blocks: Optional[List[WikiBlock]] = None
+    # --- Wiki (connaissance structurée simplifiée) ---
+    wiki_content: Optional[str] = None
     wiki_source_id: Optional[str] = None
     wiki_updated_at: Optional[datetime] = None
     wiki_vectorised: Optional[bool] = False
 
-    # --- MEDIA ---
+    # --- Media ---
     media_logo_url: Optional[str] = None
 
-    # --- LINKS ---
+    # --- Liens ---
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
 
-    # --- FLAGS ---
+    # --- Statut ---
     is_partner: bool = False
-    is_active: bool = True
 
-    # --- DATES ---
+    # --- Dates ---
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    is_active: bool = True
