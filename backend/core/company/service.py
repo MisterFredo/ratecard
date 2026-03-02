@@ -59,8 +59,8 @@ def create_company(data: CompanyCreate) -> str:
 # ============================================================
 def list_companies():
     """
-    Liste des sociétés (version légère pour listing admin).
-    Les blocs wiki ne sont pas chargés ici.
+    Liste des sociétés (version légère).
+    Pas de wiki ici.
     """
     sql = f"""
         SELECT
@@ -100,8 +100,7 @@ def get_company(company_id: str):
     Récupère une société complète (inclut wiki).
     """
     sql = f"""
-        SELECT
-            *
+        SELECT *
         FROM `{TABLE_COMPANY}`
         WHERE ID_COMPANY = @id
         LIMIT 1
@@ -151,14 +150,25 @@ def get_company(company_id: str):
 def update_company(id_company: str, data: CompanyUpdate) -> bool:
     """
     Met à jour une société existante (hors visuel).
+    Supporte le wiki optionnel.
     """
     values = data.dict(exclude_unset=True)
 
     if not values:
         return False
 
+    # Bool safe
     if "is_partner" in values:
         values["is_partner"] = bool(values["is_partner"])
+
+    # Convert WikiBlock objects to dict (ARRAY<STRUCT>)
+    if "wiki_blocks" in values and values["wiki_blocks"] is not None:
+        values["wiki_blocks"] = [
+            block.dict() for block in values["wiki_blocks"]
+        ]
+
+        # Mise à jour automatique du timestamp wiki
+        values["wiki_updated_at"] = datetime.utcnow().isoformat()
 
     values["updated_at"] = datetime.utcnow().isoformat()
 
