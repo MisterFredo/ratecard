@@ -609,4 +609,25 @@ def publish_content(
 
     return status
 
+def get_content_stats():
+    query = f"""
+        SELECT
+          COUNT(*) AS TOTAL,
+          COUNTIF(STATUS = 'PUBLISHED') AS TOTAL_PUBLISHED,
+          COUNTIF(STATUS = 'DRAFT') AS TOTAL_DRAFT,
+          COUNTIF(
+            STATUS = 'PUBLISHED'
+            AND EXTRACT(YEAR FROM PUBLISHED_AT) = EXTRACT(YEAR FROM CURRENT_DATE())
+          ) AS TOTAL_PUBLISHED_THIS_YEAR,
+          COUNTIF(
+            STATUS = 'PUBLISHED'
+            AND EXTRACT(YEAR FROM PUBLISHED_AT) = EXTRACT(YEAR FROM CURRENT_DATE())
+            AND EXTRACT(MONTH FROM PUBLISHED_AT) = EXTRACT(MONTH FROM CURRENT_DATE())
+          ) AS TOTAL_PUBLISHED_THIS_MONTH
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT`
+    """
+
+    rows = query_bq(query)
+    return rows[0] if rows else {}
+
 
