@@ -24,9 +24,6 @@ router = APIRouter()
 def create_route(data: CompanyCreate):
     """
     Crée une société (sans aucun visuel).
-
-    Les visuels sont associés UNIQUEMENT après création,
-    via une action distincte.
     """
     try:
         company_id = create_company(data)
@@ -36,12 +33,13 @@ def create_route(data: CompanyCreate):
 
 
 # ============================================================
-# LIST — liste des sociétés actives
+# LIST — liste des sociétés actives (LIGHT VERSION)
 # ============================================================
-@router.get("/list", response_model=List[CompanyOut])
+@router.get("/list")
 def list_route():
     """
     Retourne la liste des sociétés actives.
+    Version légère (sans wiki).
     """
     try:
         return list_companies()
@@ -50,12 +48,12 @@ def list_route():
 
 
 # ============================================================
-# GET ONE — récupération d'une société
+# GET ONE — récupération d'une société (FULL)
 # ============================================================
 @router.get("/{id_company}", response_model=CompanyOut)
 def get_route(id_company: str):
     """
-    Récupère une société par son ID.
+    Récupère une société complète par son ID.
     """
     company = get_company(id_company)
     if not company:
