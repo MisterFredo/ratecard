@@ -14,13 +14,12 @@ TABLE_CONCEPT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONCEPT"
 
 
 # ============================================================
-# CREATE CONCEPT — LOAD JOB (NO STREAMING)
+# CREATE CONCEPT
 # ============================================================
 def create_concept(data: ConceptCreate) -> str:
     """
     Crée un concept métier.
-
-    Insertion via LOAD JOB (ligne immédiatement stable).
+    Content = HTML complet.
     """
     concept_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
@@ -29,7 +28,7 @@ def create_concept(data: ConceptCreate) -> str:
         "ID_CONCEPT": concept_id,
         "TITLE": data.title,
         "DESCRIPTION": data.description,
-        "BLOCKS": data.blocks,
+        "CONTENT": data.content,
         "STATUS": data.status or "DRAFT",
         "VECTORISE": data.vectorise or False,
         "CREATED_AT": now,
@@ -44,7 +43,7 @@ def create_concept(data: ConceptCreate) -> str:
             write_disposition="WRITE_APPEND"
         ),
     )
-    job.result()  # ⬅️ bloquant = stable immédiatement
+    job.result()
 
     return concept_id
 
@@ -53,15 +52,19 @@ def create_concept(data: ConceptCreate) -> str:
 # LIST CONCEPTS
 # ============================================================
 def list_concepts():
+    """
+    Liste légère pour admin.
+    """
     sql = f"""
         SELECT
             ID_CONCEPT,
             TITLE,
+            DESCRIPTION,
             STATUS,
             VECTORISE,
             CREATED_AT,
             UPDATED_AT
-        FROM {TABLE_CONCEPT}
+        FROM `{TABLE_CONCEPT}`
         WHERE STATUS != 'ARCHIVED'
         ORDER BY TITLE ASC
     """
@@ -70,12 +73,13 @@ def list_concepts():
 
     return [
         {
-            "ID_CONCEPT": r["ID_CONCEPT"],
-            "TITLE": r["TITLE"],
-            "STATUS": r["STATUS"],
-            "VECTORISE": r["VECTORISE"],
-            "CREATED_AT": r["CREATED_AT"],
-            "UPDATED_AT": r["UPDATED_AT"],
+            "id_concept": r["ID_CONCEPT"],
+            "title": r["TITLE"],
+            "description": r["DESCRIPTION"],
+            "status": r["STATUS"],
+            "vectorise": r["VECTORISE"],
+            "created_at": r["CREATED_AT"],
+            "updated_at": r["UPDATED_AT"],
         }
         for r in rows
     ]
@@ -86,7 +90,7 @@ def list_concepts():
 # ============================================================
 def get_concept(concept_id: str):
     """
-    Récupère un concept par ID.
+    Récupère un concept complet.
     """
     sql = f"""
         SELECT *
@@ -94,8 +98,24 @@ def get_concept(concept_id: str):
         WHERE ID_CONCEPT = @id
         LIMIT 1
     """
+
     rows = query_bq(sql, {"id": concept_id})
-    return rows[0] if rows else None
+
+    if not rows:
+        return None
+
+    r = rows[0]
+
+    return {
+        "id_concept": r["ID_CONCEPT"],
+        "title": r["TITLE"],
+        "description": r.get("DESCRIPTION"),
+        "content": r.get("CONTENT"),
+        "status": r.get("STATUS"),
+        "vectorise": r.get("VECTORISE", False),
+        "created_at": r.get("CREATED_AT"),
+        "updated_at": r.get("UPDATED_AT"),
+    }
 
 
 # ============================================================
@@ -104,12 +124,16 @@ def get_concept(concept_id: str):
 def update_concept(id_concept: str, data: ConceptUpdate) -> bool:
     """
     Met à jour un concept existant.
-    Utilise UPDATE (pas de load job).
+    Reset vectorise si content modifié.
     """
     values = data.dict(exclude_unset=True)
 
     if not values:
         return False
+
+    # Si content modifié → reset vectorisation
+    if "content" in values:
+        values["vectorise"] = False
 
     values["updated_at"] = datetime.utcnow().isoformat()
 
