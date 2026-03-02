@@ -97,7 +97,7 @@ def list_companies():
 # ============================================================
 def get_company(company_id: str):
     """
-    Récupère une société complète (inclut wiki).
+    Récupère une société complète (inclut wiki_content).
     """
     sql = f"""
         SELECT *
@@ -117,12 +117,11 @@ def get_company(company_id: str):
         "id_company": r["ID_COMPANY"],
         "name": r["NAME"],
 
-        # --- Editorial ---
+        # --- Brand (éditorial Ratecard) ---
         "description": r.get("DESCRIPTION"),
 
-        # --- Wiki ---
-        "wiki_description": r.get("WIKI_DESCRIPTION"),
-        "wiki_blocks": r.get("WIKI_BLOCKS"),
+        # --- Wiki simplifié ---
+        "wiki_content": r.get("WIKI_CONTENT"),
         "wiki_source_id": r.get("WIKI_SOURCE_ID"),
         "wiki_updated_at": r.get("WIKI_UPDATED_AT"),
         "wiki_vectorised": r.get("WIKI_VECTORISED", False),
@@ -130,11 +129,11 @@ def get_company(company_id: str):
         # --- Media ---
         "media_logo_url": r.get("MEDIA_LOGO_RECTANGLE_ID"),
 
-        # --- Links ---
+        # --- Liens ---
         "linkedin_url": r.get("LINKEDIN_URL"),
         "website_url": r.get("WEBSITE_URL"),
 
-        # --- Flags ---
+        # --- Statut ---
         "is_partner": bool(r.get("IS_PARTNER", False)),
         "is_active": r.get("IS_ACTIVE", True),
 
@@ -149,8 +148,8 @@ def get_company(company_id: str):
 # ============================================================
 def update_company(id_company: str, data: CompanyUpdate) -> bool:
     """
-    Met à jour une société existante (hors visuel).
-    Supporte le wiki optionnel.
+    Met à jour une société existante.
+    Supporte le wiki simplifié.
     """
     values = data.dict(exclude_unset=True)
 
@@ -161,14 +160,10 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
     if "is_partner" in values:
         values["is_partner"] = bool(values["is_partner"])
 
-    # Convert WikiBlock objects to dict (ARRAY<STRUCT>)
-    if "wiki_blocks" in values and values["wiki_blocks"] is not None:
-        values["wiki_blocks"] = [
-            block.dict() for block in values["wiki_blocks"]
-        ]
-
-        # Mise à jour automatique du timestamp wiki
+    # Si wiki_content modifié → update timestamp wiki
+    if "wiki_content" in values:
         values["wiki_updated_at"] = datetime.utcnow().isoformat()
+        values["wiki_vectorised"] = False  # reset vectorisation
 
     values["updated_at"] = datetime.utcnow().isoformat()
 
