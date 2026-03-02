@@ -11,12 +11,6 @@ import HtmlEditor from "@/components/admin/HtmlEditor";
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 const COMPANY_MEDIA_PATH = "companies";
 
-type WikiBlock = {
-  title?: string;
-  icon?: string;
-  content?: string;
-};
-
 export default function CreateCompany() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -24,9 +18,8 @@ export default function CreateCompany() {
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [isPartner, setIsPartner] = useState(false);
 
-  // --- WIKI (OPTIONNEL) ---
-  const [wikiDescription, setWikiDescription] = useState("");
-  const [wikiBlocks, setWikiBlocks] = useState<WikiBlock[]>([]);
+  // --- WIKI (BLOC UNIQUE OPTIONNEL) ---
+  const [wikiContent, setWikiContent] = useState("");
 
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [logoFilename, setLogoFilename] = useState<string | null>(null);
@@ -59,11 +52,10 @@ export default function CreateCompany() {
       const newCompanyId = res.id_company;
       setCompanyId(newCompanyId);
 
-      // 🔥 Si wiki rempli → update immédiat
-      if (wikiDescription || wikiBlocks.length > 0) {
+      // 🔥 Si wiki rempli → update après création
+      if (wikiContent.trim()) {
         await api.put(`/company/update/${newCompanyId}`, {
-          wiki_description: wikiDescription || null,
-          wiki_blocks: wikiBlocks.length > 0 ? wikiBlocks : null,
+          wiki_content: wikiContent,
         });
       }
 
@@ -119,75 +111,24 @@ export default function CreateCompany() {
         }}
       />
 
-      {/* DESCRIPTION HTML */}
+      {/* DESCRIPTION COMMERCIALE */}
       <div className="space-y-2">
         <label className="block font-medium">
-          Description
-          <span className="ml-2 text-sm text-gray-500">
-            (contenu éditorial – HTML)
-          </span>
+          Description (commerciale)
         </label>
-
         <HtmlEditor value={description} onChange={setDescription} />
       </div>
 
-      {/* WIKI SECTION (OPTIONNEL) */}
-      <div className="border-t pt-6 space-y-4">
-        <h2 className="text-lg font-semibold">Wiki (optionnel)</h2>
+      {/* WIKI */}
+      <div className="border-t pt-6 space-y-2">
+        <h2 className="text-lg font-semibold">
+          Wiki (connaissance interne / éditoriale)
+        </h2>
 
-        <textarea
-          className="w-full border p-2 rounded"
-          placeholder="Description wiki"
-          value={wikiDescription}
-          onChange={(e) => setWikiDescription(e.target.value)}
+        <HtmlEditor
+          value={wikiContent}
+          onChange={setWikiContent}
         />
-
-        {wikiBlocks.map((block, index) => (
-          <div key={index} className="border p-3 rounded space-y-2">
-            <input
-              className="w-full border p-2 rounded"
-              placeholder="Titre"
-              value={block.title || ""}
-              onChange={(e) => {
-                const copy = [...wikiBlocks];
-                copy[index].title = e.target.value;
-                setWikiBlocks(copy);
-              }}
-            />
-
-            <input
-              className="w-full border p-2 rounded"
-              placeholder="Icon (optionnel)"
-              value={block.icon || ""}
-              onChange={(e) => {
-                const copy = [...wikiBlocks];
-                copy[index].icon = e.target.value;
-                setWikiBlocks(copy);
-              }}
-            />
-
-            <textarea
-              className="w-full border p-2 rounded"
-              placeholder="Contenu"
-              value={block.content || ""}
-              onChange={(e) => {
-                const copy = [...wikiBlocks];
-                copy[index].content = e.target.value;
-                setWikiBlocks(copy);
-              }}
-            />
-          </div>
-        ))}
-
-        <button
-          type="button"
-          onClick={() =>
-            setWikiBlocks([...wikiBlocks, { title: "", content: "" }])
-          }
-          className="text-sm underline"
-        >
-          + Ajouter un bloc
-        </button>
       </div>
 
       {/* PARTENAIRE */}
