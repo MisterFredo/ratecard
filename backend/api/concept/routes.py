@@ -36,14 +36,11 @@ def create_route(data: ConceptCreate):
 # ============================================================
 # LIST — liste des concepts
 # ============================================================
-@router.get("/list", response_model=List[ConceptOut])
+@router.get("/list")
 def list_route():
-    """
-    Retourne la liste des concepts.
-    Version légère (sans logique supplémentaire).
-    """
     try:
-        return list_concepts()
+        concepts = list_concepts()
+        return {"concepts": concepts}
     except Exception as e:
         raise HTTPException(400, f"Erreur liste concepts : {e}")
 
