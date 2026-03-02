@@ -1,8 +1,12 @@
 from fastapi import APIRouter, HTTPException
+from typing import List
+
 from api.concept.models import (
     ConceptCreate,
     ConceptUpdate,
+    ConceptOut,
 )
+
 from core.concept.service import (
     create_concept,
     list_concepts,
@@ -20,8 +24,7 @@ router = APIRouter()
 def create_route(data: ConceptCreate):
     """
     Crée un concept métier.
-
-    Les blocs sont stockés en JSON stringifié.
+    Content = HTML complet.
     """
     try:
         concept_id = create_concept(data)
@@ -31,16 +34,16 @@ def create_route(data: ConceptCreate):
 
 
 # ============================================================
-# LIST — liste des concepts actifs
+# LIST — liste des concepts
 # ============================================================
-@router.get("/list")
+@router.get("/list", response_model=List[ConceptOut])
 def list_route():
     """
-    Retourne la liste des concepts actifs.
+    Retourne la liste des concepts.
+    Version légère (sans logique supplémentaire).
     """
     try:
-        concepts = list_concepts()
-        return {"status": "ok", "concepts": concepts}
+        return list_concepts()
     except Exception as e:
         raise HTTPException(400, f"Erreur liste concepts : {e}")
 
@@ -48,16 +51,23 @@ def list_route():
 # ============================================================
 # GET ONE — récupération d'un concept
 # ============================================================
-@router.get("/{id_concept}")
+@router.get("/{id_concept}", response_model=ConceptOut)
 def get_route(id_concept: str):
     """
     Récupère un concept par son ID.
     """
-    concept = get_concept(id_concept)
-    if not concept:
-        raise HTTPException(404, "Concept introuvable")
+    try:
+        concept = get_concept(id_concept)
 
-    return {"status": "ok", "concept": concept}
+        if not concept:
+            raise HTTPException(404, "Concept introuvable")
+
+        return concept
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Erreur récupération concept : {e}")
 
 
 # ============================================================
@@ -67,16 +77,17 @@ def get_route(id_concept: str):
 def update_route(id_concept: str, data: ConceptUpdate):
     """
     Met à jour un concept existant.
-
-    Peut inclure :
-    - titre
-    - description
-    - blocs JSON
-    - statut
-    - flag vectorisation
+    Supporte content HTML.
     """
     try:
         updated = update_concept(id_concept, data)
-        return {"status": "ok", "updated": updated}
+
+        if not updated:
+            raise HTTPException(404, "Concept introuvable ou aucune modification")
+
+        return {"status": "ok", "updated": True}
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(400, f"Erreur mise à jour concept : {e}")
