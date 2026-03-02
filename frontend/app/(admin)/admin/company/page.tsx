@@ -8,14 +8,10 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 const COMPANY_MEDIA_PATH = "companies";
 
 type CompanyRow = {
-  ID_COMPANY: string;
-  NAME: string;
-
-  // 🔑 NOM DU FICHIER GCS
-  MEDIA_LOGO_RECTANGLE_ID?: string | null;
-
-  // PARTENAIRE
-  IS_PARTNER?: boolean | null;
+  id_company: string;
+  name: string;
+  media_logo_url?: string | null;
+  is_partner?: boolean | null;
 };
 
 export default function CompanyList() {
@@ -30,9 +26,8 @@ export default function CompanyList() {
       setLoading(true);
 
       try {
-        const res = await api.get("/company/list");
-        const rows: CompanyRow[] = res.companies || [];
-        setCompanies(rows);
+        const rows: CompanyRow[] = await api.get("/company/list");
+        setCompanies(rows || []);
       } catch (e) {
         console.error(e);
         alert("❌ Erreur chargement sociétés");
@@ -81,20 +76,20 @@ export default function CompanyList() {
 
           <tbody>
             {companies.map((c) => {
-              const isPartner = Boolean(c.IS_PARTNER);
+              const isPartner = Boolean(c.is_partner);
 
-              const rectUrl = c.MEDIA_LOGO_RECTANGLE_ID
-                ? `${GCS_BASE_URL}/${COMPANY_MEDIA_PATH}/${c.MEDIA_LOGO_RECTANGLE_ID}`
+              const rectUrl = c.media_logo_url
+                ? `${GCS_BASE_URL}/${COMPANY_MEDIA_PATH}/${c.media_logo_url}`
                 : null;
 
               return (
                 <tr
-                  key={c.ID_COMPANY}
+                  key={c.id_company}
                   className="border-b hover:bg-gray-50"
                 >
                   {/* NOM */}
                   <td className="p-2 font-medium">
-                    {c.NAME}
+                    {c.name}
                   </td>
 
                   {/* STATUT */}
@@ -115,7 +110,7 @@ export default function CompanyList() {
                     {rectUrl ? (
                       <img
                         src={rectUrl}
-                        alt={`Logo ${c.NAME}`}
+                        alt={`Logo ${c.name}`}
                         className="h-10 max-w-[120px] object-contain"
                       />
                     ) : (
@@ -126,7 +121,7 @@ export default function CompanyList() {
                   {/* ACTIONS */}
                   <td className="p-2 text-right">
                     <Link
-                      href={`/admin/company/edit/${c.ID_COMPANY}`}
+                      href={`/admin/company/edit/${c.id_company}`}
                       className="text-blue-600 hover:underline"
                     >
                       Modifier
