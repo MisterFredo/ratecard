@@ -60,7 +60,7 @@ def create_company(data: CompanyCreate) -> str:
 def list_companies():
     """
     Liste des sociétés (version légère).
-    Pas de wiki ici.
+    Ajoute indicateurs de complétion Description & Wiki.
     """
     sql = f"""
         SELECT
@@ -69,7 +69,24 @@ def list_companies():
             CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
             c.MEDIA_LOGO_RECTANGLE_ID,
             COALESCE(m.NB_ANALYSES, 0) AS NB_ANALYSES,
-            COALESCE(m.LAST_30_DAYS, 0) AS DELTA_30D
+            COALESCE(m.LAST_30_DAYS, 0) AS DELTA_30D,
+
+            -- Description remplie ?
+            CASE
+                WHEN c.DESCRIPTION IS NOT NULL
+                     AND TRIM(c.DESCRIPTION) != ""
+                THEN TRUE
+                ELSE FALSE
+            END AS HAS_DESCRIPTION,
+
+            -- Wiki rempli ?
+            CASE
+                WHEN c.WIKI_CONTENT IS NOT NULL
+                     AND TRIM(c.WIKI_CONTENT) != ""
+                THEN TRUE
+                ELSE FALSE
+            END AS HAS_WIKI
+
         FROM `{TABLE_COMPANY}` c
         LEFT JOIN `{TABLE_COMPANY_METRICS}` m
           ON m.ID_COMPANY = c.ID_COMPANY
@@ -87,10 +104,11 @@ def list_companies():
             "media_logo_url": r["MEDIA_LOGO_RECTANGLE_ID"],
             "nb_analyses": r["NB_ANALYSES"],
             "delta_30d": r["DELTA_30D"],
+            "has_description": r["HAS_DESCRIPTION"],
+            "has_wiki": r["HAS_WIKI"],
         }
         for r in rows
     ]
-
 
 # ============================================================
 # GET ONE COMPANY (DETAIL COMPLET)
