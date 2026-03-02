@@ -52,9 +52,6 @@ def create_concept(data: ConceptCreate) -> str:
 # LIST CONCEPTS
 # ============================================================
 def list_concepts():
-    """
-    Liste légère pour admin.
-    """
     sql = f"""
         SELECT
             ID_CONCEPT,
@@ -65,7 +62,7 @@ def list_concepts():
             CREATED_AT,
             UPDATED_AT
         FROM `{TABLE_CONCEPT}`
-        WHERE STATUS != 'ARCHIVED'
+        WHERE COALESCE(STATUS, 'DRAFT') != 'ARCHIVED'
         ORDER BY TITLE ASC
     """
 
@@ -76,14 +73,13 @@ def list_concepts():
             "id_concept": r["ID_CONCEPT"],
             "title": r["TITLE"],
             "description": r["DESCRIPTION"],
-            "status": r["STATUS"],
+            "status": r["STATUS"] or "DRAFT",
             "vectorise": r["VECTORISE"],
             "created_at": r["CREATED_AT"],
             "updated_at": r["UPDATED_AT"],
         }
         for r in rows
     ]
-
 
 # ============================================================
 # GET ONE CONCEPT
