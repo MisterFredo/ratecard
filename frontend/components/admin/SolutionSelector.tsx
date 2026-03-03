@@ -27,9 +27,9 @@ export default function SolutionSelector({ values, onChange }: Props) {
         const res = await api.get("/solution/list");
 
         setOptions(
-          (res.solutions || []).map((s: any) => ({
+          (res.SOLUTIONS || []).map((s: any) => ({
             id: s.ID_SOLUTION,
-            label: s.NAME,   // ✅ CORRIGÉ
+            label: s.NAME,
           }))
         );
       } catch (e) {
@@ -50,7 +50,7 @@ export default function SolutionSelector({ values, onChange }: Props) {
     onChange(
       selected.map((item) => ({
         ID_SOLUTION: item.id,
-        NAME: item.label,   // ✅ CORRIGÉ
+        NAME: item.label,
       }))
     );
   }
@@ -70,7 +70,7 @@ export default function SolutionSelector({ values, onChange }: Props) {
       options={options}
       values={values.map((v) => ({
         id: v.ID_SOLUTION,
-        label: v.NAME,   // ✅ CORRIGÉ
+        label: v.NAME,
       }))}
       onChange={handleChange}
     />
