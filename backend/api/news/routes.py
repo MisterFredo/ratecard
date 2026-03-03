@@ -50,7 +50,12 @@ router = APIRouter()
 def create_route(data: NewsCreate):
     try:
         news_id = create_news(data)
-        return {"status": "ok", "id_news": news_id}
+
+        return {
+            "STATUS": "OK",
+            "ID_NEWS": news_id,
+        }
+
     except Exception as e:
         logger.exception("Erreur création news")
         raise HTTPException(400, str(e))
