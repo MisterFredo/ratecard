@@ -215,6 +215,7 @@ def duplicate_company_visual_for_news(id_news: str, company_media_id: str) -> st
 # GET ONE NEWS / BRÈVE
 # ============================================================
 def get_news(id_news: str):
+
     rows = query_bq(
         f"""
         SELECT *
@@ -230,48 +231,37 @@ def get_news(id_news: str):
 
     news = serialize_row(rows[0])
 
-    company_rows = query_bq(
-        f"""
-        SELECT ID_COMPANY, NAME, MEDIA_LOGO_RECTANGLE_ID, IS_PARTNER
-        FROM `{TABLE_COMPANY}`
-        WHERE ID_COMPANY = @id
-        """,
-        {"id": news["ID_COMPANY"]},
-    )
+    # ------------------------------------------------------------
+    # CONCEPTS
+    # ------------------------------------------------------------
 
-    if company_rows:
-        c = company_rows[0]
-        news["company"] = {
-            "id_company": c["ID_COMPANY"],
-            "name": c["NAME"],
-            "media_logo_rectangle_id": c["MEDIA_LOGO_RECTANGLE_ID"],
-            "is_partner": bool(c["IS_PARTNER"]),
-        }
-    else:
-        news["company"] = None
-
-    news["topics"] = query_bq(
+    news["concepts"] = query_bq(
         f"""
-        SELECT T.ID_TOPIC, T.LABEL, T.TOPIC_AXIS
-        FROM `{TABLE_NEWS_TOPIC}` NT
-        JOIN `{TABLE_TOPIC}` T ON NT.ID_TOPIC = T.ID_TOPIC
-        WHERE NT.ID_NEWS = @id
+        SELECT C.ID_CONCEPT, C.TITLE
+        FROM `{TABLE_NEWS_CONCEPT}` NC
+        JOIN `{TABLE_CONCEPT}` C
+          ON NC.ID_CONCEPT = C.ID_CONCEPT
+        WHERE NC.ID_NEWS = @id
         """,
         {"id": id_news},
     )
 
-    news["persons"] = query_bq(
+    # ------------------------------------------------------------
+    # SOLUTIONS
+    # ------------------------------------------------------------
+
+    news["solutions"] = query_bq(
         f"""
-        SELECT P.ID_PERSON, P.NAME
-        FROM `{TABLE_NEWS_PERSON}` NP
-        JOIN `{TABLE_PERSON}` P ON NP.ID_PERSON = P.ID_PERSON
-        WHERE NP.ID_NEWS = @id
+        SELECT S.ID_SOLUTION, S.NAME
+        FROM `{TABLE_NEWS_SOLUTION}` NS
+        JOIN `{TABLE_SOLUTION}` S
+          ON NS.ID_SOLUTION = S.ID_SOLUTION
+        WHERE NS.ID_NEWS = @id
         """,
         {"id": id_news},
     )
 
     return news
-
 
 # ============================================================
 # LIST NEWS / BRÈVES (PUBLIC)
