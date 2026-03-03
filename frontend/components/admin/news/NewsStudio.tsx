@@ -228,7 +228,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
     if (
       newsKind === "NEWS" &&
       !mediaId &&
-      !companyFull?.media_logo_url
+      !companyFull?.MEDIA_LOGO_RECTANGLE_ID
     ) {
       return alert("Visuel requis pour une news");
     }
@@ -315,7 +315,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
             <NewsStepVisual
               newsId={internalNewsId}
               mediaId={mediaId}
-              companyMediaId={companyFull?.media_logo_url || null}
+              companyMediaId={companyFull?.MEDIA_LOGO_RECTANGLE_ID || null}
               onUpdated={setMediaId}
               onNext={() => setStep("PREVIEW")}
             />
