@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 type ConceptRow = {
   ID_CONCEPT: string;
@@ -23,6 +23,7 @@ export default function ConceptList() {
   const [loading, setLoading] = useState(true);
   const [concepts, setConcepts] = useState<ConceptRow[]>([]);
   const [topicsMap, setTopicsMap] = useState<Record<string, string>>({});
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
      LOAD DATA
@@ -53,6 +54,33 @@ export default function ConceptList() {
 
     load();
   }, []);
+
+  /* ---------------------------------------------------------
+     DELETE
+  --------------------------------------------------------- */
+  async function handleDelete(id: string) {
+    const confirmDelete = window.confirm(
+      "Confirmer la suppression de ce concept ?\n\nCette action est irréversible."
+    );
+
+    if (!confirmDelete) return;
+
+    setDeletingId(id);
+
+    try {
+      await api.delete(`/concept/${id}`);
+
+      // Suppression optimiste du state
+      setConcepts((prev) =>
+        prev.filter((c) => c.ID_CONCEPT !== id)
+      );
+    } catch (e) {
+      console.error(e);
+      alert("❌ Erreur suppression concept");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   if (loading) return <p>Chargement…</p>;
 
@@ -85,7 +113,7 @@ export default function ConceptList() {
               <th className="p-3">Statut</th>
               <th className="p-3">Vectorisé</th>
               <th className="p-3">Mis à jour</th>
-              <th className="p-3 w-16"></th>
+              <th className="p-3 w-24"></th>
             </tr>
           </thead>
 
@@ -140,14 +168,24 @@ export default function ConceptList() {
                     : "-"}
                 </td>
 
-                {/* EDIT */}
-                <td className="p-3">
+                {/* ACTIONS */}
+                <td className="p-3 flex items-center gap-3">
                   <Link
                     href={`/admin/concept/edit/${c.ID_CONCEPT}`}
                     className="text-blue-600 hover:text-blue-800"
                   >
                     <Pencil size={16} />
                   </Link>
+
+                  <button
+                    onClick={() =>
+                      handleDelete(c.ID_CONCEPT)
+                    }
+                    disabled={deletingId === c.ID_CONCEPT}
+                    className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </td>
               </tr>
             ))}
