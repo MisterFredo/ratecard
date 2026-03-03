@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 
-// STEPS
 import NewsStepSource from "@/components/admin/news/steps/NewsStepSource";
 import NewsStepContent from "@/components/admin/news/steps/NewsStepContent";
 import NewsStepVisual from "@/components/admin/news/steps/NewsStepVisual";
@@ -31,33 +30,28 @@ export default function NewsStudio({ mode, newsId }: Props) {
   const searchParams = useSearchParams();
 
   /* =========================================================
-     STATE — STRICTEMENT ALIGNÉ BQ
+     STATE
   ========================================================= */
 
-  // STRUCTURE (EN DUR)
   const [newsKind, setNewsKind] = useState<"NEWS" | "BRIEF">("NEWS");
-
-  // CATÉGORIE ÉDITORIALE (BQ)
   const [newsType, setNewsType] = useState<string | null>(null);
 
-  // CONTENU
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [body, setBody] = useState("");
 
-  // RELATIONS
   const [company, setCompany] = useState<any | null>(null);
   const [companyFull, setCompanyFull] = useState<any | null>(null);
   const [topics, setTopics] = useState<any[]>([]);
   const [persons, setPersons] = useState<any[]>([]);
 
-  // VISUEL
-  const [mediaId, setMediaId] = useState<string | null>(null);
+  // 🔥 NOUVEAU
+  const [concepts, setConcepts] = useState<any[]>([]);
+  const [solutions, setSolutions] = useState<any[]>([]);
 
-  // PUBLICATION
+  const [mediaId, setMediaId] = useState<string | null>(null);
   const [publishAt, setPublishAt] = useState<string>("");
 
-  // META
   const [internalNewsId, setInternalNewsId] = useState<string | null>(
     newsId || null
   );
@@ -78,7 +72,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
     stepOrder.indexOf(step) >= stepOrder.indexOf(target);
 
   /* =========================================================
-     INIT STEP FROM URL
+     INIT STEP
   ========================================================= */
   useEffect(() => {
     const stepParam = searchParams.get("step") as Step | null;
@@ -122,6 +116,23 @@ export default function NewsStudio({ mode, newsId }: Props) {
         );
 
         setPersons(n.persons || []);
+
+        // 🔥 LOAD CONCEPTS
+        setConcepts(
+          (n.concepts || []).map((c: any) => ({
+            id_concept: c.ID_CONCEPT,
+            title: c.TITLE,
+          }))
+        );
+
+        // 🔥 LOAD SOLUTIONS
+        setSolutions(
+          (n.solutions || []).map((s: any) => ({
+            id_solution: s.ID_SOLUTION,
+            name: s.NAME,
+          }))
+        );
+
         setMediaId(n.MEDIA_RECTANGLE_ID || null);
 
         if (!searchParams.get("step")) {
@@ -170,36 +181,20 @@ export default function NewsStudio({ mode, newsId }: Props) {
     setSaving(true);
 
     const payload = {
-      // --------------------------------------------------
-      // SOCIÉTÉ
-      // --------------------------------------------------
       id_company: company.id_company || company.ID_COMPANY,
-
-      // --------------------------------------------------
-      // STRUCTURE ÉDITORIALE
-      // --------------------------------------------------
-      news_kind: newsKind,        // ✅ NEWS | BRIEF
-      news_type: newsType ?? null, // ✅ CORPORATE | PARTENAIRE | ...
-
-      // --------------------------------------------------
-      // CONTENU
-      // --------------------------------------------------
+      news_kind: newsKind,
+      news_type: newsType ?? null,
       title,
       excerpt,
       body: newsKind === "NEWS" ? body : null,
 
-      // --------------------------------------------------
-      // RELATIONS (IDs UNIQUEMENT)
-      // --------------------------------------------------
       topics: topics.map((t) => t.id_topic),
       persons: persons.map((p) => p.id_person || p.ID_PERSON),
-    };
 
-    // 🔍 DEBUG TEMPORAIRE (tu peux laisser pendant les tests)
-    console.log(
-      "SAVE NEWS PAYLOAD",
-      JSON.stringify(payload, null, 2)
-    );
+      // 🔥 NOUVEAU
+      concepts: concepts.map((c) => c.id_concept),
+      solutions: solutions.map((s) => s.id_solution),
+    };
 
     try {
       if (!internalNewsId) {
@@ -217,7 +212,6 @@ export default function NewsStudio({ mode, newsId }: Props) {
       setSaving(false);
     }
   }
-
 
   /* =========================================================
      PUBLISH
@@ -286,6 +280,8 @@ export default function NewsStudio({ mode, newsId }: Props) {
             company={company}
             topics={topics}
             persons={persons}
+            concepts={concepts}
+            solutions={solutions}
             newsKind={newsKind}
             newsType={newsType}
             onChange={(d) => {
@@ -297,6 +293,8 @@ export default function NewsStudio({ mode, newsId }: Props) {
               if (d.company !== undefined) setCompany(d.company);
               if (d.topics !== undefined) setTopics(d.topics);
               if (d.persons !== undefined) setPersons(d.persons);
+              if (d.concepts !== undefined) setConcepts(d.concepts);
+              if (d.solutions !== undefined) setSolutions(d.solutions);
             }}
             onValidate={saveNews}
             saving={saving}
@@ -304,7 +302,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </details>
       )}
 
-      {/* VISUAL */}
+      {/* RESTE IDENTIQUE (VISUAL / PREVIEW / PUBLISH / LINKEDIN) */}
       {newsKind === "NEWS" && isStepReached("VISUAL") && (
         <details open={step === "VISUAL"} className="border rounded p-4">
           <summary onClick={() => setStep("VISUAL")} className="font-semibold">
@@ -323,7 +321,6 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </details>
       )}
 
-      {/* PREVIEW */}
       {isStepReached("PREVIEW") && internalNewsId && (
         <NewsStepPreview
           newsId={internalNewsId}
@@ -331,7 +328,6 @@ export default function NewsStudio({ mode, newsId }: Props) {
         />
       )}
 
-      {/* PUBLISH */}
       {isStepReached("PUBLISH") && internalNewsId && (
         <NewsStepPublish
           publishAt={publishAt}
@@ -341,7 +337,6 @@ export default function NewsStudio({ mode, newsId }: Props) {
         />
       )}
 
-      {/* LINKEDIN */}
       {newsKind === "NEWS" && isStepReached("LINKEDIN") && internalNewsId && (
         <NewsStepLinkedIn
           newsId={internalNewsId}
