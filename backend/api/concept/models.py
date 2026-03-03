@@ -10,13 +10,18 @@ class ConceptCreate(BaseModel):
     """
     Création d'un concept métier.
     Content = HTML complet.
+    ⚠️ Champs alignés BQ
     """
-    title: str
-    description: Optional[str] = None
-    content: Optional[str] = None
 
-    status: Optional[str] = "DRAFT"
-    vectorise: Optional[bool] = False
+    TITLE: str
+    DESCRIPTION: Optional[str] = None
+    CONTENT: Optional[str] = None
+
+    STATUS: Optional[str] = "DRAFT"
+    VECTORISE: Optional[bool] = False
+
+    # 🔥 Nouveau : 0 ou 1 topic
+    ID_TOPIC: Optional[str] = None
 
 
 # ============================================================
@@ -25,13 +30,18 @@ class ConceptCreate(BaseModel):
 class ConceptUpdate(BaseModel):
     """
     Mise à jour partielle d'un concept.
+    ⚠️ Champs alignés BQ
     """
-    title: Optional[str] = None
-    description: Optional[str] = None
-    content: Optional[str] = None
 
-    status: Optional[str] = None
-    vectorise: Optional[bool] = None
+    TITLE: Optional[str] = None
+    DESCRIPTION: Optional[str] = None
+    CONTENT: Optional[str] = None
+
+    STATUS: Optional[str] = None
+    VECTORISE: Optional[bool] = None
+
+    # 🔥 Mono-topic
+    ID_TOPIC: Optional[str] = None
 
 
 # ============================================================
@@ -39,15 +49,20 @@ class ConceptUpdate(BaseModel):
 # ============================================================
 class ConceptOut(BaseModel):
     """
-    Représentation alignée avec RATECARD_CONCEPT simplifiée.
+    Représentation alignée avec RATECARD_CONCEPT.
+    100% MAJUSCULES.
     """
-    id_concept: str
-    title: str
-    description: Optional[str] = None
-    content: Optional[str] = None
 
-    status: Optional[str] = None
-    vectorise: Optional[bool] = False
+    ID_CONCEPT: str
+    TITLE: str
+    DESCRIPTION: Optional[str] = None
+    CONTENT: Optional[str] = None
 
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    STATUS: Optional[str] = None
+    VECTORISE: Optional[bool] = False
+
+    # 🔥 Mono-topic
+    ID_TOPIC: Optional[str] = None
+
+    CREATED_AT: Optional[datetime] = None
+    UPDATED_AT: Optional[datetime] = None
