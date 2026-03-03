@@ -10,15 +10,15 @@ class CompanyCreate(BaseModel):
     """
     Création d'une société.
     ⚠️ Aucun champ média ici.
+    ⚠️ Champs alignés BQ
     """
-    name: str
-    description: Optional[str] = None
+    NAME: str
+    DESCRIPTION: Optional[str] = None
 
-    linkedin_url: Optional[str] = None
-    website_url: Optional[str] = None
+    LINKEDIN_URL: Optional[str] = None
+    WEBSITE_URL: Optional[str] = None
 
-    # Statut partenaire
-    is_partner: Optional[bool] = False
+    IS_PARTNER: Optional[bool] = False
 
 
 # ============================================================
@@ -28,51 +28,52 @@ class CompanyUpdate(BaseModel):
     """
     Mise à jour des données métier.
     Les visuels restent gérés via /visuals/company/*
+    ⚠️ Champs alignés BQ
     """
-    name: Optional[str] = None
-    description: Optional[str] = None
+    NAME: Optional[str] = None
+    DESCRIPTION: Optional[str] = None
 
-    linkedin_url: Optional[str] = None
-    website_url: Optional[str] = None
+    LINKEDIN_URL: Optional[str] = None
+    WEBSITE_URL: Optional[str] = None
 
-    is_partner: Optional[bool] = None
+    IS_PARTNER: Optional[bool] = None
 
     # --- Wiki (bloc unique) ---
-    wiki_content: Optional[str] = None
+    WIKI_CONTENT: Optional[str] = None
 
 
 # ============================================================
-# OUT — représentation frontend-ready
+# OUT — représentation alignée BQ
 # ============================================================
 class CompanyOut(BaseModel):
     """
-    Représentation d'une société consommable par le frontend.
+    Représentation EXACTEMENT alignée avec RATECARD_COMPANY.
+    Aucun snake_case.
     """
 
-    id_company: str
-    name: str
+    ID_COMPANY: str
+    NAME: str
 
-    # --- Brand (éditorial Ratecard) ---
-    description: Optional[str] = None
+    # --- Brand ---
+    DESCRIPTION: Optional[str] = None
 
-    # --- Wiki (connaissance structurée simplifiée) ---
-    wiki_content: Optional[str] = None
-    wiki_source_id: Optional[str] = None
-    wiki_updated_at: Optional[datetime] = None
-    wiki_vectorised: Optional[bool] = False
+    # --- Wiki ---
+    WIKI_CONTENT: Optional[str] = None
+    WIKI_SOURCE_ID: Optional[str] = None
+    WIKI_UPDATED_AT: Optional[datetime] = None
+    WIKI_VECTORISED: Optional[bool] = False
 
     # --- Media ---
-    media_logo_url: Optional[str] = None
+    MEDIA_LOGO_RECTANGLE_ID: Optional[str] = None
 
     # --- Liens ---
-    linkedin_url: Optional[str] = None
-    website_url: Optional[str] = None
+    LINKEDIN_URL: Optional[str] = None
+    WEBSITE_URL: Optional[str] = None
 
     # --- Statut ---
-    is_partner: bool = False
+    IS_PARTNER: Optional[bool] = False
+    IS_ACTIVE: Optional[bool] = True
 
     # --- Dates ---
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-
-    is_active: bool = True
+    CREATED_AT: Optional[datetime] = None
+    UPDATED_AT: Optional[datetime] = None
