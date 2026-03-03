@@ -8,52 +8,53 @@ from datetime import datetime
 # ============================================================
 
 class NewsCreate(BaseModel):
-    ID_COMPANY: str
-    NEWS_KIND: str
-    NEWS_TYPE: Optional[str] = None
+    ID_COMPANY: str = Field(..., alias="id_company")
+    NEWS_KIND: str = Field(..., alias="news_kind")
+    NEWS_TYPE: Optional[str] = Field(None, alias="news_type")
 
-    TITLE: str
-    EXCERPT: Optional[str] = None
-    BODY: Optional[str] = None
+    TITLE: str = Field(..., alias="title")
+    EXCERPT: Optional[str] = Field(None, alias="excerpt")
+    BODY: Optional[str] = Field(None, alias="body")
 
-    MEDIA_RECTANGLE_ID: Optional[str] = None
-    SOURCE_URL: Optional[str] = None
-    AUTHOR: Optional[str] = None
+    MEDIA_RECTANGLE_ID: Optional[str] = Field(None, alias="media_rectangle_id")
+    SOURCE_URL: Optional[str] = Field(None, alias="source_url")
+    AUTHOR: Optional[str] = Field(None, alias="author")
 
-    TOPICS: List[str] = Field(default_factory=list)
-    PERSONS: List[str] = Field(default_factory=list)
+    TOPICS: List[str] = Field(default_factory=list, alias="topics")
+    PERSONS: List[str] = Field(default_factory=list, alias="persons")
 
-    CONCEPTS: List[str] = Field(default_factory=list)
-    SOLUTIONS: List[str] = Field(default_factory=list)
+    CONCEPTS: List[str] = Field(default_factory=list, alias="concepts")
+    SOLUTIONS: List[str] = Field(default_factory=list, alias="solutions")
 
     class Config:
-        extra = "forbid"
-
+        populate_by_name = True   # accepte MAJUSCULES aussi
+        extra = "ignore"          # ne bloque plus si champ en trop
 # ============================================================
 # UPDATE NEWS / BRÈVE
 # ============================================================
 
 class NewsUpdate(BaseModel):
-    ID_COMPANY: Optional[str] = None
-    NEWS_KIND: Optional[str] = None
-    NEWS_TYPE: Optional[str] = None
+    ID_COMPANY: Optional[str] = Field(None, alias="id_company")
+    NEWS_KIND: Optional[str] = Field(None, alias="news_kind")
+    NEWS_TYPE: Optional[str] = Field(None, alias="news_type")
 
-    TITLE: Optional[str] = None
-    EXCERPT: Optional[str] = None
-    BODY: Optional[str] = None
+    TITLE: Optional[str] = Field(None, alias="title")
+    EXCERPT: Optional[str] = Field(None, alias="excerpt")
+    BODY: Optional[str] = Field(None, alias="body")
 
-    MEDIA_RECTANGLE_ID: Optional[str] = None
-    SOURCE_URL: Optional[str] = None
-    AUTHOR: Optional[str] = None
+    MEDIA_RECTANGLE_ID: Optional[str] = Field(None, alias="media_rectangle_id")
+    SOURCE_URL: Optional[str] = Field(None, alias="source_url")
+    AUTHOR: Optional[str] = Field(None, alias="author")
 
-    TOPICS: Optional[List[str]] = None
-    PERSONS: Optional[List[str]] = None
+    TOPICS: Optional[List[str]] = Field(None, alias="topics")
+    PERSONS: Optional[List[str]] = Field(None, alias="persons")
 
-    CONCEPTS: Optional[List[str]] = None
-    SOLUTIONS: Optional[List[str]] = None
+    CONCEPTS: Optional[List[str]] = Field(None, alias="concepts")
+    SOLUTIONS: Optional[List[str]] = Field(None, alias="solutions")
 
     class Config:
-        extra = "forbid"
+        populate_by_name = True
+        extra = "ignore"
 
 # ============================================================
 # PUBLISH
