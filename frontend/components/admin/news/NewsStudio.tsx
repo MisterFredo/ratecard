@@ -181,7 +181,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
     setSaving(true);
 
     const payload = {
-      ID_COMPANY: company.ID_COMPANY,
+      ID_COMPANY: company.ID_COMPANY || company.id_company,
       NEWS_KIND: newsKind,
       NEWS_TYPE: newsType ?? null,
 
