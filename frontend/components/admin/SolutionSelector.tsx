@@ -11,7 +11,7 @@ import SearchableMultiSelect, {
 --------------------------------------------------------- */
 export type Solution = {
   ID_SOLUTION: string;
-  TITLE: string;
+  NAME: string;
 };
 
 type Props = {
@@ -35,7 +35,7 @@ export default function SolutionSelector({ values, onChange }: Props) {
         setOptions(
           (res.solutions || []).map((s: any) => ({
             id: s.ID_SOLUTION,
-            label: s.TITLE,
+            label: s.NAME, // 🔥 CORRECTION ICI
           }))
         );
       } catch (e) {
@@ -59,7 +59,7 @@ export default function SolutionSelector({ values, onChange }: Props) {
     onChange(
       selected.map((item) => ({
         ID_SOLUTION: item.id,
-        TITLE: item.label,
+        NAME: item.label, // 🔥 CORRECTION ICI
       }))
     );
   }
@@ -79,7 +79,7 @@ export default function SolutionSelector({ values, onChange }: Props) {
       options={options}
       values={values.map((v) => ({
         id: v.ID_SOLUTION,
-        label: v.TITLE,
+        label: v.NAME, // 🔥 CORRECTION ICI
       }))}
       onChange={handleChange}
     />
