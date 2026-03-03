@@ -358,9 +358,6 @@ def update_news(id_news: str, data: NewsUpdate):
 
     fields = {}
 
-    # -------------------------
-    # STRUCTURE
-    # -------------------------
     if data.news_kind is not None:
         fields["NEWS_KIND"] = data.news_kind
 
@@ -370,9 +367,6 @@ def update_news(id_news: str, data: NewsUpdate):
     if data.id_company is not None:
         fields["ID_COMPANY"] = data.id_company
 
-    # -------------------------
-    # CONTENU
-    # -------------------------
     if data.title is not None:
         fields["TITLE"] = data.title
 
@@ -382,16 +376,10 @@ def update_news(id_news: str, data: NewsUpdate):
     if data.body is not None:
         fields["BODY"] = data.body
 
-    # -------------------------
-    # VISUEL
-    # -------------------------
     if data.media_rectangle_id is not None:
         fields["MEDIA_RECTANGLE_ID"] = data.media_rectangle_id
         fields["HAS_VISUAL"] = bool(data.media_rectangle_id)
 
-    # -------------------------
-    # META
-    # -------------------------
     if data.source_url is not None:
         fields["SOURCE_URL"] = data.source_url
 
@@ -400,9 +388,6 @@ def update_news(id_news: str, data: NewsUpdate):
 
     fields["UPDATED_AT"] = datetime.utcnow()
 
-    # -------------------------
-    # UPDATE SQL
-    # -------------------------
     if fields:
         update_bq(
             table=TABLE_NEWS,
@@ -410,18 +395,16 @@ def update_news(id_news: str, data: NewsUpdate):
             where={"ID_NEWS": id_news},
         )
 
-    # -------------------------
-    # RELATIONS — uniquement si envoyées
-    # -------------------------
     client = get_bigquery_client()
 
+    # -------------------------
+    # TOPICS
+    # -------------------------
     if data.topics is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_TOPIC}` WHERE ID_NEWS = @id",
             job_config=bigquery.QueryJobConfig(
-                query_parameters=[
-                    bigquery.ScalarQueryParameter("id", "STRING", id_news)
-                ]
+                query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_news)]
             ),
         ).result()
 
@@ -431,13 +414,14 @@ def update_news(id_news: str, data: NewsUpdate):
                 [{"ID_NEWS": id_news, "ID_TOPIC": tid} for tid in data.topics],
             )
 
+    # -------------------------
+    # PERSONS
+    # -------------------------
     if data.persons is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_PERSON}` WHERE ID_NEWS = @id",
             job_config=bigquery.QueryJobConfig(
-                query_parameters=[
-                    bigquery.ScalarQueryParameter("id", "STRING", id_news)
-                ]
+                query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_news)]
             ),
         ).result()
 
@@ -447,10 +431,41 @@ def update_news(id_news: str, data: NewsUpdate):
                 [{"ID_NEWS": id_news, "ID_PERSON": pid} for pid in data.persons],
             )
 
+    # -------------------------
+    # 🔥 CONCEPTS
+    # -------------------------
+    if getattr(data, "concepts", None) is not None:
+        client.query(
+            f"DELETE FROM `{TABLE_NEWS_CONCEPT}` WHERE ID_NEWS = @id",
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_news)]
+            ),
+        ).result()
+
+        if data.concepts:
+            insert_bq(
+                TABLE_NEWS_CONCEPT,
+                [{"ID_NEWS": id_news, "ID_CONCEPT": cid} for cid in data.concepts],
+            )
+
+    # -------------------------
+    # 🔥 SOLUTIONS
+    # -------------------------
+    if getattr(data, "solutions", None) is not None:
+        client.query(
+            f"DELETE FROM `{TABLE_NEWS_SOLUTION}` WHERE ID_NEWS = @id",
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_news)]
+            ),
+        ).result()
+
+        if data.solutions:
+            insert_bq(
+                TABLE_NEWS_SOLUTION,
+                [{"ID_NEWS": id_news, "ID_SOLUTION": sid} for sid in data.solutions],
+            )
+
     return True
-
-
-
 # ============================================================
 # ARCHIVE / DELETE
 # ============================================================
