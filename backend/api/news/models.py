@@ -1,5 +1,3 @@
-# backend/api/news/models.py
-
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
@@ -25,6 +23,10 @@ class NewsCreate(BaseModel):
     topics: List[str] = Field(default_factory=list)
     persons: List[str] = Field(default_factory=list)
 
+    # 🔥 NOUVEAU — RELATIONS SOUPLES
+    concepts: List[str] = Field(default_factory=list)
+    solutions: List[str] = Field(default_factory=list)
+
     class Config:
         extra = "forbid"
 
@@ -48,6 +50,10 @@ class NewsUpdate(BaseModel):
 
     topics: Optional[List[str]] = None
     persons: Optional[List[str]] = None
+
+    # 🔥 NOUVEAU — RELATIONS SOUPLES
+    concepts: Optional[List[str]] = None
+    solutions: Optional[List[str]] = None
 
     class Config:
         extra = "ignore"
@@ -77,6 +83,16 @@ class TopicMini(BaseModel):
     axis: Optional[str] = None
 
 
+class ConceptMini(BaseModel):
+    id_concept: str
+    title: str
+
+
+class SolutionMini(BaseModel):
+    id_solution: str
+    title: str
+
+
 # ============================================================
 # OUT — VERSION LISTING (FLUX UNIQUEMENT)
 # ============================================================
@@ -87,10 +103,14 @@ class BreveOut(BaseModel):
     excerpt: Optional[str] = None
     published_at: datetime
     news_type: Optional[str] = None
-    news_kind: Optional[str] = None  # 🔥 AJOUT ICI
+    news_kind: Optional[str] = None
 
     company: CompanyMini
     topics: List[TopicMini] = Field(default_factory=list)
+
+    # 🔥 NOUVEAU — TAGGING SOUPLE
+    concepts: List[ConceptMini] = Field(default_factory=list)
+    solutions: List[SolutionMini] = Field(default_factory=list)
 
 
 # ============================================================
