@@ -5,6 +5,11 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
+type Topic = {
+  ID_TOPIC: string;
+  LABEL: string;
+};
+
 export default function EditConcept({
   params,
 }: {
@@ -15,13 +20,32 @@ export default function EditConcept({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [content, setContent] = useState("");
-  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">("DRAFT");
+  const [TITLE, setTITLE] = useState("");
+  const [DESCRIPTION, setDESCRIPTION] = useState("");
+  const [CONTENT, setCONTENT] = useState("");
+  const [STATUS, setSTATUS] = useState<"DRAFT" | "PUBLISHED">("DRAFT");
+  const [ID_TOPIC, setID_TOPIC] = useState<string | null>(null);
+
+  const [topics, setTopics] = useState<Topic[]>([]);
 
   /* ---------------------------------------------------------
-     LOAD
+     LOAD TOPICS
+  --------------------------------------------------------- */
+  useEffect(() => {
+    async function loadTopics() {
+      try {
+        const res = await api.get("/topic/list");
+        setTopics(res.topics || []);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    loadTopics();
+  }, []);
+
+  /* ---------------------------------------------------------
+     LOAD CONCEPT
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
@@ -30,10 +54,11 @@ export default function EditConcept({
       try {
         const concept = await api.get(`/concept/${id}`);
 
-        setTitle(concept.title || "");
-        setDescription(concept.description || "");
-        setContent(concept.content || "");
-        setStatus(concept.status || "DRAFT");
+        setTITLE(concept.TITLE || "");
+        setDESCRIPTION(concept.DESCRIPTION || "");
+        setCONTENT(concept.CONTENT || "");
+        setSTATUS(concept.STATUS || "DRAFT");
+        setID_TOPIC(concept.ID_TOPIC || null);
       } catch (e) {
         console.error(e);
         alert("❌ Erreur chargement concept");
@@ -49,12 +74,12 @@ export default function EditConcept({
      SAVE
   --------------------------------------------------------- */
   async function save() {
-    if (!title.trim()) {
+    if (!TITLE.trim()) {
       alert("Titre requis");
       return;
     }
 
-    if (!content.trim()) {
+    if (!CONTENT.trim()) {
       alert("Le contenu est requis");
       return;
     }
@@ -63,10 +88,11 @@ export default function EditConcept({
 
     try {
       await api.put(`/concept/update/${id}`, {
-        title,
-        description: description || null,
-        content,
-        status,
+        TITLE,
+        DESCRIPTION: DESCRIPTION || null,
+        CONTENT,
+        STATUS,
+        ID_TOPIC: ID_TOPIC || null,
       });
 
       alert("Concept mis à jour");
@@ -102,8 +128,8 @@ export default function EditConcept({
         </label>
         <input
           className="border p-2 w-full rounded"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={TITLE}
+          onChange={(e) => setTITLE(e.target.value)}
         />
       </div>
 
@@ -114,9 +140,31 @@ export default function EditConcept({
         </label>
         <textarea
           className="border p-2 w-full rounded h-24"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          value={DESCRIPTION}
+          onChange={(e) => setDESCRIPTION(e.target.value)}
         />
+      </div>
+
+      {/* TOPIC (0 ou 1) */}
+      <div className="space-y-2 max-w-md">
+        <label className="block text-sm font-medium">
+          Topic (optionnel)
+        </label>
+
+        <select
+          className="border p-2 rounded w-full"
+          value={ID_TOPIC || ""}
+          onChange={(e) =>
+            setID_TOPIC(e.target.value || null)
+          }
+        >
+          <option value="">— Aucun topic —</option>
+          {topics.map((t) => (
+            <option key={t.ID_TOPIC} value={t.ID_TOPIC}>
+              {t.LABEL}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* CONTENT */}
@@ -126,8 +174,8 @@ export default function EditConcept({
         </label>
 
         <HtmlEditor
-          value={content}
-          onChange={setContent}
+          value={CONTENT}
+          onChange={setCONTENT}
         />
       </div>
 
@@ -138,9 +186,9 @@ export default function EditConcept({
         </label>
         <select
           className="border p-2 rounded w-full"
-          value={status}
+          value={STATUS}
           onChange={(e) =>
-            setStatus(e.target.value as "DRAFT" | "PUBLISHED")
+            setSTATUS(e.target.value as "DRAFT" | "PUBLISHED")
           }
         >
           <option value="DRAFT">DRAFT</option>
