@@ -109,15 +109,32 @@ def update_concept(id_concept: str, data: ConceptUpdate) -> bool:
 
 def delete_concept(id_concept: str) -> bool:
     """
-    Supprime physiquement un concept.
-    Retourne True si supprimé.
+    Suppression physique d’un concept.
+    Retourne True si une ligne a été supprimée.
     """
 
-    from utils.bigquery_utils import delete_bq
+    from utils.bigquery_utils import query_bq
 
-    deleted = delete_bq(
-        table=TABLE_CONCEPT,
-        where={"ID_CONCEPT": id_concept},
+    # Vérifier existence
+    existing = query_bq(
+        f"""
+        SELECT ID_CONCEPT
+        FROM `{TABLE_CONCEPT}`
+        WHERE ID_CONCEPT = @id
+        """,
+        {"id": id_concept},
     )
 
-    return deleted
+    if not existing:
+        return False
+
+    # Suppression
+    query_bq(
+        f"""
+        DELETE FROM `{TABLE_CONCEPT}`
+        WHERE ID_CONCEPT = @id
+        """,
+        {"id": id_concept},
+    )
+
+    return True
