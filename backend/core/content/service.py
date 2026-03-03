@@ -406,7 +406,7 @@ def list_contents_admin():
 # UPDATE CONTENT
 # ============================================================
 def update_content(id_content: str, data: Dict[str, Any]):
-    ...
+
     # ---------------------------------------------------------
     # VALIDATIONS MÉTIER
     # ---------------------------------------------------------
@@ -428,7 +428,7 @@ def update_content(id_content: str, data: Dict[str, Any]):
     now = datetime.utcnow()
 
     # ---------------------------------------------------------
-    # 1) UPDATE TABLE_CONTENT (SANS ARRAY)
+    # 1) UPDATE TABLE_CONTENT (COLONNES SIMPLES)
     # ---------------------------------------------------------
     fields = {
         "ANGLE_TITLE": data.angle_title,
@@ -459,7 +459,7 @@ def update_content(id_content: str, data: Dict[str, Any]):
     )
 
     # ---------------------------------------------------------
-    # 2) UPDATE DES COLONNES ARRAY (REQUÊTES DÉDIÉES)
+    # 2) UPDATE DES COLONNES ARRAY
     # ---------------------------------------------------------
     array_updates = {
         "CITATIONS": normalize_array(data.citations),
@@ -494,13 +494,15 @@ def update_content(id_content: str, data: Dict[str, Any]):
         ).result()
 
     # ---------------------------------------------------------
-    # RESET RELATIONS
+    # 3) RESET RELATIONS
     # ---------------------------------------------------------
     for table in (
         TABLE_CONTENT_TOPIC,
         TABLE_CONTENT_EVENT,
         TABLE_CONTENT_COMPANY,
         TABLE_CONTENT_PERSON,
+        TABLE_CONTENT_CONCEPT,
+        TABLE_CONTENT_SOLUTION,
     ):
         client.query(
             f"DELETE FROM `{table}` WHERE ID_CONTENT = @id",
@@ -516,8 +518,9 @@ def update_content(id_content: str, data: Dict[str, Any]):
         ).result()
 
     # ---------------------------------------------------------
-    # REINSERT RELATIONS
+    # 4) REINSERT RELATIONS
     # ---------------------------------------------------------
+
     if data.topics:
         insert_bq(
             TABLE_CONTENT_TOPIC,
@@ -559,8 +562,27 @@ def update_content(id_content: str, data: Dict[str, Any]):
             ],
         )
 
-    return True
+    # 🔥 CONCEPTS
+    if getattr(data, "concepts", None):
+        insert_bq(
+            TABLE_CONTENT_CONCEPT,
+            [
+                {"ID_CONTENT": id_content, "ID_CONCEPT": cid, "CREATED_AT": now}
+                for cid in data.concepts
+            ],
+        )
 
+    # 🔥 SOLUTIONS
+    if getattr(data, "solutions", None):
+        insert_bq(
+            TABLE_CONTENT_SOLUTION,
+            [
+                {"ID_CONTENT": id_content, "ID_SOLUTION": sid, "CREATED_AT": now}
+                for sid in data.solutions
+            ],
+        )
+
+    return True
 
 # ============================================================
 # ARCHIVE CONTENT
