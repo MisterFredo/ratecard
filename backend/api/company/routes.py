@@ -1,10 +1,8 @@
 from fastapi import APIRouter, HTTPException
-from typing import List
 
 from api.company.models import (
     CompanyCreate,
     CompanyUpdate,
-    CompanyOut,
 )
 
 from core.company.service import (
@@ -24,10 +22,11 @@ router = APIRouter()
 def create_route(data: CompanyCreate):
     """
     Crée une société (sans aucun visuel).
+    ⚠️ Contrat MAJUSCULES
     """
     try:
         company_id = create_company(data)
-        return {"status": "ok", "id_company": company_id}
+        return {"status": "ok", "ID_COMPANY": company_id}
     except Exception as e:
         raise HTTPException(400, f"Erreur création société : {e}")
 
@@ -39,10 +38,11 @@ def create_route(data: CompanyCreate):
 def list_route():
     """
     Retourne la liste des sociétés actives.
-    Version légère (pas de wiki).
+    ⚠️ Doit renvoyer des champs MAJUSCULES.
     """
     try:
-        return list_companies()
+        companies = list_companies()
+        return {"status": "ok", "companies": companies}
     except Exception as e:
         raise HTTPException(400, f"Erreur liste sociétés : {e}")
 
@@ -50,11 +50,11 @@ def list_route():
 # ============================================================
 # GET ONE — récupération complète
 # ============================================================
-@router.get("/{id_company}", response_model=CompanyOut)
+@router.get("/{id_company}")
 def get_route(id_company: str):
     """
     Récupère une société complète par son ID.
-    Inclut wiki_content.
+    ⚠️ Renvoie brut BQ (MAJUSCULES)
     """
     try:
         company = get_company(id_company)
@@ -62,7 +62,7 @@ def get_route(id_company: str):
         if not company:
             raise HTTPException(404, "Société introuvable")
 
-        return company
+        return {"status": "ok", "company": company}
 
     except HTTPException:
         raise
@@ -77,14 +77,18 @@ def get_route(id_company: str):
 def update_route(id_company: str, data: CompanyUpdate):
     """
     Met à jour une société existante.
+    ⚠️ Champs attendus en MAJUSCULES
     """
     try:
         updated = update_company(id_company, data)
 
         if not updated:
-            raise HTTPException(404, "Société introuvable ou aucune modification")
+            raise HTTPException(
+                404,
+                "Société introuvable ou aucune modification"
+            )
 
-        return {"status": "ok", "updated": True}
+        return {"status": "ok", "UPDATED": True}
 
     except HTTPException:
         raise
