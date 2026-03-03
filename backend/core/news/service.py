@@ -348,33 +348,33 @@ def update_news(id_news: str, data: NewsUpdate):
 
     fields = {}
 
-    if data.news_kind is not None:
-        fields["NEWS_KIND"] = data.news_kind
+    if data.NEWS_KIND is not None:
+        fields["NEWS_KIND"] = data.NEWS_KIND
 
-    if data.news_type is not None:
-        fields["NEWS_TYPE"] = data.news_type
+    if data.NEWS_TYPE is not None:
+        fields["NEWS_TYPE"] = data.NEWS_TYPE
 
-    if data.id_company is not None:
-        fields["ID_COMPANY"] = data.id_company
+    if data.ID_COMPANY is not None:
+        fields["ID_COMPANY"] = data.ID_COMPANY
 
-    if data.title is not None:
-        fields["TITLE"] = data.title
+    if data.TITLE is not None:
+        fields["TITLE"] = data.TITLE
 
-    if data.excerpt is not None:
-        fields["EXCERPT"] = data.excerpt
+    if data.EXCERPT is not None:
+        fields["EXCERPT"] = data.EXCERPT
 
-    if data.body is not None:
-        fields["BODY"] = data.body
+    if data.BODY is not None:
+        fields["BODY"] = data.BODY
 
-    if data.media_rectangle_id is not None:
-        fields["MEDIA_RECTANGLE_ID"] = data.media_rectangle_id
-        fields["HAS_VISUAL"] = bool(data.media_rectangle_id)
+    if data.MEDIA_RECTANGLE_ID is not None:
+        fields["MEDIA_RECTANGLE_ID"] = data.MEDIA_RECTANGLE_ID
+        fields["HAS_VISUAL"] = bool(data.MEDIA_RECTANGLE_ID)
 
-    if data.source_url is not None:
-        fields["SOURCE_URL"] = data.source_url
+    if data.SOURCE_URL is not None:
+        fields["SOURCE_URL"] = data.SOURCE_URL
 
-    if data.author is not None:
-        fields["AUTHOR"] = data.author
+    if data.AUTHOR is not None:
+        fields["AUTHOR"] = data.AUTHOR
 
     fields["UPDATED_AT"] = datetime.utcnow()
 
@@ -387,72 +387,80 @@ def update_news(id_news: str, data: NewsUpdate):
 
     client = get_bigquery_client()
 
-    # -------------------------
+    # ------------------------------------------------------------
     # TOPICS
-    # -------------------------
-    if data.topics is not None:
+    # ------------------------------------------------------------
+    if data.TOPICS is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_TOPIC}` WHERE ID_NEWS = @id",
             job_config=bigquery.QueryJobConfig(
-                query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_news)]
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("id", "STRING", id_news)
+                ]
             ),
         ).result()
 
-        if data.topics:
+        if data.TOPICS:
             insert_bq(
                 TABLE_NEWS_TOPIC,
-                [{"ID_NEWS": id_news, "ID_TOPIC": tid} for tid in data.topics],
+                [{"ID_NEWS": id_news, "ID_TOPIC": tid} for tid in data.TOPICS],
             )
 
-    # -------------------------
+    # ------------------------------------------------------------
     # PERSONS
-    # -------------------------
-    if data.persons is not None:
+    # ------------------------------------------------------------
+    if data.PERSONS is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_PERSON}` WHERE ID_NEWS = @id",
             job_config=bigquery.QueryJobConfig(
-                query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_news)]
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("id", "STRING", id_news)
+                ]
             ),
         ).result()
 
-        if data.persons:
+        if data.PERSONS:
             insert_bq(
                 TABLE_NEWS_PERSON,
-                [{"ID_NEWS": id_news, "ID_PERSON": pid} for pid in data.persons],
+                [{"ID_NEWS": id_news, "ID_PERSON": pid} for pid in data.PERSONS],
             )
 
-    # -------------------------
-    # 🔥 CONCEPTS
-    # -------------------------
-    if getattr(data, "concepts", None) is not None:
+    # ------------------------------------------------------------
+    # CONCEPTS
+    # ------------------------------------------------------------
+    if data.CONCEPTS is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_CONCEPT}` WHERE ID_NEWS = @id",
             job_config=bigquery.QueryJobConfig(
-                query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_news)]
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("id", "STRING", id_news)
+                ]
             ),
         ).result()
 
-        if data.concepts:
+        if data.CONCEPTS:
             insert_bq(
                 TABLE_NEWS_CONCEPT,
-                [{"ID_NEWS": id_news, "ID_CONCEPT": cid} for cid in data.concepts],
+                [{"ID_NEWS": id_news, "ID_CONCEPT": cid} for cid in data.CONCEPTS],
             )
 
-    # -------------------------
-    # 🔥 SOLUTIONS
-    # -------------------------
-    if getattr(data, "solutions", None) is not None:
+    # ------------------------------------------------------------
+    # SOLUTIONS
+    # ------------------------------------------------------------
+    if data.SOLUTIONS is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_SOLUTION}` WHERE ID_NEWS = @id",
             job_config=bigquery.QueryJobConfig(
-                query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", id_news)]
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("id", "STRING", id_news)
+                ]
             ),
         ).result()
 
-        if data.solutions:
+        if data.SOLUTIONS:
             insert_bq(
                 TABLE_NEWS_SOLUTION,
-                [{"ID_NEWS": id_news, "ID_SOLUTION": sid} for sid in data.solutions],
+                [{"ID_NEWS": id_news, "ID_SOLUTION": sid} for sid in data.SOLUTIONS],
             )
 
     return True
