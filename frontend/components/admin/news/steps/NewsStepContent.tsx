@@ -132,16 +132,16 @@ export default function NewsStepContent({
   ========================================================= */
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* =====================================================
           STRUCTURE
       ===================================================== */}
       <div>
-        <label className="block font-medium mb-1">
+        <label className="block font-medium mb-2">
           Type de contenu
         </label>
 
-        <div className="flex gap-4">
+        <div className="flex gap-6">
           <label className="flex items-center gap-2">
             <input
               type="radio"
@@ -166,11 +166,9 @@ export default function NewsStepContent({
           CATÉGORIE ÉDITORIALE
       ===================================================== */}
       <div>
-        <label className="block font-medium mb-1">
+        <label className="block font-medium mb-2">
           Catégorie éditoriale
-          <span className="text-sm text-gray-400 ml-1">
-            (optionnel)
-          </span>
+          <span className="text-sm text-gray-400 ml-1">(optionnel)</span>
         </label>
 
         <select
@@ -194,41 +192,56 @@ export default function NewsStepContent({
       </div>
 
       {/* =====================================================
-          SOCIÉTÉ
+          TAXONOMIE — UNE SEULE LIGNE
       ===================================================== */}
-      <CompanySelector
-        values={company ? [company] : []}
-        onChange={(items) => {
-          onChange({ company: items[0] || null });
-          onChange({ persons: [] });
-        }}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div>
+          <label className="block font-medium mb-2">Société</label>
+          <CompanySelector
+            values={company ? [company] : []}
+            onChange={(items) => {
+              onChange({ company: items[0] || null });
+              onChange({ persons: [] });
+            }}
+          />
+        </div>
 
-      {/* =====================================================
-          CONCEPTS (MULTI)
-      ===================================================== */}
-      <ConceptSelector
-        values={concepts}
-        onChange={(items) =>
-          onChange({ concepts: items })
-        }
-      />
+        <div>
+          <label className="block font-medium mb-2">Topics</label>
+          <TopicSelector
+            values={topics}
+            onChange={(items) =>
+              onChange({ topics: items })
+            }
+          />
+        </div>
 
-      {/* =====================================================
-          SOLUTIONS (MULTI)
-      ===================================================== */}
-      <SolutionSelector
-        values={solutions}
-        onChange={(items) =>
-          onChange({ solutions: items })
-        }
-      />
+        <div>
+          <label className="block font-medium mb-2">Concepts</label>
+          <ConceptSelector
+            values={concepts}
+            onChange={(items) =>
+              onChange({ concepts: items })
+            }
+          />
+        </div>
+
+        <div>
+          <label className="block font-medium mb-2">Solutions</label>
+          <SolutionSelector
+            values={solutions}
+            onChange={(items) =>
+              onChange({ solutions: items })
+            }
+          />
+        </div>
+      </div>
 
       {/* =====================================================
           TITRE
       ===================================================== */}
       <div>
-        <label className="block font-medium mb-1">
+        <label className="block font-medium mb-2">
           Titre *
         </label>
         <input
@@ -245,7 +258,7 @@ export default function NewsStepContent({
           EXCERPT
       ===================================================== */}
       <div>
-        <label className="block font-medium mb-1">
+        <label className="block font-medium mb-2">
           Excerpt *
         </label>
         <textarea
@@ -261,50 +274,48 @@ export default function NewsStepContent({
           BODY
       ===================================================== */}
       {newsKind === "NEWS" && (
-        <HtmlEditor
-          value={body}
-          onChange={(html) =>
-            onChange({ body: html })
-          }
-        />
+        <div>
+          <label className="block font-medium mb-2">
+            Contenu
+          </label>
+          <HtmlEditor
+            value={body}
+            onChange={(html) =>
+              onChange({ body: html })
+            }
+          />
+        </div>
       )}
-
-      {/* =====================================================
-          TOPICS
-      ===================================================== */}
-      <TopicSelector
-        values={topics}
-        onChange={(items) =>
-          onChange({ topics: items })
-        }
-      />
 
       {/* =====================================================
           PERSONNES
       ===================================================== */}
-      <PersonSelector
-        values={persons}
-        persons={allPersons}
-        companyId={
-          company?.id_company ||
-          company?.ID_COMPANY ||
-          null
-        }
-        onChange={(items) =>
-          onChange({ persons: items })
-        }
-      />
+      <div>
+        <label className="block font-medium mb-2">
+          Personnes citées
+        </label>
+        <PersonSelector
+          values={persons}
+          persons={allPersons}
+          companyId={company?.ID_COMPANY || null}
+          onChange={(items) =>
+            onChange({ persons: items })
+          }
+        />
+      </div>
 
       {/* =====================================================
           ACTION
       ===================================================== */}
-      <button
-        onClick={onValidate}
-        disabled={saving}
-        className="bg-ratecard-green text-white px-4 py-2 rounded"
-      >
-        {saving ? "Sauvegarde…" : "Enregistrer"}
-      </button>
+      <div className="pt-4">
+        <button
+          onClick={onValidate}
+          disabled={saving}
+          className="bg-ratecard-green text-white px-6 py-2 rounded"
+        >
+          {saving ? "Sauvegarde…" : "Enregistrer"}
+        </button>
+      </div>
     </div>
   );
 }
