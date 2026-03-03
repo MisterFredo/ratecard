@@ -8,12 +8,12 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 const COMPANY_MEDIA_PATH = "companies";
 
 type CompanyRow = {
-  id_company: string;
-  name: string;
-  media_logo_url?: string | null;
-  is_partner?: boolean | null;
-  has_description?: boolean;
-  has_wiki?: boolean;
+  ID_COMPANY: string;
+  NAME: string;
+  MEDIA_LOGO_RECTANGLE_ID?: string | null;
+  IS_PARTNER?: boolean | null;
+  HAS_DESCRIPTION?: boolean;
+  HAS_WIKI?: boolean;
 };
 
 export default function CompanyList() {
@@ -24,8 +24,8 @@ export default function CompanyList() {
     async function load() {
       setLoading(true);
       try {
-        const rows: CompanyRow[] = await api.get("/company/list");
-        setCompanies(rows || []);
+        const res = await api.get("/company/list");
+        setCompanies(res.companies || []);
       } catch (e) {
         console.error(e);
         alert("❌ Erreur chargement sociétés");
@@ -73,18 +73,18 @@ export default function CompanyList() {
 
           <tbody>
             {companies.map((c) => {
-              const isPartner = Boolean(c.is_partner);
+              const isPartner = Boolean(c.IS_PARTNER);
 
-              const rectUrl = c.media_logo_url
-                ? `${GCS_BASE_URL}/${COMPANY_MEDIA_PATH}/${c.media_logo_url}`
+              const rectUrl = c.MEDIA_LOGO_RECTANGLE_ID
+                ? `${GCS_BASE_URL}/${COMPANY_MEDIA_PATH}/${c.MEDIA_LOGO_RECTANGLE_ID}`
                 : null;
 
               return (
                 <tr
-                  key={c.id_company}
+                  key={c.ID_COMPANY}
                   className="border-b hover:bg-gray-50"
                 >
-                  <td className="p-2 font-medium">{c.name}</td>
+                  <td className="p-2 font-medium">{c.NAME}</td>
 
                   <td className="p-2">
                     {isPartner ? (
@@ -100,7 +100,7 @@ export default function CompanyList() {
 
                   {/* DESCRIPTION STATUS */}
                   <td className="p-2">
-                    {c.has_description ? (
+                    {c.HAS_DESCRIPTION ? (
                       <span className="text-green-600 font-semibold">✓</span>
                     ) : (
                       <span className="text-gray-400">—</span>
@@ -109,7 +109,7 @@ export default function CompanyList() {
 
                   {/* WIKI STATUS */}
                   <td className="p-2">
-                    {c.has_wiki ? (
+                    {c.HAS_WIKI ? (
                       <span className="text-blue-600 font-semibold">✓</span>
                     ) : (
                       <span className="text-gray-400">—</span>
@@ -120,7 +120,7 @@ export default function CompanyList() {
                     {rectUrl ? (
                       <img
                         src={rectUrl}
-                        alt={`Logo ${c.name}`}
+                        alt={`Logo ${c.NAME}`}
                         className="h-10 max-w-[120px] object-contain"
                       />
                     ) : (
@@ -130,7 +130,7 @@ export default function CompanyList() {
 
                   <td className="p-2 text-right">
                     <Link
-                      href={`/admin/company/edit/${c.id_company}`}
+                      href={`/admin/company/edit/${c.ID_COMPANY}`}
                       className="text-blue-600 hover:underline"
                     >
                       Modifier
