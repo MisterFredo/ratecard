@@ -6,27 +6,43 @@ import { api } from "@/lib/api";
 import { Pencil } from "lucide-react";
 
 type ConceptRow = {
-  id_concept: string;
-  title: string;
-  description?: string;
-  status: "DRAFT" | "PUBLISHED";
-  vectorise?: boolean;
-  created_at?: string;
-  updated_at?: string;
+  ID_CONCEPT: string;
+  TITLE: string;
+  STATUS: "DRAFT" | "PUBLISHED";
+  VECTORISE?: boolean;
+  ID_TOPIC?: string | null;
+  UPDATED_AT?: string;
+};
+
+type Topic = {
+  ID_TOPIC: string;
+  LABEL: string;
 };
 
 export default function ConceptList() {
   const [loading, setLoading] = useState(true);
   const [concepts, setConcepts] = useState<ConceptRow[]>([]);
+  const [topicsMap, setTopicsMap] = useState<Record<string, string>>({});
 
   /* ---------------------------------------------------------
-     LOAD
+     LOAD DATA
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get("/concept/list");
-        setConcepts(res.concepts || []);
+        const [conceptRes, topicRes] = await Promise.all([
+          api.get("/concept/list"),
+          api.get("/topic/list"),
+        ]);
+
+        setConcepts(conceptRes.concepts || []);
+
+        const map: Record<string, string> = {};
+        (topicRes.topics || []).forEach((t: Topic) => {
+          map[t.ID_TOPIC] = t.LABEL;
+        });
+
+        setTopicsMap(map);
       } catch (e) {
         console.error(e);
         alert("❌ Erreur chargement concepts");
@@ -65,6 +81,7 @@ export default function ConceptList() {
           <thead className="bg-gray-100 text-left">
             <tr>
               <th className="p-3">Titre</th>
+              <th className="p-3">Topic</th>
               <th className="p-3">Statut</th>
               <th className="p-3">Vectorisé</th>
               <th className="p-3">Mis à jour</th>
@@ -75,30 +92,37 @@ export default function ConceptList() {
           <tbody>
             {concepts.map((c) => (
               <tr
-                key={c.id_concept}
+                key={c.ID_CONCEPT}
                 className="border-t hover:bg-gray-50"
               >
                 {/* TITLE */}
                 <td className="p-3 font-medium">
-                  {c.title}
+                  {c.TITLE}
+                </td>
+
+                {/* TOPIC */}
+                <td className="p-3 text-gray-600">
+                  {c.ID_TOPIC
+                    ? topicsMap[c.ID_TOPIC] || "—"
+                    : "—"}
                 </td>
 
                 {/* STATUS */}
                 <td className="p-3">
                   <span
                     className={`px-2 py-1 rounded text-xs ${
-                      c.status === "PUBLISHED"
+                      c.STATUS === "PUBLISHED"
                         ? "bg-green-100 text-green-700"
                         : "bg-gray-200 text-gray-600"
                     }`}
                   >
-                    {c.status}
+                    {c.STATUS}
                   </span>
                 </td>
 
                 {/* VECTORISE */}
                 <td className="p-3">
-                  {c.vectorise ? (
+                  {c.VECTORISE ? (
                     <span className="text-green-600">
                       ✔
                     </span>
@@ -111,15 +135,15 @@ export default function ConceptList() {
 
                 {/* UPDATED */}
                 <td className="p-3 text-gray-500">
-                  {c.updated_at
-                    ? new Date(c.updated_at).toLocaleDateString()
+                  {c.UPDATED_AT
+                    ? new Date(c.UPDATED_AT).toLocaleDateString()
                     : "-"}
                 </td>
 
                 {/* EDIT */}
                 <td className="p-3">
                   <Link
-                    href={`/admin/concept/edit/${c.id_concept}`}
+                    href={`/admin/concept/edit/${c.ID_CONCEPT}`}
                     className="text-blue-600 hover:text-blue-800"
                   >
                     <Pencil size={16} />
@@ -131,7 +155,7 @@ export default function ConceptList() {
             {concepts.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="p-6 text-center text-gray-400"
                 >
                   Aucun concept trouvé
