@@ -8,23 +8,23 @@ from datetime import datetime
 # ============================================================
 
 class NewsCreate(BaseModel):
-    ID_COMPANY: str
-    NEWS_KIND: str
-    NEWS_TYPE: Optional[str] = None
+    id_company: str
+    news_kind: str  # "NEWS" | "BRIEF"
+    news_type: Optional[str] = None
 
-    TITLE: str
-    EXCERPT: Optional[str] = None
-    BODY: Optional[str] = None
+    title: str
+    excerpt: Optional[str] = None
+    body: Optional[str] = None
 
-    MEDIA_RECTANGLE_ID: Optional[str] = None
-    SOURCE_URL: Optional[str] = None
-    AUTHOR: Optional[str] = None
+    media_rectangle_id: Optional[str] = None
+    source_url: Optional[str] = None
+    author: Optional[str] = None
 
-    TOPICS: List[str] = Field(default_factory=list)
-    PERSONS: List[str] = Field(default_factory=list)
+    topics: List[str] = Field(default_factory=list)
+    persons: List[str] = Field(default_factory=list)
 
-    CONCEPTS: List[str] = Field(default_factory=list)
-    SOLUTIONS: List[str] = Field(default_factory=list)
+    concepts: List[str] = Field(default_factory=list)
+    solutions: List[str] = Field(default_factory=list)
 
     class Config:
         extra = "forbid"
@@ -35,23 +35,23 @@ class NewsCreate(BaseModel):
 # ============================================================
 
 class NewsUpdate(BaseModel):
-    ID_COMPANY: Optional[str] = None
-    NEWS_KIND: Optional[str] = None
-    NEWS_TYPE: Optional[str] = None
+    id_company: Optional[str] = None
+    news_kind: Optional[str] = None
+    news_type: Optional[str] = None
 
-    TITLE: Optional[str] = None
-    EXCERPT: Optional[str] = None
-    BODY: Optional[str] = None
+    title: Optional[str] = None
+    excerpt: Optional[str] = None
+    body: Optional[str] = None
 
-    MEDIA_RECTANGLE_ID: Optional[str] = None
-    SOURCE_URL: Optional[str] = None
-    AUTHOR: Optional[str] = None
+    media_rectangle_id: Optional[str] = None
+    source_url: Optional[str] = None
+    author: Optional[str] = None
 
-    TOPICS: Optional[List[str]] = None
-    PERSONS: Optional[List[str]] = None
+    topics: Optional[List[str]] = None
+    persons: Optional[List[str]] = None
 
-    CONCEPTS: Optional[List[str]] = None
-    SOLUTIONS: Optional[List[str]] = None
+    concepts: Optional[List[str]] = None
+    solutions: Optional[List[str]] = None
 
     class Config:
         extra = "forbid"
@@ -62,7 +62,7 @@ class NewsUpdate(BaseModel):
 # ============================================================
 
 class NewsPublish(BaseModel):
-    publish_at: Optional[str] = None
+    publish_at: Optional[datetime] = None
 
 
 # ============================================================
