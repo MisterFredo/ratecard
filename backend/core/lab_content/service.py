@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Any
+from typing import Dict, Any, List
 from utils.llm import run_llm
 
 
@@ -12,21 +12,19 @@ def transform_source_to_content(
     angle_title: str,
     angle_signal: str,
     context: Dict[str, Any],
+    selected_concepts: List[Dict[str, str]],
 ) -> Dict[str, Any]:
-    """
-    Transforme une source en CONTENT Ratecard structuré.
 
-    SORTIE :
-    - excerpt
-    - concept
-    - content_body
-    - citations   (liste)
-    - chiffres    (liste)
-    - acteurs     (liste)
+    if not isinstance(source_text, str) or not source_text.strip():
+        return {}
 
-    Tous les champs sont destinés à être VALIDÉS HUMAINEMENT
-    avant persistance en base.
-    """
+    # ---------------------------------------------------------
+    # BUILD CONCEPT BLOCK
+    # ---------------------------------------------------------
+    concepts_block = "\n".join([
+        f"- {c['title']} : {c['description']}"
+        for c in selected_concepts
+    ]) if selected_concepts else "Aucun concept spécifique."
 
     prompt = f"""
 Tu es un assistant d’analyse stratégique pour Curator.
@@ -46,6 +44,16 @@ une THÈSE ANALYTIQUE exploitable dans un moteur aval.
 Titre : {angle_title}
 Signal : {angle_signal}
 
+==================== CADRE CONCEPTUEL ====================
+L’analyse doit être cohérente avec les concepts suivants :
+
+{concepts_block}
+
+Tu ne dois pas redéfinir ces concepts.
+Tu dois structurer l’analyse en cohérence avec eux.
+Si un concept n’est pas réellement présent dans la source,
+ne le forces pas artificiellement.
+
 ==================== SOURCE ====================
 Type : {source_type}
 Texte :
@@ -56,17 +64,12 @@ Texte :
 Le développement doit explicitement :
 
 1. Identifier la TENSION centrale présente dans la source.
-2. Décrire le MÉCANISME à l’œuvre (ce qui change concrètement).
+2. Décrire le MÉCANISME à l’œuvre.
 3. Expliquer la CONSÉQUENCE logique si cette dynamique se poursuit.
 
 Tu ne dois pas extrapoler au-delà des éléments contenus dans la source.
-Toute projection doit être directement déduite du texte.
 
 ==================== FORMAT DE SORTIE ATTENDU ====================
-
-Tu dois produire un TEXTE STRUCTURÉ,
-avec EXACTEMENT les sections suivantes,
-dans cet ordre, sans texte avant ni après :
 
 EXCERPT
 (1 à 2 phrases synthétiques exprimant clairement la thèse.)
@@ -78,27 +81,24 @@ DEVELOPPEMENT
 (Texte structuré en 3 blocs logiques :
 - Tension
 - Mécanisme
-- Conséquence
-Chaque bloc peut être développé en 1 ou 2 paragraphes courts.)
+- Conséquence)
 
 CITATIONS
 (Liste des citations EXACTES présentes dans la source,
 entre guillemets. Si aucune, écris : Aucun.)
 
 CHIFFRES
-(Liste des chiffres ou données quantitatives présentes
-dans la source. Si aucun, écris : Aucun.)
+(Liste des chiffres présents dans la source. Si aucun, écris : Aucun.)
 
 ACTEURS
-(Liste des entreprises, marques ou organisations citées
-dans la source. Jamais de personnes physiques.
+(Liste des entreprises citées. Jamais de personnes physiques.
 Si aucun, écris : Aucun.)
 """
 
     raw = run_llm(prompt)
 
     # ---------------------------------------------------------
-    # PARSING PAR SECTIONS BALISÉES
+    # PARSING
     # ---------------------------------------------------------
     sections = {
         "EXCERPT": "",
@@ -110,9 +110,7 @@ Si aucun, écris : Aucun.)
     }
 
     current = None
-    lines = raw.splitlines()
-
-    for line in lines:
+    for line in raw.splitlines():
         line = line.strip()
         if not line:
             continue
@@ -124,9 +122,6 @@ Si aucun, écris : Aucun.)
         if current:
             sections[current] += line + "\n"
 
-    # ---------------------------------------------------------
-    # NETTOYAGE & NORMALISATION
-    # ---------------------------------------------------------
     excerpt = sections["EXCERPT"].strip()
     concept = sections["CONCEPT"].strip()
     body = sections["DEVELOPPEMENT"].strip()
@@ -136,8 +131,7 @@ Si aucun, écris : Aucun.)
             return []
         items = []
         for line in block.splitlines():
-            line = line.strip()
-            line = re.sub(r"^[-•]\s*", "", line)
+            line = re.sub(r"^[-•]\s*", "", line.strip())
             if line:
                 items.append(line)
         return items
@@ -146,9 +140,6 @@ Si aucun, écris : Aucun.)
     chiffres = parse_list(sections["CHIFFRES"])
     acteurs = parse_list(sections["ACTEURS"])
 
-    # ---------------------------------------------------------
-    # FALLBACK MÉTIER (SÉCURITÉ)
-    # ---------------------------------------------------------
     if not excerpt and not body:
         clean = source_text.strip()
         return {
