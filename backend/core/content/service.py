@@ -51,15 +51,6 @@ def normalize_array(value):
 # CREATE CONTENT — ANALYSE RATECARD
 # ============================================================
 def create_content(data: Dict[str, Any]) -> str:
-    """
-    Crée un contenu ANALYTIQUE Ratecard (validation humaine).
-
-    Règles métier :
-    - angle_title obligatoire
-    - angle_signal obligatoire
-    - au moins UNE entité associée
-    - PAS de logique de visuel au niveau contenu
-    """
 
     if not data.angle_title or not data.angle_title.strip():
         raise ValueError("ANGLE_TITLE obligatoire")
@@ -80,60 +71,44 @@ def create_content(data: Dict[str, Any]) -> str:
 
     content_id = str(uuid.uuid4())
 
-    # ---------------------------------------------------------
-    # DATES
-    # ---------------------------------------------------------
     today = date.today()
     date_creation = data.date_creation or today
     date_import = data.date_import or today
     now = datetime.utcnow()
 
-    # ---------------------------------------------------------
-    # ROW PRINCIPALE (SANS VISUEL)
-    # ---------------------------------------------------------
     row = [{
         "ID_CONTENT": content_id,
         "STATUS": "DRAFT",
         "IS_ACTIVE": True,
         "AUTHOR": data.author,
 
-        # SOURCE
         "SOURCE_TYPE": data.source_type,
         "SOURCE_TEXT": data.source_text,
         "SOURCE_URL": data.source_url,
         "SOURCE_AUTHOR": data.source_author,
 
-        # ANGLE
         "ANGLE_TITLE": data.angle_title,
         "ANGLE_SIGNAL": data.angle_signal,
 
-        # CONTENU
         "EXCERPT": data.excerpt,
         "CONCEPT": data.concept,
         "CONTENT_BODY": data.content_body,
 
-        # AIDES ÉDITORIALES
         "CITATIONS": normalize_array(data.citations),
         "CHIFFRES": normalize_array(data.chiffres),
         "ACTEURS_CITES": normalize_array(data.acteurs_cites),
 
-        # SEO
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
 
-        # DATES
         "DATE_CREATION": date_creation.isoformat(),
         "DATE_IMPORT": date_import.isoformat(),
 
-        # PUBLICATION
         "PUBLISHED_AT": None,
     }]
 
     client = get_bigquery_client()
 
-    # ---------------------------------------------------------
-    # INSERT VIA LOAD JOB (ANTI STREAMING BUFFER)
-    # ---------------------------------------------------------
     client.load_table_from_json(
         row,
         TABLE_CONTENT,
@@ -145,6 +120,7 @@ def create_content(data: Dict[str, Any]) -> str:
     # ---------------------------------------------------------
     # RELATIONS
     # ---------------------------------------------------------
+
     if data.topics:
         insert_bq(
             TABLE_CONTENT_TOPIC,
@@ -186,8 +162,27 @@ def create_content(data: Dict[str, Any]) -> str:
             ],
         )
 
-    return content_id
+    # 🔥 CONCEPTS
+    if getattr(data, "concepts", None):
+        insert_bq(
+            TABLE_CONTENT_CONCEPT,
+            [
+                {"ID_CONTENT": content_id, "ID_CONCEPT": cid, "CREATED_AT": now}
+                for cid in data.concepts
+            ],
+        )
 
+    # 🔥 SOLUTIONS
+    if getattr(data, "solutions", None):
+        insert_bq(
+            TABLE_CONTENT_SOLUTION,
+            [
+                {"ID_CONTENT": content_id, "ID_SOLUTION": sid, "CREATED_AT": now}
+                for sid in data.solutions
+            ],
+        )
+
+    return content_id
 
 # ============================================================
 # GET ONE CONTENT (ENRICHI)
