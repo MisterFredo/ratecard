@@ -42,10 +42,9 @@ export default function NewsStudio({ mode, newsId }: Props) {
 
   const [company, setCompany] = useState<any | null>(null);
   const [companyFull, setCompanyFull] = useState<any | null>(null);
+
   const [topics, setTopics] = useState<any[]>([]);
   const [persons, setPersons] = useState<any[]>([]);
-
-  // 🔥 NOUVEAU
   const [concepts, setConcepts] = useState<any[]>([]);
   const [solutions, setSolutions] = useState<any[]>([]);
 
@@ -55,6 +54,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   const [internalNewsId, setInternalNewsId] = useState<string | null>(
     newsId || null
   );
+
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [step, setStep] = useState<Step>("SOURCE");
@@ -74,6 +74,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   /* =========================================================
      INIT STEP
   ========================================================= */
+
   useEffect(() => {
     const stepParam = searchParams.get("step") as Step | null;
     if (stepParam && stepOrder.includes(stepParam)) {
@@ -84,6 +85,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   /* =========================================================
      LOAD NEWS (EDIT)
   ========================================================= */
+
   useEffect(() => {
     if (mode !== "edit" || !newsId) return;
 
@@ -99,39 +101,20 @@ export default function NewsStudio({ mode, newsId }: Props) {
         setExcerpt(n.EXCERPT || "");
         setBody(n.BODY || "");
 
+        // 🔥 Normalisation company en UPPER_CASE
         setCompany(
-          n.company
+          n.ID_COMPANY
             ? {
-                id_company: n.company.id_company,
-                name: n.company.name,
+                ID_COMPANY: n.ID_COMPANY,
+                NAME: n.COMPANY_NAME,
               }
             : null
         );
 
-        setTopics(
-          (n.topics || []).map((t: any) => ({
-            id_topic: t.ID_TOPIC,
-            label: t.LABEL,
-          }))
-        );
-
-        setPersons(n.persons || []);
-
-        // 🔥 LOAD CONCEPTS
-        setConcepts(
-          (n.concepts || []).map((c: any) => ({
-            id_concept: c.ID_CONCEPT,
-            title: c.TITLE,
-          }))
-        );
-
-        // 🔥 LOAD SOLUTIONS
-        setSolutions(
-          (n.solutions || []).map((s: any) => ({
-            id_solution: s.ID_SOLUTION,
-            name: s.NAME,
-          }))
-        );
+        setTopics(n.TOPICS || []);
+        setPersons(n.PERSONS || []);
+        setConcepts(n.CONCEPTS || []);
+        setSolutions(n.SOLUTIONS || []);
 
         setMediaId(n.MEDIA_RECTANGLE_ID || null);
 
@@ -150,17 +133,16 @@ export default function NewsStudio({ mode, newsId }: Props) {
   /* =========================================================
      LOAD COMPANY FULL
   ========================================================= */
+
   useEffect(() => {
-    if (!company?.id_company && !company?.ID_COMPANY) {
+    if (!company?.ID_COMPANY) {
       setCompanyFull(null);
       return;
     }
 
-    const companyId = company.id_company || company.ID_COMPANY;
-
     async function loadCompany() {
       try {
-        const res = await api.get(`/company/${companyId}`);
+        const res = await api.get(`/company/${company.ID_COMPANY}`);
         setCompanyFull(res.company);
       } catch {
         setCompanyFull(null);
@@ -173,15 +155,16 @@ export default function NewsStudio({ mode, newsId }: Props) {
   /* =========================================================
      SAVE
   ========================================================= */
+
   async function saveNews() {
     if (!title.trim()) return alert("Titre requis");
     if (!excerpt.trim()) return alert("Excerpt requis");
-    if (!company) return alert("Société requise");
+    if (!company?.ID_COMPANY) return alert("Société requise");
 
     setSaving(true);
 
     const payload = {
-      ID_COMPANY: company.ID_COMPANY || company.id_company,
+      ID_COMPANY: company.ID_COMPANY,
       NEWS_KIND: newsKind,
       NEWS_TYPE: newsType ?? null,
 
@@ -189,17 +172,19 @@ export default function NewsStudio({ mode, newsId }: Props) {
       EXCERPT: excerpt,
       BODY: newsKind === "NEWS" ? body : null,
 
-      TOPICS: topics.map((t) => t.ID_TOPIC || t.id_topic),
-      PERSONS: persons.map((p) => p.ID_PERSON || p.id_person),
+      TOPICS: topics.map((t) => t.ID_TOPIC),
+      PERSONS: persons.map((p) => p.ID_PERSON),
 
-      CONCEPTS: concepts.map((c) => c.ID_CONCEPT || c.id_concept),
-      SOLUTIONS: solutions.map((s) => s.ID_SOLUTION || s.id_solution),
+      CONCEPTS: concepts.map((c) => c.ID_CONCEPT),
+      SOLUTIONS: solutions.map((s) => s.ID_SOLUTION),
     };
 
     try {
       if (!internalNewsId) {
         const res = await api.post("/news/create", payload);
-        setInternalNewsId(res.id_news);
+
+        // 🔥 IMPORTANT : backend renvoie ID_NEWS
+        setInternalNewsId(res.ID_NEWS);
       } else {
         await api.put(`/news/update/${internalNewsId}`, payload);
       }
@@ -216,6 +201,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   /* =========================================================
      PUBLISH
   ========================================================= */
+
   async function publishNews() {
     if (!internalNewsId) return;
 
@@ -247,9 +233,9 @@ export default function NewsStudio({ mode, newsId }: Props) {
   /* =========================================================
      UI
   ========================================================= */
+
   return (
     <div className="space-y-6">
-      {/* SOURCE */}
       <details open={step === "SOURCE"} className="border rounded p-4">
         <summary onClick={() => setStep("SOURCE")} className="font-semibold">
           1. Source
@@ -266,7 +252,6 @@ export default function NewsStudio({ mode, newsId }: Props) {
         />
       </details>
 
-      {/* CONTENT */}
       {isStepReached("CONTENT") && (
         <details open={step === "CONTENT"} className="border rounded p-4">
           <summary onClick={() => setStep("CONTENT")} className="font-semibold">
@@ -302,7 +287,6 @@ export default function NewsStudio({ mode, newsId }: Props) {
         </details>
       )}
 
-      {/* RESTE IDENTIQUE (VISUAL / PREVIEW / PUBLISH / LINKEDIN) */}
       {newsKind === "NEWS" && isStepReached("VISUAL") && (
         <details open={step === "VISUAL"} className="border rounded p-4">
           <summary onClick={() => setStep("VISUAL")} className="font-semibold">
@@ -337,13 +321,15 @@ export default function NewsStudio({ mode, newsId }: Props) {
         />
       )}
 
-      {newsKind === "NEWS" && isStepReached("LINKEDIN") && internalNewsId && (
-        <NewsStepLinkedIn
-          newsId={internalNewsId}
-          title={title}
-          excerpt={excerpt}
-        />
-      )}
+      {newsKind === "NEWS" &&
+        isStepReached("LINKEDIN") &&
+        internalNewsId && (
+          <NewsStepLinkedIn
+            newsId={internalNewsId}
+            title={title}
+            excerpt={excerpt}
+          />
+        )}
     </div>
   );
 }
