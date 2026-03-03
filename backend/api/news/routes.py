@@ -519,6 +519,24 @@ def save_linkedin_post_for_news(news_id: str, data: NewsLinkedInPost):
         logger.exception("Erreur sauvegarde post LinkedIn")
         raise HTTPException(500, "Erreur sauvegarde post LinkedIn")
 
+# ============================================================
+# LINKEDIN GET (ONE NEWS)
+# ============================================================
+
+@router.get("/{news_id}/linkedin")
+def get_linkedin_post_for_news(news_id: str):
+    try:
+        post = get_news_linkedin_post(news_id)
+
+        if not post:
+            return {"status": "ok", "post": None}
+
+        return {"status": "ok", "post": post}
+
+    except Exception:
+        logger.exception("Erreur récupération post LinkedIn")
+        raise HTTPException(500, "Erreur récupération post LinkedIn")
+
 
 # ============================================================
 # GET ONE NEWS
