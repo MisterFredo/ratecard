@@ -18,24 +18,20 @@ TABLE_COMPANY_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_METRICS"
 
 
 # ============================================================
-# CREATE COMPANY — DATA ONLY
+# CREATE COMPANY — MAJUSCULES
 # ============================================================
 def create_company(data: CompanyCreate) -> str:
-    """
-    Crée une société (données uniquement).
-    Le visuel est uploadé dans un second temps.
-    """
     company_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
 
     row = [{
         "ID_COMPANY": company_id,
-        "NAME": data.name,
-        "DESCRIPTION": data.description or None,
+        "NAME": data.NAME,
+        "DESCRIPTION": data.DESCRIPTION or None,
         "MEDIA_LOGO_RECTANGLE_ID": None,
-        "LINKEDIN_URL": data.linkedin_url or None,
-        "WEBSITE_URL": data.website_url or None,
-        "IS_PARTNER": bool(data.is_partner),
+        "LINKEDIN_URL": data.LINKEDIN_URL or None,
+        "WEBSITE_URL": data.WEBSITE_URL or None,
+        "IS_PARTNER": bool(data.IS_PARTNER),
         "CREATED_AT": now,
         "UPDATED_AT": now,
         "IS_ACTIVE": True,
@@ -55,13 +51,9 @@ def create_company(data: CompanyCreate) -> str:
 
 
 # ============================================================
-# LIST COMPANIES (ADMIN / LISTING LIGHT)
+# LIST COMPANIES — MAJUSCULES
 # ============================================================
 def list_companies():
-    """
-    Liste des sociétés (version légère).
-    Ajoute indicateurs de complétion Description & Wiki.
-    """
     sql = f"""
         SELECT
             c.ID_COMPANY,
@@ -70,23 +62,16 @@ def list_companies():
             c.MEDIA_LOGO_RECTANGLE_ID,
             COALESCE(m.NB_ANALYSES, 0) AS NB_ANALYSES,
             COALESCE(m.LAST_30_DAYS, 0) AS DELTA_30D,
-
-            -- Description remplie ?
             CASE
                 WHEN c.DESCRIPTION IS NOT NULL
                      AND TRIM(c.DESCRIPTION) != ""
-                THEN TRUE
-                ELSE FALSE
+                THEN TRUE ELSE FALSE
             END AS HAS_DESCRIPTION,
-
-            -- Wiki rempli ?
             CASE
                 WHEN c.WIKI_CONTENT IS NOT NULL
                      AND TRIM(c.WIKI_CONTENT) != ""
-                THEN TRUE
-                ELSE FALSE
+                THEN TRUE ELSE FALSE
             END AS HAS_WIKI
-
         FROM `{TABLE_COMPANY}` c
         LEFT JOIN `{TABLE_COMPANY_METRICS}` m
           ON m.ID_COMPANY = c.ID_COMPANY
@@ -94,29 +79,13 @@ def list_companies():
         ORDER BY NB_ANALYSES DESC, c.NAME ASC
     """
 
-    rows = query_bq(sql)
+    return query_bq(sql)  # ⚠️ brut BQ
 
-    return [
-        {
-            "id_company": r["ID_COMPANY"],
-            "name": r["NAME"],
-            "is_partner": bool(r["IS_PARTNER"]),
-            "media_logo_url": r["MEDIA_LOGO_RECTANGLE_ID"],
-            "nb_analyses": r["NB_ANALYSES"],
-            "delta_30d": r["DELTA_30D"],
-            "has_description": r["HAS_DESCRIPTION"],
-            "has_wiki": r["HAS_WIKI"],
-        }
-        for r in rows
-    ]
 
 # ============================================================
-# GET ONE COMPANY (DETAIL COMPLET)
+# GET ONE COMPANY — MAJUSCULES
 # ============================================================
 def get_company(company_id: str):
-    """
-    Récupère une société complète (inclut wiki_content).
-    """
     sql = f"""
         SELECT *
         FROM `{TABLE_COMPANY}`
@@ -129,64 +98,27 @@ def get_company(company_id: str):
     if not rows:
         return None
 
-    r = rows[0]
-
-    return {
-        "id_company": r["ID_COMPANY"],
-        "name": r["NAME"],
-
-        # --- Brand (éditorial Ratecard) ---
-        "description": r.get("DESCRIPTION"),
-
-        # --- Wiki simplifié ---
-        "wiki_content": r.get("WIKI_CONTENT"),
-        "wiki_source_id": r.get("WIKI_SOURCE_ID"),
-        "wiki_updated_at": r.get("WIKI_UPDATED_AT"),
-        "wiki_vectorised": r.get("WIKI_VECTORISED", False),
-
-        # --- Media ---
-        "media_logo_url": r.get("MEDIA_LOGO_RECTANGLE_ID"),
-
-        # --- Liens ---
-        "linkedin_url": r.get("LINKEDIN_URL"),
-        "website_url": r.get("WEBSITE_URL"),
-
-        # --- Statut ---
-        "is_partner": bool(r.get("IS_PARTNER", False)),
-        "is_active": r.get("IS_ACTIVE", True),
-
-        # --- Dates ---
-        "created_at": r.get("CREATED_AT"),
-        "updated_at": r.get("UPDATED_AT"),
-    }
+    return rows[0]  # ⚠️ brut BQ
 
 
 # ============================================================
-# UPDATE COMPANY
+# UPDATE COMPANY — MAJUSCULES
 # ============================================================
 def update_company(id_company: str, data: CompanyUpdate) -> bool:
-    """
-    Met à jour une société existante.
-    Supporte le wiki simplifié.
-    """
     values = data.dict(exclude_unset=True)
 
     if not values:
         return False
 
-    # Bool safe
-    if "is_partner" in values:
-        values["is_partner"] = bool(values["is_partner"])
+    # Mise à jour timestamp si WIKI_CONTENT modifié
+    if "WIKI_CONTENT" in values:
+        values["WIKI_UPDATED_AT"] = datetime.utcnow().isoformat()
+        values["WIKI_VECTORISED"] = False
 
-    # Si wiki_content modifié → update timestamp wiki
-    if "wiki_content" in values:
-        values["wiki_updated_at"] = datetime.utcnow().isoformat()
-        values["wiki_vectorised"] = False  # reset vectorisation
-
-    values["updated_at"] = datetime.utcnow().isoformat()
+    values["UPDATED_AT"] = datetime.utcnow().isoformat()
 
     return update_bq(
         table=TABLE_COMPANY,
-        fields={k.upper(): v for k, v in values.items()},
+        fields=values,  # ⚠️ plus de upper()
         where={"ID_COMPANY": id_company},
     )
