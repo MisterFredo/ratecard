@@ -57,6 +57,7 @@ def create_solution(data: SolutionCreate) -> str:
 def list_solutions():
     """
     Liste des solutions avec nom société si associée.
+    Aligné avec le standard MAJUSCULES du projet.
     """
     sql = f"""
         SELECT
@@ -78,18 +79,17 @@ def list_solutions():
 
     return [
         {
-            "id_solution": r["ID_SOLUTION"],
-            "name": r["NAME"],
-            "status": r["STATUS"],
-            "id_company": r["ID_COMPANY"],
-            "company_name": r["COMPANY_NAME"],
-            "vectorise": r["VECTORISE"],
-            "created_at": r["CREATED_AT"],
-            "updated_at": r["UPDATED_AT"],
+            "ID_SOLUTION": r["ID_SOLUTION"],
+            "NAME": r["NAME"],
+            "STATUS": r["STATUS"],
+            "ID_COMPANY": r["ID_COMPANY"],
+            "COMPANY_NAME": r["COMPANY_NAME"],
+            "VECTORISE": r["VECTORISE"],
+            "CREATED_AT": r["CREATED_AT"],
+            "UPDATED_AT": r["UPDATED_AT"],
         }
         for r in rows
     ]
-
 
 # ============================================================
 # GET ONE SOLUTION
