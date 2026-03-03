@@ -637,6 +637,8 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
     else:
         publish_date = now
 
+    status = "PUBLISHED" if publish_date <= now else "SCHEDULED"
+
     update_bq(
         table=TABLE_NEWS,
         fields={
