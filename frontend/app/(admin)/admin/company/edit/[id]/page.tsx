@@ -16,16 +16,14 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [linkedinUrl, setLinkedinUrl] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [isPartner, setIsPartner] = useState(false);
+  const [NAME, setNAME] = useState("");
+  const [DESCRIPTION, setDESCRIPTION] = useState("");
+  const [LINKEDIN_URL, setLINKEDIN_URL] = useState("");
+  const [WEBSITE_URL, setWEBSITE_URL] = useState("");
+  const [IS_PARTNER, setIS_PARTNER] = useState(false);
 
-  // --- WIKI (BLOC UNIQUE) ---
-  const [wikiContent, setWikiContent] = useState("");
+  const [WIKI_CONTENT, setWIKI_CONTENT] = useState("");
 
-  // --- LOGO ---
   const [logoFilename, setLogoFilename] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
@@ -36,17 +34,18 @@ export default function EditCompany({ params }: { params: { id: string } }) {
       setLoading(true);
 
       try {
-        const c = await api.get(`/company/${id}`);
+        const res = await api.get(`/company/${id}`);
+        const c = res.company;
 
-        setName(c.name || "");
-        setDescription(c.description || "");
-        setLinkedinUrl(c.linkedin_url || "");
-        setWebsiteUrl(c.website_url || "");
-        setIsPartner(Boolean(c.is_partner));
+        setNAME(c.NAME || "");
+        setDESCRIPTION(c.DESCRIPTION || "");
+        setLINKEDIN_URL(c.LINKEDIN_URL || "");
+        setWEBSITE_URL(c.WEBSITE_URL || "");
+        setIS_PARTNER(Boolean(c.IS_PARTNER));
 
-        setWikiContent(c.wiki_content || "");
+        setWIKI_CONTENT(c.WIKI_CONTENT || "");
 
-        setLogoFilename(c.media_logo_url || null);
+        setLogoFilename(c.MEDIA_LOGO_RECTANGLE_ID || null);
       } catch (e) {
         console.error(e);
         alert("❌ Erreur chargement société");
@@ -66,12 +65,12 @@ export default function EditCompany({ params }: { params: { id: string } }) {
 
     try {
       await api.put(`/company/update/${id}`, {
-        name,
-        description: description || null,
-        linkedin_url: linkedinUrl || null,
-        website_url: websiteUrl || null,
-        is_partner: isPartner,
-        wiki_content: wikiContent || null,
+        NAME,
+        DESCRIPTION: DESCRIPTION || null,
+        LINKEDIN_URL: LINKEDIN_URL || null,
+        WEBSITE_URL: WEBSITE_URL || null,
+        IS_PARTNER,
+        WIKI_CONTENT: WIKI_CONTENT || null,
       });
 
       alert("Société modifiée");
@@ -109,21 +108,25 @@ export default function EditCompany({ params }: { params: { id: string } }) {
       </div>
 
       <EntityBaseForm
-        values={{ name, linkedinUrl, websiteUrl }}
+        values={{
+          name: NAME,
+          linkedinUrl: LINKEDIN_URL,
+          websiteUrl: WEBSITE_URL,
+        }}
         onChange={{
-          setName,
-          setLinkedinUrl,
-          setWebsiteUrl,
+          setName: setNAME,
+          setLinkedinUrl: setLINKEDIN_URL,
+          setWebsiteUrl: setWEBSITE_URL,
         }}
       />
 
-      {/* DESCRIPTION COMMERCIALE */}
+      {/* DESCRIPTION */}
       <div className="space-y-2">
         <label className="block font-medium">
           Description (commerciale)
         </label>
 
-        <HtmlEditor value={description} onChange={setDescription} />
+        <HtmlEditor value={DESCRIPTION} onChange={setDESCRIPTION} />
       </div>
 
       {/* WIKI */}
@@ -133,8 +136,8 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         </h2>
 
         <HtmlEditor
-          value={wikiContent}
-          onChange={setWikiContent}
+          value={WIKI_CONTENT}
+          onChange={setWIKI_CONTENT}
         />
       </div>
 
@@ -142,8 +145,8 @@ export default function EditCompany({ params }: { params: { id: string } }) {
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
-          checked={isPartner}
-          onChange={(e) => setIsPartner(e.target.checked)}
+          checked={IS_PARTNER}
+          onChange={(e) => setIS_PARTNER(e.target.checked)}
         />
         <label className="text-sm">
           Société partenaire
@@ -163,8 +166,10 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         rectUrl={rectUrl}
         onUpdated={async () => {
           try {
-            const c = await api.get(`/company/${id}`);
-            setLogoFilename(c.media_logo_url || null);
+            const res = await api.get(`/company/${id}`);
+            setLogoFilename(
+              res.company?.MEDIA_LOGO_RECTANGLE_ID || null
+            );
           } catch (e) {
             console.error(e);
           }
