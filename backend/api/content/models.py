@@ -57,23 +57,26 @@ class ContentCreate(BaseModel):
     chiffres: Optional[List[str]] = []
     acteurs_cites: Optional[List[str]] = []
 
-    # ENTITÉS (AU MOINS UNE)
+    # ENTITÉS EXISTANTES
     topics: Optional[List[str]] = []
     events: Optional[List[str]] = []
     companies: Optional[List[str]] = []
     persons: Optional[List[ContentPerson]] = []
+
+    # 🔥 NOUVEAU — TAGGING SOUPLE
+    concepts: List[str] = []
+    solutions: List[str] = []
 
     # SEO
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
 
     # DATES
-    date_creation: Optional[date] = None   # date éditoriale réelle
-    date_import: Optional[date] = None     # date système
+    date_creation: Optional[date] = None
+    date_import: Optional[date] = None
 
     # META
     author: Optional[str] = None
-
 
 # ============================================================
 # UPDATE
@@ -99,11 +102,15 @@ class ContentUpdate(BaseModel):
     chiffres: Optional[List[str]] = []
     acteurs_cites: Optional[List[str]] = []
 
-    # ENTITÉS
+    # ENTITÉS EXISTANTES
     topics: Optional[List[str]] = []
     events: Optional[List[str]] = []
     companies: Optional[List[str]] = []
     persons: Optional[List[ContentPerson]] = []
+
+    # 🔥 NOUVEAU — TAGGING SOUPLE
+    concepts: Optional[List[str]] = None
+    solutions: Optional[List[str]] = None
 
     # SEO
     seo_title: Optional[str] = None
@@ -114,7 +121,6 @@ class ContentUpdate(BaseModel):
 
     # META
     author: Optional[str] = None
-
 # ============================================================
 # PUBLISH CONTENT
 # ============================================================
@@ -149,3 +155,6 @@ class ContentOut(BaseModel):
     companies: list = []
     persons: list = []
 
+    # 🔥 NOUVEAU
+    concepts: list = []
+    solutions: list = []
