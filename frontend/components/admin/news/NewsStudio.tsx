@@ -315,7 +315,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
             <NewsStepVisual
               newsId={internalNewsId}
               mediaId={mediaId}
-              companyMediaId={companyFull?.MEDIA_LOGO_RECTANGLE_ID || null}
+              companyMediaId={companyFull?.media_logo_rectangle_id || null}
               onUpdated={setMediaId}
               onNext={() => setStep("PREVIEW")}
             />
