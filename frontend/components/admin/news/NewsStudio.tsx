@@ -228,7 +228,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
     if (
       newsKind === "NEWS" &&
       !mediaId &&
-      !companyFull?.MEDIA_LOGO_RECTANGLE_ID
+      !companyFull?.media_logo_rectangle_id
     ) {
       return alert("Visuel requis pour une news");
     }
