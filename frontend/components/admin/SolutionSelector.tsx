@@ -6,9 +6,6 @@ import SearchableMultiSelect, {
   SelectOption,
 } from "@/components/ui/SearchableMultiSelect";
 
-/* ---------------------------------------------------------
-   TYPES EXPORTÉS
---------------------------------------------------------- */
 export type Solution = {
   ID_SOLUTION: string;
   NAME: string;
@@ -23,9 +20,6 @@ export default function SolutionSelector({ values, onChange }: Props) {
   const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* ---------------------------------------------------------
-     LOAD SOLUTIONS
-  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -35,7 +29,7 @@ export default function SolutionSelector({ values, onChange }: Props) {
         setOptions(
           (res.solutions || []).map((s: any) => ({
             id: s.ID_SOLUTION,
-            label: s.NAME, // 🔥 CORRECTION ICI
+            label: s.NAME,   // ✅ CORRIGÉ
           }))
         );
       } catch (e) {
@@ -47,9 +41,6 @@ export default function SolutionSelector({ values, onChange }: Props) {
     load();
   }, []);
 
-  /* ---------------------------------------------------------
-     HANDLE CHANGE — MULTI
-  --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
     if (!selected || selected.length === 0) {
       onChange([]);
@@ -59,7 +50,7 @@ export default function SolutionSelector({ values, onChange }: Props) {
     onChange(
       selected.map((item) => ({
         ID_SOLUTION: item.id,
-        NAME: item.label, // 🔥 CORRECTION ICI
+        NAME: item.label,   // ✅ CORRIGÉ
       }))
     );
   }
@@ -79,7 +70,7 @@ export default function SolutionSelector({ values, onChange }: Props) {
       options={options}
       values={values.map((v) => ({
         id: v.ID_SOLUTION,
-        label: v.NAME, // 🔥 CORRECTION ICI
+        label: v.NAME,   // ✅ CORRIGÉ
       }))}
       onChange={handleChange}
     />
