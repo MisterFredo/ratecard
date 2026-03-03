@@ -106,3 +106,18 @@ def update_concept(id_concept: str, data: ConceptUpdate) -> bool:
         fields=values,  # ⚠️ plus de .upper()
         where={"ID_CONCEPT": id_concept},
     )
+
+def delete_concept(id_concept: str) -> bool:
+    """
+    Supprime physiquement un concept.
+    Retourne True si supprimé.
+    """
+
+    from utils.bigquery_utils import delete_bq
+
+    deleted = delete_bq(
+        table=TABLE_CONCEPT,
+        where={"ID_CONCEPT": id_concept},
+    )
+
+    return deleted
