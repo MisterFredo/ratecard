@@ -448,11 +448,7 @@ def generate_linkedin_post_for_news(news_id: str):
 
         title = news.get("TITLE") or ""
         excerpt = news.get("EXCERPT") or ""
-
-        # ✅ Récupération correcte de la société
-        company_name = ""
-        if news.get("company") and news["company"].get("name"):
-            company_name = news["company"]["name"]
+        company_name = news.get("COMPANY_NAME") or ""
 
         if not title.strip():
             raise HTTPException(400, "Titre manquant")
@@ -497,7 +493,10 @@ EXCERPT :
 
         text = run_llm(prompt)
 
-        return {"text": text.strip() if text else ""}
+        return {
+            "STATUS": "OK",
+            "TEXT": text.strip() if text else ""
+        }
 
     except Exception as e:
         logger.exception("Erreur génération LinkedIn")
