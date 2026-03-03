@@ -56,7 +56,6 @@ export default function NewsListPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
 
-  // 🔎 FILTRES
   const [filterType, setFilterType] = useState("");
   const [filterKind, setFilterKind] = useState("");
   const [filterCompany, setFilterCompany] = useState("");
@@ -106,6 +105,35 @@ export default function NewsListPage() {
   }, [page, filterType, filterKind, filterCompany]);
 
   const hasNext = news.length === PAGE_SIZE;
+
+  /* =========================================================
+     TRI LOCAL : SCHEDULED → DRAFT → PUBLISHED
+  ========================================================= */
+
+  const sortedNews = [...news].sort((a, b) => {
+    const order = {
+      SCHEDULED: 1,
+      DRAFT: 2,
+      PUBLISHED: 3,
+    } as Record<string, number>;
+
+    const aOrder = order[a.STATUS] ?? 99;
+    const bOrder = order[b.STATUS] ?? 99;
+
+    if (aOrder !== bOrder) {
+      return aOrder - bOrder;
+    }
+
+    const aDate = a.PUBLISHED_AT
+      ? new Date(a.PUBLISHED_AT).getTime()
+      : 0;
+
+    const bDate = b.PUBLISHED_AT
+      ? new Date(b.PUBLISHED_AT).getTime()
+      : 0;
+
+    return bDate - aDate;
+  });
 
   /* ========================================================= */
 
@@ -207,7 +235,7 @@ export default function NewsListPage() {
             </thead>
 
             <tbody>
-              {news.map((n) => (
+              {sortedNews.map((n) => (
                 <tr key={n.ID_NEWS} className="border-b hover:bg-gray-50">
                   <td className="p-2 font-medium">{n.TITLE}</td>
 
@@ -230,6 +258,8 @@ export default function NewsListPage() {
                           ? "bg-green-100 text-green-700"
                           : n.STATUS === "DRAFT"
                           ? "bg-yellow-100 text-yellow-700"
+                          : n.STATUS === "SCHEDULED"
+                          ? "bg-purple-100 text-purple-700"
                           : "bg-gray-200 text-gray-600"
                       }`}
                     >
