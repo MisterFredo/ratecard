@@ -28,12 +28,12 @@ def create_solution(data: SolutionCreate) -> str:
 
     row = [{
         "ID_SOLUTION": solution_id,
-        "NAME": data.name,
-        "ID_COMPANY": data.id_company,
-        "DESCRIPTION": data.description,
-        "CONTENT": data.content,
-        "STATUS": data.status or "DRAFT",
-        "VECTORISE": data.vectorise or False,
+        "NAME": data.NAME,
+        "ID_COMPANY": data.ID_COMPANY,
+        "DESCRIPTION": data.DESCRIPTION,
+        "CONTENT": data.CONTENT,
+        "STATUS": data.STATUS or "DRAFT",
+        "VECTORISE": data.VECTORISE or False,
         "CREATED_AT": now,
         "UPDATED_AT": now,
     }]
@@ -52,13 +52,9 @@ def create_solution(data: SolutionCreate) -> str:
 
 
 # ============================================================
-# LIST SOLUTIONS (ADMIN)
+# LIST SOLUTIONS
 # ============================================================
 def list_solutions():
-    """
-    Liste des solutions avec nom société si associée.
-    Format API 100% MAJUSCULES.
-    """
     sql = f"""
         SELECT
             s.ID_SOLUTION,
@@ -95,11 +91,7 @@ def list_solutions():
 # ============================================================
 # GET ONE SOLUTION
 # ============================================================
-def get_solution(id_solution: str):
-    """
-    Récupère une solution complète.
-    Format API aligné projet.
-    """
+def get_solution(ID_SOLUTION: str):
     sql = f"""
         SELECT
             s.ID_SOLUTION,
@@ -119,7 +111,7 @@ def get_solution(id_solution: str):
         LIMIT 1
     """
 
-    rows = query_bq(sql, {"id": id_solution})
+    rows = query_bq(sql, {"id": ID_SOLUTION})
 
     if not rows:
         return None
@@ -143,11 +135,7 @@ def get_solution(id_solution: str):
 # ============================================================
 # UPDATE SOLUTION
 # ============================================================
-def update_solution(id_solution: str, data: SolutionUpdate) -> bool:
-    """
-    Mise à jour partielle.
-    Champs alignés MAJUSCULES.
-    """
+def update_solution(ID_SOLUTION: str, data: SolutionUpdate) -> bool:
     values = data.dict(exclude_unset=True)
 
     if not values:
@@ -157,6 +145,6 @@ def update_solution(id_solution: str, data: SolutionUpdate) -> bool:
 
     return update_bq(
         table=TABLE_SOLUTION,
-        fields={k.upper(): v for k, v in values.items()},
-        where={"ID_SOLUTION": id_solution},
+        fields=values,
+        where={"ID_SOLUTION": ID_SOLUTION},
     )
