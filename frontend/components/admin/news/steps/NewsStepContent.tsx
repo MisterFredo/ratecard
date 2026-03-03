@@ -5,6 +5,13 @@ import { api } from "@/lib/api";
 
 import TopicSelector from "@/components/admin/TopicSelector";
 import CompanySelector from "@/components/admin/CompanySelector";
+import ConceptSelector, {
+  Concept,
+} from "@/components/admin/ConceptSelector";
+import SolutionSelector, {
+  Solution,
+} from "@/components/admin/SolutionSelector";
+
 import PersonSelector, {
   PersonRef,
   ArticlePerson,
@@ -21,12 +28,6 @@ type NewsType = {
   label: string;
 };
 
-/**
- * 🔒 Alignement strict BQ
- * - NEWS_KIND : structure (NEWS | BRIEF)
- * - NEWS_TYPE : catégorie éditoriale (CODE string)
- */
-
 type Props = {
   title: string;
   excerpt: string;
@@ -36,7 +37,9 @@ type Props = {
   topics: any[];
   persons: ArticlePerson[];
 
-  // STRUCTURE
+  concepts: Concept[];
+  solutions: Solution[];
+
   newsKind: "NEWS" | "BRIEF";
   newsType?: string | null;
 
@@ -47,6 +50,8 @@ type Props = {
     company?: any | null;
     topics?: any[];
     persons?: ArticlePerson[];
+    concepts?: Concept[];
+    solutions?: Solution[];
     newsKind?: "NEWS" | "BRIEF";
     newsType?: string | null;
   }) => void;
@@ -66,6 +71,8 @@ export default function NewsStepContent({
   company,
   topics,
   persons,
+  concepts,
+  solutions,
   newsKind,
   newsType = null,
   onChange,
@@ -73,7 +80,7 @@ export default function NewsStepContent({
   saving,
 }: Props) {
   /* ---------------------------------------------------------
-     NEWS_TYPE — référentiel éditorial (BQ)
+     NEWS_TYPE
   --------------------------------------------------------- */
   const [newsTypes, setNewsTypes] = useState<NewsType[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
@@ -127,7 +134,7 @@ export default function NewsStepContent({
   return (
     <div className="space-y-6">
       {/* =====================================================
-          STRUCTURE — NEWS / BRÈVE
+          STRUCTURE
       ===================================================== */}
       <div>
         <label className="block font-medium mb-1">
@@ -156,7 +163,7 @@ export default function NewsStepContent({
       </div>
 
       {/* =====================================================
-          CATÉGORIE ÉDITORIALE — NEWS_TYPE
+          CATÉGORIE ÉDITORIALE
       ===================================================== */}
       <div>
         <label className="block font-medium mb-1">
@@ -198,6 +205,26 @@ export default function NewsStepContent({
       />
 
       {/* =====================================================
+          CONCEPTS (MULTI)
+      ===================================================== */}
+      <ConceptSelector
+        values={concepts}
+        onChange={(items) =>
+          onChange({ concepts: items })
+        }
+      />
+
+      {/* =====================================================
+          SOLUTIONS (MULTI)
+      ===================================================== */}
+      <SolutionSelector
+        values={solutions}
+        onChange={(items) =>
+          onChange({ solutions: items })
+        }
+      />
+
+      {/* =====================================================
           TITRE
       ===================================================== */}
       <div>
@@ -231,7 +258,7 @@ export default function NewsStepContent({
       </div>
 
       {/* =====================================================
-          TEXTE — UNIQUEMENT NEWS
+          BODY
       ===================================================== */}
       {newsKind === "NEWS" && (
         <HtmlEditor
