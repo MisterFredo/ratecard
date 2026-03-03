@@ -40,9 +40,16 @@ def list_route():
     """
     Retourne la liste des sociétés actives.
     Version légère (pas de wiki).
+    ⚠️ Contrat stable pour News & Analyses.
     """
     try:
-        return list_companies()
+        companies = list_companies()
+
+        return {
+            "status": "ok",
+            "companies": companies
+        }
+
     except Exception as e:
         raise HTTPException(400, f"Erreur liste sociétés : {e}")
 
