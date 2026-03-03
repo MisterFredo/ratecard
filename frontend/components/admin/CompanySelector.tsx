@@ -31,12 +31,10 @@ export default function CompanySelector({ values, onChange }: Props) {
       setLoading(true);
       try {
         const res = await api.get("/company/list");
-
-        // res est un tableau direct
         setOptions(
-          (res || []).map((c: any) => ({
-            id: c.id_company,
-            label: c.name,
+          (res.companies || []).map((c: any) => ({
+            id: c.ID_COMPANY,
+            label: c.NAME,
           }))
         );
       } catch (e) {
