@@ -232,10 +232,40 @@ def get_news(id_news: str):
     news = serialize_row(rows[0])
 
     # ------------------------------------------------------------
+    # TOPICS
+    # ------------------------------------------------------------
+
+    news["TOPICS"] = query_bq(
+        f"""
+        SELECT T.ID_TOPIC, T.LABEL
+        FROM `{TABLE_NEWS_TOPIC}` NT
+        JOIN `{TABLE_TOPIC}` T
+          ON NT.ID_TOPIC = T.ID_TOPIC
+        WHERE NT.ID_NEWS = @id
+        """,
+        {"id": id_news},
+    )
+
+    # ------------------------------------------------------------
+    # PERSONS
+    # ------------------------------------------------------------
+
+    news["PERSONS"] = query_bq(
+        f"""
+        SELECT P.ID_PERSON, P.NAME
+        FROM `{TABLE_NEWS_PERSON}` NP
+        JOIN `{TABLE_PERSON}` P
+          ON NP.ID_PERSON = P.ID_PERSON
+        WHERE NP.ID_NEWS = @id
+        """,
+        {"id": id_news},
+    )
+
+    # ------------------------------------------------------------
     # CONCEPTS
     # ------------------------------------------------------------
 
-    news["concepts"] = query_bq(
+    news["CONCEPTS"] = query_bq(
         f"""
         SELECT C.ID_CONCEPT, C.TITLE
         FROM `{TABLE_NEWS_CONCEPT}` NC
@@ -250,7 +280,7 @@ def get_news(id_news: str):
     # SOLUTIONS
     # ------------------------------------------------------------
 
-    news["solutions"] = query_bq(
+    news["SOLUTIONS"] = query_bq(
         f"""
         SELECT S.ID_SOLUTION, S.NAME
         FROM `{TABLE_NEWS_SOLUTION}` NS
