@@ -39,14 +39,14 @@ def create_solution(data: SolutionCreate) -> str:
     }]
 
     client = get_bigquery_client()
-    job = client.load_table_from_json(
+
+    client.load_table_from_json(
         row,
         TABLE_SOLUTION,
         job_config=bigquery.LoadJobConfig(
             write_disposition="WRITE_APPEND"
         ),
-    )
-    job.result()
+    ).result()
 
     return solution_id
 
@@ -57,7 +57,7 @@ def create_solution(data: SolutionCreate) -> str:
 def list_solutions():
     """
     Liste des solutions avec nom société si associée.
-    Aligné avec le standard MAJUSCULES du projet.
+    Format API 100% MAJUSCULES.
     """
     sql = f"""
         SELECT
@@ -91,22 +91,53 @@ def list_solutions():
         for r in rows
     ]
 
+
 # ============================================================
 # GET ONE SOLUTION
 # ============================================================
 def get_solution(id_solution: str):
     """
     Récupère une solution complète.
+    Format API aligné projet.
     """
     sql = f"""
-        SELECT *
-        FROM `{TABLE_SOLUTION}`
-        WHERE ID_SOLUTION = @id
+        SELECT
+            s.ID_SOLUTION,
+            s.NAME,
+            s.ID_COMPANY,
+            s.DESCRIPTION,
+            s.CONTENT,
+            s.STATUS,
+            s.VECTORISE,
+            s.CREATED_AT,
+            s.UPDATED_AT,
+            c.NAME AS COMPANY_NAME
+        FROM `{TABLE_SOLUTION}` s
+        LEFT JOIN `{TABLE_COMPANY}` c
+          ON s.ID_COMPANY = c.ID_COMPANY
+        WHERE s.ID_SOLUTION = @id
         LIMIT 1
     """
 
     rows = query_bq(sql, {"id": id_solution})
-    return rows[0] if rows else None
+
+    if not rows:
+        return None
+
+    r = rows[0]
+
+    return {
+        "ID_SOLUTION": r["ID_SOLUTION"],
+        "NAME": r["NAME"],
+        "ID_COMPANY": r["ID_COMPANY"],
+        "COMPANY_NAME": r["COMPANY_NAME"],
+        "DESCRIPTION": r["DESCRIPTION"],
+        "CONTENT": r["CONTENT"],
+        "STATUS": r["STATUS"],
+        "VECTORISE": r["VECTORISE"],
+        "CREATED_AT": r["CREATED_AT"],
+        "UPDATED_AT": r["UPDATED_AT"],
+    }
 
 
 # ============================================================
@@ -115,13 +146,14 @@ def get_solution(id_solution: str):
 def update_solution(id_solution: str, data: SolutionUpdate) -> bool:
     """
     Mise à jour partielle.
+    Champs alignés MAJUSCULES.
     """
     values = data.dict(exclude_unset=True)
 
     if not values:
         return False
 
-    values["updated_at"] = datetime.utcnow().isoformat()
+    values["UPDATED_AT"] = datetime.utcnow().isoformat()
 
     return update_bq(
         table=TABLE_SOLUTION,
