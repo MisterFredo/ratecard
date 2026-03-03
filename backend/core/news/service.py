@@ -627,13 +627,15 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
     now = datetime.now(timezone.utc)
 
     if published_at:
-        publish_date = datetime.fromisoformat(published_at)
+        if isinstance(published_at, str):
+            publish_date = datetime.fromisoformat(published_at)
+        else:
+            publish_date = published_at
+
         if publish_date.tzinfo is None:
             publish_date = publish_date.replace(tzinfo=timezone.utc)
     else:
         publish_date = now
-
-    status = "PUBLISHED" if publish_date <= now else "SCHEDULED"
 
     update_bq(
         table=TABLE_NEWS,
