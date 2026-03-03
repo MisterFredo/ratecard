@@ -189,11 +189,11 @@ export default function NewsStudio({ mode, newsId }: Props) {
       EXCERPT: excerpt,
       BODY: newsKind === "NEWS" ? body : null,
 
-      TOPICS: topics.map((t) => t.ID_TOPIC),
-      PERSONS: persons.map((p) => p.ID_PERSON),
+      TOPICS: topics.map((t) => t.ID_TOPIC || t.id_topic),
+      PERSONS: persons.map((p) => p.ID_PERSON || p.id_person),
 
-      CONCEPTS: concepts.map((c) => c.ID_CONCEPT),
-      SOLUTIONS: solutions.map((s) => s.ID_SOLUTION),
+      CONCEPTS: concepts.map((c) => c.ID_CONCEPT || c.id_concept),
+      SOLUTIONS: solutions.map((s) => s.ID_SOLUTION || s.id_solution),
     };
 
     try {
