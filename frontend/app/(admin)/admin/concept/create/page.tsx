@@ -1,28 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
-export default function CreateConcept() {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [content, setContent] = useState("");
-  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">("DRAFT");
+type Topic = {
+  ID_TOPIC: string;
+  LABEL: string;
+};
 
+export default function CreateConcept() {
+  const [TITLE, setTITLE] = useState("");
+  const [DESCRIPTION, setDESCRIPTION] = useState("");
+  const [CONTENT, setCONTENT] = useState("");
+  const [STATUS, setSTATUS] = useState<"DRAFT" | "PUBLISHED">("DRAFT");
+  const [ID_TOPIC, setID_TOPIC] = useState<string | null>(null);
+
+  const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(false);
+
+  /* ---------------------------------------------------------
+     LOAD TOPICS
+  --------------------------------------------------------- */
+  useEffect(() => {
+    async function loadTopics() {
+      try {
+        const res = await api.get("/topic/list");
+        setTopics(res.topics || []);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    loadTopics();
+  }, []);
 
   /* ---------------------------------------------------------
      SAVE
   --------------------------------------------------------- */
   async function save() {
-    if (!title.trim()) {
+    if (!TITLE.trim()) {
       alert("Titre requis");
       return;
     }
 
-    if (!content.trim()) {
+    if (!CONTENT.trim()) {
       alert("Le contenu est requis");
       return;
     }
@@ -31,19 +54,21 @@ export default function CreateConcept() {
       setLoading(true);
 
       await api.post("/concept/create", {
-        title,
-        description: description || null,
-        content,
-        status,
+        TITLE,
+        DESCRIPTION: DESCRIPTION || null,
+        CONTENT,
+        STATUS,
+        ID_TOPIC: ID_TOPIC || null, // ✅ mono-topic
       });
 
       alert("Concept créé avec succès");
 
-      // reset form
-      setTitle("");
-      setDescription("");
-      setContent("");
-      setStatus("DRAFT");
+      // reset
+      setTITLE("");
+      setDESCRIPTION("");
+      setCONTENT("");
+      setSTATUS("DRAFT");
+      setID_TOPIC(null);
     } catch (e) {
       console.error(e);
       alert("❌ Erreur création concept");
@@ -75,9 +100,8 @@ export default function CreateConcept() {
         </label>
         <input
           className="border p-2 w-full rounded"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ex : Retail Media, Viewability, ID Graph..."
+          value={TITLE}
+          onChange={(e) => setTITLE(e.target.value)}
         />
       </div>
 
@@ -88,21 +112,42 @@ export default function CreateConcept() {
         </label>
         <textarea
           className="border p-2 w-full rounded h-24"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Résumé synthétique du concept (1–2 phrases)"
+          value={DESCRIPTION}
+          onChange={(e) => setDESCRIPTION(e.target.value)}
         />
       </div>
 
-      {/* CONTENT (HTML UNIQUE) */}
+      {/* TOPIC (0 ou 1) */}
+      <div className="space-y-2 max-w-md">
+        <label className="block text-sm font-medium">
+          Topic (optionnel)
+        </label>
+
+        <select
+          className="border p-2 rounded w-full"
+          value={ID_TOPIC || ""}
+          onChange={(e) =>
+            setID_TOPIC(e.target.value || null)
+          }
+        >
+          <option value="">— Aucun topic —</option>
+          {topics.map((t) => (
+            <option key={t.ID_TOPIC} value={t.ID_TOPIC}>
+              {t.LABEL}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* CONTENT */}
       <div className="space-y-2">
         <label className="block text-sm font-medium">
           Contenu complet
         </label>
 
         <HtmlEditor
-          value={content}
-          onChange={setContent}
+          value={CONTENT}
+          onChange={setCONTENT}
         />
       </div>
 
@@ -113,9 +158,9 @@ export default function CreateConcept() {
         </label>
         <select
           className="border p-2 rounded w-full"
-          value={status}
+          value={STATUS}
           onChange={(e) =>
-            setStatus(e.target.value as "DRAFT" | "PUBLISHED")
+            setSTATUS(e.target.value as "DRAFT" | "PUBLISHED")
           }
         >
           <option value="DRAFT">DRAFT</option>
