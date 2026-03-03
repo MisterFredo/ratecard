@@ -8,53 +8,54 @@ from datetime import datetime
 # ============================================================
 
 class NewsCreate(BaseModel):
-    ID_COMPANY: str = Field(..., alias="id_company")
-    NEWS_KIND: str = Field(..., alias="news_kind")
-    NEWS_TYPE: Optional[str] = Field(None, alias="news_type")
+    id_company: str
+    news_kind: str
+    news_type: Optional[str] = None
 
-    TITLE: str = Field(..., alias="title")
-    EXCERPT: Optional[str] = Field(None, alias="excerpt")
-    BODY: Optional[str] = Field(None, alias="body")
+    title: str
+    excerpt: Optional[str] = None
+    body: Optional[str] = None
 
-    MEDIA_RECTANGLE_ID: Optional[str] = Field(None, alias="media_rectangle_id")
-    SOURCE_URL: Optional[str] = Field(None, alias="source_url")
-    AUTHOR: Optional[str] = Field(None, alias="author")
+    media_rectangle_id: Optional[str] = None
+    source_url: Optional[str] = None
+    author: Optional[str] = None
 
-    TOPICS: List[str] = Field(default_factory=list, alias="topics")
-    PERSONS: List[str] = Field(default_factory=list, alias="persons")
+    topics: List[str] = Field(default_factory=list)
+    persons: List[str] = Field(default_factory=list)
 
-    CONCEPTS: List[str] = Field(default_factory=list, alias="concepts")
-    SOLUTIONS: List[str] = Field(default_factory=list, alias="solutions")
+    concepts: List[str] = Field(default_factory=list)
+    solutions: List[str] = Field(default_factory=list)
 
     class Config:
-        populate_by_name = True   # accepte MAJUSCULES aussi
-        extra = "ignore"          # ne bloque plus si champ en trop
+        extra = "ignore"  # ne bloque pas si le front envoie un champ en plus
+
+
 # ============================================================
 # UPDATE NEWS / BRÈVE
 # ============================================================
 
 class NewsUpdate(BaseModel):
-    ID_COMPANY: Optional[str] = Field(None, alias="id_company")
-    NEWS_KIND: Optional[str] = Field(None, alias="news_kind")
-    NEWS_TYPE: Optional[str] = Field(None, alias="news_type")
+    id_company: Optional[str] = None
+    news_kind: Optional[str] = None
+    news_type: Optional[str] = None
 
-    TITLE: Optional[str] = Field(None, alias="title")
-    EXCERPT: Optional[str] = Field(None, alias="excerpt")
-    BODY: Optional[str] = Field(None, alias="body")
+    title: Optional[str] = None
+    excerpt: Optional[str] = None
+    body: Optional[str] = None
 
-    MEDIA_RECTANGLE_ID: Optional[str] = Field(None, alias="media_rectangle_id")
-    SOURCE_URL: Optional[str] = Field(None, alias="source_url")
-    AUTHOR: Optional[str] = Field(None, alias="author")
+    media_rectangle_id: Optional[str] = None
+    source_url: Optional[str] = None
+    author: Optional[str] = None
 
-    TOPICS: Optional[List[str]] = Field(None, alias="topics")
-    PERSONS: Optional[List[str]] = Field(None, alias="persons")
+    topics: Optional[List[str]] = None
+    persons: Optional[List[str]] = None
 
-    CONCEPTS: Optional[List[str]] = Field(None, alias="concepts")
-    SOLUTIONS: Optional[List[str]] = Field(None, alias="solutions")
+    concepts: Optional[List[str]] = None
+    solutions: Optional[List[str]] = None
 
     class Config:
-        populate_by_name = True
         extra = "ignore"
+
 
 # ============================================================
 # PUBLISH
@@ -91,7 +92,7 @@ class SolutionMini(BaseModel):
 
 
 # ============================================================
-# OUT — VERSION LISTING (FLUX UNIQUEMENT)
+# OUT — VERSION LISTING (FLUX)
 # ============================================================
 
 class BreveOut(BaseModel):
@@ -105,7 +106,6 @@ class BreveOut(BaseModel):
     company: CompanyMini
     topics: List[TopicMini] = Field(default_factory=list)
 
-    # 🔥 NOUVEAU — TAGGING SOUPLE
     concepts: List[ConceptMini] = Field(default_factory=list)
     solutions: List[SolutionMini] = Field(default_factory=list)
 
@@ -139,17 +139,17 @@ class BreveTypeStat(BaseModel):
 
 
 # ============================================================
-# RESPONSE — SEARCH (FLUX UNIQUEMENT)
+# RESPONSE — SEARCH
 # ============================================================
 
 class BrevesSearchResponse(BaseModel):
-    total_count: int
+    total_count: int = 0
     sponsorised: List[BreveOut] = Field(default_factory=list)
     items: List[BreveOut] = Field(default_factory=list)
 
 
 # ============================================================
-# RESPONSE — STATS (FILTRES UNIQUEMENT)
+# RESPONSE — STATS
 # ============================================================
 
 class BrevesStatsResponse(BaseModel):
