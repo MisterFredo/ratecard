@@ -135,14 +135,17 @@ export default function NewsStudio({ mode, newsId }: Props) {
   ========================================================= */
 
   useEffect(() => {
-    if (!company?.ID_COMPANY) {
+    const companyId =
+      company?.ID_COMPANY || company?.id_company;
+
+    if (!companyId) {
       setCompanyFull(null);
       return;
     }
 
     async function loadCompany() {
       try {
-        const res = await api.get(`/company/${company.ID_COMPANY}`);
+        const res = await api.get(`/company/${companyId}`);
         setCompanyFull(res.company);
       } catch {
         setCompanyFull(null);
