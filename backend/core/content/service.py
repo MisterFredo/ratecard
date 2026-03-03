@@ -188,6 +188,7 @@ def create_content(data: Dict[str, Any]) -> str:
 # GET ONE CONTENT (ENRICHI)
 # ============================================================
 def get_content(id_content: str):
+
     rows = query_bq(
         f"""
         SELECT *
@@ -203,9 +204,6 @@ def get_content(id_content: str):
 
     row = rows[0]
 
-    # ---------------------------------------------------------
-    # MAPPING CANONIQUE (API → FRONT)
-    # ---------------------------------------------------------
     content = {
         "id_content": row["ID_CONTENT"],
         "angle_title": row["ANGLE_TITLE"],
@@ -218,64 +216,84 @@ def get_content(id_content: str):
         "acteurs_cites": row.get("ACTEURS_CITES") or [],
     }
 
-    # ---------------------------------------------------------
-    # DATE — ISO 8601
-    # ---------------------------------------------------------
     published_at = row.get("PUBLISHED_AT")
-    if isinstance(published_at, datetime):
-        content["published_at"] = published_at.isoformat()
-    else:
-        content["published_at"] = None
+    content["published_at"] = (
+        published_at.isoformat() if isinstance(published_at, datetime) else None
+    )
 
     # ---------------------------------------------------------
-    # RELATIONS
+    # RELATIONS EXISTANTES
     # ---------------------------------------------------------
+
     content["topics"] = query_bq(
         f"""
-        SELECT
-            T.ID_TOPIC,
-            T.LABEL,
-            T.TOPIC_AXIS
+        SELECT T.ID_TOPIC, T.LABEL, T.TOPIC_AXIS
         FROM `{TABLE_CONTENT_TOPIC}` CT
         JOIN `{TABLE_TOPIC}` T
           ON CT.ID_TOPIC = T.ID_TOPIC
         WHERE CT.ID_CONTENT = @id
         """,
-        {"id": id_content}
+        {"id": id_content},
     )
 
     content["events"] = query_bq(
         f"""
         SELECT E.ID_EVENT, E.LABEL
         FROM `{TABLE_CONTENT_EVENT}` CE
-        JOIN `{TABLE_EVENT}` E ON CE.ID_EVENT = E.ID_EVENT
+        JOIN `{TABLE_EVENT}` E
+          ON CE.ID_EVENT = E.ID_EVENT
         WHERE CE.ID_CONTENT = @id
         """,
-        {"id": id_content}
+        {"id": id_content},
     )
 
     content["companies"] = query_bq(
         f"""
         SELECT C.ID_COMPANY, C.NAME
         FROM `{TABLE_CONTENT_COMPANY}` CC
-        JOIN `{TABLE_COMPANY}` C ON CC.ID_COMPANY = C.ID_COMPANY
+        JOIN `{TABLE_COMPANY}` C
+          ON CC.ID_COMPANY = C.ID_COMPANY
         WHERE CC.ID_CONTENT = @id
         """,
-        {"id": id_content}
+        {"id": id_content},
     )
 
     content["persons"] = query_bq(
         f"""
         SELECT P.ID_PERSON, P.NAME, CP.ROLE
         FROM `{TABLE_CONTENT_PERSON}` CP
-        JOIN `{TABLE_PERSON}` P ON CP.ID_PERSON = P.ID_PERSON
+        JOIN `{TABLE_PERSON}` P
+          ON CP.ID_PERSON = P.ID_PERSON
         WHERE CP.ID_CONTENT = @id
         """,
-        {"id": id_content}
+        {"id": id_content},
+    )
+
+    # 🔥 CONCEPTS
+    content["concepts"] = query_bq(
+        f"""
+        SELECT C.ID_CONCEPT, C.TITLE
+        FROM `{TABLE_CONTENT_CONCEPT}` CC
+        JOIN `{TABLE_CONCEPT}` C
+          ON CC.ID_CONCEPT = C.ID_CONCEPT
+        WHERE CC.ID_CONTENT = @id
+        """,
+        {"id": id_content},
+    )
+
+    # 🔥 SOLUTIONS
+    content["solutions"] = query_bq(
+        f"""
+        SELECT S.ID_SOLUTION, S.NAME
+        FROM `{TABLE_CONTENT_SOLUTION}` CS
+        JOIN `{TABLE_SOLUTION}` S
+          ON CS.ID_SOLUTION = S.ID_SOLUTION
+        WHERE CS.ID_CONTENT = @id
+        """,
+        {"id": id_content},
     )
 
     return content
-
 
 # ============================================================
 # LIST CONTENTS (ADMIN)
