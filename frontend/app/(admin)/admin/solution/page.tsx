@@ -4,14 +4,21 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+type Solution = {
+  ID_SOLUTION: string;
+  NAME: string;
+  COMPANY_NAME?: string | null;
+  STATUS: string;
+};
+
 export default function SolutionList() {
-  const [solutions, setSolutions] = useState([]);
+  const [SOLUTIONS, setSOLUTIONS] = useState<Solution[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       const res = await api.get("/solution/list");
-      setSolutions(res.solutions || []);
+      setSOLUTIONS(res.SOLUTIONS || []);
       setLoading(false);
     }
     load();
@@ -41,13 +48,13 @@ export default function SolutionList() {
           </tr>
         </thead>
         <tbody>
-          {solutions.map((s: any) => (
-            <tr key={s.id_solution} className="border-b">
-              <td className="p-2 font-medium">{s.name}</td>
+          {SOLUTIONS.map((s) => (
+            <tr key={s.ID_SOLUTION} className="border-b">
+              <td className="p-2 font-medium">{s.NAME}</td>
 
               <td className="p-2">
-                {s.company_name ? (
-                  s.company_name
+                {s.COMPANY_NAME ? (
+                  s.COMPANY_NAME
                 ) : (
                   <span className="text-red-600 text-xs">
                     ⚠ Non associée
@@ -55,11 +62,11 @@ export default function SolutionList() {
                 )}
               </td>
 
-              <td className="p-2">{s.status}</td>
+              <td className="p-2">{s.STATUS}</td>
 
               <td className="p-2 text-right">
                 <Link
-                  href={`/admin/solution/edit/${s.id_solution}`}
+                  href={`/admin/solution/edit/${s.ID_SOLUTION}`}
                   className="text-blue-600 underline"
                 >
                   Modifier
