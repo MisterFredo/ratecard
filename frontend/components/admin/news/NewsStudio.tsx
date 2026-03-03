@@ -181,19 +181,19 @@ export default function NewsStudio({ mode, newsId }: Props) {
     setSaving(true);
 
     const payload = {
-      id_company: company.id_company || company.ID_COMPANY,
-      news_kind: newsKind,
-      news_type: newsType ?? null,
-      title,
-      excerpt,
-      body: newsKind === "NEWS" ? body : null,
+      ID_COMPANY: company.ID_COMPANY,
+      NEWS_KIND: newsKind,
+      NEWS_TYPE: newsType ?? null,
 
-      topics: topics.map((t) => t.id_topic),
-      persons: persons.map((p) => p.id_person || p.ID_PERSON),
+      TITLE: title,
+      EXCERPT: excerpt,
+      BODY: newsKind === "NEWS" ? body : null,
 
-      // 🔥 NOUVEAU
-      concepts: concepts.map((c) => c.id_concept),
-      solutions: solutions.map((s) => s.id_solution),
+      TOPICS: topics.map((t) => t.ID_TOPIC),
+      PERSONS: persons.map((p) => p.ID_PERSON),
+
+      CONCEPTS: concepts.map((c) => c.ID_CONCEPT),
+      SOLUTIONS: solutions.map((s) => s.ID_SOLUTION),
     };
 
     try {
