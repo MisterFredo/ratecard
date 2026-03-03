@@ -470,18 +470,22 @@ def archive_news(id_news: str):
 
 def delete_news(news_id: str):
     client = get_bigquery_client()
+
     queries = [
         f"DELETE FROM `{TABLE_NEWS}` WHERE ID_NEWS = @id",
         f"DELETE FROM `{TABLE_NEWS_TOPIC}` WHERE ID_NEWS = @id",
         f"DELETE FROM `{TABLE_NEWS_PERSON}` WHERE ID_NEWS = @id",
+        f"DELETE FROM `{TABLE_NEWS_CONCEPT}` WHERE ID_NEWS = @id",
+        f"DELETE FROM `{TABLE_NEWS_SOLUTION}` WHERE ID_NEWS = @id",
         f"DELETE FROM `{TABLE_NEWS_LINKEDIN_POST}` WHERE ID_NEWS = @id",
     ]
+
     job_config = bigquery.QueryJobConfig(
         query_parameters=[bigquery.ScalarQueryParameter("id", "STRING", news_id)]
     )
+
     for q in queries:
         client.query(q, job_config=job_config).result()
-
 # ============================================================
 # PUBLISH
 # ============================================================
