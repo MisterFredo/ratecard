@@ -159,12 +159,12 @@ export default function NewsStudio({ mode, newsId }: Props) {
   async function saveNews() {
     if (!title.trim()) return alert("Titre requis");
     if (!excerpt.trim()) return alert("Excerpt requis");
-    if (!company?.ID_COMPANY) return alert("Société requise");
+    if (!company) return alert("Société requise");
 
     setSaving(true);
 
     const payload = {
-      ID_COMPANY: company.ID_COMPANY,
+      ID_COMPANY: company.ID_COMPANY || company.id_company,
       NEWS_KIND: newsKind,
       NEWS_TYPE: newsType ?? null,
 
@@ -172,18 +172,16 @@ export default function NewsStudio({ mode, newsId }: Props) {
       EXCERPT: excerpt,
       BODY: newsKind === "NEWS" ? body : null,
 
-      TOPICS: topics.map((t) => t.ID_TOPIC),
-      PERSONS: persons.map((p) => p.ID_PERSON),
+      TOPICS: topics.map((t) => t.ID_TOPIC || t.id_topic),
+      PERSONS: persons.map((p) => p.ID_PERSON || p.id_person),
 
-      CONCEPTS: concepts.map((c) => c.ID_CONCEPT),
-      SOLUTIONS: solutions.map((s) => s.ID_SOLUTION),
+      CONCEPTS: concepts.map((c) => c.ID_CONCEPT || c.id_concept),
+      SOLUTIONS: solutions.map((s) => s.ID_SOLUTION || s.id_solution),
     };
 
     try {
       if (!internalNewsId) {
         const res = await api.post("/news/create", payload);
-
-        // 🔥 IMPORTANT : backend renvoie ID_NEWS
         setInternalNewsId(res.ID_NEWS);
       } else {
         await api.put(`/news/update/${internalNewsId}`, payload);
