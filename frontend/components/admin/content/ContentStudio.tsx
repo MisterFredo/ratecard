@@ -27,28 +27,21 @@ type Props = {
 };
 
 export default function ContentStudio({ mode, contentId }: Props) {
-  /* =========================================================
-     STATE — CONTEXTE
-  ========================================================= */
   const [topics, setTopics] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
+
+  // 🔥 AJOUT
+  const [concepts, setConcepts] = useState<any[]>([]);
+  const [solutions, setSolutions] = useState<any[]>([]);
+
   const [contextValidated, setContextValidated] = useState(false);
 
-  /* =========================================================
-     STATE — SOURCE
-  ========================================================= */
   const [sourceType, setSourceType] = useState<string | null>(null);
   const [sourceText, setSourceText] = useState("");
 
-  /* =========================================================
-     STATE — ANGLE
-  ========================================================= */
   const [selectedAngle, setSelectedAngle] = useState<any | null>(null);
 
-  /* =========================================================
-     STATE — CONTENT
-  ========================================================= */
   const [excerpt, setExcerpt] = useState("");
   const [concept, setConcept] = useState("");
   const [contentBody, setContentBody] = useState("");
@@ -57,9 +50,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [chiffres, setChiffres] = useState<string[]>([]);
   const [acteurs, setActeurs] = useState<string[]>([]);
 
-  /* =========================================================
-     STATE — DATES
-  ========================================================= */
   const [dateCreation, setDateCreation] = useState<string>("");
 
   const [dateImport] = useState<string>(() => {
@@ -67,16 +57,10 @@ export default function ContentStudio({ mode, contentId }: Props) {
     return d.toISOString().slice(0, 10);
   });
 
-  /* =========================================================
-     PUBLICATION
-  ========================================================= */
   const [publishMode, setPublishMode] =
     useState<"NOW" | "SCHEDULE">("NOW");
   const [publishAt, setPublishAt] = useState<string>("");
 
-  /* =========================================================
-     META
-  ========================================================= */
   const [internalContentId, setInternalContentId] = useState<string | null>(
     contentId || null
   );
@@ -84,9 +68,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [publishing, setPublishing] = useState(false);
   const [step, setStep] = useState<Step>("CONTEXT");
 
-  /* =========================================================
-     LOAD CONTENT (EDIT MODE)
-  ========================================================= */
   useEffect(() => {
     if (mode !== "edit" || !contentId) return;
 
@@ -126,6 +107,22 @@ export default function ContentStudio({ mode, contentId }: Props) {
           }))
         );
 
+        // 🔥 CONCEPTS
+        setConcepts(
+          (c.concepts || []).map((co: any) => ({
+            ID_CONCEPT: co.ID_CONCEPT,
+            TITLE: co.TITLE,
+          }))
+        );
+
+        // 🔥 SOLUTIONS
+        setSolutions(
+          (c.solutions || []).map((s: any) => ({
+            ID_SOLUTION: s.ID_SOLUTION,
+            TITLE: s.NAME,
+          }))
+        );
+
         setSelectedAngle({
           angle_title: c.ANGLE_TITLE,
           angle_signal: c.ANGLE_SIGNAL,
@@ -142,9 +139,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
     load();
   }, [mode, contentId]);
 
-  /* =========================================================
-     SAVE CONTENT
-  ========================================================= */
   async function saveContent() {
     if (!selectedAngle) {
       alert("Angle requis");
@@ -179,6 +173,10 @@ export default function ContentStudio({ mode, contentId }: Props) {
       events: events.map((e) => e.id_event),
       companies: companies.map((c) => c.id_company),
 
+      // 🔥 AJOUT
+      concepts: concepts.map((c) => c.ID_CONCEPT),
+      solutions: solutions.map((s) => s.ID_SOLUTION),
+
       date_creation: dateCreation || null,
       date_import: dateImport,
     };
@@ -200,9 +198,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
     setSaving(false);
   }
 
-  /* =========================================================
-     PUBLISH CONTENT
-  ========================================================= */
   async function publishContent() {
     if (!internalContentId) return;
 
@@ -233,12 +228,9 @@ export default function ContentStudio({ mode, contentId }: Props) {
       setPublishing(false);
     }
   }
-  /* =========================================================
-     UI
-  ========================================================= */
+
   return (
     <div className="space-y-6">
-      {/* STEP 1 — CONTEXTE */}
       <details open={step === "CONTEXT"} className="border rounded p-4">
         <summary className="font-semibold cursor-pointer">
           1. Contexte
@@ -248,12 +240,16 @@ export default function ContentStudio({ mode, contentId }: Props) {
           topics={topics}
           events={events}
           companies={companies}
+          concepts={concepts}
+          solutions={solutions}
           dateCreation={dateCreation}
           onChangeDateCreation={setDateCreation}
           onChange={(d) => {
             if (d.topics) setTopics(d.topics);
             if (d.events) setEvents(d.events);
             if (d.companies) setCompanies(d.companies);
+            if (d.concepts) setConcepts(d.concepts);
+            if (d.solutions) setSolutions(d.solutions);
           }}
           onValidate={() => {
             if (!topics.length && !events.length && !companies.length) {
@@ -266,7 +262,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
         />
       </details>
 
-      {/* STEP 2 — SOURCE */}
       {contextValidated && (
         <details open={step === "SOURCE"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
@@ -283,7 +278,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </details>
       )}
 
-      {/* STEP 3 — ANGLES */}
       {sourceText && (
         <details open={step === "ANGLES"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
@@ -302,7 +296,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </details>
       )}
 
-      {/* STEP 4 — CONTENT */}
       {selectedAngle && (
         <details open={step === "CONTENT"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
@@ -341,7 +334,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </details>
       )}
 
-      {/* STEP 5 — PREVIEW */}
       {internalContentId && (
         <details open={step === "PREVIEW"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
@@ -356,7 +348,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </details>
       )}
 
-      {/* STEP 6 — PUBLICATION */}
       {internalContentId && (
         <details open={step === "PUBLISH"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
