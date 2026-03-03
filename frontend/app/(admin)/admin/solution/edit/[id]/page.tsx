@@ -5,48 +5,59 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
+type Company = {
+  ID_COMPANY: string;
+  NAME: string;
+};
+
 export default function EditSolution({ params }: { params: { id: string } }) {
   const { id } = params;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [content, setContent] = useState("");
-  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">("DRAFT");
-  const [idCompany, setIdCompany] = useState<string | null>(null);
-  const [companies, setCompanies] = useState([]);
+  const [NAME, setNAME] = useState("");
+  const [DESCRIPTION, setDESCRIPTION] = useState("");
+  const [CONTENT, setCONTENT] = useState("");
+  const [STATUS, setSTATUS] =
+    useState<"DRAFT" | "PUBLISHED">("DRAFT");
+  const [ID_COMPANY, setID_COMPANY] =
+    useState<string | null>(null);
+
+  const [COMPANIES, setCOMPANIES] = useState<Company[]>([]);
 
   useEffect(() => {
     async function load() {
       const solRes = await api.get(`/solution/${id}`);
-      const sol = solRes.solution;
+      const sol = solRes.SOLUTION;
 
-      setName(sol.NAME);
-      setDescription(sol.DESCRIPTION || "");
-      setContent(sol.CONTENT);
-      setStatus(sol.STATUS);
-      setIdCompany(sol.ID_COMPANY);
+      setNAME(sol.NAME);
+      setDESCRIPTION(sol.DESCRIPTION || "");
+      setCONTENT(sol.CONTENT);
+      setSTATUS(sol.STATUS);
+      setID_COMPANY(sol.ID_COMPANY || null);
 
       const compRes = await api.get("/company/list");
-      setCompanies(compRes || []);
+      setCOMPANIES(compRes.COMPANIES || []);
 
       setLoading(false);
     }
+
     load();
   }, [id]);
 
   async function save() {
     try {
       setSaving(true);
+
       await api.put(`/solution/update/${id}`, {
-        name,
-        description,
-        content,
-        status,
-        id_company: idCompany,
+        NAME,
+        DESCRIPTION,
+        CONTENT,
+        STATUS,
+        ID_COMPANY,
       });
+
       alert("Solution mise à jour");
     } catch (e) {
       alert("Erreur mise à jour");
@@ -59,42 +70,53 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-semibold">Modifier solution</h1>
+      <div className="flex justify-between">
+        <h1 className="text-3xl font-semibold">
+          Modifier solution
+        </h1>
+        <Link href="/admin/solution" className="underline">
+          ← Retour
+        </Link>
+      </div>
 
       <input
         className="border p-2 w-full rounded"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        value={NAME}
+        onChange={(e) => setNAME(e.target.value)}
       />
 
       <select
         className="border p-2 rounded w-full"
-        value={idCompany || ""}
+        value={ID_COMPANY || ""}
         onChange={(e) =>
-          setIdCompany(e.target.value || null)
+          setID_COMPANY(e.target.value || null)
         }
       >
         <option value="">— Aucune société —</option>
-        {companies.map((c: any) => (
-          <option key={c.id_company} value={c.id_company}>
-            {c.name}
+        {COMPANIES.map((c) => (
+          <option key={c.ID_COMPANY} value={c.ID_COMPANY}>
+            {c.NAME}
           </option>
         ))}
       </select>
 
       <textarea
         className="border p-2 w-full rounded h-24"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
+        value={DESCRIPTION}
+        onChange={(e) =>
+          setDESCRIPTION(e.target.value)
+        }
       />
 
-      <HtmlEditor value={content} onChange={setContent} />
+      <HtmlEditor value={CONTENT} onChange={setCONTENT} />
 
       <select
         className="border p-2 rounded"
-        value={status}
+        value={STATUS}
         onChange={(e) =>
-          setStatus(e.target.value as "DRAFT" | "PUBLISHED")
+          setSTATUS(
+            e.target.value as "DRAFT" | "PUBLISHED"
+          )
         }
       >
         <option value="DRAFT">DRAFT</option>
