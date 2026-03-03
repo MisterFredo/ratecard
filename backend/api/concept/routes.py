@@ -11,6 +11,7 @@ from core.concept.service import (
     list_concepts,
     get_concept,
     update_concept,
+    delete_concept,   # 🔥 AJOUT
 )
 
 router = APIRouter()
@@ -21,10 +22,6 @@ router = APIRouter()
 # ============================================================
 @router.post("/create")
 def create_route(data: ConceptCreate):
-    """
-    Crée un concept métier.
-    ⚠️ Champs attendus en MAJUSCULES
-    """
     try:
         concept_id = create_concept(data)
         return {"status": "ok", "ID_CONCEPT": concept_id}
@@ -37,10 +34,6 @@ def create_route(data: ConceptCreate):
 # ============================================================
 @router.get("/list")
 def list_route():
-    """
-    Retourne la liste brute des concepts.
-    ⚠️ Champs MAJUSCULES
-    """
     try:
         concepts = list_concepts()
         return {"status": "ok", "concepts": concepts}
@@ -53,10 +46,6 @@ def list_route():
 # ============================================================
 @router.get("/{id_concept}", response_model=ConceptOut)
 def get_route(id_concept: str):
-    """
-    Récupère un concept par son ID.
-    Inclut ID_TOPIC (0 ou 1).
-    """
     try:
         concept = get_concept(id_concept)
 
@@ -76,10 +65,6 @@ def get_route(id_concept: str):
 # ============================================================
 @router.put("/update/{id_concept}")
 def update_route(id_concept: str, data: ConceptUpdate):
-    """
-    Met à jour un concept existant.
-    Supporte ID_TOPIC (mono-topic).
-    """
     try:
         updated = update_concept(id_concept, data)
 
@@ -95,3 +80,22 @@ def update_route(id_concept: str, data: ConceptUpdate):
         raise
     except Exception as e:
         raise HTTPException(400, f"Erreur mise à jour concept : {e}")
+
+
+# ============================================================
+# DELETE — suppression d'un concept
+# ============================================================
+@router.delete("/{id_concept}")
+def delete_route(id_concept: str):
+    try:
+        deleted = delete_concept(id_concept)
+
+        if not deleted:
+            raise HTTPException(404, "Concept introuvable")
+
+        return {"status": "ok", "DELETED": True}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Erreur suppression concept : {e}")
