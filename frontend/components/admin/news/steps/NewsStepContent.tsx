@@ -133,6 +133,7 @@ export default function NewsStepContent({
 
   return (
     <div className="space-y-8">
+
       {/* =====================================================
           STRUCTURE
       ===================================================== */}
@@ -168,7 +169,6 @@ export default function NewsStepContent({
       <div>
         <label className="block font-medium mb-2">
           Catégorie éditoriale
-          <span className="text-sm text-gray-400 ml-1">(optionnel)</span>
         </label>
 
         <select
@@ -192,49 +192,39 @@ export default function NewsStepContent({
       </div>
 
       {/* =====================================================
-          TAXONOMIE — UNE SEULE LIGNE
+          TAXONOMIE — SEULEMENT ORGANISATION
       ===================================================== */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div>
-          <label className="block font-medium mb-2">Société</label>
-          <CompanySelector
-            values={company ? [company] : []}
-            onChange={(items) => {
-              onChange({ company: items[0] || null });
-              onChange({ persons: [] });
-            }}
-          />
-        </div>
 
-        <div>
-          <label className="block font-medium mb-2">Topics</label>
-          <TopicSelector
-            values={topics}
-            onChange={(items) =>
-              onChange({ topics: items })
-            }
-          />
-        </div>
+        <CompanySelector
+          values={company ? [company] : []}
+          onChange={(items) => {
+            onChange({ company: items[0] || null });
+            onChange({ persons: [] });
+          }}
+        />
 
-        <div>
-          <label className="block font-medium mb-2">Concepts</label>
-          <ConceptSelector
-            values={concepts}
-            onChange={(items) =>
-              onChange({ concepts: items })
-            }
-          />
-        </div>
+        <TopicSelector
+          values={topics}
+          onChange={(items) =>
+            onChange({ topics: items })
+          }
+        />
 
-        <div>
-          <label className="block font-medium mb-2">Solutions</label>
-          <SolutionSelector
-            values={solutions}
-            onChange={(items) =>
-              onChange({ solutions: items })
-            }
-          />
-        </div>
+        <ConceptSelector
+          values={concepts}
+          onChange={(items) =>
+            onChange({ concepts: items })
+          }
+        />
+
+        <SolutionSelector
+          values={solutions}
+          onChange={(items) =>
+            onChange({ solutions: items })
+          }
+        />
+
       </div>
 
       {/* =====================================================
@@ -274,48 +264,41 @@ export default function NewsStepContent({
           BODY
       ===================================================== */}
       {newsKind === "NEWS" && (
-        <div>
-          <label className="block font-medium mb-2">
-            Contenu
-          </label>
-          <HtmlEditor
-            value={body}
-            onChange={(html) =>
-              onChange({ body: html })
-            }
-          />
-        </div>
+        <HtmlEditor
+          value={body}
+          onChange={(html) =>
+            onChange({ body: html })
+          }
+        />
       )}
 
       {/* =====================================================
           PERSONNES
       ===================================================== */}
-      <div>
-        <label className="block font-medium mb-2">
-          Personnes citées
-        </label>
-        <PersonSelector
-          values={persons}
-          persons={allPersons}
-          companyId={company?.ID_COMPANY || null}
-          onChange={(items) =>
-            onChange({ persons: items })
-          }
-        />
-      </div>
+      <PersonSelector
+        values={persons}
+        persons={allPersons}
+        companyId={
+          company?.id_company ||
+          company?.ID_COMPANY ||
+          null
+        }
+        onChange={(items) =>
+          onChange({ persons: items })
+        }
+      />
 
       {/* =====================================================
           ACTION
       ===================================================== */}
-      <div className="pt-4">
-        <button
-          onClick={onValidate}
-          disabled={saving}
-          className="bg-ratecard-green text-white px-6 py-2 rounded"
-        >
-          {saving ? "Sauvegarde…" : "Enregistrer"}
-        </button>
-      </div>
+      <button
+        onClick={onValidate}
+        disabled={saving}
+        className="bg-ratecard-green text-white px-6 py-2 rounded"
+      >
+        {saving ? "Sauvegarde…" : "Enregistrer"}
+      </button>
+
     </div>
   );
 }
