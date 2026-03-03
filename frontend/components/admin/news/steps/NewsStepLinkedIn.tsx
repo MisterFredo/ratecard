@@ -32,9 +32,9 @@ export default function NewsStepLinkedIn({
       try {
         const res = await api.get(`/news/${newsId}/linkedin`);
 
-        if (res?.text) {
-          setText(res.text);
-          setMode(res.mode || "manual");
+        if (res?.post?.TEXT) {
+          setText(res.post.TEXT);
+          setMode(res.post.MODE || "manual");
         }
       } catch (e) {
         console.error("Erreur chargement post LinkedIn", e);
@@ -76,13 +76,13 @@ export default function NewsStepLinkedIn({
     try {
       const res = await api.post(
         `/news/${newsId}/linkedin/generate`,
-        {} // ⚠️ body requis par le wrapper api.post
+        {}
       );
 
-      if (res?.text) {
-        setText(res.text);
+      if (res?.TEXT) {
+        setText(res.TEXT);
         setMode("ai");
-        await save(res.text, "ai");
+        await save(res.TEXT, "ai");
       }
     } catch (e) {
       console.error("Erreur génération IA LinkedIn", e);
