@@ -218,9 +218,14 @@ def get_news(id_news: str):
 
     rows = query_bq(
         f"""
-        SELECT *
-        FROM `{TABLE_NEWS}`
-        WHERE ID_NEWS = @id
+        SELECT
+            n.*,
+            c.NAME AS COMPANY_NAME,
+            c.IS_PARTNER
+        FROM `{TABLE_NEWS}` n
+        JOIN `{TABLE_COMPANY}` c
+          ON n.ID_COMPANY = c.ID_COMPANY
+        WHERE n.ID_NEWS = @id
         LIMIT 1
         """,
         {"id": id_news},
@@ -292,7 +297,6 @@ def get_news(id_news: str):
     )
 
     return news
-
 # ============================================================
 # LIST NEWS / BRÈVES (PUBLIC)
 # ============================================================
