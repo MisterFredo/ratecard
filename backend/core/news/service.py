@@ -56,7 +56,6 @@ def create_news(data: NewsCreate) -> str:
     if not data.title or not data.title.strip():
         raise ValueError("TITLE obligatoire")
 
-    # ✅ STRUCTURE
     if data.news_kind not in ("NEWS", "BRIEF"):
         raise ValueError("NEWS_KIND invalide (NEWS | BRIEF)")
 
@@ -65,9 +64,9 @@ def create_news(data: NewsCreate) -> str:
 
     client = get_bigquery_client()
 
-    # ============================================================
-    # 🔥 FALLBACK VISUEL SOCIÉTÉ
-    # ============================================================
+    # ------------------------------------------------------------
+    # FALLBACK VISUEL SOCIÉTÉ
+    # ------------------------------------------------------------
 
     media_id = data.media_rectangle_id
 
@@ -95,35 +94,24 @@ def create_news(data: NewsCreate) -> str:
         if result and result[0].MEDIA_LOGO_RECTANGLE_ID:
             media_id = result[0].MEDIA_LOGO_RECTANGLE_ID
 
-    # ============================================================
+    # ------------------------------------------------------------
     # INSERT NEWS
-    # ============================================================
+    # ------------------------------------------------------------
 
     row = [{
         "ID_NEWS": news_id,
         "STATUS": "DRAFT",
         "IS_ACTIVE": True,
-
-        # STRUCTURE
-        "NEWS_KIND": data.news_kind,  # NEWS | BRIEF
-
-        # CATÉGORIE RÉDACTIONNELLE
+        "NEWS_KIND": data.news_kind,
         "NEWS_TYPE": data.news_type,
-
-        # CONTENU
         "ID_COMPANY": data.id_company,
         "TITLE": data.title,
         "EXCERPT": data.excerpt,
         "BODY": data.body if data.news_kind == "NEWS" else None,
-
-        # VISUEL (toujours rempli après fallback)
         "MEDIA_RECTANGLE_ID": media_id,
         "HAS_VISUAL": bool(media_id),
-
-        # META
         "SOURCE_URL": data.source_url,
         "AUTHOR": data.author,
-
         "PUBLISHED_AT": None,
         "CREATED_AT": now,
         "UPDATED_AT": now,
@@ -132,14 +120,12 @@ def create_news(data: NewsCreate) -> str:
     client.load_table_from_json(
         row,
         TABLE_NEWS,
-        job_config=bigquery.LoadJobConfig(
-            write_disposition="WRITE_APPEND"
-        ),
+        job_config=bigquery.LoadJobConfig(write_disposition="WRITE_APPEND"),
     ).result()
 
-    # ============================================================
-    # RELATIONS
-    # ============================================================
+    # ------------------------------------------------------------
+    # RELATIONS CLASSIQUES
+    # ------------------------------------------------------------
 
     if data.topics:
         insert_bq(
@@ -151,6 +137,26 @@ def create_news(data: NewsCreate) -> str:
         insert_bq(
             TABLE_NEWS_PERSON,
             [{"ID_NEWS": news_id, "ID_PERSON": pid} for pid in data.persons],
+        )
+
+    # ------------------------------------------------------------
+    # 🔥 NOUVELLES RELATIONS — CONCEPTS
+    # ------------------------------------------------------------
+
+    if getattr(data, "concepts", None):
+        insert_bq(
+            TABLE_NEWS_CONCEPT,
+            [{"ID_NEWS": news_id, "ID_CONCEPT": cid} for cid in data.concepts],
+        )
+
+    # ------------------------------------------------------------
+    # 🔥 NOUVELLES RELATIONS — SOLUTIONS
+    # ------------------------------------------------------------
+
+    if getattr(data, "solutions", None):
+        insert_bq(
+            TABLE_NEWS_SOLUTION,
+            [{"ID_NEWS": news_id, "ID_SOLUTION": sid} for sid in data.solutions],
         )
 
     return news_id
