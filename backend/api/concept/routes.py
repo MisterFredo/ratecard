@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException
-from typing import List
 
 from api.concept.models import (
     ConceptCreate,
@@ -24,11 +23,11 @@ router = APIRouter()
 def create_route(data: ConceptCreate):
     """
     Crée un concept métier.
-    Content = HTML complet.
+    ⚠️ Champs attendus en MAJUSCULES
     """
     try:
         concept_id = create_concept(data)
-        return {"status": "ok", "id_concept": concept_id}
+        return {"status": "ok", "ID_CONCEPT": concept_id}
     except Exception as e:
         raise HTTPException(400, f"Erreur création concept : {e}")
 
@@ -38,9 +37,13 @@ def create_route(data: ConceptCreate):
 # ============================================================
 @router.get("/list")
 def list_route():
+    """
+    Retourne la liste brute des concepts.
+    ⚠️ Champs MAJUSCULES
+    """
     try:
         concepts = list_concepts()
-        return {"concepts": concepts}
+        return {"status": "ok", "concepts": concepts}
     except Exception as e:
         raise HTTPException(400, f"Erreur liste concepts : {e}")
 
@@ -52,6 +55,7 @@ def list_route():
 def get_route(id_concept: str):
     """
     Récupère un concept par son ID.
+    Inclut ID_TOPIC (0 ou 1).
     """
     try:
         concept = get_concept(id_concept)
@@ -74,15 +78,18 @@ def get_route(id_concept: str):
 def update_route(id_concept: str, data: ConceptUpdate):
     """
     Met à jour un concept existant.
-    Supporte content HTML.
+    Supporte ID_TOPIC (mono-topic).
     """
     try:
         updated = update_concept(id_concept, data)
 
         if not updated:
-            raise HTTPException(404, "Concept introuvable ou aucune modification")
+            raise HTTPException(
+                404,
+                "Concept introuvable ou aucune modification"
+            )
 
-        return {"status": "ok", "updated": True}
+        return {"status": "ok", "UPDATED": True}
 
     except HTTPException:
         raise
