@@ -7,6 +7,10 @@ type Props = {
   events: any[];
   companies: any[];
 
+  // 🔥 NOUVEAU
+  concepts: any[];
+  solutions: any[];
+
   dateCreation: string;
   onChangeDateCreation: (value: string) => void;
 
@@ -14,6 +18,8 @@ type Props = {
     topics?: any[];
     events?: any[];
     companies?: any[];
+    concepts?: any[];
+    solutions?: any[];
   }) => void;
 
   onValidate: () => void;
@@ -23,6 +29,8 @@ export default function StepContext({
   topics,
   events,
   companies,
+  concepts,
+  solutions,
   dateCreation,
   onChangeDateCreation,
   onChange,
@@ -34,6 +42,8 @@ export default function StepContext({
         topics={topics}
         events={events}
         companies={companies}
+        concepts={concepts}
+        solutions={solutions}
         onChange={onChange}
       />
 
