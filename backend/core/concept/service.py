@@ -14,23 +14,20 @@ TABLE_CONCEPT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONCEPT"
 
 
 # ============================================================
-# CREATE CONCEPT
+# CREATE CONCEPT — MAJUSCULES + ID_TOPIC
 # ============================================================
 def create_concept(data: ConceptCreate) -> str:
-    """
-    Crée un concept métier.
-    Content = HTML complet.
-    """
     concept_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
 
     row = [{
         "ID_CONCEPT": concept_id,
-        "TITLE": data.title,
-        "DESCRIPTION": data.description,
-        "CONTENT": data.content,
-        "STATUS": data.status or "DRAFT",
-        "VECTORISE": data.vectorise or False,
+        "TITLE": data.TITLE,
+        "DESCRIPTION": data.DESCRIPTION,
+        "CONTENT": data.CONTENT,
+        "STATUS": data.STATUS or "DRAFT",
+        "VECTORISE": data.VECTORISE or False,
+        "ID_TOPIC": data.ID_TOPIC,  # 🔥 mono-topic
         "CREATED_AT": now,
         "UPDATED_AT": now,
     }]
@@ -49,7 +46,7 @@ def create_concept(data: ConceptCreate) -> str:
 
 
 # ============================================================
-# LIST CONCEPTS
+# LIST CONCEPTS — MAJUSCULES + ID_TOPIC
 # ============================================================
 def list_concepts():
     sql = f"""
@@ -59,6 +56,7 @@ def list_concepts():
             DESCRIPTION,
             STATUS,
             VECTORISE,
+            ID_TOPIC,
             CREATED_AT,
             UPDATED_AT
         FROM `{TABLE_CONCEPT}`
@@ -66,28 +64,13 @@ def list_concepts():
         ORDER BY TITLE ASC
     """
 
-    rows = query_bq(sql)
+    return query_bq(sql)  # ⚠️ brut BQ
 
-    return [
-        {
-            "id_concept": r["ID_CONCEPT"],
-            "title": r["TITLE"],
-            "description": r["DESCRIPTION"],
-            "status": r["STATUS"] or "DRAFT",
-            "vectorise": r["VECTORISE"],
-            "created_at": r["CREATED_AT"],
-            "updated_at": r["UPDATED_AT"],
-        }
-        for r in rows
-    ]
 
 # ============================================================
-# GET ONE CONCEPT
+# GET ONE CONCEPT — MAJUSCULES + ID_TOPIC
 # ============================================================
 def get_concept(concept_id: str):
-    """
-    Récupère un concept complet.
-    """
     sql = f"""
         SELECT *
         FROM `{TABLE_CONCEPT}`
@@ -100,41 +83,26 @@ def get_concept(concept_id: str):
     if not rows:
         return None
 
-    r = rows[0]
-
-    return {
-        "id_concept": r["ID_CONCEPT"],
-        "title": r["TITLE"],
-        "description": r.get("DESCRIPTION"),
-        "content": r.get("CONTENT"),
-        "status": r.get("STATUS"),
-        "vectorise": r.get("VECTORISE", False),
-        "created_at": r.get("CREATED_AT"),
-        "updated_at": r.get("UPDATED_AT"),
-    }
+    return rows[0]  # ⚠️ brut BQ
 
 
 # ============================================================
-# UPDATE CONCEPT
+# UPDATE CONCEPT — MAJUSCULES + ID_TOPIC
 # ============================================================
 def update_concept(id_concept: str, data: ConceptUpdate) -> bool:
-    """
-    Met à jour un concept existant.
-    Reset vectorise si content modifié.
-    """
     values = data.dict(exclude_unset=True)
 
     if not values:
         return False
 
-    # Si content modifié → reset vectorisation
-    if "content" in values:
-        values["vectorise"] = False
+    # Si CONTENT modifié → reset VECTORISE
+    if "CONTENT" in values:
+        values["VECTORISE"] = False
 
-    values["updated_at"] = datetime.utcnow().isoformat()
+    values["UPDATED_AT"] = datetime.utcnow().isoformat()
 
     return update_bq(
         table=TABLE_CONCEPT,
-        fields={k.upper(): v for k, v in values.items()},
+        fields=values,  # ⚠️ plus de .upper()
         where={"ID_CONCEPT": id_concept},
     )
