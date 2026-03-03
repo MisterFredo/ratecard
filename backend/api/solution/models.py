@@ -10,13 +10,13 @@ class SolutionCreate(BaseModel):
     """
     Création d'une solution.
     """
-    name: str
-    id_company: Optional[str] = None  # association manuelle
-    description: Optional[str] = None
-    content: str
+    NAME: str
+    ID_COMPANY: Optional[str] = None
+    DESCRIPTION: Optional[str] = None
+    CONTENT: str
 
-    status: Optional[str] = "DRAFT"
-    vectorise: Optional[bool] = False
+    STATUS: Optional[str] = "DRAFT"
+    VECTORISE: Optional[bool] = False
 
 
 # ============================================================
@@ -26,13 +26,13 @@ class SolutionUpdate(BaseModel):
     """
     Mise à jour partielle d'une solution.
     """
-    name: Optional[str] = None
-    id_company: Optional[str] = None
-    description: Optional[str] = None
-    content: Optional[str] = None
+    NAME: Optional[str] = None
+    ID_COMPANY: Optional[str] = None
+    DESCRIPTION: Optional[str] = None
+    CONTENT: Optional[str] = None
 
-    status: Optional[str] = None
-    vectorise: Optional[bool] = None
+    STATUS: Optional[str] = None
+    VECTORISE: Optional[bool] = None
 
 
 # ============================================================
@@ -40,16 +40,16 @@ class SolutionUpdate(BaseModel):
 # ============================================================
 class SolutionOut(BaseModel):
     """
-    Représentation 1:1 avec RATECARD_SOLUTION.
+    Représentation alignée 1:1 avec RATECARD_SOLUTION.
     """
-    id_solution: str
-    name: str
-    id_company: Optional[str] = None
-    description: Optional[str] = None
-    content: str
+    ID_SOLUTION: str
+    NAME: str
+    ID_COMPANY: Optional[str] = None
+    DESCRIPTION: Optional[str] = None
+    CONTENT: str
 
-    status: Optional[str] = None
-    vectorise: Optional[bool] = False
+    STATUS: Optional[str] = None
+    VECTORISE: Optional[bool] = False
 
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    CREATED_AT: Optional[datetime] = None
+    UPDATED_AT: Optional[datetime] = None
