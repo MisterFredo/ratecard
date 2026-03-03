@@ -6,50 +6,52 @@ import { api } from "@/lib/api";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
 type Company = {
-  id_company: string;
-  name: string;
+  ID_COMPANY: string;
+  NAME: string;
 };
 
 export default function CreateSolution() {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [content, setContent] = useState("");
-  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">("DRAFT");
-  const [idCompany, setIdCompany] = useState<string | null>(null);
+  const [NAME, setNAME] = useState("");
+  const [DESCRIPTION, setDESCRIPTION] = useState("");
+  const [CONTENT, setCONTENT] = useState("");
+  const [STATUS, setSTATUS] =
+    useState<"DRAFT" | "PUBLISHED">("DRAFT");
+  const [ID_COMPANY, setID_COMPANY] =
+    useState<string | null>(null);
 
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [COMPANIES, setCOMPANIES] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function loadCompanies() {
       const res = await api.get("/company/list");
-      setCompanies(res || []);
+      setCOMPANIES(res.COMPANIES || []);
     }
     loadCompanies();
   }, []);
 
   async function save() {
-    if (!name.trim()) return alert("Nom requis");
-    if (!content.trim()) return alert("Contenu requis");
+    if (!NAME.trim()) return alert("Nom requis");
+    if (!CONTENT.trim()) return alert("Contenu requis");
 
     try {
       setLoading(true);
 
       await api.post("/solution/create", {
-        name,
-        description: description || null,
-        content,
-        status,
-        id_company: idCompany,
+        NAME,
+        DESCRIPTION: DESCRIPTION || null,
+        CONTENT,
+        STATUS,
+        ID_COMPANY,
       });
 
       alert("Solution créée");
 
-      setName("");
-      setDescription("");
-      setContent("");
-      setStatus("DRAFT");
-      setIdCompany(null);
+      setNAME("");
+      setDESCRIPTION("");
+      setCONTENT("");
+      setSTATUS("DRAFT");
+      setID_COMPANY(null);
     } catch (e) {
       console.error(e);
       alert("❌ Erreur création");
@@ -61,7 +63,9 @@ export default function CreateSolution() {
   return (
     <div className="space-y-10">
       <div className="flex justify-between">
-        <h1 className="text-2xl font-semibold">Ajouter une solution</h1>
+        <h1 className="text-2xl font-semibold">
+          Ajouter une solution
+        </h1>
         <Link href="/admin/solution" className="underline">
           ← Retour
         </Link>
@@ -71,22 +75,24 @@ export default function CreateSolution() {
       <input
         className="border p-2 w-full rounded"
         placeholder="Nom de la solution"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        value={NAME}
+        onChange={(e) => setNAME(e.target.value)}
       />
 
       {/* COMPANY */}
       <select
         className="border p-2 rounded w-full"
-        value={idCompany || ""}
+        value={ID_COMPANY || ""}
         onChange={(e) =>
-          setIdCompany(e.target.value || null)
+          setID_COMPANY(e.target.value || null)
         }
       >
-        <option value="">— Aucune société associée —</option>
-        {companies.map((c) => (
-          <option key={c.id_company} value={c.id_company}>
-            {c.name}
+        <option value="">
+          — Aucune société associée —
+        </option>
+        {COMPANIES.map((c) => (
+          <option key={c.ID_COMPANY} value={c.ID_COMPANY}>
+            {c.NAME}
           </option>
         ))}
       </select>
@@ -95,19 +101,23 @@ export default function CreateSolution() {
       <textarea
         className="border p-2 w-full rounded h-24"
         placeholder="Description courte"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
+        value={DESCRIPTION}
+        onChange={(e) =>
+          setDESCRIPTION(e.target.value)
+        }
       />
 
       {/* CONTENT */}
-      <HtmlEditor value={content} onChange={setContent} />
+      <HtmlEditor value={CONTENT} onChange={setCONTENT} />
 
       {/* STATUS */}
       <select
         className="border p-2 rounded w-full max-w-xs"
-        value={status}
+        value={STATUS}
         onChange={(e) =>
-          setStatus(e.target.value as "DRAFT" | "PUBLISHED")
+          setSTATUS(
+            e.target.value as "DRAFT" | "PUBLISHED"
+          )
         }
       >
         <option value="DRAFT">DRAFT</option>
