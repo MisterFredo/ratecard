@@ -12,14 +12,14 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 const COMPANY_MEDIA_PATH = "companies";
 
 export default function CreateCompany() {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [linkedinUrl, setLinkedinUrl] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [isPartner, setIsPartner] = useState(false);
+  const [NAME, setNAME] = useState("");
+  const [DESCRIPTION, setDESCRIPTION] = useState("");
+  const [LINKEDIN_URL, setLINKEDIN_URL] = useState("");
+  const [WEBSITE_URL, setWEBSITE_URL] = useState("");
+  const [IS_PARTNER, setIS_PARTNER] = useState(false);
 
-  // --- WIKI (BLOC UNIQUE OPTIONNEL) ---
-  const [wikiContent, setWikiContent] = useState("");
+  // --- WIKI ---
+  const [WIKI_CONTENT, setWIKI_CONTENT] = useState("");
 
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [logoFilename, setLogoFilename] = useState<string | null>(null);
@@ -29,7 +29,7 @@ export default function CreateCompany() {
   // CREATE
   // ---------------------------------------------------------
   async function save() {
-    if (!name.trim()) {
+    if (!NAME.trim()) {
       alert("Nom requis");
       return;
     }
@@ -38,24 +38,24 @@ export default function CreateCompany() {
 
     try {
       const res = await api.post("/company/create", {
-        name,
-        description: description || null,
-        linkedin_url: linkedinUrl || null,
-        website_url: websiteUrl || null,
-        is_partner: isPartner,
+        NAME,
+        DESCRIPTION: DESCRIPTION || null,
+        LINKEDIN_URL: LINKEDIN_URL || null,
+        WEBSITE_URL: WEBSITE_URL || null,
+        IS_PARTNER,
       });
 
-      if (!res.id_company) {
+      if (!res.ID_COMPANY) {
         throw new Error("ID société manquant");
       }
 
-      const newCompanyId = res.id_company;
+      const newCompanyId = res.ID_COMPANY;
       setCompanyId(newCompanyId);
 
       // 🔥 Si wiki rempli → update après création
-      if (wikiContent.trim()) {
+      if (WIKI_CONTENT.trim()) {
         await api.put(`/company/update/${newCompanyId}`, {
-          wiki_content: wikiContent,
+          WIKI_CONTENT,
         });
       }
 
@@ -76,7 +76,9 @@ export default function CreateCompany() {
 
     try {
       const res = await api.get(`/company/${companyId}`);
-      setLogoFilename(res.media_logo_url || null);
+      setLogoFilename(
+        res.company?.MEDIA_LOGO_RECTANGLE_ID || null
+      );
     } catch (e) {
       console.error(e);
       alert("❌ Erreur rechargement société");
@@ -103,20 +105,24 @@ export default function CreateCompany() {
 
       {/* INFOS DE BASE */}
       <EntityBaseForm
-        values={{ name, linkedinUrl, websiteUrl }}
+        values={{
+          name: NAME,
+          linkedinUrl: LINKEDIN_URL,
+          websiteUrl: WEBSITE_URL,
+        }}
         onChange={{
-          setName,
-          setLinkedinUrl,
-          setWebsiteUrl,
+          setName: setNAME,
+          setLinkedinUrl: setLINKEDIN_URL,
+          setWebsiteUrl: setWEBSITE_URL,
         }}
       />
 
-      {/* DESCRIPTION COMMERCIALE */}
+      {/* DESCRIPTION */}
       <div className="space-y-2">
         <label className="block font-medium">
           Description (commerciale)
         </label>
-        <HtmlEditor value={description} onChange={setDescription} />
+        <HtmlEditor value={DESCRIPTION} onChange={setDESCRIPTION} />
       </div>
 
       {/* WIKI */}
@@ -126,8 +132,8 @@ export default function CreateCompany() {
         </h2>
 
         <HtmlEditor
-          value={wikiContent}
-          onChange={setWikiContent}
+          value={WIKI_CONTENT}
+          onChange={setWIKI_CONTENT}
         />
       </div>
 
@@ -135,8 +141,8 @@ export default function CreateCompany() {
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
-          checked={isPartner}
-          onChange={(e) => setIsPartner(e.target.checked)}
+          checked={IS_PARTNER}
+          onChange={(e) => setIS_PARTNER(e.target.checked)}
         />
         <label className="text-sm">Société partenaire</label>
       </div>
