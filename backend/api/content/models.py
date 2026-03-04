@@ -32,6 +32,7 @@ class ContentCreate(BaseModel):
     source_author: Optional[str] = None
 
     # SUMMARY VALIDÉ
+    title: str                          # ← NOUVEAU (OBLIGATOIRE)
     excerpt: Optional[str] = None
     concept: Optional[str] = None
     concept_id: str                     # ← OBLIGATOIRE
@@ -76,6 +77,7 @@ class ContentUpdate(BaseModel):
     source_author: Optional[str] = None
 
     # SUMMARY
+    title: Optional[str] = None         # ← NOUVEAU
     excerpt: Optional[str] = None
     concept: Optional[str] = None
     concept_id: Optional[str] = None
@@ -121,6 +123,7 @@ class ContentOut(BaseModel):
     id_content: str
     status: str
 
+    title: Optional[str]                # ← NOUVEAU
     excerpt: Optional[str]
     concept: Optional[str]
     concept_id: Optional[str]
