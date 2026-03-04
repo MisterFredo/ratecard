@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List, Dict
+from typing import Optional, List
 from datetime import date, datetime
 
 
@@ -12,51 +12,32 @@ class ContentPerson(BaseModel):
 
 
 # ============================================================
-# IA — ANGLES (REQUÊTE)
+# IA — SUMMARY REQUEST
 # ============================================================
-class ContentAnglesRequest(BaseModel):
+class ContentSummaryRequest(BaseModel):
     source_type: Optional[str] = None
     source_text: str
-    context: Dict[str, List[str]]
-
-
-# ============================================================
-# IA — GENERATE CONTENT (REQUÊTE)
-# ============================================================
-class ContentGenerateRequest(BaseModel):
-    source_type: Optional[str]
-    source_text: str
-
-    angle_title: str
-    angle_signal: str
-
-    concept: str           # concept éditorial libre (phrase)
-    concept_id: str        # ← NOUVEAU — concept gouverné obligatoire
-
-    context: Dict[str, List[str]]
+    context: dict
 
 
 # ============================================================
 # CREATE
 # ============================================================
 class ContentCreate(BaseModel):
+
     # SOURCE
     source_type: Optional[str] = None
     source_text: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
 
-    # ANGLE (OBLIGATOIRE)
-    angle_title: str
-    angle_signal: str
-
-    # CONTENU VALIDÉ
+    # SUMMARY VALIDÉ
     excerpt: Optional[str] = None
-    concept: Optional[str] = None           # concept éditorial libre
-    concept_id: Optional[str] = None        # ← NOUVEAU (sera obligatoire backend)
+    concept: Optional[str] = None
+    concept_id: str                     # ← OBLIGATOIRE
     content_body: Optional[str] = None
 
-    # AIDES ÉDITORIALES VALIDÉES
+    # EXTRACTIONS STRUCTURÉES
     citations: Optional[List[str]] = []
     chiffres: Optional[List[str]] = []
     acteurs_cites: Optional[List[str]] = []
@@ -67,9 +48,9 @@ class ContentCreate(BaseModel):
     companies: Optional[List[str]] = []
     persons: Optional[List[ContentPerson]] = []
 
-    # 🔥 NOUVEAU — TAGGING SOUPLE
-    concepts: List[str] = []
-    solutions: List[str] = []
+    # TAGGING SOUPLE
+    concepts: Optional[List[str]] = []
+    solutions: Optional[List[str]] = []
 
     # SEO
     seo_title: Optional[str] = None
@@ -87,23 +68,20 @@ class ContentCreate(BaseModel):
 # UPDATE
 # ============================================================
 class ContentUpdate(BaseModel):
+
     # SOURCE
     source_type: Optional[str] = None
     source_text: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
 
-    # ANGLE
-    angle_title: str
-    angle_signal: str
-
-    # CONTENU VALIDÉ
+    # SUMMARY
     excerpt: Optional[str] = None
     concept: Optional[str] = None
-    concept_id: Optional[str] = None        # ← NOUVEAU (optionnel pour legacy)
+    concept_id: Optional[str] = None
     content_body: Optional[str] = None
 
-    # AIDES ÉDITORIALES VALIDÉES
+    # EXTRACTIONS STRUCTURÉES
     citations: Optional[List[str]] = []
     chiffres: Optional[List[str]] = []
     acteurs_cites: Optional[List[str]] = []
@@ -114,7 +92,7 @@ class ContentUpdate(BaseModel):
     companies: Optional[List[str]] = []
     persons: Optional[List[ContentPerson]] = []
 
-    # 🔥 NOUVEAU — TAGGING SOUPLE
+    # TAGGING SOUPLE
     concepts: Optional[List[str]] = None
     solutions: Optional[List[str]] = None
 
@@ -130,7 +108,7 @@ class ContentUpdate(BaseModel):
 
 
 # ============================================================
-# PUBLISH CONTENT
+# PUBLISH
 # ============================================================
 class ContentPublish(BaseModel):
     publish_at: Optional[datetime] = None
@@ -143,12 +121,9 @@ class ContentOut(BaseModel):
     id_content: str
     status: str
 
-    angle_title: str
-    angle_signal: str
-
     excerpt: Optional[str]
-    concept: Optional[str]        # éditorial libre
-    concept_id: Optional[str]     # ← NOUVEAU
+    concept: Optional[str]
+    concept_id: Optional[str]
     content_body: Optional[str]
 
     citations: List[str] = []
@@ -164,6 +139,5 @@ class ContentOut(BaseModel):
     companies: list = []
     persons: list = []
 
-    # 🔥 NOUVEAU
     concepts: list = []
     solutions: list = []
