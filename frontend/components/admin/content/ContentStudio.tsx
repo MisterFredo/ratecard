@@ -7,7 +7,6 @@ import { api } from "@/lib/api";
 import StepContext from "@/components/admin/content/steps/StepContext";
 import StepSource from "@/components/admin/content/steps/StepSource";
 import StepSummary from "@/components/admin/content/steps/StepSummary";
-import StepContent from "@/components/admin/content/steps/StepContent";
 import StepPreview from "@/components/admin/content/steps/StepPreview";
 import StepPublish from "@/components/admin/content/steps/StepPublish";
 
@@ -17,7 +16,6 @@ type Step =
   | "CONTEXT"
   | "SOURCE"
   | "SUMMARY"
-  | "CONTENT"
   | "PREVIEW"
   | "PUBLISH";
 
@@ -115,7 +113,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
     setSaving(true);
 
     const payload = {
-      title: excerpt.slice(0, 120), // fallback simple si besoin
+      title: excerpt.slice(0, 120),
       excerpt,
       concept,
       concept_id: conceptId,
@@ -138,7 +136,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
         await api.put(`/content/update/${internalContentId}`, payload);
       }
 
-      // 🔥 Skip preview → direct publish
+      // Direct publication step
       setStep("PUBLISH");
 
     } catch (e) {
@@ -229,11 +227,11 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </details>
       )}
 
-      {/* SUMMARY */}
+      {/* SUMMARY + EDITION */}
       {sourceText && (
         <details open={step === "SUMMARY"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            3. Summary
+            3. Synthèse
           </summary>
 
           <StepSummary
@@ -256,25 +254,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
               if (d.concept !== undefined) setConcept(d.concept);
               if (d.conceptId !== undefined) setConceptId(d.conceptId);
             }}
-            onValidate={() => setStep("CONTENT")}
-          />
-        </details>
-      )}
-
-      {/* FINALISATION */}
-      {(excerpt || contentBody) && (
-        <details open={step === "CONTENT"} className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            4. Finalisation
-          </summary>
-
-          <StepContent
-            excerpt={excerpt}
-            contentBody={contentBody}
-            onChange={(d) => {
-              if (d.excerpt !== undefined) setExcerpt(d.excerpt);
-              if (d.contentBody !== undefined) setContentBody(d.contentBody);
-            }}
             onValidate={saveContent}
           />
         </details>
@@ -289,7 +268,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
           <StepPreview
             contentId={internalContentId}
-            onBack={() => setStep("CONTENT")}
+            onBack={() => setStep("SUMMARY")}
             onNext={() => setStep("PUBLISH")}
           />
         </details>
@@ -299,7 +278,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
       {internalContentId && (
         <details open={step === "PUBLISH"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            5. Publication
+            4. Publication
           </summary>
 
           <StepPublish
