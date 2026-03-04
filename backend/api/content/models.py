@@ -30,7 +30,8 @@ class ContentGenerateRequest(BaseModel):
     angle_title: str
     angle_signal: str
 
-    concept: str  # ← OBLIGATOIRE
+    concept: str           # concept éditorial libre (phrase)
+    concept_id: str        # ← NOUVEAU — concept gouverné obligatoire
 
     context: Dict[str, List[str]]
 
@@ -51,7 +52,8 @@ class ContentCreate(BaseModel):
 
     # CONTENU VALIDÉ
     excerpt: Optional[str] = None
-    concept: Optional[str] = None
+    concept: Optional[str] = None           # concept éditorial libre
+    concept_id: Optional[str] = None        # ← NOUVEAU (sera obligatoire backend)
     content_body: Optional[str] = None
 
     # AIDES ÉDITORIALES VALIDÉES
@@ -80,6 +82,7 @@ class ContentCreate(BaseModel):
     # META
     author: Optional[str] = None
 
+
 # ============================================================
 # UPDATE
 # ============================================================
@@ -97,6 +100,7 @@ class ContentUpdate(BaseModel):
     # CONTENU VALIDÉ
     excerpt: Optional[str] = None
     concept: Optional[str] = None
+    concept_id: Optional[str] = None        # ← NOUVEAU (optionnel pour legacy)
     content_body: Optional[str] = None
 
     # AIDES ÉDITORIALES VALIDÉES
@@ -123,6 +127,8 @@ class ContentUpdate(BaseModel):
 
     # META
     author: Optional[str] = None
+
+
 # ============================================================
 # PUBLISH CONTENT
 # ============================================================
@@ -141,7 +147,8 @@ class ContentOut(BaseModel):
     angle_signal: str
 
     excerpt: Optional[str]
-    concept: Optional[str]
+    concept: Optional[str]        # éditorial libre
+    concept_id: Optional[str]     # ← NOUVEAU
     content_body: Optional[str]
 
     citations: List[str] = []
