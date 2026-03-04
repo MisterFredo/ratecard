@@ -4,7 +4,7 @@ from utils.llm import run_llm
 
 
 # ============================================================
-# PROPOSE ANGLES — 1 ANGLE = 1 CONCEPT (VERSION STABLE + ID)
+# PROPOSE ANGLES — 1 ANGLE = 1 CONCEPT (VERSION ÉTENDUE 5 MAX)
 # ============================================================
 def propose_angles(
     source_type: str,
@@ -13,15 +13,19 @@ def propose_angles(
     available_concepts: List[Dict[str, str]],
 ) -> List[Dict[str, str]]:
     """
-    Génère de 1 à 3 angles maximum.
+    Génère entre 3 et 5 angles maximum.
 
     Règles :
     - Chaque angle doit s'appuyer sur EXACTEMENT un concept.
     - Chaque concept ne peut apparaître qu'une seule fois.
     - Aucun concept hors liste autorisée.
+    - Les angles doivent être réellement différenciés.
     """
 
     if not isinstance(source_text, str) or not source_text.strip():
+        return []
+
+    if not available_concepts:
         return []
 
     # ---------------------------------------------------------
@@ -37,8 +41,11 @@ Tu es un analyste stratégique B2B spécialisé en Adtech,
 Retail Media et transformation digitale.
 
 OBJECTIF :
-Proposer de 1 à 3 angles éditoriaux maximum,
+Proposer ENTRE 3 ET 5 angles éditoriaux,
 dérivés STRICTEMENT de la source fournie.
+
+Les angles doivent être exploitables dans un média
+d’analyse stratégique.
 
 RÈGLES FONDAMENTALES :
 
@@ -48,12 +55,16 @@ RÈGLES FONDAMENTALES :
 - Ne jamais inventer.
 - Ne jamais reformuler un concept.
 - Un concept ne peut apparaître qu’une seule fois.
-- Ne produire plusieurs angles que s’ils sont réellement différenciés.
+- Les angles doivent être réellement différenciés.
+- Éviter toute variation superficielle.
+- Varier les types de tensions stratégiques
+  (marché, concurrence, modèle économique,
+   technologie, organisation, pouvoir, dépendance).
 
 CONCEPTS AUTORISÉS :
 {concepts_block}
 
-FORMAT EXACT :
+FORMAT STRICT À RESPECTER :
 
 ANGLE
 Titre : ...
@@ -101,13 +112,15 @@ SOURCE :
         cleaned_angles.append({
             "angle_title": angle["angle_title"],
             "angle_signal": angle["angle_signal"],
-            "concept": concept_title,                 # phrase pivot
-            "concept_id": valid_map[concept_title],  # ID gouverné
+            "concept": concept_title,
+            "concept_id": valid_map[concept_title],
         })
 
-        if len(cleaned_angles) == 3:
+        # Max 5 angles
+        if len(cleaned_angles) == 5:
             break
 
+    # Minimum 1 angle garanti si possible
     return cleaned_angles
 
 
