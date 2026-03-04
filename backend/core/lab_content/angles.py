@@ -37,34 +37,56 @@ def propose_angles(
     ])
 
     prompt = f"""
+prompt = f"""
 Tu es un analyste stratégique B2B spécialisé en Adtech,
 Retail Media et transformation digitale.
 
 OBJECTIF :
-Proposer ENTRE 3 ET 5 angles éditoriaux,
-dérivés STRICTEMENT de la source fournie.
 
-Les angles doivent être exploitables dans un média
-d’analyse stratégique.
+Produire EXACTEMENT 5 angles éditoriaux distincts
+à partir de la source fournie.
 
-RÈGLES FONDAMENTALES :
+Si la source est très focalisée, explore différentes tensions
+stratégiques possibles (technologique, gouvernance, pouvoir,
+efficacité opérationnelle, modèle économique, dépendance,
+impact marché).
 
-- Chaque angle doit s'appuyer sur EXACTEMENT UN concept.
+ÉTAPE 1 — Réflexion interne (ne pas afficher) :
+Identifie 5 concepts DISTINCTS pertinents parmi la liste autorisée.
+
+ÉTAPE 2 — Production :
+Construis un angle stratégique par concept.
+
+RÈGLES OBLIGATOIRES :
+
+- Chaque angle doit s’appuyer sur EXACTEMENT UN concept.
 - Le champ Concept doit correspondre STRICTEMENT
-  à l’un des concepts listés ci-dessous.
-- Ne jamais inventer.
-- Ne jamais reformuler un concept.
-- Un concept ne peut apparaître qu’une seule fois.
+  à l’un des concepts listés ci-dessous (copie exacte).
+- Chaque concept ne peut apparaître qu’une seule fois.
 - Les angles doivent être réellement différenciés.
-- Éviter toute variation superficielle.
-- Varier les types de tensions stratégiques
-  (marché, concurrence, modèle économique,
-   technologie, organisation, pouvoir, dépendance).
+- Pas de variation superficielle.
+- Pas d’angles redondants.
+- Strictement basé sur la source.
 
 CONCEPTS AUTORISÉS :
 {concepts_block}
 
-FORMAT STRICT À RESPECTER :
+FORMAT STRICT :
+
+ANGLE
+Titre : ...
+Signal : ...
+Concept : ...
+
+ANGLE
+Titre : ...
+Signal : ...
+Concept : ...
+
+ANGLE
+Titre : ...
+Signal : ...
+Concept : ...
 
 ANGLE
 Titre : ...
