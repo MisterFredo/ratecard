@@ -251,7 +251,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
           topics={topics}
           events={events}
           companies={companies}
-          concepts={[]}   // ❗ désactivé en sélection manuelle
           solutions={solutions}
           dateCreation={dateCreation}
           onChangeDateCreation={setDateCreation}
