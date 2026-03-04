@@ -8,9 +8,10 @@ type Props = {
   angle: {
     angle_title: string;
     angle_signal: string;
+    concept: string;
+    concept_id: string;
   };
 
-  // 🔑 SOURCE & CONTEXTE (OBLIGATOIRES)
   sourceType: string | null;
   sourceText: string;
   context: {
@@ -19,7 +20,6 @@ type Props = {
     companies: any[];
   };
 
-  // CONTENU
   excerpt: string;
   concept: string;
   contentBody: string;
@@ -56,26 +56,39 @@ export default function StepContent({
 }: Props) {
   const [loading, setLoading] = useState(false);
 
+  // ==========================================================
+  // IA GENERATION (PIVOT CONCEPT VERROUILLÉ)
+  // ==========================================================
   async function generateViaIA() {
+    if (!angle?.concept) {
+      alert("Concept pivot requis");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await api.post("/content/ai/generate", {
         source_type: sourceType,
         source_text: sourceText,
-        context: {
-          topics: context.topics.map((t) => t.label),
-          events: context.events.map((e) => e.label),
-          companies: context.companies.map((c) => c.name),
-        },
+
         angle_title: angle.angle_title,
         angle_signal: angle.angle_signal,
+
+        // 🔥 pivot obligatoire
+        concept: angle.concept,
+
+        context: {
+          topics: context.topics.map((t) => t.id_topic),
+          events: context.events.map((e) => e.id_event),
+          companies: context.companies.map((c) => c.id_company),
+        },
       });
 
       if (res?.content) {
         onChange({
           excerpt: res.content.excerpt || "",
-          concept: res.content.concept || "",
+          concept: res.content.concept || angle.concept,
           contentBody: res.content.content_body || "",
           citations: res.content.citations || [],
           chiffres: res.content.chiffres || [],
@@ -90,6 +103,9 @@ export default function StepContent({
     setLoading(false);
   }
 
+  // ==========================================================
+  // EDIT LIST HELPERS
+  // ==========================================================
   function updateList(
     key: "citations" | "chiffres" | "acteurs",
     index: number,
@@ -110,6 +126,9 @@ export default function StepContent({
     onChange({ [key]: list });
   }
 
+  // ==========================================================
+  // UI
+  // ==========================================================
   return (
     <div className="space-y-6">
       {/* ANGLE CONTEXT */}
@@ -117,11 +136,17 @@ export default function StepContent({
         <p className="text-sm font-medium text-gray-700">
           Angle sélectionné
         </p>
+
         <p className="font-semibold text-ratecard-blue">
           {angle.angle_title}
         </p>
+
         <p className="text-sm text-gray-600 mt-1">
           {angle.angle_signal}
+        </p>
+
+        <p className="text-xs text-gray-400 mt-2">
+          Concept pivot : {angle.concept}
         </p>
       </div>
 
@@ -137,10 +162,16 @@ export default function StepContent({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* CITATIONS */}
         <div className="space-y-2">
-          <h4 className="font-semibold text-sm">Citations proposées</h4>
+          <h4 className="font-semibold text-sm">
+            Citations proposées
+          </h4>
+
           {citations.length === 0 && (
-            <p className="text-xs text-gray-400 italic">Aucune</p>
+            <p className="text-xs text-gray-400 italic">
+              Aucune
+            </p>
           )}
+
           {citations.map((c, i) => (
             <div key={i} className="flex gap-2">
               <textarea
@@ -162,10 +193,16 @@ export default function StepContent({
 
         {/* CHIFFRES */}
         <div className="space-y-2">
-          <h4 className="font-semibold text-sm">Chiffres clés</h4>
+          <h4 className="font-semibold text-sm">
+            Chiffres clés
+          </h4>
+
           {chiffres.length === 0 && (
-            <p className="text-xs text-gray-400 italic">Aucun</p>
+            <p className="text-xs text-gray-400 italic">
+              Aucun
+            </p>
           )}
+
           {chiffres.map((c, i) => (
             <div key={i} className="flex gap-2">
               <input
@@ -187,10 +224,16 @@ export default function StepContent({
 
         {/* ACTEURS */}
         <div className="space-y-2">
-          <h4 className="font-semibold text-sm">Acteurs cités</h4>
+          <h4 className="font-semibold text-sm">
+            Acteurs cités
+          </h4>
+
           {acteurs.length === 0 && (
-            <p className="text-xs text-gray-400 italic">Aucun</p>
+            <p className="text-xs text-gray-400 italic">
+              Aucun
+            </p>
           )}
+
           {acteurs.map((a, i) => (
             <div key={i} className="flex gap-2">
               <input
