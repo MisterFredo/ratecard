@@ -17,7 +17,7 @@ def transform_source_to_content(
         return {}
 
     # ---------------------------------------------------------
-    # BUILD CONCEPT LIST FOR PROMPT
+    # CONCEPT LIST FOR PROMPT (INDICATIVE ONLY)
     # ---------------------------------------------------------
     concepts_block = "\n".join(
         [f"- {c['title']}" for c in available_concepts]
@@ -29,22 +29,15 @@ Tu es un assistant de synthèse professionnelle B2B.
 MISSION :
 Produire une synthèse factuelle, dense et précise.
 
-OBJECTIF :
-Permettre à un professionnel de comprendre en moins de 30 secondes :
-- Ce qui est annoncé
-- Ce qui change
-- Les idées structurantes
-- Les éléments concrets présentés
-
 ⚠️ RÈGLES ABSOLUES :
 - Strictement basé sur la source.
 - Aucun fait inventé.
 - Aucun chiffre inventé.
 - Aucun acteur inventé.
 - Aucune interprétation.
-- Aucune analyse externe.
-- Pas de reformulation marketing.
-- Style sobre, professionnel, informatif.
+- Style sobre, professionnel.
+- La synthèse doit TOUJOURS être rédigée en français,
+  même si la source est en anglais.
 
 ==================== SOURCE ====================
 Type : {source_type}
@@ -52,8 +45,7 @@ Texte :
 {source_text}
 
 ==================== CONCEPTS AUTORISÉS ====================
-Après avoir rédigé la synthèse,
-tu peux sélectionner zéro, un ou plusieurs concepts pertinents
+Tu peux citer zéro, un ou plusieurs concepts pertinents
 UNIQUEMENT parmi la liste suivante.
 Ne jamais inventer.
 
@@ -80,11 +72,14 @@ ACTEURS
 (Liste entreprises mentionnées ou "Aucun")
 
 CONCEPTS
-(Liste exacte ou "Aucun")
+(Liste des concepts identifiés ou "Aucun")
 """
 
     raw = run_llm(prompt)
 
+    # ---------------------------------------------------------
+    # PARSING IDENTIQUE À L’ANCIEN (ROBUSTE ET SIMPLE)
+    # ---------------------------------------------------------
     sections = {
         "TITLE": "",
         "EXCERPT": "",
@@ -116,7 +111,7 @@ CONCEPTS
     points_cles = sections["POINTS CLES"].strip()
 
     # ---------------------------------------------------------
-    # PARSE LIST BLOCKS
+    # LIST PARSER (IDENTIQUE À L’ANCIEN)
     # ---------------------------------------------------------
     def parse_list(block: str):
         if not block or block.lower().startswith("aucun"):
@@ -131,20 +126,17 @@ CONCEPTS
     citations = parse_list(sections["CITATIONS"])
     chiffres = parse_list(sections["CHIFFRES"])
     acteurs = parse_list(sections["ACTEURS"])
-    concept_titles = parse_list(sections["CONCEPTS"])
+    concepts_found = parse_list(sections["CONCEPTS"])
 
     # ---------------------------------------------------------
-    # BACKEND VALIDATION DES CONCEPTS
+    # PAS DE MATCHING
+    # On remonte les concepts tels quels
     # ---------------------------------------------------------
-    valid_map = {c["title"]: c["id"] for c in available_concepts}
-    selected_concepts = []
 
-    for title_candidate in concept_titles:
-        if title_candidate in valid_map:
-            selected_concepts.append({
-                "id": valid_map[title_candidate],
-                "title": title_candidate,
-            })
+    concepts = [
+        {"title": c.strip()}
+        for c in concepts_found
+    ]
 
     return {
         "title": title,
@@ -153,5 +145,5 @@ CONCEPTS
         "citations": citations,
         "chiffres": chiffres,
         "acteurs_cites": acteurs,
-        "concepts": selected_concepts,
+        "concepts": concepts,
     }
