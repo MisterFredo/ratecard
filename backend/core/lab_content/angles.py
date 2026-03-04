@@ -44,37 +44,24 @@ OBJECTIF :
 Produire EXACTEMENT 5 angles éditoriaux distincts
 à partir de la source fournie.
 
-IMPORTANT :
+Si la source est très focalisée, explore différentes tensions
+stratégiques possibles : technologique, gouvernance, pouvoir
+de marché, modèle économique, dépendance, efficacité opérationnelle.
 
-1) Si la source est explicitement centrée sur un concept précis
-présent dans la liste autorisée, ce concept DOIT
-obligatoirement apparaître parmi les angles proposés.
-
-2) Les 4 autres angles doivent explorer des tensions
-stratégiques différentes :
-- gouvernance
-- pouvoir de marché
-- modèle économique
-- dépendance technologique
-- efficacité opérationnelle
-- impact concurrentiel
-
-ÉTAPE 1 (raisonnement interne, ne pas afficher) :
-- Identifier le concept central éventuel.
-- Sélectionner 5 concepts DISTINCTS dans la liste autorisée.
-- Vérifier qu’ils ne sont pas redondants.
+ÉTAPE 1 (réflexion interne, ne pas afficher) :
+Identifie 5 concepts DISTINCTS pertinents parmi la liste autorisée.
 
 ÉTAPE 2 :
-Construire un angle stratégique par concept.
+Construis un angle stratégique par concept.
 
-RÈGLES STRICTES :
+RÈGLES OBLIGATOIRES :
 
-- 1 angle = EXACTEMENT 1 concept.
+- Chaque angle doit s’appuyer sur EXACTEMENT UN concept.
 - Le champ Concept doit correspondre STRICTEMENT
-  à un concept de la liste (copie exacte).
-- Aucun concept ne peut apparaître deux fois.
+  à l’un des concepts listés ci-dessous (copie exacte).
+- Chaque concept ne peut apparaître qu’une seule fois.
+- Les angles doivent être réellement différenciés.
 - Pas de variation superficielle.
-- Pas d’angles redondants.
 - Strictement basé sur la source.
 
 CONCEPTS AUTORISÉS :
