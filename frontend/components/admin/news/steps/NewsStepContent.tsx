@@ -265,7 +265,7 @@ export default function NewsStepContent({
 
         <ConceptSelector
           values={concepts}
-          concepts={availableConcepts}   // 🔥 dynamique
+          topicIds={topics.map(t => t.id_topic || t.ID_TOPIC)}
           onChange={(items) =>
             onChange({ concepts: items })
           }
