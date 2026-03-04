@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Pencil } from "lucide-react";
@@ -15,6 +15,10 @@ type ContentLite = {
   STATUS: string;
   PUBLISHED_AT?: string | null;
   DATE_CREATION?: string | null;
+
+  // 🔥 NOUVEAU
+  topics?: { LABEL: string }[];
+  concepts?: { TITLE: string }[];
 };
 
 type ContentStats = {
@@ -34,9 +38,6 @@ export default function ContentListPage() {
   const [stats, setStats] = useState<ContentStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  /* ---------------------------------------------------------
-     LOAD CONTENTS (ADMIN)
-  --------------------------------------------------------- */
   async function load() {
     setLoading(true);
 
@@ -65,14 +66,49 @@ export default function ContentListPage() {
   /* ---------------------------------------------------------
      HELPERS
   --------------------------------------------------------- */
+
   function formatDate(value?: string | null) {
     if (!value) return "—";
     return new Date(value).toLocaleDateString("fr-FR");
   }
 
+  function isScheduled(c: ContentLite) {
+    if (!c.PUBLISHED_AT) return false;
+    return new Date(c.PUBLISHED_AT) > new Date();
+  }
+
+  /* ---------------------------------------------------------
+     🔥 TRI INTELLIGENT
+     1. Draft
+     2. Scheduled
+     3. Published (desc)
+  --------------------------------------------------------- */
+
+  const sortedContents = useMemo(() => {
+    return [...contents].sort((a, b) => {
+      // 1️⃣ Draft en premier
+      if (a.STATUS === "DRAFT" && b.STATUS !== "DRAFT") return -1;
+      if (b.STATUS === "DRAFT" && a.STATUS !== "DRAFT") return 1;
+
+      // 2️⃣ Scheduled ensuite
+      const aScheduled = isScheduled(a);
+      const bScheduled = isScheduled(b);
+
+      if (aScheduled && !bScheduled) return -1;
+      if (bScheduled && !aScheduled) return 1;
+
+      // 3️⃣ Published → plus récent en premier
+      const dateA = new Date(a.PUBLISHED_AT || 0).getTime();
+      const dateB = new Date(b.PUBLISHED_AT || 0).getTime();
+
+      return dateB - dateA;
+    });
+  }, [contents]);
+
   /* ---------------------------------------------------------
      RENDER
   --------------------------------------------------------- */
+
   return (
     <div className="space-y-8">
       {/* HEADER */}
@@ -89,7 +125,7 @@ export default function ContentListPage() {
         </Link>
       </div>
 
-      {/* ================= STATS ================= */}
+      {/* STATS */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <StatCard label="Total" value={stats.TOTAL} />
@@ -111,6 +147,8 @@ export default function ContentListPage() {
         <thead>
           <tr className="bg-gray-100 border-b text-left text-gray-700">
             <th className="p-2">Titre</th>
+            <th className="p-2">Topic</th>
+            <th className="p-2">Concept</th>
             <th className="p-2">Statut</th>
             <th className="p-2">Date contexte</th>
             <th className="p-2">Publié le</th>
@@ -119,7 +157,7 @@ export default function ContentListPage() {
         </thead>
 
         <tbody>
-          {contents.map((c) => (
+          {sortedContents.map((c) => (
             <tr
               key={c.ID_CONTENT}
               className="border-b hover:bg-gray-50 transition"
@@ -127,6 +165,20 @@ export default function ContentListPage() {
               {/* TITRE */}
               <td className="p-2 font-medium">
                 {c.TITLE}
+              </td>
+
+              {/* TOPIC */}
+              <td className="p-2 text-gray-600">
+                {c.topics?.length
+                  ? c.topics.map((t) => t.LABEL).join(", ")
+                  : "—"}
+              </td>
+
+              {/* CONCEPT */}
+              <td className="p-2 text-gray-600">
+                {c.concepts?.length
+                  ? c.concepts.map((co) => co.TITLE).join(", ")
+                  : "—"}
               </td>
 
               {/* STATUS */}
@@ -159,7 +211,6 @@ export default function ContentListPage() {
                 <Link
                   href={`/admin/content/edit/${c.ID_CONTENT}`}
                   className="inline-flex items-center gap-1 text-ratecard-blue hover:text-ratecard-blue/80"
-                  title="Modifier le contenu"
                 >
                   <Pencil size={16} />
                 </Link>
