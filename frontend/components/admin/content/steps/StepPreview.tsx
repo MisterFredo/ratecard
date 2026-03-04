@@ -26,7 +26,8 @@ export default function StepPreview({
 
       try {
         const res = await api.get(`/content/${contentId}`);
-        const c = res;
+
+        const c = res?.content;
 
         if (!c) {
           throw new Error("Content vide");
@@ -62,7 +63,6 @@ export default function StepPreview({
   --------------------------------------------------------- */
   return (
     <div className="space-y-10 max-w-3xl">
-
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-ratecard-blue">
