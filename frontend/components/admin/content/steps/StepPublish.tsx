@@ -5,12 +5,10 @@ type PublishMode = "NOW" | "SCHEDULE";
 type Props = {
   publishMode: PublishMode;
   publishAt: string;
-
   publishing?: boolean;
 
   onChangeMode: (mode: PublishMode) => void;
   onChangeDate: (value: string) => void;
-
   onPublish: () => void;
 };
 
@@ -26,56 +24,62 @@ export default function StepPublish({
   const isScheduleInvalid =
     publishMode === "SCHEDULE" && !publishAt;
 
+  const previewDate =
+    publishMode === "NOW"
+      ? new Date().toLocaleString()
+      : publishAt
+        ? new Date(publishAt).toLocaleString()
+        : null;
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
       {/* STATUS */}
       <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
-        <strong>Brouillon</strong> — ce contenu n’est pas encore publié.
+        <strong>Statut :</strong> Brouillon — ce contenu n’est pas encore publié.
       </div>
 
       <p className="text-sm text-gray-600">
-        Choisissez quand publier le contenu.
-        La date sélectionnée sera utilisée comme date officielle de publication.
+        Sélectionnez le moment de publication.  
+        La date choisie deviendra la date officielle du contenu.
       </p>
 
       {/* MODE */}
-      <div className="space-y-3">
+      <div className="space-y-4">
 
-        <label className="flex items-start gap-2 cursor-pointer">
+        <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="radio"
             checked={publishMode === "NOW"}
             onChange={() => onChangeMode("NOW")}
           />
-          <span>
-            <strong>Publier maintenant</strong>
+          <div>
+            <strong>Publier immédiatement</strong>
             <div className="text-xs text-gray-500">
-              Publication immédiate à la date actuelle.
+              La date actuelle sera utilisée.
             </div>
-          </span>
+          </div>
         </label>
 
-        <label className="flex items-start gap-2 cursor-pointer">
+        <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="radio"
             checked={publishMode === "SCHEDULE"}
             onChange={() => onChangeMode("SCHEDULE")}
           />
-          <span>
-            <strong>Planifier la publication</strong>
+          <div>
+            <strong>Planifier</strong>
             <div className="text-xs text-gray-500">
-              La date choisie sera utilisée comme date officielle
-              (passée ou future).
+              Vous pouvez choisir une date passée ou future.
             </div>
-          </span>
+          </div>
         </label>
 
       </div>
 
       {/* DATE INPUT */}
       {publishMode === "SCHEDULE" && (
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label className="text-sm font-medium">
             Date et heure de publication
           </label>
@@ -94,6 +98,13 @@ export default function StepPublish({
               Veuillez sélectionner une date.
             </p>
           )}
+        </div>
+      )}
+
+      {/* PREVIEW DATE */}
+      {previewDate && (
+        <div className="bg-gray-50 border rounded p-3 text-sm text-gray-700">
+          <strong>Date officielle :</strong> {previewDate}
         </div>
       )}
 
