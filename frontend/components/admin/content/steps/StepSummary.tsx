@@ -6,7 +6,12 @@ import { api } from "@/lib/api";
 type Props = {
   sourceType: string | null;
   sourceText: string;
-  context: any;
+
+  context: {
+    topics: string[];
+    events?: string[];
+    companies?: string[];
+  };
 
   excerpt: string;
   contentBody: string;
@@ -16,7 +21,16 @@ type Props = {
   concept: string;
   conceptId: string | null;
 
-  onChange: (data: any) => void;
+  onChange: (data: {
+    excerpt?: string;
+    contentBody?: string;
+    citations?: string[];
+    chiffres?: string[];
+    acteurs?: string[];
+    concept?: string;
+    conceptId?: string | null;
+  }) => void;
+
   onValidate: () => void;
 };
 
@@ -24,6 +38,7 @@ export default function StepSummary({
   sourceType,
   sourceText,
   context,
+
   excerpt,
   contentBody,
   citations,
@@ -31,17 +46,25 @@ export default function StepSummary({
   acteurs,
   concept,
   conceptId,
+
   onChange,
   onValidate,
 }: Props) {
 
   const [loading, setLoading] = useState(false);
-  const [generated, setGenerated] = useState(false);
 
+  // ==========================================================
+  // GENERATE SUMMARY
+  // ==========================================================
   async function generateSummary() {
 
     if (!sourceText?.trim()) {
       alert("Source vide");
+      return;
+    }
+
+    if (!context?.topics?.length) {
+      alert("Au moins un topic est requis");
       return;
     }
 
@@ -55,14 +78,14 @@ export default function StepSummary({
       });
 
       onChange({
-        excerpt: res.excerpt,
-        contentBody: res.content_body,
+        excerpt: res.excerpt || "",
+        contentBody: res.content_body || "",
         citations: res.citations || [],
         chiffres: res.chiffres || [],
         acteurs: res.acteurs || [],
+        concept: res.concept || "",
+        conceptId: res.concept_id || null,
       });
-
-      setGenerated(true);
 
     } catch (e) {
       console.error(e);
@@ -72,11 +95,14 @@ export default function StepSummary({
     setLoading(false);
   }
 
+  // ==========================================================
+  // RENDER
+  // ==========================================================
   return (
     <div className="space-y-6">
 
-      {/* GENERATION */}
-      {!generated && (
+      {/* GENERATE BUTTON */}
+      <div className="flex items-center gap-4">
         <button
           onClick={generateSummary}
           disabled={loading}
@@ -84,12 +110,12 @@ export default function StepSummary({
         >
           {loading ? "Génération..." : "Générer la synthèse"}
         </button>
-      )}
+      </div>
 
       {/* EXCERPT */}
       <div>
         <label className="block text-sm font-medium mb-2">
-          Résumé court (1–2 phrases)
+          Résumé exécutif
         </label>
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
@@ -98,10 +124,10 @@ export default function StepSummary({
         />
       </div>
 
-      {/* CONTENT BODY */}
+      {/* BODY */}
       <div>
         <label className="block text-sm font-medium mb-2">
-          Points clés à retenir
+          Points clés
         </label>
         <textarea
           className="w-full border rounded p-3 min-h-[240px]"
@@ -110,10 +136,10 @@ export default function StepSummary({
         />
       </div>
 
-      {/* CONCEPT TAG (optionnel) */}
+      {/* CONCEPT (optionnel) */}
       <div>
         <label className="block text-sm font-medium mb-2">
-          Concept éditorial (optionnel)
+          Concept associé (optionnel)
         </label>
         <input
           className="w-full border rounded p-3"
@@ -129,7 +155,7 @@ export default function StepSummary({
       {/* CITATIONS */}
       <div>
         <label className="block text-sm font-medium mb-2">
-          Citations exactes
+          Citations
         </label>
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
@@ -167,7 +193,7 @@ export default function StepSummary({
       {/* ACTEURS */}
       <div>
         <label className="block text-sm font-medium mb-2">
-          Acteurs mentionnés
+          Acteurs cités
         </label>
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
@@ -183,12 +209,13 @@ export default function StepSummary({
         />
       </div>
 
+      {/* VALIDATE */}
       <div className="pt-4">
         <button
           onClick={onValidate}
           className="px-4 py-2 bg-green-600 text-white rounded"
         >
-          Valider la synthèse
+          Enregistrer le contenu
         </button>
       </div>
 
