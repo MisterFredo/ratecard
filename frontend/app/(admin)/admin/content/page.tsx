@@ -84,26 +84,30 @@ export default function ContentListPage() {
      3. Published (desc)
   --------------------------------------------------------- */
 
-  const sortedContents = useMemo(() => {
-    return [...contents].sort((a, b) => {
-      // 1️⃣ Draft en premier
-      if (a.STATUS === "DRAFT" && b.STATUS !== "DRAFT") return -1;
-      if (b.STATUS === "DRAFT" && a.STATUS !== "DRAFT") return 1;
+   const sortedContents = useMemo(() => {
+     return [...contents].sort((a, b) => {
 
-      // 2️⃣ Scheduled ensuite
-      const aScheduled = isScheduled(a);
-      const bScheduled = isScheduled(b);
+       if (a.STATUS === "DRAFT" && b.STATUS !== "DRAFT") return -1;
+       if (b.STATUS === "DRAFT" && a.STATUS !== "DRAFT") return 1;
 
-      if (aScheduled && !bScheduled) return -1;
-      if (bScheduled && !aScheduled) return 1;
+       const now = new Date();
 
-      // 3️⃣ Published → plus récent en premier
-      const dateA = new Date(a.PUBLISHED_AT || 0).getTime();
-      const dateB = new Date(b.PUBLISHED_AT || 0).getTime();
+       const aScheduled =
+         a.PUBLISHED_AT && new Date(a.PUBLISHED_AT) > now;
+       const bScheduled =
+         b.PUBLISHED_AT && new Date(b.PUBLISHED_AT) > now;
 
-      return dateB - dateA;
-    });
-  }, [contents]);
+       if (aScheduled && !bScheduled) return -1;
+       if (bScheduled && !aScheduled) return 1;
+
+       const dateA = new Date(a.PUBLISHED_AT || 0).getTime();
+       const dateB = new Date(b.PUBLISHED_AT || 0).getTime();
+
+       return dateB - dateA;
+     });
+   }, [contents]);
+
+   if (loading) return <div>Chargement…</div>;
 
   /* ---------------------------------------------------------
      RENDER
