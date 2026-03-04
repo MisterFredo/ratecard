@@ -79,10 +79,6 @@ def create_content(data: Dict[str, Any]) -> str:
     # INIT
     # ---------------------------------------------------------
     content_id = str(uuid.uuid4())
-
-    today = date.today()
-    date_creation = data.date_creation or today
-    date_import = data.date_import or today
     now = datetime.utcnow()
 
     # ---------------------------------------------------------
@@ -116,10 +112,7 @@ def create_content(data: Dict[str, Any]) -> str:
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
 
-        # DATES
-        "DATE_CREATION": date_creation,
-        "DATE_IMPORT": date_import,
-
+        # UNIQUE DATE MÉTIER
         "PUBLISHED_AT": None,
     }]
 
@@ -218,25 +211,34 @@ def get_content(id_content: str):
 
     row = rows[0]
 
+    published_at = row.get("PUBLISHED_AT")
+
     content = {
         "id_content": row["ID_CONTENT"],
+        "status": row.get("STATUS"),
+
+        # SUMMARY
         "title": row.get("TITLE"),
         "excerpt": row.get("EXCERPT"),
         "concept": row.get("CONCEPT"),
         "concept_id": row.get("CONCEPT_ID"),
         "content_body": row.get("CONTENT_BODY"),
+
+        # STRUCTURED FIELDS
         "chiffres": row.get("CHIFFRES") or [],
         "citations": row.get("CITATIONS") or [],
         "acteurs_cites": row.get("ACTEURS_CITES") or [],
+
+        # UNIQUE DATE MÉTIER
+        "published_at": (
+            published_at.isoformat()
+            if isinstance(published_at, datetime)
+            else None
+        ),
     }
 
-    published_at = row.get("PUBLISHED_AT")
-    content["published_at"] = (
-        published_at.isoformat() if isinstance(published_at, datetime) else None
-    )
-
     # ---------------------------------------------------------
-    # RELATIONS EXISTANTES
+    # RELATIONS
     # ---------------------------------------------------------
 
     content["topics"] = query_bq(
@@ -283,7 +285,6 @@ def get_content(id_content: str):
         {"id": id_content},
     )
 
-    # 🔥 CONCEPTS
     content["concepts"] = query_bq(
         f"""
         SELECT C.ID_CONCEPT, C.TITLE
@@ -295,7 +296,6 @@ def get_content(id_content: str):
         {"id": id_content},
     )
 
-    # 🔥 SOLUTIONS
     content["solutions"] = query_bq(
         f"""
         SELECT S.ID_SOLUTION, S.NAME
@@ -331,6 +331,7 @@ def list_contents():
           E.LABEL AS EVENT_LABEL,
 
           T.TOPICS
+
         FROM `{TABLE_CONTENT}` C
 
         LEFT JOIN `{TABLE_CONTENT_EVENT}` CE
@@ -357,6 +358,7 @@ def list_contents():
         WHERE
           C.STATUS = 'PUBLISHED'
           AND C.IS_ACTIVE = TRUE
+
         ORDER BY C.PUBLISHED_AT DESC
         """
     )
@@ -373,7 +375,11 @@ def list_contents():
             "citations": r.get("CITATIONS") or [],
             "acteurs_cites": r.get("ACTEURS_CITES") or [],
             "topics": (r.get("TOPICS") or [])[:2],
-            "published_at": r["PUBLISHED_AT"],
+            "published_at": (
+                r["PUBLISHED_AT"].isoformat()
+                if r.get("PUBLISHED_AT")
+                else None
+            ),
             "event": (
                 {
                     "id": r["ID_EVENT"],
@@ -386,9 +392,6 @@ def list_contents():
         for r in rows
     ]
 
-# ============================================================
-# LIST CONTENTS (ADMIN) — VERSION ENRICHIE
-# ============================================================
 def list_contents_admin():
 
     rows = query_bq(
@@ -398,22 +401,21 @@ def list_contents_admin():
           C.TITLE,
           C.STATUS,
           C.PUBLISHED_AT,
-          C.DATE_CREATION,
 
-          -- 🔥 TOPICS
+          -- TOPICS
           ARRAY(
             SELECT AS STRUCT T.LABEL
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC` CT
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC` T
+            FROM `{TABLE_CONTENT_TOPIC}` CT
+            JOIN `{TABLE_TOPIC}` T
               ON T.ID_TOPIC = CT.ID_TOPIC
             WHERE CT.ID_CONTENT = C.ID_CONTENT
           ) AS topics,
 
-          -- 🔥 CONCEPTS
+          -- CONCEPTS
           ARRAY(
             SELECT AS STRUCT CO.TITLE
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_CONCEPT` CC
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONCEPT` CO
+            FROM `{TABLE_CONTENT_CONCEPT}` CC
+            JOIN `{TABLE_CONCEPT}` CO
               ON CO.ID_CONCEPT = CC.ID_CONCEPT
             WHERE CC.ID_CONTENT = C.ID_CONTENT
           ) AS concepts
@@ -421,6 +423,8 @@ def list_contents_admin():
         FROM `{TABLE_CONTENT}` C
         WHERE
           (C.IS_ACTIVE = TRUE OR C.IS_ACTIVE IS NULL)
+
+        ORDER BY C.PUBLISHED_AT DESC
         """
     )
 
@@ -429,8 +433,11 @@ def list_contents_admin():
             "ID_CONTENT": r["ID_CONTENT"],
             "TITLE": r.get("TITLE"),
             "STATUS": r["STATUS"],
-            "PUBLISHED_AT": r["PUBLISHED_AT"],
-            "DATE_CREATION": r.get("DATE_CREATION"),
+            "PUBLISHED_AT": (
+                r["PUBLISHED_AT"].isoformat()
+                if r.get("PUBLISHED_AT")
+                else None
+            ),
             "topics": r.get("topics", []),
             "concepts": r.get("concepts", []),
         }
@@ -453,6 +460,12 @@ def update_content(id_content: str, data: Dict[str, Any]):
     ):
         raise ValueError("Un contenu doit rester associé à au moins une entité")
 
+    if data.title is not None and not data.title.strip():
+        raise ValueError("TITLE ne peut pas être vide")
+
+    if data.concept_id is not None and not data.concept_id:
+        raise ValueError("CONCEPT_ID invalide")
+
     client = get_bigquery_client()
     now = datetime.utcnow()
 
@@ -460,7 +473,7 @@ def update_content(id_content: str, data: Dict[str, Any]):
     # 1) UPDATE TABLE_CONTENT (COLONNES SIMPLES)
     # ---------------------------------------------------------
     fields = {
-        "TITLE": data.title,
+        "TITLE": data.title.strip() if data.title else None,
         "EXCERPT": data.excerpt,
         "CONCEPT": data.concept,
         "CONCEPT_ID": data.concept_id,
@@ -478,7 +491,9 @@ def update_content(id_content: str, data: Dict[str, Any]):
 
         # META
         "AUTHOR": data.author,
-        "DATE_CREATION": data.date_creation,
+
+        # TECH
+        "UPDATED_AT": now,  # recommandé
     }
 
     update_bq(
@@ -497,9 +512,6 @@ def update_content(id_content: str, data: Dict[str, Any]):
     }
 
     for column, values in array_updates.items():
-        if values is None:
-            continue
-
         client.query(
             f"""
             UPDATE `{TABLE_CONTENT}`
@@ -508,16 +520,8 @@ def update_content(id_content: str, data: Dict[str, Any]):
             """,
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ArrayQueryParameter(
-                        "values",
-                        "STRING",
-                        values,
-                    ),
-                    bigquery.ScalarQueryParameter(
-                        "id",
-                        "STRING",
-                        id_content,
-                    ),
+                    bigquery.ArrayQueryParameter("values", "STRING", values),
+                    bigquery.ScalarQueryParameter("id", "STRING", id_content),
                 ]
             ),
         ).result()
@@ -537,11 +541,7 @@ def update_content(id_content: str, data: Dict[str, Any]):
             f"DELETE FROM `{table}` WHERE ID_CONTENT = @id",
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter(
-                        "id",
-                        "STRING",
-                        id_content,
-                    )
+                    bigquery.ScalarQueryParameter("id", "STRING", id_content)
                 ]
             ),
         ).result()
@@ -591,7 +591,6 @@ def update_content(id_content: str, data: Dict[str, Any]):
             ],
         )
 
-    # 🔥 CONCEPTS
     if getattr(data, "concepts", None):
         insert_bq(
             TABLE_CONTENT_CONCEPT,
@@ -601,7 +600,6 @@ def update_content(id_content: str, data: Dict[str, Any]):
             ],
         )
 
-    # 🔥 SOLUTIONS
     if getattr(data, "solutions", None):
         insert_bq(
             TABLE_CONTENT_SOLUTION,
@@ -628,56 +626,75 @@ def archive_content(id_content: str):
 # ============================================================
 # PUBLISH CONTENT
 # ============================================================
+# ============================================================
+# PUBLISH CONTENT
+# ============================================================
 def publish_content(
     id_content: str,
     published_at: Optional[datetime] = None,
 ):
     """
-    Publie un contenu analytique à une date donnée.
+    Publie un contenu à une date donnée.
 
     Règles :
-    - si aucune date n’est fournie → publication immédiate
-    - si une date est fournie (passée ou future) → elle est respectée
-    - toutes les dates sont normalisées en UTC
+    - si aucune date → publication immédiate
+    - date passée → PUBLISHED
+    - date future → SCHEDULED
+    - toutes les dates normalisées en UTC
     """
+
+    client = get_bigquery_client()
+
+    # ---------------------------------------------------------
+    # Vérifie que le content existe
+    # ---------------------------------------------------------
+    exists = query_bq(
+        f"""
+        SELECT ID_CONTENT
+        FROM `{TABLE_CONTENT}`
+        WHERE ID_CONTENT = @id
+        LIMIT 1
+        """,
+        {"id": id_content},
+    )
+
+    if not exists:
+        raise ValueError("Content introuvable")
 
     now = datetime.now(timezone.utc)
 
     # ---------------------------------------------------------
-    # AUCUNE DATE FOURNIE → PUBLICATION IMMÉDIATE
+    # Aucune date fournie → publication immédiate
     # ---------------------------------------------------------
     if published_at is None:
-        update_bq(
-            table=TABLE_CONTENT,
-            fields={
-                "STATUS": "PUBLISHED",
-                "PUBLISHED_AT": now,
-            },
-            where={"ID_CONTENT": id_content},
-        )
-        return "PUBLISHED"
+        status = "PUBLISHED"
+        final_date = now
+
+    else:
+        # Normalisation UTC
+        if published_at.tzinfo is None:
+            published_at = published_at.replace(tzinfo=timezone.utc)
+        else:
+            published_at = published_at.astimezone(timezone.utc)
+
+        final_date = published_at
+        status = "PUBLISHED" if final_date <= now else "SCHEDULED"
 
     # ---------------------------------------------------------
-    # NORMALISATION UTC
+    # Update
     # ---------------------------------------------------------
-    if published_at.tzinfo is None:
-        published_at = published_at.replace(tzinfo=timezone.utc)
-
-    # ---------------------------------------------------------
-    # STATUT EN FONCTION DE LA DATE
-    # ---------------------------------------------------------
-    status = "PUBLISHED" if published_at <= now else "SCHEDULED"
-
     update_bq(
         table=TABLE_CONTENT,
         fields={
             "STATUS": status,
-            "PUBLISHED_AT": published_at,
+            "PUBLISHED_AT": final_date,
+            "UPDATED_AT": now,
         },
         where={"ID_CONTENT": id_content},
     )
 
     return status
+
 
 def get_content_stats():
     query = f"""
