@@ -42,7 +42,6 @@ def generate_angles(
 ):
     topic_ids = context.get("topics", [])
 
-    # 🔒 Toujours charger côté backend
     available_concepts = load_concepts_by_topics(topic_ids)
 
     if not available_concepts:
@@ -60,27 +59,33 @@ def generate_angles(
 # CONTENT — étape 2
 # ============================================================
 def generate_content(
+    source_type: Optional[str],
+    source_text: str,
     angle_title: str,
     angle_signal: str,
-    concept: str,  # ← pivot obligatoire
-    source_type: Optional[str] = None,
-    source_text: str = "",
-    context: Dict[str, List[str]] = {},
+    concept: str,          # phrase éditoriale
+    concept_id: str,       # pivot gouverné
+    context: Dict[str, List[str]],
 ):
     """
     Génère le contenu à partir d’un angle validé.
-    Le champ 'concept' doit correspondre à un concept sélectionné.
+    concept_id = référence gouvernée (obligatoire)
+    concept = formulation éditoriale libre
     """
 
-    # On encapsule le concept dans une structure attendue
+    if not concept_id:
+        raise ValueError("concept_id obligatoire")
+
+    # On encapsule le pivot conceptuel
     selected_concepts = [
         {
-            "title": concept,
-            "description": "",  # pas nécessaire ici
+            "id": concept_id,
+            "title": concept,   # on conserve la phrase éditoriale
+            "description": "",
         }
     ]
 
-    return transform_source_to_content(
+    content = transform_source_to_content(
         source_type=source_type,
         source_text=source_text,
         angle_title=angle_title,
@@ -88,3 +93,9 @@ def generate_content(
         context=context,
         selected_concepts=selected_concepts,
     )
+
+    # 🔒 On force la cohérence finale
+    content["concept"] = concept
+    content["concept_id"] = concept_id
+
+    return content
