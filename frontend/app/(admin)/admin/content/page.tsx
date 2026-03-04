@@ -14,9 +14,8 @@ type ContentLite = {
   TITLE: string;
   STATUS: string;
   PUBLISHED_AT?: string | null;
-  DATE_CREATION?: string | null;
   topics?: { LABEL: string }[];
-  concepts?: { TITLE: string }[];
+  concept?: string | null;
 };
 
 type ContentStats = {
@@ -73,26 +72,37 @@ export default function ContentListPage() {
     return new Date(c.PUBLISHED_AT) > new Date();
   }
 
+  function getStatusLabel(c: ContentLite) {
+    if (c.STATUS === "DRAFT") return "DRAFT";
+    if (isScheduled(c)) return "SCHEDULED";
+    return "PUBLISHED";
+  }
+
+  function getStatusClasses(status: string) {
+    if (status === "PUBLISHED")
+      return "bg-green-100 text-green-700";
+    if (status === "DRAFT")
+      return "bg-yellow-100 text-yellow-700";
+    return "bg-blue-100 text-blue-700";
+  }
+
   /* ---------------------------------------------------------
-     TRI ADMIN SIMPLE
+     TRI ADMIN
      1. Draft
      2. Scheduled
      3. Published (desc)
   --------------------------------------------------------- */
 
   const sortedContents = [...contents].sort((a, b) => {
-    // Draft en premier
-    if (a.STATUS === "DRAFT" && b.STATUS !== "DRAFT") return -1;
-    if (b.STATUS === "DRAFT" && a.STATUS !== "DRAFT") return 1;
+    const aStatus = getStatusLabel(a);
+    const bStatus = getStatusLabel(b);
 
-    // Scheduled ensuite
-    const aScheduled = isScheduled(a);
-    const bScheduled = isScheduled(b);
+    if (aStatus === "DRAFT" && bStatus !== "DRAFT") return -1;
+    if (bStatus === "DRAFT" && aStatus !== "DRAFT") return 1;
 
-    if (aScheduled && !bScheduled) return -1;
-    if (bScheduled && !aScheduled) return 1;
+    if (aStatus === "SCHEDULED" && bStatus !== "SCHEDULED") return -1;
+    if (bStatus === "SCHEDULED" && aStatus !== "SCHEDULED") return 1;
 
-    // Published → plus récent en premier
     const dateA = new Date(a.PUBLISHED_AT || 0).getTime();
     const dateB = new Date(b.PUBLISHED_AT || 0).getTime();
 
@@ -146,64 +156,59 @@ export default function ContentListPage() {
             <th className="p-2">Topic</th>
             <th className="p-2">Concept</th>
             <th className="p-2">Statut</th>
-            <th className="p-2">Date contexte</th>
-            <th className="p-2">Publié le</th>
+            <th className="p-2">Publication</th>
             <th className="p-2 text-right">Actions</th>
           </tr>
         </thead>
 
         <tbody>
-          {sortedContents.map((c) => (
-            <tr
-              key={c.ID_CONTENT}
-              className="border-b hover:bg-gray-50 transition"
-            >
-              <td className="p-2 font-medium">{c.TITLE}</td>
+          {sortedContents.map((c) => {
+            const status = getStatusLabel(c);
 
-              <td className="p-2 text-gray-600">
-                {c.topics?.length
-                  ? c.topics.map((t) => t.LABEL).join(", ")
-                  : "—"}
-              </td>
+            return (
+              <tr
+                key={c.ID_CONTENT}
+                className="border-b hover:bg-gray-50 transition"
+              >
+                <td className="p-2 font-medium">
+                  {c.TITLE}
+                </td>
 
-              <td className="p-2 text-gray-600">
-                {c.concepts?.length
-                  ? c.concepts.map((co) => co.TITLE).join(", ")
-                  : "—"}
-              </td>
+                <td className="p-2 text-gray-600">
+                  {c.topics?.length
+                    ? c.topics.map((t) => t.LABEL).join(", ")
+                    : "—"}
+                </td>
 
-              <td className="p-2">
-                <span
-                  className={`px-2 py-1 rounded text-xs font-medium ${
-                    c.STATUS === "PUBLISHED"
-                      ? "bg-green-100 text-green-700"
-                      : c.STATUS === "DRAFT"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-gray-200 text-gray-600"
-                  }`}
-                >
-                  {c.STATUS}
-                </span>
-              </td>
+                <td className="p-2 text-gray-600">
+                  {c.concept || "—"}
+                </td>
 
-              <td className="p-2 text-gray-600">
-                {formatDate(c.DATE_CREATION)}
-              </td>
+                <td className="p-2">
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-medium ${getStatusClasses(
+                      status
+                    )}`}
+                  >
+                    {status}
+                  </span>
+                </td>
 
-              <td className="p-2">
-                {formatDate(c.PUBLISHED_AT)}
-              </td>
+                <td className="p-2 text-gray-600">
+                  {formatDate(c.PUBLISHED_AT)}
+                </td>
 
-              <td className="p-2 text-right">
-                <Link
-                  href={`/admin/content/edit/${c.ID_CONTENT}`}
-                  className="inline-flex items-center gap-1 text-ratecard-blue hover:text-ratecard-blue/80"
-                >
-                  <Pencil size={16} />
-                </Link>
-              </td>
-            </tr>
-          ))}
+                <td className="p-2 text-right">
+                  <Link
+                    href={`/admin/content/edit/${c.ID_CONTENT}`}
+                    className="inline-flex items-center gap-1 text-ratecard-blue hover:text-ratecard-blue/80"
+                  >
+                    <Pencil size={16} />
+                  </Link>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
