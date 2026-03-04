@@ -127,6 +127,58 @@ export default function NewsStepContent({
     loadPersons();
   }, []);
 
+  /* ---------------------------------------------------------
+     CONCEPTS DYNAMIQUES SELON TOPICS
+  --------------------------------------------------------- */
+  const [availableConcepts, setAvailableConcepts] = useState<Concept[]>([]);
+
+  useEffect(() => {
+    async function loadConcepts() {
+      if (!topics || topics.length === 0) {
+        setAvailableConcepts([]);
+        return;
+      }
+
+      try {
+        const topicIds = topics
+          .map((t: any) => t.id_topic || t.ID_TOPIC)
+          .filter(Boolean);
+
+        if (!topicIds.length) {
+          setAvailableConcepts([]);
+          return;
+        }
+
+        const query = topicIds.join(",");
+        const res = await api.get(
+          `/concept/list?topic_ids=${query}`
+        );
+
+        const fetched = res.concepts || [];
+        setAvailableConcepts(fetched);
+
+        // 🔒 Sécurisation : supprimer les concepts devenus invalides
+        const validIds = new Set(
+          fetched.map((c: any) => c.ID_CONCEPT)
+        );
+
+        const filtered = concepts.filter((c) =>
+          validIds.has(c.ID_CONCEPT)
+        );
+
+        if (filtered.length !== concepts.length) {
+          onChange({ concepts: filtered });
+        }
+      } catch (e) {
+        console.error("Erreur chargement concepts dynamiques", e);
+        setAvailableConcepts([]);
+      }
+    }
+
+    loadConcepts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topics]);
+
   /* =========================================================
      UI
   ========================================================= */
@@ -192,7 +244,7 @@ export default function NewsStepContent({
       </div>
 
       {/* =====================================================
-          TAXONOMIE — SEULEMENT ORGANISATION
+          TAXONOMIE
       ===================================================== */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
 
@@ -213,6 +265,7 @@ export default function NewsStepContent({
 
         <ConceptSelector
           values={concepts}
+          concepts={availableConcepts}   // 🔥 dynamique
           onChange={(items) =>
             onChange({ concepts: items })
           }
