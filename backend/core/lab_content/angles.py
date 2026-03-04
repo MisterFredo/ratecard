@@ -4,7 +4,7 @@ from utils.llm import run_llm
 
 
 # ============================================================
-# PROPOSE ANGLES — STRUCTURED STRATEGIC PASS + CONCEPT SUGGESTION
+# PROPOSE ANGLES — 1 ANGLE = 1 CONCEPT (VERSION STABLE)
 # ============================================================
 def propose_angles(
     source_type: str,
@@ -13,23 +13,22 @@ def propose_angles(
     available_concepts: List[Dict[str, str]],
 ) -> List[Dict[str, str]]:
     """
-    Génère de 1 à 3 angles éditoriaux maximum,
-    dérivés strictement des tensions internes de la source.
+    Génère de 1 à 3 angles maximum.
 
-    Pour chaque angle :
-    - Propose jusqu'à 3 concepts maximum
-    - Sélectionne uniquement parmi les concepts fournis
-    - Ne jamais inventer de concept
+    Règles :
+    - Chaque angle doit s'appuyer sur EXACTEMENT un concept.
+    - Chaque concept ne peut apparaître qu'une seule fois.
+    - Aucun concept hors liste autorisée.
     """
 
     if not isinstance(source_text, str) or not source_text.strip():
         return []
 
     # ---------------------------------------------------------
-    # BUILD CONCEPTS BLOCK FOR PROMPT
+    # BUILD CONCEPT LIST FOR PROMPT
     # ---------------------------------------------------------
     concepts_block = "\n".join([
-        f"- {c['id']} | {c['title']} : {c['description']}"
+        f"- {c['title']}"
         for c in available_concepts
     ])
 
@@ -38,35 +37,20 @@ Tu es un analyste stratégique B2B spécialisé en Adtech,
 Retail Media et transformation digitale.
 
 OBJECTIF :
-Produire de 1 à 3 angles éditoriaux maximum,
+Proposer de 1 à 3 angles éditoriaux maximum,
 dérivés STRICTEMENT de la source fournie.
 
-ÉTAPE 1 — Résumé factuel
-Résume en 5 points maximum les idées clés du texte.
+RÈGLES FONDAMENTALES :
 
-ÉTAPE 2 — Tensions internes
-Identifie les tensions structurantes présentes
-dans le texte (oppositions, mutation métier,
-bascule de pouvoir, dépendance, arbitrage, etc.).
-
-ÉTAPE 3 — Angles éditoriaux
-Formule jusqu’à 3 angles distincts UNIQUEMENT si réellement différenciés.
-
-Pour chaque angle :
-- Sélectionne de 1 à 3 concepts maximum.
-- Utilise UNIQUEMENT les ID fournis.
+- Chaque angle doit s'appuyer sur EXACTEMENT UN concept.
+- Le champ Concept doit correspondre STRICTEMENT
+  à l’un des concepts listés ci-dessous.
 - Ne jamais inventer.
 - Ne jamais reformuler un concept.
-- Si aucun concept pertinent, laisser vide.
+- Un concept ne peut apparaître qu’une seule fois.
+- Ne produire plusieurs angles que s’ils sont réellement différenciés.
 
-RÈGLES GÉNÉRALES :
-- Ne produis pas artificiellement 3 angles.
-- Si la source est mono-thèse, propose un seul angle.
-- Chaque angle doit être autonome.
-- Pas d’extrapolation hors texte.
-- Pas de reformulation descriptive faible.
-
-CONCEPTS DISPONIBLES :
+CONCEPTS AUTORISÉS :
 {concepts_block}
 
 FORMAT EXACT :
@@ -74,12 +58,12 @@ FORMAT EXACT :
 ANGLE
 Titre : ...
 Signal : ...
-Concepts : id1, id2
+Concept : ...
 
 ANGLE
 Titre : ...
 Signal : ...
-Concepts : id3
+Concept : ...
 
 SOURCE :
 {source_text}
@@ -88,44 +72,45 @@ SOURCE :
     raw = run_llm(prompt)
     angles = parse_multiple_angles(raw)
 
-    # ---------------------------------------------------------
-    # SÉCURITÉ : max 3 angles
-    # ---------------------------------------------------------
     if not angles:
-        return [{
-            "angle_title": source_text.strip().split("\n")[0][:120],
-            "angle_signal": source_text.strip()[:300],
-            "suggested_concepts": [],
-        }]
-
-    angles = angles[:3]
+        return []
 
     # ---------------------------------------------------------
-    # VALIDATION DES CONCEPTS (NE JAMAIS FAIRE CONFIANCE AU LLM)
+    # SÉCURISATION BACKEND
     # ---------------------------------------------------------
-    valid_ids = {c["id"] for c in available_concepts}
+    valid_titles = {c["title"] for c in available_concepts}
+    used_concepts = set()
+    cleaned_angles = []
 
     for angle in angles:
-        clean_ids = []
-        for cid in angle.get("suggested_concepts", []):
-            if cid in valid_ids:
-                clean_ids.append(cid)
+        concept = angle.get("concept")
 
-        # Max 3 concepts
-        angle["suggested_concepts"] = clean_ids[:3]
+        if not concept:
+            continue
 
-    return angles
+        if concept not in valid_titles:
+            continue
+
+        if concept in used_concepts:
+            continue
+
+        used_concepts.add(concept)
+        cleaned_angles.append(angle)
+
+        if len(cleaned_angles) == 3:
+            break
+
+    return cleaned_angles
 
 
 # ============================================================
-# PARSE MULTIPLE ANGLES (ROBUST + CONCEPTS)
+# PARSE MULTIPLE ANGLES (ROBUST)
 # ============================================================
 def parse_multiple_angles(text: str) -> List[Dict[str, str]]:
     if not isinstance(text, str):
         return []
 
     blocks = re.split(r"\bANGLE\b", text, flags=re.IGNORECASE)
-
     results = []
 
     for block in blocks:
@@ -141,27 +126,17 @@ def parse_multiple_angles(text: str) -> List[Dict[str, str]]:
             flags=re.IGNORECASE,
         )
 
-        concepts_match = re.search(
-            r"Concepts\s*:\s*(.+)",
+        concept_match = re.search(
+            r"Concept\s*:\s*(.+)",
             block,
             flags=re.IGNORECASE,
         )
 
-        if title_match and signal_match:
-            concepts = []
-
-            if concepts_match:
-                raw_ids = concepts_match.group(1)
-                concepts = [
-                    cid.strip()
-                    for cid in raw_ids.split(",")
-                    if cid.strip()
-                ]
-
+        if title_match and signal_match and concept_match:
             results.append({
                 "angle_title": title_match.group(1).strip(),
                 "angle_signal": signal_match.group(1).strip(),
-                "suggested_concepts": concepts,
+                "concept": concept_match.group(1).strip(),
             })
 
     return results
