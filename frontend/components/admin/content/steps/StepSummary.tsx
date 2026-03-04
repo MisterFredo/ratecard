@@ -24,7 +24,6 @@ export default function StepSummary({
   sourceType,
   sourceText,
   context,
-
   excerpt,
   contentBody,
   citations,
@@ -32,13 +31,15 @@ export default function StepSummary({
   acteurs,
   concept,
   conceptId,
-
   onChange,
   onValidate,
 }: Props) {
+
   const [loading, setLoading] = useState(false);
+  const [generated, setGenerated] = useState(false);
 
   async function generateSummary() {
+
     if (!sourceText?.trim()) {
       alert("Source vide");
       return;
@@ -59,9 +60,10 @@ export default function StepSummary({
         citations: res.citations || [],
         chiffres: res.chiffres || [],
         acteurs: res.acteurs || [],
-        concept: res.concept,
-        conceptId: res.concept_id,
       });
+
+      setGenerated(true);
+
     } catch (e) {
       console.error(e);
       alert("Erreur génération summary");
@@ -73,20 +75,21 @@ export default function StepSummary({
   return (
     <div className="space-y-6">
 
-      <div className="flex items-center gap-4">
+      {/* GENERATION */}
+      {!generated && (
         <button
           onClick={generateSummary}
           disabled={loading}
           className="px-4 py-2 bg-black text-white rounded"
         >
-          {loading ? "Génération..." : "Générer le summary"}
+          {loading ? "Génération..." : "Générer la synthèse"}
         </button>
-      </div>
+      )}
 
       {/* EXCERPT */}
       <div>
         <label className="block text-sm font-medium mb-2">
-          Excerpt (résumé court)
+          Résumé court (1–2 phrases)
         </label>
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
@@ -95,10 +98,10 @@ export default function StepSummary({
         />
       </div>
 
-      {/* BODY */}
+      {/* CONTENT BODY */}
       <div>
         <label className="block text-sm font-medium mb-2">
-          Body structuré
+          Points clés à retenir
         </label>
         <textarea
           className="w-full border rounded p-3 min-h-[240px]"
@@ -107,10 +110,10 @@ export default function StepSummary({
         />
       </div>
 
-      {/* CONCEPT */}
+      {/* CONCEPT TAG (optionnel) */}
       <div>
         <label className="block text-sm font-medium mb-2">
-          Concept pivot
+          Concept éditorial (optionnel)
         </label>
         <input
           className="w-full border rounded p-3"
@@ -126,7 +129,7 @@ export default function StepSummary({
       {/* CITATIONS */}
       <div>
         <label className="block text-sm font-medium mb-2">
-          Citations
+          Citations exactes
         </label>
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
@@ -164,7 +167,7 @@ export default function StepSummary({
       {/* ACTEURS */}
       <div>
         <label className="block text-sm font-medium mb-2">
-          Acteurs cités
+          Acteurs mentionnés
         </label>
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
@@ -185,9 +188,10 @@ export default function StepSummary({
           onClick={onValidate}
           className="px-4 py-2 bg-green-600 text-white rounded"
         >
-          Valider le summary
+          Valider la synthèse
         </button>
       </div>
+
     </div>
   );
 }
