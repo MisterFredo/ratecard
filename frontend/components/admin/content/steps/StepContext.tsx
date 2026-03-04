@@ -6,9 +6,6 @@ type Props = {
   topics: any[];
   events: any[];
   companies: any[];
-
-  // 🔥 NOUVEAU
-  concepts: any[];
   solutions: any[];
 
   dateCreation: string;
@@ -18,7 +15,6 @@ type Props = {
     topics?: any[];
     events?: any[];
     companies?: any[];
-    concepts?: any[];
     solutions?: any[];
   }) => void;
 
@@ -29,7 +25,6 @@ export default function StepContext({
   topics,
   events,
   companies,
-  concepts,
   solutions,
   dateCreation,
   onChangeDateCreation,
@@ -38,11 +33,11 @@ export default function StepContext({
 }: Props) {
   return (
     <div className="space-y-6">
+      {/* CONTEXTE STRUCTURANT */}
       <ContentContextBlock
         topics={topics}
         events={events}
         companies={companies}
-        concepts={concepts}
         solutions={solutions}
         onChange={onChange}
       />
@@ -52,17 +47,20 @@ export default function StepContext({
         <label className="block text-sm font-medium text-gray-700">
           Date éditoriale
         </label>
+
         <input
           type="date"
           className="border rounded p-2 w-full"
           value={dateCreation}
           onChange={(e) => onChangeDateCreation(e.target.value)}
         />
+
         <p className="text-xs text-gray-500">
           Date à laquelle le contenu est rattaché éditorialement
         </p>
       </div>
 
+      {/* ACTION */}
       <button
         onClick={onValidate}
         className="bg-ratecard-blue text-white px-4 py-2 rounded"
