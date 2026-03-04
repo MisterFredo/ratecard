@@ -28,7 +28,7 @@ export default function AdminShell({
   }
 
   const navItems = [
-    { href: "/admin/content", label: "Analyses", icon: Layers },
+    { href: "/admin/content", label: "Contenus", icon: Layers },
 
     { href: "/admin/news", label: "News", icon: Newspaper },
 
