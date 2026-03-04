@@ -77,6 +77,7 @@ export default function StepContent({
 
         // 🔥 pivot obligatoire
         concept: angle.concept,
+        concept_id: angle.concept_id,
 
         context: {
           topics: context.topics.map((t) => t.id_topic),
