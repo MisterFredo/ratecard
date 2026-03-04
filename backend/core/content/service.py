@@ -92,6 +92,7 @@ def create_content(data: Dict[str, Any]) -> str:
 
         "EXCERPT": data.excerpt,
         "CONCEPT": data.concept,
+        "CONCEPT_ID": data.concept_id,
         "CONTENT_BODY": data.content_body,
 
         "CITATIONS": normalize_array(data.citations),
