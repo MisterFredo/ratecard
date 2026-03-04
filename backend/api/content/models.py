@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import date, datetime
+from datetime import datetime
 
 
 # ============================================================
@@ -25,43 +25,51 @@ class ContentSummaryRequest(BaseModel):
 # ============================================================
 class ContentCreate(BaseModel):
 
+    # ---------------------------------------------------------
     # SOURCE
+    # ---------------------------------------------------------
     source_type: Optional[str] = None
     source_text: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
 
-    # SUMMARY VALIDÉ
-    title: str                          # ← NOUVEAU (OBLIGATOIRE)
+    # ---------------------------------------------------------
+    # SUMMARY VALIDÉ (factuel)
+    # ---------------------------------------------------------
+    title: str
     excerpt: Optional[str] = None
-    concept: Optional[str] = None
-    concept_id: str                     # ← OBLIGATOIRE
     content_body: Optional[str] = None
 
+    # ---------------------------------------------------------
     # EXTRACTIONS STRUCTURÉES
-    citations: Optional[List[str]] = []
-    chiffres: Optional[List[str]] = []
-    acteurs_cites: Optional[List[str]] = []
+    # ---------------------------------------------------------
+    citations: List[str] = []
+    chiffres: List[str] = []
+    acteurs_cites: List[str] = []
 
-    # ENTITÉS EXISTANTES
-    topics: Optional[List[str]] = []
-    events: Optional[List[str]] = []
-    companies: Optional[List[str]] = []
-    persons: Optional[List[ContentPerson]] = []
+    # ---------------------------------------------------------
+    # ENTITÉS MÉTIER
+    # ---------------------------------------------------------
+    topics: List[str] = []
+    events: List[str] = []
+    companies: List[str] = []
+    persons: List[ContentPerson] = []
 
-    # TAGGING SOUPLE
-    concepts: Optional[List[str]] = []
-    solutions: Optional[List[str]] = []
+    # ---------------------------------------------------------
+    # TAGGING ANALYTIQUE
+    # ---------------------------------------------------------
+    concepts: List[str] = []
+    solutions: List[str] = []
 
+    # ---------------------------------------------------------
     # SEO
+    # ---------------------------------------------------------
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
 
-    # DATES
-    date_creation: Optional[date] = None
-    date_import: Optional[date] = None
-
+    # ---------------------------------------------------------
     # META
+    # ---------------------------------------------------------
     author: Optional[str] = None
 
 
@@ -70,42 +78,51 @@ class ContentCreate(BaseModel):
 # ============================================================
 class ContentUpdate(BaseModel):
 
+    # ---------------------------------------------------------
     # SOURCE
+    # ---------------------------------------------------------
     source_type: Optional[str] = None
     source_text: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
 
+    # ---------------------------------------------------------
     # SUMMARY
-    title: Optional[str] = None         # ← NOUVEAU
+    # ---------------------------------------------------------
+    title: Optional[str] = None
     excerpt: Optional[str] = None
-    concept: Optional[str] = None
-    concept_id: Optional[str] = None
     content_body: Optional[str] = None
 
+    # ---------------------------------------------------------
     # EXTRACTIONS STRUCTURÉES
-    citations: Optional[List[str]] = []
-    chiffres: Optional[List[str]] = []
-    acteurs_cites: Optional[List[str]] = []
+    # ---------------------------------------------------------
+    citations: Optional[List[str]] = None
+    chiffres: Optional[List[str]] = None
+    acteurs_cites: Optional[List[str]] = None
 
-    # ENTITÉS EXISTANTES
-    topics: Optional[List[str]] = []
-    events: Optional[List[str]] = []
-    companies: Optional[List[str]] = []
-    persons: Optional[List[ContentPerson]] = []
+    # ---------------------------------------------------------
+    # ENTITÉS MÉTIER
+    # ---------------------------------------------------------
+    topics: Optional[List[str]] = None
+    events: Optional[List[str]] = None
+    companies: Optional[List[str]] = None
+    persons: Optional[List[ContentPerson]] = None
 
-    # TAGGING SOUPLE
+    # ---------------------------------------------------------
+    # TAGGING ANALYTIQUE
+    # ---------------------------------------------------------
     concepts: Optional[List[str]] = None
     solutions: Optional[List[str]] = None
 
+    # ---------------------------------------------------------
     # SEO
+    # ---------------------------------------------------------
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
 
-    # DATES
-    date_creation: Optional[date] = None
-
+    # ---------------------------------------------------------
     # META
+    # ---------------------------------------------------------
     author: Optional[str] = None
 
 
@@ -123,24 +140,20 @@ class ContentOut(BaseModel):
     id_content: str
     status: str
 
-    title: Optional[str]                # ← NOUVEAU
+    title: Optional[str]
     excerpt: Optional[str]
-    concept: Optional[str]
-    concept_id: Optional[str]
     content_body: Optional[str]
 
     citations: List[str] = []
     chiffres: List[str] = []
     acteurs_cites: List[str] = []
 
-    date_creation: Optional[date]
-    date_import: Optional[date]
     published_at: Optional[datetime]
 
-    topics: list = []
-    events: list = []
-    companies: list = []
-    persons: list = []
+    topics: List = []
+    events: List = []
+    companies: List = []
+    persons: List = []
 
-    concepts: list = []
-    solutions: list = []
+    concepts: List = []
+    solutions: List = []
