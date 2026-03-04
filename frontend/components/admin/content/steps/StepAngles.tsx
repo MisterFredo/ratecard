@@ -6,6 +6,8 @@ import { api } from "@/lib/api";
 type Angle = {
   angle_title: string;
   angle_signal: string;
+  concept: string;
+  concept_id: string;
 };
 
 type Props = {
@@ -28,14 +30,10 @@ export default function StepAngles({
   const [angles, setAngles] = useState<Angle[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Mode création manuelle
   const [manualMode, setManualMode] = useState(false);
   const [manualTitle, setManualTitle] = useState("");
   const [manualSignal, setManualSignal] = useState("");
 
-  // ---------------------------------------------------------
-  // LOAD ANGLES IA
-  // ---------------------------------------------------------
   async function loadAngles() {
     if (!sourceText?.trim()) return;
 
@@ -45,9 +43,9 @@ export default function StepAngles({
         source_type: sourceType,
         source_text: sourceText,
         context: {
-          topics: context.topics.map((t) => t.label),
-          events: context.events.map((e) => e.label),
-          companies: context.companies.map((c) => c.name),
+          topics: context.topics.map((t) => t.id_topic), // ⚠️ IMPORTANT
+          events: context.events.map((e) => e.id_event),
+          companies: context.companies.map((c) => c.id_company),
         },
       });
 
@@ -70,38 +68,34 @@ export default function StepAngles({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---------------------------------------------------------
-  // VALIDATE MANUAL ANGLE
-  // ---------------------------------------------------------
   function validateManualAngle() {
     if (!manualTitle.trim() || !manualSignal.trim()) {
       alert("Titre et signal requis");
       return;
     }
 
+    // ⚠️ En mode manuel, pas de concept_id
+    // Donc on laisse vide pour l’instant (backlog compatible)
     onSelect({
       angle_title: manualTitle.trim(),
       angle_signal: manualSignal.trim(),
+      concept: "",
+      concept_id: "",
     });
   }
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
   return (
     <div className="space-y-6">
       <p className="text-sm text-gray-600">
         Sélectionnez un angle éditorial ou créez-en un manuellement.
       </p>
 
-      {/* LOADING */}
       {loading && (
         <p className="text-sm text-gray-500">
           Analyse de la source en cours…
         </p>
       )}
 
-      {/* ANGLES IA */}
       {!loading && angles.length > 0 && (
         <div className="space-y-3">
           {angles.map((a, idx) => (
@@ -116,19 +110,22 @@ export default function StepAngles({
               <p className="text-sm text-gray-600 mt-1">
                 {a.angle_signal}
               </p>
+
+              {/* 🔥 Affichage concept */}
+              <p className="text-xs text-gray-400 mt-2">
+                Concept : {a.concept}
+              </p>
             </div>
           ))}
         </div>
       )}
 
-      {/* NO ANGLE IA */}
       {!loading && angles.length === 0 && !manualMode && (
         <div className="text-sm text-gray-500 italic">
           Aucun angle proposé automatiquement.
         </div>
       )}
 
-      {/* TOGGLE MANUAL */}
       {!manualMode && (
         <button
           onClick={() => setManualMode(true)}
@@ -138,7 +135,6 @@ export default function StepAngles({
         </button>
       )}
 
-      {/* MANUAL ANGLE */}
       {manualMode && (
         <div className="border rounded p-4 space-y-3 bg-gray-50">
           <div>
