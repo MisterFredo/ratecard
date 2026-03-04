@@ -4,7 +4,7 @@ from utils.llm import run_llm
 
 
 # ============================================================
-# PROPOSE ANGLES — 1 ANGLE = 1 CONCEPT (VERSION ÉTENDUE 5 MAX)
+# PROPOSE ANGLES — VERSION STABLE (5 ANGLES MAX)
 # ============================================================
 def propose_angles(
     source_type: str,
@@ -13,13 +13,13 @@ def propose_angles(
     available_concepts: List[Dict[str, str]],
 ) -> List[Dict[str, str]]:
     """
-    Génère entre 3 et 5 angles maximum.
+    Génère EXACTEMENT 5 angles distincts si possible.
 
     Règles :
-    - Chaque angle doit s'appuyer sur EXACTEMENT un concept.
-    - Chaque concept ne peut apparaître qu'une seule fois.
-    - Aucun concept hors liste autorisée.
-    - Les angles doivent être réellement différenciés.
+    - 1 angle = 1 concept
+    - Concept strictement issu de la liste autorisée
+    - Pas de doublon concept
+    - Nettoyage backend sécurisé
     """
 
     if not isinstance(source_text, str) or not source_text.strip():
@@ -31,13 +31,11 @@ def propose_angles(
     # ---------------------------------------------------------
     # BUILD CONCEPT LIST FOR PROMPT
     # ---------------------------------------------------------
-    concepts_block = "\n".join([
-        f"- {c['title']}"
-        for c in available_concepts
-    ])
+    concepts_block = "\n".join(
+        [f"- {c['title']}" for c in available_concepts]
+    )
 
     prompt = f"""
-prompt = f"""
 Tu es un analyste stratégique B2B spécialisé en Adtech,
 Retail Media et transformation digitale.
 
@@ -47,14 +45,13 @@ Produire EXACTEMENT 5 angles éditoriaux distincts
 à partir de la source fournie.
 
 Si la source est très focalisée, explore différentes tensions
-stratégiques possibles (technologique, gouvernance, pouvoir,
-efficacité opérationnelle, modèle économique, dépendance,
-impact marché).
+stratégiques possibles : technologique, gouvernance, pouvoir
+de marché, modèle économique, dépendance, efficacité opérationnelle.
 
-ÉTAPE 1 — Réflexion interne (ne pas afficher) :
+ÉTAPE 1 (réflexion interne, ne pas afficher) :
 Identifie 5 concepts DISTINCTS pertinents parmi la liste autorisée.
 
-ÉTAPE 2 — Production :
+ÉTAPE 2 :
 Construis un angle stratégique par concept.
 
 RÈGLES OBLIGATOIRES :
@@ -65,7 +62,6 @@ RÈGLES OBLIGATOIRES :
 - Chaque concept ne peut apparaître qu’une seule fois.
 - Les angles doivent être réellement différenciés.
 - Pas de variation superficielle.
-- Pas d’angles redondants.
 - Strictement basé sur la source.
 
 CONCEPTS AUTORISÉS :
@@ -109,7 +105,7 @@ SOURCE :
         return []
 
     # ---------------------------------------------------------
-    # SÉCURISATION BACKEND + AJOUT CONCEPT_ID
+    # BACKEND VALIDATION + CONCEPT_ID ATTACHMENT
     # ---------------------------------------------------------
     valid_map = {c["title"]: c["id"] for c in available_concepts}
     used_concepts = set()
@@ -121,11 +117,9 @@ SOURCE :
         if not concept_title:
             continue
 
-        # Concept hors liste
         if concept_title not in valid_map:
             continue
 
-        # Concept déjà utilisé
         if concept_title in used_concepts:
             continue
 
@@ -138,16 +132,14 @@ SOURCE :
             "concept_id": valid_map[concept_title],
         })
 
-        # Max 5 angles
         if len(cleaned_angles) == 5:
             break
 
-    # Minimum 1 angle garanti si possible
     return cleaned_angles
 
 
 # ============================================================
-# PARSE MULTIPLE ANGLES (ROBUST)
+# PARSE MULTIPLE ANGLES — ROBUST
 # ============================================================
 def parse_multiple_angles(text: str) -> List[Dict[str, str]]:
     if not isinstance(text, str):
