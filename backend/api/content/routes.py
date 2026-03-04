@@ -127,17 +127,23 @@ def ai_angles(payload: ContentAnglesRequest):
 def ai_generate(payload: ContentGenerateRequest):
     """
     Génère excerpt + concept + content_body + citations + chiffres + acteurs
-    à partir d’une source et d’un angle validé.
+    à partir d’un angle validé + concept pivot obligatoire.
     """
     try:
+        if not payload.concept:
+            raise HTTPException(400, "Concept obligatoire")
+
         content = generate_content(
             source_type=payload.source_type,
             source_text=payload.source_text,
             angle_title=payload.angle_title,
             angle_signal=payload.angle_signal,
+            concept=payload.concept,  # ← pivot injecté ici
             context=payload.context,
         )
+
         return {"status": "ok", "content": content}
+
     except Exception as e:
         raise HTTPException(400, f"Erreur génération content : {e}")
 
