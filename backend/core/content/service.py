@@ -199,6 +199,7 @@ def get_content(id_content: str):
 
     content = {
         "id_content": row["ID_CONTENT"],
+        "title": row.get("TITLE"),
         "excerpt": row.get("EXCERPT"),
         "concept": row.get("CONCEPT"),
         "concept_id": row.get("CONCEPT_ID"),
@@ -295,6 +296,7 @@ def list_contents():
         f"""
         SELECT
           C.ID_CONTENT,
+          C.TITLE,
           C.EXCERPT,
           C.CONCEPT,
           C.CONCEPT_ID,
@@ -341,6 +343,7 @@ def list_contents():
     return [
         {
             "id": r["ID_CONTENT"],
+            "title": row.get("TITLE"),
             "excerpt": r.get("EXCERPT"),
             "concept": r.get("CONCEPT"),
             "concept_id": r.get("CONCEPT_ID"),
@@ -434,8 +437,8 @@ def update_content(id_content: str, data: Dict[str, Any]):
     # 1) UPDATE TABLE_CONTENT (COLONNES SIMPLES)
     # ---------------------------------------------------------
     fields = {
-        "EXCERPT": data.excerpt,
         "TITLE": data.title,
+        "EXCERPT": data.excerpt,
         "CONCEPT": data.concept,
         "CONCEPT_ID": data.concept_id,
         "CONTENT_BODY": data.content_body,
