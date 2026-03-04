@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+from typing import Optional
 
 from api.concept.models import (
     ConceptCreate,
@@ -11,7 +12,7 @@ from core.concept.service import (
     list_concepts,
     get_concept,
     update_concept,
-    delete_concept,   # 🔥 AJOUT
+    delete_concept,
 )
 
 router = APIRouter()
@@ -30,13 +31,24 @@ def create_route(data: ConceptCreate):
 
 
 # ============================================================
-# LIST — liste des concepts
+# LIST — liste des concepts (avec filtre topic optionnel)
 # ============================================================
 @router.get("/list")
-def list_route():
+def list_route(topic_ids: Optional[str] = Query(None)):
+    """
+    topic_ids:
+        - None → retourne tous les concepts (comportement actuel)
+        - "id1,id2" → filtre sur ces topics
+    """
     try:
-        concepts = list_concepts()
+        if topic_ids:
+            ids = [i.strip() for i in topic_ids.split(",") if i.strip()]
+            concepts = list_concepts(topic_ids=ids)
+        else:
+            concepts = list_concepts()
+
         return {"status": "ok", "concepts": concepts}
+
     except Exception as e:
         raise HTTPException(400, f"Erreur liste concepts : {e}")
 
