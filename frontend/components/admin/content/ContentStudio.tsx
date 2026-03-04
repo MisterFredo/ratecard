@@ -237,7 +237,11 @@ export default function ContentStudio({ mode, contentId }: Props) {
           <StepSummary
             sourceType={sourceType}
             sourceText={sourceText}
-            context={{ topics, events, companies }}
+            context={{
+              topics: topics.map((t) => t.id_topic),
+              events: events.map((e) => e.id_event),
+              companies: companies.map((c) => c.id_company),
+            }}
             excerpt={excerpt}
             contentBody={contentBody}
             citations={citations}
