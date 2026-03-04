@@ -52,6 +52,18 @@ def normalize_array(value):
 # ============================================================
 def create_content(data: Dict[str, Any]) -> str:
 
+    # ---------------------------------------------------------
+    # VALIDATIONS MÉTIER
+    # ---------------------------------------------------------
+    if not data.title or not data.title.strip():
+        raise ValueError("TITLE obligatoire")
+
+    if not data.concept_id:
+        raise ValueError("CONCEPT_ID obligatoire")
+
+    if not data.content_body or not data.content_body.strip():
+        raise ValueError("CONTENT_BODY obligatoire")
+
     if not (
         data.topics
         or data.events
@@ -63,6 +75,9 @@ def create_content(data: Dict[str, Any]) -> str:
             "(topic, event, company ou person)"
         )
 
+    # ---------------------------------------------------------
+    # INIT
+    # ---------------------------------------------------------
     content_id = str(uuid.uuid4())
 
     today = date.today()
@@ -70,32 +85,40 @@ def create_content(data: Dict[str, Any]) -> str:
     date_import = data.date_import or today
     now = datetime.utcnow()
 
+    # ---------------------------------------------------------
+    # INSERT TABLE_CONTENT
+    # ---------------------------------------------------------
     row = [{
         "ID_CONTENT": content_id,
         "STATUS": "DRAFT",
         "IS_ACTIVE": True,
         "AUTHOR": data.author,
 
+        # SOURCE
         "SOURCE_TYPE": data.source_type,
         "SOURCE_TEXT": data.source_text,
         "SOURCE_URL": data.source_url,
         "SOURCE_AUTHOR": data.source_author,
 
-        "TITLE": data.title,
+        # SUMMARY
+        "TITLE": data.title.strip(),
         "EXCERPT": data.excerpt,
         "CONCEPT": data.concept,
         "CONCEPT_ID": data.concept_id,
         "CONTENT_BODY": data.content_body,
 
+        # STRUCTURED FIELDS
         "CITATIONS": normalize_array(data.citations),
         "CHIFFRES": normalize_array(data.chiffres),
         "ACTEURS_CITES": normalize_array(data.acteurs_cites),
 
+        # SEO
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
 
-        "DATE_CREATION": date_creation.isoformat(),
-        "DATE_IMPORT": date_import.isoformat(),
+        # DATES
+        "DATE_CREATION": date_creation,
+        "DATE_IMPORT": date_import,
 
         "PUBLISHED_AT": None,
     }]
@@ -155,7 +178,6 @@ def create_content(data: Dict[str, Any]) -> str:
             ],
         )
 
-    # 🔥 CONCEPTS
     if getattr(data, "concepts", None):
         insert_bq(
             TABLE_CONTENT_CONCEPT,
@@ -165,7 +187,6 @@ def create_content(data: Dict[str, Any]) -> str:
             ],
         )
 
-    # 🔥 SOLUTIONS
     if getattr(data, "solutions", None):
         insert_bq(
             TABLE_CONTENT_SOLUTION,
