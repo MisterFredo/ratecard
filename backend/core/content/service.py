@@ -52,12 +52,6 @@ def normalize_array(value):
 # ============================================================
 def create_content(data: Dict[str, Any]) -> str:
 
-    if not data.angle_title or not data.angle_title.strip():
-        raise ValueError("ANGLE_TITLE obligatoire")
-
-    if not data.angle_signal or not data.angle_signal.strip():
-        raise ValueError("ANGLE_SIGNAL obligatoire")
-
     if not (
         data.topics
         or data.events
@@ -86,9 +80,6 @@ def create_content(data: Dict[str, Any]) -> str:
         "SOURCE_TEXT": data.source_text,
         "SOURCE_URL": data.source_url,
         "SOURCE_AUTHOR": data.source_author,
-
-        "ANGLE_TITLE": data.angle_title,
-        "ANGLE_SIGNAL": data.angle_signal,
 
         "EXCERPT": data.excerpt,
         "CONCEPT": data.concept,
@@ -207,8 +198,6 @@ def get_content(id_content: str):
 
     content = {
         "id_content": row["ID_CONTENT"],
-        "angle_title": row["ANGLE_TITLE"],
-        "angle_signal": row["ANGLE_SIGNAL"],
         "excerpt": row.get("EXCERPT"),
         "concept": row.get("CONCEPT"),
         "concept_id": row.get("CONCEPT_ID"),
@@ -305,8 +294,6 @@ def list_contents():
         f"""
         SELECT
           C.ID_CONTENT,
-          C.ANGLE_TITLE,
-          C.ANGLE_SIGNAL,
           C.EXCERPT,
           C.CONCEPT,
           C.CONCEPT_ID,
@@ -353,8 +340,6 @@ def list_contents():
     return [
         {
             "id": r["ID_CONTENT"],
-            "title": r["ANGLE_TITLE"],
-            "signal": r["ANGLE_SIGNAL"],
             "excerpt": r.get("EXCERPT"),
             "concept": r.get("CONCEPT"),
             "concept_id": r.get("CONCEPT_ID"),
@@ -385,7 +370,6 @@ def list_contents_admin():
         f"""
         SELECT
           C.ID_CONTENT,
-          C.ANGLE_TITLE,
           C.STATUS,
           C.PUBLISHED_AT,
           C.DATE_CREATION,
@@ -417,7 +401,6 @@ def list_contents_admin():
     return [
         {
             "ID_CONTENT": r["ID_CONTENT"],
-            "TITLE": r["ANGLE_TITLE"],
             "STATUS": r["STATUS"],
             "PUBLISHED_AT": r["PUBLISHED_AT"],
             "DATE_CREATION": r.get("DATE_CREATION"),
@@ -435,12 +418,6 @@ def update_content(id_content: str, data: Dict[str, Any]):
     # ---------------------------------------------------------
     # VALIDATIONS MÉTIER
     # ---------------------------------------------------------
-    if not data.angle_title or not data.angle_title.strip():
-        raise ValueError("ANGLE_TITLE obligatoire")
-
-    if not data.angle_signal or not data.angle_signal.strip():
-        raise ValueError("ANGLE_SIGNAL obligatoire")
-
     if not (
         data.topics
         or data.events
@@ -456,8 +433,6 @@ def update_content(id_content: str, data: Dict[str, Any]):
     # 1) UPDATE TABLE_CONTENT (COLONNES SIMPLES)
     # ---------------------------------------------------------
     fields = {
-        "ANGLE_TITLE": data.angle_title,
-        "ANGLE_SIGNAL": data.angle_signal,
         "EXCERPT": data.excerpt,
         "CONCEPT": data.concept,
         "CONCEPT_ID": data.concept_id,
