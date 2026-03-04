@@ -4,7 +4,7 @@ from utils.llm import run_llm
 
 
 # ============================================================
-# IA CONTENT — SOURCE → CONTENT (PIVOT CONCEPT VERROUILLÉ)
+# IA CONTENT — SOURCE → CONTENT (PIVOT STRUCTURE ONLY)
 # ============================================================
 def transform_source_to_content(
     source_type: str,
@@ -18,9 +18,7 @@ def transform_source_to_content(
     if not isinstance(source_text, str) or not source_text.strip():
         return {}
 
-    # ---------------------------------------------------------
-    # CONCEPT PIVOT IMPOSÉ
-    # ---------------------------------------------------------
+    # Pivot éditorial (informative only)
     pivot_concept = selected_concepts[0]["title"] if selected_concepts else ""
 
     prompt = f"""
@@ -34,42 +32,29 @@ une THÈSE ANALYTIQUE exploitable.
 - Tu n’inventes jamais de faits.
 - Tu n’inventes jamais de chiffres.
 - Tu n’inventes jamais de citations.
-- Tu écris en français, ton analytique B2B.
-- Tu ne rédiges pas un article média.
+- Ton analytique B2B structuré.
+- Pas de rédaction média.
 
 ==================== ANGLE ====================
 Titre : {angle_title}
 Signal : {angle_signal}
 
-==================== CONCEPT PIVOT ====================
-L’analyse doit s’articuler autour du concept suivant :
+==================== CADRE ====================
+L’analyse doit être cohérente avec le concept suivant :
 {pivot_concept}
-
-Tu ne dois pas redéfinir ce concept.
-Tu dois structurer ton analyse en cohérence avec lui.
 
 ==================== SOURCE ====================
 Type : {source_type}
 Texte :
 {source_text}
 
-==================== OBJECTIF ANALYTIQUE ====================
-
-Le développement doit :
-
-1. Identifier la tension centrale.
-2. Décrire le mécanisme à l’œuvre.
-3. Expliquer la conséquence logique.
-
-Ne pas extrapoler au-delà de la source.
-
 ==================== FORMAT STRICT ====================
 
 EXCERPT
-(1 à 2 phrases synthétiques.)
+(1 à 2 phrases.)
 
 DEVELOPPEMENT
-(3 blocs logiques :
+(3 blocs :
 - Tension
 - Mécanisme
 - Conséquence)
@@ -128,7 +113,6 @@ ACTEURS
         clean = source_text.strip()
         return {
             "excerpt": angle_signal,
-            "concept": pivot_concept,
             "content_body": clean[:800],
             "citations": [],
             "chiffres": [],
@@ -137,7 +121,6 @@ ACTEURS
 
     return {
         "excerpt": excerpt,
-        "concept": pivot_concept,  # ← FORCÉ
         "content_body": body,
         "citations": citations,
         "chiffres": chiffres,
