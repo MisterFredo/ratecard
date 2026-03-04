@@ -377,21 +377,40 @@ def list_contents():
     ]
 
 # ============================================================
-# LIST CONTENTS (ADMIN) — VERSION STABLE
+# LIST CONTENTS (ADMIN) — VERSION ENRICHIE
 # ============================================================
 def list_contents_admin():
+
     rows = query_bq(
         f"""
         SELECT
           C.ID_CONTENT,
           C.ANGLE_TITLE,
           C.STATUS,
-          C.PUBLISHED_AT
+          C.PUBLISHED_AT,
+          C.DATE_CREATION,
+
+          -- 🔥 TOPICS
+          ARRAY(
+            SELECT AS STRUCT T.LABEL
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC` CT
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC` T
+              ON T.ID_TOPIC = CT.ID_TOPIC
+            WHERE CT.ID_CONTENT = C.ID_CONTENT
+          ) AS topics,
+
+          -- 🔥 CONCEPTS
+          ARRAY(
+            SELECT AS STRUCT CO.TITLE
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_CONCEPT` CC
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONCEPT` CO
+              ON CO.ID_CONCEPT = CC.ID_CONCEPT
+            WHERE CC.ID_CONTENT = C.ID_CONTENT
+          ) AS concepts
+
         FROM `{TABLE_CONTENT}` C
         WHERE
           (C.IS_ACTIVE = TRUE OR C.IS_ACTIVE IS NULL)
-        ORDER BY
-          C.PUBLISHED_AT DESC
         """
     )
 
@@ -401,10 +420,12 @@ def list_contents_admin():
             "TITLE": r["ANGLE_TITLE"],
             "STATUS": r["STATUS"],
             "PUBLISHED_AT": r["PUBLISHED_AT"],
+            "DATE_CREATION": r.get("DATE_CREATION"),
+            "topics": r.get("topics", []),
+            "concepts": r.get("concepts", []),
         }
         for r in rows
     ]
-
 
 # ============================================================
 # UPDATE CONTENT
