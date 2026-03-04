@@ -15,22 +15,36 @@ export type Concept = {
 };
 
 type Props = {
-  values: Concept[];                           // 🔥 MULTI
+  values: Concept[];
   onChange: (concepts: Concept[]) => void;
+
+  // 🔥 NOUVEAU — optionnel
+  topicIds?: string[];
 };
 
-export default function ConceptSelector({ values, onChange }: Props) {
+export default function ConceptSelector({
+  values,
+  onChange,
+  topicIds,
+}: Props) {
   const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
 
   /* ---------------------------------------------------------
-     LOAD CONCEPTS
+     LOAD CONCEPTS (DYNAMIQUE)
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
+
       try {
-        const res = await api.get("/concept/list");
+        let url = "/concept/list";
+
+        if (topicIds && topicIds.length > 0) {
+          url += `?topic_ids=${topicIds.join(",")}`;
+        }
+
+        const res = await api.get(url);
 
         setOptions(
           (res.concepts || []).map((c: any) => ({
@@ -40,12 +54,14 @@ export default function ConceptSelector({ values, onChange }: Props) {
         );
       } catch (e) {
         console.error("Erreur chargement concepts", e);
+        setOptions([]);
       }
+
       setLoading(false);
     }
 
     load();
-  }, []);
+  }, [topicIds]);
 
   /* ---------------------------------------------------------
      HANDLE CHANGE — MULTI
