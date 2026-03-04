@@ -27,10 +27,12 @@ type Props = {
 };
 
 export default function ContentStudio({ mode, contentId }: Props) {
+
   const [topics, setTopics] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [solutions, setSolutions] = useState<any[]>([]);
+
   const [conceptId, setConceptId] = useState<string | null>(null);
   const [concept, setConcept] = useState("");
 
@@ -46,20 +48,13 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [chiffres, setChiffres] = useState<string[]>([]);
   const [acteurs, setActeurs] = useState<string[]>([]);
 
-  const [dateCreation, setDateCreation] = useState<string>("");
-
-  const [dateImport] = useState<string>(() => {
-    const d = new Date();
-    return d.toISOString().slice(0, 10);
-  });
-
   const [publishMode, setPublishMode] =
     useState<"NOW" | "SCHEDULE">("NOW");
+
   const [publishAt, setPublishAt] = useState<string>("");
 
-  const [internalContentId, setInternalContentId] = useState<string | null>(
-    contentId || null
-  );
+  const [internalContentId, setInternalContentId] =
+    useState<string | null>(contentId || null);
 
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -76,47 +71,23 @@ export default function ContentStudio({ mode, contentId }: Props) {
         const res = await api.get(`/content/${contentId}`);
         const c = res.content;
 
-        setExcerpt(c.EXCERPT || "");
-        setConcept(c.CONCEPT || "");
-        setConceptId(c.CONCEPT_ID || null);
-        setContentBody(c.CONTENT_BODY || "");
+        setExcerpt(c.excerpt || "");
+        setConcept(c.concept || "");
+        setConceptId(c.concept_id || null);
+        setContentBody(c.content_body || "");
 
-        setCitations(c.CITATIONS || []);
-        setChiffres(c.CHIFFRES || []);
-        setActeurs(c.ACTEURS_CITES || []);
+        setCitations(c.citations || []);
+        setChiffres(c.chiffres || []);
+        setActeurs(c.acteurs_cites || []);
 
-        setDateCreation(c.DATE_CREATION || "");
-
-        setTopics(
-          (c.topics || []).map((t: any) => ({
-            id_topic: t.ID_TOPIC,
-            label: t.LABEL,
-          }))
-        );
-
-        setEvents(
-          (c.events || []).map((e: any) => ({
-            id_event: e.ID_EVENT,
-            label: e.LABEL,
-          }))
-        );
-
-        setCompanies(
-          (c.companies || []).map((co: any) => ({
-            id_company: co.ID_COMPANY,
-            name: co.NAME,
-          }))
-        );
-
-        setSolutions(
-          (c.solutions || []).map((s: any) => ({
-            ID_SOLUTION: s.ID_SOLUTION,
-            TITLE: s.NAME,
-          }))
-        );
+        setTopics(c.topics || []);
+        setEvents(c.events || []);
+        setCompanies(c.companies || []);
+        setSolutions(c.solutions || []);
 
         setContextValidated(true);
         setStep("SUMMARY");
+
       } catch (e) {
         console.error(e);
         alert("Erreur chargement contenu");
@@ -130,6 +101,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // SAVE
   // ============================================================
   async function saveContent() {
+
     if (!excerpt.trim() || !contentBody.trim()) {
       alert("Summary incomplet");
       return;
@@ -143,26 +115,22 @@ export default function ContentStudio({ mode, contentId }: Props) {
     setSaving(true);
 
     const payload = {
+      title: excerpt.slice(0, 120), // fallback simple si besoin
       excerpt,
       concept,
       concept_id: conceptId,
-
       content_body: contentBody,
-
       citations,
       chiffres,
       acteurs_cites: acteurs,
-
       topics: topics.map((t) => t.id_topic),
       events: events.map((e) => e.id_event),
       companies: companies.map((c) => c.id_company),
       solutions: solutions.map((s) => s.ID_SOLUTION),
-
-      date_creation: dateCreation || null,
-      date_import: dateImport,
     };
 
     try {
+
       if (!internalContentId) {
         const res = await api.post("/content/create", payload);
         setInternalContentId(res.id_content);
@@ -170,7 +138,9 @@ export default function ContentStudio({ mode, contentId }: Props) {
         await api.put(`/content/update/${internalContentId}`, payload);
       }
 
-      setStep("PREVIEW");
+      // 🔥 Skip preview → direct publish
+      setStep("PUBLISH");
+
     } catch (e) {
       console.error(e);
       alert("❌ Erreur sauvegarde contenu");
@@ -183,6 +153,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // PUBLISH
   // ============================================================
   async function publishContent() {
+
     if (!internalContentId) return;
 
     setPublishing(true);
@@ -196,9 +167,11 @@ export default function ContentStudio({ mode, contentId }: Props) {
       });
 
       alert("Contenu publié");
+
     } catch (e) {
       console.error(e);
       alert("Erreur publication");
+
     } finally {
       setPublishing(false);
     }
@@ -207,6 +180,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // ============================================================
   // RENDER
   // ============================================================
+
   return (
     <div className="space-y-6">
 
@@ -221,8 +195,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
           events={events}
           companies={companies}
           solutions={solutions}
-          dateCreation={dateCreation}
-          onChangeDateCreation={setDateCreation}
           onChange={(d) => {
             if (d.topics) setTopics(d.topics);
             if (d.events) setEvents(d.events);
@@ -289,7 +261,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </details>
       )}
 
-      {/* CONTENT (édition manuelle enrichie si besoin) */}
+      {/* FINALISATION */}
       {(excerpt || contentBody) && (
         <details open={step === "CONTENT"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
@@ -308,11 +280,11 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </details>
       )}
 
-      {/* PREVIEW */}
+      {/* PREVIEW (OPTIONNEL) */}
       {internalContentId && (
         <details open={step === "PREVIEW"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            5. Aperçu
+            Aperçu (optionnel)
           </summary>
 
           <StepPreview
@@ -327,7 +299,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
       {internalContentId && (
         <details open={step === "PUBLISH"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            6. Publication
+            5. Publication
           </summary>
 
           <StepPublish
