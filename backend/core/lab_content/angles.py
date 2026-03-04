@@ -4,7 +4,7 @@ from utils.llm import run_llm
 
 
 # ============================================================
-# PROPOSE ANGLES — 1 ANGLE = 1 CONCEPT (VERSION STABLE)
+# PROPOSE ANGLES — 1 ANGLE = 1 CONCEPT (VERSION STABLE + ID)
 # ============================================================
 def propose_angles(
     source_type: str,
@@ -76,26 +76,34 @@ SOURCE :
         return []
 
     # ---------------------------------------------------------
-    # SÉCURISATION BACKEND
+    # SÉCURISATION BACKEND + AJOUT CONCEPT_ID
     # ---------------------------------------------------------
-    valid_titles = {c["title"] for c in available_concepts}
+    valid_map = {c["title"]: c["id"] for c in available_concepts}
     used_concepts = set()
     cleaned_angles = []
 
     for angle in angles:
-        concept = angle.get("concept")
+        concept_title = angle.get("concept")
 
-        if not concept:
+        if not concept_title:
             continue
 
-        if concept not in valid_titles:
+        # Concept hors liste
+        if concept_title not in valid_map:
             continue
 
-        if concept in used_concepts:
+        # Concept déjà utilisé
+        if concept_title in used_concepts:
             continue
 
-        used_concepts.add(concept)
-        cleaned_angles.append(angle)
+        used_concepts.add(concept_title)
+
+        cleaned_angles.append({
+            "angle_title": angle["angle_title"],
+            "angle_signal": angle["angle_signal"],
+            "concept": concept_title,                 # phrase pivot
+            "concept_id": valid_map[concept_title],  # ID gouverné
+        })
 
         if len(cleaned_angles) == 3:
             break
