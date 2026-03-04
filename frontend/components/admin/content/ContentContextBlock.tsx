@@ -27,30 +27,28 @@ export default function ContentContextBlock({
   onChange,
 }: Props) {
   return (
-    <div className="space-y-6">
-      {/* TOPICS */}
+    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+
       <TopicSelector
         values={topics}
         onChange={(items) => onChange({ topics: items })}
       />
 
-      {/* EVENTS */}
       <EventSelector
         values={events}
         onChange={(items) => onChange({ events: items })}
       />
 
-      {/* COMPANIES — MULTI SELECT */}
       <CompanySelector
         values={companies}
         onChange={(items) => onChange({ companies: items })}
       />
 
-      {/* SOLUTIONS */}
       <SolutionSelector
         values={solutions}
         onChange={(items) => onChange({ solutions: items })}
       />
+
     </div>
   );
 }
