@@ -58,9 +58,6 @@ def create_content(data: Dict[str, Any]) -> str:
     if not data.title or not data.title.strip():
         raise ValueError("TITLE obligatoire")
 
-    if not data.concept_id:
-        raise ValueError("CONCEPT_ID obligatoire")
-
     if not data.content_body or not data.content_body.strip():
         raise ValueError("CONTENT_BODY obligatoire")
 
@@ -71,7 +68,7 @@ def create_content(data: Dict[str, Any]) -> str:
         or data.persons
     ):
         raise ValueError(
-            "Un contenu analytique doit être associé à au moins une entité "
+            "Un contenu doit être associé à au moins une entité "
             "(topic, event, company ou person)"
         )
 
@@ -96,11 +93,9 @@ def create_content(data: Dict[str, Any]) -> str:
         "SOURCE_URL": data.source_url,
         "SOURCE_AUTHOR": data.source_author,
 
-        # SUMMARY
+        # SUMMARY FACTUEL
         "TITLE": data.title.strip(),
         "EXCERPT": data.excerpt,
-        "CONCEPT": data.concept,
-        "CONCEPT_ID": data.concept_id,
         "CONTENT_BODY": data.content_body,
 
         # STRUCTURED FIELDS
@@ -112,7 +107,7 @@ def create_content(data: Dict[str, Any]) -> str:
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
 
-        # UNIQUE DATE MÉTIER
+        # DATE MÉTIER UNIQUE
         "PUBLISHED_AT": None,
     }]
 
@@ -171,7 +166,8 @@ def create_content(data: Dict[str, Any]) -> str:
             ],
         )
 
-    if getattr(data, "concepts", None):
+    # MULTI-CONCEPTS (relation only)
+    if data.concepts:
         insert_bq(
             TABLE_CONTENT_CONCEPT,
             [
@@ -180,7 +176,8 @@ def create_content(data: Dict[str, Any]) -> str:
             ],
         )
 
-    if getattr(data, "solutions", None):
+    # SOLUTIONS
+    if data.solutions:
         insert_bq(
             TABLE_CONTENT_SOLUTION,
             [
@@ -190,7 +187,6 @@ def create_content(data: Dict[str, Any]) -> str:
         )
 
     return content_id
-
 # ============================================================
 # GET ONE CONTENT (ENRICHI)
 # ============================================================
@@ -210,18 +206,15 @@ def get_content(id_content: str):
         return None
 
     row = rows[0]
-
     published_at = row.get("PUBLISHED_AT")
 
     content = {
         "id_content": row["ID_CONTENT"],
         "status": row.get("STATUS"),
 
-        # SUMMARY
+        # SUMMARY FACTUEL
         "title": row.get("TITLE"),
         "excerpt": row.get("EXCERPT"),
-        "concept": row.get("CONCEPT"),
-        "concept_id": row.get("CONCEPT_ID"),
         "content_body": row.get("CONTENT_BODY"),
 
         # STRUCTURED FIELDS
@@ -308,19 +301,17 @@ def get_content(id_content: str):
     )
 
     return content
-
 # ============================================================
 # LIST CONTENTS (ADMIN)
 # ============================================================
 def list_contents():
+
     rows = query_bq(
         f"""
         SELECT
           C.ID_CONTENT,
           C.TITLE,
           C.EXCERPT,
-          C.CONCEPT,
-          C.CONCEPT_ID,
           C.CONTENT_BODY,
           C.CHIFFRES,
           C.CITATIONS,
@@ -368,8 +359,6 @@ def list_contents():
             "id": r["ID_CONTENT"],
             "title": r.get("TITLE"),
             "excerpt": r.get("EXCERPT"),
-            "concept": r.get("CONCEPT"),
-            "concept_id": r.get("CONCEPT_ID"),
             "content_body": r.get("CONTENT_BODY"),
             "chiffres": r.get("CHIFFRES") or [],
             "citations": r.get("CITATIONS") or [],
@@ -449,25 +438,14 @@ def list_contents_admin():
 # ============================================================
 def update_content(id_content: str, data: Dict[str, Any]):
 
+    client = get_bigquery_client()
+    now = datetime.utcnow()
+
     # ---------------------------------------------------------
     # VALIDATIONS MÉTIER
     # ---------------------------------------------------------
-    if not (
-        data.topics
-        or data.events
-        or data.companies
-        or data.persons
-    ):
-        raise ValueError("Un contenu doit rester associé à au moins une entité")
-
     if data.title is not None and not data.title.strip():
         raise ValueError("TITLE ne peut pas être vide")
-
-    if data.concept_id is not None and not data.concept_id:
-        raise ValueError("CONCEPT_ID invalide")
-
-    client = get_bigquery_client()
-    now = datetime.utcnow()
 
     # ---------------------------------------------------------
     # 1) UPDATE TABLE_CONTENT (COLONNES SIMPLES)
@@ -475,8 +453,6 @@ def update_content(id_content: str, data: Dict[str, Any]):
     fields = {
         "TITLE": data.title.strip() if data.title else None,
         "EXCERPT": data.excerpt,
-        "CONCEPT": data.concept,
-        "CONCEPT_ID": data.concept_id,
         "CONTENT_BODY": data.content_body,
 
         # SOURCE
@@ -493,7 +469,7 @@ def update_content(id_content: str, data: Dict[str, Any]):
         "AUTHOR": data.author,
 
         # TECH
-        "UPDATED_AT": now,  # recommandé
+        "UPDATED_AT": now,
     }
 
     update_bq(
@@ -506,12 +482,18 @@ def update_content(id_content: str, data: Dict[str, Any]):
     # 2) UPDATE DES COLONNES ARRAY
     # ---------------------------------------------------------
     array_updates = {
-        "CITATIONS": normalize_array(data.citations),
-        "CHIFFRES": normalize_array(data.chiffres),
-        "ACTEURS_CITES": normalize_array(data.acteurs_cites),
+        "CITATIONS": data.citations,
+        "CHIFFRES": data.chiffres,
+        "ACTEURS_CITES": data.acteurs_cites,
     }
 
     for column, values in array_updates.items():
+
+        if values is None:
+            continue  # ne rien faire si non envoyé
+
+        values = normalize_array(values)
+
         client.query(
             f"""
             UPDATE `{TABLE_CONTENT}`
@@ -527,16 +509,14 @@ def update_content(id_content: str, data: Dict[str, Any]):
         ).result()
 
     # ---------------------------------------------------------
-    # 3) RESET RELATIONS
+    # 3) UPDATE RELATIONS UNIQUEMENT SI FOURNIES
     # ---------------------------------------------------------
-    for table in (
-        TABLE_CONTENT_TOPIC,
-        TABLE_CONTENT_EVENT,
-        TABLE_CONTENT_COMPANY,
-        TABLE_CONTENT_PERSON,
-        TABLE_CONTENT_CONCEPT,
-        TABLE_CONTENT_SOLUTION,
-    ):
+
+    def reset_and_insert(table, id_field, values):
+        if values is None:
+            return  # ne rien faire
+
+        # reset
         client.query(
             f"DELETE FROM `{table}` WHERE ID_CONTENT = @id",
             job_config=bigquery.QueryJobConfig(
@@ -546,68 +526,60 @@ def update_content(id_content: str, data: Dict[str, Any]):
             ),
         ).result()
 
-    # ---------------------------------------------------------
-    # 4) REINSERT RELATIONS
-    # ---------------------------------------------------------
+        # insert si liste non vide
+        if values:
+            insert_bq(
+                table,
+                [
+                    {
+                        "ID_CONTENT": id_content,
+                        id_field: v,
+                        "CREATED_AT": now,
+                    }
+                    for v in values
+                ],
+            )
 
-    if data.topics:
-        insert_bq(
-            TABLE_CONTENT_TOPIC,
-            [
-                {"ID_CONTENT": id_content, "ID_TOPIC": tid, "CREATED_AT": now}
-                for tid in data.topics
-            ],
-        )
+    # TOPICS
+    reset_and_insert(TABLE_CONTENT_TOPIC, "ID_TOPIC", data.topics)
 
-    if data.events:
-        insert_bq(
-            TABLE_CONTENT_EVENT,
-            [
-                {"ID_CONTENT": id_content, "ID_EVENT": eid, "CREATED_AT": now}
-                for eid in data.events
-            ],
-        )
+    # EVENTS
+    reset_and_insert(TABLE_CONTENT_EVENT, "ID_EVENT", data.events)
 
-    if data.companies:
-        insert_bq(
-            TABLE_CONTENT_COMPANY,
-            [
-                {"ID_CONTENT": id_content, "ID_COMPANY": cid, "CREATED_AT": now}
-                for cid in data.companies
-            ],
-        )
+    # COMPANIES
+    reset_and_insert(TABLE_CONTENT_COMPANY, "ID_COMPANY", data.companies)
 
-    if data.persons:
-        insert_bq(
-            TABLE_CONTENT_PERSON,
-            [
-                {
-                    "ID_CONTENT": id_content,
-                    "ID_PERSON": p.id_person,
-                    "ROLE": p.role,
-                    "CREATED_AT": now,
-                }
-                for p in data.persons
-            ],
-        )
+    # PERSONS (cas spécifique)
+    if data.persons is not None:
 
-    if getattr(data, "concepts", None):
-        insert_bq(
-            TABLE_CONTENT_CONCEPT,
-            [
-                {"ID_CONTENT": id_content, "ID_CONCEPT": cid, "CREATED_AT": now}
-                for cid in data.concepts
-            ],
-        )
+        client.query(
+            f"DELETE FROM `{TABLE_CONTENT_PERSON}` WHERE ID_CONTENT = @id",
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("id", "STRING", id_content)
+                ]
+            ),
+        ).result()
 
-    if getattr(data, "solutions", None):
-        insert_bq(
-            TABLE_CONTENT_SOLUTION,
-            [
-                {"ID_CONTENT": id_content, "ID_SOLUTION": sid, "CREATED_AT": now}
-                for sid in data.solutions
-            ],
-        )
+        if data.persons:
+            insert_bq(
+                TABLE_CONTENT_PERSON,
+                [
+                    {
+                        "ID_CONTENT": id_content,
+                        "ID_PERSON": p.id_person,
+                        "ROLE": p.role,
+                        "CREATED_AT": now,
+                    }
+                    for p in data.persons
+                ],
+            )
+
+    # CONCEPTS (multi-tag)
+    reset_and_insert(TABLE_CONTENT_CONCEPT, "ID_CONCEPT", data.concepts)
+
+    # SOLUTIONS
+    reset_and_insert(TABLE_CONTENT_SOLUTION, "ID_SOLUTION", data.solutions)
 
     return True
 
@@ -622,10 +594,6 @@ def archive_content(id_content: str):
     )
     return True
 
-
-# ============================================================
-# PUBLISH CONTENT
-# ============================================================
 # ============================================================
 # PUBLISH CONTENT
 # ============================================================
