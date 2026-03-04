@@ -2,9 +2,8 @@ from fastapi import APIRouter, HTTPException
 from api.content.models import (
     ContentCreate,
     ContentUpdate,
-    ContentAnglesRequest,
     ContentPublish,
-    ContentGenerateRequest,
+    ContentSummaryRequest,
 )
 
 from core.content.service import (
@@ -18,10 +17,7 @@ from core.content.service import (
     get_content_stats,
 )
 
-from core.content.orchestration import (
-    generate_angles,
-    generate_content,
-)
+from core.content.orchestration import generate_summary
 
 router = APIRouter()
 
@@ -97,51 +93,21 @@ def publish_route(id_content: str, payload: ContentPublish):
 
 
 # ============================================================
-# IA — STEP 1 : PROPOSE ANGLES
+# IA — GENERATE SUMMARY
 # ============================================================
-@router.post("/ai/angles")
-def ai_angles(payload: ContentAnglesRequest):
+@router.post("/ai/summary")
+def ai_summary(payload: ContentSummaryRequest):
     try:
-        angles = generate_angles(
+        summary = generate_summary(
             source_type=payload.source_type,
             source_text=payload.source_text,
             context=payload.context,
         )
-        return {"status": "ok", "angles": angles}
-    except Exception as e:
-        raise HTTPException(400, f"Erreur génération angles : {e}")
 
-
-# ============================================================
-# IA — STEP 2 : GENERATE CONTENT
-# ============================================================
-@router.post("/ai/generate")
-def ai_generate(payload: ContentGenerateRequest):
-    """
-    Génère excerpt + concept + content_body + citations + chiffres + acteurs
-    à partir d’un angle validé + concept pivot obligatoire.
-    """
-    try:
-        if not payload.concept:
-            raise HTTPException(400, "Concept éditorial obligatoire")
-
-        if not payload.concept_id:
-            raise HTTPException(400, "Concept_ID obligatoire")
-
-        content = generate_content(
-            source_type=payload.source_type,
-            source_text=payload.source_text,
-            angle_title=payload.angle_title,
-            angle_signal=payload.angle_signal,
-            concept=payload.concept,
-            concept_id=payload.concept_id,
-            context=payload.context,
-        )
-
-        return {"status": "ok", "content": content}
+        return {"status": "ok", **summary}
 
     except Exception as e:
-        raise HTTPException(400, f"Erreur génération content : {e}")
+        raise HTTPException(400, f"Erreur génération summary : {e}")
 
 
 # ============================================================
