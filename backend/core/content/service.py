@@ -436,6 +436,7 @@ def update_content(id_content: str, data: Dict[str, Any]):
         "ANGLE_SIGNAL": data.angle_signal,
         "EXCERPT": data.excerpt,
         "CONCEPT": data.concept,
+        "CONCEPT_ID": data.concept_id,
         "CONTENT_BODY": data.content_body,
 
         # SOURCE
