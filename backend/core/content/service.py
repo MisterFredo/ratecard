@@ -211,6 +211,7 @@ def get_content(id_content: str):
         "angle_signal": row["ANGLE_SIGNAL"],
         "excerpt": row.get("EXCERPT"),
         "concept": row.get("CONCEPT"),
+        "concept_id": row.get("CONCEPT_ID"),
         "content_body": row.get("CONTENT_BODY"),
         "chiffres": row.get("CHIFFRES") or [],
         "citations": row.get("CITATIONS") or [],
