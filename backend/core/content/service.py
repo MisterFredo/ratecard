@@ -81,6 +81,7 @@ def create_content(data: Dict[str, Any]) -> str:
         "SOURCE_URL": data.source_url,
         "SOURCE_AUTHOR": data.source_author,
 
+        "TITLE": data.title,
         "EXCERPT": data.excerpt,
         "CONCEPT": data.concept,
         "CONCEPT_ID": data.concept_id,
@@ -434,6 +435,7 @@ def update_content(id_content: str, data: Dict[str, Any]):
     # ---------------------------------------------------------
     fields = {
         "EXCERPT": data.excerpt,
+        "TITLE": data.title,
         "CONCEPT": data.concept,
         "CONCEPT_ID": data.concept_id,
         "CONTENT_BODY": data.content_body,
