@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 // STEPS
 import StepContext from "@/components/admin/content/steps/StepContext";
 import StepSource from "@/components/admin/content/steps/StepSource";
-import StepAngles from "@/components/admin/content/steps/StepAngles";
+import StepSummary from "@/components/admin/content/steps/StepSummary";
 import StepContent from "@/components/admin/content/steps/StepContent";
 import StepPreview from "@/components/admin/content/steps/StepPreview";
 import StepPublish from "@/components/admin/content/steps/StepPublish";
@@ -16,7 +16,7 @@ type Mode = "create" | "edit";
 type Step =
   | "CONTEXT"
   | "SOURCE"
-  | "ANGLES"
+  | "SUMMARY"
   | "CONTENT"
   | "PREVIEW"
   | "PUBLISH";
@@ -30,19 +30,16 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [topics, setTopics] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
-  const [concepts, setConcepts] = useState<any[]>([]); // pivot auto
   const [solutions, setSolutions] = useState<any[]>([]);
+  const [conceptId, setConceptId] = useState<string | null>(null);
+  const [concept, setConcept] = useState("");
 
   const [contextValidated, setContextValidated] = useState(false);
 
   const [sourceType, setSourceType] = useState<string | null>(null);
   const [sourceText, setSourceText] = useState("");
 
-  const [selectedAngle, setSelectedAngle] = useState<any | null>(null);
-
   const [excerpt, setExcerpt] = useState("");
-  const [concept, setConcept] = useState("");
-  const [conceptId, setConceptId] = useState<string | null>(null);
   const [contentBody, setContentBody] = useState("");
 
   const [citations, setCitations] = useState<string[]>([]);
@@ -118,24 +115,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
           }))
         );
 
-        if (c.CONCEPT_ID) {
-          setConcepts([
-            {
-              ID_CONCEPT: c.CONCEPT_ID,
-              TITLE: c.CONCEPT,
-            },
-          ]);
-        }
-
-        setSelectedAngle({
-          angle_title: c.ANGLE_TITLE,
-          angle_signal: c.ANGLE_SIGNAL,
-          concept: c.CONCEPT,
-          concept_id: c.CONCEPT_ID,
-        });
-
         setContextValidated(true);
-        setStep("CONTENT");
+        setStep("SUMMARY");
       } catch (e) {
         console.error(e);
         alert("Erreur chargement contenu");
@@ -149,18 +130,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // SAVE
   // ============================================================
   async function saveContent() {
-    if (!selectedAngle) {
-      alert("Angle requis");
-      return;
-    }
-
-    if (!conceptId) {
-      alert("Concept pivot requis");
-      return;
-    }
-
     if (!excerpt.trim() || !contentBody.trim()) {
-      alert("Contenu incomplet");
+      alert("Summary incomplet");
       return;
     }
 
@@ -172,9 +143,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
     setSaving(true);
 
     const payload = {
-      angle_title: selectedAngle.angle_title,
-      angle_signal: selectedAngle.angle_signal,
-
       excerpt,
       concept,
       concept_id: conceptId,
@@ -188,7 +156,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
       topics: topics.map((t) => t.id_topic),
       events: events.map((e) => e.id_event),
       companies: companies.map((c) => c.id_company),
-
       solutions: solutions.map((s) => s.ID_SOLUTION),
 
       date_creation: dateCreation || null,
@@ -242,6 +209,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // ============================================================
   return (
     <div className="space-y-6">
+
+      {/* CONTEXT */}
       <details open={step === "CONTEXT"} className="border rounded p-4">
         <summary className="font-semibold cursor-pointer">
           1. Contexte
@@ -271,6 +240,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
         />
       </details>
 
+      {/* SOURCE */}
       {contextValidated && (
         <details open={step === "SOURCE"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
@@ -281,80 +251,64 @@ export default function ContentStudio({ mode, contentId }: Props) {
             onSubmit={({ type, text }) => {
               setSourceType(type);
               setSourceText(text);
-              setStep("ANGLES");
+              setStep("SUMMARY");
             }}
           />
         </details>
       )}
 
+      {/* SUMMARY */}
       {sourceText && (
-        <details open={step === "ANGLES"} className="border rounded p-4">
+        <details open={step === "SUMMARY"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            3. Angles
+            3. Summary
           </summary>
 
-          <StepAngles
+          <StepSummary
             sourceType={sourceType}
             sourceText={sourceText}
             context={{ topics, events, companies }}
-            onSelect={(angle) => {
-              setSelectedAngle(angle);
-
-              if (angle.concept) setConcept(angle.concept);
-              if (angle.concept_id) {
-                setConceptId(angle.concept_id);
-                setConcepts([
-                  {
-                    ID_CONCEPT: angle.concept_id,
-                    TITLE: angle.concept,
-                  },
-                ]);
-              }
-
-              setStep("CONTENT");
-            }}
-          />
-        </details>
-      )}
-
-      {selectedAngle && (
-        <details open={step === "CONTENT"} className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            4. Contenu
-          </summary>
-
-          <StepContent
-            angle={selectedAngle}
-            sourceType={sourceType}
-            sourceText={sourceText}
-            context={{ topics, events, companies }}
-
             excerpt={excerpt}
-            concept={concept}
             contentBody={contentBody}
-
             citations={citations}
             chiffres={chiffres}
             acteurs={acteurs}
-
+            concept={concept}
+            conceptId={conceptId}
             onChange={(d) => {
               if (d.excerpt !== undefined) setExcerpt(d.excerpt);
+              if (d.contentBody !== undefined) setContentBody(d.contentBody);
+              if (d.citations !== undefined) setCitations(d.citations);
+              if (d.chiffres !== undefined) setChiffres(d.chiffres);
+              if (d.acteurs !== undefined) setActeurs(d.acteurs);
               if (d.concept !== undefined) setConcept(d.concept);
-              if (d.contentBody !== undefined)
-                setContentBody(d.contentBody);
-              if (d.citations !== undefined)
-                setCitations(d.citations);
-              if (d.chiffres !== undefined)
-                setChiffres(d.chiffres);
-              if (d.acteurs !== undefined)
-                setActeurs(d.acteurs);
+              if (d.conceptId !== undefined) setConceptId(d.conceptId);
             }}
+            onValidate={() => setStep("CONTENT")}
+          />
+        </details>
+      )}
 
+      {/* CONTENT (édition manuelle enrichie si besoin) */}
+      {(excerpt || contentBody) && (
+        <details open={step === "CONTENT"} className="border rounded p-4">
+          <summary className="font-semibold cursor-pointer">
+            4. Finalisation
+          </summary>
+
+          <StepContent
+            excerpt={excerpt}
+            contentBody={contentBody}
+            onChange={(d) => {
+              if (d.excerpt !== undefined) setExcerpt(d.excerpt);
+              if (d.contentBody !== undefined) setContentBody(d.contentBody);
+            }}
             onValidate={saveContent}
           />
         </details>
       )}
 
+      {/* PREVIEW */}
       {internalContentId && (
         <details open={step === "PREVIEW"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
@@ -369,6 +323,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </details>
       )}
 
+      {/* PUBLISH */}
       {internalContentId && (
         <details open={step === "PUBLISH"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
@@ -385,6 +340,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
           />
         </details>
       )}
+
     </div>
   );
 }
