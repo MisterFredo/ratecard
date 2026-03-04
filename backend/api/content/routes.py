@@ -9,8 +9,8 @@ from api.content.models import (
 
 from core.content.service import (
     create_content,
-    list_contents,          # ⬅️ version publique (lecture / analyses)
-    list_contents_admin,    # ⬅️ version admin (liste stable)
+    list_contents,
+    list_contents_admin,
     get_content,
     update_content,
     archive_content,
@@ -24,6 +24,7 @@ from core.content.orchestration import (
 )
 
 router = APIRouter()
+
 
 # ============================================================
 # CREATE CONTENT
@@ -45,14 +46,6 @@ def list_route():
     contents = list_contents_admin()
     return {"status": "ok", "contents": contents}
 
-@router.get("/{id_content}")
-def read_analysis(id_content: str):
-    content = get_content(id_content)
-
-    if not content:
-        raise HTTPException(404, "Analyse introuvable")
-
-    return content
 
 # ============================================================
 # CONTENT STATS (ADMIN)
@@ -97,7 +90,6 @@ def publish_route(id_content: str, payload: ContentPublish):
             id_content=id_content,
             published_at=payload.publish_at,
         )
-
         return {"status": "ok", "published_status": status}
 
     except Exception as e:
@@ -131,14 +123,18 @@ def ai_generate(payload: ContentGenerateRequest):
     """
     try:
         if not payload.concept:
-            raise HTTPException(400, "Concept obligatoire")
+            raise HTTPException(400, "Concept éditorial obligatoire")
+
+        if not payload.concept_id:
+            raise HTTPException(400, "Concept_ID obligatoire")
 
         content = generate_content(
             source_type=payload.source_type,
             source_text=payload.source_text,
             angle_title=payload.angle_title,
             angle_signal=payload.angle_signal,
-            concept=payload.concept,  # ← pivot injecté ici
+            concept=payload.concept,
+            concept_id=payload.concept_id,
             context=payload.context,
         )
 
@@ -150,12 +146,12 @@ def ai_generate(payload: ContentGenerateRequest):
 
 # ============================================================
 # GET ONE CONTENT (ADMIN)
-# ⚠️ DOIT IMPÉRATIVEMENT ÊTRE TOUT EN BAS
 # ============================================================
 @router.get("/{id_content}")
 def get_route(id_content: str):
     content = get_content(id_content)
+
     if not content:
         raise HTTPException(404, "Content introuvable")
-    return {"status": "ok", "content": content}
 
+    return {"status": "ok", "content": content}
