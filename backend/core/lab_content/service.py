@@ -4,7 +4,7 @@ from utils.llm import run_llm
 
 
 # ============================================================
-# IA CONTENT — SOURCE → CONTENT (VERSION STRUCTURÉE STRATÉGIQUE)
+# IA CONTENT — SOURCE → CONTENT (PIVOT CONCEPT VERROUILLÉ)
 # ============================================================
 def transform_source_to_content(
     source_type: str,
@@ -19,40 +19,34 @@ def transform_source_to_content(
         return {}
 
     # ---------------------------------------------------------
-    # BUILD CONCEPT BLOCK
+    # CONCEPT PIVOT IMPOSÉ
     # ---------------------------------------------------------
-    concepts_block = "\n".join([
-        f"- {c['title']} : {c['description']}"
-        for c in selected_concepts
-    ]) if selected_concepts else "Aucun concept spécifique."
+    pivot_concept = selected_concepts[0]["title"] if selected_concepts else ""
 
     prompt = f"""
 Tu es un assistant d’analyse stratégique pour Curator.
 
 Ta mission est d’aider un éditeur humain à formaliser
-une THÈSE ANALYTIQUE exploitable dans un moteur aval.
+une THÈSE ANALYTIQUE exploitable.
 
 ⚠️ RÈGLES FONDAMENTALES :
 - Tu travailles STRICTEMENT à partir de la source fournie.
-- Tu n’inventes jamais de faits, chiffres ou citations.
-- Si une information n’est pas présente dans la source, tu écris "Aucun".
-- Tu écris en français, avec un ton analytique, structuré et B2B.
+- Tu n’inventes jamais de faits.
+- Tu n’inventes jamais de chiffres.
+- Tu n’inventes jamais de citations.
+- Tu écris en français, ton analytique B2B.
 - Tu ne rédiges pas un article média.
-- Tu formalises une position intellectuelle claire et comparable.
 
 ==================== ANGLE ====================
 Titre : {angle_title}
 Signal : {angle_signal}
 
-==================== CADRE CONCEPTUEL ====================
-L’analyse doit être cohérente avec les concepts suivants :
+==================== CONCEPT PIVOT ====================
+L’analyse doit s’articuler autour du concept suivant :
+{pivot_concept}
 
-{concepts_block}
-
-Tu ne dois pas redéfinir ces concepts.
-Tu dois structurer l’analyse en cohérence avec eux.
-Si un concept n’est pas réellement présent dans la source,
-ne le forces pas artificiellement.
+Tu ne dois pas redéfinir ce concept.
+Tu dois structurer ton analyse en cohérence avec lui.
 
 ==================== SOURCE ====================
 Type : {source_type}
@@ -61,48 +55,39 @@ Texte :
 
 ==================== OBJECTIF ANALYTIQUE ====================
 
-Le développement doit explicitement :
+Le développement doit :
 
-1. Identifier la TENSION centrale présente dans la source.
-2. Décrire le MÉCANISME à l’œuvre.
-3. Expliquer la CONSÉQUENCE logique si cette dynamique se poursuit.
+1. Identifier la tension centrale.
+2. Décrire le mécanisme à l’œuvre.
+3. Expliquer la conséquence logique.
 
-Tu ne dois pas extrapoler au-delà des éléments contenus dans la source.
+Ne pas extrapoler au-delà de la source.
 
-==================== FORMAT DE SORTIE ATTENDU ====================
+==================== FORMAT STRICT ====================
 
 EXCERPT
-(1 à 2 phrases synthétiques exprimant clairement la thèse.)
-
-CONCEPT
-(1 phrase unique, dense, qui formalise la tension centrale.)
+(1 à 2 phrases synthétiques.)
 
 DEVELOPPEMENT
-(Texte structuré en 3 blocs logiques :
+(3 blocs logiques :
 - Tension
 - Mécanisme
 - Conséquence)
 
 CITATIONS
-(Liste des citations EXACTES présentes dans la source,
-entre guillemets. Si aucune, écris : Aucun.)
+(Liste exacte ou "Aucun")
 
 CHIFFRES
-(Liste des chiffres présents dans la source. Si aucun, écris : Aucun.)
+(Liste exacte ou "Aucun")
 
 ACTEURS
-(Liste des entreprises citées. Jamais de personnes physiques.
-Si aucun, écris : Aucun.)
+(Liste entreprises ou "Aucun")
 """
 
     raw = run_llm(prompt)
 
-    # ---------------------------------------------------------
-    # PARSING
-    # ---------------------------------------------------------
     sections = {
         "EXCERPT": "",
-        "CONCEPT": "",
         "DEVELOPPEMENT": "",
         "CITATIONS": "",
         "CHIFFRES": "",
@@ -123,7 +108,6 @@ Si aucun, écris : Aucun.)
             sections[current] += line + "\n"
 
     excerpt = sections["EXCERPT"].strip()
-    concept = sections["CONCEPT"].strip()
     body = sections["DEVELOPPEMENT"].strip()
 
     def parse_list(block: str):
@@ -144,7 +128,7 @@ Si aucun, écris : Aucun.)
         clean = source_text.strip()
         return {
             "excerpt": angle_signal,
-            "concept": angle_signal,
+            "concept": pivot_concept,
             "content_body": clean[:800],
             "citations": [],
             "chiffres": [],
@@ -153,7 +137,7 @@ Si aucun, écris : Aucun.)
 
     return {
         "excerpt": excerpt,
-        "concept": concept,
+        "concept": pivot_concept,  # ← FORCÉ
         "content_body": body,
         "citations": citations,
         "chiffres": chiffres,
