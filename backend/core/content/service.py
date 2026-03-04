@@ -343,7 +343,7 @@ def list_contents():
     return [
         {
             "id": r["ID_CONTENT"],
-            "title": row.get("TITLE"),
+            "title": r.get("TITLE"),
             "excerpt": r.get("EXCERPT"),
             "concept": r.get("CONCEPT"),
             "concept_id": r.get("CONCEPT_ID"),
@@ -374,6 +374,7 @@ def list_contents_admin():
         f"""
         SELECT
           C.ID_CONTENT,
+          C.TITLE,
           C.STATUS,
           C.PUBLISHED_AT,
           C.DATE_CREATION,
@@ -405,6 +406,7 @@ def list_contents_admin():
     return [
         {
             "ID_CONTENT": r["ID_CONTENT"],
+            "TITLE": r.get("TITLE"),
             "STATUS": r["STATUS"],
             "PUBLISHED_AT": r["PUBLISHED_AT"],
             "DATE_CREATION": r.get("DATE_CREATION"),
