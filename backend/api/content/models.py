@@ -24,13 +24,15 @@ class ContentAnglesRequest(BaseModel):
 # IA — GENERATE CONTENT (REQUÊTE)
 # ============================================================
 class ContentGenerateRequest(BaseModel):
-    source_type: Optional[str] = None
+    source_type: Optional[str]
     source_text: str
-    context: Dict[str, List[str]]
 
     angle_title: str
     angle_signal: str
 
+    concept: str  # ← OBLIGATOIRE
+
+    context: Dict[str, List[str]]
 
 
 # ============================================================
