@@ -290,6 +290,21 @@ export default function ContentStudio({ mode, contentId }: Props) {
             context={{ topics, events, companies }}
             onSelect={(angle) => {
               setSelectedAngle(angle);
+
+              // 🔥 Synchronisation pivot concept
+              if (angle.concept) {
+                setConcept(angle.concept);
+              }
+
+              if (angle.concept_id) {
+                setConcepts([
+                  {
+                    ID_CONCEPT: angle.concept_id,
+                    TITLE: angle.concept,
+                  },
+                ]);
+              }
+
               setStep("CONTENT");
             }}
           />
