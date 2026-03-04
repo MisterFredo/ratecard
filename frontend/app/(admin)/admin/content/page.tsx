@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Pencil } from "lucide-react";
@@ -15,8 +15,6 @@ type ContentLite = {
   STATUS: string;
   PUBLISHED_AT?: string | null;
   DATE_CREATION?: string | null;
-
-  // 🔥 NOUVEAU
   topics?: { LABEL: string }[];
   concepts?: { TITLE: string }[];
 };
@@ -61,8 +59,6 @@ export default function ContentListPage() {
     load();
   }, []);
 
-  if (loading) return <div>Chargement…</div>;
-
   /* ---------------------------------------------------------
      HELPERS
   --------------------------------------------------------- */
@@ -78,36 +74,32 @@ export default function ContentListPage() {
   }
 
   /* ---------------------------------------------------------
-     🔥 TRI INTELLIGENT
+     TRI ADMIN SIMPLE
      1. Draft
      2. Scheduled
      3. Published (desc)
   --------------------------------------------------------- */
 
-   const sortedContents = useMemo(() => {
-     return [...contents].sort((a, b) => {
+  const sortedContents = [...contents].sort((a, b) => {
+    // Draft en premier
+    if (a.STATUS === "DRAFT" && b.STATUS !== "DRAFT") return -1;
+    if (b.STATUS === "DRAFT" && a.STATUS !== "DRAFT") return 1;
 
-       if (a.STATUS === "DRAFT" && b.STATUS !== "DRAFT") return -1;
-       if (b.STATUS === "DRAFT" && a.STATUS !== "DRAFT") return 1;
+    // Scheduled ensuite
+    const aScheduled = isScheduled(a);
+    const bScheduled = isScheduled(b);
 
-       const now = new Date();
+    if (aScheduled && !bScheduled) return -1;
+    if (bScheduled && !aScheduled) return 1;
 
-       const aScheduled =
-         a.PUBLISHED_AT && new Date(a.PUBLISHED_AT) > now;
-       const bScheduled =
-         b.PUBLISHED_AT && new Date(b.PUBLISHED_AT) > now;
+    // Published → plus récent en premier
+    const dateA = new Date(a.PUBLISHED_AT || 0).getTime();
+    const dateB = new Date(b.PUBLISHED_AT || 0).getTime();
 
-       if (aScheduled && !bScheduled) return -1;
-       if (bScheduled && !aScheduled) return 1;
+    return dateB - dateA;
+  });
 
-       const dateA = new Date(a.PUBLISHED_AT || 0).getTime();
-       const dateB = new Date(b.PUBLISHED_AT || 0).getTime();
-
-       return dateB - dateA;
-     });
-   }, [contents]);
-
-   if (loading) return <div>Chargement…</div>;
+  if (loading) return <div>Chargement…</div>;
 
   /* ---------------------------------------------------------
      RENDER
@@ -166,26 +158,20 @@ export default function ContentListPage() {
               key={c.ID_CONTENT}
               className="border-b hover:bg-gray-50 transition"
             >
-              {/* TITRE */}
-              <td className="p-2 font-medium">
-                {c.TITLE}
-              </td>
+              <td className="p-2 font-medium">{c.TITLE}</td>
 
-              {/* TOPIC */}
               <td className="p-2 text-gray-600">
                 {c.topics?.length
                   ? c.topics.map((t) => t.LABEL).join(", ")
                   : "—"}
               </td>
 
-              {/* CONCEPT */}
               <td className="p-2 text-gray-600">
                 {c.concepts?.length
                   ? c.concepts.map((co) => co.TITLE).join(", ")
                   : "—"}
               </td>
 
-              {/* STATUS */}
               <td className="p-2">
                 <span
                   className={`px-2 py-1 rounded text-xs font-medium ${
@@ -200,17 +186,14 @@ export default function ContentListPage() {
                 </span>
               </td>
 
-              {/* DATE CONTEXTE */}
               <td className="p-2 text-gray-600">
                 {formatDate(c.DATE_CREATION)}
               </td>
 
-              {/* DATE PUBLICATION */}
               <td className="p-2">
                 {formatDate(c.PUBLISHED_AT)}
               </td>
 
-              {/* ACTIONS */}
               <td className="p-2 text-right">
                 <Link
                   href={`/admin/content/edit/${c.ID_CONTENT}`}
