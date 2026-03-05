@@ -15,9 +15,13 @@ type Props = {
   chiffres: string[];
   acteurs: string[];
   concepts: string[];
-
-  // 👇 rendu optionnel
   solutions?: string[];
+
+  // 🔥 NOUVEAUX CHAMPS ANALYTIQUES
+  mecanique?: string;
+  enjeu?: string;
+  friction?: string;
+  signal?: string;
 
   onChange: (data: {
     excerpt?: string;
@@ -27,6 +31,11 @@ type Props = {
     acteurs?: string[];
     concepts?: string[];
     solutions?: string[];
+
+    mecanique?: string;
+    enjeu?: string;
+    friction?: string;
+    signal?: string;
   }) => void;
 
   onNext: () => void;
@@ -43,9 +52,12 @@ export default function StepSummary({
   chiffres,
   acteurs,
   concepts,
-
-  // 👇 valeur par défaut
   solutions = [],
+
+  mecanique = "",
+  enjeu = "",
+  friction = "",
+  signal = "",
 
   onChange,
   onNext,
@@ -55,7 +67,7 @@ export default function StepSummary({
   const [loading, setLoading] = useState(false);
 
   // ==========================================================
-  // GENERATE SUMMARY
+  // GENERATE (Résumé + Analyse en une passe)
   // ==========================================================
 
   async function generateSummary() {
@@ -77,7 +89,7 @@ export default function StepSummary({
         payload.source_id = sourceId;
       }
 
-      const res = await api.post("/content/ai/summary", payload);
+      const res = await api.post("/content/ai/generate", payload);
 
       onChange({
 
@@ -88,14 +100,20 @@ export default function StepSummary({
         chiffres: res.chiffres || [],
         acteurs: res.acteurs_cites || [],
         concepts: res.concepts || [],
-        solutions: res.solutions || []
+        solutions: res.solutions || [],
+
+        // 🔥 ANALYSE
+        mecanique: res.mecanique_expliquee || "",
+        enjeu: res.enjeu_strategique || "",
+        friction: res.point_de_friction || "",
+        signal: res.signal_analytique || ""
 
       });
 
     } catch (e) {
 
       console.error(e);
-      alert("Erreur génération summary");
+      alert("Erreur génération");
 
     }
 
@@ -103,13 +121,9 @@ export default function StepSummary({
 
   }
 
-  // ==========================================================
-  // RENDER
-  // ==========================================================
-
   return (
 
-    <div className="space-y-6">
+    <div className="space-y-8">
 
       {/* GENERATE */}
 
@@ -119,11 +133,11 @@ export default function StepSummary({
           disabled={loading}
           className="px-4 py-2 bg-black text-white rounded"
         >
-          {loading ? "Génération..." : "Générer la synthèse"}
+          {loading ? "Génération..." : "Générer la synthèse & l’analyse"}
         </button>
       </div>
 
-      {/* EXCERPT */}
+      {/* RESUME EXECUTIF */}
 
       <div>
         <label className="block text-sm font-medium mb-2">
@@ -138,7 +152,7 @@ export default function StepSummary({
         />
       </div>
 
-      {/* BODY */}
+      {/* POINTS CLES */}
 
       <div>
         <label className="block text-sm font-medium mb-2">
@@ -153,7 +167,7 @@ export default function StepSummary({
         />
       </div>
 
-      {/* CITATIONS */}
+      {/* EXTRACTIONS STRUCTUREES */}
 
       <div>
         <label className="block text-sm font-medium mb-2">
@@ -173,8 +187,6 @@ export default function StepSummary({
         />
       </div>
 
-      {/* CHIFFRES */}
-
       <div>
         <label className="block text-sm font-medium mb-2">
           Chiffres clés
@@ -192,8 +204,6 @@ export default function StepSummary({
           }
         />
       </div>
-
-      {/* ACTEURS */}
 
       <div>
         <label className="block text-sm font-medium mb-2">
@@ -213,44 +223,66 @@ export default function StepSummary({
         />
       </div>
 
-      {/* CONCEPTS */}
+      {/* 🔥 BLOC ANALYTIQUE */}
 
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Concepts métier
-        </label>
-        <textarea
-          className="w-full border rounded p-3 min-h-[80px]"
-          value={concepts.join("\n")}
-          onChange={(e) =>
-            onChange({
-              concepts: e.target.value
-                .split("\n")
-                .map((l) => l.trim())
-                .filter(Boolean),
-            })
-          }
-        />
-      </div>
+      <div className="border-t pt-6 space-y-6">
 
-      {/* SOLUTIONS */}
+        <h3 className="text-sm font-semibold text-gray-700">
+          Analyse stratégique
+        </h3>
 
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Solutions / Produits
-        </label>
-        <textarea
-          className="w-full border rounded p-3 min-h-[80px]"
-          value={solutions.join("\n")}
-          onChange={(e) =>
-            onChange({
-              solutions: e.target.value
-                .split("\n")
-                .map((l) => l.trim())
-                .filter(Boolean),
-            })
-          }
-        />
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Mécanique expliquée
+          </label>
+          <textarea
+            className="w-full border rounded p-3 min-h-[120px]"
+            value={mecanique}
+            onChange={(e) =>
+              onChange({ mecanique: e.target.value })
+            }
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Enjeu stratégique
+          </label>
+          <textarea
+            className="w-full border rounded p-3 min-h-[120px]"
+            value={enjeu}
+            onChange={(e) =>
+              onChange({ enjeu: e.target.value })
+            }
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Point de friction
+          </label>
+          <textarea
+            className="w-full border rounded p-3 min-h-[100px]"
+            value={friction}
+            onChange={(e) =>
+              onChange({ friction: e.target.value })
+            }
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Signal analytique
+          </label>
+          <textarea
+            className="w-full border rounded p-3 min-h-[120px]"
+            value={signal}
+            onChange={(e) =>
+              onChange({ signal: e.target.value })
+            }
+          />
+        </div>
+
       </div>
 
       {/* NEXT */}
