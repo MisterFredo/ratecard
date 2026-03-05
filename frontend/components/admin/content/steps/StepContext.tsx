@@ -26,10 +26,29 @@ export default function StepContext({
   onChange,
   onValidate,
 }: Props) {
+
+  function validate() {
+
+    const hasContext =
+      topics.length ||
+      events.length ||
+      companies.length ||
+      solutions.length;
+
+    if (!hasContext) {
+      alert("Merci d'ajouter au moins un élément de contexte.");
+      return;
+    }
+
+    onValidate();
+  }
+
   return (
+
     <div className="space-y-6">
 
       {/* CONTEXTE STRUCTURANT */}
+
       <ContentContextBlock
         topics={topics}
         events={events}
@@ -39,13 +58,15 @@ export default function StepContext({
       />
 
       {/* ACTION */}
+
       <button
-        onClick={onValidate}
+        onClick={validate}
         className="bg-ratecard-blue text-white px-4 py-2 rounded"
       >
         Continuer
       </button>
 
     </div>
+
   );
 }
