@@ -1,15 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "@/lib/api";
-
 import EditableList from "@/components/admin/content/steps/EditableList";
-import MultiSelectTopics from "@/components/admin/content/steps/MultiSelectTopics";
-
-type Topic = {
-  ID_TOPIC: string;
-  LABEL: string;
-};
 
 type Props = {
   sourceId: string | null;
@@ -37,24 +30,11 @@ type Props = {
 
 export default function StepSummary(props: Props) {
 
-  const [allTopics, setAllTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // =========================================
-  // LOAD TOPICS (13 → small volume)
-  // =========================================
-
-  useEffect(() => {
-    async function loadTopics() {
-      const res = await api.get("/topic/list");
-      setAllTopics(res.topics || []);
-    }
-    loadTopics();
-  }, []);
-
-  // =========================================
-  // NORMALIZATION HELPERS
-  // =========================================
+  // =====================================================
+  // Helpers
+  // =====================================================
 
   function normalizeList(input: any): string[] {
 
@@ -81,20 +61,17 @@ export default function StepSummary(props: Props) {
     return [];
   }
 
-  function normalizePoints(input: string): string[] {
-    if (!input) return [];
-
-    return input
+  function stripHtmlList(text: string): string {
+    if (!text) return "";
+    return text
       .replace(/<\/?ul>/g, "")
       .replace(/<\/?li>/g, "\n")
-      .split("\n")
-      .map((x) => x.trim())
-      .filter(Boolean);
+      .trim();
   }
 
-  // =========================================
-  // GENERATE (LLM)
-  // =========================================
+  // =====================================================
+  // Generate (LLM)
+  // =====================================================
 
   async function generate() {
 
@@ -110,8 +87,9 @@ export default function StepSummary(props: Props) {
       });
 
       props.onChange({
+
         excerpt: res.excerpt || "",
-        contentBody: (normalizeList(res.content_body) || []).join("\n"),
+        contentBody: stripHtmlList(res.content_body || ""),
 
         citations: normalizeList(res.citations),
         chiffres: normalizeList(res.chiffres),
@@ -119,12 +97,13 @@ export default function StepSummary(props: Props) {
         acteurs: normalizeList(res.acteurs_cites),
         concepts: normalizeList(res.concepts),
         solutions: normalizeList(res.solutions),
-        topics: res.topics || [],
+        topics: normalizeList(res.topics),
 
         mecanique: res.mecanique_expliquee || "",
         enjeu: res.enjeu_strategique || "",
         friction: res.point_de_friction || "",
         signal: res.signal_analytique || "",
+
       });
 
     } catch (e) {
@@ -135,15 +114,15 @@ export default function StepSummary(props: Props) {
     setLoading(false);
   }
 
-  // =========================================
+  // =====================================================
   // RENDER
-  // =========================================
+  // =====================================================
 
   return (
 
     <div className="space-y-10">
 
-      {/* GENERATION */}
+      {/* GENERATE BUTTON */}
 
       <button
         onClick={generate}
@@ -157,12 +136,13 @@ export default function StepSummary(props: Props) {
       {/* ÉDITORIAL */}
       {/* ========================================= */}
 
-      <div className="space-y-4">
+      <div className="space-y-6">
 
         <h3 className="text-sm font-semibold text-gray-700">
           Éditorial
         </h3>
 
+        {/* Résumé */}
         <div>
           <label className="block text-sm font-medium mb-2">
             Résumé exécutif
@@ -172,40 +152,11 @@ export default function StepSummary(props: Props) {
             onChange={(e) =>
               props.onChange({ excerpt: e.target.value })
             }
-            className="w-full border rounded p-3 min-h-[80px]"
+            className="w-full border rounded p-3 min-h-[100px]"
           />
         </div>
 
-        <EditableList
-          label="Points clés"
-          items={normalizePoints(props.contentBody)}
-          onChange={(items) =>
-            props.onChange({
-              contentBody: items.join("\n"),
-            })
-          }
-        />
-
-      </div>
-
-      {/* ========================================= */}
-      {/* EXTRACTIONS LLM */}
-      {/* ========================================= */}
-
-      <div className="space-y-6">
-
-        <h3 className="text-sm font-semibold text-gray-700">
-          Extractions LLM
-        </h3>
-
-        <MultiSelectTopics
-          topics={allTopics}
-          selected={props.topics}
-          onChange={(ids) =>
-            props.onChange({ topics: ids })
-          }
-        />
-
+        {/* Points clés */}
         <div>
           <label className="block text-sm font-medium mb-2">
             Points clés
@@ -218,6 +169,34 @@ export default function StepSummary(props: Props) {
             className="w-full border rounded p-3 min-h-[200px]"
           />
         </div>
+
+      </div>
+
+      {/* ========================================= */}
+      {/* EXTRACTIONS LLM (BRUT) */}
+      {/* ========================================= */}
+
+      <div className="space-y-6 border-t pt-6">
+
+        <h3 className="text-sm font-semibold text-gray-700">
+          Extractions LLM (brut)
+        </h3>
+
+        <EditableList
+          label="Topics suggérés"
+          items={props.topics}
+          onChange={(items) =>
+            props.onChange({ topics: items })
+          }
+        />
+
+        <EditableList
+          label="Acteurs cités"
+          items={props.acteurs}
+          onChange={(items) =>
+            props.onChange({ acteurs: items })
+          }
+        />
 
         <EditableList
           label="Concepts"
@@ -272,7 +251,7 @@ export default function StepSummary(props: Props) {
             onChange={(e) =>
               props.onChange({ mecanique: e.target.value })
             }
-            className="w-full border rounded p-3 min-h-[100px]"
+            className="w-full border rounded p-3 min-h-[120px]"
           />
         </div>
 
@@ -285,7 +264,7 @@ export default function StepSummary(props: Props) {
             onChange={(e) =>
               props.onChange({ enjeu: e.target.value })
             }
-            className="w-full border rounded p-3 min-h-[100px]"
+            className="w-full border rounded p-3 min-h-[120px]"
           />
         </div>
 
@@ -298,7 +277,7 @@ export default function StepSummary(props: Props) {
             onChange={(e) =>
               props.onChange({ friction: e.target.value })
             }
-            className="w-full border rounded p-3 min-h-[80px]"
+            className="w-full border rounded p-3 min-h-[100px]"
           />
         </div>
 
@@ -311,7 +290,7 @@ export default function StepSummary(props: Props) {
             onChange={(e) =>
               props.onChange({ signal: e.target.value })
             }
-            className="w-full border rounded p-3 min-h-[100px]"
+            className="w-full border rounded p-3 min-h-[120px]"
           />
         </div>
 
