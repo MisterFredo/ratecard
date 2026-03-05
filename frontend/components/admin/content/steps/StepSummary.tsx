@@ -15,6 +15,7 @@ type Props = {
   chiffres: string[];
   acteurs: string[];
   concepts: string[];
+  solutions: string[];
 
   onChange: (data: {
     excerpt?: string;
@@ -23,6 +24,7 @@ type Props = {
     chiffres?: string[];
     acteurs?: string[];
     concepts?: string[];
+    solutions?: string[];
   }) => void;
 
   onNext: () => void;
@@ -39,6 +41,7 @@ export default function StepSummary({
   chiffres,
   acteurs,
   concepts,
+  solutions,
 
   onChange,
   onNext,
@@ -46,7 +49,6 @@ export default function StepSummary({
 }: Props) {
 
   const [loading, setLoading] = useState(false);
-
 
   // ==========================================================
   // GENERATE SUMMARY
@@ -81,7 +83,8 @@ export default function StepSummary({
         citations: res.citations || [],
         chiffres: res.chiffres || [],
         acteurs: res.acteurs_cites || [],
-        concepts: res.concepts || []
+        concepts: res.concepts || [],
+        solutions: res.solutions || []
 
       });
 
@@ -95,7 +98,6 @@ export default function StepSummary({
     setLoading(false);
 
   }
-
 
   // ==========================================================
   // RENDER
@@ -119,15 +121,12 @@ export default function StepSummary({
 
       </div>
 
-
       {/* EXCERPT */}
 
       <div>
-
         <label className="block text-sm font-medium mb-2">
           Résumé exécutif
         </label>
-
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
           value={excerpt}
@@ -135,18 +134,14 @@ export default function StepSummary({
             onChange({ excerpt: e.target.value })
           }
         />
-
       </div>
-
 
       {/* BODY */}
 
       <div>
-
         <label className="block text-sm font-medium mb-2">
           Points clés
         </label>
-
         <textarea
           className="w-full border rounded p-3 min-h-[240px]"
           value={contentBody}
@@ -154,18 +149,14 @@ export default function StepSummary({
             onChange({ contentBody: e.target.value })
           }
         />
-
       </div>
-
 
       {/* CITATIONS */}
 
       <div>
-
         <label className="block text-sm font-medium mb-2">
           Citations
         </label>
-
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
           value={citations.join("\n")}
@@ -178,18 +169,14 @@ export default function StepSummary({
             })
           }
         />
-
       </div>
-
 
       {/* CHIFFRES */}
 
       <div>
-
         <label className="block text-sm font-medium mb-2">
           Chiffres clés
         </label>
-
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
           value={chiffres.join("\n")}
@@ -202,18 +189,14 @@ export default function StepSummary({
             })
           }
         />
-
       </div>
-
 
       {/* ACTEURS */}
 
       <div>
-
         <label className="block text-sm font-medium mb-2">
           Acteurs cités
         </label>
-
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
           value={acteurs.join("\n")}
@@ -226,18 +209,14 @@ export default function StepSummary({
             })
           }
         />
-
       </div>
-
 
       {/* CONCEPTS */}
 
       <div>
-
         <label className="block text-sm font-medium mb-2">
-          Concepts suggérés
+          Concepts métier
         </label>
-
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
           value={concepts.join("\n")}
@@ -250,21 +229,37 @@ export default function StepSummary({
             })
           }
         />
-
       </div>
 
+      {/* SOLUTIONS */}
+
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          Solutions / Produits
+        </label>
+        <textarea
+          className="w-full border rounded p-3 min-h-[80px]"
+          value={solutions.join("\n")}
+          onChange={(e) =>
+            onChange({
+              solutions: e.target.value
+                .split("\n")
+                .map((l) => l.trim())
+                .filter(Boolean),
+            })
+          }
+        />
+      </div>
 
       {/* NEXT */}
 
       <div className="pt-4">
-
         <button
           onClick={onNext}
           className="px-4 py-2 bg-green-600 text-white rounded"
         >
           Continuer vers le contexte
         </button>
-
       </div>
 
     </div>
