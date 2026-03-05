@@ -6,10 +6,18 @@ from utils.bigquery_utils import query_bq
 
 
 # ============================================================
-# UTILS — HEADER NORMALISATION
+# UTILS — NORMALISATION HEADER
 # ============================================================
 
 def normalize_key(text: str) -> str:
+    """
+    Normalise un header :
+    - supprime accents
+    - supprime #
+    - supprime :
+    - uppercase
+    - trim
+    """
     text = unicodedata.normalize("NFD", text)
     text = text.encode("ascii", "ignore").decode("utf-8")
     text = text.replace("#", "")
@@ -49,7 +57,7 @@ def generate_summary(
     )
 
     # ============================================================
-    # PROMPT
+    # PROMPT COMPLET
     # ============================================================
 
     prompt = f"""
@@ -73,21 +81,52 @@ Source : {source_id or "inconnue"}
 ================ FORMAT OBLIGATOIRE ================
 
 TITLE
+(Titre factuel.)
+
 EXCERPT
+(1 à 2 phrases synthétiques.)
+
 POINTS CLES
+(Liste factuelle.)
+
 CITATIONS
+(Liste exacte ou "Aucun")
+
 CHIFFRES
+(Liste exacte ou "Aucun")
+
 ACTEURS
+(Liste des entreprises citées ou "Aucun")
+
 CONCEPTS
+(Notions métier ou dynamiques marché.
+Ou "Aucun")
+
 SOLUTIONS
+(Noms de produits, plateformes ou offres.
+Ou "Aucun")
+
 TOPICS
+(Choisir 1 à 3 topics uniquement parmi cette liste.
+Ne jamais inventer ni reformuler.)
+
+{topics_list_text}
 
 ================ ANALYSE STRATEGIQUE ================
 
 MECANIQUE
+(Explique en 3 à 6 lignes la mécanique business ou opérationnelle décrite dans la source.
+Strictement basée sur le texte.)
+
 ENJEU
+(Quel est l’enjeu stratégique sous-jacent ? 2 à 4 lignes.)
+
 FRICTION
+(Quel point de tension, limite ou incertitude apparaît ? 1 à 3 lignes.
+Si aucun, écrire "Aucun")
+
 SIGNAL
+(Quel signal de marché cela révèle-t-il ? 2 à 4 lignes.)
 """
 
     raw = run_llm(prompt)
@@ -123,10 +162,10 @@ SIGNAL
         if not clean:
             continue
 
-        normalized_line = normalize_key(clean)
+        normalized = normalize_key(clean)
 
-        if normalized_line in sections:
-            current = normalized_line
+        if normalized in sections:
+            current = normalized
             continue
 
         if current:
@@ -147,10 +186,8 @@ SIGNAL
         items = []
 
         for line in block.splitlines():
-
             line = line.strip()
             line = re.sub(r"^[-•]\s*", "", line)
-
             if line and line.lower() != "aucun":
                 items.append(line)
 
@@ -165,9 +202,7 @@ SIGNAL
     if body:
         lines = parse_list(body)
         if lines:
-            body = "<ul>" + "".join(
-                f"<li>{l}</li>" for l in lines
-            ) + "</ul>"
+            body = "<ul>" + "".join(f"<li>{l}</li>" for l in lines) + "</ul>"
 
     # ============================================================
     # TOPICS MAPPING
@@ -185,7 +220,7 @@ SIGNAL
     ]
 
     # ============================================================
-    # RETURN
+    # RETURN STRUCTURED DATA
     # ============================================================
 
     return {
