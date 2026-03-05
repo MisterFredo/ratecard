@@ -387,11 +387,33 @@ def reset_and_insert(table, id_field, id_content, values):
 
 def update_content(id_content: str, data: ContentUpdate):
 
+    now = datetime.now(timezone.utc)
+
     fields = {
+        # SOURCE
+        "SOURCE_ID": data.source_id,
+        "SOURCE_TEXT": data.source_text,
+        "SOURCE_URL": data.source_url,
+        "SOURCE_AUTHOR": data.source_author,
+
+        # SUMMARY
         "TITLE": data.title,
         "EXCERPT": data.excerpt,
         "CONTENT_BODY": data.content_body,
-        "UPDATED_AT": datetime.now(timezone.utc),
+
+        # EXTRACTIONS
+        "CITATIONS": normalize_array(data.citations) if data.citations is not None else None,
+        "CHIFFRES": normalize_array(data.chiffres) if data.chiffres is not None else None,
+        "ACTEURS_CITES": normalize_array(data.acteurs_cites) if data.acteurs_cites is not None else None,
+
+        # SEO
+        "SEO_TITLE": data.seo_title,
+        "SEO_DESCRIPTION": data.seo_description,
+
+        # META
+        "AUTHOR": data.author,
+
+        "UPDATED_AT": now,
     }
 
     update_bq(
@@ -400,6 +422,7 @@ def update_content(id_content: str, data: ContentUpdate):
         where={"ID_CONTENT": id_content},
     )
 
+    # Relations (reset complet comme avant)
     reset_and_insert(
         TABLE_CONTENT_TOPIC,
         "ID_TOPIC",
@@ -435,8 +458,35 @@ def update_content(id_content: str, data: ContentUpdate):
         data.solutions or [],
     )
 
-    return True
+    # Persons avec rôle
+    client = get_bigquery_client()
 
+    client.query(
+        f"DELETE FROM `{TABLE_CONTENT_PERSON}` WHERE ID_CONTENT = @id",
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter(
+                    "id", "STRING", id_content
+                )
+            ]
+        ),
+    ).result()
+
+    if data.persons:
+        insert_bq(
+            TABLE_CONTENT_PERSON,
+            [
+                {
+                    "ID_CONTENT": id_content,
+                    "ID_PERSON": p.id_person,
+                    "ROLE": p.role,
+                    "CREATED_AT": now,
+                }
+                for p in data.persons
+            ],
+        )
+
+    return True
 
 # ============================================================
 # ARCHIVE CONTENT
