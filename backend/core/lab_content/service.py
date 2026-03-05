@@ -4,7 +4,7 @@ from utils.llm import run_llm
 
 
 # ============================================================
-# IA SUMMARY — SOURCE → FACTUAL SYNTHESIS
+# IA SUMMARY — VERSION STABLE
 # ============================================================
 def transform_source_to_content(
     source_type: str,
@@ -16,36 +16,29 @@ def transform_source_to_content(
         return {}
 
     prompt = f"""
-Tu es un assistant de synthèse professionnelle B2B.
+Tu es un assistant de synthèse B2B.
 
-MISSION :
-Produire une synthèse factuelle, dense et précise.
-
-⚠️ RÈGLES ABSOLUES :
+RÈGLES ABSOLUES :
 - Strictement basé sur la source.
 - Aucun fait inventé.
 - Aucun chiffre inventé.
 - Aucun acteur inventé.
-- Aucune interprétation.
-- Style sobre, professionnel.
-- La synthèse doit TOUJOURS être rédigée en français,
-  même si la source est en anglais.
+- Rédige TOUJOURS en français.
 
-==================== SOURCE ====================
+================ SOURCE ================
 Type : {source_type}
-Texte :
 {source_text}
 
-==================== FORMAT STRICT ====================
+================ FORMAT OBLIGATOIRE ================
 
 TITLE
-(Titre factuel et clair.)
+(Titre factuel.)
 
 EXCERPT
-(1 à 2 phrases synthétiques expliquant l'essentiel.)
+(1 à 2 phrases synthétiques.)
 
 POINTS CLES
-(Liste factuelle des éléments importants à retenir.)
+(Liste factuelle.)
 
 CITATIONS
 (Liste exacte ou "Aucun")
@@ -54,19 +47,18 @@ CHIFFRES
 (Liste exacte ou "Aucun")
 
 ACTEURS
-(Liste des entreprises citées. Jamais de personnes physiques.
-Si aucun, écris : Aucun.)
+(Liste des entreprises citées ou "Aucun")
 
 CONCEPTS
-(Liste des concepts ou notions structurantes identifiées.
-Si aucun, écris : Aucun.)
+(Liste des notions structurantes ou "Aucun")
 """
 
     raw = run_llm(prompt)
 
     # ---------------------------------------------------------
-    # PARSING EXACTEMENT COMME L'ANCIEN
+    # PARSING ROBUSTE
     # ---------------------------------------------------------
+
     sections = {
         "TITLE": "",
         "EXCERPT": "",
@@ -80,25 +72,25 @@ Si aucun, écris : Aucun.)
     current = None
 
     for line in raw.splitlines():
-        line = line.strip()
-        if not line:
+        clean = line.strip()
+        if not clean:
             continue
 
-        # Parsing strict comme avant
-        if line.upper() in sections:
-            current = line.upper()
-            continue
+        normalized = clean.upper().replace(":", "").strip()
 
-        if current:
-            sections[current] += line + "\n"
-
-    title = sections["TITLE"].strip()
-    excerpt = sections["EXCERPT"].strip()
-    points_cles = sections["POINTS CLES"].strip()
+        # Détection tolérante
+        for key in sections.keys():
+            if normalized.startswith(key):
+                current = key
+                break
+        else:
+            if current:
+                sections[current] += clean + "\n"
 
     # ---------------------------------------------------------
-    # LIST PARSER IDENTIQUE À L’ANCIEN
+    # EXTRACTION
     # ---------------------------------------------------------
+
     def parse_list(block: str):
         if not block or block.lower().startswith("aucun"):
             return []
@@ -109,17 +101,14 @@ Si aucun, écris : Aucun.)
                 items.append(line)
         return items
 
-    citations = parse_list(sections["CITATIONS"])
-    chiffres = parse_list(sections["CHIFFRES"])
-    acteurs = parse_list(sections["ACTEURS"])
-    concepts = parse_list(sections["CONCEPTS"])
-
     return {
-        "title": title,
-        "excerpt": excerpt,
-        "content_body": points_cles,
-        "citations": citations,
-        "chiffres": chiffres,
-        "acteurs_cites": acteurs,
-        "concepts": concepts,   # brute, sans matching
+        "title": sections["TITLE"].strip(),
+        "excerpt": sections["EXCERPT"].strip(),
+        "content_body": sections["POINTS CLES"].strip(),
+        "citations": parse_list(sections["CITATIONS"]),
+        "chiffres": parse_list(sections["CHIFFRES"]),
+        "acteurs_cites": parse_list(sections["ACTEURS"]),
+        "concepts": parse_list(sections["CONCEPTS"]),
     }
+
+
