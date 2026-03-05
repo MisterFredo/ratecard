@@ -5,17 +5,19 @@ import EventSelector from "@/components/admin/EventSelector";
 import CompanySelector from "@/components/admin/CompanySelector";
 import SolutionSelector from "@/components/admin/SolutionSelector";
 
+type Entity = Record<string, any>;
+
 type Props = {
-  topics: any[];
-  events: any[];
-  companies: any[];
-  solutions: any[];
+  topics: Entity[];
+  events: Entity[];
+  companies: Entity[];
+  solutions: Entity[];
 
   onChange: (data: {
-    topics?: any[];
-    events?: any[];
-    companies?: any[];
-    solutions?: any[];
+    topics?: Entity[];
+    events?: Entity[];
+    companies?: Entity[];
+    solutions?: Entity[];
   }) => void;
 };
 
@@ -26,7 +28,9 @@ export default function ContentContextBlock({
   solutions,
   onChange,
 }: Props) {
+
   return (
+
     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
 
       <TopicSelector
@@ -50,5 +54,6 @@ export default function ContentContextBlock({
       />
 
     </div>
+
   );
 }
