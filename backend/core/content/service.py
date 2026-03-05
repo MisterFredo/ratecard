@@ -6,7 +6,10 @@ from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
 
-from api.content.models import ContentCreate, ContentUpdate
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from api.content.models import ContentCreate, ContentUpdate
 
 from utils.bigquery_utils import (
     query_bq,
