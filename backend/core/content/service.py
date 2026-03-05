@@ -387,7 +387,7 @@ def reset_and_insert(table, id_field, id_content, values):
 
 def update_content(id_content: str, data: ContentUpdate):
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).isoformat()
 
     fields = {
         # SOURCE
