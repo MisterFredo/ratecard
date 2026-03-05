@@ -60,7 +60,8 @@ RÈGLES ABSOLUES :
 - Aucun fait inventé.
 - Aucun chiffre inventé.
 - Aucun acteur inventé.
-- Aucune extrapolation stratégique non appuyée par le texte.
+- Toute analyse doit être strictement déduite du texte.
+- Ne pas extrapoler au-delà des éléments explicitement mentionnés.
 - Style professionnel, clair et structuré.
 - Rédige toujours en français.
 
