@@ -1,9 +1,12 @@
 "use client";
 
-import TopicSelector from "@/components/admin/TopicSelector";
-import CompanySelector from "@/components/admin/CompanySelector";
-import ConceptSelector from "@/components/admin/ConceptSelector";
-import SolutionSelector from "@/components/admin/SolutionSelector";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+
+import TopicSelector, { Topic } from "@/components/admin/TopicSelector";
+import CompanySelector, { Company } from "@/components/admin/CompanySelector";
+import ConceptSelector, { Concept } from "@/components/admin/ConceptSelector";
+import SolutionSelector, { Solution } from "@/components/admin/SolutionSelector";
 
 type Props = {
   topicsRaw: string[];
@@ -16,9 +19,14 @@ type Props = {
   concepts: string[];
   solutions: string[];
 
-  onChange: (data: any) => void;
+  onChange: (data: {
+    topics?: string[];
+    companies?: string[];
+    concepts?: string[];
+    solutions?: string[];
+  }) => void;
+
   onSave: () => void;
-  onPublish?: () => void;
 };
 
 export default function StepValidation({
@@ -32,127 +40,153 @@ export default function StepValidation({
   solutions,
   onChange,
   onSave,
-  onPublish,
 }: Props) {
 
-  function BadgeList({ items }: { items: string[] }) {
+  // =========================
+  // Load governed data
+  // =========================
 
-    if (!items?.length) {
-      return (
-        <div className="text-xs text-gray-400">
-          Aucun élément proposé
-        </div>
-      );
+  const [allTopics, setAllTopics] = useState<Topic[]>([]);
+  const [allCompanies, setAllCompanies] = useState<Company[]>([]);
+  const [allConcepts, setAllConcepts] = useState<Concept[]>([]);
+  const [allSolutions, setAllSolutions] = useState<Solution[]>([]);
+
+  useEffect(() => {
+    async function load() {
+      const [
+        topicRes,
+        companyRes,
+        conceptRes,
+        solutionRes,
+      ] = await Promise.all([
+        api.get("/topic/list"),
+        api.get("/company/list"),
+        api.get("/concept/list"),
+        api.get("/solution/list"),
+      ]);
+
+      setAllTopics(topicRes.topics || []);
+      setAllCompanies(companyRes.companies || []);
+      setAllConcepts(conceptRes.concepts || []);
+      setAllSolutions(solutionRes.solutions || []);
     }
 
-    return (
-      <div className="flex flex-wrap gap-2">
-        {items.map((item, i) => (
-          <span
-            key={i}
-            className="text-xs bg-gray-100 border rounded px-2 py-1"
-          >
-            {item}
-          </span>
-        ))}
-      </div>
-    );
-  }
+    load();
+  }, []);
+
+  // =========================
+  // Mapping IDs → Objects
+  // =========================
+
+  const selectedTopics = allTopics.filter((t) =>
+    topics.includes(t.ID_TOPIC)
+  );
+
+  const selectedCompanies = allCompanies.filter((c) =>
+    companies.includes(c.ID_COMPANY)
+  );
+
+  const selectedConcepts = allConcepts.filter((c) =>
+    concepts.includes(c.ID_CONCEPT)
+  );
+
+  const selectedSolutions = allSolutions.filter((s) =>
+    solutions.includes(s.ID_SOLUTION)
+  );
+
+  // =========================
+  // Render
+  // =========================
 
   return (
 
     <div className="space-y-8">
 
-      {/* ================= RAW ================= */}
-
-      <div className="space-y-4">
-
-        <h3 className="text-sm font-semibold text-gray-700">
-          Propositions LLM
-        </h3>
-
-        <div className="space-y-3">
-
-          <div>
-            <div className="text-xs font-medium mb-1">
-              Topics suggérés
-            </div>
-            <BadgeList items={topicsRaw} />
-          </div>
-
-          <div>
-            <div className="text-xs font-medium mb-1">
-              Acteurs cités
-            </div>
-            <BadgeList items={acteursRaw} />
-          </div>
-
-          <div>
-            <div className="text-xs font-medium mb-1">
-              Concepts
-            </div>
-            <BadgeList items={conceptsRaw} />
-          </div>
-
-          <div>
-            <div className="text-xs font-medium mb-1">
-              Solutions
-            </div>
-            <BadgeList items={solutionsRaw} />
-          </div>
-
-        </div>
-
+      <div className="text-sm font-semibold text-gray-700">
+        Validation structurante
       </div>
 
-      {/* ================= VALIDATION ================= */}
+      {/* ================= RAW DISPLAY ================= */}
 
-      <div className="space-y-6 border-t pt-6">
+      <div className="space-y-4 text-xs text-gray-500">
 
-        <h3 className="text-sm font-semibold text-gray-700">
-          Validation structurante
-        </h3>
+        {topicsRaw.length > 0 && (
+          <div>
+            <strong>Topics LLM :</strong>{" "}
+            {topicsRaw.join(", ")}
+          </div>
+        )}
 
-        <TopicSelector
-          values={topics}
-          onChange={(vals) => onChange({ topics: vals })}
-        />
+        {acteursRaw.length > 0 && (
+          <div>
+            <strong>Acteurs LLM :</strong>{" "}
+            {acteursRaw.join(", ")}
+          </div>
+        )}
 
-        <CompanySelector
-          values={companies}
-          onChange={(vals) => onChange({ companies: vals })}
-        />
+        {conceptsRaw.length > 0 && (
+          <div>
+            <strong>Concepts LLM :</strong>{" "}
+            {conceptsRaw.join(", ")}
+          </div>
+        )}
 
-        <ConceptSelector
-          values={concepts}
-          topicIds={topics}
-          onChange={(vals) => onChange({ concepts: vals })}
-        />
-
-        <SolutionSelector
-          values={solutions}
-          onChange={(vals) => onChange({ solutions: vals })}
-        />
-
-        <button
-          onClick={onSave}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          Sauvegarder validation
-        </button>
-
-        {onPublish && (
-          <button
-            onClick={onPublish}
-            className="w-full px-4 py-2 bg-green-600 text-white rounded"
-          >
-            Publier
-          </button>
+        {solutionsRaw.length > 0 && (
+          <div>
+            <strong>Solutions LLM :</strong>{" "}
+            {solutionsRaw.join(", ")}
+          </div>
         )}
 
       </div>
 
-    </div>
+      {/* ================= SELECTORS ================= */}
 
+      <TopicSelector
+        values={selectedTopics}
+        onChange={(vals) =>
+          onChange({
+            topics: vals.map((v) => v.ID_TOPIC),
+          })
+        }
+      />
+
+      <CompanySelector
+        values={selectedCompanies}
+        onChange={(vals) =>
+          onChange({
+            companies: vals.map((v) => v.ID_COMPANY),
+          })
+        }
+      />
+
+      <ConceptSelector
+        values={selectedConcepts}
+        onChange={(vals) =>
+          onChange({
+            concepts: vals.map((v) => v.ID_CONCEPT),
+          })
+        }
+      />
+
+      <SolutionSelector
+        values={selectedSolutions}
+        onChange={(vals) =>
+          onChange({
+            solutions: vals.map((v) => v.ID_SOLUTION),
+          })
+        }
+      />
+
+      {/* ================= SAVE ================= */}
+
+      <button
+        onClick={onSave}
+        className="w-full px-4 py-2 bg-black text-white rounded text-sm"
+      >
+        Sauvegarder la validation
+      </button>
+
+    </div>
   );
 }
