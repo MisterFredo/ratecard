@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-// STEPS
 import StepSource from "@/components/admin/content/steps/StepSource";
 import StepSummary from "@/components/admin/content/steps/StepSummary";
 import StepContext from "@/components/admin/content/steps/StepContext";
@@ -54,7 +53,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [publishMode, setPublishMode] =
     useState<"NOW" | "SCHEDULE">("NOW");
 
-  const [publishAt, setPublishAt] = useState<string>("");
+  const [publishAt, setPublishAt] = useState("");
 
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -177,6 +176,11 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
     if (!internalContentId) return;
 
+    if (publishMode === "SCHEDULE" && !publishAt) {
+      alert("Merci de sélectionner une date de publication.");
+      return;
+    }
+
     setPublishing(true);
 
     try {
@@ -258,7 +262,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
             citations={citations}
             chiffres={chiffres}
             acteurs={acteurs}
-
             concepts={concepts}
 
             onChange={(d) => {
@@ -310,8 +313,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
             }}
 
             onValidate={saveContent}
-
-            saving={saving}
 
           />
 
