@@ -142,13 +142,9 @@ def ai_summary(payload: dict):
 
     try:
 
-        # Contexte optionnel (sécurisé)
-        context = payload.get("context") or {}
-
         summary = generate_summary(
-            source_type=source_id,  # alignement simple
+            source_id=source_id,
             source_text=source_text,
-            context=context,
         )
 
         if not isinstance(summary, dict):
@@ -156,19 +152,13 @@ def ai_summary(payload: dict):
 
         return {
             "status": "ok",
-            "title": summary.get("title", ""),
-            "excerpt": summary.get("excerpt", ""),
-            "content_body": summary.get("content_body", ""),
-            "citations": summary.get("citations", []),
-            "chiffres": summary.get("chiffres", []),
-            "acteurs_cites": summary.get("acteurs_cites", []),
-            "concepts": summary.get("concepts", []),
-            "solutions": summary.get("solutions", []),
+            **summary
         }
 
     except Exception as e:
         logger.exception("Erreur génération summary")
         raise HTTPException(400, f"Erreur génération summary : {e}")
+
 
 
 # ============================================================
