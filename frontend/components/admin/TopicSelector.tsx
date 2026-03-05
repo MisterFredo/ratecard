@@ -10,7 +10,7 @@ import SearchableMultiSelect, {
    TYPES
 ========================================================= */
 
-type Topic = {
+export type Topic = {
   id_topic: string;
   label: string;
   topic_axis?: "BUSINESS" | "FIELD" | null;
