@@ -33,7 +33,18 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [sourceText, setSourceText] = useState("");
 
-  // UUID ONLY
+  // =========================
+  // EXTRACTIONS LLM (RAW)
+  // =========================
+
+  const [acteursRaw, setActeursRaw] = useState<string[]>([]);
+  const [conceptsRaw, setConceptsRaw] = useState<string[]>([]);
+  const [solutionsRaw, setSolutionsRaw] = useState<string[]>([]);
+
+  // =========================
+  // GOUVERNE
+  // =========================
+
   const [topics, setTopics] = useState<string[]>([]);
   const [companies, setCompanies] = useState<string[]>([]);
   const [solutions, setSolutions] = useState<string[]>([]);
@@ -42,12 +53,12 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // =========================
   // SUMMARY
   // =========================
+
   const [excerpt, setExcerpt] = useState("");
   const [contentBody, setContentBody] = useState("");
 
   const [citations, setCitations] = useState<string[]>([]);
   const [chiffres, setChiffres] = useState<string[]>([]);
-  const [acteurs, setActeurs] = useState<string[]>([]);
 
   // ANALYSE
   const [mecanique, setMecanique] = useState("");
@@ -74,47 +85,27 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
     async function load() {
 
-      try {
+      const res = await api.get(`/content/${contentId}`);
+      const c = res.content;
 
-        const res = await api.get(`/content/${contentId}`);
-        const c = res.content;
+      setExcerpt(c.excerpt || "");
+      setContentBody(c.content_body || "");
 
-        setExcerpt(c.excerpt || "");
-        setContentBody(c.content_body || "");
+      setCitations(c.citations || []);
+      setChiffres(c.chiffres || []);
+      setActeursRaw(c.acteurs_cites || []);
 
-        setCitations(c.citations || []);
-        setChiffres(c.chiffres || []);
-        setActeurs(c.acteurs_cites || []);
+      setMecanique(c.mecanique_expliquee || "");
+      setEnjeu(c.enjeu_strategique || "");
+      setFriction(c.point_de_friction || "");
+      setSignal(c.signal_analytique || "");
 
-        setMecanique(c.mecanique_expliquee || "");
-        setEnjeu(c.enjeu_strategique || "");
-        setFriction(c.point_de_friction || "");
-        setSignal(c.signal_analytique || "");
+      setConcepts((c.concepts || []).map((x: any) => x.ID_CONCEPT));
+      setTopics((c.topics || []).map((x: any) => x.ID_TOPIC));
+      setCompanies((c.companies || []).map((x: any) => x.ID_COMPANY));
+      setSolutions((c.solutions || []).map((x: any) => x.ID_SOLUTION));
 
-        setConcepts(
-          (c.concepts || []).map((x: any) => x.ID_CONCEPT)
-        );
-
-        setTopics(
-          (c.topics || []).map((x: any) => x.ID_TOPIC)
-        );
-
-        setCompanies(
-          (c.companies || []).map((x: any) => x.ID_COMPANY)
-        );
-
-        setSolutions(
-          (c.solutions || []).map((x: any) => x.ID_SOLUTION)
-        );
-
-        setStep("SUMMARY");
-
-      } catch (e) {
-
-        console.error(e);
-        alert("Erreur chargement contenu");
-
-      }
+      setStep("SUMMARY");
 
     }
 
@@ -123,7 +114,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   }, [mode, contentId]);
 
   // ============================================================
-  // SAVE (CREATE / UPDATE)
+  // SAVE
   // ============================================================
 
   async function saveContent() {
@@ -142,16 +133,16 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
       citations,
       chiffres,
-      acteurs_cites: acteurs,
+      acteurs_cites: acteursRaw,
 
       mecanique_expliquee: mecanique,
       enjeu_strategique: enjeu,
       point_de_friction: friction,
       signal_analytique: signal,
 
-      concepts,
       topics,
       companies,
+      concepts,
       solutions,
 
     };
@@ -184,53 +175,12 @@ export default function ContentStudio({ mode, contentId }: Props) {
   }
 
   // ============================================================
-  // PUBLISH
-  // ============================================================
-
-  async function publishContent() {
-
-    if (!internalContentId) return;
-
-    if (publishMode === "SCHEDULE" && !publishAt) {
-      alert("Sélectionner une date.");
-      return;
-    }
-
-    setPublishing(true);
-
-    try {
-
-      await api.post(`/content/publish/${internalContentId}`, {
-        publish_at:
-          publishMode === "NOW"
-            ? null
-            : new Date(publishAt).toISOString(),
-      });
-
-      alert("Contenu publié");
-
-    } catch (e) {
-
-      console.error(e);
-      alert("Erreur publication");
-
-    } finally {
-
-      setPublishing(false);
-
-    }
-
-  }
-
-  // ============================================================
   // RENDER
   // ============================================================
 
   return (
 
     <div className="space-y-6">
-
-      {/* SOURCE */}
 
       <details open={step === "SOURCE"} className="border rounded p-4">
         <summary className="font-semibold cursor-pointer">
@@ -239,17 +189,12 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
         <StepSource
           onSubmit={({ source_id, text }) => {
-
             setSourceId(source_id);
             setSourceText(text);
-
             setStep("SUMMARY");
-
           }}
         />
       </details>
-
-      {/* SUMMARY */}
 
       {sourceText && (
         <details open={step === "SUMMARY"} className="border rounded p-4">
@@ -264,9 +209,9 @@ export default function ContentStudio({ mode, contentId }: Props) {
             contentBody={contentBody}
             citations={citations}
             chiffres={chiffres}
-            acteurs={acteurs}
-            concepts={concepts}
-            solutions={solutions}
+            acteurs={acteursRaw}
+            concepts={conceptsRaw}
+            solutions={solutionsRaw}
             topics={topics}
             mecanique={mecanique}
             enjeu={enjeu}
@@ -278,10 +223,12 @@ export default function ContentStudio({ mode, contentId }: Props) {
               if (d.contentBody !== undefined) setContentBody(d.contentBody);
               if (d.citations !== undefined) setCitations(d.citations);
               if (d.chiffres !== undefined) setChiffres(d.chiffres);
-              if (d.acteurs !== undefined) setActeurs(d.acteurs);
-              if (d.concepts !== undefined) setConcepts(d.concepts);
-              if (d.solutions !== undefined) setSolutions(d.solutions);
+
+              if (d.acteurs !== undefined) setActeursRaw(d.acteurs);
+              if (d.concepts !== undefined) setConceptsRaw(d.concepts);
+              if (d.solutions !== undefined) setSolutionsRaw(d.solutions);
               if (d.topics !== undefined) setTopics(d.topics);
+
               if (d.mecanique !== undefined) setMecanique(d.mecanique);
               if (d.enjeu !== undefined) setEnjeu(d.enjeu);
               if (d.friction !== undefined) setFriction(d.friction);
@@ -292,8 +239,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
           />
         </details>
       )}
-
-      {/* PREVIEW */}
 
       {internalContentId && (
         <details open={step === "PREVIEW"} className="border rounded p-4">
@@ -309,8 +254,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </details>
       )}
 
-      {/* PUBLISH */}
-
       {internalContentId && (
         <details open={step === "PUBLISH"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
@@ -323,7 +266,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
             publishing={publishing}
             onChangeMode={setPublishMode}
             onChangeDate={setPublishAt}
-            onPublish={publishContent}
+            onPublish={() => {}}
           />
         </details>
       )}
