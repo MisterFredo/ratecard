@@ -137,7 +137,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
       topics: topics.map((t) => t.id_topic),
       events: events.map((e) => e.id_event),
       companies: companies.map((c) => c.id_company),
-      solutions: solutions.map((s) => s.ID_SOLUTION)
+      solutions: solutions.map((s) => s.id_solution) // ✅ aligné
 
     };
 
@@ -218,115 +218,79 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
     <div className="space-y-6">
 
-
       {/* SOURCE */}
-
       <details open={step === "SOURCE"} className="border rounded p-4">
-
         <summary className="font-semibold cursor-pointer">
           1. Source
         </summary>
 
         <StepSource
           onSubmit={({ source_id, text }) => {
-
             setSourceId(source_id);
             setSourceText(text);
-
             setStep("SUMMARY");
-
           }}
         />
-
       </details>
 
 
       {/* SUMMARY */}
-
       {sourceText && (
-
         <details open={step === "SUMMARY"} className="border rounded p-4">
-
           <summary className="font-semibold cursor-pointer">
             2. Synthèse
           </summary>
 
           <StepSummary
-
             sourceId={sourceId}
             sourceText={sourceText}
-
             excerpt={excerpt}
             contentBody={contentBody}
-
             citations={citations}
             chiffres={chiffres}
             acteurs={acteurs}
             concepts={concepts}
-
             onChange={(d) => {
-
               if (d.excerpt !== undefined) setExcerpt(d.excerpt);
               if (d.contentBody !== undefined) setContentBody(d.contentBody);
-
               if (d.citations !== undefined) setCitations(d.citations);
               if (d.chiffres !== undefined) setChiffres(d.chiffres);
               if (d.acteurs !== undefined) setActeurs(d.acteurs);
-
               if (d.concepts !== undefined) setConcepts(d.concepts);
-
             }}
-
             onNext={() => setStep("CONTEXT")}
-
           />
-
         </details>
-
       )}
 
 
       {/* CONTEXT */}
-
       {step !== "SOURCE" && (
-
         <details open={step === "CONTEXT"} className="border rounded p-4">
-
           <summary className="font-semibold cursor-pointer">
             3. Contexte
           </summary>
 
           <StepContext
-
             topics={topics}
             events={events}
             companies={companies}
             solutions={solutions}
-
             onChange={(d) => {
-
               if (d.topics) setTopics(d.topics);
               if (d.events) setEvents(d.events);
               if (d.companies) setCompanies(d.companies);
               if (d.solutions) setSolutions(d.solutions);
-
             }}
-
             onValidate={saveContent}
-
           />
-
         </details>
-
       )}
 
 
       {/* PREVIEW */}
-
       {internalContentId && (
-
         <details open={step === "PREVIEW"} className="border rounded p-4">
-
           <summary className="font-semibold cursor-pointer">
             4. Aperçu
           </summary>
@@ -336,18 +300,13 @@ export default function ContentStudio({ mode, contentId }: Props) {
             onBack={() => setStep("CONTEXT")}
             onNext={() => setStep("PUBLISH")}
           />
-
         </details>
-
       )}
 
 
       {/* PUBLISH */}
-
       {internalContentId && (
-
         <details open={step === "PUBLISH"} className="border rounded p-4">
-
           <summary className="font-semibold cursor-pointer">
             5. Publication
           </summary>
@@ -360,9 +319,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
             onChangeDate={setPublishAt}
             onPublish={publishContent}
           />
-
         </details>
-
       )}
 
     </div>
