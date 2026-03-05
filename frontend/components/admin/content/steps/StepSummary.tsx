@@ -120,29 +120,30 @@ export default function StepSummary(props: Props) {
 
   return (
 
-    <div className="space-y-10">
+    <div className="space-y-12">
 
-      {/* GENERATE BUTTON */}
+      {/* ================= GENERATE ================= */}
 
-      <button
-        onClick={generate}
-        disabled={loading}
-        className="px-4 py-2 bg-black text-white rounded"
-      >
-        {loading ? "Génération..." : "Générer synthèse & analyse"}
-      </button>
+      <div className="flex justify-between items-center">
 
-      {/* ========================================= */}
-      {/* ÉDITORIAL */}
-      {/* ========================================= */}
+        <h2 className="text-lg font-semibold">
+          Synthèse & Analyse
+        </h2>
+
+        <button
+          onClick={generate}
+          disabled={loading}
+          className="px-4 py-2 bg-black text-white rounded text-sm"
+        >
+          {loading ? "Génération..." : "Générer"}
+        </button>
+
+      </div>
+
+      {/* ================= ÉDITORIAL ================= */}
 
       <div className="space-y-6">
 
-        <h3 className="text-sm font-semibold text-gray-700">
-          Éditorial
-        </h3>
-
-        {/* Résumé */}
         <div>
           <label className="block text-sm font-medium mb-2">
             Résumé exécutif
@@ -156,7 +157,6 @@ export default function StepSummary(props: Props) {
           />
         </div>
 
-        {/* Points clés */}
         <div>
           <label className="block text-sm font-medium mb-2">
             Points clés
@@ -172,9 +172,7 @@ export default function StepSummary(props: Props) {
 
       </div>
 
-      {/* ========================================= */}
-      {/* EXTRACTIONS LLM (BRUT) */}
-      {/* ========================================= */}
+      {/* ================= EXTRACTIONS LLM ================= */}
 
       <div className="space-y-6 border-t pt-6">
 
@@ -182,59 +180,61 @@ export default function StepSummary(props: Props) {
           Extractions LLM (brut)
         </h3>
 
-        <EditableList
-          label="Topics suggérés"
-          items={props.topics}
-          onChange={(items) =>
-            props.onChange({ topics: items })
-          }
-        />
+        <div className="bg-gray-50 border rounded p-4 space-y-4">
 
-        <EditableList
-          label="Acteurs cités"
-          items={props.acteurs}
-          onChange={(items) =>
-            props.onChange({ acteurs: items })
-          }
-        />
+          <EditableList
+            label="Topics suggérés"
+            items={props.topics}
+            onChange={(items) =>
+              props.onChange({ topics: items })
+            }
+          />
 
-        <EditableList
-          label="Concepts"
-          items={props.concepts}
-          onChange={(items) =>
-            props.onChange({ concepts: items })
-          }
-        />
+          <EditableList
+            label="Acteurs cités"
+            items={props.acteurs}
+            onChange={(items) =>
+              props.onChange({ acteurs: items })
+            }
+          />
 
-        <EditableList
-          label="Solutions"
-          items={props.solutions}
-          onChange={(items) =>
-            props.onChange({ solutions: items })
-          }
-        />
+          <EditableList
+            label="Concepts"
+            items={props.concepts}
+            onChange={(items) =>
+              props.onChange({ concepts: items })
+            }
+          />
 
-        <EditableList
-          label="Citations"
-          items={props.citations}
-          onChange={(items) =>
-            props.onChange({ citations: items })
-          }
-        />
+          <EditableList
+            label="Solutions"
+            items={props.solutions}
+            onChange={(items) =>
+              props.onChange({ solutions: items })
+            }
+          />
 
-        <EditableList
-          label="Chiffres clés"
-          items={props.chiffres}
-          onChange={(items) =>
-            props.onChange({ chiffres: items })
-          }
-        />
+          <EditableList
+            label="Citations"
+            items={props.citations}
+            onChange={(items) =>
+              props.onChange({ citations: items })
+            }
+          />
+
+          <EditableList
+            label="Chiffres clés"
+            items={props.chiffres}
+            onChange={(items) =>
+              props.onChange({ chiffres: items })
+            }
+          />
+
+        </div>
 
       </div>
 
-      {/* ========================================= */}
-      {/* ANALYSE STRATÉGIQUE */}
-      {/* ========================================= */}
+      {/* ================= ANALYSE ================= */}
 
       <div className="space-y-6 border-t pt-6">
 
@@ -242,69 +242,55 @@ export default function StepSummary(props: Props) {
           Analyse stratégique
         </h3>
 
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Mécanique expliquée
-          </label>
-          <textarea
-            value={props.mecanique}
-            onChange={(e) =>
-              props.onChange({ mecanique: e.target.value })
-            }
-            className="w-full border rounded p-3 min-h-[120px]"
-          />
-        </div>
+        <textarea
+          placeholder="Mécanique expliquée"
+          value={props.mecanique}
+          onChange={(e) =>
+            props.onChange({ mecanique: e.target.value })
+          }
+          className="w-full border rounded p-3 min-h-[120px]"
+        />
 
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Enjeu stratégique
-          </label>
-          <textarea
-            value={props.enjeu}
-            onChange={(e) =>
-              props.onChange({ enjeu: e.target.value })
-            }
-            className="w-full border rounded p-3 min-h-[120px]"
-          />
-        </div>
+        <textarea
+          placeholder="Enjeu stratégique"
+          value={props.enjeu}
+          onChange={(e) =>
+            props.onChange({ enjeu: e.target.value })
+          }
+          className="w-full border rounded p-3 min-h-[120px]"
+        />
 
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Point de friction
-          </label>
-          <textarea
-            value={props.friction}
-            onChange={(e) =>
-              props.onChange({ friction: e.target.value })
-            }
-            className="w-full border rounded p-3 min-h-[100px]"
-          />
-        </div>
+        <textarea
+          placeholder="Point de friction"
+          value={props.friction}
+          onChange={(e) =>
+            props.onChange({ friction: e.target.value })
+          }
+          className="w-full border rounded p-3 min-h-[100px]"
+        />
 
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Signal analytique
-          </label>
-          <textarea
-            value={props.signal}
-            onChange={(e) =>
-              props.onChange({ signal: e.target.value })
-            }
-            className="w-full border rounded p-3 min-h-[120px]"
-          />
-        </div>
+        <textarea
+          placeholder="Signal analytique"
+          value={props.signal}
+          onChange={(e) =>
+            props.onChange({ signal: e.target.value })
+          }
+          className="w-full border rounded p-3 min-h-[120px]"
+        />
 
       </div>
 
-      {/* ACTION */}
+      {/* ================= SAVE ================= */}
 
       <button
         onClick={props.onNext}
         className="px-4 py-2 bg-green-600 text-white rounded"
       >
-        Sauvegarder & Aperçu
+        Sauvegarder l'éditorial
       </button>
 
     </div>
+
   );
+
 }
