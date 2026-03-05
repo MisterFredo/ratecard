@@ -512,7 +512,7 @@ def publish_content(
     published_at: Optional[datetime] = None,
 ):
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).isoformat()
 
     if published_at is None:
 
