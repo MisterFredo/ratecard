@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-type Props = {
+import EditableList from "@/components/admin/content/steps/EditableList";
+import EditableList from "@/components/admin/content/steps/MultiSelectTopics";
 
+type Topic = {
+  ID_TOPIC: string;
+  LABEL: string;
+};
+
+type Props = {
   sourceId: string | null;
   sourceText: string;
 
@@ -19,374 +26,178 @@ type Props = {
   solutions: string[];
   topics: string[];
 
-  // 🔥 ANALYSE
-  mecanique?: string;
-  enjeu?: string;
-  friction?: string;
-  signal?: string;
+  mecanique: string;
+  enjeu: string;
+  friction: string;
+  signal: string;
 
-  onChange: (data: {
-    excerpt?: string;
-    contentBody?: string;
-    citations?: string[];
-    chiffres?: string[];
-    acteurs?: string[];
-    concepts?: string[];
-    solutions?: string[];
-    topics?: string[];
-    mecanique?: string;
-    enjeu?: string;
-    friction?: string;
-    signal?: string;
-  }) => void;
-
+  onChange: (data: any) => void;
   onNext: () => void;
 };
 
-export default function StepSummary({
+export default function StepSummary(props: Props) {
 
-  sourceId,
-  sourceText,
-
-  excerpt,
-  contentBody,
-  citations,
-  chiffres,
-
-  acteurs,
-  concepts,
-  solutions,
-  topics,
-
-  mecanique = "",
-  enjeu = "",
-  friction = "",
-  signal = "",
-
-  onChange,
-  onNext,
-
-}: Props) {
-
+  const [allTopics, setAllTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // ==========================================================
-  // GENERATE (Résumé + Analyse)
-  // ==========================================================
-
-  async function generateSummary() {
-
-    if (!sourceText?.trim()) {
-      alert("Source vide");
-      return;
+  useEffect(() => {
+    async function loadTopics() {
+      const res = await api.get("/topic/list");
+      setAllTopics(res.topics || []);
     }
+    loadTopics();
+  }, []);
+
+  async function generate() {
+
+    if (!props.sourceText?.trim()) return;
 
     setLoading(true);
 
-    try {
+    const res = await api.post("/content/ai/generate", {
+      source_text: props.sourceText,
+      source_id: props.sourceId,
+    });
 
-      const payload: any = {
-        source_text: sourceText
-      };
-
-      if (sourceId) {
-        payload.source_id = sourceId;
-      }
-
-      const res = await api.post("/content/ai/generate", payload);
-
-      onChange({
-
-        excerpt: res.excerpt || "",
-        contentBody: res.content_body || "",
-
-        citations: res.citations || [],
-        chiffres: res.chiffres || [],
-
-        acteurs: res.acteurs_cites || [],
-        concepts: res.concepts || [],
-        solutions: res.solutions || [],
-        topics: res.topics || [],
-
-        mecanique: res.mecanique_expliquee || "",
-        enjeu: res.enjeu_strategique || "",
-        friction: res.point_de_friction || "",
-        signal: res.signal_analytique || ""
-
-      });
-
-    } catch (e) {
-
-      console.error(e);
-      alert("Erreur génération");
-
-    }
+    props.onChange({
+      excerpt: res.excerpt || "",
+      contentBody: res.content_body || "",
+      citations: res.citations || [],
+      chiffres: res.chiffres || [],
+      acteurs: res.acteurs_cites || [],
+      concepts: res.concepts || [],
+      solutions: res.solutions || [],
+      topics: res.topics || [],
+      mecanique: res.mecanique_expliquee || "",
+      enjeu: res.enjeu_strategique || "",
+      friction: res.point_de_friction || "",
+      signal: res.signal_analytique || "",
+    });
 
     setLoading(false);
-
   }
-
-  // ==========================================================
-  // UTIL
-  // ==========================================================
-
-  function parseTextarea(value: string) {
-    return value
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean);
-  }
-
-  // ==========================================================
-  // RENDER
-  // ==========================================================
 
   return (
 
-    <div className="space-y-10">
+    <div className="space-y-8">
 
-      {/* GENERATE BUTTON */}
+      <button
+        onClick={generate}
+        disabled={loading}
+        className="px-4 py-2 bg-black text-white rounded"
+      >
+        {loading ? "Génération..." : "Générer"}
+      </button>
 
-      <div className="flex items-center gap-4">
-        <button
-          onClick={generateSummary}
-          disabled={loading}
-          className="px-4 py-2 bg-black text-white rounded"
-        >
-          {loading ? "Génération..." : "Générer la synthèse & l’analyse"}
-        </button>
+      {/* Résumé */}
+
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          Résumé exécutif
+        </label>
+        <textarea
+          value={props.excerpt}
+          onChange={(e) =>
+            props.onChange({ excerpt: e.target.value })
+          }
+          className="w-full border rounded p-3 min-h-[80px]"
+        />
       </div>
 
-      {/* ========================= */}
-      {/* 🔹 PARTIE EDITORIALE     */}
-      {/* ========================= */}
+      {/* Points clés */}
 
-      <div className="space-y-6">
+      <EditableList
+        label="Points clés"
+        items={props.contentBody
+          .replace(/<\/?ul>/g, "")
+          .replace(/<\/?li>/g, "\n")
+          .split("\n")
+          .filter(Boolean)}
+        onChange={(items) =>
+          props.onChange({
+            contentBody: items.join("\n"),
+          })
+        }
+      />
 
-        <h3 className="text-sm font-semibold text-gray-700">
-          Éditorial
-        </h3>
+      {/* Topics */}
 
-        {/* Résumé */}
+      <MultiSelectTopics
+        topics={allTopics}
+        selected={props.topics}
+        onChange={(ids) =>
+          props.onChange({ topics: ids })
+        }
+      />
 
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Résumé exécutif
-          </label>
-          <textarea
-            className="w-full border rounded p-3 min-h-[80px]"
-            value={excerpt}
-            onChange={(e) =>
-              onChange({ excerpt: e.target.value })
-            }
-          />
-        </div>
+      {/* Citations */}
 
-        {/* Points clés */}
+      <EditableList
+        label="Citations"
+        items={props.citations}
+        onChange={(items) =>
+          props.onChange({ citations: items })
+        }
+      />
 
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Points clés
-          </label>
-          <textarea
-            className="w-full border rounded p-3 min-h-[200px]"
-            value={contentBody}
-            onChange={(e) =>
-              onChange({ contentBody: e.target.value })
-            }
-          />
-        </div>
+      {/* Chiffres */}
 
-      </div>
+      <EditableList
+        label="Chiffres clés"
+        items={props.chiffres}
+        onChange={(items) =>
+          props.onChange({ chiffres: items })
+        }
+      />
 
-      {/* ========================= */}
-      {/* 🔹 EXTRACTIONS STRUCTUREES */}
-      {/* ========================= */}
+      {/* Analyse */}
 
-      <div className="border-t pt-8 space-y-6">
+      <div className="border-t pt-6 space-y-4">
 
-        <h3 className="text-sm font-semibold text-gray-700">
-          Extractions LLM (à valider)
-        </h3>
+        <textarea
+          value={props.mecanique}
+          onChange={(e) =>
+            props.onChange({ mecanique: e.target.value })
+          }
+          placeholder="Mécanique"
+          className="w-full border rounded p-3 min-h-[100px]"
+        />
 
-        {/* Citations */}
+        <textarea
+          value={props.enjeu}
+          onChange={(e) =>
+            props.onChange({ enjeu: e.target.value })
+          }
+          placeholder="Enjeu"
+          className="w-full border rounded p-3 min-h-[100px]"
+        />
 
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Citations
-          </label>
-          <textarea
-            className="w-full border rounded p-3 min-h-[80px]"
-            value={citations.join("\n")}
-            onChange={(e) =>
-              onChange({
-                citations: parseTextarea(e.target.value),
-              })
-            }
-          />
-        </div>
+        <textarea
+          value={props.friction}
+          onChange={(e) =>
+            props.onChange({ friction: e.target.value })
+          }
+          placeholder="Friction"
+          className="w-full border rounded p-3 min-h-[80px]"
+        />
 
-        {/* Chiffres */}
-
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Chiffres clés
-          </label>
-          <textarea
-            className="w-full border rounded p-3 min-h-[80px]"
-            value={chiffres.join("\n")}
-            onChange={(e) =>
-              onChange({
-                chiffres: parseTextarea(e.target.value),
-              })
-            }
-          />
-        </div>
-
-        {/* Acteurs */}
-
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Acteurs (entreprises)
-          </label>
-          <textarea
-            className="w-full border rounded p-3 min-h-[80px]"
-            value={acteurs.join("\n")}
-            onChange={(e) =>
-              onChange({
-                acteurs: parseTextarea(e.target.value),
-              })
-            }
-          />
-        </div>
-
-        {/* Concepts */}
-
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Concepts métier
-          </label>
-          <textarea
-            className="w-full border rounded p-3 min-h-[80px]"
-            value={concepts.join("\n")}
-            onChange={(e) =>
-              onChange({
-                concepts: parseTextarea(e.target.value),
-              })
-            }
-          />
-        </div>
-
-        {/* Solutions */}
-
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Solutions / Produits
-          </label>
-          <textarea
-            className="w-full border rounded p-3 min-h-[80px]"
-            value={solutions.join("\n")}
-            onChange={(e) =>
-              onChange({
-                solutions: parseTextarea(e.target.value),
-              })
-            }
-          />
-        </div>
-
-        {/* Topics */}
-
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Topics (1 à 3)
-          </label>
-          <textarea
-            className="w-full border rounded p-3 min-h-[80px]"
-            value={topics.join("\n")}
-            onChange={(e) =>
-              onChange({
-                topics: parseTextarea(e.target.value),
-              })
-            }
-          />
-        </div>
+        <textarea
+          value={props.signal}
+          onChange={(e) =>
+            props.onChange({ signal: e.target.value })
+          }
+          placeholder="Signal"
+          className="w-full border rounded p-3 min-h-[100px]"
+        />
 
       </div>
 
-      {/* ========================= */}
-      {/* 🔥 ANALYSE STRATEGIQUE   */}
-      {/* ========================= */}
-
-      <div className="border-t pt-8 space-y-6">
-
-        <h3 className="text-sm font-semibold text-gray-700">
-          Analyse stratégique
-        </h3>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Mécanique expliquée
-          </label>
-          <textarea
-            className="w-full border rounded p-3 min-h-[120px]"
-            value={mecanique}
-            onChange={(e) =>
-              onChange({ mecanique: e.target.value })
-            }
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Enjeu stratégique
-          </label>
-          <textarea
-            className="w-full border rounded p-3 min-h-[120px]"
-            value={enjeu}
-            onChange={(e) =>
-              onChange({ enjeu: e.target.value })
-            }
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Point de friction
-          </label>
-          <textarea
-            className="w-full border rounded p-3 min-h-[100px]"
-            value={friction}
-            onChange={(e) =>
-              onChange({ friction: e.target.value })
-            }
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Signal analytique
-          </label>
-          <textarea
-            className="w-full border rounded p-3 min-h-[120px]"
-            value={signal}
-            onChange={(e) =>
-              onChange({ signal: e.target.value })
-            }
-          />
-        </div>
-
-      </div>
-
-      {/* NEXT */}
-
-      <div className="pt-6">
-        <button
-          onClick={onNext}
-          className="px-4 py-2 bg-green-600 text-white rounded"
-        >
-          Continuer vers l’aperçu
-        </button>
-      </div>
+      <button
+        onClick={props.onNext}
+        className="px-4 py-2 bg-green-600 text-white rounded"
+      >
+        Sauvegarder & Aperçu
+      </button>
 
     </div>
 
