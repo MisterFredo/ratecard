@@ -17,8 +17,6 @@ export type Concept = {
 type Props = {
   values: Concept[];
   onChange: (concepts: Concept[]) => void;
-
-  // Optionnel : filtrage dynamique par topics
   topicIds?: string[];
 };
 
@@ -35,9 +33,6 @@ export default function ConceptSelector({
      LOAD CONCEPTS (DYNAMIQUE SELON TOPICS)
   --------------------------------------------------------- */
   useEffect(() => {
-
-    // Évite double appel si topicIds pas encore défini
-    if (topicIds === undefined) return;
 
     async function load() {
 
@@ -66,9 +61,11 @@ export default function ConceptSelector({
         console.error("Erreur chargement concepts", e);
         setOptions([]);
 
-      }
+      } finally {
 
-      setLoading(false);
+        setLoading(false);
+
+      }
 
     }
 
@@ -78,7 +75,6 @@ export default function ConceptSelector({
 
   /* ---------------------------------------------------------
      NETTOYAGE AUTOMATIQUE DES CONCEPTS INVALIDES
-     (si topic change et que certains concepts ne sont plus valides)
   --------------------------------------------------------- */
   useEffect(() => {
 
@@ -94,10 +90,10 @@ export default function ConceptSelector({
       onChange(filtered);
     }
 
-  }, [options, values, onChange]);
+  }, [options]); // ⬅️ volontairement limité à options uniquement
 
   /* ---------------------------------------------------------
-     HANDLE CHANGE — MULTI
+     HANDLE CHANGE
   --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
 
