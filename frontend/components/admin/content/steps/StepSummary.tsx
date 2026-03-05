@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 import EditableList from "@/components/admin/content/steps/EditableList";
-import EditableList from "@/components/admin/content/steps/MultiSelectTopics";
+import MultiSelectTopics from "@/components/admin/content/steps/MultiSelectTopics";
 
 type Topic = {
   ID_TOPIC: string;
