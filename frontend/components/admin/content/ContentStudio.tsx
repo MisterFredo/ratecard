@@ -30,7 +30,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [sourceText, setSourceText] = useState("");
 
   // =========================
-  // LLM RAW (visible gauche)
+  // LLM RAW
   // =========================
 
   const [topicsRaw, setTopicsRaw] = useState<string[]>([]);
@@ -39,7 +39,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [solutionsRaw, setSolutionsRaw] = useState<string[]>([]);
 
   // =========================
-  // STRUCTURANT (droite)
+  // STRUCTURANT
   // =========================
 
   const [topics, setTopics] = useState<string[]>([]);
@@ -62,7 +62,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [signal, setSignal] = useState("");
 
   // =========================
-  // STATUS / PUBLISH
+  // STATUS
   // =========================
 
   const [status, setStatus] = useState("DRAFT");
@@ -110,7 +110,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   }, [contentId]);
 
   // ============================================================
-  // SAVE EDITORIAL (MANUEL)
+  // SAVE EDITORIAL
   // ============================================================
 
   async function saveEditorial() {
@@ -150,7 +150,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   }
 
   // ============================================================
-  // SAVE STRUCTURANT (MANUEL)
+  // SAVE STRUCTURANT
   // ============================================================
 
   async function saveValidation() {
@@ -164,7 +164,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
       solutions,
     });
 
-    alert("Validation structurante sauvegardée");
+    alert("Validation sauvegardée");
 
   }
 
@@ -209,13 +209,13 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
     <div className="grid grid-cols-3 gap-10">
 
-      {/* ================= LEFT COLUMN ================= */}
+      {/* LEFT */}
 
       <div className="col-span-2 space-y-12">
 
         {!internalContentId && (
           <StepSource
-            onSubmit={({ source_id, text }) => {
+            onCreate={({ source_id, text }) => {
               setSourceId(source_id);
               setSourceText(text);
             }}
@@ -267,7 +267,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
       </div>
 
-      {/* ================= RIGHT COLUMN ================= */}
+      {/* RIGHT */}
 
       <div className="col-span-1">
         <div className="sticky top-6 space-y-6">
@@ -292,32 +292,32 @@ export default function ContentStudio({ mode, contentId }: Props) {
               onSave={saveValidation}
             />
 
-            <div className="border-t pt-4 space-y-3">
+            <div className="border-t pt-4 space-y-4">
 
               <div className="text-sm">
                 Statut : <strong>{status}</strong>
               </div>
 
-              <div className="text-sm font-medium">
-                Publication
-              </div>
+              <div className="space-y-2">
 
-              <div className="flex gap-3 text-sm">
-                <label>
+                <label className="flex gap-2 text-sm">
                   <input
                     type="radio"
                     checked={publishMode === "NOW"}
                     onChange={() => setPublishMode("NOW")}
-                  /> Maintenant
+                  />
+                  Publier maintenant
                 </label>
 
-                <label>
+                <label className="flex gap-2 text-sm">
                   <input
                     type="radio"
                     checked={publishMode === "SCHEDULE"}
                     onChange={() => setPublishMode("SCHEDULE")}
-                  /> Planifier
+                  />
+                  Planifier
                 </label>
+
               </div>
 
               {publishMode === "SCHEDULE" && (
@@ -332,7 +332,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
               <button
                 onClick={publishContent}
                 disabled={publishing}
-                className="px-4 py-2 bg-green-600 text-white rounded text-sm w-full"
+                className="w-full px-4 py-2 bg-green-600 text-white rounded text-sm"
               >
                 {publishing ? "Publication..." : "Publier"}
               </button>
@@ -344,7 +344,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </div>
       </div>
 
-      {/* ================= PREVIEW DRAWER ================= */}
+      {/* DRAWER */}
 
       {previewOpen && internalContentId && (
         <StepPreview
