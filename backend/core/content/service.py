@@ -5,11 +5,7 @@ from typing import Optional, Dict, Any
 from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
-
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from api.content.models import ContentCreate, ContentUpdate
+from api.content.models import ContentCreate, ContentUpdate
 
 from utils.bigquery_utils import (
     query_bq,
@@ -59,7 +55,7 @@ def normalize_array(value):
 # CREATE CONTENT
 # ============================================================
 
-def update_content(id_content: str, data: "ContentUpdate"):
+def create_content(data: ContentCreate) -> str:
 
     if not data.title or not data.title.strip():
         raise ValueError("TITLE obligatoire")
