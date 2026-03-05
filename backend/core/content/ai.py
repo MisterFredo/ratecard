@@ -72,8 +72,6 @@ RÈGLES ABSOLUES :
 - Ne pas extrapoler au-delà des éléments explicitement mentionnés.
 - Style professionnel, clair et structuré.
 - Rédige toujours en français.
-- Ne jamais utiliser de balises HTML.
-- Retourner du texte brut uniquement.
 
 ================ SOURCE ================
 Source : {source_id or "inconnue"}
