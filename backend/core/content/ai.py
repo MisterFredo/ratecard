@@ -72,6 +72,8 @@ RÈGLES ABSOLUES :
 - Ne pas extrapoler au-delà des éléments explicitement mentionnés.
 - Style professionnel, clair et structuré.
 - Rédige toujours en français.
+- Ne jamais utiliser de balises HTML.
+- Retourner du texte brut uniquement.
 
 ================ SOURCE ================
 Source : {source_id or "inconnue"}
@@ -87,7 +89,7 @@ EXCERPT
 (1 à 2 phrases synthétiques.)
 
 POINTS CLES
-(Liste factuelle.)
+(Liste factuelle. Les points clés doivent être séparés par des retours à la ligne.)
 
 CITATIONS
 (Liste exacte ou "Aucun")
