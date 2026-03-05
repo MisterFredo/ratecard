@@ -33,10 +33,11 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [sourceText, setSourceText] = useState("");
 
-  const [topics, setTopics] = useState<any[]>([]);
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [solutions, setSolutions] = useState<any[]>([]);
-  const [concepts, setConcepts] = useState<any[]>([]);
+  // UUID ONLY
+  const [topics, setTopics] = useState<string[]>([]);
+  const [companies, setCompanies] = useState<string[]>([]);
+  const [solutions, setSolutions] = useState<string[]>([]);
+  const [concepts, setConcepts] = useState<string[]>([]);
 
   // =========================
   // SUMMARY
@@ -48,7 +49,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [chiffres, setChiffres] = useState<string[]>([]);
   const [acteurs, setActeurs] = useState<string[]>([]);
 
-  // 🔥 ANALYSE
+  // ANALYSE
   const [mecanique, setMecanique] = useState("");
   const [enjeu, setEnjeu] = useState("");
   const [friction, setFriction] = useState("");
@@ -61,11 +62,10 @@ export default function ContentStudio({ mode, contentId }: Props) {
     useState<"NOW" | "SCHEDULE">("NOW");
   const [publishAt, setPublishAt] = useState("");
 
-  const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
 
   // ============================================================
-  // LOAD EDIT
+  // LOAD EDIT MODE
   // ============================================================
 
   useEffect(() => {
@@ -91,10 +91,21 @@ export default function ContentStudio({ mode, contentId }: Props) {
         setFriction(c.point_de_friction || "");
         setSignal(c.signal_analytique || "");
 
-        setConcepts(c.concepts || []);
-        setTopics(c.topics || []);
-        setCompanies(c.companies || []);
-        setSolutions(c.solutions || []);
+        setConcepts(
+          (c.concepts || []).map((x: any) => x.ID_CONCEPT)
+        );
+
+        setTopics(
+          (c.topics || []).map((x: any) => x.ID_TOPIC)
+        );
+
+        setCompanies(
+          (c.companies || []).map((x: any) => x.ID_COMPANY)
+        );
+
+        setSolutions(
+          (c.solutions || []).map((x: any) => x.ID_SOLUTION)
+        );
 
         setStep("SUMMARY");
 
@@ -112,17 +123,15 @@ export default function ContentStudio({ mode, contentId }: Props) {
   }, [mode, contentId]);
 
   // ============================================================
-  // SAVE
+  // SAVE (CREATE / UPDATE)
   // ============================================================
 
   async function saveContent() {
 
     if (!excerpt.trim() || !contentBody.trim()) {
-      alert("Summary incomplet");
+      alert("Résumé incomplet");
       return;
     }
-
-    setSaving(true);
 
     const payload = {
 
@@ -131,35 +140,19 @@ export default function ContentStudio({ mode, contentId }: Props) {
       excerpt,
       content_body: contentBody,
 
-      citations: citations || [],
-      chiffres: chiffres || [],
-      acteurs_cites: acteurs || [],
+      citations,
+      chiffres,
+      acteurs_cites: acteurs,
 
-      // 🔥 ANALYSE
       mecanique_expliquee: mecanique,
       enjeu_strategique: enjeu,
       point_de_friction: friction,
       signal_analytique: signal,
 
-      concepts: (concepts || [])
-        .map((c) =>
-          typeof c === "string"
-            ? c
-            : c?.ID_CONCEPT
-        )
-        .filter(Boolean),
-
-      topics: (topics || [])
-        .map((t) => t?.ID_TOPIC)
-        .filter(Boolean),
-
-      companies: (companies || [])
-        .map((c) => c?.ID_COMPANY)
-        .filter(Boolean),
-
-      solutions: (solutions || [])
-        .map((s) => s?.ID_SOLUTION)
-        .filter(Boolean),
+      concepts,
+      topics,
+      companies,
+      solutions,
 
     };
 
@@ -172,7 +165,10 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
       } else {
 
-        await api.put(`/content/update/${internalContentId}`, payload);
+        await api.put(
+          `/content/update/${internalContentId}`,
+          payload
+        );
 
       }
 
@@ -185,8 +181,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
     }
 
-    setSaving(false);
-
   }
 
   // ============================================================
@@ -198,7 +192,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
     if (!internalContentId) return;
 
     if (publishMode === "SCHEDULE" && !publishAt) {
-      alert("Merci de sélectionner une date.");
+      alert("Sélectionner une date.");
       return;
     }
 
@@ -228,9 +222,15 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
   }
 
+  // ============================================================
+  // RENDER
+  // ============================================================
+
   return (
 
     <div className="space-y-6">
+
+      {/* SOURCE */}
 
       <details open={step === "SOURCE"} className="border rounded p-4">
         <summary className="font-semibold cursor-pointer">
@@ -238,21 +238,18 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </summary>
 
         <StepSource
-          onSubmit={({ source_id, text, topics, companies, solutions, concepts }) => {
+          onSubmit={({ source_id, text }) => {
 
             setSourceId(source_id);
             setSourceText(text);
-
-            setTopics(topics || []);
-            setCompanies(companies || []);
-            setSolutions(solutions || []);
-            setConcepts(concepts || []);
 
             setStep("SUMMARY");
 
           }}
         />
       </details>
+
+      {/* SUMMARY */}
 
       {sourceText && (
         <details open={step === "SUMMARY"} className="border rounded p-4">
@@ -268,30 +265,35 @@ export default function ContentStudio({ mode, contentId }: Props) {
             citations={citations}
             chiffres={chiffres}
             acteurs={acteurs}
-            concepts={
-              concepts.map((c) =>
-                typeof c === "string" ? c : c?.TITLE
-              )
-            }
+            concepts={concepts}
+            solutions={solutions}
+            topics={topics}
             mecanique={mecanique}
             enjeu={enjeu}
             friction={friction}
             signal={signal}
             onChange={(d) => {
+
               if (d.excerpt !== undefined) setExcerpt(d.excerpt);
               if (d.contentBody !== undefined) setContentBody(d.contentBody);
               if (d.citations !== undefined) setCitations(d.citations);
               if (d.chiffres !== undefined) setChiffres(d.chiffres);
               if (d.acteurs !== undefined) setActeurs(d.acteurs);
+              if (d.concepts !== undefined) setConcepts(d.concepts);
+              if (d.solutions !== undefined) setSolutions(d.solutions);
+              if (d.topics !== undefined) setTopics(d.topics);
               if (d.mecanique !== undefined) setMecanique(d.mecanique);
               if (d.enjeu !== undefined) setEnjeu(d.enjeu);
               if (d.friction !== undefined) setFriction(d.friction);
               if (d.signal !== undefined) setSignal(d.signal);
+
             }}
             onNext={saveContent}
           />
         </details>
       )}
+
+      {/* PREVIEW */}
 
       {internalContentId && (
         <details open={step === "PREVIEW"} className="border rounded p-4">
@@ -306,6 +308,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
           />
         </details>
       )}
+
+      {/* PUBLISH */}
 
       {internalContentId && (
         <details open={step === "PUBLISH"} className="border rounded p-4">
