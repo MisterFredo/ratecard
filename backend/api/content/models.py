@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
@@ -42,23 +42,23 @@ class ContentCreate(BaseModel):
     # ---------------------------------------------------------
     # EXTRACTIONS STRUCTURÉES
     # ---------------------------------------------------------
-    citations: List[str] = []
-    chiffres: List[str] = []
-    acteurs_cites: List[str] = []
+    citations: List[str] = Field(default_factory=list)
+    chiffres: List[str] = Field(default_factory=list)
+    acteurs_cites: List[str] = Field(default_factory=list)
 
     # ---------------------------------------------------------
     # ENTITÉS MÉTIER
     # ---------------------------------------------------------
-    topics: List[str] = []
-    events: List[str] = []
-    companies: List[str] = []
-    persons: List[ContentPerson] = []
+    topics: List[str] = Field(default_factory=list)
+    events: List[str] = Field(default_factory=list)
+    companies: List[str] = Field(default_factory=list)
+    persons: List[ContentPerson] = Field(default_factory=list)
 
     # ---------------------------------------------------------
     # TAGGING ANALYTIQUE
     # ---------------------------------------------------------
-    concepts: List[str] = []
-    solutions: List[str] = []
+    concepts: List[str] = Field(default_factory=list)
+    solutions: List[str] = Field(default_factory=list)
 
     # ---------------------------------------------------------
     # SEO
@@ -139,24 +139,24 @@ class ContentOut(BaseModel):
     id_content: str
     status: str
 
-    source_id: Optional[str]
-    source_url: Optional[str]
-    source_author: Optional[str]
+    source_id: Optional[str] = None
+    source_url: Optional[str] = None
+    source_author: Optional[str] = None
 
-    title: Optional[str]
-    excerpt: Optional[str]
-    content_body: Optional[str]
+    title: Optional[str] = None
+    excerpt: Optional[str] = None
+    content_body: Optional[str] = None
 
-    citations: List[str] = []
-    chiffres: List[str] = []
-    acteurs_cites: List[str] = []
+    citations: List[str] = Field(default_factory=list)
+    chiffres: List[str] = Field(default_factory=list)
+    acteurs_cites: List[str] = Field(default_factory=list)
 
-    published_at: Optional[datetime]
+    published_at: Optional[datetime] = None
 
-    topics: List = []
-    events: List = []
-    companies: List = []
-    persons: List = []
+    topics: List[str] = Field(default_factory=list)
+    events: List[str] = Field(default_factory=list)
+    companies: List[str] = Field(default_factory=list)
+    persons: List[ContentPerson] = Field(default_factory=list)
 
-    concepts: List = []
-    solutions: List = []
+    concepts: List[str] = Field(default_factory=list)
+    solutions: List[str] = Field(default_factory=list)
