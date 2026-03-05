@@ -21,8 +21,7 @@ export default function EditableList({
   }
 
   function removeItem(index: number) {
-    const copy = items.filter((_, i) => i !== index);
-    onChange(copy);
+    onChange(items.filter((_, i) => i !== index));
   }
 
   function addItem() {
@@ -31,6 +30,7 @@ export default function EditableList({
 
   return (
     <div className="space-y-2">
+
       <label className="block text-sm font-medium">
         {label}
       </label>
@@ -40,6 +40,12 @@ export default function EditableList({
           <input
             value={item}
             onChange={(e) => updateItem(i, e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addItem();
+              }
+            }}
             className="flex-1 border rounded px-2 py-1 text-sm"
             placeholder={placeholder}
           />
@@ -58,6 +64,7 @@ export default function EditableList({
       >
         + Ajouter
       </button>
+
     </div>
   );
 }
