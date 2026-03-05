@@ -94,7 +94,7 @@ export default function ConceptSelector({
       onChange(filtered);
     }
 
-  }, [options]);
+  }, [options, values, onChange]);
 
   /* ---------------------------------------------------------
      HANDLE CHANGE — MULTI
