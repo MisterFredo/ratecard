@@ -14,27 +14,41 @@ export default function StepPreview({
   onBack,
   onNext,
 }: Props) {
+
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState<any | null>(null);
 
+
   useEffect(() => {
-    async function load() {
-      setLoading(true);
+
+    async function loadContent() {
 
       try {
+
+        setLoading(true);
+
         const res = await api.get(`/content/${contentId}`);
+
         setContent(res?.content || null);
+
       } catch (e) {
+
         console.error(e);
         alert("Contenu introuvable");
         setContent(null);
+
       } finally {
+
         setLoading(false);
+
       }
+
     }
 
-    load();
+    loadContent();
+
   }, [contentId]);
+
 
   if (loading) {
     return <div>Chargement de l’aperçu…</div>;
@@ -48,11 +62,16 @@ export default function StepPreview({
     );
   }
 
+
   return (
+
     <div className="space-y-10 max-w-3xl">
 
+
       {/* HEADER */}
+
       <div className="flex justify-between items-center">
+
         <h2 className="text-xl font-semibold text-ratecard-blue">
           Aperçu du contenu
         </h2>
@@ -63,19 +82,29 @@ export default function StepPreview({
         >
           ← Modifier
         </button>
+
       </div>
 
+
       {/* EXCERPT */}
+
       {content.excerpt && (
+
         <div className="bg-white border rounded p-5 shadow-sm">
+
           <p className="text-base font-medium text-gray-800">
             {content.excerpt}
           </p>
+
         </div>
+
       )}
 
+
       {/* CONTEXTE */}
+
       <div className="text-sm text-gray-600 space-y-1">
+
         <div>
           <strong>Topics :</strong>{" "}
           {content.topics?.length
@@ -96,76 +125,125 @@ export default function StepPreview({
             ? content.companies.map((c: any) => c.NAME).join(", ")
             : "—"}
         </div>
+
+        <div>
+          <strong>Solutions :</strong>{" "}
+          {content.solutions?.length
+            ? content.solutions.map((s: any) => s.NAME).join(", ")
+            : "—"}
+        </div>
+
       </div>
 
-      {/* CONCEPT (optionnel) */}
-      {content.concept && (
-        <div className="border-l-4 border-ratecard-blue pl-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
-            Concept associé
-          </h4>
-          <p className="text-sm text-gray-700">
-            {content.concept}
-          </p>
-        </div>
-      )}
 
       {/* BODY STRUCTURÉ */}
-      <div
-        className="
-          prose prose-sm max-w-none
-          prose-p:my-4
-          prose-ul:my-4
-          prose-li:my-1
-          prose-strong:font-semibold
-        "
-        dangerouslySetInnerHTML={{
-          __html: content.content_body || "",
-        }}
-      />
+
+      {content.content_body && (
+
+        <div className="space-y-3 text-gray-800">
+
+          {content.content_body
+            .split("\n")
+            .filter((l: string) => l.trim())
+            .map((line: string, i: number) => (
+              <p key={i}>{line}</p>
+            ))}
+
+        </div>
+
+      )}
+
 
       {/* CHIFFRES */}
+
       {content.chiffres?.length > 0 && (
+
         <div>
+
           <h4 className="font-semibold text-sm mb-2">
             Chiffres clés
           </h4>
+
           <ul className="list-disc list-inside text-sm text-gray-700">
+
             {content.chiffres.map((c: string, i: number) => (
               <li key={i}>{c}</li>
             ))}
+
           </ul>
+
         </div>
+
       )}
 
+
       {/* CITATIONS */}
+
       {content.citations?.length > 0 && (
+
         <div>
+
           <h4 className="font-semibold text-sm mb-2">
             Citations
           </h4>
+
           <ul className="space-y-2 text-sm text-gray-700">
+
             {content.citations.map((c: string, i: number) => (
-              <li key={i} className="italic">“{c}”</li>
+              <li key={i} className="italic">
+                “{c}”
+              </li>
             ))}
+
           </ul>
+
         </div>
+
       )}
 
+
       {/* ACTEURS */}
+
       {content.acteurs_cites?.length > 0 && (
+
         <div>
+
           <h4 className="font-semibold text-sm mb-2">
             Acteurs cités
           </h4>
+
           <p className="text-sm text-gray-700">
             {content.acteurs_cites.join(", ")}
           </p>
+
         </div>
+
       )}
 
+
+      {/* CONCEPTS */}
+
+      {content.concepts?.length > 0 && (
+
+        <div>
+
+          <h4 className="font-semibold text-sm mb-2">
+            Concepts
+          </h4>
+
+          <p className="text-sm text-gray-700">
+            {content.concepts.join(", ")}
+          </p>
+
+        </div>
+
+      )}
+
+
       {/* ACTIONS */}
+
       <div className="flex gap-4 pt-6">
+
         <button
           onClick={onBack}
           className="px-4 py-2 border rounded"
@@ -179,8 +257,11 @@ export default function StepPreview({
         >
           Continuer vers publication
         </button>
+
       </div>
 
     </div>
+
   );
+
 }
