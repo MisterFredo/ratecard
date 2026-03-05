@@ -34,13 +34,14 @@ def load_concepts_by_topics(topic_ids: List[str]) -> List[Dict[str, str]]:
 
 
 # ============================================================
-# SUMMARY GENERATION (VERSION SIMPLIFIÉE)
+# SUMMARY GENERATION — VERSION STABLE
 # ============================================================
 def generate_summary(
-    source_type: Optional[str],
+    source_id: Optional[str],
     source_text: str,
-    context: Dict[str, List[str]],
-):
+    context: Optional[Dict[str, List[str]]] = None,
+) -> Dict:
+
     """
     Génère :
     - title
@@ -50,17 +51,32 @@ def generate_summary(
     - chiffres
     - acteurs_cites
     - concepts
+    - solutions
 
-    Sans dépendance aux concepts gouvernés.
+    Version stable alignée avec la route.
     """
 
     if not source_text or not source_text.strip():
         raise ValueError("Source vide")
 
+    context = context or {}
+
     content = transform_source_to_content(
-        source_type=source_type,
+        source_type=source_id,   # alignement interne
         source_text=source_text,
         context=context,
     )
 
-    return content
+    if not isinstance(content, dict):
+        raise ValueError("Réponse LLM invalide")
+
+    return {
+        "title": content.get("title", ""),
+        "excerpt": content.get("excerpt", ""),
+        "content_body": content.get("content_body", ""),
+        "citations": content.get("citations", []),
+        "chiffres": content.get("chiffres", []),
+        "acteurs_cites": content.get("acteurs_cites", []),
+        "concepts": content.get("concepts", []),
+        "solutions": content.get("solutions", []),
+    }
