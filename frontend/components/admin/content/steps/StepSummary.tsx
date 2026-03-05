@@ -15,7 +15,9 @@ type Props = {
   chiffres: string[];
   acteurs: string[];
   concepts: string[];
-  solutions: string[];
+
+  // 👇 rendu optionnel
+  solutions?: string[];
 
   onChange: (data: {
     excerpt?: string;
@@ -41,7 +43,9 @@ export default function StepSummary({
   chiffres,
   acteurs,
   concepts,
-  solutions,
+
+  // 👇 valeur par défaut
+  solutions = [],
 
   onChange,
   onNext,
@@ -110,7 +114,6 @@ export default function StepSummary({
       {/* GENERATE */}
 
       <div className="flex items-center gap-4">
-
         <button
           onClick={generateSummary}
           disabled={loading}
@@ -118,7 +121,6 @@ export default function StepSummary({
         >
           {loading ? "Génération..." : "Générer la synthèse"}
         </button>
-
       </div>
 
       {/* EXCERPT */}
@@ -258,7 +260,7 @@ export default function StepSummary({
           onClick={onNext}
           className="px-4 py-2 bg-green-600 text-white rounded"
         >
-          Continuer vers le contexte
+          Continuer vers l’aperçu
         </button>
       </div>
 
