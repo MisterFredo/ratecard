@@ -42,12 +42,13 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [chiffres, setChiffres] = useState<string[]>([]);
   const [acteurs, setActeurs] = useState<string[]>([]);
   const [concepts, setConcepts] = useState<string[]>([]);
+  const [solutions, setSolutions] = useState<string[]>([]);
 
-  // CONTEXT
+  // CONTEXT (gouverné)
   const [topics, setTopics] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
-  const [solutions, setSolutions] = useState<any[]>([]);
+  const [contextSolutions, setContextSolutions] = useState<any[]>([]);
 
   // PUBLISH
   const [publishMode, setPublishMode] =
@@ -57,7 +58,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
-
 
   // ============================================================
   // LOAD EDIT
@@ -85,7 +85,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
         setTopics(c.topics || []);
         setEvents(c.events || []);
         setCompanies(c.companies || []);
-        setSolutions(c.solutions || []);
+        setContextSolutions(c.solutions || []);
 
         setStep("SUMMARY");
 
@@ -101,7 +101,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
     load();
 
   }, [mode, contentId]);
-
 
   // ============================================================
   // SAVE CONTENT
@@ -137,7 +136,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
       topics: topics.map((t) => t.id_topic),
       events: events.map((e) => e.id_event),
       companies: companies.map((c) => c.id_company),
-      solutions: solutions.map((s) => s.id_solution) // ✅ aligné
+      solutions: contextSolutions.map((s) => s.id_solution)
 
     };
 
@@ -166,7 +165,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
     setSaving(false);
 
   }
-
 
   // ============================================================
   // PUBLISH
@@ -209,7 +207,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
   }
 
-
   // ============================================================
   // RENDER
   // ============================================================
@@ -233,7 +230,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
         />
       </details>
 
-
       {/* SUMMARY */}
       {sourceText && (
         <details open={step === "SUMMARY"} className="border rounded p-4">
@@ -250,6 +246,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
             chiffres={chiffres}
             acteurs={acteurs}
             concepts={concepts}
+            solutions={solutions}
             onChange={(d) => {
               if (d.excerpt !== undefined) setExcerpt(d.excerpt);
               if (d.contentBody !== undefined) setContentBody(d.contentBody);
@@ -257,12 +254,12 @@ export default function ContentStudio({ mode, contentId }: Props) {
               if (d.chiffres !== undefined) setChiffres(d.chiffres);
               if (d.acteurs !== undefined) setActeurs(d.acteurs);
               if (d.concepts !== undefined) setConcepts(d.concepts);
+              if (d.solutions !== undefined) setSolutions(d.solutions);
             }}
             onNext={() => setStep("CONTEXT")}
           />
         </details>
       )}
-
 
       {/* CONTEXT */}
       {step !== "SOURCE" && (
@@ -275,18 +272,17 @@ export default function ContentStudio({ mode, contentId }: Props) {
             topics={topics}
             events={events}
             companies={companies}
-            solutions={solutions}
+            solutions={contextSolutions}
             onChange={(d) => {
               if (d.topics) setTopics(d.topics);
               if (d.events) setEvents(d.events);
               if (d.companies) setCompanies(d.companies);
-              if (d.solutions) setSolutions(d.solutions);
+              if (d.solutions) setContextSolutions(d.solutions);
             }}
             onValidate={saveContent}
           />
         </details>
       )}
-
 
       {/* PREVIEW */}
       {internalContentId && (
@@ -302,7 +298,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
           />
         </details>
       )}
-
 
       {/* PUBLISH */}
       {internalContentId && (
