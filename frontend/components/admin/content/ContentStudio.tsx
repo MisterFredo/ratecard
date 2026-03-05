@@ -30,6 +30,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // =========================
   // SOURCE
   // =========================
+
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [sourceText, setSourceText] = useState("");
 
@@ -42,13 +43,13 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [solutionsRaw, setSolutionsRaw] = useState<string[]>([]);
 
   // =========================
-  // GOUVERNE
+  // GOUVERNÉ
   // =========================
 
   const [topics, setTopics] = useState<string[]>([]);
   const [companies, setCompanies] = useState<string[]>([]);
-  const [solutions, setSolutions] = useState<string[]>([]);
   const [concepts, setConcepts] = useState<string[]>([]);
+  const [solutions, setSolutions] = useState<string[]>([]);
 
   // =========================
   // SUMMARY
@@ -60,7 +61,10 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [citations, setCitations] = useState<string[]>([]);
   const [chiffres, setChiffres] = useState<string[]>([]);
 
+  // =========================
   // ANALYSE
+  // =========================
+
   const [mecanique, setMecanique] = useState("");
   const [enjeu, setEnjeu] = useState("");
   const [friction, setFriction] = useState("");
@@ -69,10 +73,11 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // =========================
   // PUBLISH
   // =========================
+
   const [publishMode, setPublishMode] =
     useState<"NOW" | "SCHEDULE">("NOW");
-  const [publishAt, setPublishAt] = useState("");
 
+  const [publishAt, setPublishAt] = useState("");
   const [publishing, setPublishing] = useState(false);
 
   // ============================================================
@@ -114,7 +119,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   }, [mode, contentId]);
 
   // ============================================================
-  // SAVE
+  // SAVE (CREATE / UPDATE)
   // ============================================================
 
   async function saveContent() {
@@ -175,12 +180,53 @@ export default function ContentStudio({ mode, contentId }: Props) {
   }
 
   // ============================================================
+  // PUBLISH
+  // ============================================================
+
+  async function publishContent() {
+
+    if (!internalContentId) return;
+
+    if (publishMode === "SCHEDULE" && !publishAt) {
+      alert("Sélectionner une date.");
+      return;
+    }
+
+    setPublishing(true);
+
+    try {
+
+      await api.post(`/content/publish/${internalContentId}`, {
+        publish_at:
+          publishMode === "NOW"
+            ? null
+            : new Date(publishAt).toISOString(),
+      });
+
+      alert("Contenu publié");
+
+    } catch (e) {
+
+      console.error(e);
+      alert("Erreur publication");
+
+    } finally {
+
+      setPublishing(false);
+
+    }
+
+  }
+
+  // ============================================================
   // RENDER
   // ============================================================
 
   return (
 
     <div className="space-y-6">
+
+      {/* SOURCE */}
 
       <details open={step === "SOURCE"} className="border rounded p-4">
         <summary className="font-semibold cursor-pointer">
@@ -195,6 +241,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
           }}
         />
       </details>
+
+      {/* SUMMARY */}
 
       {sourceText && (
         <details open={step === "SUMMARY"} className="border rounded p-4">
@@ -240,6 +288,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </details>
       )}
 
+      {/* PREVIEW */}
+
       {internalContentId && (
         <details open={step === "PREVIEW"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
@@ -254,6 +304,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </details>
       )}
 
+      {/* PUBLISH */}
+
       {internalContentId && (
         <details open={step === "PUBLISH"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
@@ -266,7 +318,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
             publishing={publishing}
             onChangeMode={setPublishMode}
             onChangeDate={setPublishAt}
-            onPublish={() => {}}
+            onPublish={publishContent}
           />
         </details>
       )}
