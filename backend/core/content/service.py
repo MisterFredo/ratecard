@@ -5,6 +5,9 @@ from typing import Optional, Dict, Any
 from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
+
+from api.content.models import ContentCreate, ContentUpdate
+
 from utils.bigquery_utils import (
     query_bq,
     insert_bq,
@@ -53,7 +56,7 @@ def normalize_array(value):
 # CREATE CONTENT
 # ============================================================
 
-def create_content(data: Dict[str, Any]) -> str:
+def create_content(data: ContentCreate) -> str:
 
     if not data.title or not data.title.strip():
         raise ValueError("TITLE obligatoire")
@@ -62,7 +65,7 @@ def create_content(data: Dict[str, Any]) -> str:
         raise ValueError("CONTENT_BODY obligatoire")
 
     content_id = str(uuid.uuid4())
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     row = [{
         "ID_CONTENT": content_id,
@@ -96,14 +99,20 @@ def create_content(data: Dict[str, Any]) -> str:
     client.load_table_from_json(
         row,
         TABLE_CONTENT,
-        job_config=bigquery.LoadJobConfig(write_disposition="WRITE_APPEND"),
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
     ).result()
 
     if data.topics:
         insert_bq(
             TABLE_CONTENT_TOPIC,
             [
-                {"ID_CONTENT": content_id, "ID_TOPIC": tid, "CREATED_AT": now}
+                {
+                    "ID_CONTENT": content_id,
+                    "ID_TOPIC": tid,
+                    "CREATED_AT": now
+                }
                 for tid in data.topics
             ],
         )
@@ -112,7 +121,11 @@ def create_content(data: Dict[str, Any]) -> str:
         insert_bq(
             TABLE_CONTENT_EVENT,
             [
-                {"ID_CONTENT": content_id, "ID_EVENT": eid, "CREATED_AT": now}
+                {
+                    "ID_CONTENT": content_id,
+                    "ID_EVENT": eid,
+                    "CREATED_AT": now
+                }
                 for eid in data.events
             ],
         )
@@ -121,7 +134,11 @@ def create_content(data: Dict[str, Any]) -> str:
         insert_bq(
             TABLE_CONTENT_COMPANY,
             [
-                {"ID_CONTENT": content_id, "ID_COMPANY": cid, "CREATED_AT": now}
+                {
+                    "ID_CONTENT": content_id,
+                    "ID_COMPANY": cid,
+                    "CREATED_AT": now
+                }
                 for cid in data.companies
             ],
         )
@@ -144,7 +161,11 @@ def create_content(data: Dict[str, Any]) -> str:
         insert_bq(
             TABLE_CONTENT_CONCEPT,
             [
-                {"ID_CONTENT": content_id, "ID_CONCEPT": cid, "CREATED_AT": now}
+                {
+                    "ID_CONTENT": content_id,
+                    "ID_CONCEPT": cid,
+                    "CREATED_AT": now
+                }
                 for cid in data.concepts
             ],
         )
@@ -153,7 +174,11 @@ def create_content(data: Dict[str, Any]) -> str:
         insert_bq(
             TABLE_CONTENT_SOLUTION,
             [
-                {"ID_CONTENT": content_id, "ID_SOLUTION": sid, "CREATED_AT": now}
+                {
+                    "ID_CONTENT": content_id,
+                    "ID_SOLUTION": sid,
+                    "CREATED_AT": now
+                }
                 for sid in data.solutions
             ],
         )
@@ -185,12 +210,20 @@ def get_content(id_content: str):
     content = {
         "id_content": row["ID_CONTENT"],
         "status": row.get("STATUS"),
+
+        "source_id": row.get("SOURCE_ID"),
+        "source_text": row.get("SOURCE_TEXT"),
+        "source_url": row.get("SOURCE_URL"),
+        "source_author": row.get("SOURCE_AUTHOR"),
+
         "title": row.get("TITLE"),
         "excerpt": row.get("EXCERPT"),
         "content_body": row.get("CONTENT_BODY"),
+
         "citations": row.get("CITATIONS") or [],
         "chiffres": row.get("CHIFFRES") or [],
         "acteurs_cites": row.get("ACTEURS_CITES") or [],
+
         "published_at": (
             row["PUBLISHED_AT"].isoformat()
             if row.get("PUBLISHED_AT")
@@ -303,10 +336,11 @@ def list_contents_admin():
           ID_CONTENT,
           TITLE,
           STATUS,
-          PUBLISHED_AT
+          PUBLISHED_AT,
+          UPDATED_AT
         FROM `{TABLE_CONTENT}`
         WHERE IS_ACTIVE = TRUE
-        ORDER BY PUBLISHED_AT DESC
+        ORDER BY UPDATED_AT DESC
         """
     )
 
@@ -320,18 +354,21 @@ def list_contents_admin():
 def reset_and_insert(table, id_field, id_content, values):
 
     client = get_bigquery_client()
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     client.query(
         f"DELETE FROM `{table}` WHERE ID_CONTENT = @id",
         job_config=bigquery.QueryJobConfig(
             query_parameters=[
-                bigquery.ScalarQueryParameter("id", "STRING", id_content)
+                bigquery.ScalarQueryParameter(
+                    "id", "STRING", id_content
+                )
             ]
         ),
     ).result()
 
     if values:
+
         insert_bq(
             table,
             [
@@ -349,13 +386,13 @@ def reset_and_insert(table, id_field, id_content, values):
 # UPDATE CONTENT
 # ============================================================
 
-def update_content(id_content: str, data: Dict[str, Any]):
+def update_content(id_content: str, data: ContentUpdate):
 
     fields = {
         "TITLE": data.title,
         "EXCERPT": data.excerpt,
         "CONTENT_BODY": data.content_body,
-        "UPDATED_AT": datetime.utcnow(),
+        "UPDATED_AT": datetime.now(timezone.utc),
     }
 
     update_bq(
@@ -364,11 +401,40 @@ def update_content(id_content: str, data: Dict[str, Any]):
         where={"ID_CONTENT": id_content},
     )
 
-    reset_and_insert(TABLE_CONTENT_TOPIC, "ID_TOPIC", id_content, data.topics)
-    reset_and_insert(TABLE_CONTENT_EVENT, "ID_EVENT", id_content, data.events)
-    reset_and_insert(TABLE_CONTENT_COMPANY, "ID_COMPANY", id_content, data.companies)
-    reset_and_insert(TABLE_CONTENT_CONCEPT, "ID_CONCEPT", id_content, data.concepts)
-    reset_and_insert(TABLE_CONTENT_SOLUTION, "ID_SOLUTION", id_content, data.solutions)
+    reset_and_insert(
+        TABLE_CONTENT_TOPIC,
+        "ID_TOPIC",
+        id_content,
+        data.topics or [],
+    )
+
+    reset_and_insert(
+        TABLE_CONTENT_EVENT,
+        "ID_EVENT",
+        id_content,
+        data.events or [],
+    )
+
+    reset_and_insert(
+        TABLE_CONTENT_COMPANY,
+        "ID_COMPANY",
+        id_content,
+        data.companies or [],
+    )
+
+    reset_and_insert(
+        TABLE_CONTENT_CONCEPT,
+        "ID_CONCEPT",
+        id_content,
+        data.concepts or [],
+    )
+
+    reset_and_insert(
+        TABLE_CONTENT_SOLUTION,
+        "ID_SOLUTION",
+        id_content,
+        data.solutions or [],
+    )
 
     return True
 
@@ -400,15 +466,24 @@ def publish_content(
     now = datetime.now(timezone.utc)
 
     if published_at is None:
+
         status = "PUBLISHED"
         final_date = now
+
     else:
 
         if published_at.tzinfo is None:
-            published_at = published_at.replace(tzinfo=timezone.utc)
+            published_at = published_at.replace(
+                tzinfo=timezone.utc
+            )
 
         final_date = published_at
-        status = "PUBLISHED" if final_date <= now else "SCHEDULED"
+
+        status = (
+            "PUBLISHED"
+            if final_date <= now
+            else "SCHEDULED"
+        )
 
     update_bq(
         table=TABLE_CONTENT,
@@ -436,12 +511,15 @@ def get_content_stats():
           COUNTIF(STATUS = 'DRAFT') AS TOTAL_DRAFT,
           COUNTIF(
             STATUS = 'PUBLISHED'
-            AND EXTRACT(YEAR FROM PUBLISHED_AT) = EXTRACT(YEAR FROM CURRENT_DATE())
+            AND EXTRACT(YEAR FROM PUBLISHED_AT)
+                = EXTRACT(YEAR FROM CURRENT_DATE())
           ) AS TOTAL_PUBLISHED_THIS_YEAR,
           COUNTIF(
             STATUS = 'PUBLISHED'
-            AND EXTRACT(YEAR FROM PUBLISHED_AT) = EXTRACT(YEAR FROM CURRENT_DATE())
-            AND EXTRACT(MONTH FROM PUBLISHED_AT) = EXTRACT(MONTH FROM CURRENT_DATE())
+            AND EXTRACT(YEAR FROM PUBLISHED_AT)
+                = EXTRACT(YEAR FROM CURRENT_DATE())
+            AND EXTRACT(MONTH FROM PUBLISHED_AT)
+                = EXTRACT(MONTH FROM CURRENT_DATE())
           ) AS TOTAL_PUBLISHED_THIS_MONTH
         FROM `{TABLE_CONTENT}`
     """
