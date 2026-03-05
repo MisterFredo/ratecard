@@ -206,13 +206,18 @@ export default function StepSummary(props: Props) {
           }
         />
 
-        <EditableList
-          label="Acteurs cités"
-          items={props.acteurs}
-          onChange={(items) =>
-            props.onChange({ acteurs: items })
-          }
-        />
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Points clés
+          </label>
+          <textarea
+            value={props.contentBody}
+            onChange={(e) =>
+              props.onChange({ contentBody: e.target.value })
+            }
+            className="w-full border rounded p-3 min-h-[200px]"
+          />
+        </div>
 
         <EditableList
           label="Concepts"
