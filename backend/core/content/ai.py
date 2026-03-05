@@ -68,6 +68,9 @@ CONCEPTS
 
     raw = run_llm(prompt)
 
+    if not raw:
+        raise ValueError("Réponse LLM vide")
+
     sections = {
         "TITLE": "",
         "EXCERPT": "",
@@ -107,17 +110,36 @@ CONCEPTS
         items = []
 
         for line in block.splitlines():
-            line = re.sub(r"^[-•]\s*", "", line.strip())
 
-            if line:
+            line = line.strip()
+
+            line = re.sub(r"^[-•]\s*", "", line)
+
+            if line and line.lower() != "aucun":
                 items.append(line)
 
         return items
 
+
+    # ============================================================
+    # CLEAN BODY
+    # ============================================================
+
+    body = sections["POINTS CLES"].strip()
+
+    # transforme la liste en HTML simple
+    if body:
+        lines = parse_list(body)
+
+        if lines:
+            body = "<ul>" + "".join(
+                f"<li>{l}</li>" for l in lines
+            ) + "</ul>"
+
     return {
         "title": sections["TITLE"].strip(),
         "excerpt": sections["EXCERPT"].strip(),
-        "content_body": sections["POINTS CLES"].strip(),
+        "content_body": body,
         "citations": parse_list(sections["CITATIONS"]),
         "chiffres": parse_list(sections["CHIFFRES"]),
         "acteurs_cites": parse_list(sections["ACTEURS"]),
