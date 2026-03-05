@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 type Source = {
-  id_source: string;
-  label: string;
+  ID_SOURCE: string;
+  LABEL: string;
 };
 
 type Props = {
@@ -38,12 +38,14 @@ export default function StepSource({ onSubmit }: Props) {
 
       try {
 
-        const res = await api.get("/sources");
+        const res = await api.get("/source/list");
 
-        setSources(res.sources || []);
+        const list = res.sources || [];
 
-        if (res.sources?.length) {
-          setSourceId(res.sources[0].id_source);
+        setSources(list);
+
+        if (list.length) {
+          setSourceId(list[0].ID_SOURCE);
         }
 
       } catch (e) {
@@ -117,10 +119,10 @@ export default function StepSource({ onSubmit }: Props) {
             {sources.map((s) => (
 
               <option
-                key={s.id_source}
-                value={s.id_source}
+                key={s.ID_SOURCE}
+                value={s.ID_SOURCE}
               >
-                {s.label}
+                {s.LABEL}
               </option>
 
             ))}
