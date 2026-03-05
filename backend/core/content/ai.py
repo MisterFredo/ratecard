@@ -6,17 +6,10 @@ from utils.bigquery_utils import query_bq
 
 
 # ============================================================
-# PARSING ROBUSTE
+# UTILS — HEADER NORMALISATION
 # ============================================================
 
 def normalize_key(text: str) -> str:
-    """
-    Normalise un header :
-    - supprime accents
-    - supprime # et :
-    - uppercase
-    - trim
-    """
     text = unicodedata.normalize("NFD", text)
     text = text.encode("ascii", "ignore").decode("utf-8")
     text = text.replace("#", "")
@@ -24,52 +17,10 @@ def normalize_key(text: str) -> str:
     return text.strip().upper()
 
 
-sections = {
-    "TITLE": "",
-    "EXCERPT": "",
-    "POINTS CLES": "",
-    "CITATIONS": "",
-    "CHIFFRES": "",
-    "ACTEURS": "",
-    "CONCEPTS": "",
-    "SOLUTIONS": "",
-    "TOPICS": "",
-    "MECANIQUE": "",
-    "ENJEU": "",
-    "FRICTION": "",
-    "SIGNAL": "",
-}
-
-current = None
-
-for line in raw.splitlines():
-
-    clean = line.strip()
-    if not clean:
-        continue
-
-    normalized_line = normalize_key(clean)
-
-    matched = False
-
-    for key in sections.keys():
-
-        if normalized_line == key:
-            current = key
-            matched = True
-            break
-
-    if matched:
-        continue
-
-    if current:
-        sections[current] += clean + "\n"
-
-
-
 # ============================================================
 # GENERATE SUMMARY + ANALYSE FROM SOURCE
 # ============================================================
+
 def generate_summary(
     source_id: Optional[str],
     source_text: str,
@@ -121,52 +72,21 @@ Source : {source_id or "inconnue"}
 ================ FORMAT OBLIGATOIRE ================
 
 TITLE
-(Titre factuel.)
-
 EXCERPT
-(1 à 2 phrases synthétiques.)
-
 POINTS CLES
-(Liste factuelle.)
-
 CITATIONS
-(Liste exacte ou "Aucun")
-
 CHIFFRES
-(Liste exacte ou "Aucun")
-
 ACTEURS
-(Liste des entreprises citées ou "Aucun")
-
 CONCEPTS
-(Notions métier ou dynamiques marché.
-Ou "Aucun")
-
 SOLUTIONS
-(Noms de produits, plateformes ou offres.
-Ou "Aucun")
-
 TOPICS
-(Choisir 1 à 3 topics uniquement parmi cette liste.
-Ne jamais inventer ni reformuler.)
-
-{topics_list_text}
 
 ================ ANALYSE STRATEGIQUE ================
 
 MECANIQUE
-(Explique en 3 à 6 lignes la mécanique business ou opérationnelle décrite dans la source.
-Strictement basée sur le texte.)
-
 ENJEU
-(Quel est l’enjeu stratégique sous-jacent ? 2 à 4 lignes.)
-
 FRICTION
-(Quel point de tension, limite ou incertitude apparaît ? 1 à 3 lignes.
-Si aucun, écrire "Aucun")
-
 SIGNAL
-(Quel signal de marché cela révèle-t-il ? 2 à 4 lignes.)
 """
 
     raw = run_llm(prompt)
@@ -175,7 +95,7 @@ SIGNAL
         raise ValueError("Réponse LLM vide")
 
     # ============================================================
-    # PARSING
+    # PARSING ROBUSTE
     # ============================================================
 
     sections = {
@@ -188,7 +108,6 @@ SIGNAL
         "CONCEPTS": "",
         "SOLUTIONS": "",
         "TOPICS": "",
-        # 🔥 NOUVELLES SECTIONS
         "MECANIQUE": "",
         "ENJEU": "",
         "FRICTION": "",
@@ -203,22 +122,25 @@ SIGNAL
         if not clean:
             continue
 
-        normalized = clean.upper().replace(":", "").strip()
+        normalized_line = normalize_key(clean)
 
-        for key in sections:
-            if normalized.startswith(key):
-                current = key
-                break
-        else:
-            if current:
-                sections[current] += clean + "\n"
+        if normalized_line in sections:
+            current = normalized_line
+            continue
+
+        if current:
+            sections[current] += clean + "\n"
+
+    # ============================================================
+    # LIST PARSER
+    # ============================================================
 
     def parse_list(block: str) -> List[str]:
 
         if not block:
             return []
 
-        if block.lower().startswith("aucun"):
+        if block.strip().lower().startswith("aucun"):
             return []
 
         items = []
@@ -247,7 +169,7 @@ SIGNAL
             ) + "</ul>"
 
     # ============================================================
-    # VALIDATE & MAP TOPICS
+    # TOPICS MAPPING
     # ============================================================
 
     raw_topics = parse_list(sections["TOPICS"])
@@ -262,11 +184,10 @@ SIGNAL
     ]
 
     # ============================================================
-    # RETURN STRUCTURED DATA
+    # RETURN
     # ============================================================
 
     return {
-        # 🔹 ÉDITORIAL
         "title": sections["TITLE"].strip(),
         "excerpt": sections["EXCERPT"].strip(),
         "content_body": body,
@@ -276,8 +197,6 @@ SIGNAL
         "concepts": parse_list(sections["CONCEPTS"]),
         "solutions": parse_list(sections["SOLUTIONS"]),
         "topics": topic_ids,
-
-        # 🔥 ANALYSE
         "mecanique_expliquee": sections["MECANIQUE"].strip(),
         "enjeu_strategique": sections["ENJEU"].strip(),
         "point_de_friction": sections["FRICTION"].strip(),
