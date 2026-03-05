@@ -73,9 +73,6 @@ def create_content(data: ContentCreate) -> str:
         "AUTHOR": data.author,
 
         "SOURCE_ID": data.source_id,
-        "SOURCE_TEXT": data.source_text,
-        "SOURCE_URL": data.source_url,
-        "SOURCE_AUTHOR": data.source_author,
 
         "TITLE": data.title.strip(),
         "EXCERPT": data.excerpt,
@@ -211,9 +208,6 @@ def get_content(id_content: str):
         "status": row.get("STATUS"),
 
         "source_id": row.get("SOURCE_ID"),
-        "source_text": row.get("SOURCE_TEXT"),
-        "source_url": row.get("SOURCE_URL"),
-        "source_author": row.get("SOURCE_AUTHOR"),
 
         "title": row.get("TITLE"),
         "excerpt": row.get("EXCERPT"),
@@ -392,9 +386,6 @@ def update_content(id_content: str, data: ContentUpdate):
     fields = {
         # SOURCE
         "SOURCE_ID": data.source_id,
-        "SOURCE_TEXT": data.source_text,
-        "SOURCE_URL": data.source_url,
-        "SOURCE_AUTHOR": data.source_author,
 
         # SUMMARY
         "TITLE": data.title,
