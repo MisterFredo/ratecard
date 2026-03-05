@@ -13,11 +13,13 @@ type Props = {
 
   citations: string[];
   chiffres: string[];
+
   acteurs: string[];
   concepts: string[];
-  solutions?: string[];
+  solutions: string[];
+  topics: string[];
 
-  // 🔥 NOUVEAUX CHAMPS ANALYTIQUES
+  // 🔥 ANALYSE
   mecanique?: string;
   enjeu?: string;
   friction?: string;
@@ -31,7 +33,7 @@ type Props = {
     acteurs?: string[];
     concepts?: string[];
     solutions?: string[];
-
+    topics?: string[];
     mecanique?: string;
     enjeu?: string;
     friction?: string;
@@ -50,9 +52,11 @@ export default function StepSummary({
   contentBody,
   citations,
   chiffres,
+
   acteurs,
   concepts,
-  solutions = [],
+  solutions,
+  topics,
 
   mecanique = "",
   enjeu = "",
@@ -67,7 +71,7 @@ export default function StepSummary({
   const [loading, setLoading] = useState(false);
 
   // ==========================================================
-  // GENERATE (Résumé + Analyse en une passe)
+  // GENERATE (Résumé + Analyse)
   // ==========================================================
 
   async function generateSummary() {
@@ -98,11 +102,12 @@ export default function StepSummary({
 
         citations: res.citations || [],
         chiffres: res.chiffres || [],
+
         acteurs: res.acteurs_cites || [],
         concepts: res.concepts || [],
         solutions: res.solutions || [],
+        topics: res.topics || [],
 
-        // 🔥 ANALYSE
         mecanique: res.mecanique_expliquee || "",
         enjeu: res.enjeu_strategique || "",
         friction: res.point_de_friction || "",
@@ -121,11 +126,26 @@ export default function StepSummary({
 
   }
 
+  // ==========================================================
+  // UTIL
+  // ==========================================================
+
+  function parseTextarea(value: string) {
+    return value
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+  }
+
+  // ==========================================================
+  // RENDER
+  // ==========================================================
+
   return (
 
-    <div className="space-y-8">
+    <div className="space-y-10">
 
-      {/* GENERATE */}
+      {/* GENERATE BUTTON */}
 
       <div className="flex items-center gap-4">
         <button
@@ -137,95 +157,167 @@ export default function StepSummary({
         </button>
       </div>
 
-      {/* RESUME EXECUTIF */}
+      {/* ========================= */}
+      {/* 🔹 PARTIE EDITORIALE     */}
+      {/* ========================= */}
 
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Résumé exécutif
-        </label>
-        <textarea
-          className="w-full border rounded p-3 min-h-[80px]"
-          value={excerpt}
-          onChange={(e) =>
-            onChange({ excerpt: e.target.value })
-          }
-        />
+      <div className="space-y-6">
+
+        <h3 className="text-sm font-semibold text-gray-700">
+          Éditorial
+        </h3>
+
+        {/* Résumé */}
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Résumé exécutif
+          </label>
+          <textarea
+            className="w-full border rounded p-3 min-h-[80px]"
+            value={excerpt}
+            onChange={(e) =>
+              onChange({ excerpt: e.target.value })
+            }
+          />
+        </div>
+
+        {/* Points clés */}
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Points clés
+          </label>
+          <textarea
+            className="w-full border rounded p-3 min-h-[200px]"
+            value={contentBody}
+            onChange={(e) =>
+              onChange({ contentBody: e.target.value })
+            }
+          />
+        </div>
+
       </div>
 
-      {/* POINTS CLES */}
+      {/* ========================= */}
+      {/* 🔹 EXTRACTIONS STRUCTUREES */}
+      {/* ========================= */}
 
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Points clés
-        </label>
-        <textarea
-          className="w-full border rounded p-3 min-h-[240px]"
-          value={contentBody}
-          onChange={(e) =>
-            onChange({ contentBody: e.target.value })
-          }
-        />
+      <div className="border-t pt-8 space-y-6">
+
+        <h3 className="text-sm font-semibold text-gray-700">
+          Extractions LLM (à valider)
+        </h3>
+
+        {/* Citations */}
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Citations
+          </label>
+          <textarea
+            className="w-full border rounded p-3 min-h-[80px]"
+            value={citations.join("\n")}
+            onChange={(e) =>
+              onChange({
+                citations: parseTextarea(e.target.value),
+              })
+            }
+          />
+        </div>
+
+        {/* Chiffres */}
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Chiffres clés
+          </label>
+          <textarea
+            className="w-full border rounded p-3 min-h-[80px]"
+            value={chiffres.join("\n")}
+            onChange={(e) =>
+              onChange({
+                chiffres: parseTextarea(e.target.value),
+              })
+            }
+          />
+        </div>
+
+        {/* Acteurs */}
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Acteurs (entreprises)
+          </label>
+          <textarea
+            className="w-full border rounded p-3 min-h-[80px]"
+            value={acteurs.join("\n")}
+            onChange={(e) =>
+              onChange({
+                acteurs: parseTextarea(e.target.value),
+              })
+            }
+          />
+        </div>
+
+        {/* Concepts */}
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Concepts métier
+          </label>
+          <textarea
+            className="w-full border rounded p-3 min-h-[80px]"
+            value={concepts.join("\n")}
+            onChange={(e) =>
+              onChange({
+                concepts: parseTextarea(e.target.value),
+              })
+            }
+          />
+        </div>
+
+        {/* Solutions */}
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Solutions / Produits
+          </label>
+          <textarea
+            className="w-full border rounded p-3 min-h-[80px]"
+            value={solutions.join("\n")}
+            onChange={(e) =>
+              onChange({
+                solutions: parseTextarea(e.target.value),
+              })
+            }
+          />
+        </div>
+
+        {/* Topics */}
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Topics (1 à 3)
+          </label>
+          <textarea
+            className="w-full border rounded p-3 min-h-[80px]"
+            value={topics.join("\n")}
+            onChange={(e) =>
+              onChange({
+                topics: parseTextarea(e.target.value),
+              })
+            }
+          />
+        </div>
+
       </div>
 
-      {/* EXTRACTIONS STRUCTUREES */}
+      {/* ========================= */}
+      {/* 🔥 ANALYSE STRATEGIQUE   */}
+      {/* ========================= */}
 
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Citations
-        </label>
-        <textarea
-          className="w-full border rounded p-3 min-h-[80px]"
-          value={citations.join("\n")}
-          onChange={(e) =>
-            onChange({
-              citations: e.target.value
-                .split("\n")
-                .map((l) => l.trim())
-                .filter(Boolean),
-            })
-          }
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Chiffres clés
-        </label>
-        <textarea
-          className="w-full border rounded p-3 min-h-[80px]"
-          value={chiffres.join("\n")}
-          onChange={(e) =>
-            onChange({
-              chiffres: e.target.value
-                .split("\n")
-                .map((l) => l.trim())
-                .filter(Boolean),
-            })
-          }
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Acteurs cités
-        </label>
-        <textarea
-          className="w-full border rounded p-3 min-h-[80px]"
-          value={acteurs.join("\n")}
-          onChange={(e) =>
-            onChange({
-              acteurs: e.target.value
-                .split("\n")
-                .map((l) => l.trim())
-                .filter(Boolean),
-            })
-          }
-        />
-      </div>
-
-      {/* 🔥 BLOC ANALYTIQUE */}
-
-      <div className="border-t pt-6 space-y-6">
+      <div className="border-t pt-8 space-y-6">
 
         <h3 className="text-sm font-semibold text-gray-700">
           Analyse stratégique
@@ -287,7 +379,7 @@ export default function StepSummary({
 
       {/* NEXT */}
 
-      <div className="pt-4">
+      <div className="pt-6">
         <button
           onClick={onNext}
           className="px-4 py-2 bg-green-600 text-white rounded"
