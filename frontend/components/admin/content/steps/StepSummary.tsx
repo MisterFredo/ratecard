@@ -78,117 +78,182 @@ export default function StepSummary(props: Props) {
   }
 
   return (
+    <div className="space-y-10">
 
-    <div className="space-y-8">
+      {/* GENERATION */}
 
       <button
         onClick={generate}
         disabled={loading}
         className="px-4 py-2 bg-black text-white rounded"
       >
-        {loading ? "Génération..." : "Générer"}
+        {loading ? "Génération..." : "Générer synthèse & analyse"}
       </button>
 
-      {/* Résumé */}
+      {/* ========================================= */}
+      {/* ÉDITORIAL */}
+      {/* ========================================= */}
 
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Résumé exécutif
-        </label>
-        <textarea
-          value={props.excerpt}
-          onChange={(e) =>
-            props.onChange({ excerpt: e.target.value })
+      <div className="space-y-4">
+
+        <h3 className="text-sm font-semibold text-gray-700">
+          Éditorial
+        </h3>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Résumé exécutif
+          </label>
+          <textarea
+            value={props.excerpt}
+            onChange={(e) =>
+              props.onChange({ excerpt: e.target.value })
+            }
+            className="w-full border rounded p-3 min-h-[80px]"
+          />
+        </div>
+
+        <EditableList
+          label="Points clés"
+          items={
+            props.contentBody
+              ? props.contentBody
+                  .replace(/<\/?ul>/g, "")
+                  .replace(/<\/?li>/g, "\n")
+                  .split("\n")
+                  .filter(Boolean)
+              : []
           }
-          className="w-full border rounded p-3 min-h-[80px]"
+          onChange={(items) =>
+            props.onChange({
+              contentBody: items.join("\n"),
+            })
+          }
         />
+
       </div>
 
-      {/* Points clés */}
+      {/* ========================================= */}
+      {/* EXTRACTIONS LLM */}
+      {/* ========================================= */}
 
-      <EditableList
-        label="Points clés"
-        items={props.contentBody
-          .replace(/<\/?ul>/g, "")
-          .replace(/<\/?li>/g, "\n")
-          .split("\n")
-          .filter(Boolean)}
-        onChange={(items) =>
-          props.onChange({
-            contentBody: items.join("\n"),
-          })
-        }
-      />
+      <div className="space-y-6">
 
-      {/* Topics */}
+        <h3 className="text-sm font-semibold text-gray-700">
+          Extractions LLM
+        </h3>
 
-      <MultiSelectTopics
-        topics={allTopics}
-        selected={props.topics}
-        onChange={(ids) =>
-          props.onChange({ topics: ids })
-        }
-      />
-
-      {/* Citations */}
-
-      <EditableList
-        label="Citations"
-        items={props.citations}
-        onChange={(items) =>
-          props.onChange({ citations: items })
-        }
-      />
-
-      {/* Chiffres */}
-
-      <EditableList
-        label="Chiffres clés"
-        items={props.chiffres}
-        onChange={(items) =>
-          props.onChange({ chiffres: items })
-        }
-      />
-
-      {/* Analyse */}
-
-      <div className="border-t pt-6 space-y-4">
-
-        <textarea
-          value={props.mecanique}
-          onChange={(e) =>
-            props.onChange({ mecanique: e.target.value })
+        <MultiSelectTopics
+          topics={allTopics}
+          selected={props.topics}
+          onChange={(ids) =>
+            props.onChange({ topics: ids })
           }
-          placeholder="Mécanique"
-          className="w-full border rounded p-3 min-h-[100px]"
         />
 
-        <textarea
-          value={props.enjeu}
-          onChange={(e) =>
-            props.onChange({ enjeu: e.target.value })
+        <EditableList
+          label="Acteurs cités"
+          items={props.acteurs}
+          onChange={(items) =>
+            props.onChange({ acteurs: items })
           }
-          placeholder="Enjeu"
-          className="w-full border rounded p-3 min-h-[100px]"
         />
 
-        <textarea
-          value={props.friction}
-          onChange={(e) =>
-            props.onChange({ friction: e.target.value })
+        <EditableList
+          label="Concepts"
+          items={props.concepts}
+          onChange={(items) =>
+            props.onChange({ concepts: items })
           }
-          placeholder="Friction"
-          className="w-full border rounded p-3 min-h-[80px]"
         />
 
-        <textarea
-          value={props.signal}
-          onChange={(e) =>
-            props.onChange({ signal: e.target.value })
+        <EditableList
+          label="Solutions"
+          items={props.solutions}
+          onChange={(items) =>
+            props.onChange({ solutions: items })
           }
-          placeholder="Signal"
-          className="w-full border rounded p-3 min-h-[100px]"
         />
+
+        <EditableList
+          label="Citations"
+          items={props.citations}
+          onChange={(items) =>
+            props.onChange({ citations: items })
+          }
+        />
+
+        <EditableList
+          label="Chiffres clés"
+          items={props.chiffres}
+          onChange={(items) =>
+            props.onChange({ chiffres: items })
+          }
+        />
+
+      </div>
+
+      {/* ========================================= */}
+      {/* ANALYSE */}
+      {/* ========================================= */}
+
+      <div className="space-y-6 border-t pt-6">
+
+        <h3 className="text-sm font-semibold text-gray-700">
+          Analyse stratégique
+        </h3>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Mécanique expliquée
+          </label>
+          <textarea
+            value={props.mecanique}
+            onChange={(e) =>
+              props.onChange({ mecanique: e.target.value })
+            }
+            className="w-full border rounded p-3 min-h-[100px]"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Enjeu stratégique
+          </label>
+          <textarea
+            value={props.enjeu}
+            onChange={(e) =>
+              props.onChange({ enjeu: e.target.value })
+            }
+            className="w-full border rounded p-3 min-h-[100px]"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Point de friction
+          </label>
+          <textarea
+            value={props.friction}
+            onChange={(e) =>
+              props.onChange({ friction: e.target.value })
+            }
+            className="w-full border rounded p-3 min-h-[80px]"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Signal analytique
+          </label>
+          <textarea
+            value={props.signal}
+            onChange={(e) =>
+              props.onChange({ signal: e.target.value })
+            }
+            className="w-full border rounded p-3 min-h-[100px]"
+          />
+        </div>
 
       </div>
 
@@ -200,7 +265,5 @@ export default function StepSummary(props: Props) {
       </button>
 
     </div>
-
   );
-
 }
