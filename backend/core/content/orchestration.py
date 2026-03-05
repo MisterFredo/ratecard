@@ -34,7 +34,7 @@ def load_concepts_by_topics(topic_ids: List[str]) -> List[Dict[str, str]]:
 
 
 # ============================================================
-# SUMMARY GENERATION
+# SUMMARY GENERATION (VERSION SIMPLIFIÉE)
 # ============================================================
 def generate_summary(
     source_type: Optional[str],
@@ -49,25 +49,18 @@ def generate_summary(
     - citations
     - chiffres
     - acteurs_cites
+    - concepts
 
-    En utilisant les concepts gouvernés liés aux topics.
+    Sans dépendance aux concepts gouvernés.
     """
 
-    topic_ids = context.get("topics", [])
-
-    if not topic_ids:
-        raise ValueError("Au moins un topic est requis")
-
-    available_concepts = load_concepts_by_topics(topic_ids)
-
-    if not available_concepts:
-        raise ValueError("Aucun concept publié associé aux topics")
+    if not source_text or not source_text.strip():
+        raise ValueError("Source vide")
 
     content = transform_source_to_content(
         source_type=source_type,
         source_text=source_text,
         context=context,
-        available_concepts=available_concepts,
     )
 
     return content
