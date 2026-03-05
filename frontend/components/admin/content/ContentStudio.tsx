@@ -8,6 +8,7 @@ import StepSummary from "@/components/admin/content/steps/StepSummary";
 import StepContext from "@/components/admin/content/steps/StepContext";
 import StepPreview from "@/components/admin/content/steps/StepPreview";
 import StepPublish from "@/components/admin/content/steps/StepPublish";
+import AutoContextMatcher from "@/components/admin/content/AutoContextMatcher";
 
 type Mode = "create" | "edit";
 
