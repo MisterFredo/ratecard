@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional
-from core.lab_content.service import transform_source_to_content
+from core.content.service import transform_source_to_content
 from utils.bigquery_utils import query_bq
 
 
