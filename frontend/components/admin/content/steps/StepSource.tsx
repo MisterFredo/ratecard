@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 type Source = {
-  id_source: string;
-  label: string;
+  SOURCE_ID: string;
+  NAME: string;
 };
 
 type Props = {
@@ -38,14 +38,14 @@ export default function StepSource({ onSubmit }: Props) {
 
       try {
 
-        const res = await api.get("/content/sources"); // ✅ aligné backend
+        const res = await api.get("/source/list");
 
         const list = res.sources || [];
 
         setSources(list);
 
         if (list.length) {
-          setSourceId(list[0].id_source); // ✅ aligné snake_case
+          setSourceId(list[0].SOURCE_ID);
         }
 
       } catch (e) {
@@ -99,7 +99,9 @@ export default function StepSource({ onSubmit }: Props) {
 
     <div className="space-y-6">
 
+
       {/* SOURCE SELECTOR */}
+
       <div className="flex flex-col md:flex-row md:items-end md:gap-6 gap-4">
 
         <div className="flex-1 space-y-1">
@@ -117,10 +119,10 @@ export default function StepSource({ onSubmit }: Props) {
             {sources.map((s) => (
 
               <option
-                key={s.id_source}
-                value={s.id_source}
+                key={s.SOURCE_ID}
+                value={s.SOURCE_ID}
               >
-                {s.label}
+                {s.NAME}
               </option>
 
             ))}
@@ -137,6 +139,7 @@ export default function StepSource({ onSubmit }: Props) {
 
 
       {/* SOURCE TEXT */}
+
       <div className="space-y-1">
 
         <label className="text-sm font-medium">
@@ -158,6 +161,7 @@ export default function StepSource({ onSubmit }: Props) {
 
 
       {/* ACTION */}
+
       <div>
 
         <button
