@@ -222,6 +222,11 @@ def get_content(id_content: str):
         "chiffres": row.get("CHIFFRES") or [],
         "acteurs_cites": row.get("ACTEURS_CITES") or [],
 
+        "mecanique_expliquee": row.get("MECANIQUE_EXPLIQUEE"),
+        "enjeu_strategique": row.get("ENJEU_STRATEGIQUE"),
+        "point_de_friction": row.get("POINT_DE_FRICTION"),
+        "signal_analytique": row.get("SIGNAL_ANALYTIQUE"),
+
         "published_at": (
             row["PUBLISHED_AT"].isoformat()
             if row.get("PUBLISHED_AT")
