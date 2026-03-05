@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-import StepSummary from "@/components/admin/content/steps/StepSummary";
 import StepSource from "@/components/admin/content/steps/StepSource";
+import StepSummary from "@/components/admin/content/steps/StepSummary";
 import StepValidation from "@/components/admin/content/steps/StepValidation";
 import StepPreview from "@/components/admin/content/steps/StepPreview";
 
@@ -30,7 +30,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [sourceText, setSourceText] = useState("");
 
   // =========================
-  // LLM RAW
+  // LLM RAW (visible gauche)
   // =========================
 
   const [topicsRaw, setTopicsRaw] = useState<string[]>([]);
@@ -39,7 +39,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [solutionsRaw, setSolutionsRaw] = useState<string[]>([]);
 
   // =========================
-  // STRUCTURANT (SENIOR)
+  // STRUCTURANT (droite)
   // =========================
 
   const [topics, setTopics] = useState<string[]>([]);
@@ -61,11 +61,19 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [friction, setFriction] = useState("");
   const [signal, setSignal] = useState("");
 
+  // =========================
+  // STATUS / PUBLISH
+  // =========================
+
+  const [status, setStatus] = useState("DRAFT");
   const [publishing, setPublishing] = useState(false);
-  const [status, setStatus] = useState<string>("DRAFT");
+
+  const [publishMode, setPublishMode] =
+    useState<"NOW" | "SCHEDULE">("NOW");
+  const [publishAt, setPublishAt] = useState("");
 
   // ============================================================
-  // LOAD EXISTING CONTENT
+  // LOAD EXISTING
   // ============================================================
 
   useEffect(() => {
@@ -81,11 +89,12 @@ export default function ContentStudio({ mode, contentId }: Props) {
       setContentBody(c.content_body || "");
       setCitations(c.citations || []);
       setChiffres(c.chiffres || []);
-
       setActeursRaw(c.acteurs_cites || []);
-      setTopicsRaw(c.topics_raw || []);
-      setConceptsRaw(c.concepts_raw || []);
-      setSolutionsRaw(c.solutions_raw || []);
+
+      setMecanique(c.mecanique_expliquee || "");
+      setEnjeu(c.enjeu_strategique || "");
+      setFriction(c.point_de_friction || "");
+      setSignal(c.signal_analytique || "");
 
       setTopics((c.topics || []).map((x: any) => x.ID_TOPIC));
       setCompanies((c.companies || []).map((x: any) => x.ID_COMPANY));
@@ -101,22 +110,25 @@ export default function ContentStudio({ mode, contentId }: Props) {
   }, [contentId]);
 
   // ============================================================
-  // SAVE EDITORIAL
+  // SAVE EDITORIAL (MANUEL)
   // ============================================================
 
-  async function saveContent() {
+  async function saveEditorial() {
 
     const payload = {
+
       title: excerpt.slice(0, 120),
       excerpt,
       content_body: contentBody,
       citations,
       chiffres,
       acteurs_cites: acteursRaw,
+
       mecanique_expliquee: mecanique,
       enjeu_strategique: enjeu,
       point_de_friction: friction,
       signal_analytique: signal,
+
     };
 
     if (!internalContentId) {
@@ -133,10 +145,12 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
     }
 
+    alert("Éditorial sauvegardé");
+
   }
 
   // ============================================================
-  // SAVE STRUCTURANT
+  // SAVE STRUCTURANT (MANUEL)
   // ============================================================
 
   async function saveValidation() {
@@ -149,6 +163,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
       concepts,
       solutions,
     });
+
+    alert("Validation structurante sauvegardée");
 
   }
 
@@ -166,7 +182,12 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
       const res = await api.post(
         `/content/publish/${internalContentId}`,
-        { publish_at: null }
+        {
+          publish_at:
+            publishMode === "NOW"
+              ? null
+              : new Date(publishAt).toISOString(),
+        }
       );
 
       setStatus(res.published_status);
@@ -188,11 +209,9 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
     <div className="grid grid-cols-3 gap-10">
 
-      {/* ================= LEFT ================= */}
+      {/* ================= LEFT COLUMN ================= */}
 
       <div className="col-span-2 space-y-12">
-
-        {/* SOURCE */}
 
         {!internalContentId && (
           <StepSource
@@ -202,8 +221,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
             }}
           />
         )}
-
-        {/* SUMMARY */}
 
         <StepSummary
           sourceId={sourceId}
@@ -236,10 +253,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
             if (d.signal !== undefined) setSignal(d.signal);
 
           }}
-          onNext={saveContent}
+          onNext={saveEditorial}
         />
-
-        {/* PREVIEW BUTTON */}
 
         {internalContentId && (
           <button
@@ -252,33 +267,81 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
       </div>
 
-      {/* ================= RIGHT (STICKY) ================= */}
+      {/* ================= RIGHT COLUMN ================= */}
 
-      <div className="col-span-1 sticky top-6 h-fit">
+      <div className="col-span-1">
+        <div className="sticky top-6 space-y-6">
 
-        <StepValidation
-          topicsRaw={topicsRaw}
-          acteursRaw={acteursRaw}
-          conceptsRaw={conceptsRaw}
-          solutionsRaw={solutionsRaw}
-          topics={topics}
-          companies={companies}
-          concepts={concepts}
-          solutions={solutions}
-          onChange={(d) => {
-            if (d.topics !== undefined) setTopics(d.topics);
-            if (d.companies !== undefined) setCompanies(d.companies);
-            if (d.concepts !== undefined) setConcepts(d.concepts);
-            if (d.solutions !== undefined) setSolutions(d.solutions);
-          }}
-          onSave={saveValidation}
-          onPublish={mode === "validate" ? publishContent : undefined}
-        />
+          <div className="bg-white border rounded p-6 shadow-sm space-y-6">
 
-        <div className="mt-6 text-sm">
-          Statut : <strong>{status}</strong>
+            <StepValidation
+              topicsRaw={topicsRaw}
+              acteursRaw={acteursRaw}
+              conceptsRaw={conceptsRaw}
+              solutionsRaw={solutionsRaw}
+              topics={topics}
+              companies={companies}
+              concepts={concepts}
+              solutions={solutions}
+              onChange={(d) => {
+                if (d.topics !== undefined) setTopics(d.topics);
+                if (d.companies !== undefined) setCompanies(d.companies);
+                if (d.concepts !== undefined) setConcepts(d.concepts);
+                if (d.solutions !== undefined) setSolutions(d.solutions);
+              }}
+              onSave={saveValidation}
+            />
+
+            <div className="border-t pt-4 space-y-3">
+
+              <div className="text-sm">
+                Statut : <strong>{status}</strong>
+              </div>
+
+              <div className="text-sm font-medium">
+                Publication
+              </div>
+
+              <div className="flex gap-3 text-sm">
+                <label>
+                  <input
+                    type="radio"
+                    checked={publishMode === "NOW"}
+                    onChange={() => setPublishMode("NOW")}
+                  /> Maintenant
+                </label>
+
+                <label>
+                  <input
+                    type="radio"
+                    checked={publishMode === "SCHEDULE"}
+                    onChange={() => setPublishMode("SCHEDULE")}
+                  /> Planifier
+                </label>
+              </div>
+
+              {publishMode === "SCHEDULE" && (
+                <input
+                  type="datetime-local"
+                  value={publishAt}
+                  onChange={(e) => setPublishAt(e.target.value)}
+                  className="border rounded p-2 w-full text-sm"
+                />
+              )}
+
+              <button
+                onClick={publishContent}
+                disabled={publishing}
+                className="px-4 py-2 bg-green-600 text-white rounded text-sm w-full"
+              >
+                {publishing ? "Publication..." : "Publier"}
+              </button>
+
+            </div>
+
+          </div>
+
         </div>
-
       </div>
 
       {/* ================= PREVIEW DRAWER ================= */}
