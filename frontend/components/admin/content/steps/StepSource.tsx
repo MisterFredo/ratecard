@@ -173,7 +173,7 @@ export default function StepSource({ onSubmit }: Props) {
               : "bg-gray-400 cursor-not-allowed"
           }`}
         >
-          Générer le résumé
+          Valider la source
         </button>
 
       </div>
