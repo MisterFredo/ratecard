@@ -1,6 +1,9 @@
 "use client";
 
-import ContentContextBlock from "@/components/admin/content/ContentContextBlock";
+import TopicSelector from "@/components/admin/TopicSelector";
+import EventSelector from "@/components/admin/EventSelector";
+import CompanySelector from "@/components/admin/CompanySelector";
+import SolutionSelector from "@/components/admin/SolutionSelector";
 
 type Props = {
   topics: any[];
@@ -47,15 +50,32 @@ export default function StepContext({
 
     <div className="space-y-6">
 
-      {/* CONTEXTE STRUCTURANT */}
+      {/* SELECTORS */}
 
-      <ContentContextBlock
-        topics={topics}
-        events={events}
-        companies={companies}
-        solutions={solutions}
-        onChange={onChange}
-      />
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+
+        <TopicSelector
+          values={topics}
+          onChange={(items) => onChange({ topics: items })}
+        />
+
+        <EventSelector
+          values={events}
+          onChange={(items) => onChange({ events: items })}
+        />
+
+        <CompanySelector
+          values={companies}
+          onChange={(items) => onChange({ companies: items })}
+        />
+
+        <SolutionSelector
+          values={solutions}
+          onChange={(items) => onChange({ solutions: items })}
+        />
+
+      </div>
+
 
       {/* ACTION */}
 
