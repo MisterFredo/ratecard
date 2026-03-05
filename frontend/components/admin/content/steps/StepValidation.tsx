@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-import MultiSelectTopics from "@/components/admin/MultiSelectTopics";
+import MultiSelectTopics from "@/components/admin/content/steps/MultiSelectTopics";
 import CompanySelector, { Company } from "@/components/admin/CompanySelector";
 import ConceptSelector, { Concept } from "@/components/admin/ConceptSelector";
 import SolutionSelector, { Solution } from "@/components/admin/SolutionSelector";
