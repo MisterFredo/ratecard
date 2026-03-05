@@ -41,13 +41,29 @@ export default function StepSummary(props: Props) {
     if (!input) return [];
 
     if (Array.isArray(input)) {
+
       return input
-        .flatMap((item) =>
-          typeof item === "string"
-            ? item.split(/[,;\n]/)
-            : []
-        )
-        .map((x) => x.trim())
+        .flatMap((item) => {
+
+          if (typeof item === "string") {
+            return item.split(/[,;\n]/);
+          }
+
+          if (typeof item === "object" && item !== null) {
+            return (
+              item.label ||
+              item.LABEL ||
+              item.name ||
+              item.NAME ||
+              item.title ||
+              item.TITLE ||
+              ""
+            );
+          }
+
+          return [];
+        })
+        .map((x) => String(x).trim())
         .filter(Boolean);
     }
 
@@ -292,4 +308,5 @@ export default function StepSummary(props: Props) {
     </div>
 
   );
+
 }
