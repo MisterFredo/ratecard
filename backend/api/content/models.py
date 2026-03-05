@@ -17,7 +17,6 @@ class ContentPerson(BaseModel):
 class ContentSummaryRequest(BaseModel):
     source_id: Optional[str] = None
     source_text: str
-    context: dict
 
 
 # ============================================================
