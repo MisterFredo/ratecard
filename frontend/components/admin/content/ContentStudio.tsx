@@ -27,15 +27,18 @@ type Props = {
 export default function ContentStudio({ mode, contentId }: Props) {
 
   const [step, setStep] = useState<Step>("SOURCE");
-
   const [internalContentId, setInternalContentId] =
     useState<string | null>(contentId || null);
 
+  // =========================
   // SOURCE
+  // =========================
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [sourceText, setSourceText] = useState("");
 
-  // SUMMARY
+  // =========================
+  // SUMMARY (LLM)
+  // =========================
   const [excerpt, setExcerpt] = useState("");
   const [contentBody, setContentBody] = useState("");
 
@@ -45,16 +48,22 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [concepts, setConcepts] = useState<string[]>([]);
   const [solutions, setSolutions] = useState<string[]>([]);
 
-  // CONTEXT (gouverné)
+  // =========================
+  // CONTEXT (GOVERNED)
+  // =========================
   const [topics, setTopics] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [contextSolutions, setContextSolutions] = useState<any[]>([]);
 
+  // Flag pour éviter override manuel
+  const [autoMatched, setAutoMatched] = useState(false);
+
+  // =========================
   // PUBLISH
+  // =========================
   const [publishMode, setPublishMode] =
     useState<"NOW" | "SCHEDULE">("NOW");
-
   const [publishAt, setPublishAt] = useState("");
 
   const [saving, setSaving] = useState(false);
@@ -104,7 +113,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   }, [mode, contentId]);
 
   // ============================================================
-  // SAVE CONTENT
+  // SAVE
   // ============================================================
 
   async function saveContent() {
@@ -131,7 +140,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
       citations,
       chiffres,
       acteurs_cites: acteurs,
-
       concepts,
 
       topics: topics.map((t) => t.id_topic),
@@ -176,7 +184,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
     if (!internalContentId) return;
 
     if (publishMode === "SCHEDULE" && !publishAt) {
-      alert("Merci de sélectionner une date de publication.");
+      alert("Merci de sélectionner une date.");
       return;
     }
 
@@ -185,12 +193,10 @@ export default function ContentStudio({ mode, contentId }: Props) {
     try {
 
       await api.post(`/content/publish/${internalContentId}`, {
-
         publish_at:
           publishMode === "NOW"
             ? null
             : new Date(publishAt).toISOString(),
-
       });
 
       alert("Contenu publié");
@@ -213,113 +219,136 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // ============================================================
 
   return (
+    <>
+      {/* AUTO MATCH uniquement si on est en SUMMARY
+          et pas déjà exécuté */}
+      {step === "SUMMARY" && !autoMatched && (
+        <AutoContextMatcher
+          llmSolutions={solutions}
+          llmCompanies={acteurs}
+          llmConcepts={concepts}
+          onMatch={({ solutions, companies }) => {
 
-    <div className="space-y-6">
+            if (solutions?.length) {
+              setContextSolutions(solutions);
+            }
 
-      {/* SOURCE */}
-      <details open={step === "SOURCE"} className="border rounded p-4">
-        <summary className="font-semibold cursor-pointer">
-          1. Source
-        </summary>
+            if (companies?.length) {
+              setCompanies(companies);
+            }
 
-        <StepSource
-          onSubmit={({ source_id, text }) => {
-            setSourceId(source_id);
-            setSourceText(text);
-            setStep("SUMMARY");
+            setAutoMatched(true);
           }}
         />
-      </details>
+      )}
 
-      {/* SUMMARY */}
-      {sourceText && (
-        <details open={step === "SUMMARY"} className="border rounded p-4">
+      <div className="space-y-6">
+
+        {/* SOURCE */}
+        <details open={step === "SOURCE"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            2. Synthèse
+            1. Source
           </summary>
 
-          <StepSummary
-            sourceId={sourceId}
-            sourceText={sourceText}
-            excerpt={excerpt}
-            contentBody={contentBody}
-            citations={citations}
-            chiffres={chiffres}
-            acteurs={acteurs}
-            concepts={concepts}
-            solutions={solutions}
-            onChange={(d) => {
-              if (d.excerpt !== undefined) setExcerpt(d.excerpt);
-              if (d.contentBody !== undefined) setContentBody(d.contentBody);
-              if (d.citations !== undefined) setCitations(d.citations);
-              if (d.chiffres !== undefined) setChiffres(d.chiffres);
-              if (d.acteurs !== undefined) setActeurs(d.acteurs);
-              if (d.concepts !== undefined) setConcepts(d.concepts);
-              if (d.solutions !== undefined) setSolutions(d.solutions);
+          <StepSource
+            onSubmit={({ source_id, text }) => {
+              setSourceId(source_id);
+              setSourceText(text);
+              setStep("SUMMARY");
+              setAutoMatched(false);
             }}
-            onNext={() => setStep("CONTEXT")}
           />
         </details>
-      )}
 
-      {/* CONTEXT */}
-      {step !== "SOURCE" && (
-        <details open={step === "CONTEXT"} className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            3. Contexte
-          </summary>
+        {/* SUMMARY */}
+        {sourceText && (
+          <details open={step === "SUMMARY"} className="border rounded p-4">
+            <summary className="font-semibold cursor-pointer">
+              2. Synthèse
+            </summary>
 
-          <StepContext
-            topics={topics}
-            events={events}
-            companies={companies}
-            solutions={contextSolutions}
-            onChange={(d) => {
-              if (d.topics) setTopics(d.topics);
-              if (d.events) setEvents(d.events);
-              if (d.companies) setCompanies(d.companies);
-              if (d.solutions) setContextSolutions(d.solutions);
-            }}
-            onValidate={saveContent}
-          />
-        </details>
-      )}
+            <StepSummary
+              sourceId={sourceId}
+              sourceText={sourceText}
+              excerpt={excerpt}
+              contentBody={contentBody}
+              citations={citations}
+              chiffres={chiffres}
+              acteurs={acteurs}
+              concepts={concepts}
+              solutions={solutions}
+              onChange={(d) => {
+                if (d.excerpt !== undefined) setExcerpt(d.excerpt);
+                if (d.contentBody !== undefined) setContentBody(d.contentBody);
+                if (d.citations !== undefined) setCitations(d.citations);
+                if (d.chiffres !== undefined) setChiffres(d.chiffres);
+                if (d.acteurs !== undefined) setActeurs(d.acteurs);
+                if (d.concepts !== undefined) setConcepts(d.concepts);
+                if (d.solutions !== undefined) setSolutions(d.solutions);
+              }}
+              onNext={() => setStep("CONTEXT")}
+            />
+          </details>
+        )}
 
-      {/* PREVIEW */}
-      {internalContentId && (
-        <details open={step === "PREVIEW"} className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            4. Aperçu
-          </summary>
+        {/* CONTEXT */}
+        {step !== "SOURCE" && (
+          <details open={step === "CONTEXT"} className="border rounded p-4">
+            <summary className="font-semibold cursor-pointer">
+              3. Contexte
+            </summary>
 
-          <StepPreview
-            contentId={internalContentId}
-            onBack={() => setStep("CONTEXT")}
-            onNext={() => setStep("PUBLISH")}
-          />
-        </details>
-      )}
+            <StepContext
+              topics={topics}
+              events={events}
+              companies={companies}
+              solutions={contextSolutions}
+              onChange={(d) => {
+                if (d.topics) setTopics(d.topics);
+                if (d.events) setEvents(d.events);
+                if (d.companies) setCompanies(d.companies);
+                if (d.solutions) setContextSolutions(d.solutions);
+              }}
+              onValidate={saveContent}
+            />
+          </details>
+        )}
 
-      {/* PUBLISH */}
-      {internalContentId && (
-        <details open={step === "PUBLISH"} className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            5. Publication
-          </summary>
+        {/* PREVIEW */}
+        {internalContentId && (
+          <details open={step === "PREVIEW"} className="border rounded p-4">
+            <summary className="font-semibold cursor-pointer">
+              4. Aperçu
+            </summary>
 
-          <StepPublish
-            publishMode={publishMode}
-            publishAt={publishAt}
-            publishing={publishing}
-            onChangeMode={setPublishMode}
-            onChangeDate={setPublishAt}
-            onPublish={publishContent}
-          />
-        </details>
-      )}
+            <StepPreview
+              contentId={internalContentId}
+              onBack={() => setStep("CONTEXT")}
+              onNext={() => setStep("PUBLISH")}
+            />
+          </details>
+        )}
 
-    </div>
+        {/* PUBLISH */}
+        {internalContentId && (
+          <details open={step === "PUBLISH"} className="border rounded p-4">
+            <summary className="font-semibold cursor-pointer">
+              5. Publication
+            </summary>
 
+            <StepPublish
+              publishMode={publishMode}
+              publishAt={publishAt}
+              publishing={publishing}
+              onChangeMode={setPublishMode}
+              onChangeDate={setPublishAt}
+              onPublish={publishContent}
+            />
+          </details>
+        )}
+
+      </div>
+    </>
   );
 
 }
