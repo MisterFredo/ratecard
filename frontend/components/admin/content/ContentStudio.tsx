@@ -48,6 +48,12 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [chiffres, setChiffres] = useState<string[]>([]);
   const [acteurs, setActeurs] = useState<string[]>([]);
 
+  // 🔥 ANALYSE
+  const [mecanique, setMecanique] = useState("");
+  const [enjeu, setEnjeu] = useState("");
+  const [friction, setFriction] = useState("");
+  const [signal, setSignal] = useState("");
+
   // =========================
   // PUBLISH
   // =========================
@@ -80,9 +86,12 @@ export default function ContentStudio({ mode, contentId }: Props) {
         setChiffres(c.chiffres || []);
         setActeurs(c.acteurs_cites || []);
 
-        // ⚠️ ici c.concepts = string[]
-        setConcepts(c.concepts || []);
+        setMecanique(c.mecanique_expliquee || "");
+        setEnjeu(c.enjeu_strategique || "");
+        setFriction(c.point_de_friction || "");
+        setSignal(c.signal_analytique || "");
 
+        setConcepts(c.concepts || []);
         setTopics(c.topics || []);
         setCompanies(c.companies || []);
         setSolutions(c.solutions || []);
@@ -126,7 +135,12 @@ export default function ContentStudio({ mode, contentId }: Props) {
       chiffres: chiffres || [],
       acteurs_cites: acteurs || [],
 
-      // 🔐 sécurisation concepts
+      // 🔥 ANALYSE
+      mecanique_expliquee: mecanique,
+      enjeu_strategique: enjeu,
+      point_de_friction: friction,
+      signal_analytique: signal,
+
       concepts: (concepts || [])
         .map((c) =>
           typeof c === "string"
@@ -214,15 +228,10 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
   }
 
-  // ============================================================
-  // RENDER
-  // ============================================================
-
   return (
 
     <div className="space-y-6">
 
-      {/* SOURCE */}
       <details open={step === "SOURCE"} className="border rounded p-4">
         <summary className="font-semibold cursor-pointer">
           1. Source
@@ -245,11 +254,10 @@ export default function ContentStudio({ mode, contentId }: Props) {
         />
       </details>
 
-      {/* SUMMARY */}
       {sourceText && (
         <details open={step === "SUMMARY"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
-            2. Synthèse
+            2. Synthèse & Analyse
           </summary>
 
           <StepSummary
@@ -265,19 +273,26 @@ export default function ContentStudio({ mode, contentId }: Props) {
                 typeof c === "string" ? c : c?.TITLE
               )
             }
+            mecanique={mecanique}
+            enjeu={enjeu}
+            friction={friction}
+            signal={signal}
             onChange={(d) => {
               if (d.excerpt !== undefined) setExcerpt(d.excerpt);
               if (d.contentBody !== undefined) setContentBody(d.contentBody);
               if (d.citations !== undefined) setCitations(d.citations);
               if (d.chiffres !== undefined) setChiffres(d.chiffres);
               if (d.acteurs !== undefined) setActeurs(d.acteurs);
+              if (d.mecanique !== undefined) setMecanique(d.mecanique);
+              if (d.enjeu !== undefined) setEnjeu(d.enjeu);
+              if (d.friction !== undefined) setFriction(d.friction);
+              if (d.signal !== undefined) setSignal(d.signal);
             }}
             onNext={saveContent}
           />
         </details>
       )}
 
-      {/* PREVIEW */}
       {internalContentId && (
         <details open={step === "PREVIEW"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
@@ -292,7 +307,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </details>
       )}
 
-      {/* PUBLISH */}
       {internalContentId && (
         <details open={step === "PUBLISH"} className="border rounded p-4">
           <summary className="font-semibold cursor-pointer">
