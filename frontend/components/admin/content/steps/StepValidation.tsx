@@ -75,23 +75,23 @@ export default function StepValidation({
   }, []);
 
   // =========================
-  // Mapping IDs → Objects
+  // Mapping IDs → Objects (snake_case)
   // =========================
 
   const selectedTopics = allTopics.filter((t) =>
-    topics.includes(t.ID_TOPIC)
+    topics.includes(t.id_topic)
   );
 
   const selectedCompanies = allCompanies.filter((c) =>
-    companies.includes(c.ID_COMPANY)
+    companies.includes(c.id_company)
   );
 
   const selectedConcepts = allConcepts.filter((c) =>
-    concepts.includes(c.ID_CONCEPT)
+    concepts.includes(c.id_concept)
   );
 
   const selectedSolutions = allSolutions.filter((s) =>
-    solutions.includes(s.ID_SOLUTION)
+    solutions.includes(s.id_solution)
   );
 
   // =========================
@@ -112,29 +112,25 @@ export default function StepValidation({
 
         {topicsRaw.length > 0 && (
           <div>
-            <strong>Topics LLM :</strong>{" "}
-            {topicsRaw.join(", ")}
+            <strong>Topics LLM :</strong> {topicsRaw.join(", ")}
           </div>
         )}
 
         {acteursRaw.length > 0 && (
           <div>
-            <strong>Acteurs LLM :</strong>{" "}
-            {acteursRaw.join(", ")}
+            <strong>Acteurs LLM :</strong> {acteursRaw.join(", ")}
           </div>
         )}
 
         {conceptsRaw.length > 0 && (
           <div>
-            <strong>Concepts LLM :</strong>{" "}
-            {conceptsRaw.join(", ")}
+            <strong>Concepts LLM :</strong> {conceptsRaw.join(", ")}
           </div>
         )}
 
         {solutionsRaw.length > 0 && (
           <div>
-            <strong>Solutions LLM :</strong>{" "}
-            {solutionsRaw.join(", ")}
+            <strong>Solutions LLM :</strong> {solutionsRaw.join(", ")}
           </div>
         )}
 
@@ -146,7 +142,7 @@ export default function StepValidation({
         values={selectedTopics}
         onChange={(vals) =>
           onChange({
-            topics: vals.map((v) => v.ID_TOPIC),
+            topics: vals.map((v) => v.id_topic),
           })
         }
       />
@@ -155,7 +151,7 @@ export default function StepValidation({
         values={selectedCompanies}
         onChange={(vals) =>
           onChange({
-            companies: vals.map((v) => v.ID_COMPANY),
+            companies: vals.map((v) => v.id_company),
           })
         }
       />
@@ -164,7 +160,7 @@ export default function StepValidation({
         values={selectedConcepts}
         onChange={(vals) =>
           onChange({
-            concepts: vals.map((v) => v.ID_CONCEPT),
+            concepts: vals.map((v) => v.id_concept),
           })
         }
       />
@@ -173,7 +169,7 @@ export default function StepValidation({
         values={selectedSolutions}
         onChange={(vals) =>
           onChange({
-            solutions: vals.map((v) => v.ID_SOLUTION),
+            solutions: vals.map((v) => v.id_solution),
           })
         }
       />
