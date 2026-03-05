@@ -3,13 +3,6 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-import TopicSelector from "@/components/admin/TopicSelector";
-import CompanySelector from "@/components/admin/CompanySelector";
-import SolutionSelector from "@/components/admin/SolutionSelector";
-import ConceptSelector, {
-  Concept,
-} from "@/components/admin/ConceptSelector";
-
 type Source = {
   SOURCE_ID: string;
   NAME: string;
@@ -19,10 +12,6 @@ type Props = {
   onSubmit: (data: {
     source_id: string;
     text: string;
-    topics: any[];
-    companies: any[];
-    solutions: any[];
-    concepts: Concept[];
   }) => void;
 };
 
@@ -32,12 +21,6 @@ export default function StepSource({ onSubmit }: Props) {
   const [sourceId, setSourceId] = useState<string>("");
 
   const [sourceText, setSourceText] = useState("");
-
-  // Champs gouvernés (optionnels)
-  const [topics, setTopics] = useState<any[]>([]);
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [solutions, setSolutions] = useState<any[]>([]);
-  const [concepts, setConcepts] = useState<Concept[]>([]);
 
   const charCount = sourceText.length;
 
@@ -100,10 +83,6 @@ export default function StepSource({ onSubmit }: Props) {
     onSubmit({
       source_id: sourceId,
       text: sourceText.trim(),
-      topics,
-      companies,
-      solutions,
-      concepts,
     });
 
   }
@@ -166,55 +145,6 @@ export default function StepSource({ onSubmit }: Props) {
 
         <p className="text-xs text-gray-500">
           Le résumé sera strictement basé sur ce texte.
-        </p>
-
-      </div>
-
-      {/* TAGS FORTS (OPTIONNELS) */}
-
-      <div className="space-y-6 border-t pt-6">
-
-        <h3 className="text-sm font-semibold text-gray-700">
-          Tags forts (optionnel)
-        </h3>
-
-        {/* Ligne 1 : Topics + Concepts */}
-        <div className="grid gap-6 md:grid-cols-2">
-
-          <TopicSelector
-            values={topics}
-            onChange={setTopics}
-          />
-
-          <ConceptSelector
-            values={concepts}
-            topicIds={topics
-              .map((t) => t?.id_topic)
-              .filter(Boolean)
-            }
-            onChange={setConcepts}
-          />
-
-        </div>
-
-        {/* Ligne 2 : Companies + Solutions */}
-        <div className="grid gap-6 md:grid-cols-2">
-
-          <CompanySelector
-            values={companies}
-            onChange={setCompanies}
-          />
-
-          <SolutionSelector
-            values={solutions}
-            onChange={setSolutions}
-          />
-
-        </div>
-
-        <p className="text-xs text-gray-500">
-          Ces éléments sont facultatifs. Ils permettent de guider la
-          gouvernance et la future vectorisation.
         </p>
 
       </div>
