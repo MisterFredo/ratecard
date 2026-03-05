@@ -33,14 +33,13 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [sourceText, setSourceText] = useState("");
 
-  // Champs gouvernés injectés dès le départ
   const [topics, setTopics] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [solutions, setSolutions] = useState<any[]>([]);
   const [concepts, setConcepts] = useState<any[]>([]);
 
   // =========================
-  // SUMMARY (LLM)
+  // SUMMARY
   // =========================
   const [excerpt, setExcerpt] = useState("");
   const [contentBody, setContentBody] = useState("");
@@ -80,6 +79,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
         setCitations(c.citations || []);
         setChiffres(c.chiffres || []);
         setActeurs(c.acteurs_cites || []);
+
+        // ⚠️ ici c.concepts = string[]
         setConcepts(c.concepts || []);
 
         setTopics(c.topics || []);
@@ -121,14 +122,30 @@ export default function ContentStudio({ mode, contentId }: Props) {
       excerpt,
       content_body: contentBody,
 
-      citations,
-      chiffres,
-      acteurs_cites: acteurs,
-      concepts: concepts.map((c) => c.ID_CONCEPT),
+      citations: citations || [],
+      chiffres: chiffres || [],
+      acteurs_cites: acteurs || [],
 
-      topics: topics.map((t) => t.ID_TOPIC),
-      companies: companies.map((c) => c.ID_COMPANY),
-      solutions: solutions.map((s) => s.ID_SOLUTION)
+      // 🔐 sécurisation concepts
+      concepts: (concepts || [])
+        .map((c) =>
+          typeof c === "string"
+            ? c
+            : c?.ID_CONCEPT
+        )
+        .filter(Boolean),
+
+      topics: (topics || [])
+        .map((t) => t?.ID_TOPIC)
+        .filter(Boolean),
+
+      companies: (companies || [])
+        .map((c) => c?.ID_COMPANY)
+        .filter(Boolean),
+
+      solutions: (solutions || [])
+        .map((s) => s?.ID_SOLUTION)
+        .filter(Boolean),
 
     };
 
@@ -243,7 +260,11 @@ export default function ContentStudio({ mode, contentId }: Props) {
             citations={citations}
             chiffres={chiffres}
             acteurs={acteurs}
-            concepts={concepts.map(c => c.TITLE)}
+            concepts={
+              concepts.map((c) =>
+                typeof c === "string" ? c : c?.TITLE
+              )
+            }
             onChange={(d) => {
               if (d.excerpt !== undefined) setExcerpt(d.excerpt);
               if (d.contentBody !== undefined) setContentBody(d.contentBody);
