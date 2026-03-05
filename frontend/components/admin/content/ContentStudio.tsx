@@ -3,18 +3,12 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-import StepSource from "@/components/admin/content/steps/StepSource";
 import StepSummary from "@/components/admin/content/steps/StepSummary";
+import StepSource from "@/components/admin/content/steps/StepSource";
+import StepValidation from "@/components/admin/content/steps/StepValidation";
 import StepPreview from "@/components/admin/content/steps/StepPreview";
-import StepPublish from "@/components/admin/content/steps/StepPublish";
 
-type Mode = "create" | "edit";
-
-type Step =
-  | "SOURCE"
-  | "SUMMARY"
-  | "PREVIEW"
-  | "PUBLISH";
+type Mode = "create" | "edit" | "validate";
 
 type Props = {
   mode: Mode;
@@ -23,9 +17,10 @@ type Props = {
 
 export default function ContentStudio({ mode, contentId }: Props) {
 
-  const [step, setStep] = useState<Step>("SOURCE");
   const [internalContentId, setInternalContentId] =
     useState<string | null>(contentId || null);
+
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // =========================
   // SOURCE
@@ -35,15 +30,16 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [sourceText, setSourceText] = useState("");
 
   // =========================
-  // EXTRACTIONS LLM (RAW)
+  // LLM RAW
   // =========================
 
+  const [topicsRaw, setTopicsRaw] = useState<string[]>([]);
   const [acteursRaw, setActeursRaw] = useState<string[]>([]);
   const [conceptsRaw, setConceptsRaw] = useState<string[]>([]);
   const [solutionsRaw, setSolutionsRaw] = useState<string[]>([]);
 
   // =========================
-  // GOUVERNÉ
+  // STRUCTURANT (SENIOR)
   // =========================
 
   const [topics, setTopics] = useState<string[]>([]);
@@ -52,41 +48,29 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [solutions, setSolutions] = useState<string[]>([]);
 
   // =========================
-  // SUMMARY
+  // EDITORIAL
   // =========================
 
   const [excerpt, setExcerpt] = useState("");
   const [contentBody, setContentBody] = useState("");
-
   const [citations, setCitations] = useState<string[]>([]);
   const [chiffres, setChiffres] = useState<string[]>([]);
-
-  // =========================
-  // ANALYSE
-  // =========================
 
   const [mecanique, setMecanique] = useState("");
   const [enjeu, setEnjeu] = useState("");
   const [friction, setFriction] = useState("");
   const [signal, setSignal] = useState("");
 
-  // =========================
-  // PUBLISH
-  // =========================
-
-  const [publishMode, setPublishMode] =
-    useState<"NOW" | "SCHEDULE">("NOW");
-
-  const [publishAt, setPublishAt] = useState("");
   const [publishing, setPublishing] = useState(false);
+  const [status, setStatus] = useState<string>("DRAFT");
 
   // ============================================================
-  // LOAD EDIT MODE
+  // LOAD EXISTING CONTENT
   // ============================================================
 
   useEffect(() => {
 
-    if (mode !== "edit" || !contentId) return;
+    if (!contentId) return;
 
     async function load() {
 
@@ -95,87 +79,76 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
       setExcerpt(c.excerpt || "");
       setContentBody(c.content_body || "");
-
       setCitations(c.citations || []);
       setChiffres(c.chiffres || []);
+
       setActeursRaw(c.acteurs_cites || []);
+      setTopicsRaw(c.topics_raw || []);
+      setConceptsRaw(c.concepts_raw || []);
+      setSolutionsRaw(c.solutions_raw || []);
 
-      setMecanique(c.mecanique_expliquee || "");
-      setEnjeu(c.enjeu_strategique || "");
-      setFriction(c.point_de_friction || "");
-      setSignal(c.signal_analytique || "");
-
-      setConcepts((c.concepts || []).map((x: any) => x.ID_CONCEPT));
       setTopics((c.topics || []).map((x: any) => x.ID_TOPIC));
       setCompanies((c.companies || []).map((x: any) => x.ID_COMPANY));
+      setConcepts((c.concepts || []).map((x: any) => x.ID_CONCEPT));
       setSolutions((c.solutions || []).map((x: any) => x.ID_SOLUTION));
 
-      setStep("SUMMARY");
+      setStatus(c.status || "DRAFT");
 
     }
 
     load();
 
-  }, [mode, contentId]);
+  }, [contentId]);
 
   // ============================================================
-  // SAVE (CREATE / UPDATE)
+  // SAVE EDITORIAL
   // ============================================================
 
   async function saveContent() {
 
-    if (!excerpt.trim() || !contentBody.trim()) {
-      alert("Résumé incomplet");
-      return;
-    }
-
     const payload = {
-
       title: excerpt.slice(0, 120),
-
       excerpt,
       content_body: contentBody,
-
       citations,
       chiffres,
       acteurs_cites: acteursRaw,
-
       mecanique_expliquee: mecanique,
       enjeu_strategique: enjeu,
       point_de_friction: friction,
       signal_analytique: signal,
+    };
 
+    if (!internalContentId) {
+
+      const res = await api.post("/content/create", payload);
+      setInternalContentId(res.id_content);
+
+    } else {
+
+      await api.put(
+        `/content/update/${internalContentId}`,
+        payload
+      );
+
+    }
+
+  }
+
+  // ============================================================
+  // SAVE STRUCTURANT
+  // ============================================================
+
+  async function saveValidation() {
+
+    if (!internalContentId) return;
+
+    await api.put(`/content/update/${internalContentId}`, {
       topics,
       companies,
       concepts,
       solutions,
-
-    };
-
-    try {
-
-      if (!internalContentId) {
-
-        const res = await api.post("/content/create", payload);
-        setInternalContentId(res.id_content);
-
-      } else {
-
-        await api.put(
-          `/content/update/${internalContentId}`,
-          payload
-        );
-
-      }
-
-      setStep("PREVIEW");
-
-    } catch (e) {
-
-      console.error(e);
-      alert("❌ Erreur sauvegarde contenu");
-
-    }
+    });
 
   }
 
@@ -187,34 +160,23 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
     if (!internalContentId) return;
 
-    if (publishMode === "SCHEDULE" && !publishAt) {
-      alert("Sélectionner une date.");
-      return;
-    }
-
     setPublishing(true);
 
     try {
 
-      await api.post(`/content/publish/${internalContentId}`, {
-        publish_at:
-          publishMode === "NOW"
-            ? null
-            : new Date(publishAt).toISOString(),
-      });
+      const res = await api.post(
+        `/content/publish/${internalContentId}`,
+        { publish_at: null }
+      );
 
-      alert("Contenu publié");
+      setStatus(res.published_status);
 
     } catch (e) {
-
       console.error(e);
       alert("Erreur publication");
-
-    } finally {
-
-      setPublishing(false);
-
     }
+
+    setPublishing(false);
 
   }
 
@@ -224,103 +186,108 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
   return (
 
-    <div className="space-y-6">
+    <div className="grid grid-cols-3 gap-10">
 
-      {/* SOURCE */}
+      {/* ================= LEFT ================= */}
 
-      <details open={step === "SOURCE"} className="border rounded p-4">
-        <summary className="font-semibold cursor-pointer">
-          1. Source
-        </summary>
+      <div className="col-span-2 space-y-12">
 
-        <StepSource
-          onSubmit={({ source_id, text }) => {
-            setSourceId(source_id);
-            setSourceText(text);
-            setStep("SUMMARY");
-          }}
-        />
-      </details>
+        {/* SOURCE */}
 
-      {/* SUMMARY */}
-
-      {sourceText && (
-        <details open={step === "SUMMARY"} className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            2. Synthèse & Analyse
-          </summary>
-
-          <StepSummary
-            sourceId={sourceId}
-            sourceText={sourceText}
-            excerpt={excerpt}
-            contentBody={contentBody}
-            citations={citations}
-            chiffres={chiffres}
-            acteurs={acteursRaw}
-            concepts={conceptsRaw}
-            solutions={solutionsRaw}
-            topics={topics}
-            mecanique={mecanique}
-            enjeu={enjeu}
-            friction={friction}
-            signal={signal}
-            onChange={(d) => {
-
-              if (d.excerpt !== undefined) setExcerpt(d.excerpt);
-              if (d.contentBody !== undefined) setContentBody(d.contentBody);
-              if (d.citations !== undefined) setCitations(d.citations);
-              if (d.chiffres !== undefined) setChiffres(d.chiffres);
-
-              if (d.acteurs !== undefined) setActeursRaw(d.acteurs);
-              if (d.concepts !== undefined) setConceptsRaw(d.concepts);
-              if (d.solutions !== undefined) setSolutionsRaw(d.solutions);
-              if (d.topics !== undefined) setTopics(d.topics);
-
-              if (d.mecanique !== undefined) setMecanique(d.mecanique);
-              if (d.enjeu !== undefined) setEnjeu(d.enjeu);
-              if (d.friction !== undefined) setFriction(d.friction);
-              if (d.signal !== undefined) setSignal(d.signal);
-
+        {!internalContentId && (
+          <StepSource
+            onSubmit={({ source_id, text }) => {
+              setSourceId(source_id);
+              setSourceText(text);
             }}
-            onNext={saveContent}
           />
-        </details>
-      )}
+        )}
 
-      {/* PREVIEW */}
+        {/* SUMMARY */}
 
-      {internalContentId && (
-        <details open={step === "PREVIEW"} className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            3. Aperçu
-          </summary>
+        <StepSummary
+          sourceId={sourceId}
+          sourceText={sourceText}
+          excerpt={excerpt}
+          contentBody={contentBody}
+          citations={citations}
+          chiffres={chiffres}
+          acteurs={acteursRaw}
+          concepts={conceptsRaw}
+          solutions={solutionsRaw}
+          topics={topicsRaw}
+          mecanique={mecanique}
+          enjeu={enjeu}
+          friction={friction}
+          signal={signal}
+          onChange={(d) => {
 
-          <StepPreview
-            contentId={internalContentId}
-            onBack={() => setStep("SUMMARY")}
-            onNext={() => setStep("PUBLISH")}
-          />
-        </details>
-      )}
+            if (d.excerpt !== undefined) setExcerpt(d.excerpt);
+            if (d.contentBody !== undefined) setContentBody(d.contentBody);
+            if (d.citations !== undefined) setCitations(d.citations);
+            if (d.chiffres !== undefined) setChiffres(d.chiffres);
+            if (d.acteurs !== undefined) setActeursRaw(d.acteurs);
+            if (d.concepts !== undefined) setConceptsRaw(d.concepts);
+            if (d.solutions !== undefined) setSolutionsRaw(d.solutions);
+            if (d.topics !== undefined) setTopicsRaw(d.topics);
+            if (d.mecanique !== undefined) setMecanique(d.mecanique);
+            if (d.enjeu !== undefined) setEnjeu(d.enjeu);
+            if (d.friction !== undefined) setFriction(d.friction);
+            if (d.signal !== undefined) setSignal(d.signal);
 
-      {/* PUBLISH */}
+          }}
+          onNext={saveContent}
+        />
 
-      {internalContentId && (
-        <details open={step === "PUBLISH"} className="border rounded p-4">
-          <summary className="font-semibold cursor-pointer">
-            4. Publication
-          </summary>
+        {/* PREVIEW BUTTON */}
 
-          <StepPublish
-            publishMode={publishMode}
-            publishAt={publishAt}
-            publishing={publishing}
-            onChangeMode={setPublishMode}
-            onChangeDate={setPublishAt}
-            onPublish={publishContent}
-          />
-        </details>
+        {internalContentId && (
+          <button
+            onClick={() => setPreviewOpen(true)}
+            className="px-4 py-2 bg-gray-800 text-white rounded"
+          >
+            Aperçu
+          </button>
+        )}
+
+      </div>
+
+      {/* ================= RIGHT (STICKY) ================= */}
+
+      <div className="col-span-1 sticky top-6 h-fit">
+
+        <StepValidation
+          topicsRaw={topicsRaw}
+          acteursRaw={acteursRaw}
+          conceptsRaw={conceptsRaw}
+          solutionsRaw={solutionsRaw}
+          topics={topics}
+          companies={companies}
+          concepts={concepts}
+          solutions={solutions}
+          onChange={(d) => {
+            if (d.topics !== undefined) setTopics(d.topics);
+            if (d.companies !== undefined) setCompanies(d.companies);
+            if (d.concepts !== undefined) setConcepts(d.concepts);
+            if (d.solutions !== undefined) setSolutions(d.solutions);
+          }}
+          onSave={saveValidation}
+          onPublish={mode === "validate" ? publishContent : undefined}
+        />
+
+        <div className="mt-6 text-sm">
+          Statut : <strong>{status}</strong>
+        </div>
+
+      </div>
+
+      {/* ================= PREVIEW DRAWER ================= */}
+
+      {previewOpen && internalContentId && (
+        <StepPreview
+          contentId={internalContentId}
+          onClose={() => setPreviewOpen(false)}
+        />
       )}
 
     </div>
