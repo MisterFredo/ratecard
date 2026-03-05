@@ -79,9 +79,11 @@ export default function NewsStepContent({
   onValidate,
   saving,
 }: Props) {
-  /* ---------------------------------------------------------
-     NEWS_TYPE
-  --------------------------------------------------------- */
+
+  /* =====================================================
+     NEWS TYPES
+  ===================================================== */
+
   const [newsTypes, setNewsTypes] = useState<NewsType[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
 
@@ -101,15 +103,17 @@ export default function NewsStepContent({
     loadTypes();
   }, []);
 
-  /* ---------------------------------------------------------
+  /* =====================================================
      PERSONNES
-  --------------------------------------------------------- */
+  ===================================================== */
+
   const [allPersons, setAllPersons] = useState<PersonRef[]>([]);
 
   useEffect(() => {
     async function loadPersons() {
       try {
         const res = await api.get("/person/list");
+
         setAllPersons(
           (res.persons || []).map((p: any) => ({
             id_person: p.ID_PERSON,
@@ -127,21 +131,25 @@ export default function NewsStepContent({
     loadPersons();
   }, []);
 
-  /* ---------------------------------------------------------
+  /* =====================================================
      CONCEPTS DYNAMIQUES SELON TOPICS
-  --------------------------------------------------------- */
+  ===================================================== */
+
   const [availableConcepts, setAvailableConcepts] = useState<Concept[]>([]);
 
   useEffect(() => {
+
     async function loadConcepts() {
+
       if (!topics || topics.length === 0) {
         setAvailableConcepts([]);
         return;
       }
 
       try {
+
         const topicIds = topics
-          .map((t: any) => t.id_topic || t.ID_TOPIC)
+          .map((t: any) => t.id_topic)
           .filter(Boolean);
 
         if (!topicIds.length) {
@@ -150,25 +158,29 @@ export default function NewsStepContent({
         }
 
         const query = topicIds.join(",");
-        const res = await api.get(
-          `/concept/list?topic_ids=${query}`
-        );
+        const res = await api.get(`/concept/list?topic_ids=${query}`);
 
         const fetched = res.concepts || [];
-        setAvailableConcepts(fetched);
 
-        // 🔒 Sécurisation : supprimer les concepts devenus invalides
-        const validIds = new Set(
-          fetched.map((c: any) => c.ID_CONCEPT)
-        );
+        // Mapping API → UI snake_case
+        const mapped: Concept[] = fetched.map((c: any) => ({
+          id_concept: c.ID_CONCEPT,
+          title: c.TITLE,
+        }));
+
+        setAvailableConcepts(mapped);
+
+        // 🔒 Nettoyage automatique des concepts devenus invalides
+        const validIds = new Set(mapped.map((c) => c.id_concept));
 
         const filtered = concepts.filter((c) =>
-          validIds.has(c.ID_CONCEPT)
+          validIds.has(c.id_concept)
         );
 
         if (filtered.length !== concepts.length) {
           onChange({ concepts: filtered });
         }
+
       } catch (e) {
         console.error("Erreur chargement concepts dynamiques", e);
         setAvailableConcepts([]);
@@ -176,19 +188,18 @@ export default function NewsStepContent({
     }
 
     loadConcepts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topics]);
 
-  /* =========================================================
+  }, [topics]); // eslint-disable-line
+
+  /* =====================================================
      UI
-  ========================================================= */
+  ===================================================== */
 
   return (
+
     <div className="space-y-8">
 
-      {/* =====================================================
-          STRUCTURE
-      ===================================================== */}
+      {/* TYPE */}
       <div>
         <label className="block font-medium mb-2">
           Type de contenu
@@ -215,9 +226,7 @@ export default function NewsStepContent({
         </div>
       </div>
 
-      {/* =====================================================
-          CATÉGORIE ÉDITORIALE
-      ===================================================== */}
+      {/* CATÉGORIE */}
       <div>
         <label className="block font-medium mb-2">
           Catégorie éditoriale
@@ -228,9 +237,7 @@ export default function NewsStepContent({
           disabled={loadingTypes}
           value={newsType || ""}
           onChange={(e) =>
-            onChange({
-              newsType: e.target.value || null,
-            })
+            onChange({ newsType: e.target.value || null })
           }
         >
           <option value="">— Non renseignée —</option>
@@ -243,9 +250,7 @@ export default function NewsStepContent({
         </select>
       </div>
 
-      {/* =====================================================
-          TAXONOMIE
-      ===================================================== */}
+      {/* TAXONOMIE */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
 
         <CompanySelector
@@ -258,31 +263,23 @@ export default function NewsStepContent({
 
         <TopicSelector
           values={topics}
-          onChange={(items) =>
-            onChange({ topics: items })
-          }
+          onChange={(items) => onChange({ topics: items })}
         />
 
         <ConceptSelector
           values={concepts}
-          topicIds={topics.map(t => t.id_topic || t.ID_TOPIC)}
-          onChange={(items) =>
-            onChange({ concepts: items })
-          }
+          topicIds={topics.map((t: any) => t.id_topic)}
+          onChange={(items) => onChange({ concepts: items })}
         />
 
         <SolutionSelector
           values={solutions}
-          onChange={(items) =>
-            onChange({ solutions: items })
-          }
+          onChange={(items) => onChange({ solutions: items })}
         />
 
       </div>
 
-      {/* =====================================================
-          TITRE
-      ===================================================== */}
+      {/* TITRE */}
       <div>
         <label className="block font-medium mb-2">
           Titre *
@@ -291,15 +288,11 @@ export default function NewsStepContent({
           type="text"
           className="w-full border rounded p-2"
           value={title}
-          onChange={(e) =>
-            onChange({ title: e.target.value })
-          }
+          onChange={(e) => onChange({ title: e.target.value })}
         />
       </div>
 
-      {/* =====================================================
-          EXCERPT
-      ===================================================== */}
+      {/* EXCERPT */}
       <div>
         <label className="block font-medium mb-2">
           Excerpt *
@@ -307,43 +300,27 @@ export default function NewsStepContent({
         <textarea
           className="w-full border rounded p-2 h-24"
           value={excerpt}
-          onChange={(e) =>
-            onChange({ excerpt: e.target.value })
-          }
+          onChange={(e) => onChange({ excerpt: e.target.value })}
         />
       </div>
 
-      {/* =====================================================
-          BODY
-      ===================================================== */}
+      {/* BODY */}
       {newsKind === "NEWS" && (
         <HtmlEditor
           value={body}
-          onChange={(html) =>
-            onChange({ body: html })
-          }
+          onChange={(html) => onChange({ body: html })}
         />
       )}
 
-      {/* =====================================================
-          PERSONNES
-      ===================================================== */}
+      {/* PERSONNES */}
       <PersonSelector
         values={persons}
         persons={allPersons}
-        companyId={
-          company?.id_company ||
-          company?.ID_COMPANY ||
-          null
-        }
-        onChange={(items) =>
-          onChange({ persons: items })
-        }
+        companyId={company?.id_company || null}
+        onChange={(items) => onChange({ persons: items })}
       />
 
-      {/* =====================================================
-          ACTION
-      ===================================================== */}
+      {/* ACTION */}
       <button
         onClick={onValidate}
         disabled={saving}
