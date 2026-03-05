@@ -503,12 +503,12 @@ def publish_content(
     published_at: Optional[datetime] = None,
 ):
 
-    now = datetime.now(timezone.utc).isoformat()
+    now_dt = datetime.now(timezone.utc)
 
     if published_at is None:
 
         status = "PUBLISHED"
-        final_date = now
+        final_dt = now_dt
 
     else:
 
@@ -517,26 +517,26 @@ def publish_content(
                 tzinfo=timezone.utc
             )
 
-        final_date = published_at
+        final_dt = published_at
 
         status = (
             "PUBLISHED"
-            if final_date <= now
+            if final_dt <= now_dt
             else "SCHEDULED"
         )
 
+    # 👉 Conversion en ISO uniquement pour BigQuery
     update_bq(
         table=TABLE_CONTENT,
         fields={
             "STATUS": status,
-            "PUBLISHED_AT": final_date,
-            "UPDATED_AT": now,
+            "PUBLISHED_AT": final_dt.isoformat(),
+            "UPDATED_AT": now_dt.isoformat(),
         },
         where={"ID_CONTENT": id_content},
     )
 
     return status
-
 
 # ============================================================
 # CONTENT STATS
