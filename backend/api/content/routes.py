@@ -1,15 +1,14 @@
 from fastapi import APIRouter, HTTPException
+from typing import Optional, List
 
 from api.content.models import (
     ContentCreate,
     ContentUpdate,
     ContentPublish,
-    ContentSummaryRequest,
 )
 
 from core.content.service import (
     create_content,
-    list_contents,
     list_contents_admin,
     get_content,
     update_content,
@@ -22,7 +21,10 @@ from core.content.orchestration import generate_summary
 
 from utils.bigquery_utils import query_bq
 
+import logging
+
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 # ============================================================
@@ -34,6 +36,7 @@ def create_route(data: ContentCreate):
         content_id = create_content(data)
         return {"status": "ok", "id_content": content_id}
     except Exception as e:
+        logger.exception("Erreur création content")
         raise HTTPException(400, f"Erreur création content : {e}")
 
 
@@ -42,8 +45,12 @@ def create_route(data: ContentCreate):
 # ============================================================
 @router.get("/list")
 def list_route():
-    contents = list_contents_admin()
-    return {"status": "ok", "contents": contents}
+    try:
+        contents = list_contents_admin()
+        return {"status": "ok", "contents": contents}
+    except Exception as e:
+        logger.exception("Erreur liste content")
+        raise HTTPException(400, f"Erreur liste content : {e}")
 
 
 # ============================================================
@@ -51,8 +58,12 @@ def list_route():
 # ============================================================
 @router.get("/admin/stats")
 def stats_route():
-    stats = get_content_stats()
-    return {"status": "ok", "stats": stats}
+    try:
+        stats = get_content_stats()
+        return {"status": "ok", "stats": stats}
+    except Exception as e:
+        logger.exception("Erreur stats content")
+        raise HTTPException(400, f"Erreur stats content : {e}")
 
 
 # ============================================================
@@ -60,13 +71,17 @@ def stats_route():
 # ============================================================
 @router.get("/sources")
 def list_sources():
-    rows = query_bq("""
-        SELECT id_source, label
-        FROM RATECARD_SOURCE
-        WHERE status = 'ACTIVE'
-        ORDER BY label
-    """)
-    return {"sources": rows}
+    try:
+        rows = query_bq("""
+            SELECT id_source, label
+            FROM RATECARD_SOURCE
+            WHERE status = 'ACTIVE'
+            ORDER BY label
+        """)
+        return {"status": "ok", "sources": rows}
+    except Exception as e:
+        logger.exception("Erreur liste sources")
+        raise HTTPException(400, f"Erreur liste sources : {e}")
 
 
 # ============================================================
@@ -78,6 +93,7 @@ def update_route(id_content: str, data: ContentUpdate):
         update_content(id_content, data)
         return {"status": "ok", "updated": True}
     except Exception as e:
+        logger.exception("Erreur mise à jour content")
         raise HTTPException(400, f"Erreur mise à jour content : {e}")
 
 
@@ -90,6 +106,7 @@ def archive_route(id_content: str):
         archive_content(id_content)
         return {"status": "ok", "archived": True}
     except Exception as e:
+        logger.exception("Erreur archivage content")
         raise HTTPException(400, f"Erreur archivage content : {e}")
 
 
@@ -107,30 +124,51 @@ def publish_route(id_content: str, payload: ContentPublish):
         return {"status": "ok", "published_status": status}
 
     except Exception as e:
+        logger.exception("Erreur publication content")
         raise HTTPException(400, f"Erreur publication content : {e}")
 
 
 # ============================================================
-# IA — GENERATE SUMMARY
+# IA — GENERATE SUMMARY (ALIGNÉ SUR NEWS)
 # ============================================================
 @router.post("/ai/summary")
-def ai_summary(payload: ContentSummaryRequest):
+def ai_summary(payload: dict):
+
+    source_id = payload.get("source_id")
+    source_text = payload.get("source_text")
+
+    if not source_text or not source_text.strip():
+        raise HTTPException(400, "Source manquante")
 
     try:
 
+        # Contexte optionnel (sécurisé)
+        context = payload.get("context") or {}
+
         summary = generate_summary(
-            source_id=payload.source_id,
-            source_text=payload.source_text,
+            source_type=source_id,  # alignement simple
+            source_text=source_text,
+            context=context,
         )
 
-        return {"status": "ok", **summary}
+        if not isinstance(summary, dict):
+            raise ValueError("Summary invalide")
+
+        return {
+            "status": "ok",
+            "title": summary.get("title", ""),
+            "excerpt": summary.get("excerpt", ""),
+            "content_body": summary.get("content_body", ""),
+            "citations": summary.get("citations", []),
+            "chiffres": summary.get("chiffres", []),
+            "acteurs_cites": summary.get("acteurs_cites", []),
+            "concepts": summary.get("concepts", []),
+            "solutions": summary.get("solutions", []),
+        }
 
     except Exception as e:
-
-        raise HTTPException(
-            400,
-            f"Erreur génération summary : {e}"
-        )
+        logger.exception("Erreur génération summary")
+        raise HTTPException(400, f"Erreur génération summary : {e}")
 
 
 # ============================================================
@@ -139,9 +177,14 @@ def ai_summary(payload: ContentSummaryRequest):
 @router.get("/{id_content}")
 def get_route(id_content: str):
 
-    content = get_content(id_content)
+    try:
+        content = get_content(id_content)
 
-    if not content:
-        raise HTTPException(404, "Content introuvable")
+        if not content:
+            raise HTTPException(404, "Content introuvable")
 
-    return {"status": "ok", "content": content}
+        return {"status": "ok", "content": content}
+
+    except Exception as e:
+        logger.exception("Erreur récupération content")
+        raise HTTPException(400, f"Erreur récupération content : {e}")
