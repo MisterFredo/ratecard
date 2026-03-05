@@ -1,3 +1,72 @@
+import re
+import unicodedata
+from typing import Dict, Any, Optional, List
+from utils.llm import run_llm
+from utils.bigquery_utils import query_bq
+
+
+# ============================================================
+# PARSING ROBUSTE
+# ============================================================
+
+def normalize_key(text: str) -> str:
+    """
+    Normalise un header :
+    - supprime accents
+    - supprime # et :
+    - uppercase
+    - trim
+    """
+    text = unicodedata.normalize("NFD", text)
+    text = text.encode("ascii", "ignore").decode("utf-8")
+    text = text.replace("#", "")
+    text = text.replace(":", "")
+    return text.strip().upper()
+
+
+sections = {
+    "TITLE": "",
+    "EXCERPT": "",
+    "POINTS CLES": "",
+    "CITATIONS": "",
+    "CHIFFRES": "",
+    "ACTEURS": "",
+    "CONCEPTS": "",
+    "SOLUTIONS": "",
+    "TOPICS": "",
+    "MECANIQUE": "",
+    "ENJEU": "",
+    "FRICTION": "",
+    "SIGNAL": "",
+}
+
+current = None
+
+for line in raw.splitlines():
+
+    clean = line.strip()
+    if not clean:
+        continue
+
+    normalized_line = normalize_key(clean)
+
+    matched = False
+
+    for key in sections.keys():
+
+        if normalized_line == key:
+            current = key
+            matched = True
+            break
+
+    if matched:
+        continue
+
+    if current:
+        sections[current] += clean + "\n"
+
+
+
 # ============================================================
 # GENERATE SUMMARY + ANALYSE FROM SOURCE
 # ============================================================
