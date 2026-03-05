@@ -64,7 +64,7 @@ def create_content(data: ContentCreate) -> str:
         raise ValueError("CONTENT_BODY obligatoire")
 
     content_id = str(uuid.uuid4())
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).isoformat()
 
     row = [{
         "ID_CONTENT": content_id,
