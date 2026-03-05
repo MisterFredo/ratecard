@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Any, List
+from typing import Dict, Any
 from utils.llm import run_llm
 
 
@@ -10,18 +10,10 @@ def transform_source_to_content(
     source_type: str,
     source_text: str,
     context: Dict[str, Any],
-    available_concepts: List[Dict[str, str]],
 ) -> Dict[str, Any]:
 
     if not isinstance(source_text, str) or not source_text.strip():
         return {}
-
-    # ---------------------------------------------------------
-    # CONCEPT LIST FOR PROMPT (INDICATIVE ONLY)
-    # ---------------------------------------------------------
-    concepts_block = "\n".join(
-        [f"- {c['title']}" for c in available_concepts]
-    ) if available_concepts else "Aucun concept disponible"
 
     prompt = f"""
 Tu es un assistant de synthèse professionnelle B2B.
@@ -44,13 +36,6 @@ Type : {source_type}
 Texte :
 {source_text}
 
-==================== CONCEPTS AUTORISÉS ====================
-Tu peux citer zéro, un ou plusieurs concepts pertinents
-UNIQUEMENT parmi la liste suivante.
-Ne jamais inventer.
-
-{concepts_block}
-
 ==================== FORMAT STRICT ====================
 
 TITLE
@@ -69,16 +54,18 @@ CHIFFRES
 (Liste exacte ou "Aucun")
 
 ACTEURS
-(Liste entreprises mentionnées ou "Aucun")
+(Liste des entreprises citées. Jamais de personnes physiques.
+Si aucun, écris : Aucun.)
 
 CONCEPTS
-(Liste des concepts identifiés ou "Aucun")
+(Liste des concepts ou notions structurantes identifiées.
+Si aucun, écris : Aucun.)
 """
 
     raw = run_llm(prompt)
 
     # ---------------------------------------------------------
-    # PARSING IDENTIQUE À L’ANCIEN (ROBUSTE ET SIMPLE)
+    # PARSING EXACTEMENT COMME L'ANCIEN
     # ---------------------------------------------------------
     sections = {
         "TITLE": "",
@@ -97,10 +84,9 @@ CONCEPTS
         if not line:
             continue
 
-        header = line.upper()
-
-        if header in sections:
-            current = header
+        # Parsing strict comme avant
+        if line.upper() in sections:
+            current = line.upper()
             continue
 
         if current:
@@ -111,7 +97,7 @@ CONCEPTS
     points_cles = sections["POINTS CLES"].strip()
 
     # ---------------------------------------------------------
-    # LIST PARSER (IDENTIQUE À L’ANCIEN)
+    # LIST PARSER IDENTIQUE À L’ANCIEN
     # ---------------------------------------------------------
     def parse_list(block: str):
         if not block or block.lower().startswith("aucun"):
@@ -126,17 +112,7 @@ CONCEPTS
     citations = parse_list(sections["CITATIONS"])
     chiffres = parse_list(sections["CHIFFRES"])
     acteurs = parse_list(sections["ACTEURS"])
-    concepts_found = parse_list(sections["CONCEPTS"])
-
-    # ---------------------------------------------------------
-    # PAS DE MATCHING
-    # On remonte les concepts tels quels
-    # ---------------------------------------------------------
-
-    concepts = [
-        {"title": c.strip()}
-        for c in concepts_found
-    ]
+    concepts = parse_list(sections["CONCEPTS"])
 
     return {
         "title": title,
@@ -145,5 +121,5 @@ CONCEPTS
         "citations": citations,
         "chiffres": chiffres,
         "acteurs_cites": acteurs,
-        "concepts": concepts,
+        "concepts": concepts,   # brute, sans matching
     }
