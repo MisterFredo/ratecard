@@ -16,14 +16,11 @@ type Props = {
 };
 
 export default function StepSource({ onCreate }: Props) {
-
   const [sources, setSources] = useState<Source[]>([]);
   const [sourceId, setSourceId] = useState("");
   const [sourceText, setSourceText] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const charCount = sourceText.length;
-
   const isValid =
     sourceText.trim().length >= 80 && sourceId;
 
@@ -32,11 +29,8 @@ export default function StepSource({ onCreate }: Props) {
   // ==========================================================
 
   useEffect(() => {
-
     async function loadSources() {
-
       try {
-
         const res = await api.get("/source/list");
         const list = res.sources || [];
 
@@ -45,46 +39,26 @@ export default function StepSource({ onCreate }: Props) {
         if (list.length) {
           setSourceId(list[0].SOURCE_ID);
         }
-
       } catch (e) {
-
         console.error(e);
         alert("Impossible de charger les sources");
-
       }
-
     }
 
     loadSources();
-
   }, []);
 
   // ==========================================================
-  // CREATE CONTENT
+  // HANDLE SUBMIT (NO CREATION)
   // ==========================================================
 
-  async function handleCreate() {
-
+  function handleSubmit() {
     if (!isValid) return;
 
-    setLoading(true);
-
-    try {
-
-      onCreate({
-        source_id: sourceId,
-        text: sourceText.trim(),
-      });
-
-    } catch (e) {
-
-      console.error(e);
-      alert("Erreur création");
-
-    }
-
-    setLoading(false);
-
+    onCreate({
+      source_id: sourceId,
+      text: sourceText.trim(),
+    });
   }
 
   // ==========================================================
@@ -92,25 +66,21 @@ export default function StepSource({ onCreate }: Props) {
   // ==========================================================
 
   return (
-
-    <div className="bg-white border rounded p-6 shadow-sm space-y-6">
+    <div className="bg-white border rounded p-5 shadow-sm space-y-4">
 
       <div className="flex justify-between items-center">
-
-        <h2 className="text-lg font-semibold">
-          Nouvelle source
+        <h2 className="text-base font-semibold">
+          Source
         </h2>
 
         <div className="text-xs text-gray-500">
           {charCount} caractères
         </div>
-
       </div>
 
-      {/* SELECT */}
+      {/* SELECT SOURCE */}
 
       <div className="space-y-1">
-
         <label className="text-sm font-medium">
           Source
         </label>
@@ -118,7 +88,7 @@ export default function StepSource({ onCreate }: Props) {
         <select
           value={sourceId}
           onChange={(e) => setSourceId(e.target.value)}
-          className="border rounded p-2 w-full"
+          className="border rounded p-2 w-full text-sm"
         >
           {sources.map((s) => (
             <option
@@ -129,13 +99,11 @@ export default function StepSource({ onCreate }: Props) {
             </option>
           ))}
         </select>
-
       </div>
 
-      {/* TEXT */}
+      {/* TEXT AREA */}
 
       <div className="space-y-1">
-
         <label className="text-sm font-medium">
           Texte brut
         </label>
@@ -143,32 +111,29 @@ export default function StepSource({ onCreate }: Props) {
         <textarea
           value={sourceText}
           onChange={(e) => setSourceText(e.target.value)}
-          className="border rounded p-3 w-full h-52"
+          className="border rounded p-3 w-full h-44 text-sm"
           placeholder="Collez ici la source à analyser..."
         />
 
         <p className="text-xs text-gray-500">
           Minimum recommandé : 80 caractères
         </p>
-
       </div>
 
       {/* ACTION */}
 
       <button
-        onClick={handleCreate}
-        disabled={!isValid || loading}
-        className={`px-5 py-2 rounded font-medium text-white w-full ${
+        onClick={handleSubmit}
+        disabled={!isValid}
+        className={`px-4 py-2 rounded text-white text-sm w-full ${
           isValid
             ? "bg-black hover:bg-gray-800"
             : "bg-gray-400 cursor-not-allowed"
         }`}
       >
-        {loading ? "Création..." : "Créer le brouillon"}
+        Analyser la source
       </button>
 
     </div>
-
   );
-
 }
