@@ -188,7 +188,10 @@ export default function StepSource({ onSubmit }: Props) {
 
           <ConceptSelector
             values={concepts}
-            topicIds={topics.map((t) => t.ID_TOPIC)}
+            topicIds={topics
+              .map((t) => t?.ID_TOPIC)
+              .filter(Boolean)
+            }
             onChange={setConcepts}
           />
 
