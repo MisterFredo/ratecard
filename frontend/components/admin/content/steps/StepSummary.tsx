@@ -40,6 +40,10 @@ export default function StepSummary(props: Props) {
   const [allTopics, setAllTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // =========================================
+  // LOAD TOPICS (13 → small volume)
+  // =========================================
+
   useEffect(() => {
     async function loadTopics() {
       const res = await api.get("/topic/list");
@@ -48,36 +52,95 @@ export default function StepSummary(props: Props) {
     loadTopics();
   }, []);
 
+  // =========================================
+  // NORMALIZATION HELPERS
+  // =========================================
+
+  function normalizeList(input: any): string[] {
+
+    if (!input) return [];
+
+    if (Array.isArray(input)) {
+      return input
+        .flatMap((item) =>
+          typeof item === "string"
+            ? item.split(/[,;\n]/)
+            : []
+        )
+        .map((x) => x.trim())
+        .filter(Boolean);
+    }
+
+    if (typeof input === "string") {
+      return input
+        .split(/[,;\n]/)
+        .map((x) => x.trim())
+        .filter(Boolean);
+    }
+
+    return [];
+  }
+
+  function normalizePoints(input: string): string[] {
+    if (!input) return [];
+
+    return input
+      .replace(/<\/?ul>/g, "")
+      .replace(/<\/?li>/g, "\n")
+      .split("\n")
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+
+  // =========================================
+  // GENERATE (LLM)
+  // =========================================
+
   async function generate() {
 
     if (!props.sourceText?.trim()) return;
 
     setLoading(true);
 
-    const res = await api.post("/content/ai/generate", {
-      source_text: props.sourceText,
-      source_id: props.sourceId,
-    });
+    try {
 
-    props.onChange({
-      excerpt: res.excerpt || "",
-      contentBody: res.content_body || "",
-      citations: res.citations || [],
-      chiffres: res.chiffres || [],
-      acteurs: res.acteurs_cites || [],
-      concepts: res.concepts || [],
-      solutions: res.solutions || [],
-      topics: res.topics || [],
-      mecanique: res.mecanique_expliquee || "",
-      enjeu: res.enjeu_strategique || "",
-      friction: res.point_de_friction || "",
-      signal: res.signal_analytique || "",
-    });
+      const res = await api.post("/content/ai/generate", {
+        source_text: props.sourceText,
+        source_id: props.sourceId,
+      });
+
+      props.onChange({
+        excerpt: res.excerpt || "",
+        contentBody: (normalizeList(res.content_body) || []).join("\n"),
+
+        citations: normalizeList(res.citations),
+        chiffres: normalizeList(res.chiffres),
+
+        acteurs: normalizeList(res.acteurs_cites),
+        concepts: normalizeList(res.concepts),
+        solutions: normalizeList(res.solutions),
+        topics: res.topics || [],
+
+        mecanique: res.mecanique_expliquee || "",
+        enjeu: res.enjeu_strategique || "",
+        friction: res.point_de_friction || "",
+        signal: res.signal_analytique || "",
+      });
+
+    } catch (e) {
+      console.error(e);
+      alert("Erreur génération");
+    }
 
     setLoading(false);
   }
 
+  // =========================================
+  // RENDER
+  // =========================================
+
   return (
+
     <div className="space-y-10">
 
       {/* GENERATION */}
@@ -115,15 +178,7 @@ export default function StepSummary(props: Props) {
 
         <EditableList
           label="Points clés"
-          items={
-            props.contentBody
-              ? props.contentBody
-                  .replace(/<\/?ul>/g, "")
-                  .replace(/<\/?li>/g, "\n")
-                  .split("\n")
-                  .filter(Boolean)
-              : []
-          }
+          items={normalizePoints(props.contentBody)}
           onChange={(items) =>
             props.onChange({
               contentBody: items.join("\n"),
@@ -194,7 +249,7 @@ export default function StepSummary(props: Props) {
       </div>
 
       {/* ========================================= */}
-      {/* ANALYSE */}
+      {/* ANALYSE STRATÉGIQUE */}
       {/* ========================================= */}
 
       <div className="space-y-6 border-t pt-6">
@@ -256,6 +311,8 @@ export default function StepSummary(props: Props) {
         </div>
 
       </div>
+
+      {/* ACTION */}
 
       <button
         onClick={props.onNext}
