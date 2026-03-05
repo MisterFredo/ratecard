@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 type Source = {
-  id_source: string;
-  label: string;
+  SOURCE_ID: string;
+  NAME: string;
 };
 
 type Props = {
@@ -45,7 +45,7 @@ export default function StepSource({ onSubmit }: Props) {
         setSources(list);
 
         if (list.length) {
-          setSourceId(list[0].id_source);
+          setSourceId(list[0].SOURCE_ID);
         }
 
       } catch (e) {
@@ -99,6 +99,7 @@ export default function StepSource({ onSubmit }: Props) {
 
     <div className="space-y-6">
 
+
       {/* SOURCE SELECTOR */}
 
       <div className="flex flex-col md:flex-row md:items-end md:gap-6 gap-4">
@@ -118,10 +119,10 @@ export default function StepSource({ onSubmit }: Props) {
             {sources.map((s) => (
 
               <option
-                key={s.id_source}
-                value={s.id_source}
+                key={s.SOURCE_ID}
+                value={s.SOURCE_ID}
               >
-                {s.label}
+                {s.NAME}
               </option>
 
             ))}
