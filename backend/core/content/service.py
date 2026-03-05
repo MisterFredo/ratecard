@@ -59,7 +59,7 @@ def normalize_array(value):
 # CREATE CONTENT
 # ============================================================
 
-def create_content(data: ContentCreate) -> str:
+def update_content(id_content: str, data: "ContentUpdate"):
 
     if not data.title or not data.title.strip():
         raise ValueError("TITLE obligatoire")
