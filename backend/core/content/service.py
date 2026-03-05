@@ -82,6 +82,11 @@ def create_content(data: ContentCreate) -> str:
         "CHIFFRES": normalize_array(data.chiffres),
         "ACTEURS_CITES": normalize_array(data.acteurs_cites),
 
+        "MECANIQUE_EXPLIQUEE": data.mecanique_expliquee,
+        "ENJEU_STRATEGIQUE": data.enjeu_strategique,
+        "POINT_DE_FRICTION": data.point_de_friction,
+        "SIGNAL_ANALYTIQUE": data.signal_analytique,
+
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
 
