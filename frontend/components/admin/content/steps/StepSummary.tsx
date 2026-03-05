@@ -120,20 +120,20 @@ export default function StepSummary(props: Props) {
 
   return (
 
-    <div className="space-y-12">
+    <div className="space-y-8">
 
-      {/* ================= GENERATE ================= */}
+      {/* HEADER */}
 
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center border-b pb-3">
 
-        <h2 className="text-lg font-semibold">
+        <h2 className="text-base font-semibold">
           Synthèse & Analyse
         </h2>
 
         <button
           onClick={generate}
           disabled={loading}
-          className="px-4 py-2 bg-black text-white rounded text-sm"
+          className="px-3 py-1.5 bg-black text-white rounded text-sm"
         >
           {loading ? "Génération..." : "Générer"}
         </button>
@@ -142,10 +142,10 @@ export default function StepSummary(props: Props) {
 
       {/* ================= ÉDITORIAL ================= */}
 
-      <div className="space-y-6">
+      <div className="space-y-4">
 
         <div>
-          <label className="block text-sm font-medium mb-2">
+          <label className="block text-sm font-medium mb-1">
             Résumé exécutif
           </label>
           <textarea
@@ -153,12 +153,12 @@ export default function StepSummary(props: Props) {
             onChange={(e) =>
               props.onChange({ excerpt: e.target.value })
             }
-            className="w-full border rounded p-3 min-h-[100px]"
+            className="w-full border rounded p-3 min-h-[90px] text-sm"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">
+          <label className="block text-sm font-medium mb-1">
             Points clés
           </label>
           <textarea
@@ -166,7 +166,7 @@ export default function StepSummary(props: Props) {
             onChange={(e) =>
               props.onChange({ contentBody: e.target.value })
             }
-            className="w-full border rounded p-3 min-h-[200px]"
+            className="w-full border rounded p-3 min-h-[170px] text-sm"
           />
         </div>
 
@@ -174,10 +174,10 @@ export default function StepSummary(props: Props) {
 
       {/* ================= EXTRACTIONS LLM ================= */}
 
-      <div className="space-y-6 border-t pt-6">
+      <div className="space-y-4 border-t pt-4">
 
         <h3 className="text-sm font-semibold text-gray-700">
-          Extractions LLM (brut)
+          Extractions LLM
         </h3>
 
         <div className="bg-gray-50 border rounded p-4 space-y-4">
@@ -236,7 +236,7 @@ export default function StepSummary(props: Props) {
 
       {/* ================= ANALYSE ================= */}
 
-      <div className="space-y-6 border-t pt-6">
+      <div className="space-y-4 border-t pt-4">
 
         <h3 className="text-sm font-semibold text-gray-700">
           Analyse stratégique
@@ -248,7 +248,7 @@ export default function StepSummary(props: Props) {
           onChange={(e) =>
             props.onChange({ mecanique: e.target.value })
           }
-          className="w-full border rounded p-3 min-h-[120px]"
+          className="w-full border rounded p-3 min-h-[110px] text-sm"
         />
 
         <textarea
@@ -257,7 +257,7 @@ export default function StepSummary(props: Props) {
           onChange={(e) =>
             props.onChange({ enjeu: e.target.value })
           }
-          className="w-full border rounded p-3 min-h-[120px]"
+          className="w-full border rounded p-3 min-h-[110px] text-sm"
         />
 
         <textarea
@@ -266,7 +266,7 @@ export default function StepSummary(props: Props) {
           onChange={(e) =>
             props.onChange({ friction: e.target.value })
           }
-          className="w-full border rounded p-3 min-h-[100px]"
+          className="w-full border rounded p-3 min-h-[90px] text-sm"
         />
 
         <textarea
@@ -275,7 +275,7 @@ export default function StepSummary(props: Props) {
           onChange={(e) =>
             props.onChange({ signal: e.target.value })
           }
-          className="w-full border rounded p-3 min-h-[120px]"
+          className="w-full border rounded p-3 min-h-[110px] text-sm"
         />
 
       </div>
@@ -284,7 +284,7 @@ export default function StepSummary(props: Props) {
 
       <button
         onClick={props.onNext}
-        className="px-4 py-2 bg-green-600 text-white rounded"
+        className="px-4 py-2 bg-green-600 text-white rounded text-sm"
       >
         Sauvegarder l'éditorial
       </button>
@@ -292,5 +292,4 @@ export default function StepSummary(props: Props) {
     </div>
 
   );
-
 }
