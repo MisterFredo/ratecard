@@ -15,7 +15,7 @@ class ContentPerson(BaseModel):
 # IA — SUMMARY REQUEST
 # ============================================================
 class ContentSummaryRequest(BaseModel):
-    source_type: Optional[str] = None
+    source_id: Optional[str] = None
     source_text: str
     context: dict
 
@@ -28,7 +28,7 @@ class ContentCreate(BaseModel):
     # ---------------------------------------------------------
     # SOURCE
     # ---------------------------------------------------------
-    source_type: Optional[str] = None
+    source_id: Optional[str] = None
     source_text: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
@@ -81,7 +81,7 @@ class ContentUpdate(BaseModel):
     # ---------------------------------------------------------
     # SOURCE
     # ---------------------------------------------------------
-    source_type: Optional[str] = None
+    source_id: Optional[str] = None
     source_text: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
@@ -139,6 +139,10 @@ class ContentPublish(BaseModel):
 class ContentOut(BaseModel):
     id_content: str
     status: str
+
+    source_id: Optional[str]
+    source_url: Optional[str]
+    source_author: Optional[str]
 
     title: Optional[str]
     excerpt: Optional[str]
