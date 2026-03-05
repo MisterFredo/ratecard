@@ -129,10 +129,10 @@ def publish_route(id_content: str, payload: ContentPublish):
 
 
 # ============================================================
-# IA — GENERATE SUMMARY (ALIGNÉ SUR NEWS)
+# IA — GENERATE CONTENT (Résumé + Analyse en une passe)
 # ============================================================
-@router.post("/ai/summary")
-def ai_summary(payload: dict):
+@router.post("/ai/generate")
+def ai_generate(payload: dict):
 
     source_id = payload.get("source_id")
     source_text = payload.get("source_text")
@@ -142,23 +142,22 @@ def ai_summary(payload: dict):
 
     try:
 
-        summary = generate_summary(
+        result = generate_summary(   # on garde le nom interne si déjà utilisé
             source_id=source_id,
             source_text=source_text,
         )
 
-        if not isinstance(summary, dict):
-            raise ValueError("Summary invalide")
+        if not isinstance(result, dict):
+            raise ValueError("Réponse IA invalide")
 
         return {
             "status": "ok",
-            **summary
+            **result
         }
 
     except Exception as e:
-        logger.exception("Erreur génération summary")
-        raise HTTPException(400, f"Erreur génération summary : {e}")
-
+        logger.exception("Erreur génération contenu IA")
+        raise HTTPException(400, f"Erreur génération contenu IA : {e}")
 
 
 # ============================================================
