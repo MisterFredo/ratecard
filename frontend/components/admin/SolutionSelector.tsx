@@ -6,9 +6,12 @@ import SearchableMultiSelect, {
   SelectOption,
 } from "@/components/ui/SearchableMultiSelect";
 
+/* ---------------------------------------------------------
+   TYPES (UI = snake_case)
+--------------------------------------------------------- */
 export type Solution = {
-  ID_SOLUTION: string;
-  NAME: string;
+  id_solution: string;
+  name: string;
 };
 
 type Props = {
@@ -17,13 +20,21 @@ type Props = {
 };
 
 export default function SolutionSelector({ values, onChange }: Props) {
+
   const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
 
+  /* ---------------------------------------------------------
+     LOAD SOLUTIONS
+  --------------------------------------------------------- */
   useEffect(() => {
+
     async function load() {
+
       setLoading(true);
+
       try {
+
         const res = await api.get("/solution/list");
 
         setOptions(
@@ -32,16 +43,29 @@ export default function SolutionSelector({ values, onChange }: Props) {
             label: s.NAME,
           }))
         );
+
       } catch (e) {
+
         console.error("Erreur chargement solutions", e);
+        setOptions([]);
+
+      } finally {
+
+        setLoading(false);
+
       }
-      setLoading(false);
+
     }
 
     load();
+
   }, []);
 
+  /* ---------------------------------------------------------
+     HANDLE CHANGE
+  --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
+
     if (!selected || selected.length === 0) {
       onChange([]);
       return;
@@ -49,11 +73,16 @@ export default function SolutionSelector({ values, onChange }: Props) {
 
     onChange(
       selected.map((item) => ({
-        ID_SOLUTION: item.id,
-        NAME: item.label,
+        id_solution: item.id,
+        name: item.label,
       }))
     );
+
   }
+
+  /* ---------------------------------------------------------
+     RENDER
+  --------------------------------------------------------- */
 
   if (loading) {
     return (
@@ -69,10 +98,11 @@ export default function SolutionSelector({ values, onChange }: Props) {
       placeholder="Rechercher une ou plusieurs solutions…"
       options={options}
       values={values.map((v) => ({
-        id: v.ID_SOLUTION,
-        label: v.NAME,
+        id: v.id_solution,
+        label: v.name,
       }))}
       onChange={handleChange}
     />
   );
+
 }
