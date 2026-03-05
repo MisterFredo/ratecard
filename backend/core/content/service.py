@@ -353,7 +353,7 @@ def list_contents_admin():
 def reset_and_insert(table, id_field, id_content, values):
 
     client = get_bigquery_client()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).isoformat()
 
     client.query(
         f"DELETE FROM `{table}` WHERE ID_CONTENT = @id",
