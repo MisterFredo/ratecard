@@ -33,7 +33,7 @@ export default function StepSource({ onSubmit }: Props) {
 
   const [sourceText, setSourceText] = useState("");
 
-  // 🔥 Champs gouvernés (OPTIONNELS)
+  // Champs gouvernés (optionnels)
   const [topics, setTopics] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [solutions, setSolutions] = useState<any[]>([]);
@@ -55,7 +55,6 @@ export default function StepSource({ onSubmit }: Props) {
       try {
 
         const res = await api.get("/source/list");
-
         const list = res.sources || [];
 
         setSources(list);
@@ -179,12 +178,24 @@ export default function StepSource({ onSubmit }: Props) {
           Tags forts (optionnel)
         </h3>
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {/* Ligne 1 : Topics + Concepts */}
+        <div className="grid gap-6 md:grid-cols-2">
 
           <TopicSelector
             values={topics}
             onChange={setTopics}
           />
+
+          <ConceptSelector
+            values={concepts}
+            topicIds={topics.map((t) => t.id)}  {/* ✅ correction */}
+            onChange={setConcepts}
+          />
+
+        </div>
+
+        {/* Ligne 2 : Companies + Solutions */}
+        <div className="grid gap-6 md:grid-cols-2">
 
           <CompanySelector
             values={companies}
@@ -194,12 +205,6 @@ export default function StepSource({ onSubmit }: Props) {
           <SolutionSelector
             values={solutions}
             onChange={setSolutions}
-          />
-
-          <ConceptSelector
-            values={concepts}
-            topicIds={topics.map((t) => t.ID_TOPIC)}
-            onChange={setConcepts}
           />
 
         </div>
