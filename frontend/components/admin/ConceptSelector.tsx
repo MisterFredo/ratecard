@@ -7,11 +7,11 @@ import SearchableMultiSelect, {
 } from "@/components/ui/SearchableMultiSelect";
 
 /* ---------------------------------------------------------
-   TYPES EXPORTÉS
+   TYPES (UI = snake_case)
 --------------------------------------------------------- */
 export type Concept = {
-  ID_CONCEPT: string;
-  TITLE: string;
+  id_concept: string;
+  title: string;
 };
 
 type Props = {
@@ -83,14 +83,14 @@ export default function ConceptSelector({
     const validIds = options.map((o) => o.id);
 
     const filtered = values.filter((v) =>
-      validIds.includes(v.ID_CONCEPT)
+      validIds.includes(v.id_concept)
     );
 
     if (filtered.length !== values.length) {
       onChange(filtered);
     }
 
-  }, [options]); // ⬅️ volontairement limité à options uniquement
+  }, [options]);
 
   /* ---------------------------------------------------------
      HANDLE CHANGE
@@ -104,8 +104,8 @@ export default function ConceptSelector({
 
     onChange(
       selected.map((item) => ({
-        ID_CONCEPT: item.id,
-        TITLE: item.label,
+        id_concept: item.id,
+        title: item.label,
       }))
     );
 
@@ -129,8 +129,8 @@ export default function ConceptSelector({
       placeholder="Rechercher un ou plusieurs concepts…"
       options={options}
       values={values.map((v) => ({
-        id: v.ID_CONCEPT,
-        label: v.TITLE,
+        id: v.id_concept,
+        label: v.title,
       }))}
       onChange={handleChange}
     />
