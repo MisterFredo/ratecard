@@ -3,6 +3,13 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
+import TopicSelector from "@/components/admin/TopicSelector";
+import CompanySelector from "@/components/admin/CompanySelector";
+import SolutionSelector from "@/components/admin/SolutionSelector";
+import ConceptSelector, {
+  Concept,
+} from "@/components/admin/ConceptSelector";
+
 type Source = {
   SOURCE_ID: string;
   NAME: string;
@@ -12,6 +19,10 @@ type Props = {
   onSubmit: (data: {
     source_id: string;
     text: string;
+    topics: any[];
+    companies: any[];
+    solutions: any[];
+    concepts: Concept[];
   }) => void;
 };
 
@@ -22,11 +33,16 @@ export default function StepSource({ onSubmit }: Props) {
 
   const [sourceText, setSourceText] = useState("");
 
+  // 🔥 Champs gouvernés (OPTIONNELS)
+  const [topics, setTopics] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [solutions, setSolutions] = useState<any[]>([]);
+  const [concepts, setConcepts] = useState<Concept[]>([]);
+
   const charCount = sourceText.length;
 
   const isValid =
     sourceText.trim().length >= 80 && sourceId;
-
 
   // ==========================================================
   // LOAD SOURCES
@@ -61,7 +77,6 @@ export default function StepSource({ onSubmit }: Props) {
 
   }, []);
 
-
   // ==========================================================
   // VALIDATE
   // ==========================================================
@@ -86,10 +101,13 @@ export default function StepSource({ onSubmit }: Props) {
     onSubmit({
       source_id: sourceId,
       text: sourceText.trim(),
+      topics,
+      companies,
+      solutions,
+      concepts,
     });
 
   }
-
 
   // ==========================================================
   // RENDER
@@ -97,8 +115,7 @@ export default function StepSource({ onSubmit }: Props) {
 
   return (
 
-    <div className="space-y-6">
-
+    <div className="space-y-8">
 
       {/* SOURCE SELECTOR */}
 
@@ -115,18 +132,14 @@ export default function StepSource({ onSubmit }: Props) {
             onChange={(e) => setSourceId(e.target.value)}
             className="border rounded p-2 w-full"
           >
-
             {sources.map((s) => (
-
               <option
                 key={s.SOURCE_ID}
                 value={s.SOURCE_ID}
               >
                 {s.NAME}
               </option>
-
             ))}
-
           </select>
 
         </div>
@@ -136,7 +149,6 @@ export default function StepSource({ onSubmit }: Props) {
         </div>
 
       </div>
-
 
       {/* SOURCE TEXT */}
 
@@ -159,6 +171,45 @@ export default function StepSource({ onSubmit }: Props) {
 
       </div>
 
+      {/* TAGS FORTS (OPTIONNELS) */}
+
+      <div className="space-y-6 border-t pt-6">
+
+        <h3 className="text-sm font-semibold text-gray-700">
+          Tags forts (optionnel)
+        </h3>
+
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+
+          <TopicSelector
+            values={topics}
+            onChange={setTopics}
+          />
+
+          <CompanySelector
+            values={companies}
+            onChange={setCompanies}
+          />
+
+          <SolutionSelector
+            values={solutions}
+            onChange={setSolutions}
+          />
+
+          <ConceptSelector
+            values={concepts}
+            topicIds={topics.map((t) => t.ID_TOPIC)}
+            onChange={setConcepts}
+          />
+
+        </div>
+
+        <p className="text-xs text-gray-500">
+          Ces éléments sont facultatifs. Ils permettent de guider la
+          gouvernance et la future vectorisation.
+        </p>
+
+      </div>
 
       {/* ACTION */}
 
