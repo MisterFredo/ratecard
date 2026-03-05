@@ -16,7 +16,6 @@ type Props = {
 };
 
 export default function ContentStudio({ mode, contentId }: Props) {
-
   const [internalContentId, setInternalContentId] =
     useState<string | null>(contentId || null);
 
@@ -30,7 +29,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [sourceText, setSourceText] = useState("");
 
   // =========================
-  // LLM RAW
+  // LLM RAW (affichage informatif)
   // =========================
 
   const [topicsRaw, setTopicsRaw] = useState<string[]>([]);
@@ -39,7 +38,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [solutionsRaw, setSolutionsRaw] = useState<string[]>([]);
 
   // =========================
-  // STRUCTURANT
+  // STRUCTURANT (IDs uniquement)
   // =========================
 
   const [topics, setTopics] = useState<string[]>([]);
@@ -62,7 +61,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [signal, setSignal] = useState("");
 
   // =========================
-  // STATUS
+  // STATUS / PUBLISH
   // =========================
 
   const [status, setStatus] = useState("DRAFT");
@@ -77,11 +76,9 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // ============================================================
 
   useEffect(() => {
-
     if (!contentId) return;
 
     async function load() {
-
       const res = await api.get(`/content/${contentId}`);
       const c = res.content;
 
@@ -102,11 +99,9 @@ export default function ContentStudio({ mode, contentId }: Props) {
       setSolutions((c.solutions || []).map((x: any) => x.ID_SOLUTION));
 
       setStatus(c.status || "DRAFT");
-
     }
 
     load();
-
   }, [contentId]);
 
   // ============================================================
@@ -114,39 +109,27 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // ============================================================
 
   async function saveEditorial() {
-
     const payload = {
-
       title: excerpt.slice(0, 120),
       excerpt,
       content_body: contentBody,
       citations,
       chiffres,
       acteurs_cites: acteursRaw,
-
       mecanique_expliquee: mecanique,
       enjeu_strategique: enjeu,
       point_de_friction: friction,
       signal_analytique: signal,
-
     };
 
     if (!internalContentId) {
-
       const res = await api.post("/content/create", payload);
       setInternalContentId(res.id_content);
-
     } else {
-
-      await api.put(
-        `/content/update/${internalContentId}`,
-        payload
-      );
-
+      await api.put(`/content/update/${internalContentId}`, payload);
     }
 
     alert("Éditorial sauvegardé");
-
   }
 
   // ============================================================
@@ -154,7 +137,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // ============================================================
 
   async function saveValidation() {
-
     if (!internalContentId) return;
 
     await api.put(`/content/update/${internalContentId}`, {
@@ -165,7 +147,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
     });
 
     alert("Validation sauvegardée");
-
   }
 
   // ============================================================
@@ -173,13 +154,11 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // ============================================================
 
   async function publishContent() {
-
     if (!internalContentId) return;
 
     setPublishing(true);
 
     try {
-
       const res = await api.post(
         `/content/publish/${internalContentId}`,
         {
@@ -191,14 +170,12 @@ export default function ContentStudio({ mode, contentId }: Props) {
       );
 
       setStatus(res.published_status);
-
     } catch (e) {
       console.error(e);
       alert("Erreur publication");
     }
 
     setPublishing(false);
-
   }
 
   // ============================================================
@@ -206,12 +183,11 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // ============================================================
 
   return (
+    <div className="grid grid-cols-3 gap-8">
 
-    <div className="grid grid-cols-3 gap-10">
+      {/* ================= LEFT COLUMN ================= */}
 
-      {/* LEFT */}
-
-      <div className="col-span-2 space-y-12">
+      <div className="col-span-2 space-y-8">
 
         {!internalContentId && (
           <StepSource
@@ -238,7 +214,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
           friction={friction}
           signal={signal}
           onChange={(d) => {
-
             if (d.excerpt !== undefined) setExcerpt(d.excerpt);
             if (d.contentBody !== undefined) setContentBody(d.contentBody);
             if (d.citations !== undefined) setCitations(d.citations);
@@ -251,7 +226,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
             if (d.enjeu !== undefined) setEnjeu(d.enjeu);
             if (d.friction !== undefined) setFriction(d.friction);
             if (d.signal !== undefined) setSignal(d.signal);
-
           }}
           onNext={saveEditorial}
         />
@@ -259,20 +233,19 @@ export default function ContentStudio({ mode, contentId }: Props) {
         {internalContentId && (
           <button
             onClick={() => setPreviewOpen(true)}
-            className="px-4 py-2 bg-gray-800 text-white rounded"
+            className="px-4 py-2 bg-gray-800 text-white rounded text-sm"
           >
             Aperçu
           </button>
         )}
-
       </div>
 
-      {/* RIGHT */}
+      {/* ================= RIGHT COLUMN ================= */}
 
       <div className="col-span-1">
         <div className="sticky top-6 space-y-6">
 
-          <div className="bg-white border rounded p-6 shadow-sm space-y-6">
+          <div className="bg-white border rounded p-5 shadow-sm space-y-6">
 
             <StepValidation
               topicsRaw={topicsRaw}
@@ -298,9 +271,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
                 Statut : <strong>{status}</strong>
               </div>
 
-              <div className="space-y-2">
-
-                <label className="flex gap-2 text-sm">
+              <div className="space-y-2 text-sm">
+                <label className="flex gap-2">
                   <input
                     type="radio"
                     checked={publishMode === "NOW"}
@@ -309,7 +281,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
                   Publier maintenant
                 </label>
 
-                <label className="flex gap-2 text-sm">
+                <label className="flex gap-2">
                   <input
                     type="radio"
                     checked={publishMode === "SCHEDULE"}
@@ -317,7 +289,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
                   />
                   Planifier
                 </label>
-
               </div>
 
               {publishMode === "SCHEDULE" && (
@@ -344,7 +315,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </div>
       </div>
 
-      {/* DRAWER */}
+      {/* ================= PREVIEW DRAWER ================= */}
 
       {previewOpen && internalContentId && (
         <StepPreview
@@ -354,7 +325,5 @@ export default function ContentStudio({ mode, contentId }: Props) {
       )}
 
     </div>
-
   );
-
 }
