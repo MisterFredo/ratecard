@@ -1,30 +1,10 @@
-import re
-from typing import Dict, Any, Optional, List
-from utils.llm import run_llm
-from utils.bigquery_utils import query_bq
-
-
 # ============================================================
-# GENERATE SUMMARY FROM SOURCE
+# GENERATE SUMMARY + ANALYSE FROM SOURCE
 # ============================================================
 def generate_summary(
     source_id: Optional[str],
     source_text: str,
 ) -> Dict[str, Any]:
-    """
-    Génère une structure éditoriale à partir d'une source brute.
-
-    Retourne :
-    - title
-    - excerpt
-    - content_body
-    - citations
-    - chiffres
-    - acteurs_cites
-    - concepts
-    - solutions
-    - topics (ID_TOPIC)
-    """
 
     if not isinstance(source_text, str) or not source_text.strip():
         raise ValueError("Source vide")
@@ -60,7 +40,8 @@ RÈGLES ABSOLUES :
 - Aucun fait inventé.
 - Aucun chiffre inventé.
 - Aucun acteur inventé.
-- Style professionnel et synthétique.
+- Aucune extrapolation stratégique non appuyée par le texte.
+- Style professionnel, clair et structuré.
 - Rédige toujours en français.
 
 ================ SOURCE ================
@@ -89,12 +70,11 @@ ACTEURS
 (Liste des entreprises citées ou "Aucun")
 
 CONCEPTS
-(Notions métier, frameworks, dynamiques marché.
-Ne pas inclure de nom de produit ou de société.
+(Notions métier ou dynamiques marché.
 Ou "Aucun")
 
 SOLUTIONS
-(Noms de produits, plateformes, offres commerciales spécifiques.
+(Noms de produits, plateformes ou offres.
 Ou "Aucun")
 
 TOPICS
@@ -102,6 +82,22 @@ TOPICS
 Ne jamais inventer ni reformuler.)
 
 {topics_list_text}
+
+================ ANALYSE STRATEGIQUE ================
+
+MECANIQUE
+(Explique en 3 à 6 lignes la mécanique business ou opérationnelle décrite dans la source.
+Strictement basée sur le texte.)
+
+ENJEU
+(Quel est l’enjeu stratégique sous-jacent ? 2 à 4 lignes.)
+
+FRICTION
+(Quel point de tension, limite ou incertitude apparaît ? 1 à 3 lignes.
+Si aucun, écrire "Aucun")
+
+SIGNAL
+(Quel signal de marché cela révèle-t-il ? 2 à 4 lignes.)
 """
 
     raw = run_llm(prompt)
@@ -123,6 +119,11 @@ Ne jamais inventer ni reformuler.)
         "CONCEPTS": "",
         "SOLUTIONS": "",
         "TOPICS": "",
+        # 🔥 NOUVELLES SECTIONS
+        "MECANIQUE": "",
+        "ENJEU": "",
+        "FRICTION": "",
+        "SIGNAL": "",
     }
 
     current = None
@@ -196,6 +197,7 @@ Ne jamais inventer ni reformuler.)
     # ============================================================
 
     return {
+        # 🔹 ÉDITORIAL
         "title": sections["TITLE"].strip(),
         "excerpt": sections["EXCERPT"].strip(),
         "content_body": body,
@@ -205,4 +207,10 @@ Ne jamais inventer ni reformuler.)
         "concepts": parse_list(sections["CONCEPTS"]),
         "solutions": parse_list(sections["SOLUTIONS"]),
         "topics": topic_ids,
+
+        # 🔥 ANALYSE
+        "mecanique_expliquee": sections["MECANIQUE"].strip(),
+        "enjeu_strategique": sections["ENJEU"].strip(),
+        "point_de_friction": sections["FRICTION"].strip(),
+        "signal_analytique": sections["SIGNAL"].strip(),
     }
