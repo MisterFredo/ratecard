@@ -1,33 +1,68 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 
-type SourceId =
-  | "LINKEDIN"
-  | "PRESS_RELEASE"
-  | "ARTICLE"
-  | "INTERVIEW"
-  | "BLOG"
-  | "OTHER";
+type Source = {
+  id_source: string;
+  label: string;
+};
 
 type Props = {
   onSubmit: (data: {
-    source_id: SourceId;
+    source_id: string;
     text: string;
   }) => void;
 };
 
 export default function StepSource({ onSubmit }: Props) {
 
-  const [sourceId, setSourceId] =
-    useState<SourceId>("LINKEDIN");
+  const [sources, setSources] = useState<Source[]>([]);
+  const [sourceId, setSourceId] = useState<string>("");
 
   const [sourceText, setSourceText] = useState("");
 
   const charCount = sourceText.length;
 
   const isValid =
-    sourceText.trim().length >= 80;
+    sourceText.trim().length >= 80 && sourceId;
+
+
+  // ==========================================================
+  // LOAD SOURCES
+  // ==========================================================
+
+  useEffect(() => {
+
+    async function loadSources() {
+
+      try {
+
+        const res = await api.get("/sources");
+
+        setSources(res.sources || []);
+
+        if (res.sources?.length) {
+          setSourceId(res.sources[0].id_source);
+        }
+
+      } catch (e) {
+
+        console.error(e);
+        alert("Impossible de charger les sources");
+
+      }
+
+    }
+
+    loadSources();
+
+  }, []);
+
+
+  // ==========================================================
+  // VALIDATE
+  // ==========================================================
 
   function validate() {
 
@@ -41,17 +76,29 @@ export default function StepSource({ onSubmit }: Props) {
       return;
     }
 
+    if (!sourceId) {
+      alert("Merci de sélectionner une source.");
+      return;
+    }
+
     onSubmit({
       source_id: sourceId,
       text: sourceText.trim(),
     });
+
   }
+
+
+  // ==========================================================
+  // RENDER
+  // ==========================================================
 
   return (
 
     <div className="space-y-6">
 
-      {/* SOURCE TYPE */}
+
+      {/* SOURCE SELECTOR */}
 
       <div className="flex flex-col md:flex-row md:items-end md:gap-6 gap-4">
 
@@ -63,17 +110,21 @@ export default function StepSource({ onSubmit }: Props) {
 
           <select
             value={sourceId}
-            onChange={(e) =>
-              setSourceId(e.target.value as SourceId)
-            }
+            onChange={(e) => setSourceId(e.target.value)}
             className="border rounded p-2 w-full"
           >
-            <option value="LINKEDIN">Post LinkedIn</option>
-            <option value="PRESS_RELEASE">Communiqué / Blog</option>
-            <option value="ARTICLE">Article</option>
-            <option value="INTERVIEW">Interview</option>
-            <option value="BLOG">Blog</option>
-            <option value="OTHER">Autre</option>
+
+            {sources.map((s) => (
+
+              <option
+                key={s.id_source}
+                value={s.id_source}
+              >
+                {s.label}
+              </option>
+
+            ))}
+
           </select>
 
         </div>
