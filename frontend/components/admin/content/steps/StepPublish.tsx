@@ -3,6 +3,8 @@
 type PublishMode = "NOW" | "SCHEDULE";
 
 type Props = {
+  status: string;
+
   publishMode: PublishMode;
   publishAt: string;
   publishing?: boolean;
@@ -11,17 +13,16 @@ type Props = {
   onChangeDate: (value: string) => void;
 
   onPublish: () => void;
-  onBack?: () => void;
 };
 
 export default function StepPublish({
+  status,
   publishMode,
   publishAt,
   publishing = false,
   onChangeMode,
   onChangeDate,
   onPublish,
-  onBack,
 }: Props) {
 
   const isScheduleInvalid =
@@ -34,161 +35,128 @@ export default function StepPublish({
         ? new Date(publishAt).toLocaleString()
         : null;
 
-
   function handlePublish() {
 
     if (publishing) return;
 
     if (publishMode === "SCHEDULE" && !publishAt) {
-      alert("Merci de sélectionner une date de publication.");
+      alert("Merci de sélectionner une date.");
       return;
     }
 
     onPublish();
   }
 
+  function renderStatus() {
+
+    if (status === "PUBLISHED") {
+      return (
+        <div className="bg-green-50 border border-green-200 text-green-700 rounded p-3 text-sm">
+          <strong>Publié</strong>
+        </div>
+      );
+    }
+
+    if (status === "SCHEDULED") {
+      return (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 rounded p-3 text-sm">
+          <strong>Publication planifiée</strong>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded p-3 text-sm">
+        <strong>Brouillon</strong>
+      </div>
+    );
+  }
 
   return (
 
     <div className="space-y-6">
 
-
       {/* STATUS */}
-
-      <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
-        <strong>Statut :</strong> Brouillon — ce contenu n’est pas encore publié.
-      </div>
-
-
-      <p className="text-sm text-gray-600">
-        Sélectionnez le moment de publication.
-        La date choisie deviendra la date officielle du contenu.
-      </p>
-
+      {renderStatus()}
 
       {/* MODE */}
 
       <div className="space-y-4">
 
-        <label className="flex items-start gap-3 cursor-pointer">
+        <div className="text-sm font-medium">
+          Publication
+        </div>
 
+        <label className="flex items-center gap-2 text-sm">
           <input
             type="radio"
             checked={publishMode === "NOW"}
             onChange={() => onChangeMode("NOW")}
           />
-
-          <div>
-            <strong>Publier immédiatement</strong>
-
-            <div className="text-xs text-gray-500">
-              La date actuelle sera utilisée.
-            </div>
-
-          </div>
-
+          Publier immédiatement
         </label>
 
-
-        <label className="flex items-start gap-3 cursor-pointer">
-
+        <label className="flex items-center gap-2 text-sm">
           <input
             type="radio"
             checked={publishMode === "SCHEDULE"}
             onChange={() => onChangeMode("SCHEDULE")}
           />
-
-          <div>
-            <strong>Planifier</strong>
-
-            <div className="text-xs text-gray-500">
-              Vous pouvez choisir une date passée ou future.
-            </div>
-
-          </div>
-
+          Planifier
         </label>
 
       </div>
 
-
-      {/* DATE INPUT */}
+      {/* DATE */}
 
       {publishMode === "SCHEDULE" && (
 
         <div className="space-y-2">
 
-          <label className="text-sm font-medium">
-            Date et heure de publication
-          </label>
-
           <input
             type="datetime-local"
-            className={`border rounded p-2 w-full ${
-              !publishAt ? "border-red-400" : ""
-            }`}
             value={publishAt}
             onChange={(e) => onChangeDate(e.target.value)}
+            className={`border rounded p-2 w-full text-sm ${
+              !publishAt ? "border-red-400" : ""
+            }`}
           />
 
           {!publishAt && (
-
-            <p className="text-xs text-red-500">
-              Veuillez sélectionner une date.
-            </p>
-
+            <div className="text-xs text-red-500">
+              Sélectionner une date.
+            </div>
           )}
 
         </div>
 
       )}
 
-
       {/* PREVIEW DATE */}
 
-      {previewDate && (
+      {previewDate && status !== "PUBLISHED" && (
 
         <div className="bg-gray-50 border rounded p-3 text-sm text-gray-700">
-
-          <strong>Date officielle :</strong> {previewDate}
-
+          <strong>Date prévue :</strong> {previewDate}
         </div>
 
       )}
 
+      {/* ACTION */}
 
-      {/* ACTIONS */}
-
-      <div className="flex gap-4 pt-2">
-
-        {onBack && (
-
-          <button
-            onClick={onBack}
-            className="px-4 py-2 border rounded"
-          >
-            Retour
-          </button>
-
-        )}
-
-        <button
-          onClick={handlePublish}
-          disabled={publishing || isScheduleInvalid}
-          className={`px-5 py-2 rounded text-white transition ${
-            publishing || isScheduleInvalid
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700"
-          }`}
-        >
-
-          {publishing
-            ? "Publication en cours…"
-            : "Publier le contenu"}
-
-        </button>
-
-      </div>
+      <button
+        onClick={handlePublish}
+        disabled={publishing || isScheduleInvalid}
+        className={`w-full px-4 py-2 rounded text-white text-sm transition ${
+          publishing || isScheduleInvalid
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-green-600 hover:bg-green-700"
+        }`}
+      >
+        {publishing
+          ? "Publication..."
+          : "Publier"}
+      </button>
 
     </div>
 
