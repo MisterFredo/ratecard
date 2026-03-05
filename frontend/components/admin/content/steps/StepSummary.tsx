@@ -63,12 +63,15 @@ export default function StepSummary({
 
     try {
 
-      const res = await api.post("/content/ai/summary", {
-
-        source_id: sourceId,
+      const payload: any = {
         source_text: sourceText
+      };
 
-      });
+      if (sourceId) {
+        payload.source_id = sourceId;
+      }
+
+      const res = await api.post("/content/ai/summary", payload);
 
       onChange({
 
