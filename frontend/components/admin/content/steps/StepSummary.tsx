@@ -4,22 +4,17 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 
 type Props = {
-  sourceType: string | null;
-  sourceText: string;
 
-  context: {
-    topics: string[];
-    events?: string[];
-    companies?: string[];
-  };
+  sourceId: string | null;
+  sourceText: string;
 
   excerpt: string;
   contentBody: string;
+
   citations: string[];
   chiffres: string[];
   acteurs: string[];
-  concept: string;
-  conceptId: string | null;
+  concepts: string[];
 
   onChange: (data: {
     excerpt?: string;
@@ -27,35 +22,36 @@ type Props = {
     citations?: string[];
     chiffres?: string[];
     acteurs?: string[];
-    concept?: string;
-    conceptId?: string | null;
+    concepts?: string[];
   }) => void;
 
-  onValidate: () => void;
+  onNext: () => void;
 };
 
 export default function StepSummary({
-  sourceType,
+
+  sourceId,
   sourceText,
-  context,
 
   excerpt,
   contentBody,
   citations,
   chiffres,
   acteurs,
-  concept,
-  conceptId,
+  concepts,
 
   onChange,
-  onValidate,
+  onNext,
+
 }: Props) {
 
   const [loading, setLoading] = useState(false);
 
+
   // ==========================================================
   // GENERATE SUMMARY
   // ==========================================================
+
   async function generateSummary() {
 
     if (!sourceText?.trim()) {
@@ -63,46 +59,53 @@ export default function StepSummary({
       return;
     }
 
-    if (!context?.topics?.length) {
-      alert("Au moins un topic est requis");
-      return;
-    }
-
     setLoading(true);
 
     try {
+
       const res = await api.post("/content/ai/summary", {
-        source_type: sourceType,
-        source_text: sourceText,
-        context,
+
+        source_id: sourceId,
+        source_text: sourceText
+
       });
 
       onChange({
+
         excerpt: res.excerpt || "",
         contentBody: res.content_body || "",
+
         citations: res.citations || [],
         chiffres: res.chiffres || [],
-        acteurs: res.acteurs || [],
-        concept: res.concept || "",
-        conceptId: res.concept_id || null,
+        acteurs: res.acteurs_cites || [],
+        concepts: res.concepts || []
+
       });
 
     } catch (e) {
+
       console.error(e);
       alert("Erreur génération summary");
+
     }
 
     setLoading(false);
+
   }
+
 
   // ==========================================================
   // RENDER
   // ==========================================================
+
   return (
+
     <div className="space-y-6">
 
-      {/* GENERATE BUTTON */}
+      {/* GENERATE */}
+
       <div className="flex items-center gap-4">
+
         <button
           onClick={generateSummary}
           disabled={loading}
@@ -110,53 +113,56 @@ export default function StepSummary({
         >
           {loading ? "Génération..." : "Générer la synthèse"}
         </button>
+
       </div>
 
+
       {/* EXCERPT */}
+
       <div>
+
         <label className="block text-sm font-medium mb-2">
           Résumé exécutif
         </label>
+
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
           value={excerpt}
-          onChange={(e) => onChange({ excerpt: e.target.value })}
+          onChange={(e) =>
+            onChange({ excerpt: e.target.value })
+          }
         />
+
       </div>
 
+
       {/* BODY */}
+
       <div>
+
         <label className="block text-sm font-medium mb-2">
           Points clés
         </label>
+
         <textarea
           className="w-full border rounded p-3 min-h-[240px]"
           value={contentBody}
-          onChange={(e) => onChange({ contentBody: e.target.value })}
-        />
-      </div>
-
-      {/* CONCEPT (optionnel) */}
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Concept associé (optionnel)
-        </label>
-        <input
-          className="w-full border rounded p-3"
-          value={concept}
           onChange={(e) =>
-            onChange({
-              concept: e.target.value,
-            })
+            onChange({ contentBody: e.target.value })
           }
         />
+
       </div>
 
+
       {/* CITATIONS */}
+
       <div>
+
         <label className="block text-sm font-medium mb-2">
           Citations
         </label>
+
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
           value={citations.join("\n")}
@@ -169,13 +175,18 @@ export default function StepSummary({
             })
           }
         />
+
       </div>
 
+
       {/* CHIFFRES */}
+
       <div>
+
         <label className="block text-sm font-medium mb-2">
           Chiffres clés
         </label>
+
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
           value={chiffres.join("\n")}
@@ -188,13 +199,18 @@ export default function StepSummary({
             })
           }
         />
+
       </div>
 
+
       {/* ACTEURS */}
+
       <div>
+
         <label className="block text-sm font-medium mb-2">
           Acteurs cités
         </label>
+
         <textarea
           className="w-full border rounded p-3 min-h-[80px]"
           value={acteurs.join("\n")}
@@ -207,18 +223,49 @@ export default function StepSummary({
             })
           }
         />
+
       </div>
 
-      {/* VALIDATE */}
+
+      {/* CONCEPTS */}
+
+      <div>
+
+        <label className="block text-sm font-medium mb-2">
+          Concepts suggérés
+        </label>
+
+        <textarea
+          className="w-full border rounded p-3 min-h-[80px]"
+          value={concepts.join("\n")}
+          onChange={(e) =>
+            onChange({
+              concepts: e.target.value
+                .split("\n")
+                .map((l) => l.trim())
+                .filter(Boolean),
+            })
+          }
+        />
+
+      </div>
+
+
+      {/* NEXT */}
+
       <div className="pt-4">
+
         <button
-          onClick={onValidate}
+          onClick={onNext}
           className="px-4 py-2 bg-green-600 text-white rounded"
         >
-          Enregistrer le contenu
+          Continuer vers le contexte
         </button>
+
       </div>
 
     </div>
+
   );
+
 }
