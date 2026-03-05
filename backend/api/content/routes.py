@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+
 from api.content.models import (
     ContentCreate,
     ContentUpdate,
@@ -18,6 +19,8 @@ from core.content.service import (
 )
 
 from core.content.orchestration import generate_summary
+
+from utils.bigquery_utils import query_bq
 
 router = APIRouter()
 
@@ -50,6 +53,20 @@ def list_route():
 def stats_route():
     stats = get_content_stats()
     return {"status": "ok", "stats": stats}
+
+
+# ============================================================
+# LIST SOURCES
+# ============================================================
+@router.get("/sources")
+def list_sources():
+    rows = query_bq("""
+        SELECT id_source, label
+        FROM RATECARD_SOURCE
+        WHERE status = 'ACTIVE'
+        ORDER BY label
+    """)
+    return {"sources": rows}
 
 
 # ============================================================
@@ -86,6 +103,7 @@ def publish_route(id_content: str, payload: ContentPublish):
             id_content=id_content,
             published_at=payload.publish_at,
         )
+
         return {"status": "ok", "published_status": status}
 
     except Exception as e:
@@ -97,17 +115,22 @@ def publish_route(id_content: str, payload: ContentPublish):
 # ============================================================
 @router.post("/ai/summary")
 def ai_summary(payload: ContentSummaryRequest):
+
     try:
+
         summary = generate_summary(
             source_id=payload.source_id,
             source_text=payload.source_text,
-            context=payload.context,
         )
 
         return {"status": "ok", **summary}
 
     except Exception as e:
-        raise HTTPException(400, f"Erreur génération summary : {e}")
+
+        raise HTTPException(
+            400,
+            f"Erreur génération summary : {e}"
+        )
 
 
 # ============================================================
@@ -115,6 +138,7 @@ def ai_summary(payload: ContentSummaryRequest):
 # ============================================================
 @router.get("/{id_content}")
 def get_route(id_content: str):
+
     content = get_content(id_content)
 
     if not content:
