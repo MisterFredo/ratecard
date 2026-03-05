@@ -18,7 +18,7 @@ type Props = {
   values: Concept[];
   onChange: (concepts: Concept[]) => void;
 
-  // 🔥 NOUVEAU — optionnel
+  // Optionnel : filtrage dynamique par topics
   topicIds?: string[];
 };
 
@@ -27,17 +27,24 @@ export default function ConceptSelector({
   onChange,
   topicIds,
 }: Props) {
+
   const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
 
   /* ---------------------------------------------------------
-     LOAD CONCEPTS (DYNAMIQUE)
+     LOAD CONCEPTS (DYNAMIQUE SELON TOPICS)
   --------------------------------------------------------- */
   useEffect(() => {
+
+    // Évite double appel si topicIds pas encore défini
+    if (topicIds === undefined) return;
+
     async function load() {
+
       setLoading(true);
 
       try {
+
         let url = "/concept/list";
 
         if (topicIds && topicIds.length > 0) {
@@ -46,27 +53,54 @@ export default function ConceptSelector({
 
         const res = await api.get(url);
 
-        setOptions(
+        const mappedOptions: SelectOption[] =
           (res.concepts || []).map((c: any) => ({
             id: c.ID_CONCEPT,
             label: c.TITLE,
-          }))
-        );
+          }));
+
+        setOptions(mappedOptions);
+
       } catch (e) {
+
         console.error("Erreur chargement concepts", e);
         setOptions([]);
+
       }
 
       setLoading(false);
+
     }
 
     load();
+
   }, [topicIds]);
+
+  /* ---------------------------------------------------------
+     NETTOYAGE AUTOMATIQUE DES CONCEPTS INVALIDES
+     (si topic change et que certains concepts ne sont plus valides)
+  --------------------------------------------------------- */
+  useEffect(() => {
+
+    if (!options.length || !values.length) return;
+
+    const validIds = options.map((o) => o.id);
+
+    const filtered = values.filter((v) =>
+      validIds.includes(v.ID_CONCEPT)
+    );
+
+    if (filtered.length !== values.length) {
+      onChange(filtered);
+    }
+
+  }, [options]);
 
   /* ---------------------------------------------------------
      HANDLE CHANGE — MULTI
   --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
+
     if (!selected || selected.length === 0) {
       onChange([]);
       return;
@@ -78,7 +112,12 @@ export default function ConceptSelector({
         TITLE: item.label,
       }))
     );
+
   }
+
+  /* ---------------------------------------------------------
+     RENDER
+  --------------------------------------------------------- */
 
   if (loading) {
     return (
@@ -100,4 +139,5 @@ export default function ConceptSelector({
       onChange={handleChange}
     />
   );
+
 }
