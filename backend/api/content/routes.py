@@ -17,7 +17,7 @@ from core.content.service import (
     get_content_stats,
 )
 
-from core.content.orchestration import generate_summary
+from core.content.ai import generate_summary
 
 from utils.bigquery_utils import query_bq
 
