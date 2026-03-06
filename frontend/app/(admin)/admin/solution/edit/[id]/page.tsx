@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import HtmlEditor from "@/components/admin/HtmlEditor";
@@ -10,9 +11,10 @@ type Company = {
   name: string;
 };
 
-export default function EditSolution({ params }: { params: { id: string } }) {
+export default function EditSolution() {
 
-  const { id } = params;
+  const params = useParams();
+  const id = params?.id as string;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -29,11 +31,12 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
   useEffect(() => {
 
+    if (!id) return;
+
     async function load() {
 
       try {
 
-        // ✅ GET retourne directement l'objet
         const sol = await api.get(`/solution/${id}`);
 
         setName(sol.name || "");
@@ -63,6 +66,8 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
   async function save() {
 
+    if (!id) return;
+
     try {
 
       setSaving(true);
@@ -90,6 +95,7 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
   }
 
+  if (!id) return <p>Chargement…</p>;
   if (loading) return <p>Chargement…</p>;
 
   return (
@@ -108,6 +114,7 @@ export default function EditSolution({ params }: { params: { id: string } }) {
         className="border p-2 w-full rounded"
         value={name}
         onChange={(e) => setName(e.target.value)}
+        placeholder="Nom de la solution"
       />
 
       <select
@@ -131,6 +138,7 @@ export default function EditSolution({ params }: { params: { id: string } }) {
         onChange={(e) =>
           setDescription(e.target.value)
         }
+        placeholder="Description"
       />
 
       <HtmlEditor value={content} onChange={setContent} />
