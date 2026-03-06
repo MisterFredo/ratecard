@@ -31,10 +31,11 @@ export default function CompanySelector({ values, onChange }: Props) {
       setLoading(true);
       try {
         const res = await api.get("/company/list");
+
         setOptions(
           (res.companies || []).map((c: any) => ({
-            id: c.ID_COMPANY,
-            label: c.NAME,
+            id: c.id_company,
+            label: c.name,
           }))
         );
       } catch (e) {
