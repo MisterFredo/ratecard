@@ -19,6 +19,11 @@ type Props = {
   onChange: (solutions: Solution[]) => void;
 };
 
+type SolutionApi = {
+  id_solution: string;
+  name: string;
+};
+
 export default function SolutionSelector({
   values,
   onChange,
@@ -28,24 +33,26 @@ export default function SolutionSelector({
   const [loading, setLoading] = useState(true);
 
   /* ---------------------------------------------------------
-     LOAD SOLUTIONS (API = snake_case)
+     LOAD SOLUTIONS
   --------------------------------------------------------- */
   useEffect(() => {
 
     async function load() {
 
-      setLoading(true);
-
       try {
+
+        setLoading(true);
 
         const res = await api.get("/solution/list");
 
-        setOptions(
-          (res.solutions || []).map((s: any) => ({
-            id: s.id_solution,
-            label: s.name,
-          }))
-        );
+        const solutions: SolutionApi[] = res?.solutions || [];
+
+        const mappedOptions: SelectOption[] = solutions.map((s) => ({
+          id: s.id_solution,
+          label: s.name,
+        }));
+
+        setOptions(mappedOptions);
 
       } catch (e) {
 
@@ -69,13 +76,17 @@ export default function SolutionSelector({
   --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
 
-    onChange(
-      selected.map((item) => ({
-        id_solution: item.id,
-        name: item.label,
-      }))
-    );
+    if (!selected || selected.length === 0) {
+      onChange([]);
+      return;
+    }
 
+    const mapped: Solution[] = selected.map((item) => ({
+      id_solution: item.id,
+      name: item.label,
+    }));
+
+    onChange(mapped);
   }
 
   /* ---------------------------------------------------------
