@@ -7,11 +7,11 @@ import SearchableMultiSelect, {
 } from "@/components/ui/SearchableMultiSelect";
 
 /* ---------------------------------------------------------
-   TYPES (UI interne en snake_case)
+   EXACTEMENT COMME COMPANY
 --------------------------------------------------------- */
 export type Solution = {
-  id_solution: string;
-  name: string;
+  ID_SOLUTION: string;
+  NAME: string;
 };
 
 type Props = {
@@ -27,9 +27,6 @@ export default function SolutionSelector({
   const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* ---------------------------------------------------------
-     LOAD SOLUTIONS (backend = MAJUSCULES)
-  --------------------------------------------------------- */
   useEffect(() => {
 
     async function load() {
@@ -40,7 +37,6 @@ export default function SolutionSelector({
 
         const res = await api.get("/solution/list");
 
-        // ✅ Backend renvoie ID_SOLUTION / NAME
         setOptions(
           (res.solutions || []).map((s: any) => ({
             id: s.ID_SOLUTION,
@@ -65,28 +61,16 @@ export default function SolutionSelector({
 
   }, []);
 
-  /* ---------------------------------------------------------
-     HANDLE CHANGE
-  --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
-
-    if (!selected || selected.length === 0) {
-      onChange([]);
-      return;
-    }
 
     onChange(
       selected.map((item) => ({
-        id_solution: item.id,
-        name: item.label,
+        ID_SOLUTION: item.id,
+        NAME: item.label,
       }))
     );
 
   }
-
-  /* ---------------------------------------------------------
-     RENDER
-  --------------------------------------------------------- */
 
   if (loading) {
     return (
@@ -102,8 +86,8 @@ export default function SolutionSelector({
       placeholder="Rechercher une ou plusieurs solutions…"
       options={options}
       values={values.map((v) => ({
-        id: v.id_solution,
-        label: v.name,
+        id: v.ID_SOLUTION,
+        label: v.NAME,
       }))}
       onChange={handleChange}
     />
