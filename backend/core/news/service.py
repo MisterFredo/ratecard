@@ -1014,6 +1014,11 @@ def list_breves_public(
     limit: int = 20,
     cursor: Optional[str] = None,
 ):
+    """
+    Retourne les contenus publiés (BRÈVES + NEWS)
+    rendus sous forme de brèves pour une année donnée,
+    paginés par date (cursor-based).
+    """
 
     params = {
         "year": year,
@@ -1031,12 +1036,20 @@ def list_breves_public(
             n.TITLE,
             n.EXCERPT,
             n.PUBLISHED_AT,
+
+            -- SOCIÉTÉ
             c.NAME AS COMPANY_NAME,
+
+            -- CATÉGORIE ÉDITORIALE
             n.NEWS_TYPE,
+
+            -- TOPICS
             T.TOPICS
+
         FROM `{TABLE_NEWS}` n
         JOIN `{TABLE_COMPANY}` c
           ON n.ID_COMPANY = c.ID_COMPANY
+
         LEFT JOIN (
             SELECT
                 NT.ID_NEWS,
@@ -1051,16 +1064,32 @@ def list_breves_public(
               ON NT.ID_TOPIC = T.ID_TOPIC
             GROUP BY NT.ID_NEWS
         ) T ON n.ID_NEWS = T.ID_NEWS
+
         WHERE
             n.STATUS = 'PUBLISHED'
             AND n.PUBLISHED_AT IS NOT NULL
             AND EXTRACT(YEAR FROM n.PUBLISHED_AT) = @year
             {cursor_clause}
+
         ORDER BY n.PUBLISHED_AT DESC
         LIMIT @limit
     """
 
-    return query_bq(sql, params)
+    rows = query_bq(sql, params)
+
+    return [
+        {
+            "id": r["ID_NEWS"],
+            "title": r["TITLE"],
+            "excerpt": r["EXCERPT"],
+            "published_at": r["PUBLISHED_AT"],
+            "company": r["COMPANY_NAME"],
+            "news_type": r["NEWS_TYPE"],
+            "topics": r.get("TOPICS") or [],
+        }
+        for r in rows
+    ]
+
 
 def list_news_admin(
     limit: int = 50,
