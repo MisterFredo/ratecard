@@ -80,7 +80,6 @@ export default function StepPublish({
       {renderStatus()}
 
       {/* MODE */}
-
       <div className="space-y-4">
 
         <div className="text-sm font-medium">
@@ -108,7 +107,6 @@ export default function StepPublish({
       </div>
 
       {/* DATE */}
-
       {publishMode === "SCHEDULE" && (
 
         <div className="space-y-2">
@@ -133,7 +131,6 @@ export default function StepPublish({
       )}
 
       {/* PREVIEW DATE */}
-
       {previewDate && status !== "PUBLISHED" && (
 
         <div className="bg-gray-50 border rounded p-3 text-sm text-gray-700">
@@ -143,7 +140,6 @@ export default function StepPublish({
       )}
 
       {/* ACTION */}
-
       <button
         onClick={handlePublish}
         disabled={publishing || isScheduleInvalid}
