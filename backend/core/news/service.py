@@ -388,20 +388,9 @@ def get_news(id_news: str):
 # LIST NEWS / BRÈVES (PUBLIC)
 # ============================================================
 def list_news(news_kind: str | None = None):
-
-    where_clauses = [
-        "n.STATUS = 'PUBLISHED'",
-        "n.PUBLISHED_AT IS NOT NULL",
-        "n.PUBLISHED_AT <= CURRENT_TIMESTAMP()",
-    ]
-
-    params = {}
-
+    where_kind = ""
     if news_kind:
-        where_clauses.append("n.NEWS_KIND = @news_kind")
-        params["news_kind"] = news_kind
-
-    where_sql = " AND ".join(where_clauses)
+        where_kind = f"AND n.NEWS_KIND = '{news_kind}'"
 
     sql = f"""
         SELECT
@@ -411,27 +400,23 @@ def list_news(news_kind: str | None = None):
             n.TITLE,
             n.EXCERPT,
             n.BODY,
+            n.STATUS,
             n.PUBLISHED_AT,
-            n.MEDIA_RECTANGLE_ID,
+            n.MEDIA_RECTANGLE_ID AS VISUAL_RECT_ID,
             n.HAS_VISUAL,
-
             c.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
             c.MEDIA_LOGO_RECTANGLE_ID,
             c.IS_PARTNER,
-
             T.TOPICS
-
         FROM `{TABLE_NEWS}` n
         JOIN `{TABLE_COMPANY}` c
           ON n.ID_COMPANY = c.ID_COMPANY
-
         LEFT JOIN (
             SELECT
                 NT.ID_NEWS,
                 ARRAY_AGG(
                     STRUCT(
-                        T.ID_TOPIC AS id_topic,
                         T.LABEL AS label,
                         T.TOPIC_AXIS AS axis
                     )
@@ -441,43 +426,15 @@ def list_news(news_kind: str | None = None):
               ON NT.ID_TOPIC = T.ID_TOPIC
             GROUP BY NT.ID_NEWS
         ) T ON n.ID_NEWS = T.ID_NEWS
-
-        WHERE {where_sql}
-
+        WHERE
+            n.STATUS = 'PUBLISHED'
+            AND n.PUBLISHED_AT IS NOT NULL
+            AND n.PUBLISHED_AT <= CURRENT_TIMESTAMP()
+            {where_kind}
         ORDER BY n.PUBLISHED_AT DESC
     """
 
-    rows = query_bq(sql, params)
-
-    return [
-        {
-            "id_news": r["ID_NEWS"],
-            "news_kind": r["NEWS_KIND"],
-            "news_type": r.get("NEWS_TYPE"),
-            "title": r["TITLE"],
-            "excerpt": r.get("EXCERPT"),
-            "body": r.get("BODY"),
-
-            "published_at": (
-                r["PUBLISHED_AT"].strftime("%Y-%m-%dT%H:%M:%S")
-                if r.get("PUBLISHED_AT")
-                else None
-            ),
-
-            "media_rectangle_id": r.get("MEDIA_RECTANGLE_ID"),
-            "has_visual": bool(r.get("HAS_VISUAL")),
-
-            "company": {
-                "id_company": r.get("ID_COMPANY"),
-                "name": r.get("COMPANY_NAME"),
-                "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID"),
-                "is_partner": bool(r.get("IS_PARTNER")),
-            },
-
-            "topics": r.get("TOPICS") or [],
-        }
-        for r in rows
-    ]
+    return query_bq(sql)
 # ============================================================
 # NEWS TYPES (RÉFÉRENTIEL ÉDITORIAL)
 # ============================================================
