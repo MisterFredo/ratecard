@@ -12,25 +12,25 @@ type Company = {
 
 export default function CreateSolution() {
 
-  const [NAME, setNAME] = useState("");
-  const [DESCRIPTION, setDESCRIPTION] = useState("");
-  const [CONTENT, setCONTENT] = useState("");
-  const [STATUS, setSTATUS] =
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [content, setContent] = useState("");
+  const [status, setStatus] =
     useState<"DRAFT" | "PUBLISHED">("DRAFT");
-  const [ID_COMPANY, setID_COMPANY] =
+  const [idCompany, setIdCompany] =
     useState<string | null>(null);
 
-  const [COMPANIES, setCOMPANIES] = useState<Company[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function loadCompanies() {
       try {
         const res = await api.get("/company/list");
-        setCOMPANIES(res.companies || []);
+        setCompanies(res.companies || []);
       } catch (e) {
         console.error("Erreur chargement sociétés", e);
-        setCOMPANIES([]);
+        setCompanies([]);
       }
     }
     loadCompanies();
@@ -38,28 +38,28 @@ export default function CreateSolution() {
 
   async function save() {
 
-    if (!NAME.trim()) return alert("Nom requis");
-    if (!CONTENT.trim()) return alert("Contenu requis");
+    if (!name.trim()) return alert("Nom requis");
+    if (!content.trim()) return alert("Contenu requis");
 
     try {
 
       setLoading(true);
 
       await api.post("/solution/create", {
-        NAME,
-        DESCRIPTION: DESCRIPTION || null,
-        CONTENT,
-        STATUS,
-        ID_COMPANY,
+        name,
+        description: description || null,
+        content,
+        status,
+        id_company: idCompany,
       });
 
       alert("Solution créée");
 
-      setNAME("");
-      setDESCRIPTION("");
-      setCONTENT("");
-      setSTATUS("DRAFT");
-      setID_COMPANY(null);
+      setName("");
+      setDescription("");
+      setContent("");
+      setStatus("DRAFT");
+      setIdCompany(null);
 
     } catch (e) {
 
@@ -85,51 +85,46 @@ export default function CreateSolution() {
         </Link>
       </div>
 
-      {/* NAME */}
       <input
         className="border p-2 w-full rounded"
         placeholder="Nom de la solution"
-        value={NAME}
-        onChange={(e) => setNAME(e.target.value)}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
       />
 
-      {/* COMPANY */}
       <select
         className="border p-2 rounded w-full"
-        value={ID_COMPANY || ""}
+        value={idCompany || ""}
         onChange={(e) =>
-          setID_COMPANY(e.target.value || null)
+          setIdCompany(e.target.value || null)
         }
       >
         <option value="">
           — Aucune société associée —
         </option>
-        {COMPANIES.map((c) => (
+        {companies.map((c) => (
           <option key={c.ID_COMPANY} value={c.ID_COMPANY}>
             {c.NAME}
           </option>
         ))}
       </select>
 
-      {/* DESCRIPTION */}
       <textarea
         className="border p-2 w-full rounded h-24"
         placeholder="Description courte"
-        value={DESCRIPTION}
+        value={description}
         onChange={(e) =>
-          setDESCRIPTION(e.target.value)
+          setDescription(e.target.value)
         }
       />
 
-      {/* CONTENT */}
-      <HtmlEditor value={CONTENT} onChange={setCONTENT} />
+      <HtmlEditor value={content} onChange={setContent} />
 
-      {/* STATUS */}
       <select
         className="border p-2 rounded w-full max-w-xs"
-        value={STATUS}
+        value={status}
         onChange={(e) =>
-          setSTATUS(
+          setStatus(
             e.target.value as "DRAFT" | "PUBLISHED"
           )
         }
