@@ -603,29 +603,36 @@ def publish_content(
 
     now_dt = datetime.now(timezone.utc)
 
+    # ============================================================
+    # DÉTERMINATION DATE & STATUS
+    # ============================================================
+
     if published_at is None:
-        status = "PUBLISHED"
         final_dt = now_dt
+        status = "PUBLISHED"
+
     else:
+        # Si datetime naïf → on force UTC
         if published_at.tzinfo is None:
-            published_at = published_at.replace(
-                tzinfo=timezone.utc
-            )
+            published_at = published_at.replace(tzinfo=timezone.utc)
 
         final_dt = published_at
 
-        status = (
-            "PUBLISHED"
-            if final_dt <= now_dt
-            else "SCHEDULED"
-        )
+        if final_dt <= now_dt:
+            status = "PUBLISHED"
+        else:
+            status = "SCHEDULED"
+
+    # ============================================================
+    # UPDATE BQ
+    # ============================================================
 
     update_bq(
         table=TABLE_CONTENT,
         fields={
             "STATUS": status,
-            "PUBLISHED_AT": final_dt.isoformat(),
-            "UPDATED_AT": now_dt.isoformat(),
+            "PUBLISHED_AT": final_dt,
+            "UPDATED_AT": now_dt,
         },
         where={"ID_CONTENT": id_content},
     )
