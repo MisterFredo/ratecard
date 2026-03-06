@@ -5,30 +5,22 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { Pencil } from "lucide-react";
 
-/* =========================================================
-   TYPES
-========================================================= */
-
 type ContentLite = {
-  ID_CONTENT: string;
-  TITLE: string;
-  STATUS: string;
-  PUBLISHED_AT?: string | null;
-  topics?: { LABEL: string }[];
+  id_content: string;
+  title: string;
+  status: string;
+  published_at?: string | null;
+  topics?: { label: string }[];
   concept?: string | null;
 };
 
 type ContentStats = {
-  TOTAL: number;
-  TOTAL_PUBLISHED: number;
-  TOTAL_DRAFT: number;
-  TOTAL_PUBLISHED_THIS_YEAR: number;
-  TOTAL_PUBLISHED_THIS_MONTH: number;
+  total: number;
+  total_published: number;
+  total_draft: number;
+  total_published_this_year: number;
+  total_published_this_month: number;
 };
-
-/* =========================================================
-   COMPONENT
-========================================================= */
 
 export default function ContentListPage() {
   const [contents, setContents] = useState<ContentLite[]>([]);
@@ -58,22 +50,18 @@ export default function ContentListPage() {
     load();
   }, []);
 
-  /* ---------------------------------------------------------
-     HELPERS
-  --------------------------------------------------------- */
-
   function formatDate(value?: string | null) {
     if (!value) return "—";
     return new Date(value).toLocaleDateString("fr-FR");
   }
 
   function isScheduled(c: ContentLite) {
-    if (!c.PUBLISHED_AT) return false;
-    return new Date(c.PUBLISHED_AT) > new Date();
+    if (!c.published_at) return false;
+    return new Date(c.published_at) > new Date();
   }
 
   function getStatusLabel(c: ContentLite) {
-    if (c.STATUS === "DRAFT") return "DRAFT";
+    if (c.status === "DRAFT") return "DRAFT";
     if (isScheduled(c)) return "SCHEDULED";
     return "PUBLISHED";
   }
@@ -86,13 +74,6 @@ export default function ContentListPage() {
     return "bg-blue-100 text-blue-700";
   }
 
-  /* ---------------------------------------------------------
-     TRI ADMIN
-     1. Draft
-     2. Scheduled
-     3. Published (desc)
-  --------------------------------------------------------- */
-
   const sortedContents = [...contents].sort((a, b) => {
     const aStatus = getStatusLabel(a);
     const bStatus = getStatusLabel(b);
@@ -103,21 +84,16 @@ export default function ContentListPage() {
     if (aStatus === "SCHEDULED" && bStatus !== "SCHEDULED") return -1;
     if (bStatus === "SCHEDULED" && aStatus !== "SCHEDULED") return 1;
 
-    const dateA = new Date(a.PUBLISHED_AT || 0).getTime();
-    const dateB = new Date(b.PUBLISHED_AT || 0).getTime();
+    const dateA = new Date(a.published_at || 0).getTime();
+    const dateB = new Date(b.published_at || 0).getTime();
 
     return dateB - dateA;
   });
 
   if (loading) return <div>Chargement…</div>;
 
-  /* ---------------------------------------------------------
-     RENDER
-  --------------------------------------------------------- */
-
   return (
     <div className="space-y-8">
-      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
           Contenus
@@ -131,24 +107,22 @@ export default function ContentListPage() {
         </Link>
       </div>
 
-      {/* STATS */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <StatCard label="Total" value={stats.TOTAL} />
-          <StatCard label="Publiés" value={stats.TOTAL_PUBLISHED} green />
-          <StatCard label="Drafts" value={stats.TOTAL_DRAFT} yellow />
+          <StatCard label="Total" value={stats.total} />
+          <StatCard label="Publiés" value={stats.total_published} green />
+          <StatCard label="Drafts" value={stats.total_draft} yellow />
           <StatCard
             label="Publiés (année)"
-            value={stats.TOTAL_PUBLISHED_THIS_YEAR}
+            value={stats.total_published_this_year}
           />
           <StatCard
             label="Ce mois-ci"
-            value={stats.TOTAL_PUBLISHED_THIS_MONTH}
+            value={stats.total_published_this_month}
           />
         </div>
       )}
 
-      {/* TABLE */}
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="bg-gray-100 border-b text-left text-gray-700">
@@ -167,16 +141,16 @@ export default function ContentListPage() {
 
             return (
               <tr
-                key={c.ID_CONTENT}
+                key={c.id_content}
                 className="border-b hover:bg-gray-50 transition"
               >
                 <td className="p-2 font-medium">
-                  {c.TITLE}
+                  {c.title}
                 </td>
 
                 <td className="p-2 text-gray-600">
                   {c.topics?.length
-                    ? c.topics.map((t) => t.LABEL).join(", ")
+                    ? c.topics.map((t) => t.label).join(", ")
                     : "—"}
                 </td>
 
@@ -195,12 +169,12 @@ export default function ContentListPage() {
                 </td>
 
                 <td className="p-2 text-gray-600">
-                  {formatDate(c.PUBLISHED_AT)}
+                  {formatDate(c.published_at)}
                 </td>
 
                 <td className="p-2 text-right">
                   <Link
-                    href={`/admin/content/edit/${c.ID_CONTENT}`}
+                    href={`/admin/content/edit/${c.id_content}`}
                     className="inline-flex items-center gap-1 text-ratecard-blue hover:text-ratecard-blue/80"
                   >
                     <Pencil size={16} />
@@ -214,10 +188,6 @@ export default function ContentListPage() {
     </div>
   );
 }
-
-/* =========================================================
-   STAT CARD
-========================================================= */
 
 function StatCard({
   label,
