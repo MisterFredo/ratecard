@@ -25,10 +25,11 @@ export default function EventSelector({ values, onChange }: Props) {
       setLoading(true);
       try {
         const res = await api.get("/event/list");
+
         setOptions(
           (res.events || []).map((e: any) => ({
-            id: e.ID_EVENT,
-            label: e.LABEL,
+            id: e.id_event,
+            label: e.label,
           }))
         );
       } catch (e) {
