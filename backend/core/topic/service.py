@@ -116,20 +116,35 @@ def get_topic(topic_id: str):
 # UPDATE TOPIC — DATA + MEDIA (POST-CREATION)
 # ============================================================
 def update_topic(id_topic: str, data: TopicUpdate) -> bool:
-    """
-    Met à jour un topic existant.
 
-    Utilise UPDATE (pas de load job).
-    """
     values = data.dict(exclude_unset=True)
 
     if not values:
         return False
 
-    values["updated_at"] = datetime.utcnow().isoformat()
+    now = datetime.utcnow().isoformat()
+
+    mapping = {
+        "label": "LABEL",
+        "topic_axis": "TOPIC_AXIS",
+        "description": "DESCRIPTION",
+        "seo_title": "SEO_TITLE",
+        "seo_description": "SEO_DESCRIPTION",
+        "media_square_id": "MEDIA_SQUARE_ID",
+        "media_rectangle_id": "MEDIA_RECTANGLE_ID",
+        "is_active": "IS_ACTIVE",
+    }
+
+    bq_values = {
+        mapping[k]: v
+        for k, v in values.items()
+        if k in mapping
+    }
+
+    bq_values["UPDATED_AT"] = now
 
     return update_bq(
         table=TABLE_TOPIC,
-        fields={k.upper(): v for k, v in values.items()},
+        fields=bq_values,
         where={"ID_TOPIC": id_topic},
     )
