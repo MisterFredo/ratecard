@@ -21,11 +21,11 @@ TABLE_SOURCE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE"
 # ============================================================
 def create_source(data: SourceCreate) -> str:
 
-    source_id = data.source_id or str(uuid.uuid4())
+    source_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
 
     row = [{
-        "SOURCE_ID": source_id,
+        "SOURCE_ID": source_id,  # ← obligatoire
         "NAME": data.name,
         "TYPE_SOURCE": data.type_source,
         "DESCRIPTION": data.description,
@@ -46,7 +46,6 @@ def create_source(data: SourceCreate) -> str:
     ).result()
 
     return source_id
-
 
 # ============================================================
 # LIST SOURCES (snake_case contractuel)
