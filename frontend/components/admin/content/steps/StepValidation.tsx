@@ -14,9 +14,9 @@ type TopicRef = {
 };
 
 type Props = {
-  topicsRaw: string[];
+  topicsRaw: string[]; // IDs gouvernés
   acteursRaw: string[];
-  conceptsRaw: string[];
+  conceptsRaw: any[];  // concepts LLM structurés
   solutionsRaw: string[];
 
   topics: string[];
@@ -84,6 +84,17 @@ export default function StepValidation({
   }, []);
 
   // =========================
+  // AUTO-SELECT LLM TOPICS (once)
+  // =========================
+
+  useEffect(() => {
+    if (topics.length === 0 && topicsRaw?.length > 0) {
+      onChange({ topics: topicsRaw });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topicsRaw]);
+
+  // =========================
   // Mapping IDs → Objects
   // =========================
 
@@ -128,7 +139,12 @@ export default function StepValidation({
 
         {conceptsRaw.length > 0 && (
           <div>
-            <strong>Concepts LLM :</strong> {conceptsRaw.join(", ")}
+            <strong>Concepts LLM :</strong>{" "}
+            {conceptsRaw
+              .map((c: any) =>
+                typeof c === "string" ? c : c.label
+              )
+              .join(", ")}
           </div>
         )}
 
