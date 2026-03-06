@@ -41,12 +41,15 @@ TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
 # ============================================================
 
 def normalize_array(value):
-
     if value is None:
         return []
 
     if isinstance(value, list):
-        return [str(v) for v in value if isinstance(v, str) and v.strip()]
+        return [
+            str(v).strip()
+            for v in value
+            if str(v).strip()
+        ]
 
     return []
 
