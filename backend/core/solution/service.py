@@ -29,10 +29,11 @@ def create_solution(data: SolutionCreate) -> str:
         "ID_COMPANY": data.id_company,
         "DESCRIPTION": data.description,
         "CONTENT": data.content,
-        "STATUS": data.status,
-        "VECTORISE": data.vectorise,
+        "STATUS": data.status or "DRAFT",
+        "VECTORISE": bool(data.vectorise),
         "CREATED_AT": now,
         "UPDATED_AT": now,
+        "IS_ACTIVE": True,
     }]
 
     client = get_bigquery_client()
@@ -46,6 +47,7 @@ def create_solution(data: SolutionCreate) -> str:
     ).result()
 
     return solution_id
+
 
 # ============================================================
 # LIST SOLUTIONS
@@ -65,12 +67,12 @@ def list_solutions():
         FROM `{TABLE_SOLUTION}` s
         LEFT JOIN `{TABLE_COMPANY}` c
           ON s.ID_COMPANY = c.ID_COMPANY
+        WHERE COALESCE(s.IS_ACTIVE, TRUE) = TRUE
         ORDER BY s.NAME ASC
     """
 
     rows = query_bq(sql)
 
-    # 🔁 Mapping vers snake_case API
     return [
         {
             "id_solution": r["ID_SOLUTION"],
@@ -117,7 +119,6 @@ def get_solution(id_solution: str):
 
     r = rows[0]
 
-    # 🔁 Mapping vers snake_case API
     return {
         "id_solution": r["ID_SOLUTION"],
         "name": r["NAME"],
@@ -142,9 +143,6 @@ def update_solution(id_solution: str, data: SolutionUpdate) -> bool:
     if not values:
         return False
 
-    # 🔁 Mapping snake_case → UPPERCASE BQ
-    mapped = {}
-
     field_map = {
         "name": "NAME",
         "id_company": "ID_COMPANY",
@@ -154,9 +152,11 @@ def update_solution(id_solution: str, data: SolutionUpdate) -> bool:
         "vectorise": "VECTORISE",
     }
 
-    for k, v in values.items():
-        if k in field_map:
-            mapped[field_map[k]] = v
+    mapped = {
+        field_map[k]: v
+        for k, v in values.items()
+        if k in field_map
+    }
 
     mapped["UPDATED_AT"] = datetime.utcnow().isoformat()
 
@@ -166,8 +166,9 @@ def update_solution(id_solution: str, data: SolutionUpdate) -> bool:
         where={"ID_SOLUTION": id_solution},
     )
 
+
 # ============================================================
-# DELETE SOLUTION
+# DELETE SOLUTION (SOFT DELETE)
 # ============================================================
 def delete_solution(id_solution: str) -> bool:
 
