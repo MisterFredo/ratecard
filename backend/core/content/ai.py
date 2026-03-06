@@ -1,6 +1,8 @@
 import re
 import unicodedata
 from typing import Dict, Any, Optional, List
+
+from config import BQ_PROJECT, BQ_DATASET
 from utils.llm import run_llm
 from utils.bigquery_utils import query_bq
 
@@ -41,9 +43,9 @@ def generate_summary(
     # LOAD GOVERNED TOPICS
     # ============================================================
 
-    topics_rows = query_bq("""
+    topics_rows = query_bq(f"""
         SELECT ID_TOPIC, LABEL
-        FROM `adex-5555.RATECARD.RATECARD_TOPIC`
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC`
         WHERE IS_ACTIVE = TRUE
     """)
 
