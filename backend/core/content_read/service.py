@@ -50,6 +50,7 @@ def _build_period(date_from: date, date_to: date) -> Dict:
 
 
 def _scope_join_and_where(topic_id: Optional[str], company_id: Optional[str]):
+
     if topic_id:
         join = f"""
             JOIN {TABLE_CONTENT_TOPIC} ct
@@ -57,7 +58,8 @@ def _scope_join_and_where(topic_id: Optional[str], company_id: Optional[str]):
             JOIN {TABLE_TOPIC} t
               ON ct.ID_TOPIC = t.ID_TOPIC
         """
-        where = "t.LABEL = @scope_id"
+        where = "t.ID_TOPIC = @scope_id"
+
     else:
         join = f"""
             JOIN {TABLE_CONTENT_COMPANY} cc
@@ -65,10 +67,9 @@ def _scope_join_and_where(topic_id: Optional[str], company_id: Optional[str]):
             JOIN {TABLE_COMPANY} co
               ON cc.ID_COMPANY = co.ID_COMPANY
         """
-        where = "co.NAME = @scope_id"
+        where = "co.ID_COMPANY = @scope_id"
 
     return join, where
-
 
 # ============================================================
 # /content/list
