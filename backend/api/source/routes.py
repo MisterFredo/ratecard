@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException
-from typing import Optional
+from typing import List
 
 from api.source.models import (
     SourceCreate,
     SourceUpdate,
     SourceOut,
+    SourceListOut,
 )
 
 from core.source.service import (
@@ -31,13 +32,16 @@ def create_route(data: SourceCreate):
 
 
 # ============================================================
-# LIST — liste des sources
+# LIST — liste des sources (verrouillée contractuellement)
 # ============================================================
-@router.get("/list")
+@router.get("/list", response_model=SourceListOut)
 def list_route():
     try:
         sources = list_sources()
-        return {"status": "ok", "sources": sources}
+        return {
+            "status": "ok",
+            "sources": sources,
+        }
     except Exception as e:
         raise HTTPException(400, f"Erreur liste sources : {e}")
 
