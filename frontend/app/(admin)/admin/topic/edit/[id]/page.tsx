@@ -25,9 +25,6 @@ export default function EditTopic({ params }: { params: { id: string } }) {
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
-  /* ---------------------------------------------------------
-     LOAD
-  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -36,21 +33,21 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         const res = await api.get(`/topic/${id}`);
         const t = res.topic;
 
-        setLabel(t.LABEL || "");
-        setTopicAxis(t.TOPIC_AXIS || "BUSINESS");
-        setDescription(t.DESCRIPTION || "");
-        setSeoTitle(t.SEO_TITLE || "");
-        setSeoDescription(t.SEO_DESCRIPTION || "");
+        setLabel(t.label || "");
+        setTopicAxis(t.topic_axis || "BUSINESS");
+        setDescription(t.description || "");
+        setSeoTitle(t.seo_title || "");
+        setSeoDescription(t.seo_description || "");
 
         setSquareUrl(
-          t.MEDIA_SQUARE_ID
-            ? `${GCS}/topics/TOPIC_${id}_square.jpg`
+          t.media_square_id
+            ? `${GCS}/topics/${t.media_square_id}`
             : null
         );
 
         setRectUrl(
-          t.MEDIA_RECTANGLE_ID
-            ? `${GCS}/topics/TOPIC_${id}_rect.jpg`
+          t.media_rectangle_id
+            ? `${GCS}/topics/${t.media_rectangle_id}`
             : null
         );
       } catch (e) {
@@ -64,9 +61,6 @@ export default function EditTopic({ params }: { params: { id: string } }) {
     load();
   }, [id]);
 
-  /* ---------------------------------------------------------
-     SAVE
-  --------------------------------------------------------- */
   async function save() {
     setSaving(true);
 
@@ -90,12 +84,8 @@ export default function EditTopic({ params }: { params: { id: string } }) {
 
   if (loading) return <p>Chargement…</p>;
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
     <div className="space-y-10">
-      {/* HEADER */}
       <div className="flex justify-between">
         <h1 className="text-3xl font-semibold">
           Modifier le topic
@@ -105,14 +95,12 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         </Link>
       </div>
 
-      {/* LABEL */}
       <EntityBaseForm
         values={{ name: label }}
         onChange={{ setName: setLabel }}
         labels={{ name: "Label" }}
       />
 
-      {/* AXIS */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium">
           Axe du topic
@@ -134,7 +122,6 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         </select>
       </div>
 
-      {/* DESCRIPTION HTML */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium">
           Description éditoriale
@@ -146,7 +133,6 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         />
       </div>
 
-      {/* SEO */}
       <div className="space-y-4 max-w-2xl">
         <div>
           <label className="block text-sm font-medium mb-1">
@@ -175,7 +161,6 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* ACTION */}
       <button
         className="bg-ratecard-blue px-4 py-2 text-white rounded"
         onClick={save}
@@ -184,7 +169,6 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
-      {/* VISUALS */}
       <VisualSectionTopic
         topicId={id}
         squareUrl={squareUrl}
@@ -192,12 +176,12 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         onUpdated={({ square, rectangle }) => {
           setSquareUrl(
             square
-              ? `${GCS}/topics/TOPIC_${id}_square.jpg`
+              ? `${GCS}/topics/${rectangle ? "" : ""}${square}`
               : null
           );
           setRectUrl(
             rectangle
-              ? `${GCS}/topics/TOPIC_${id}_rect.jpg`
+              ? `${GCS}/topics/${rectangle}`
               : null
           );
         }}
@@ -205,4 +189,3 @@ export default function EditTopic({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
