@@ -202,12 +202,29 @@ def get_content(id_content: str):
 
     rows = query_bq(
         f"""
-        SELECT *
+        SELECT
+          ID_CONTENT,
+          STATUS,
+          SOURCE_ID,
+          TITLE,
+          EXCERPT,
+          CONTENT_BODY,
+          CITATIONS,
+          CHIFFRES,
+          ACTEURS_CITES,
+          CONCEPTS_LLM,
+          SOLUTIONS_LLM,
+          TOPICS_LLM,
+          MECANIQUE_EXPLIQUEE,
+          ENJEU_STRATEGIQUE,
+          POINT_DE_FRICTION,
+          SIGNAL_ANALYTIQUE,
+          PUBLISHED_AT
         FROM `{TABLE_CONTENT}`
         WHERE ID_CONTENT = @id
         LIMIT 1
         """,
-        {"id": id_content}
+        {"id": id_content},
     )
 
     if not rows:
@@ -215,10 +232,12 @@ def get_content(id_content: str):
 
     row = rows[0]
 
+    def map_dt(value):
+        return value.isoformat() if value else None
+
     content = {
         "id_content": row["ID_CONTENT"],
         "status": row.get("STATUS"),
-
         "source_id": row.get("SOURCE_ID"),
 
         "title": row.get("TITLE"),
@@ -228,6 +247,7 @@ def get_content(id_content: str):
         "citations": row.get("CITATIONS") or [],
         "chiffres": row.get("CHIFFRES") or [],
         "acteurs_cites": row.get("ACTEURS_CITES") or [],
+
         "concepts_llm": row.get("CONCEPTS_LLM") or [],
         "solutions_llm": row.get("SOLUTIONS_LLM") or [],
         "topics_llm": row.get("TOPICS_LLM") or [],
@@ -237,78 +257,128 @@ def get_content(id_content: str):
         "point_de_friction": row.get("POINT_DE_FRICTION"),
         "signal_analytique": row.get("SIGNAL_ANALYTIQUE"),
 
-        "published_at": (
-            row["PUBLISHED_AT"].isoformat()
-            if row.get("PUBLISHED_AT")
-            else None
-        ),
+        "published_at": map_dt(row.get("PUBLISHED_AT")),
     }
 
-    content["topics"] = query_bq(
+    # ============================================================
+    # RELATIONS — MAPPING SNAKE_CASE
+    # ============================================================
+
+    topic_rows = query_bq(
         f"""
         SELECT T.ID_TOPIC, T.LABEL, T.TOPIC_AXIS
         FROM `{TABLE_CONTENT_TOPIC}` CT
         JOIN `{TABLE_TOPIC}` T
-        ON CT.ID_TOPIC = T.ID_TOPIC
+          ON CT.ID_TOPIC = T.ID_TOPIC
         WHERE CT.ID_CONTENT = @id
         """,
         {"id": id_content},
     )
 
-    content["events"] = query_bq(
+    content["topics"] = [
+        {
+            "id_topic": r["ID_TOPIC"],
+            "label": r["LABEL"],
+            "topic_axis": r.get("TOPIC_AXIS"),
+        }
+        for r in topic_rows
+    ]
+
+    event_rows = query_bq(
         f"""
         SELECT E.ID_EVENT, E.LABEL
         FROM `{TABLE_CONTENT_EVENT}` CE
         JOIN `{TABLE_EVENT}` E
-        ON CE.ID_EVENT = E.ID_EVENT
+          ON CE.ID_EVENT = E.ID_EVENT
         WHERE CE.ID_CONTENT = @id
         """,
         {"id": id_content},
     )
 
-    content["companies"] = query_bq(
+    content["events"] = [
+        {
+            "id_event": r["ID_EVENT"],
+            "label": r["LABEL"],
+        }
+        for r in event_rows
+    ]
+
+    company_rows = query_bq(
         f"""
         SELECT C.ID_COMPANY, C.NAME
         FROM `{TABLE_CONTENT_COMPANY}` CC
         JOIN `{TABLE_COMPANY}` C
-        ON CC.ID_COMPANY = C.ID_COMPANY
+          ON CC.ID_COMPANY = C.ID_COMPANY
         WHERE CC.ID_CONTENT = @id
         """,
         {"id": id_content},
     )
 
-    content["persons"] = query_bq(
+    content["companies"] = [
+        {
+            "id_company": r["ID_COMPANY"],
+            "name": r["NAME"],
+        }
+        for r in company_rows
+    ]
+
+    person_rows = query_bq(
         f"""
         SELECT P.ID_PERSON, P.NAME, CP.ROLE
         FROM `{TABLE_CONTENT_PERSON}` CP
         JOIN `{TABLE_PERSON}` P
-        ON CP.ID_PERSON = P.ID_PERSON
+          ON CP.ID_PERSON = P.ID_PERSON
         WHERE CP.ID_CONTENT = @id
         """,
         {"id": id_content},
     )
 
-    content["concepts"] = query_bq(
+    content["persons"] = [
+        {
+            "id_person": r["ID_PERSON"],
+            "name": r["NAME"],
+            "role": r.get("ROLE"),
+        }
+        for r in person_rows
+    ]
+
+    concept_rows = query_bq(
         f"""
         SELECT C.ID_CONCEPT, C.TITLE
         FROM `{TABLE_CONTENT_CONCEPT}` CC
         JOIN `{TABLE_CONCEPT}` C
-        ON CC.ID_CONCEPT = C.ID_CONCEPT
+          ON CC.ID_CONCEPT = C.ID_CONCEPT
         WHERE CC.ID_CONTENT = @id
         """,
         {"id": id_content},
     )
 
-    content["solutions"] = query_bq(
+    content["concepts"] = [
+        {
+            "id_concept": r["ID_CONCEPT"],
+            "title": r["TITLE"],
+        }
+        for r in concept_rows
+    ]
+
+    solution_rows = query_bq(
         f"""
         SELECT S.ID_SOLUTION, S.NAME
         FROM `{TABLE_CONTENT_SOLUTION}` CS
         JOIN `{TABLE_SOLUTION}` S
-        ON CS.ID_SOLUTION = S.ID_SOLUTION
+          ON CS.ID_SOLUTION = S.ID_SOLUTION
         WHERE CS.ID_CONTENT = @id
         """,
         {"id": id_content},
     )
+
+    content["solutions"] = [
+        {
+            "id_solution": r["ID_SOLUTION"],
+            "name": r["NAME"],
+        }
+        for r in solution_rows
+    ]
 
     return content
 
@@ -334,8 +404,18 @@ def list_contents():
         """
     )
 
-    return rows
+    def map_dt(value):
+        return value.isoformat() if value else None
 
+    return [
+        {
+            "id_content": r["ID_CONTENT"],
+            "title": r["TITLE"],
+            "excerpt": r.get("EXCERPT"),
+            "published_at": map_dt(r.get("PUBLISHED_AT")),
+        }
+        for r in rows
+    ]
 
 # ============================================================
 # LIST CONTENTS ADMIN
@@ -662,7 +742,7 @@ def publish_content(
 
 def get_content_stats():
 
-    query = f"""
+    sql = f"""
         SELECT
           COUNT(*) AS TOTAL,
           COUNTIF(STATUS = 'PUBLISHED') AS TOTAL_PUBLISHED,
@@ -682,6 +762,23 @@ def get_content_stats():
         FROM `{TABLE_CONTENT}`
     """
 
-    rows = query_bq(query)
+    rows = query_bq(sql)
 
-    return rows[0] if rows else {}
+    if not rows:
+        return {
+            "total": 0,
+            "total_published": 0,
+            "total_draft": 0,
+            "total_published_this_year": 0,
+            "total_published_this_month": 0,
+        }
+
+    r = rows[0]
+
+    return {
+        "total": r.get("TOTAL", 0),
+        "total_published": r.get("TOTAL_PUBLISHED", 0),
+        "total_draft": r.get("TOTAL_DRAFT", 0),
+        "total_published_this_year": r.get("TOTAL_PUBLISHED_THIS_YEAR", 0),
+        "total_published_this_month": r.get("TOTAL_PUBLISHED_THIS_MONTH", 0),
+    }
