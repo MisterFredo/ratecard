@@ -16,24 +16,21 @@ TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 
 
 # ============================================================
-# CREATE SOLUTION — LOAD JOB
+# CREATE SOLUTION
 # ============================================================
 def create_solution(data: SolutionCreate) -> str:
-    """
-    Crée une solution.
-    Insertion via LOAD JOB pour stabilité immédiate.
-    """
+
     solution_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
 
     row = [{
         "ID_SOLUTION": solution_id,
-        "NAME": data.NAME,
-        "ID_COMPANY": data.ID_COMPANY,
-        "DESCRIPTION": data.DESCRIPTION,
-        "CONTENT": data.CONTENT,
-        "STATUS": data.STATUS or "DRAFT",
-        "VECTORISE": data.VECTORISE or False,
+        "NAME": data.name,
+        "ID_COMPANY": data.id_company,
+        "DESCRIPTION": data.description,
+        "CONTENT": data.content,
+        "STATUS": data.status or "DRAFT",
+        "VECTORISE": data.vectorise or False,
         "CREATED_AT": now,
         "UPDATED_AT": now,
     }]
@@ -55,6 +52,7 @@ def create_solution(data: SolutionCreate) -> str:
 # LIST SOLUTIONS
 # ============================================================
 def list_solutions():
+
     sql = f"""
         SELECT
             s.ID_SOLUTION,
@@ -73,16 +71,17 @@ def list_solutions():
 
     rows = query_bq(sql)
 
+    # 🔁 Mapping vers snake_case API
     return [
         {
-            "ID_SOLUTION": r["ID_SOLUTION"],
-            "NAME": r["NAME"],
-            "STATUS": r["STATUS"],
-            "ID_COMPANY": r["ID_COMPANY"],
-            "COMPANY_NAME": r["COMPANY_NAME"],
-            "VECTORISE": r["VECTORISE"],
-            "CREATED_AT": r["CREATED_AT"],
-            "UPDATED_AT": r["UPDATED_AT"],
+            "id_solution": r["ID_SOLUTION"],
+            "name": r["NAME"],
+            "status": r["STATUS"],
+            "id_company": r["ID_COMPANY"],
+            "company_name": r["COMPANY_NAME"],
+            "vectorise": r["VECTORISE"],
+            "created_at": r["CREATED_AT"],
+            "updated_at": r["UPDATED_AT"],
         }
         for r in rows
     ]
@@ -91,7 +90,8 @@ def list_solutions():
 # ============================================================
 # GET ONE SOLUTION
 # ============================================================
-def get_solution(ID_SOLUTION: str):
+def get_solution(id_solution: str):
+
     sql = f"""
         SELECT
             s.ID_SOLUTION,
@@ -111,40 +111,58 @@ def get_solution(ID_SOLUTION: str):
         LIMIT 1
     """
 
-    rows = query_bq(sql, {"id": ID_SOLUTION})
+    rows = query_bq(sql, {"id": id_solution})
 
     if not rows:
         return None
 
     r = rows[0]
 
+    # 🔁 Mapping vers snake_case API
     return {
-        "ID_SOLUTION": r["ID_SOLUTION"],
-        "NAME": r["NAME"],
-        "ID_COMPANY": r["ID_COMPANY"],
-        "COMPANY_NAME": r["COMPANY_NAME"],
-        "DESCRIPTION": r["DESCRIPTION"],
-        "CONTENT": r["CONTENT"],
-        "STATUS": r["STATUS"],
-        "VECTORISE": r["VECTORISE"],
-        "CREATED_AT": r["CREATED_AT"],
-        "UPDATED_AT": r["UPDATED_AT"],
+        "id_solution": r["ID_SOLUTION"],
+        "name": r["NAME"],
+        "id_company": r["ID_COMPANY"],
+        "company_name": r["COMPANY_NAME"],
+        "description": r["DESCRIPTION"],
+        "content": r["CONTENT"],
+        "status": r["STATUS"],
+        "vectorise": r["VECTORISE"],
+        "created_at": r["CREATED_AT"],
+        "updated_at": r["UPDATED_AT"],
     }
 
 
 # ============================================================
 # UPDATE SOLUTION
 # ============================================================
-def update_solution(ID_SOLUTION: str, data: SolutionUpdate) -> bool:
+def update_solution(id_solution: str, data: SolutionUpdate) -> bool:
+
     values = data.dict(exclude_unset=True)
 
     if not values:
         return False
 
-    values["UPDATED_AT"] = datetime.utcnow().isoformat()
+    # 🔁 Mapping snake_case → UPPERCASE BQ
+    mapped = {}
+
+    field_map = {
+        "name": "NAME",
+        "id_company": "ID_COMPANY",
+        "description": "DESCRIPTION",
+        "content": "CONTENT",
+        "status": "STATUS",
+        "vectorise": "VECTORISE",
+    }
+
+    for k, v in values.items():
+        if k in field_map:
+            mapped[field_map[k]] = v
+
+    mapped["UPDATED_AT"] = datetime.utcnow().isoformat()
 
     return update_bq(
         table=TABLE_SOLUTION,
-        fields=values,
-        where={"ID_SOLUTION": ID_SOLUTION},
+        fields=mapped,
+        where={"ID_SOLUTION": id_solution},
     )
