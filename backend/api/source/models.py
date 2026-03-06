@@ -13,8 +13,6 @@ class SourceCreate(BaseModel):
     Création d'une source éditoriale.
     Contrat API 100% snake_case.
     """
-
-    source_id: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1)
 
     type_source: Optional[str] = None
