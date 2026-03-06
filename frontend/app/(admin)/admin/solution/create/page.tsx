@@ -23,6 +23,9 @@ export default function CreateSolution() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
 
+  /* ---------------------------------------------------------
+     LOAD COMPANIES
+  --------------------------------------------------------- */
   useEffect(() => {
     async function loadCompanies() {
       try {
@@ -33,9 +36,13 @@ export default function CreateSolution() {
         setCompanies([]);
       }
     }
+
     loadCompanies();
   }, []);
 
+  /* ---------------------------------------------------------
+     SAVE
+  --------------------------------------------------------- */
   async function save() {
 
     if (!name.trim()) return alert("Nom requis");
@@ -45,7 +52,7 @@ export default function CreateSolution() {
 
       setLoading(true);
 
-      await api.post("/solution/create", {
+      const res = await api.post("/solution/create", {
         name,
         description: description || null,
         content,
@@ -53,13 +60,19 @@ export default function CreateSolution() {
         id_company: idCompany || null,
       });
 
+      const newId = res.id_solution;
+
       alert("Solution créée");
 
+      // reset
       setName("");
       setDescription("");
       setContent("");
       setStatus("DRAFT");
       setIdCompany(null);
+
+      // optionnel futur :
+      // router.push(`/admin/solution/edit/${newId}`);
 
     } catch (e) {
 
@@ -73,6 +86,9 @@ export default function CreateSolution() {
     }
   }
 
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <div className="space-y-10">
 
@@ -102,6 +118,7 @@ export default function CreateSolution() {
         <option value="">
           — Aucune société associée —
         </option>
+
         {companies.map((c) => (
           <option key={c.id_company} value={c.id_company}>
             {c.name}
