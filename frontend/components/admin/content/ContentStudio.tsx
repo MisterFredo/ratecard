@@ -15,6 +15,15 @@ type Props = {
   contentId?: string;
 };
 
+/* =========================
+   NEW CONCEPT RAW TYPE
+========================= */
+
+type ConceptItem = {
+  label: string;
+  topic_id: string;
+};
+
 export default function ContentStudio({ mode, contentId }: Props) {
   const [internalContentId, setInternalContentId] =
     useState<string | null>(contentId || null);
@@ -29,16 +38,16 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [sourceText, setSourceText] = useState("");
 
   // =========================
-  // LLM RAW (affichage informatif)
+  // LLM RAW (INFORMATIF)
   // =========================
 
   const [topicsRaw, setTopicsRaw] = useState<string[]>([]);
   const [acteursRaw, setActeursRaw] = useState<string[]>([]);
-  const [conceptsRaw, setConceptsRaw] = useState<string[]>([]);
+  const [conceptsRaw, setConceptsRaw] = useState<ConceptItem[]>([]);
   const [solutionsRaw, setSolutionsRaw] = useState<string[]>([]);
 
   // =========================
-  // STRUCTURANT (IDs uniquement)
+  // STRUCTURANT (IDs)
   // =========================
 
   const [topics, setTopics] = useState<string[]>([]);
@@ -72,7 +81,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [publishAt, setPublishAt] = useState("");
 
   // ============================================================
-  // LOAD EXISTING
+  // LOAD EXISTING CONTENT
   // ============================================================
 
   useEffect(() => {
@@ -93,6 +102,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
       setFriction(c.point_de_friction || "");
       setSignal(c.signal_analytique || "");
 
+      // STRUCTURED IDS
       setTopics((c.topics || []).map((x: any) => x.ID_TOPIC));
       setCompanies((c.companies || []).map((x: any) => x.ID_COMPANY));
       setConcepts((c.concepts || []).map((x: any) => x.ID_CONCEPT));
@@ -105,7 +115,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   }, [contentId]);
 
   // ============================================================
-  // SAVE EDITORIAL
+  // SAVE EDITORIAL (LEFT COLUMN)
   // ============================================================
 
   async function saveEditorial() {
@@ -133,7 +143,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   }
 
   // ============================================================
-  // SAVE STRUCTURANT
+  // SAVE STRUCTURANT (RIGHT COLUMN)
   // ============================================================
 
   async function saveValidation() {
@@ -214,14 +224,26 @@ export default function ContentStudio({ mode, contentId }: Props) {
           friction={friction}
           signal={signal}
           onChange={(d) => {
+
             if (d.excerpt !== undefined) setExcerpt(d.excerpt);
             if (d.contentBody !== undefined) setContentBody(d.contentBody);
             if (d.citations !== undefined) setCitations(d.citations);
             if (d.chiffres !== undefined) setChiffres(d.chiffres);
             if (d.acteurs !== undefined) setActeursRaw(d.acteurs);
-            if (d.concepts !== undefined) setConceptsRaw(d.concepts);
-            if (d.solutions !== undefined) setSolutionsRaw(d.solutions);
-            if (d.topics !== undefined) setTopicsRaw(d.topics);
+
+            if (d.concepts !== undefined) {
+              setConceptsRaw(d.concepts);
+            }
+
+            if (d.solutions !== undefined) {
+              setSolutionsRaw(d.solutions);
+            }
+
+            if (d.topics !== undefined) {
+              setTopicsRaw(d.topics);
+              setTopics(d.topics); // auto-preselect in validation
+            }
+
             if (d.mecanique !== undefined) setMecanique(d.mecanique);
             if (d.enjeu !== undefined) setEnjeu(d.enjeu);
             if (d.friction !== undefined) setFriction(d.friction);
@@ -315,7 +337,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
         </div>
       </div>
 
-      {/* ================= PREVIEW DRAWER ================= */}
+      {/* ================= PREVIEW ================= */}
 
       {previewOpen && internalContentId && (
         <StepPreview
