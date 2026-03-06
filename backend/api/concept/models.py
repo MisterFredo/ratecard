@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
@@ -6,63 +6,73 @@ from datetime import datetime
 # ============================================================
 # CREATE
 # ============================================================
+
 class ConceptCreate(BaseModel):
     """
     Création d'un concept métier.
     Content = HTML complet.
-    ⚠️ Champs alignés BQ
+    Contrat API 100% snake_case.
     """
 
-    TITLE: str
-    DESCRIPTION: Optional[str] = None
-    CONTENT: Optional[str] = None
+    title: str = Field(..., min_length=1)
+    description: Optional[str] = None
+    content: Optional[str] = None
 
-    STATUS: Optional[str] = "DRAFT"
-    VECTORISE: Optional[bool] = False
+    status: str = "DRAFT"
+    vectorise: bool = False
 
-    # 🔥 Nouveau : 0 ou 1 topic
-    ID_TOPIC: Optional[str] = None
+    # Mono-topic (0 ou 1)
+    id_topic: Optional[str] = None
+
+    class Config:
+        extra = "forbid"
 
 
 # ============================================================
 # UPDATE
 # ============================================================
+
 class ConceptUpdate(BaseModel):
     """
     Mise à jour partielle d'un concept.
-    ⚠️ Champs alignés BQ
     """
 
-    TITLE: Optional[str] = None
-    DESCRIPTION: Optional[str] = None
-    CONTENT: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    content: Optional[str] = None
 
-    STATUS: Optional[str] = None
-    VECTORISE: Optional[bool] = None
+    status: Optional[str] = None
+    vectorise: Optional[bool] = None
 
-    # 🔥 Mono-topic
-    ID_TOPIC: Optional[str] = None
+    id_topic: Optional[str] = None
+
+    class Config:
+        extra = "forbid"
 
 
 # ============================================================
 # OUT
 # ============================================================
+
 class ConceptOut(BaseModel):
     """
-    Représentation alignée avec RATECARD_CONCEPT.
-    100% MAJUSCULES.
+    Représentation retournée par l’API.
+    Snake_case strict.
     """
 
-    ID_CONCEPT: str
-    TITLE: str
-    DESCRIPTION: Optional[str] = None
-    CONTENT: Optional[str] = None
+    id_concept: str
+    title: str
 
-    STATUS: Optional[str] = None
-    VECTORISE: Optional[bool] = False
+    description: Optional[str] = None
+    content: Optional[str] = None
 
-    # 🔥 Mono-topic
-    ID_TOPIC: Optional[str] = None
+    status: str
+    vectorise: bool
 
-    CREATED_AT: Optional[datetime] = None
-    UPDATED_AT: Optional[datetime] = None
+    id_topic: Optional[str] = None
+
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        extra = "forbid"
