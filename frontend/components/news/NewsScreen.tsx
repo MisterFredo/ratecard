@@ -15,16 +15,16 @@ type Mode = "public" | "workspace";
 ========================================================= */
 
 type NewsItemRaw = {
-  ID_NEWS: string;
-  TITLE: string;
-  EXCERPT?: string | null;
-  VISUAL_RECT_ID?: string | null;
-  PUBLISHED_AT?: string | null;
+  id_news: string;
+  title: string;
+  excerpt?: string | null;
+  visual_rect_id?: string | null;
+  published_at?: string | null;
 
-  ID_COMPANY: string;
-  COMPANY_NAME: string;
-  MEDIA_LOGO_RECTANGLE_ID?: string | null;
-  IS_PARTNER?: boolean;
+  id_company: string;
+  company_name: string;
+  media_logo_rectangle_id?: string | null;
+  is_partner?: boolean;
 };
 
 type NewsItem = {
@@ -66,7 +66,6 @@ export default function NewsScreen({ mode }: { mode: Mode }) {
   const { openRightDrawer } = useDrawer();
   const searchParams = useSearchParams();
 
-  // 🔒 garde-fou anti-réouverture
   const lastOpenedId = useRef<string | null>(null);
 
   /* ---------------------------------------------------------
@@ -75,16 +74,16 @@ export default function NewsScreen({ mode }: { mode: Mode }) {
   useEffect(() => {
     fetchNews().then((rows) => {
       const mapped: NewsItem[] = rows.map((n) => ({
-        id: n.ID_NEWS,
-        title: n.TITLE,
-        excerpt: n.EXCERPT ?? null,
-        visual_rect_id: n.VISUAL_RECT_ID ?? null,
-        published_at: n.PUBLISHED_AT || "",
+        id: n.id_news,
+        title: n.title,
+        excerpt: n.excerpt ?? null,
+        visual_rect_id: n.visual_rect_id ?? null,
+        published_at: n.published_at || "",
         company: {
-          id_company: n.ID_COMPANY,
-          name: n.COMPANY_NAME,
-          logo_rect_id: n.MEDIA_LOGO_RECTANGLE_ID ?? null,
-          is_partner: n.IS_PARTNER === true,
+          id_company: n.id_company,
+          name: n.company_name,
+          logo_rect_id: n.media_logo_rectangle_id ?? null,
+          is_partner: n.is_partner === true,
         },
       }));
 
