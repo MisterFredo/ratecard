@@ -1,38 +1,33 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
 
 # ============================================================
-# CREATE
+# CREATE — création d'une société
 # ============================================================
-
 class CompanyCreate(BaseModel):
     """
     Création d'une société.
-    Contrat API 100% snake_case.
+    ⚠️ Aucun champ média ici.
     """
 
-    name: str = Field(..., min_length=1)
+    name: str
     description: Optional[str] = None
 
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
 
-    is_partner: bool = False
-
-    class Config:
-        extra = "forbid"
+    is_partner: Optional[bool] = False
 
 
 # ============================================================
-# UPDATE
+# UPDATE — mise à jour d'une société existante
 # ============================================================
-
 class CompanyUpdate(BaseModel):
     """
-    Mise à jour partielle.
-    Les médias restent gérés via /visuals/company/*
+    Mise à jour des données métier.
+    Les visuels restent gérés via /visuals/company/*
     """
 
     name: Optional[str] = None
@@ -43,21 +38,17 @@ class CompanyUpdate(BaseModel):
 
     is_partner: Optional[bool] = None
 
-    # --- Wiki ---
+    # --- Wiki (bloc unique) ---
     wiki_content: Optional[str] = None
 
-    class Config:
-        extra = "forbid"
-
 
 # ============================================================
-# OUT
+# OUT — représentation API (snake_case)
 # ============================================================
-
 class CompanyOut(BaseModel):
     """
-    Représentation retournée par l’API.
-    Snake_case strict.
+    Représentation côté API.
+    Snake_case uniquement.
     """
 
     id_company: str
@@ -70,7 +61,7 @@ class CompanyOut(BaseModel):
     wiki_content: Optional[str] = None
     wiki_source_id: Optional[str] = None
     wiki_updated_at: Optional[datetime] = None
-    wiki_vectorised: bool = False
+    wiki_vectorised: Optional[bool] = False
 
     # --- Media ---
     media_logo_rectangle_id: Optional[str] = None
@@ -80,12 +71,9 @@ class CompanyOut(BaseModel):
     website_url: Optional[str] = None
 
     # --- Statut ---
-    is_partner: bool = False
-    is_active: bool = True
+    is_partner: Optional[bool] = False
+    is_active: Optional[bool] = True
 
     # --- Dates ---
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-
-    class Config:
-        extra = "forbid"
