@@ -395,39 +395,33 @@ def reset_and_insert(table, id_field, id_content, values):
 # ============================================================
 # UPDATE CONTENT
 # ============================================================
-
 def update_content(id_content: str, data: ContentUpdate):
 
     now = datetime.now(timezone.utc).isoformat()
 
     fields = {
-        # SOURCE
         "SOURCE_ID": data.source_id,
 
-        # SUMMARY
-        "TITLE": data.title,
+        "TITLE": data.title.strip() if data.title else None,
         "EXCERPT": data.excerpt,
         "CONTENT_BODY": data.content_body,
 
-        # EXTRACTIONS
         "CITATIONS": normalize_array(data.citations) if data.citations is not None else None,
         "CHIFFRES": normalize_array(data.chiffres) if data.chiffres is not None else None,
         "ACTEURS_CITES": normalize_array(data.acteurs_cites) if data.acteurs_cites is not None else None,
+
         "CONCEPTS_LLM": normalize_array(data.concepts_llm) if data.concepts_llm is not None else None,
         "SOLUTIONS_LLM": normalize_array(data.solutions_llm) if data.solutions_llm is not None else None,
         "TOPICS_LLM": normalize_array(data.topics_llm) if data.topics_llm is not None else None,
 
-        # 🔥 ANALYSE
         "MECANIQUE_EXPLIQUEE": data.mecanique_expliquee,
         "ENJEU_STRATEGIQUE": data.enjeu_strategique,
         "POINT_DE_FRICTION": data.point_de_friction,
         "SIGNAL_ANALYTIQUE": data.signal_analytique,
 
-        # SEO
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
 
-        # META
         "AUTHOR": data.author,
 
         "UPDATED_AT": now,
@@ -439,7 +433,6 @@ def update_content(id_content: str, data: ContentUpdate):
         where={"ID_CONTENT": id_content},
     )
 
-    # Relations (reset complet comme avant)
     reset_and_insert(
         TABLE_CONTENT_TOPIC,
         "ID_TOPIC",
@@ -475,7 +468,6 @@ def update_content(id_content: str, data: ContentUpdate):
         data.solutions or [],
     )
 
-    # Persons avec rôle
     client = get_bigquery_client()
 
     client.query(
