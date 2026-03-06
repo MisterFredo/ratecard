@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
@@ -6,57 +6,70 @@ from datetime import datetime
 # ============================================================
 # CREATE
 # ============================================================
+
 class SourceCreate(BaseModel):
     """
     Création d'une source éditoriale.
-    ⚠️ Champs alignés avec RATECARD_SOURCE
+    Contrat API 100% snake_case.
     """
 
-    SOURCE_ID: str
-    NAME: str
+    source_id: str = Field(..., min_length=1)
+    name: str = Field(..., min_length=1)
 
-    TYPE_SOURCE: Optional[str] = None
-    DESCRIPTION: Optional[str] = None
-    DOMAIN: Optional[str] = None
+    type_source: Optional[str] = None
+    description: Optional[str] = None
+    domain: Optional[str] = None
 
-    AUTHOR: Optional[str] = None
-    AUTHOR_PROFILE: Optional[str] = None
+    author: Optional[str] = None
+    author_profile: Optional[str] = None
+
+    class Config:
+        extra = "forbid"
 
 
 # ============================================================
 # UPDATE
 # ============================================================
+
 class SourceUpdate(BaseModel):
     """
     Mise à jour partielle d'une source.
     """
 
-    NAME: Optional[str] = None
+    name: Optional[str] = None
 
-    TYPE_SOURCE: Optional[str] = None
-    DESCRIPTION: Optional[str] = None
-    DOMAIN: Optional[str] = None
+    type_source: Optional[str] = None
+    description: Optional[str] = None
+    domain: Optional[str] = None
 
-    AUTHOR: Optional[str] = None
-    AUTHOR_PROFILE: Optional[str] = None
+    author: Optional[str] = None
+    author_profile: Optional[str] = None
+
+    class Config:
+        extra = "forbid"
 
 
 # ============================================================
 # OUT
 # ============================================================
+
 class SourceOut(BaseModel):
     """
-    Représentation alignée avec RATECARD_SOURCE.
+    Représentation retournée par l’API.
+    Snake_case strict.
     """
 
-    SOURCE_ID: str
-    NAME: str
+    source_id: str
+    name: str
 
-    TYPE_SOURCE: Optional[str] = None
-    DESCRIPTION: Optional[str] = None
-    DOMAIN: Optional[str] = None
+    type_source: Optional[str] = None
+    description: Optional[str] = None
+    domain: Optional[str] = None
 
-    AUTHOR: Optional[str] = None
-    AUTHOR_PROFILE: Optional[str] = None
+    author: Optional[str] = None
+    author_profile: Optional[str] = None
 
-    CREATED_AT: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        extra = "forbid"
