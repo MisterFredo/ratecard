@@ -25,7 +25,7 @@ router = APIRouter()
 def create_route(data: SourceCreate):
     try:
         source_id = create_source(data)
-        return {"status": "ok", "SOURCE_ID": source_id}
+        return {"status": "ok", "source_id": source_id}
     except Exception as e:
         raise HTTPException(400, f"Erreur création source : {e}")
 
@@ -75,7 +75,7 @@ def update_route(source_id: str, data: SourceUpdate):
                 "Source introuvable ou aucune modification"
             )
 
-        return {"status": "ok", "UPDATED": True}
+        return {"status": "ok", "updated": True}
 
     except HTTPException:
         raise
@@ -94,7 +94,7 @@ def delete_route(source_id: str):
         if not deleted:
             raise HTTPException(404, "Source introuvable")
 
-        return {"status": "ok", "DELETED": True}
+        return {"status": "ok", "deleted": True}
 
     except HTTPException:
         raise
