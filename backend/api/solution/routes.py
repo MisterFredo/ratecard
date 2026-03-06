@@ -9,6 +9,7 @@ from core.solution.service import (
     list_solutions,
     get_solution,
     update_solution,
+    delete_solution,
 )
 
 router = APIRouter()
@@ -71,3 +72,21 @@ def update_route(id_solution: str, data: SolutionUpdate):
         raise
     except Exception as e:
         raise HTTPException(400, f"Erreur mise à jour solution : {e}")
+
+# ============================================================
+# DELETE
+# ============================================================
+@router.delete("/{id_solution}")
+def delete_route(id_solution: str):
+    try:
+        deleted = delete_solution(id_solution)
+
+        if not deleted:
+            raise HTTPException(404, "Solution introuvable")
+
+        return {"status": "ok", "deleted": True}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Erreur suppression solution : {e}")
