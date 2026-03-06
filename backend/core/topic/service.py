@@ -163,3 +163,26 @@ def update_topic(id_topic: str, data: TopicUpdate) -> bool:
         fields=bq_values,
         where={"ID_TOPIC": id_topic},
     )
+
+def delete_topic(id_topic: str) -> bool:
+
+    existing = query_bq(
+        f"""
+        SELECT ID_TOPIC
+        FROM `{TABLE_TOPIC}`
+        WHERE ID_TOPIC = @id
+        """,
+        {"id": id_topic},
+    )
+
+    if not existing:
+        return False
+
+    return update_bq(
+        table=TABLE_TOPIC,
+        fields={
+            "IS_ACTIVE": False,
+            "UPDATED_AT": datetime.utcnow().isoformat(),
+        },
+        where={"ID_TOPIC": id_topic},
+    )
