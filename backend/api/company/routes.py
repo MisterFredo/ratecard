@@ -16,13 +16,12 @@ router = APIRouter()
 
 
 # ============================================================
-# CREATE
+# CREATE — création d'une société
 # ============================================================
 @router.post("/create")
 def create_route(data: CompanyCreate):
     """
-    Crée une société (sans visuel).
-    Contrat API snake_case.
+    Crée une société (sans aucun visuel).
     """
     try:
         company_id = create_company(data)
@@ -32,13 +31,12 @@ def create_route(data: CompanyCreate):
 
 
 # ============================================================
-# LIST
+# LIST — liste des sociétés actives (LIGHT)
 # ============================================================
 @router.get("/list")
 def list_route():
     """
     Retourne la liste des sociétés actives.
-    Doit renvoyer du snake_case.
     """
     try:
         companies = list_companies()
@@ -48,13 +46,12 @@ def list_route():
 
 
 # ============================================================
-# GET ONE
+# GET ONE — récupération complète
 # ============================================================
 @router.get("/{id_company}")
 def get_route(id_company: str):
     """
     Récupère une société complète par son ID.
-    Doit renvoyer un CompanyOut (snake_case).
     """
     try:
         company = get_company(id_company)
@@ -71,13 +68,12 @@ def get_route(id_company: str):
 
 
 # ============================================================
-# UPDATE
+# UPDATE — mise à jour
 # ============================================================
 @router.put("/update/{id_company}")
 def update_route(id_company: str, data: CompanyUpdate):
     """
     Met à jour une société existante.
-    Contrat API snake_case.
     """
     try:
         updated = update_company(id_company, data)
