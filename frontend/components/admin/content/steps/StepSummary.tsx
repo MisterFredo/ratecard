@@ -20,7 +20,7 @@ type Props = {
   chiffres: string[];
 
   acteurs: string[];
-  concepts: ConceptItem[];   // ⬅️ UPDATED
+  concepts: ConceptItem[];
   solutions: string[];
   topics: string[];
 
@@ -39,53 +39,55 @@ export default function StepSummary(props: Props) {
   const [topicsMap, setTopicsMap] = useState<Record<string, string>>({});
 
   // =====================================================
-  // LOAD TOPIC LABELS (ID → LABEL mapping)
+  // LOAD TOPIC LABELS (snake_case)
   // =====================================================
 
   useEffect(() => {
+
     async function loadTopics() {
       try {
+
         const res = await api.get("/topic/list");
         const map: Record<string, string> = {};
 
         (res.topics || []).forEach((t: any) => {
-          map[t.ID_TOPIC] = t.LABEL;
+          map[t.id_topic] = t.label;
         });
 
         setTopicsMap(map);
+
       } catch (e) {
         console.error("Erreur chargement topics", e);
       }
     }
 
     loadTopics();
+
   }, []);
 
   // =====================================================
-  // Helpers
+  // HELPERS
   // =====================================================
 
   function normalizeList(input: any): string[] {
+
     if (!input) return [];
 
     if (Array.isArray(input)) {
+
       return input
         .flatMap((item) => {
+
           if (typeof item === "string") {
             return item.split(/[,;\n]/);
           }
+
           if (typeof item === "object" && item !== null) {
-            return (
-              item.label ||
-              item.LABEL ||
-              item.name ||
-              item.NAME ||
-              item.title ||
-              item.TITLE ||
-              ""
-            );
+            return item.label || item.name || item.title || "";
           }
+
           return [];
+
         })
         .map((x) => String(x).trim())
         .filter(Boolean);
@@ -110,7 +112,7 @@ export default function StepSummary(props: Props) {
   }
 
   // =====================================================
-  // Generate (LLM)
+  // GENERATE (LLM)
   // =====================================================
 
   async function generate() {
@@ -136,9 +138,7 @@ export default function StepSummary(props: Props) {
 
         acteurs: normalizeList(res.acteurs_cites),
 
-        // ⬇️ Concepts déjà structurés côté back
         concepts: res.concepts || [],
-
         solutions: normalizeList(res.solutions),
         topics: res.topics || [],
 
@@ -255,7 +255,7 @@ export default function StepSummary(props: Props) {
               props.onChange({
                 concepts: items.map((label: string) => ({
                   label,
-                  topic_id: "", // L’admin pourra corriger ensuite si besoin
+                  topic_id: "",
                 })),
               })
             }
@@ -361,5 +361,7 @@ export default function StepSummary(props: Props) {
       </button>
 
     </div>
+
   );
+
 }
