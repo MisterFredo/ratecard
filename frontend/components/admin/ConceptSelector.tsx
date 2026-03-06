@@ -50,8 +50,8 @@ export default function ConceptSelector({
 
         const mappedOptions: SelectOption[] =
           (res.concepts || []).map((c: any) => ({
-            id: c.ID_CONCEPT,
-            label: c.TITLE,
+            id: c.id_concept,
+            label: c.title,
           }));
 
         setOptions(mappedOptions);
@@ -90,7 +90,7 @@ export default function ConceptSelector({
       onChange(filtered);
     }
 
-  }, [options]);
+  }, [options]); // eslint-disable-line
 
   /* ---------------------------------------------------------
      HANDLE CHANGE
