@@ -40,19 +40,16 @@ export default function TopicSelector({ values, onChange }: Props) {
         const res = await api.get("/topic/list");
         const topics = res.topics || [];
 
-        // ─────────────────────────────────────────
-        // SPLIT PAR AXE (SANS EXCLUSION)
-        // ─────────────────────────────────────────
         const businessTopics = topics.filter(
-          (t: any) => t.TOPIC_AXIS === "BUSINESS"
+          (t: any) => t.topic_axis === "BUSINESS"
         );
 
         const fieldTopics = topics.filter(
-          (t: any) => t.TOPIC_AXIS === "FIELD"
+          (t: any) => t.topic_axis === "FIELD"
         );
 
         const otherTopics = topics.filter(
-          (t: any) => !t.TOPIC_AXIS
+          (t: any) => !t.topic_axis
         );
 
         const groupedOptions: SelectOption[] = [
@@ -64,8 +61,8 @@ export default function TopicSelector({ values, onChange }: Props) {
                   disabled: true,
                 },
                 ...businessTopics.map((t: any) => ({
-                  id: t.ID_TOPIC,
-                  label: t.LABEL,
+                  id: t.id_topic,
+                  label: t.label,
                 })),
               ]
             : []),
@@ -78,8 +75,8 @@ export default function TopicSelector({ values, onChange }: Props) {
                   disabled: true,
                 },
                 ...fieldTopics.map((t: any) => ({
-                  id: t.ID_TOPIC,
-                  label: t.LABEL,
+                  id: t.id_topic,
+                  label: t.label,
                 })),
               ]
             : []),
@@ -92,8 +89,8 @@ export default function TopicSelector({ values, onChange }: Props) {
                   disabled: true,
                 },
                 ...otherTopics.map((t: any) => ({
-                  id: t.ID_TOPIC,
-                  label: t.LABEL,
+                  id: t.id_topic,
+                  label: t.label,
                 })),
               ]
             : []),
