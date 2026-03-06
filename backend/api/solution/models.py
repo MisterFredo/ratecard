@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
@@ -6,26 +6,37 @@ from datetime import datetime
 # ============================================================
 # CREATE
 # ============================================================
+
 class SolutionCreate(BaseModel):
     """
     Création d'une solution.
+    Contrat 100% snake_case côté API.
     """
-    name: str
+
+    name: str = Field(..., min_length=1)
+
     id_company: Optional[str] = None
     description: Optional[str] = None
-    content: str
 
-    status: Optional[str] = "DRAFT"
-    vectorise: Optional[bool] = False
+    content: str = Field(..., min_length=1)
+
+    status: str = "DRAFT"
+    vectorise: bool = False
+
+    class Config:
+        extra = "forbid"
 
 
 # ============================================================
 # UPDATE
 # ============================================================
+
 class SolutionUpdate(BaseModel):
     """
     Mise à jour partielle d'une solution.
+    Tous les champs sont optionnels.
     """
+
     name: Optional[str] = None
     id_company: Optional[str] = None
     description: Optional[str] = None
@@ -34,22 +45,32 @@ class SolutionUpdate(BaseModel):
     status: Optional[str] = None
     vectorise: Optional[bool] = None
 
+    class Config:
+        extra = "forbid"
+
 
 # ============================================================
 # OUT
 # ============================================================
+
 class SolutionOut(BaseModel):
     """
-    Représentation alignée côté API (snake_case).
+    Représentation retournée par l’API.
+    Snake_case strict.
     """
+
     id_solution: str
     name: str
+
     id_company: Optional[str] = None
     description: Optional[str] = None
     content: str
 
-    status: Optional[str] = None
-    vectorise: Optional[bool] = False
+    status: str
+    vectorise: bool
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    class Config:
+        extra = "forbid"
