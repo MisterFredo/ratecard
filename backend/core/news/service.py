@@ -1150,9 +1150,10 @@ def list_news_admin(
             IFNULL(n.PUBLISHED_AT, TIMESTAMP("1970-01-01")) DESC,
 
             CASE n.STATUS
-                WHEN 'PUBLISHED' THEN 1
-                WHEN 'DRAFT' THEN 2
-                ELSE 3
+                WHEN 'DRAFT' THEN 1
+                WHEN 'SCHEDULED' THEN 2
+                WHEN 'PUBLISHED' THEN 3
+                ELSE 4
             END,
 
             n.CREATED_AT DESC
