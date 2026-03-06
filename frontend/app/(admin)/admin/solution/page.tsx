@@ -5,21 +5,28 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 
 type Solution = {
-  ID_SOLUTION: string;
-  NAME: string;
-  COMPANY_NAME?: string | null;
-  STATUS: string;
+  id_solution: string;
+  name: string;
+  company_name?: string | null;
+  status: string;
 };
 
 export default function SolutionList() {
-  const [SOLUTIONS, setSOLUTIONS] = useState<Solution[]>([]);
+
+  const [solutions, setSolutions] = useState<Solution[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const res = await api.get("/solution/list");
-      setSOLUTIONS(res.SOLUTIONS || []);
-      setLoading(false);
+      try {
+        const res = await api.get("/solution/list");
+        setSolutions(res.solutions || []);
+      } catch (e) {
+        console.error("Erreur chargement solutions", e);
+        setSolutions([]);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -28,6 +35,7 @@ export default function SolutionList() {
 
   return (
     <div className="space-y-8">
+
       <div className="flex justify-between">
         <h1 className="text-3xl font-semibold">Solutions</h1>
         <Link
@@ -47,14 +55,16 @@ export default function SolutionList() {
             <th className="p-2 text-right">Actions</th>
           </tr>
         </thead>
+
         <tbody>
-          {SOLUTIONS.map((s) => (
-            <tr key={s.ID_SOLUTION} className="border-b">
-              <td className="p-2 font-medium">{s.NAME}</td>
+          {solutions.map((s) => (
+            <tr key={s.id_solution} className="border-b">
+
+              <td className="p-2 font-medium">{s.name}</td>
 
               <td className="p-2">
-                {s.COMPANY_NAME ? (
-                  s.COMPANY_NAME
+                {s.company_name ? (
+                  s.company_name
                 ) : (
                   <span className="text-red-600 text-xs">
                     ⚠ Non associée
@@ -62,20 +72,23 @@ export default function SolutionList() {
                 )}
               </td>
 
-              <td className="p-2">{s.STATUS}</td>
+              <td className="p-2">{s.status}</td>
 
               <td className="p-2 text-right">
                 <Link
-                  href={`/admin/solution/edit/${s.ID_SOLUTION}`}
+                  href={`/admin/solution/edit/${s.id_solution}`}
                   className="text-blue-600 underline"
                 >
                   Modifier
                 </Link>
               </td>
+
             </tr>
           ))}
         </tbody>
+
       </table>
+
     </div>
   );
 }
