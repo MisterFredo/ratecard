@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException
-from typing import Optional, List
+from typing import List
 
 from api.content.models import (
     ContentCreate,
     ContentUpdate,
     ContentPublish,
+    ContentSummaryRequest,
 )
 
 from core.content.service import (
@@ -18,7 +19,6 @@ from core.content.service import (
 )
 
 from core.content.ai import generate_summary
-
 from utils.bigquery_utils import query_bq
 
 import logging
@@ -37,7 +37,7 @@ def create_route(data: ContentCreate):
         return {"status": "ok", "id_content": content_id}
     except Exception as e:
         logger.exception("Erreur création content")
-        raise HTTPException(400, f"Erreur création content : {e}")
+        raise HTTPException(400, str(e))
 
 
 # ============================================================
@@ -50,7 +50,7 @@ def list_route():
         return {"status": "ok", "contents": contents}
     except Exception as e:
         logger.exception("Erreur liste content")
-        raise HTTPException(400, f"Erreur liste content : {e}")
+        raise HTTPException(400, str(e))
 
 
 # ============================================================
@@ -63,13 +63,13 @@ def stats_route():
         return {"status": "ok", "stats": stats}
     except Exception as e:
         logger.exception("Erreur stats content")
-        raise HTTPException(400, f"Erreur stats content : {e}")
+        raise HTTPException(400, str(e))
 
 
 # ============================================================
 # LIST SOURCES
 # ============================================================
-@router.get("/sources")
+@router.get("/source/list")
 def list_sources():
     try:
         rows = query_bq("""
@@ -81,7 +81,7 @@ def list_sources():
         return {"status": "ok", "sources": rows}
     except Exception as e:
         logger.exception("Erreur liste sources")
-        raise HTTPException(400, f"Erreur liste sources : {e}")
+        raise HTTPException(400, str(e))
 
 
 # ============================================================
@@ -94,7 +94,7 @@ def update_route(id_content: str, data: ContentUpdate):
         return {"status": "ok", "updated": True}
     except Exception as e:
         logger.exception("Erreur mise à jour content")
-        raise HTTPException(400, f"Erreur mise à jour content : {e}")
+        raise HTTPException(400, str(e))
 
 
 # ============================================================
@@ -107,7 +107,7 @@ def archive_route(id_content: str):
         return {"status": "ok", "archived": True}
     except Exception as e:
         logger.exception("Erreur archivage content")
-        raise HTTPException(400, f"Erreur archivage content : {e}")
+        raise HTTPException(400, str(e))
 
 
 # ============================================================
@@ -121,30 +121,29 @@ def publish_route(id_content: str, payload: ContentPublish):
             published_at=payload.publish_at,
         )
 
-        return {"status": "ok", "published_status": status}
+        return {
+            "status": "ok",
+            "published_status": status
+        }
 
     except Exception as e:
         logger.exception("Erreur publication content")
-        raise HTTPException(400, f"Erreur publication content : {e}")
+        raise HTTPException(400, str(e))
 
 
 # ============================================================
-# IA — GENERATE CONTENT (Résumé + Analyse en une passe)
+# IA — GENERATE CONTENT
 # ============================================================
 @router.post("/ai/generate")
-def ai_generate(payload: dict):
+def ai_generate(payload: ContentSummaryRequest):
 
-    source_id = payload.get("source_id")
-    source_text = payload.get("source_text")
-
-    if not source_text or not source_text.strip():
+    if not payload.source_text.strip():
         raise HTTPException(400, "Source manquante")
 
     try:
-
-        result = generate_summary(   # on garde le nom interne si déjà utilisé
-            source_id=source_id,
-            source_text=source_text,
+        result = generate_summary(
+            source_id=payload.source_id,
+            source_text=payload.source_text,
         )
 
         if not isinstance(result, dict):
@@ -157,7 +156,7 @@ def ai_generate(payload: dict):
 
     except Exception as e:
         logger.exception("Erreur génération contenu IA")
-        raise HTTPException(400, f"Erreur génération contenu IA : {e}")
+        raise HTTPException(400, str(e))
 
 
 # ============================================================
@@ -166,14 +165,9 @@ def ai_generate(payload: dict):
 @router.get("/{id_content}")
 def get_route(id_content: str):
 
-    try:
-        content = get_content(id_content)
+    content = get_content(id_content)
 
-        if not content:
-            raise HTTPException(404, "Content introuvable")
+    if not content:
+        raise HTTPException(404, "Content introuvable")
 
-        return {"status": "ok", "content": content}
-
-    except Exception as e:
-        logger.exception("Erreur récupération content")
-        raise HTTPException(400, f"Erreur récupération content : {e}")
+    return {"status": "ok", "content": content}
