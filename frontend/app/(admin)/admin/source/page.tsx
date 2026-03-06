@@ -132,7 +132,7 @@ export default function SourceList() {
                 <td className="px-4 py-3 text-center space-x-2">
 
                   <Link
-                    href={`/admin/source/${s.source_id}`}
+                    href={`/admin/source/edit/${s.source_id}`}
                     className="inline-flex items-center text-gray-500 hover:text-black transition"
                   >
                     <Pencil size={16} />
