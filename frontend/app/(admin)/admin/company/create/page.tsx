@@ -1,4 +1,3 @@
-// frontend/app/(admin)/admin/company/create/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -12,14 +11,14 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 const COMPANY_MEDIA_PATH = "companies";
 
 export default function CreateCompany() {
-  const [NAME, setNAME] = useState("");
-  const [DESCRIPTION, setDESCRIPTION] = useState("");
-  const [LINKEDIN_URL, setLINKEDIN_URL] = useState("");
-  const [WEBSITE_URL, setWEBSITE_URL] = useState("");
-  const [IS_PARTNER, setIS_PARTNER] = useState(false);
 
-  // --- WIKI ---
-  const [WIKI_CONTENT, setWIKI_CONTENT] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [isPartner, setIsPartner] = useState(false);
+
+  const [wikiContent, setWikiContent] = useState("");
 
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [logoFilename, setLogoFilename] = useState<string | null>(null);
@@ -29,7 +28,8 @@ export default function CreateCompany() {
   // CREATE
   // ---------------------------------------------------------
   async function save() {
-    if (!NAME.trim()) {
+
+    if (!name.trim()) {
       alert("Nom requis");
       return;
     }
@@ -37,52 +37,65 @@ export default function CreateCompany() {
     setSaving(true);
 
     try {
+
       const res = await api.post("/company/create", {
-        NAME,
-        DESCRIPTION: DESCRIPTION || null,
-        LINKEDIN_URL: LINKEDIN_URL || null,
-        WEBSITE_URL: WEBSITE_URL || null,
-        IS_PARTNER,
+        name,
+        description: description || null,
+        linkedin_url: linkedinUrl || null,
+        website_url: websiteUrl || null,
+        is_partner: isPartner,
       });
 
-      if (!res.ID_COMPANY) {
+      if (!res.id_company) {
         throw new Error("ID société manquant");
       }
 
-      const newCompanyId = res.ID_COMPANY;
+      const newCompanyId = res.id_company;
       setCompanyId(newCompanyId);
 
-      // 🔥 Si wiki rempli → update après création
-      if (WIKI_CONTENT.trim()) {
+      if (wikiContent.trim()) {
         await api.put(`/company/update/${newCompanyId}`, {
-          WIKI_CONTENT,
+          wiki_content: wikiContent,
         });
       }
 
       alert("Société créée. Vous pouvez maintenant ajouter un logo.");
+
     } catch (e) {
+
       console.error(e);
       alert("❌ Erreur création société");
+
     } finally {
+
       setSaving(false);
+
     }
+
   }
 
   // ---------------------------------------------------------
-  // RELOAD COMPANY (post upload logo)
+  // RELOAD COMPANY
   // ---------------------------------------------------------
   async function reloadCompany() {
+
     if (!companyId) return;
 
     try {
-      const res = await api.get(`/company/${companyId}`);
+
+      const c = await api.get(`/company/${companyId}`);
+
       setLogoFilename(
-        res.company?.MEDIA_LOGO_RECTANGLE_ID || null
+        c.media_logo_rectangle_id || null
       );
+
     } catch (e) {
+
       console.error(e);
       alert("❌ Erreur rechargement société");
+
     }
+
   }
 
   const rectUrl = logoFilename
@@ -94,6 +107,7 @@ export default function CreateCompany() {
   // ---------------------------------------------------------
   return (
     <div className="space-y-10">
+
       <div className="flex justify-between">
         <h1 className="text-2xl font-semibold text-ratecard-blue">
           Ajouter une société
@@ -103,51 +117,51 @@ export default function CreateCompany() {
         </Link>
       </div>
 
-      {/* INFOS DE BASE */}
       <EntityBaseForm
         values={{
-          name: NAME,
-          linkedinUrl: LINKEDIN_URL,
-          websiteUrl: WEBSITE_URL,
+          name,
+          linkedinUrl,
+          websiteUrl,
         }}
         onChange={{
-          setName: setNAME,
-          setLinkedinUrl: setLINKEDIN_URL,
-          setWebsiteUrl: setWEBSITE_URL,
+          setName,
+          setLinkedinUrl,
+          setWebsiteUrl,
         }}
       />
 
-      {/* DESCRIPTION */}
       <div className="space-y-2">
         <label className="block font-medium">
           Description (commerciale)
         </label>
-        <HtmlEditor value={DESCRIPTION} onChange={setDESCRIPTION} />
+        <HtmlEditor
+          value={description}
+          onChange={setDescription}
+        />
       </div>
 
-      {/* WIKI */}
       <div className="border-t pt-6 space-y-2">
         <h2 className="text-lg font-semibold">
           Wiki (connaissance interne / éditoriale)
         </h2>
 
         <HtmlEditor
-          value={WIKI_CONTENT}
-          onChange={setWIKI_CONTENT}
+          value={wikiContent}
+          onChange={setWikiContent}
         />
       </div>
 
-      {/* PARTENAIRE */}
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
-          checked={IS_PARTNER}
-          onChange={(e) => setIS_PARTNER(e.target.checked)}
+          checked={isPartner}
+          onChange={(e) => setIsPartner(e.target.checked)}
         />
-        <label className="text-sm">Société partenaire</label>
+        <label className="text-sm">
+          Société partenaire
+        </label>
       </div>
 
-      {/* ACTION */}
       <button
         onClick={save}
         disabled={saving}
@@ -156,7 +170,6 @@ export default function CreateCompany() {
         {saving ? "Enregistrement…" : "Créer"}
       </button>
 
-      {/* VISUEL */}
       {companyId && (
         <VisualSection
           entityId={companyId}
@@ -164,6 +177,7 @@ export default function CreateCompany() {
           onUpdated={reloadCompany}
         />
       )}
+
     </div>
   );
 }
