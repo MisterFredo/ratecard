@@ -50,14 +50,14 @@ def serialize_row(row: dict) -> dict:
 # ============================================================
 
 def create_news(data: NewsCreate) -> str:
-    if not data.ID_COMPANY:
-        raise ValueError("ID_COMPANY obligatoire")
+    if not data.id_company:
+        raise ValueError("id_company obligatoire")
 
-    if not data.TITLE or not data.TITLE.strip():
-        raise ValueError("TITLE obligatoire")
+    if not data.title or not data.title.strip():
+        raise ValueError("title obligatoire")
 
-    if data.NEWS_KIND not in ("NEWS", "BRIEF"):
-        raise ValueError("NEWS_KIND invalide (NEWS | BRIEF)")
+    if data.news_kind not in ("NEWS", "BRIEF"):
+        raise ValueError("news_kind invalide (NEWS | BRIEF)")
 
     news_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
@@ -68,7 +68,7 @@ def create_news(data: NewsCreate) -> str:
     # FALLBACK VISUEL SOCIÉTÉ
     # ------------------------------------------------------------
 
-    media_id = data.MEDIA_RECTANGLE_ID
+    media_id = data.media_rectangle_id
 
     if not media_id:
         query = f"""
@@ -83,7 +83,7 @@ def create_news(data: NewsCreate) -> str:
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
                     bigquery.ScalarQueryParameter(
-                        "company_id", "STRING", data.ID_COMPANY
+                        "company_id", "STRING", data.id_company
                     )
                 ]
             )
@@ -102,16 +102,16 @@ def create_news(data: NewsCreate) -> str:
         "ID_NEWS": news_id,
         "STATUS": "DRAFT",
         "IS_ACTIVE": True,
-        "NEWS_KIND": data.NEWS_KIND,
-        "NEWS_TYPE": data.NEWS_TYPE,
-        "ID_COMPANY": data.ID_COMPANY,
-        "TITLE": data.TITLE,
-        "EXCERPT": data.EXCERPT,
-        "BODY": data.BODY if data.NEWS_KIND == "NEWS" else None,
+        "NEWS_KIND": data.news_kind,
+        "NEWS_TYPE": data.news_type,
+        "ID_COMPANY": data.id_company,
+        "TITLE": data.title,
+        "EXCERPT": data.excerpt,
+        "BODY": data.body if data.news_kind == "NEWS" else None,
         "MEDIA_RECTANGLE_ID": media_id,
         "HAS_VISUAL": bool(media_id),
-        "SOURCE_URL": data.SOURCE_URL,
-        "AUTHOR": data.AUTHOR,
+        "SOURCE_URL": data.source_url,
+        "AUTHOR": data.author,
         "PUBLISHED_AT": None,
         "CREATED_AT": now,
         "UPDATED_AT": now,
@@ -127,36 +127,36 @@ def create_news(data: NewsCreate) -> str:
     # RELATIONS CLASSIQUES
     # ------------------------------------------------------------
 
-    if data.TOPICS:
+    if data.topics:
         insert_bq(
             TABLE_NEWS_TOPIC,
-            [{"ID_NEWS": news_id, "ID_TOPIC": tid} for tid in data.TOPICS],
+            [{"ID_NEWS": news_id, "ID_TOPIC": tid} for tid in data.topics],
         )
 
-    if data.PERSONS:
+    if data.persons:
         insert_bq(
             TABLE_NEWS_PERSON,
-            [{"ID_NEWS": news_id, "ID_PERSON": pid} for pid in data.PERSONS],
+            [{"ID_NEWS": news_id, "ID_PERSON": pid} for pid in data.persons],
         )
 
     # ------------------------------------------------------------
     # RELATIONS — CONCEPTS
     # ------------------------------------------------------------
 
-    if data.CONCEPTS:
+    if data.concepts:
         insert_bq(
             TABLE_NEWS_CONCEPT,
-            [{"ID_NEWS": news_id, "ID_CONCEPT": cid} for cid in data.CONCEPTS],
+            [{"ID_NEWS": news_id, "ID_CONCEPT": cid} for cid in data.concepts],
         )
 
     # ------------------------------------------------------------
     # RELATIONS — SOLUTIONS
     # ------------------------------------------------------------
 
-    if data.SOLUTIONS:
+    if data.solutions:
         insert_bq(
             TABLE_NEWS_SOLUTION,
-            [{"ID_NEWS": news_id, "ID_SOLUTION": sid} for sid in data.SOLUTIONS],
+            [{"ID_NEWS": news_id, "ID_SOLUTION": sid} for sid in data.solutions],
         )
 
     return news_id
@@ -386,15 +386,15 @@ def update_news(id_news: str, data: NewsUpdate):
         return True
 
     field_map = {
-        "NEWS_KIND": "NEWS_KIND",
-        "NEWS_TYPE": "NEWS_TYPE",
-        "ID_COMPANY": "ID_COMPANY",
-        "TITLE": "TITLE",
-        "EXCERPT": "EXCERPT",
-        "BODY": "BODY",
-        "MEDIA_RECTANGLE_ID": "MEDIA_RECTANGLE_ID",
-        "SOURCE_URL": "SOURCE_URL",
-        "AUTHOR": "AUTHOR",
+        "news_kind": "NEWS_KIND",
+        "news_type": "NEWS_TYPE",
+        "id_company": "ID_COMPANY",
+        "title": "TITLE",
+        "excerpt": "EXCERPT",
+        "body": "BODY",
+        "media_rectangle_id": "MEDIA_RECTANGLE_ID",
+        "source_url": "SOURCE_URL",
+        "author": "AUTHOR",
     }
 
     fields = {}
@@ -403,8 +403,8 @@ def update_news(id_news: str, data: NewsUpdate):
         if k in field_map:
             fields[field_map[k]] = v
 
-    if "MEDIA_RECTANGLE_ID" in values:
-        fields["HAS_VISUAL"] = bool(values["MEDIA_RECTANGLE_ID"])
+    if "media_rectangle_id" in values:
+        fields["HAS_VISUAL"] = bool(values["media_rectangle_id"])
 
     fields["UPDATED_AT"] = datetime.utcnow().isoformat()
 
@@ -418,7 +418,7 @@ def update_news(id_news: str, data: NewsUpdate):
     client = get_bigquery_client()
 
     # TOPICS
-    if data.TOPICS is not None:
+    if data.topics is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_TOPIC}` WHERE ID_NEWS = @id",
             job_config=bigquery.QueryJobConfig(
@@ -428,14 +428,14 @@ def update_news(id_news: str, data: NewsUpdate):
             ),
         ).result()
 
-        if data.TOPICS:
+        if data.topics:
             insert_bq(
                 TABLE_NEWS_TOPIC,
-                [{"ID_NEWS": id_news, "ID_TOPIC": tid} for tid in data.TOPICS],
+                [{"ID_NEWS": id_news, "ID_TOPIC": tid} for tid in data.topics],
             )
 
     # PERSONS
-    if data.PERSONS is not None:
+    if data.persons is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_PERSON}` WHERE ID_NEWS = @id",
             job_config=bigquery.QueryJobConfig(
@@ -445,14 +445,14 @@ def update_news(id_news: str, data: NewsUpdate):
             ),
         ).result()
 
-        if data.PERSONS:
+        if data.persons:
             insert_bq(
                 TABLE_NEWS_PERSON,
-                [{"ID_NEWS": id_news, "ID_PERSON": pid} for pid in data.PERSONS],
+                [{"ID_NEWS": id_news, "ID_PERSON": pid} for pid in data.persons],
             )
 
     # CONCEPTS
-    if data.CONCEPTS is not None:
+    if data.concepts is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_CONCEPT}` WHERE ID_NEWS = @id",
             job_config=bigquery.QueryJobConfig(
@@ -462,14 +462,14 @@ def update_news(id_news: str, data: NewsUpdate):
             ),
         ).result()
 
-        if data.CONCEPTS:
+        if data.concepts:
             insert_bq(
                 TABLE_NEWS_CONCEPT,
-                [{"ID_NEWS": id_news, "ID_CONCEPT": cid} for cid in data.CONCEPTS],
+                [{"ID_NEWS": id_news, "ID_CONCEPT": cid} for cid in data.concepts],
             )
 
     # SOLUTIONS
-    if data.SOLUTIONS is not None:
+    if data.solutions is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_SOLUTION}` WHERE ID_NEWS = @id",
             job_config=bigquery.QueryJobConfig(
@@ -479,13 +479,15 @@ def update_news(id_news: str, data: NewsUpdate):
             ),
         ).result()
 
-        if data.SOLUTIONS:
+        if data.solutions:
             insert_bq(
                 TABLE_NEWS_SOLUTION,
-                [{"ID_NEWS": id_news, "ID_SOLUTION": sid} for sid in data.SOLUTIONS],
+                [{"ID_NEWS": id_news, "ID_SOLUTION": sid} for sid in data.solutions],
             )
 
     return True
+
+
 # ============================================================
 # ARCHIVE / DELETE
 # ============================================================
