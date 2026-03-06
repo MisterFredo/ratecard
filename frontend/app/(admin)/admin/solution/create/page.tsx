@@ -11,6 +11,7 @@ type Company = {
 };
 
 export default function CreateSolution() {
+
   const [NAME, setNAME] = useState("");
   const [DESCRIPTION, setDESCRIPTION] = useState("");
   const [CONTENT, setCONTENT] = useState("");
@@ -24,17 +25,24 @@ export default function CreateSolution() {
 
   useEffect(() => {
     async function loadCompanies() {
-      const res = await api.get("/company/list");
-      setCOMPANIES(res.COMPANIES || []);
+      try {
+        const res = await api.get("/company/list");
+        setCOMPANIES(res.companies || []);
+      } catch (e) {
+        console.error("Erreur chargement sociétés", e);
+        setCOMPANIES([]);
+      }
     }
     loadCompanies();
   }, []);
 
   async function save() {
+
     if (!NAME.trim()) return alert("Nom requis");
     if (!CONTENT.trim()) return alert("Contenu requis");
 
     try {
+
       setLoading(true);
 
       await api.post("/solution/create", {
@@ -52,16 +60,22 @@ export default function CreateSolution() {
       setCONTENT("");
       setSTATUS("DRAFT");
       setID_COMPANY(null);
+
     } catch (e) {
+
       console.error(e);
       alert("❌ Erreur création");
+
     } finally {
+
       setLoading(false);
+
     }
   }
 
   return (
     <div className="space-y-10">
+
       <div className="flex justify-between">
         <h1 className="text-2xl font-semibold">
           Ajouter une solution
@@ -131,6 +145,7 @@ export default function CreateSolution() {
       >
         {loading ? "Création…" : "Créer"}
       </button>
+
     </div>
   );
 }
