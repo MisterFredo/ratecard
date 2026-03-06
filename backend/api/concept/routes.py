@@ -19,7 +19,7 @@ router = APIRouter()
 
 
 # ============================================================
-# CREATE
+# CREATE — création d'un concept
 # ============================================================
 @router.post("/create")
 def create_route(data: ConceptCreate):
@@ -31,13 +31,13 @@ def create_route(data: ConceptCreate):
 
 
 # ============================================================
-# LIST
+# LIST — liste des concepts (avec filtre topic optionnel)
 # ============================================================
 @router.get("/list")
 def list_route(topic_ids: Optional[str] = Query(None)):
     """
     topic_ids:
-        - None → retourne tous les concepts
+        - None → retourne tous les concepts (comportement actuel)
         - "id1,id2" → filtre sur ces topics
     """
     try:
@@ -54,7 +54,7 @@ def list_route(topic_ids: Optional[str] = Query(None)):
 
 
 # ============================================================
-# GET ONE
+# GET ONE — récupération d'un concept
 # ============================================================
 @router.get("/{id_concept}", response_model=ConceptOut)
 def get_route(id_concept: str):
@@ -73,7 +73,7 @@ def get_route(id_concept: str):
 
 
 # ============================================================
-# UPDATE
+# UPDATE — mise à jour d'un concept existant
 # ============================================================
 @router.put("/update/{id_concept}")
 def update_route(id_concept: str, data: ConceptUpdate):
@@ -95,7 +95,7 @@ def update_route(id_concept: str, data: ConceptUpdate):
 
 
 # ============================================================
-# DELETE
+# DELETE — suppression d'un concept
 # ============================================================
 @router.delete("/{id_concept}")
 def delete_route(id_concept: str):
