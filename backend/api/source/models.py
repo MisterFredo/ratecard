@@ -49,14 +49,6 @@ class SourceUpdate(BaseModel):
     class Config:
         extra = "forbid"
 
-class SourceListOut(BaseModel):
-    status: str
-    sources: List[SourceOut]
-
-    class Config:
-        extra = "forbid"
-
-
 # ============================================================
 # OUT
 # ============================================================
@@ -78,6 +70,13 @@ class SourceOut(BaseModel):
     author_profile: Optional[str] = None
 
     created_at: Optional[datetime] = None
+
+    class Config:
+        extra = "forbid"
+
+class SourceListOut(BaseModel):
+    status: str
+    sources: List[SourceOut]
 
     class Config:
         extra = "forbid"
