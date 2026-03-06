@@ -175,3 +175,17 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
         fields=bq_values,
         where={"ID_COMPANY": id_company},
     )
+
+# ============================================================
+# DELETE COMPANY (SOFT DELETE)
+# ============================================================
+def delete_company(id_company: str) -> bool:
+
+    return update_bq(
+        table=TABLE_COMPANY,
+        fields={
+            "IS_ACTIVE": False,
+            "UPDATED_AT": datetime.utcnow().isoformat(),
+        },
+        where={"ID_COMPANY": id_company},
+    )
