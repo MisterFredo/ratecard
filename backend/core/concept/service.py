@@ -54,37 +54,7 @@ def list_concepts(topic_ids: Optional[List[str]] = None):
 
     client = get_bigquery_client()
 
-    if topic_ids:
-        sql = f"""
-            SELECT
-                ID_CONCEPT,
-                TITLE,
-                DESCRIPTION,
-                STATUS,
-                VECTORISE,
-                ID_TOPIC,
-                CREATED_AT,
-                UPDATED_AT
-            FROM `{TABLE_CONCEPT}`
-            WHERE COALESCE(STATUS, 'DRAFT') != 'ARCHIVED'
-              AND ID_TOPIC IN UNNEST(@topic_ids)
-            ORDER BY TITLE ASC
-        """
-
-        job_config = bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ArrayQueryParameter(
-                    "topic_ids",
-                    "STRING",
-                    topic_ids
-                )
-            ]
-        )
-
-        rows = client.query(sql, job_config=job_config).result()
-        return [dict(row) for row in rows]
-
-    sql = f"""
+    base_sql = f"""
         SELECT
             ID_CONCEPT,
             TITLE,
@@ -96,18 +66,57 @@ def list_concepts(topic_ids: Optional[List[str]] = None):
             UPDATED_AT
         FROM `{TABLE_CONCEPT}`
         WHERE COALESCE(STATUS, 'DRAFT') != 'ARCHIVED'
-        ORDER BY TITLE ASC
     """
 
-    return query_bq(sql)
+    if topic_ids:
+        base_sql += " AND ID_TOPIC IN UNNEST(@topic_ids)"
+
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ArrayQueryParameter(
+                    "topic_ids",
+                    "STRING",
+                    topic_ids
+                )
+            ]
+        )
+
+        rows = client.query(base_sql + " ORDER BY TITLE ASC", job_config=job_config).result()
+    else:
+        rows = query_bq(base_sql + " ORDER BY TITLE ASC")
+
+    # 🔥 MAPPING UPPER → snake_case
+    return [
+        {
+            "id_concept": r["ID_CONCEPT"],
+            "title": r["TITLE"],
+            "description": r["DESCRIPTION"],
+            "status": r["STATUS"],
+            "vectorise": r["VECTORISE"],
+            "id_topic": r["ID_TOPIC"],
+            "created_at": r["CREATED_AT"],
+            "updated_at": r["UPDATED_AT"],
+        }
+        for r in rows
+    ]
 
 
 # ============================================================
 # GET ONE CONCEPT
 # ============================================================
 def get_concept(concept_id: str):
+
     sql = f"""
-        SELECT *
+        SELECT
+            ID_CONCEPT,
+            TITLE,
+            DESCRIPTION,
+            CONTENT,
+            STATUS,
+            VECTORISE,
+            ID_TOPIC,
+            CREATED_AT,
+            UPDATED_AT
         FROM `{TABLE_CONCEPT}`
         WHERE ID_CONCEPT = @id
         LIMIT 1
@@ -118,8 +127,20 @@ def get_concept(concept_id: str):
     if not rows:
         return None
 
-    return rows[0]
+    r = rows[0]
 
+    # 🔥 MAPPING UPPER → snake_case
+    return {
+        "id_concept": r["ID_CONCEPT"],
+        "title": r["TITLE"],
+        "description": r["DESCRIPTION"],
+        "content": r["CONTENT"],
+        "status": r["STATUS"],
+        "vectorise": r["VECTORISE"],
+        "id_topic": r["ID_TOPIC"],
+        "created_at": r["CREATED_AT"],
+        "updated_at": r["UPDATED_AT"],
+    }
 
 # ============================================================
 # UPDATE CONCEPT
