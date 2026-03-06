@@ -52,8 +52,8 @@ def create_route(data: NewsCreate):
         news_id = create_news(data)
 
         return {
-            "STATUS": "OK",
-            "ID_NEWS": news_id,
+            "status": "ok",
+            "id_news": news_id,
         }
 
     except Exception as e:
