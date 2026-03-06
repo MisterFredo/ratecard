@@ -23,10 +23,12 @@ def create_route(data: SolutionCreate):
     """
     try:
         solution_id = create_solution(data)
+
         return {
-            "STATUS": "OK",
-            "ID_SOLUTION": solution_id,
+            "status": "ok",
+            "id_solution": solution_id,
         }
+
     except Exception as e:
         raise HTTPException(400, f"Erreur création solution : {e}")
 
@@ -41,10 +43,12 @@ def list_route():
     """
     try:
         solutions = list_solutions()
+
         return {
-            "STATUS": "OK",
-            "SOLUTIONS": solutions,
+            "status": "ok",
+            "solutions": solutions,
         }
+
     except Exception as e:
         raise HTTPException(400, f"Erreur liste solutions : {e}")
 
@@ -52,36 +56,37 @@ def list_route():
 # ============================================================
 # GET ONE
 # ============================================================
-@router.get("/{ID_SOLUTION}")
-def get_route(ID_SOLUTION: str):
+@router.get("/{id_solution}")
+def get_route(id_solution: str):
     """
     Récupère une solution par son ID.
     """
-    solution = get_solution(ID_SOLUTION)
+    solution = get_solution(id_solution)
 
     if not solution:
         raise HTTPException(404, "Solution introuvable")
 
     return {
-        "STATUS": "OK",
-        "SOLUTION": solution,
+        "status": "ok",
+        "solution": solution,
     }
 
 
 # ============================================================
 # UPDATE
 # ============================================================
-@router.put("/update/{ID_SOLUTION}")
-def update_route(ID_SOLUTION: str, data: SolutionUpdate):
+@router.put("/update/{id_solution}")
+def update_route(id_solution: str, data: SolutionUpdate):
     """
     Met à jour une solution existante.
     """
     try:
-        updated = update_solution(ID_SOLUTION, data)
+        updated = update_solution(id_solution, data)
 
         return {
-            "STATUS": "OK",
-            "UPDATED": updated,
+            "status": "ok",
+            "updated": updated,
         }
+
     except Exception as e:
         raise HTTPException(400, f"Erreur mise à jour solution : {e}")
