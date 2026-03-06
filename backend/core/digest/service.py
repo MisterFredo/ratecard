@@ -215,14 +215,14 @@ def _search_analyses_digest(
         where_clauses.append("C.PUBLISHED_AT < @cursor")
         params["cursor"] = cursor
 
-    # Period filter
+    # Period filter (ALIGNEMENT ALIAS)
     if period == "7d":
         where_clauses.append(
-            "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
+            "DATE(C.PUBLISHED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
         )
     elif period == "30d":
         where_clauses.append(
-            "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
+            "DATE(C.PUBLISHED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
         )
 
     where_sql = " AND ".join(where_clauses)
