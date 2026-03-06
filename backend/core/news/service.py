@@ -1063,24 +1063,42 @@ def list_news_admin(
 
         ORDER BY
             
-            -- 1️⃣ Date de publication (les plus récentes en haut)
             IFNULL(n.PUBLISHED_AT, TIMESTAMP("1970-01-01")) DESC,
 
-            -- 2️⃣ Priorité aux statuts (publié > draft > autres)
             CASE n.STATUS
                 WHEN 'PUBLISHED' THEN 1
                 WHEN 'DRAFT' THEN 2
                 ELSE 3
             END,
 
-            -- 3️⃣ Sinon fallback sur date de création
             n.CREATED_AT DESC
 
         LIMIT @limit
         OFFSET @offset
     """
 
-    return query_bq(sql, params)
+    rows = query_bq(sql, params)
+
+    # ---------------------------
+    # MAPPING API (snake_case)
+    # ---------------------------
+
+    return [
+        {
+            "id_news": r["ID_NEWS"],
+            "title": r["TITLE"],
+            "status": r["STATUS"],
+            "published_at": (
+                r["PUBLISHED_AT"].isoformat()
+                if r.get("PUBLISHED_AT")
+                else None
+            ),
+            "news_kind": r["NEWS_KIND"],
+            "news_type": r.get("NEWS_TYPE"),
+            "company_name": r.get("COMPANY_NAME"),
+        }
+        for r in rows
+    ]
 
 
 def get_news_admin_stats():
