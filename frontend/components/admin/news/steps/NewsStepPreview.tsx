@@ -35,17 +35,17 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
   if (loading) return <p>Chargement…</p>;
   if (!news) return <p>Contenu introuvable</p>;
 
-  const newsType: NewsType = news.NEWS_TYPE || "NEWS";
+  const newsType: NewsType = news.news_type || "NEWS";
 
   /* ---------------------------------------------------------
      VISUEL — uniquement pertinent pour NEWS
   --------------------------------------------------------- */
   const visualSrc =
     newsType === "NEWS"
-      ? news.MEDIA_RECTANGLE_ID
-        ? `${GCS_BASE_URL}/news/${news.MEDIA_RECTANGLE_ID}`
-        : news.company?.MEDIA_LOGO_RECTANGLE_ID
-        ? `${GCS_BASE_URL}/companies/${news.company.MEDIA_LOGO_RECTANGLE_ID}`
+      ? news.media_rectangle_id
+        ? `${GCS_BASE_URL}/news/${news.media_rectangle_id}`
+        : news.company?.media_logo_rectangle_id
+        ? `${GCS_BASE_URL}/companies/${news.company.media_logo_rectangle_id}`
         : null
       : null;
 
@@ -60,7 +60,7 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
       {visualSrc && (
         <img
           src={visualSrc}
-          alt={news.TITLE}
+          alt={news.title}
           className="w-full max-h-[260px] object-cover border rounded"
         />
       )}
@@ -68,24 +68,24 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
       {/* SOCIÉTÉ */}
       {news.company && (
         <p className="text-sm text-gray-500">
-          Société : <strong>{news.company.NAME}</strong>
+          Société : <strong>{news.company.name}</strong>
         </p>
       )}
 
       {/* TITRE */}
       <h2 className="text-2xl font-semibold text-gray-900">
-        {news.TITLE}
+        {news.title}
       </h2>
 
       {/* EXCERPT — TOUJOURS AFFICHÉ */}
-      {news.EXCERPT && (
+      {news.excerpt && (
         <p className="text-base font-medium text-gray-800">
-          {news.EXCERPT}
+          {news.excerpt}
         </p>
       )}
 
       {/* TEXTE LONG — NEWS UNIQUEMENT */}
-      {newsType === "NEWS" && news.BODY && (
+      {newsType === "NEWS" && news.body && (
         <div
           className="
             prose prose-sm max-w-none
@@ -99,7 +99,7 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
             hover:prose-a:underline
           "
           dangerouslySetInnerHTML={{
-            __html: news.BODY,
+            __html: news.body,
           }}
         />
       )}
@@ -109,10 +109,10 @@ export default function NewsStepPreview({ newsId, onNext }: Props) {
         <div className="flex gap-2 flex-wrap pt-2">
           {news.topics.map((t: any) => (
             <span
-              key={t.ID_TOPIC}
+              key={t.id_topic}
               className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-600"
             >
-              {t.LABEL}
+              {t.label}
             </span>
           ))}
         </div>
