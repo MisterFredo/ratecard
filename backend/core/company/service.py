@@ -18,7 +18,7 @@ TABLE_COMPANY_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_METRICS"
 
 
 # ============================================================
-# CREATE COMPANY — MAJUSCULES
+# CREATE COMPANY
 # ============================================================
 def create_company(data: CompanyCreate) -> str:
     company_id = str(uuid.uuid4())
@@ -26,12 +26,12 @@ def create_company(data: CompanyCreate) -> str:
 
     row = [{
         "ID_COMPANY": company_id,
-        "NAME": data.NAME,
-        "DESCRIPTION": data.DESCRIPTION or None,
+        "NAME": data.name,
+        "DESCRIPTION": data.description or None,
         "MEDIA_LOGO_RECTANGLE_ID": None,
-        "LINKEDIN_URL": data.LINKEDIN_URL or None,
-        "WEBSITE_URL": data.WEBSITE_URL or None,
-        "IS_PARTNER": bool(data.IS_PARTNER),
+        "LINKEDIN_URL": data.linkedin_url or None,
+        "WEBSITE_URL": data.website_url or None,
+        "IS_PARTNER": bool(data.is_partner),
         "CREATED_AT": now,
         "UPDATED_AT": now,
         "IS_ACTIVE": True,
@@ -51,7 +51,7 @@ def create_company(data: CompanyCreate) -> str:
 
 
 # ============================================================
-# LIST COMPANIES — MAJUSCULES
+# LIST COMPANIES — BQ BRUT
 # ============================================================
 def list_companies():
     sql = f"""
@@ -79,11 +79,11 @@ def list_companies():
         ORDER BY NB_ANALYSES DESC, c.NAME ASC
     """
 
-    return query_bq(sql)  # ⚠️ brut BQ
+    return query_bq(sql)
 
 
 # ============================================================
-# GET ONE COMPANY — MAJUSCULES
+# GET ONE COMPANY — BQ BRUT
 # ============================================================
 def get_company(company_id: str):
     sql = f"""
@@ -98,11 +98,11 @@ def get_company(company_id: str):
     if not rows:
         return None
 
-    return rows[0]  # ⚠️ brut BQ
+    return rows[0]
 
 
 # ============================================================
-# UPDATE COMPANY — MAJUSCULES
+# UPDATE COMPANY
 # ============================================================
 def update_company(id_company: str, data: CompanyUpdate) -> bool:
     values = data.dict(exclude_unset=True)
@@ -110,15 +110,29 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
     if not values:
         return False
 
-    # Mise à jour timestamp si WIKI_CONTENT modifié
-    if "WIKI_CONTENT" in values:
-        values["WIKI_UPDATED_AT"] = datetime.utcnow().isoformat()
-        values["WIKI_VECTORISED"] = False
+    mapping = {
+        "name": "NAME",
+        "description": "DESCRIPTION",
+        "linkedin_url": "LINKEDIN_URL",
+        "website_url": "WEBSITE_URL",
+        "is_partner": "IS_PARTNER",
+        "wiki_content": "WIKI_CONTENT",
+    }
 
-    values["UPDATED_AT"] = datetime.utcnow().isoformat()
+    bq_values = {
+        mapping[k]: v
+        for k, v in values.items()
+        if k in mapping
+    }
+
+    if "WIKI_CONTENT" in bq_values:
+        bq_values["WIKI_UPDATED_AT"] = datetime.utcnow().isoformat()
+        bq_values["WIKI_VECTORISED"] = False
+
+    bq_values["UPDATED_AT"] = datetime.utcnow().isoformat()
 
     return update_bq(
         table=TABLE_COMPANY,
-        fields=values,  # ⚠️ plus de upper()
+        fields=bq_values,
         where={"ID_COMPANY": id_company},
     )
