@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import HtmlEditor from "@/components/admin/HtmlEditor";
@@ -11,10 +10,9 @@ type Company = {
   name: string;
 };
 
-export default function EditSolution() {
+export default function EditSolution({ params }: { params: { id: string } }) {
 
-  const params = useParams();
-  const id = params?.id as string;
+  const { id } = params;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -29,21 +27,24 @@ export default function EditSolution() {
 
   const [companies, setCompanies] = useState<Company[]>([]);
 
+  /* ---------------------------------------------------------
+     LOAD
+  --------------------------------------------------------- */
   useEffect(() => {
-
-    if (!id) return;
 
     async function load() {
 
       try {
 
-        const sol = await api.get(`/solution/${id}`);
+        // ✅ aligné avec router { status, solution }
+        const res = await api.get(`/solution/${id}`);
+        const sol = res.solution;
 
-        setName(sol.name || "");
-        setDescription(sol.description || "");
-        setContent(sol.content || "");
-        setStatus(sol.status || "DRAFT");
-        setIdCompany(sol.id_company || null);
+        setName(sol?.name || "");
+        setDescription(sol?.description || "");
+        setContent(sol?.content || "");
+        setStatus(sol?.status || "DRAFT");
+        setIdCompany(sol?.id_company || null);
 
         const compRes = await api.get("/company/list");
         setCompanies(compRes.companies || []);
@@ -51,6 +52,7 @@ export default function EditSolution() {
       } catch (e) {
 
         console.error("Erreur chargement solution", e);
+        alert("❌ Erreur chargement solution");
 
       } finally {
 
@@ -64,9 +66,10 @@ export default function EditSolution() {
 
   }, [id]);
 
+  /* ---------------------------------------------------------
+     SAVE
+  --------------------------------------------------------- */
   async function save() {
-
-    if (!id) return;
 
     try {
 
@@ -85,7 +88,7 @@ export default function EditSolution() {
     } catch (e) {
 
       console.error(e);
-      alert("Erreur mise à jour");
+      alert("❌ Erreur mise à jour");
 
     } finally {
 
@@ -95,9 +98,11 @@ export default function EditSolution() {
 
   }
 
-  if (!id) return <p>Chargement…</p>;
   if (loading) return <p>Chargement…</p>;
 
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <div className="space-y-8">
 
