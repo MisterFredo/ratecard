@@ -84,7 +84,9 @@ export default function NewsStepVisual({
   }
 
   const visualSrc = mediaId
-    ? `${GCS_BASE_URL}/news/${mediaId}`
+    ? mediaId.startsWith("NEWS_")
+      ? `${GCS_BASE_URL}/news/${mediaId}`
+      : `${GCS_BASE_URL}/companies/${mediaId}`
     : companyMediaId
     ? `${GCS_BASE_URL}/companies/${companyMediaId}`
     : null;
