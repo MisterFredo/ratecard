@@ -67,7 +67,6 @@ def list_solutions():
         FROM `{TABLE_SOLUTION}` s
         LEFT JOIN `{TABLE_COMPANY}` c
           ON s.ID_COMPANY = c.ID_COMPANY
-        WHERE COALESCE(s.IS_ACTIVE, TRUE) = TRUE
         ORDER BY s.NAME ASC
     """
 
