@@ -20,6 +20,11 @@ type Props = {
   topicIds?: string[];
 };
 
+type ConceptApi = {
+  id_concept: string;
+  title: string;
+};
+
 export default function ConceptSelector({
   values,
   onChange,
@@ -36,9 +41,9 @@ export default function ConceptSelector({
 
     async function load() {
 
-      setLoading(true);
-
       try {
+
+        setLoading(true);
 
         let url = "/concept/list";
 
@@ -48,11 +53,12 @@ export default function ConceptSelector({
 
         const res = await api.get(url);
 
-        const mappedOptions: SelectOption[] =
-          (res.concepts || []).map((c: any) => ({
-            id: c.id_concept,
-            label: c.title,
-          }));
+        const concepts: ConceptApi[] = res?.concepts || [];
+
+        const mappedOptions: SelectOption[] = concepts.map((c) => ({
+          id: c.id_concept,
+          label: c.title,
+        }));
 
         setOptions(mappedOptions);
 
@@ -80,17 +86,17 @@ export default function ConceptSelector({
 
     if (!options.length || !values.length) return;
 
-    const validIds = options.map((o) => o.id);
+    const validIds = new Set(options.map((o) => o.id));
 
     const filtered = values.filter((v) =>
-      validIds.includes(v.id_concept)
+      validIds.has(v.id_concept)
     );
 
     if (filtered.length !== values.length) {
       onChange(filtered);
     }
 
-  }, [options]); // eslint-disable-line
+  }, [options]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ---------------------------------------------------------
      HANDLE CHANGE
@@ -102,13 +108,12 @@ export default function ConceptSelector({
       return;
     }
 
-    onChange(
-      selected.map((item) => ({
-        id_concept: item.id,
-        title: item.label,
-      }))
-    );
+    const mapped: Concept[] = selected.map((item) => ({
+      id_concept: item.id,
+      title: item.label,
+    }));
 
+    onChange(mapped);
   }
 
   /* ---------------------------------------------------------
@@ -135,5 +140,4 @@ export default function ConceptSelector({
       onChange={handleChange}
     />
   );
-
 }
