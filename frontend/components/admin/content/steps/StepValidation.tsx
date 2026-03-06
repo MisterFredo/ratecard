@@ -98,16 +98,16 @@ export default function StepValidation({
   // Mapping IDs → Objects
   // =========================
 
-  const selectedCompanies = allCompanies.filter((c) =>
-    companies.includes(c.id_company)
+  const selectedCompanies = allCompanies.filter((c: any) =>
+    companies.includes(c.ID_COMPANY)
   );
 
-  const selectedConcepts = allConcepts.filter((c) =>
-    concepts.includes(c.id_concept)
+  const selectedConcepts = allConcepts.filter((c: any) =>
+    concepts.includes(c.ID_CONCEPT)
   );
 
-  const selectedSolutions = allSolutions.filter((s) =>
-    solutions.includes(s.id_solution)
+  const selectedSolutions = allSolutions.filter((s: any) =>
+    solutions.includes(s.ID_SOLUTION)
   );
 
   // =========================
