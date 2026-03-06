@@ -219,7 +219,21 @@ def get_news(id_news: str):
     rows = query_bq(
         f"""
         SELECT
-            n.*,
+            n.ID_NEWS,
+            n.STATUS,
+            n.NEWS_KIND,
+            n.NEWS_TYPE,
+            n.TITLE,
+            n.EXCERPT,
+            n.BODY,
+            n.MEDIA_RECTANGLE_ID,
+            n.HAS_VISUAL,
+            n.SOURCE_URL,
+            n.AUTHOR,
+            n.PUBLISHED_AT,
+            n.CREATED_AT,
+            n.UPDATED_AT,
+            c.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
             c.IS_PARTNER
         FROM `{TABLE_NEWS}` n
@@ -234,13 +248,52 @@ def get_news(id_news: str):
     if not rows:
         return None
 
-    news = serialize_row(rows[0])
+    r = rows[0]
+
+    news = {
+        "id_news": r["ID_NEWS"],
+        "status": r.get("STATUS"),
+        "news_kind": r.get("NEWS_KIND"),
+        "news_type": r.get("NEWS_TYPE"),
+
+        "title": r.get("TITLE"),
+        "excerpt": r.get("EXCERPT"),
+        "body": r.get("BODY"),
+
+        "media_rectangle_id": r.get("MEDIA_RECTANGLE_ID"),
+        "has_visual": bool(r.get("HAS_VISUAL")),
+
+        "source_url": r.get("SOURCE_URL"),
+        "author": r.get("AUTHOR"),
+
+        "published_at": (
+            r["PUBLISHED_AT"].isoformat()
+            if r.get("PUBLISHED_AT")
+            else None
+        ),
+        "created_at": (
+            r["CREATED_AT"].isoformat()
+            if r.get("CREATED_AT")
+            else None
+        ),
+        "updated_at": (
+            r["UPDATED_AT"].isoformat()
+            if r.get("UPDATED_AT")
+            else None
+        ),
+
+        "company": {
+            "id_company": r.get("ID_COMPANY"),
+            "name": r.get("COMPANY_NAME"),
+            "is_partner": bool(r.get("IS_PARTNER")),
+        },
+    }
 
     # ------------------------------------------------------------
     # TOPICS
     # ------------------------------------------------------------
 
-    news["TOPICS"] = query_bq(
+    topic_rows = query_bq(
         f"""
         SELECT T.ID_TOPIC, T.LABEL
         FROM `{TABLE_NEWS_TOPIC}` NT
@@ -251,11 +304,19 @@ def get_news(id_news: str):
         {"id": id_news},
     )
 
+    news["topics"] = [
+        {
+            "id_topic": t["ID_TOPIC"],
+            "label": t["LABEL"],
+        }
+        for t in topic_rows
+    ]
+
     # ------------------------------------------------------------
     # PERSONS
     # ------------------------------------------------------------
 
-    news["PERSONS"] = query_bq(
+    person_rows = query_bq(
         f"""
         SELECT P.ID_PERSON, P.NAME
         FROM `{TABLE_NEWS_PERSON}` NP
@@ -266,11 +327,19 @@ def get_news(id_news: str):
         {"id": id_news},
     )
 
+    news["persons"] = [
+        {
+            "id_person": p["ID_PERSON"],
+            "name": p["NAME"],
+        }
+        for p in person_rows
+    ]
+
     # ------------------------------------------------------------
     # CONCEPTS
     # ------------------------------------------------------------
 
-    news["CONCEPTS"] = query_bq(
+    concept_rows = query_bq(
         f"""
         SELECT C.ID_CONCEPT, C.TITLE
         FROM `{TABLE_NEWS_CONCEPT}` NC
@@ -281,11 +350,19 @@ def get_news(id_news: str):
         {"id": id_news},
     )
 
+    news["concepts"] = [
+        {
+            "id_concept": c["ID_CONCEPT"],
+            "title": c["TITLE"],
+        }
+        for c in concept_rows
+    ]
+
     # ------------------------------------------------------------
     # SOLUTIONS
     # ------------------------------------------------------------
 
-    news["SOLUTIONS"] = query_bq(
+    solution_rows = query_bq(
         f"""
         SELECT S.ID_SOLUTION, S.NAME
         FROM `{TABLE_NEWS_SOLUTION}` NS
@@ -296,7 +373,17 @@ def get_news(id_news: str):
         {"id": id_news},
     )
 
+    news["solutions"] = [
+        {
+            "id_solution": s["ID_SOLUTION"],
+            "name": s["NAME"],
+        }
+        for s in solution_rows
+    ]
+
     return news
+
+
 # ============================================================
 # LIST NEWS / BRÈVES (PUBLIC)
 # ============================================================
@@ -1102,6 +1189,7 @@ def list_news_admin(
 
 
 def get_news_admin_stats():
+
     sql = f"""
         SELECT
             COUNT(*) AS TOTAL,
@@ -1114,7 +1202,8 @@ def get_news_admin_stats():
 
             COUNTIF(
                 STATUS = 'PUBLISHED'
-                AND EXTRACT(YEAR FROM PUBLISHED_AT) = EXTRACT(YEAR FROM CURRENT_TIMESTAMP())
+                AND EXTRACT(YEAR FROM PUBLISHED_AT)
+                    = EXTRACT(YEAR FROM CURRENT_TIMESTAMP())
             ) AS TOTAL_PUBLISHED_THIS_YEAR
 
         FROM `{TABLE_NEWS}`
@@ -1122,7 +1211,26 @@ def get_news_admin_stats():
 
     rows = query_bq(sql)
 
-    return rows[0] if rows else {}
+    if not rows:
+        return {
+            "total": 0,
+            "total_published": 0,
+            "total_draft": 0,
+            "total_news": 0,
+            "total_briefs": 0,
+            "total_published_this_year": 0,
+        }
+
+    r = rows[0]
+
+    return {
+        "total": r.get("TOTAL", 0) or 0,
+        "total_published": r.get("TOTAL_PUBLISHED", 0) or 0,
+        "total_draft": r.get("TOTAL_DRAFT", 0) or 0,
+        "total_news": r.get("TOTAL_NEWS", 0) or 0,
+        "total_briefs": r.get("TOTAL_BRIEVES", 0) or 0,
+        "total_published_this_year": r.get("TOTAL_PUBLISHED_THIS_YEAR", 0) or 0,
+    }
 
 
 
