@@ -13,6 +13,10 @@ router = APIRouter()
 ADMIN_EMAIL = "mister.fredo@gmail.com"
 
 
+# ============================================================
+# LOGIN / LOGOUT
+# ============================================================
+
 @router.post("/login")
 def admin_login(payload: dict, response: Response):
     email = payload.get("email")
@@ -51,11 +55,10 @@ def admin_digest_search(payload: dict):
 
     period = payload.get("period", "total")
 
-    # sécurité minimale
     if period not in ("total", "30d", "7d"):
         period = "total"
 
-    return search_digest(
+    result = search_digest(
         topics=payload.get("topics"),
         companies=payload.get("companies"),
         news_types=payload.get("news_types"),
@@ -64,6 +67,11 @@ def admin_digest_search(payload: dict):
         period=period,
     )
 
+    return {
+        "status": "ok",
+        "result": result,
+    }
+
 
 # ============================================================
 # DIGEST TEMPLATES
@@ -71,30 +79,52 @@ def admin_digest_search(payload: dict):
 
 @router.get("/digest/template")
 def admin_list_templates():
-    return list_templates()
+    templates = list_templates()
+
+    return {
+        "status": "ok",
+        "templates": templates,
+    }
 
 
 @router.get("/digest/template/{template_id}")
 def admin_get_template(template_id: str):
     tpl = get_template(template_id)
+
     if not tpl:
         raise HTTPException(404, "Template introuvable")
-    return tpl
+
+    return {
+        "status": "ok",
+        "template": tpl,
+    }
 
 
 @router.post("/digest/template")
 def admin_create_template(payload: dict):
     template_id = create_template(payload)
-    return {"id_template": template_id}
+
+    return {
+        "status": "ok",
+        "id_template": template_id,
+    }
 
 
 @router.put("/digest/template/{template_id}")
 def admin_update_template(template_id: str, payload: dict):
     update_template(template_id, payload)
-    return {"status": "ok"}
+
+    return {
+        "status": "ok",
+        "updated": True,
+    }
 
 
 @router.delete("/digest/template/{template_id}")
 def admin_delete_template(template_id: str):
     delete_template(template_id)
-    return {"status": "ok", "deleted": True}
+
+    return {
+        "status": "ok",
+        "deleted": True,
+    }
