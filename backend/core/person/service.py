@@ -99,22 +99,36 @@ def get_person(person_id: str):
 # UPDATE PERSON — DATA + MEDIA (POST-CREATION)
 # ============================================================
 def update_person(id_person: str, data: PersonUpdate) -> bool:
-    """
-    Met à jour une personne existante.
 
-    Utilise UPDATE (pas de load job).
-    """
     values = data.dict(exclude_unset=True)
 
     if not values:
         return False
 
-    values["updated_at"] = datetime.utcnow().isoformat()
+    now = datetime.utcnow().isoformat()
+
+    mapping = {
+        "name": "NAME",
+        "id_company": "ID_COMPANY",
+        "title": "TITLE",
+        "description": "DESCRIPTION",
+        "linkedin_url": "LINKEDIN_URL",
+
+        # 🔑 ALIGNEMENT MEDIA
+        "media_picture_square_id": "MEDIA_PORTRAIT_ID",
+        "media_picture_rectangle_id": "MEDIA_PORTRAIT_ID",
+    }
+
+    bq_values = {
+        mapping[k]: v
+        for k, v in values.items()
+        if k in mapping
+    }
+
+    bq_values["UPDATED_AT"] = now
 
     return update_bq(
         table=TABLE_PERSON,
-        fields={k.upper(): v for k, v in values.items()},
+        fields=bq_values,
         where={"ID_PERSON": id_person},
     )
-
-
