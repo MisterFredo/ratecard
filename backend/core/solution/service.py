@@ -29,8 +29,8 @@ def create_solution(data: SolutionCreate) -> str:
         "ID_COMPANY": data.id_company,
         "DESCRIPTION": data.description,
         "CONTENT": data.content,
-        "STATUS": data.status or "DRAFT",
-        "VECTORISE": data.vectorise or False,
+        "STATUS": data.status,
+        "VECTORISE": data.vectorise,
         "CREATED_AT": now,
         "UPDATED_AT": now,
     }]
@@ -46,7 +46,6 @@ def create_solution(data: SolutionCreate) -> str:
     ).result()
 
     return solution_id
-
 
 # ============================================================
 # LIST SOLUTIONS
@@ -166,3 +165,30 @@ def update_solution(id_solution: str, data: SolutionUpdate) -> bool:
         fields=mapped,
         where={"ID_SOLUTION": id_solution},
     )
+
+# ============================================================
+# DELETE SOLUTION
+# ============================================================
+def delete_solution(id_solution: str) -> bool:
+
+    existing = query_bq(
+        f"""
+        SELECT ID_SOLUTION
+        FROM `{TABLE_SOLUTION}`
+        WHERE ID_SOLUTION = @id
+        """,
+        {"id": id_solution},
+    )
+
+    if not existing:
+        return False
+
+    query_bq(
+        f"""
+        DELETE FROM `{TABLE_SOLUTION}`
+        WHERE ID_SOLUTION = @id
+        """,
+        {"id": id_solution},
+    )
+
+    return True
