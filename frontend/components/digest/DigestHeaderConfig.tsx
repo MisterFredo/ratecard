@@ -38,22 +38,24 @@ export default function DigestHeaderConfig({
       try {
         const res = await api.get("/company/list");
 
-        const mapped: CompanyOption[] = (res?.companies || []).map(
-          (c: {
-            ID_COMPANY: string;
-            NAME: string;
-            MEDIA_LOGO_RECTANGLE_ID?: string | null;
-          }) => ({
-            id_company: c.ID_COMPANY,
-            name: c.NAME,
-            media_logo_rectangle_id:
-              c.MEDIA_LOGO_RECTANGLE_ID ?? null,
-          })
-        );
+        // Support ancien format { companies: [...] }
+        // et nouveau format direct [...]
+        const raw = Array.isArray(res)
+          ? res
+          : res?.companies || [];
+
+        const mapped: CompanyOption[] = raw.map((c: any) => ({
+          id_company: c.id_company ?? c.ID_COMPANY,
+          name: c.name ?? c.NAME,
+          media_logo_rectangle_id:
+            c.media_logo_rectangle_id ??
+            c.MEDIA_LOGO_RECTANGLE_ID ??
+            null,
+        }));
 
         setCompanies(mapped);
 
-        // 🔥 Auto-select Ratecard si rien sélectionné
+        // Auto-select Ratecard si rien sélectionné
         if (!headerConfig.headerCompany && mapped.length > 0) {
           const ratecard =
             mapped.find((c) =>
