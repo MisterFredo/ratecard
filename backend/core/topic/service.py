@@ -85,15 +85,14 @@ def list_topics():
 
     return [
         {
-            "ID_TOPIC": r["ID_TOPIC"],
-            "LABEL": r["LABEL"],
-            "TOPIC_AXIS": r.get("TOPIC_AXIS"),  # ⬅️ NOUVEAU
-            "NB_ANALYSES": r["NB_ANALYSES"],
-            "DELTA_30D": r["DELTA_30D"],
+            "id_topic": r["ID_TOPIC"],
+            "label": r["LABEL"],
+            "topic_axis": r.get("TOPIC_AXIS"),
+            "nb_analyses": r["NB_ANALYSES"],
+            "delta_30d": r["DELTA_30D"],
         }
-        for r in rows
+    for r in rows
     ]
-
 
 # ============================================================
 # GET ONE TOPIC
