@@ -79,13 +79,26 @@ def list_companies():
         ORDER BY NB_ANALYSES DESC, c.NAME ASC
     """
 
-    return query_bq(sql)
+    rows = query_bq(sql)
 
-
+    return [
+        {
+            "id_company": r["ID_COMPANY"],
+            "name": r["NAME"],
+            "is_partner": r["IS_PARTNER"],
+            "media_logo_rectangle_id": r["MEDIA_LOGO_RECTANGLE_ID"],
+            "nb_analyses": r["NB_ANALYSES"],
+            "delta_30d": r["DELTA_30D"],
+            "has_description": r["HAS_DESCRIPTION"],
+            "has_wiki": r["HAS_WIKI"],
+        }
+        for r in rows
+    ]
 # ============================================================
 # GET ONE COMPANY — BQ BRUT
 # ============================================================
 def get_company(company_id: str):
+
     sql = f"""
         SELECT *
         FROM `{TABLE_COMPANY}`
@@ -98,8 +111,34 @@ def get_company(company_id: str):
     if not rows:
         return None
 
-    return rows[0]
+    r = rows[0]
 
+    return {
+        "id_company": r["ID_COMPANY"],
+        "name": r["NAME"],
+        "description": r.get("DESCRIPTION"),
+
+        # Wiki
+        "wiki_content": r.get("WIKI_CONTENT"),
+        "wiki_source_id": r.get("WIKI_SOURCE_ID"),
+        "wiki_updated_at": r.get("WIKI_UPDATED_AT"),
+        "wiki_vectorised": r.get("WIKI_VECTORISED", False),
+
+        # Media (intact)
+        "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID"),
+
+        # Liens
+        "linkedin_url": r.get("LINKEDIN_URL"),
+        "website_url": r.get("WEBSITE_URL"),
+
+        # Statut
+        "is_partner": r.get("IS_PARTNER", False),
+        "is_active": r.get("IS_ACTIVE", True),
+
+        # Dates
+        "created_at": r.get("CREATED_AT"),
+        "updated_at": r.get("UPDATED_AT"),
+    }
 
 # ============================================================
 # UPDATE COMPANY
