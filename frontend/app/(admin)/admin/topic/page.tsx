@@ -7,11 +7,11 @@ import { api } from "@/lib/api";
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 type TopicRow = {
-  ID_TOPIC: string;
-  LABEL: string;
-  TOPIC_AXIS?: "BUSINESS" | "FIELD";
-  MEDIA_SQUARE_ID?: string | null;
-  MEDIA_RECTANGLE_ID?: string | null;
+  id_topic: string;
+  label: string;
+  topic_axis?: "BUSINESS" | "FIELD";
+  media_square_id?: string | null;
+  media_rectangle_id?: string | null;
 };
 
 export default function TopicList() {
@@ -38,7 +38,6 @@ export default function TopicList() {
 
   return (
     <div className="space-y-8">
-      {/* HEADER */}
       <div className="flex justify-between">
         <h1 className="text-3xl font-semibold">Topics</h1>
 
@@ -68,27 +67,25 @@ export default function TopicList() {
 
           <tbody>
             {topics.map((t) => {
-              const squareUrl = t.MEDIA_SQUARE_ID
-                ? `${GCS}/topics/TOPIC_${t.ID_TOPIC}_square.jpg`
+              const squareUrl = t.media_square_id
+                ? `${GCS}/topics/${t.media_square_id}`
                 : null;
 
-              const rectUrl = t.MEDIA_RECTANGLE_ID
-                ? `${GCS}/topics/TOPIC_${t.ID_TOPIC}_rect.jpg`
+              const rectUrl = t.media_rectangle_id
+                ? `${GCS}/topics/${t.media_rectangle_id}`
                 : null;
 
               return (
                 <tr
-                  key={t.ID_TOPIC}
+                  key={t.id_topic}
                   className="border-b hover:bg-gray-50"
                 >
-                  {/* LABEL */}
                   <td className="p-2 font-medium">
-                    {t.LABEL}
+                    {t.label}
                   </td>
 
-                  {/* AXIS */}
                   <td className="p-2">
-                    {t.TOPIC_AXIS === "FIELD" ? (
+                    {t.topic_axis === "FIELD" ? (
                       <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
                         FIELD
                       </span>
@@ -99,7 +96,6 @@ export default function TopicList() {
                     )}
                   </td>
 
-                  {/* SQUARE */}
                   <td className="p-2">
                     {squareUrl ? (
                       <img
@@ -111,7 +107,6 @@ export default function TopicList() {
                     )}
                   </td>
 
-                  {/* RECTANGLE */}
                   <td className="p-2">
                     {rectUrl ? (
                       <img
@@ -123,10 +118,9 @@ export default function TopicList() {
                     )}
                   </td>
 
-                  {/* ACTIONS */}
                   <td className="p-2 text-right">
                     <Link
-                      href={`/admin/topic/edit/${t.ID_TOPIC}`}
+                      href={`/admin/topic/edit/${t.id_topic}`}
                       className="text-blue-600 hover:underline"
                     >
                       Modifier
@@ -141,4 +135,3 @@ export default function TopicList() {
     </div>
   );
 }
-
