@@ -9,8 +9,8 @@ import ConceptSelector, { Concept } from "@/components/admin/ConceptSelector";
 import SolutionSelector, { Solution } from "@/components/admin/SolutionSelector";
 
 type TopicRef = {
-  ID_TOPIC: string;
-  LABEL: string;
+  id_topic: string;
+  label: string;
 };
 
 type Props = {
@@ -57,8 +57,11 @@ export default function StepValidation({
   // =========================
 
   useEffect(() => {
+
     async function load() {
+
       try {
+
         const [
           topicRes,
           companyRes,
@@ -73,34 +76,35 @@ export default function StepValidation({
 
         setAllTopics(topicRes?.topics || []);
 
-        // 🔁 Normalisation snake_case
         setAllCompanies(
           (companyRes?.companies || []).map((c: any) => ({
-            id_company: c.ID_COMPANY,
-            name: c.NAME,
+            id_company: c.id_company,
+            name: c.name,
           }))
         );
 
         setAllConcepts(
           (conceptRes?.concepts || []).map((c: any) => ({
-            id_concept: c.ID_CONCEPT,
-            title: c.TITLE,
+            id_concept: c.id_concept,
+            title: c.title,
           }))
         );
 
         setAllSolutions(
           (solutionRes?.solutions || []).map((s: any) => ({
-            id_solution: s.ID_SOLUTION,
-            name: s.NAME,
+            id_solution: s.id_solution,
+            name: s.name,
           }))
         );
 
       } catch (e) {
         console.error("Erreur chargement validation", e);
       }
+
     }
 
     load();
+
   }, []);
 
   // =========================
@@ -110,10 +114,12 @@ export default function StepValidation({
   const [autoInjected, setAutoInjected] = useState(false);
 
   useEffect(() => {
+
     if (!autoInjected && topicsRaw?.length > 0) {
       onChange({ topics: topicsRaw });
       setAutoInjected(true);
     }
+
   }, [topicsRaw, autoInjected, onChange]);
 
   // =========================
@@ -137,6 +143,7 @@ export default function StepValidation({
   // =========================
 
   return (
+
     <div className="space-y-6">
 
       <div className="text-sm font-semibold text-gray-700">
@@ -232,5 +239,7 @@ export default function StepValidation({
       </button>
 
     </div>
+
   );
+
 }
