@@ -22,17 +22,17 @@ TABLE_SOURCE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE"
 # ============================================================
 def create_source(data: SourceCreate) -> str:
 
-    source_id = data.SOURCE_ID or str(uuid.uuid4())
+    source_id = data.source_id or str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
 
     row = [{
         "SOURCE_ID": source_id,
-        "NAME": data.NAME,
-        "TYPE_SOURCE": data.TYPE_SOURCE,
-        "DESCRIPTION": data.DESCRIPTION,
-        "DOMAIN": data.DOMAIN,
-        "AUTHOR": data.AUTHOR,
-        "AUTHOR_PROFILE": data.AUTHOR_PROFILE,
+        "NAME": data.name,
+        "TYPE_SOURCE": data.type_source,
+        "DESCRIPTION": data.description,
+        "DOMAIN": data.domain,
+        "AUTHOR": data.author,
+        "AUTHOR_PROFILE": data.author_profile,
         "CREATED_AT": now,
     }]
 
@@ -49,7 +49,6 @@ def create_source(data: SourceCreate) -> str:
     job.result()
 
     return source_id
-
 
 # ============================================================
 # LIST SOURCES
@@ -103,13 +102,26 @@ def update_source(source_id: str, data: SourceUpdate) -> bool:
     if not values:
         return False
 
+    mapping = {
+        "name": "NAME",
+        "type_source": "TYPE_SOURCE",
+        "description": "DESCRIPTION",
+        "domain": "DOMAIN",
+        "author": "AUTHOR",
+        "author_profile": "AUTHOR_PROFILE",
+    }
+
+    bq_values = {
+        mapping[k]: v
+        for k, v in values.items()
+        if k in mapping
+    }
+
     return update_bq(
         table=TABLE_SOURCE,
-        fields=values,
+        fields=bq_values,
         where={"SOURCE_ID": source_id},
     )
-
-
 # ============================================================
 # DELETE SOURCE
 # ============================================================
