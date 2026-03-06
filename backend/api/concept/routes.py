@@ -19,25 +19,25 @@ router = APIRouter()
 
 
 # ============================================================
-# CREATE — création d'un concept
+# CREATE
 # ============================================================
 @router.post("/create")
 def create_route(data: ConceptCreate):
     try:
         concept_id = create_concept(data)
-        return {"status": "ok", "ID_CONCEPT": concept_id}
+        return {"status": "ok", "id_concept": concept_id}
     except Exception as e:
         raise HTTPException(400, f"Erreur création concept : {e}")
 
 
 # ============================================================
-# LIST — liste des concepts (avec filtre topic optionnel)
+# LIST
 # ============================================================
 @router.get("/list")
 def list_route(topic_ids: Optional[str] = Query(None)):
     """
     topic_ids:
-        - None → retourne tous les concepts (comportement actuel)
+        - None → retourne tous les concepts
         - "id1,id2" → filtre sur ces topics
     """
     try:
@@ -54,7 +54,7 @@ def list_route(topic_ids: Optional[str] = Query(None)):
 
 
 # ============================================================
-# GET ONE — récupération d'un concept
+# GET ONE
 # ============================================================
 @router.get("/{id_concept}", response_model=ConceptOut)
 def get_route(id_concept: str):
@@ -73,7 +73,7 @@ def get_route(id_concept: str):
 
 
 # ============================================================
-# UPDATE — mise à jour d'un concept existant
+# UPDATE
 # ============================================================
 @router.put("/update/{id_concept}")
 def update_route(id_concept: str, data: ConceptUpdate):
@@ -86,7 +86,7 @@ def update_route(id_concept: str, data: ConceptUpdate):
                 "Concept introuvable ou aucune modification"
             )
 
-        return {"status": "ok", "UPDATED": True}
+        return {"status": "ok", "updated": True}
 
     except HTTPException:
         raise
@@ -95,7 +95,7 @@ def update_route(id_concept: str, data: ConceptUpdate):
 
 
 # ============================================================
-# DELETE — suppression d'un concept
+# DELETE
 # ============================================================
 @router.delete("/{id_concept}")
 def delete_route(id_concept: str):
@@ -105,7 +105,7 @@ def delete_route(id_concept: str):
         if not deleted:
             raise HTTPException(404, "Concept introuvable")
 
-        return {"status": "ok", "DELETED": True}
+        return {"status": "ok", "deleted": True}
 
     except HTTPException:
         raise
