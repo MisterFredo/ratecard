@@ -50,10 +50,10 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // STRUCTURANT (IDs)
   // =========================
 
-  setTopics((c.topics || []).map((x: any) => x.id_topic));
-  setCompanies((c.companies || []).map((x: any) => x.id_company));
-  setConcepts((c.concepts || []).map((x: any) => x.id_concept));
-  setSolutions((c.solutions || []).map((x: any) => x.id_solution));
+  const [topics, setTopics] = useState<string[]>([]);
+  const [companies, setCompanies] = useState<string[]>([]);
+  const [concepts, setConcepts] = useState<string[]>([]);
+  const [solutions, setSolutions] = useState<string[]>([]);
 
   // =========================
   // EDITORIAL
