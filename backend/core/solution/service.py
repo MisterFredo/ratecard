@@ -183,12 +183,11 @@ def delete_solution(id_solution: str) -> bool:
     if not existing:
         return False
 
-    query_bq(
-        f"""
-        DELETE FROM `{TABLE_SOLUTION}`
-        WHERE ID_SOLUTION = @id
-        """,
-        {"id": id_solution},
+    return update_bq(
+        table=TABLE_SOLUTION,
+        fields={
+            "IS_ACTIVE": False,
+            "UPDATED_AT": datetime.utcnow().isoformat(),
+        },
+        where={"ID_SOLUTION": id_solution},
     )
-
-    return True
