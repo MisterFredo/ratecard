@@ -16,19 +16,19 @@ type Props = {
 };
 
 export default function StepSource({ onCreate }: Props) {
+
   const [sources, setSources] = useState<Source[]>([]);
   const [sourceId, setSourceId] = useState("");
   const [sourceText, setSourceText] = useState("");
 
   const charCount = sourceText.length;
-  const isValid =
-    sourceText.trim().length >= 80 && sourceId;
 
   // ==========================================================
   // LOAD SOURCES
   // ==========================================================
 
   useEffect(() => {
+
     async function loadSources() {
       try {
         const res = await api.get("/source/list");
@@ -38,7 +38,12 @@ export default function StepSource({ onCreate }: Props) {
 
         if (list.length) {
           setSourceId(list[0].SOURCE_ID);
+          onCreate({
+            source_id: list[0].SOURCE_ID,
+            text: "",
+          });
         }
+
       } catch (e) {
         console.error(e);
         alert("Impossible de charger les sources");
@@ -46,26 +51,28 @@ export default function StepSource({ onCreate }: Props) {
     }
 
     loadSources();
+
   }, []);
 
   // ==========================================================
-  // HANDLE SUBMIT (NO CREATION)
+  // PROPAGATION AUTO AU PARENT
   // ==========================================================
 
-  function handleSubmit() {
-    if (!isValid) return;
+  useEffect(() => {
 
     onCreate({
       source_id: sourceId,
-      text: sourceText.trim(),
+      text: sourceText,
     });
-  }
+
+  }, [sourceId, sourceText]);
 
   // ==========================================================
   // RENDER
   // ==========================================================
 
   return (
+
     <div className="bg-white border rounded p-5 shadow-sm space-y-4">
 
       <div className="flex justify-between items-center">
@@ -120,20 +127,8 @@ export default function StepSource({ onCreate }: Props) {
         </p>
       </div>
 
-      {/* ACTION */}
-
-      <button
-        onClick={handleSubmit}
-        disabled={!isValid}
-        className={`px-4 py-2 rounded text-white text-sm w-full ${
-          isValid
-            ? "bg-black hover:bg-gray-800"
-            : "bg-gray-400 cursor-not-allowed"
-        }`}
-      >
-        Analyser la source
-      </button>
-
     </div>
+
   );
+
 }
