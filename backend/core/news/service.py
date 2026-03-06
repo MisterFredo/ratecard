@@ -65,10 +65,14 @@ def create_news(data: NewsCreate) -> str:
     client = get_bigquery_client()
 
     # ------------------------------------------------------------
-    # FALLBACK VISUEL SOCIÉTÉ
+    # VISUEL PAR DÉFAUT = LOGO SOCIÉTÉ
     # ------------------------------------------------------------
 
     media_id = data.media_rectangle_id
+
+    # On considère None / "" / "   " comme absent
+    if not media_id or not str(media_id).strip():
+        media_id = None
 
     if not media_id:
         query = f"""
@@ -105,7 +109,7 @@ def create_news(data: NewsCreate) -> str:
         "NEWS_KIND": data.news_kind,
         "NEWS_TYPE": data.news_type,
         "ID_COMPANY": data.id_company,
-        "TITLE": data.title,
+        "TITLE": data.title.strip(),
         "EXCERPT": data.excerpt,
         "BODY": data.body if data.news_kind == "NEWS" else None,
         "MEDIA_RECTANGLE_ID": media_id,
@@ -120,7 +124,9 @@ def create_news(data: NewsCreate) -> str:
     client.load_table_from_json(
         row,
         TABLE_NEWS,
-        job_config=bigquery.LoadJobConfig(write_disposition="WRITE_APPEND"),
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
     ).result()
 
     # ------------------------------------------------------------
@@ -130,13 +136,19 @@ def create_news(data: NewsCreate) -> str:
     if data.topics:
         insert_bq(
             TABLE_NEWS_TOPIC,
-            [{"ID_NEWS": news_id, "ID_TOPIC": tid} for tid in data.topics],
+            [
+                {"ID_NEWS": news_id, "ID_TOPIC": tid}
+                for tid in data.topics
+            ],
         )
 
     if data.persons:
         insert_bq(
             TABLE_NEWS_PERSON,
-            [{"ID_NEWS": news_id, "ID_PERSON": pid} for pid in data.persons],
+            [
+                {"ID_NEWS": news_id, "ID_PERSON": pid}
+                for pid in data.persons
+            ],
         )
 
     # ------------------------------------------------------------
@@ -146,7 +158,10 @@ def create_news(data: NewsCreate) -> str:
     if data.concepts:
         insert_bq(
             TABLE_NEWS_CONCEPT,
-            [{"ID_NEWS": news_id, "ID_CONCEPT": cid} for cid in data.concepts],
+            [
+                {"ID_NEWS": news_id, "ID_CONCEPT": cid}
+                for cid in data.concepts
+            ],
         )
 
     # ------------------------------------------------------------
@@ -156,7 +171,10 @@ def create_news(data: NewsCreate) -> str:
     if data.solutions:
         insert_bq(
             TABLE_NEWS_SOLUTION,
-            [{"ID_NEWS": news_id, "ID_SOLUTION": sid} for sid in data.solutions],
+            [
+                {"ID_NEWS": news_id, "ID_SOLUTION": sid}
+                for sid in data.solutions
+            ],
         )
 
     return news_id
