@@ -16,7 +16,7 @@ TABLE_CONCEPT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONCEPT"
 
 
 # ============================================================
-# CREATE CONCEPT — MAJUSCULES + ID_TOPIC
+# CREATE CONCEPT
 # ============================================================
 def create_concept(data: ConceptCreate) -> str:
     concept_id = str(uuid.uuid4())
@@ -24,12 +24,12 @@ def create_concept(data: ConceptCreate) -> str:
 
     row = [{
         "ID_CONCEPT": concept_id,
-        "TITLE": data.TITLE,
-        "DESCRIPTION": data.DESCRIPTION,
-        "CONTENT": data.CONTENT,
-        "STATUS": data.STATUS or "DRAFT",
-        "VECTORISE": data.VECTORISE or False,
-        "ID_TOPIC": data.ID_TOPIC,
+        "TITLE": data.title,
+        "DESCRIPTION": data.description,
+        "CONTENT": data.content,
+        "STATUS": data.status or "DRAFT",
+        "VECTORISE": data.vectorise or False,
+        "ID_TOPIC": data.id_topic,
         "CREATED_AT": now,
         "UPDATED_AT": now,
     }]
@@ -48,7 +48,7 @@ def create_concept(data: ConceptCreate) -> str:
 
 
 # ============================================================
-# LIST CONCEPTS — AVEC FILTRE TOPIC OPTIONNEL
+# LIST CONCEPTS
 # ============================================================
 def list_concepts(topic_ids: Optional[List[str]] = None):
 
@@ -82,10 +82,8 @@ def list_concepts(topic_ids: Optional[List[str]] = None):
         )
 
         rows = client.query(sql, job_config=job_config).result()
-
         return [dict(row) for row in rows]
 
-    # 🔁 Legacy : aucun filtre
     sql = f"""
         SELECT
             ID_CONCEPT,
@@ -105,7 +103,7 @@ def list_concepts(topic_ids: Optional[List[str]] = None):
 
 
 # ============================================================
-# GET ONE CONCEPT — MAJUSCULES + ID_TOPIC
+# GET ONE CONCEPT
 # ============================================================
 def get_concept(concept_id: str):
     sql = f"""
@@ -124,7 +122,7 @@ def get_concept(concept_id: str):
 
 
 # ============================================================
-# UPDATE CONCEPT — MAJUSCULES + ID_TOPIC
+# UPDATE CONCEPT
 # ============================================================
 def update_concept(id_concept: str, data: ConceptUpdate) -> bool:
     values = data.dict(exclude_unset=True)
@@ -132,14 +130,29 @@ def update_concept(id_concept: str, data: ConceptUpdate) -> bool:
     if not values:
         return False
 
-    if "CONTENT" in values:
-        values["VECTORISE"] = False
+    mapping = {
+        "title": "TITLE",
+        "description": "DESCRIPTION",
+        "content": "CONTENT",
+        "status": "STATUS",
+        "vectorise": "VECTORISE",
+        "id_topic": "ID_TOPIC",
+    }
 
-    values["UPDATED_AT"] = datetime.utcnow().isoformat()
+    bq_values = {
+        mapping[k]: v
+        for k, v in values.items()
+        if k in mapping
+    }
+
+    if "CONTENT" in bq_values:
+        bq_values["VECTORISE"] = False
+
+    bq_values["UPDATED_AT"] = datetime.utcnow().isoformat()
 
     return update_bq(
         table=TABLE_CONCEPT,
-        fields=values,
+        fields=bq_values,
         where={"ID_CONCEPT": id_concept},
     )
 
