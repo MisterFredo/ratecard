@@ -163,14 +163,12 @@ def update_template(template_id: str, data: Dict[str, Any]):
 
 def delete_template(template_id: str):
 
-    client = get_bigquery_client()
-
-    client.query(
+    query_bq(
         f"""
         DELETE FROM `{TABLE_TEMPLATE}`
         WHERE ID_TEMPLATE = @id
         """,
-        job_config=None,
-    ).result()
+        {"id": template_id},
+    )
 
     return True
