@@ -18,6 +18,7 @@ from core.content.service import (
 )
 
 from core.content.ai import generate_summary
+
 from utils.bigquery_utils import query_bq
 
 import logging
@@ -72,23 +73,12 @@ def stats_route():
 def list_sources():
     try:
         rows = query_bq("""
-            SELECT ID_SOURCE, LABEL
+            SELECT id_source, label
             FROM RATECARD_SOURCE
-            WHERE STATUS = 'ACTIVE'
-            ORDER BY LABEL
+            WHERE status = 'ACTIVE'
+            ORDER BY label
         """)
-
-        # Mapping BQ → snake_case
-        sources = [
-            {
-                "id_source": row["ID_SOURCE"],
-                "label": row["LABEL"],
-            }
-            for row in rows
-        ]
-
-        return {"status": "ok", "sources": sources}
-
+        return {"status": "ok", "sources": rows}
     except Exception as e:
         logger.exception("Erreur liste sources")
         raise HTTPException(400, f"Erreur liste sources : {e}")
@@ -126,12 +116,12 @@ def archive_route(id_content: str):
 @router.post("/publish/{id_content}")
 def publish_route(id_content: str, payload: ContentPublish):
     try:
-        published_status = publish_content(
+        status = publish_content(
             id_content=id_content,
             published_at=payload.publish_at,
         )
 
-        return {"status": "ok", "published_status": published_status}
+        return {"status": "ok", "published_status": status}
 
     except Exception as e:
         logger.exception("Erreur publication content")
@@ -139,7 +129,7 @@ def publish_route(id_content: str, payload: ContentPublish):
 
 
 # ============================================================
-# IA — GENERATE CONTENT
+# IA — GENERATE CONTENT (Résumé + Analyse en une passe)
 # ============================================================
 @router.post("/ai/generate")
 def ai_generate(payload: dict):
@@ -151,7 +141,8 @@ def ai_generate(payload: dict):
         raise HTTPException(400, "Source manquante")
 
     try:
-        result = generate_summary(
+
+        result = generate_summary(   # on garde le nom interne si déjà utilisé
             source_id=source_id,
             source_text=source_text,
         )
@@ -174,6 +165,7 @@ def ai_generate(payload: dict):
 # ============================================================
 @router.get("/{id_content}")
 def get_route(id_content: str):
+
     try:
         content = get_content(id_content)
 
@@ -182,8 +174,6 @@ def get_route(id_content: str):
 
         return {"status": "ok", "content": content}
 
-    except HTTPException:
-        raise
     except Exception as e:
         logger.exception("Erreur récupération content")
         raise HTTPException(400, f"Erreur récupération content : {e}")
