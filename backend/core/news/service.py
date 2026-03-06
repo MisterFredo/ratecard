@@ -65,43 +65,7 @@ def create_news(data: NewsCreate) -> str:
     client = get_bigquery_client()
 
     # ------------------------------------------------------------
-    # VISUEL PAR DÉFAUT = LOGO SOCIÉTÉ
-    # ------------------------------------------------------------
-
-    media_id = data.media_rectangle_id
-
-    # Normalisation (None / "" / espaces)
-    if not media_id or not str(media_id).strip():
-        media_id = None
-
-    if not media_id:
-        query = f"""
-            SELECT MEDIA_LOGO_RECTANGLE_ID
-            FROM `{TABLE_COMPANY}`
-            WHERE ID_COMPANY = @company_id
-            LIMIT 1
-        """
-
-        job = client.query(
-            query,
-            job_config=bigquery.QueryJobConfig(
-                query_parameters=[
-                    bigquery.ScalarQueryParameter(
-                        "company_id", "STRING", data.id_company
-                    )
-                ]
-            )
-        )
-
-        result = list(job.result())
-
-        if result:
-            logo = result[0].get("MEDIA_LOGO_RECTANGLE_ID")
-            if logo:
-                media_id = logo
-
-    # ------------------------------------------------------------
-    # INSERT NEWS
+    # 1️⃣ INSERT NEWS SANS VISUEL (provisoirement)
     # ------------------------------------------------------------
 
     row = [{
@@ -114,8 +78,8 @@ def create_news(data: NewsCreate) -> str:
         "TITLE": data.title.strip(),
         "EXCERPT": data.excerpt,
         "BODY": data.body if data.news_kind == "NEWS" else None,
-        "MEDIA_RECTANGLE_ID": media_id,
-        "HAS_VISUAL": bool(media_id),
+        "MEDIA_RECTANGLE_ID": None,
+        "HAS_VISUAL": False,
         "SOURCE_URL": data.source_url,
         "AUTHOR": data.author,
         "PUBLISHED_AT": None,
@@ -130,6 +94,31 @@ def create_news(data: NewsCreate) -> str:
             write_disposition="WRITE_APPEND"
         ),
     ).result()
+
+    # ------------------------------------------------------------
+    # 2️⃣ SI PAS D’UPLOAD → DUPLICATION LOGO SOCIÉTÉ
+    # ------------------------------------------------------------
+
+    if not data.media_rectangle_id:
+
+        logo_rows = query_bq(
+            f"""
+            SELECT MEDIA_LOGO_RECTANGLE_ID
+            FROM `{TABLE_COMPANY}`
+            WHERE ID_COMPANY = @company_id
+            LIMIT 1
+            """,
+            {"company_id": data.id_company},
+        )
+
+        if logo_rows:
+            logo = logo_rows[0].get("MEDIA_LOGO_RECTANGLE_ID")
+
+            if logo:
+                new_filename = duplicate_company_visual_for_news(
+                    news_id,
+                    logo
+                )
 
     # ------------------------------------------------------------
     # RELATIONS CLASSIQUES
@@ -147,19 +136,11 @@ def create_news(data: NewsCreate) -> str:
             [{"ID_NEWS": news_id, "ID_PERSON": pid} for pid in data.persons],
         )
 
-    # ------------------------------------------------------------
-    # RELATIONS — CONCEPTS
-    # ------------------------------------------------------------
-
     if data.concepts:
         insert_bq(
             TABLE_NEWS_CONCEPT,
             [{"ID_NEWS": news_id, "ID_CONCEPT": cid} for cid in data.concepts],
         )
-
-    # ------------------------------------------------------------
-    # RELATIONS — SOLUTIONS
-    # ------------------------------------------------------------
 
     if data.solutions:
         insert_bq(
