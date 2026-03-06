@@ -19,7 +19,11 @@ type Props = {
   onChange: (companies: Company[]) => void;
 };
 
-export default function CompanySelector({ values, onChange }: Props) {
+export default function CompanySelector({
+  values,
+  onChange,
+}: Props) {
+
   const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,30 +31,42 @@ export default function CompanySelector({ values, onChange }: Props) {
      LOAD COMPANIES
   --------------------------------------------------------- */
   useEffect(() => {
+
     async function load() {
-      setLoading(true);
+
       try {
+
+        setLoading(true);
+
         const res = await api.get("/company/list");
 
+        const companies: Company[] = res?.companies || [];
+
         setOptions(
-          (res.companies || []).map((c: any) => ({
+          companies.map((c) => ({
             id: c.id_company,
             label: c.name,
           }))
         );
+
       } catch (e) {
         console.error("Erreur chargement sociétés", e);
+        setOptions([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
+
     }
 
     load();
+
   }, []);
 
   /* ---------------------------------------------------------
      HANDLE CHANGE — MULTI AUTORISÉ
   --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
+
     if (!selected || selected.length === 0) {
       onChange([]);
       return;
@@ -64,6 +80,9 @@ export default function CompanySelector({ values, onChange }: Props) {
     );
   }
 
+  /* ---------------------------------------------------------
+     LOADING
+  --------------------------------------------------------- */
   if (loading) {
     return (
       <div className="text-sm text-gray-500">
@@ -72,6 +91,9 @@ export default function CompanySelector({ values, onChange }: Props) {
     );
   }
 
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <SearchableMultiSelect
       label="Sociétés"
