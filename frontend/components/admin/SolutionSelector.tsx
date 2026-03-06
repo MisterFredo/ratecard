@@ -6,6 +6,9 @@ import SearchableMultiSelect, {
   SelectOption,
 } from "@/components/ui/SearchableMultiSelect";
 
+/* ---------------------------------------------------------
+   TYPES (UI interne en snake_case)
+--------------------------------------------------------- */
 export type Solution = {
   id_solution: string;
   name: string;
@@ -24,6 +27,9 @@ export default function SolutionSelector({
   const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
 
+  /* ---------------------------------------------------------
+     LOAD SOLUTIONS (backend = MAJUSCULES)
+  --------------------------------------------------------- */
   useEffect(() => {
 
     async function load() {
@@ -34,11 +40,11 @@ export default function SolutionSelector({
 
         const res = await api.get("/solution/list");
 
-        // ✅ Backend snake_case
+        // ✅ Backend renvoie ID_SOLUTION / NAME
         setOptions(
           (res.solutions || []).map((s: any) => ({
-            id: s.id_solution,
-            label: s.name,
+            id: s.ID_SOLUTION,
+            label: s.NAME,
           }))
         );
 
@@ -59,6 +65,9 @@ export default function SolutionSelector({
 
   }, []);
 
+  /* ---------------------------------------------------------
+     HANDLE CHANGE
+  --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
 
     if (!selected || selected.length === 0) {
@@ -74,6 +83,10 @@ export default function SolutionSelector({
     );
 
   }
+
+  /* ---------------------------------------------------------
+     RENDER
+  --------------------------------------------------------- */
 
   if (loading) {
     return (
