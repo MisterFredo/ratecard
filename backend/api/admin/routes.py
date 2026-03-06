@@ -12,6 +12,7 @@ router = APIRouter()
 
 ADMIN_EMAIL = "mister.fredo@gmail.com"
 
+
 @router.post("/login")
 def admin_login(payload: dict, response: Response):
     email = payload.get("email")
@@ -40,6 +41,7 @@ def admin_logout(response: Response):
     )
     return {"status": "ok"}
 
+
 # ============================================================
 # DIGEST SEARCH
 # ============================================================
@@ -61,6 +63,8 @@ def admin_digest_search(payload: dict):
         cursor=payload.get("cursor"),
         period=period,
     )
+
+
 # ============================================================
 # DIGEST TEMPLATES
 # ============================================================
@@ -93,4 +97,4 @@ def admin_update_template(template_id: str, payload: dict):
 @router.delete("/digest/template/{template_id}")
 def admin_delete_template(template_id: str):
     delete_template(template_id)
-    return {"status": "deleted"}
+    return {"status": "ok", "deleted": True}
