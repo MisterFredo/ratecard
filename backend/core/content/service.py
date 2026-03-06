@@ -400,81 +400,158 @@ def reset_and_insert(table, id_field, id_content, values):
 # ============================================================
 def update_content(id_content: str, data: ContentUpdate):
 
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc)
 
-    fields = {
-        "SOURCE_ID": data.source_id,
+    fields = {}
 
-        "TITLE": data.title.strip() if data.title else None,
-        "EXCERPT": data.excerpt,
-        "CONTENT_BODY": data.content_body,
+    # ============================================================
+    # SOURCE
+    # ============================================================
 
-        "CITATIONS": normalize_array(data.citations) if data.citations is not None else None,
-        "CHIFFRES": normalize_array(data.chiffres) if data.chiffres is not None else None,
-        "ACTEURS_CITES": normalize_array(data.acteurs_cites) if data.acteurs_cites is not None else None,
+    if data.source_id is not None:
+        fields["SOURCE_ID"] = data.source_id
 
-        "CONCEPTS_LLM": normalize_array(data.concepts_llm) if data.concepts_llm is not None else None,
-        "SOLUTIONS_LLM": normalize_array(data.solutions_llm) if data.solutions_llm is not None else None,
-        "TOPICS_LLM": normalize_array(data.topics_llm) if data.topics_llm is not None else None,
+    if data.source_text is not None:
+        fields["SOURCE_TEXT"] = data.source_text
 
-        "MECANIQUE_EXPLIQUEE": data.mecanique_expliquee,
-        "ENJEU_STRATEGIQUE": data.enjeu_strategique,
-        "POINT_DE_FRICTION": data.point_de_friction,
-        "SIGNAL_ANALYTIQUE": data.signal_analytique,
+    if data.source_url is not None:
+        fields["SOURCE_URL"] = data.source_url
 
-        "SEO_TITLE": data.seo_title,
-        "SEO_DESCRIPTION": data.seo_description,
+    if data.source_author is not None:
+        fields["SOURCE_AUTHOR"] = data.source_author
 
-        "AUTHOR": data.author,
+    # ============================================================
+    # SUMMARY
+    # ============================================================
 
-        "UPDATED_AT": now,
-    }
+    if data.title is not None:
+        fields["TITLE"] = data.title.strip()
 
-    update_bq(
-        table=TABLE_CONTENT,
-        fields={k: v for k, v in fields.items() if v is not None},
-        where={"ID_CONTENT": id_content},
-    )
+    if data.excerpt is not None:
+        fields["EXCERPT"] = data.excerpt
+
+    if data.content_body is not None:
+        fields["CONTENT_BODY"] = data.content_body
+
+    # ============================================================
+    # EXTRACTIONS STRUCTURÉES
+    # ============================================================
+
+    if data.citations is not None:
+        fields["CITATIONS"] = normalize_array(data.citations)
+
+    if data.chiffres is not None:
+        fields["CHIFFRES"] = normalize_array(data.chiffres)
+
+    if data.acteurs_cites is not None:
+        fields["ACTEURS_CITES"] = normalize_array(data.acteurs_cites)
+
+    if data.concepts_llm is not None:
+        fields["CONCEPTS_LLM"] = normalize_array(data.concepts_llm)
+
+    if data.solutions_llm is not None:
+        fields["SOLUTIONS_LLM"] = normalize_array(data.solutions_llm)
+
+    if data.topics_llm is not None:
+        fields["TOPICS_LLM"] = normalize_array(data.topics_llm)
+
+    # ============================================================
+    # ANALYSE STRATÉGIQUE
+    # ============================================================
+
+    if data.mecanique_expliquee is not None:
+        fields["MECANIQUE_EXPLIQUEE"] = data.mecanique_expliquee
+
+    if data.enjeu_strategique is not None:
+        fields["ENJEU_STRATEGIQUE"] = data.enjeu_strategique
+
+    if data.point_de_friction is not None:
+        fields["POINT_DE_FRICTION"] = data.point_de_friction
+
+    if data.signal_analytique is not None:
+        fields["SIGNAL_ANALYTIQUE"] = data.signal_analytique
+
+    # ============================================================
+    # SEO
+    # ============================================================
+
+    if data.seo_title is not None:
+        fields["SEO_TITLE"] = data.seo_title
+
+    if data.seo_description is not None:
+        fields["SEO_DESCRIPTION"] = data.seo_description
+
+    # ============================================================
+    # META
+    # ============================================================
+
+    if data.author is not None:
+        fields["AUTHOR"] = data.author
+
+    # Toujours mettre à jour UPDATED_AT
+    fields["UPDATED_AT"] = now
+
+    # ============================================================
+    # UPDATE TABLE PRINCIPALE
+    # ============================================================
+
+    if fields:
+        update_bq(
+            table=TABLE_CONTENT,
+            fields=fields,
+            where={"ID_CONTENT": id_content},
+        )
+
+    # ============================================================
+    # RESET RELATIONS
+    # ============================================================
 
     reset_and_insert(
         TABLE_CONTENT_TOPIC,
         "ID_TOPIC",
         id_content,
-        data.topics or [],
+        data.topics if data.topics is not None else [],
     )
 
     reset_and_insert(
         TABLE_CONTENT_EVENT,
         "ID_EVENT",
         id_content,
-        data.events or [],
+        data.events if data.events is not None else [],
     )
 
     reset_and_insert(
         TABLE_CONTENT_COMPANY,
         "ID_COMPANY",
         id_content,
-        data.companies or [],
+        data.companies if data.companies is not None else [],
     )
 
     reset_and_insert(
         TABLE_CONTENT_CONCEPT,
         "ID_CONCEPT",
         id_content,
-        data.concepts or [],
+        data.concepts if data.concepts is not None else [],
     )
 
     reset_and_insert(
         TABLE_CONTENT_SOLUTION,
         "ID_SOLUTION",
         id_content,
-        data.solutions or [],
+        data.solutions if data.solutions is not None else [],
     )
+
+    # ============================================================
+    # PERSONS (gestion spécifique car rôle)
+    # ============================================================
 
     client = get_bigquery_client()
 
     client.query(
-        f"DELETE FROM `{TABLE_CONTENT_PERSON}` WHERE ID_CONTENT = @id",
+        f"""
+        DELETE FROM `{TABLE_CONTENT_PERSON}`
+        WHERE ID_CONTENT = @id
+        """,
         job_config=bigquery.QueryJobConfig(
             query_parameters=[
                 bigquery.ScalarQueryParameter(
