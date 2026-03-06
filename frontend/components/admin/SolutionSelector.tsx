@@ -7,11 +7,11 @@ import SearchableMultiSelect, {
 } from "@/components/ui/SearchableMultiSelect";
 
 /* ---------------------------------------------------------
-   EXACTEMENT COMME COMPANY
+   UI TYPE — snake_case uniquement
 --------------------------------------------------------- */
 export type Solution = {
-  ID_SOLUTION: string;
-  NAME: string;
+  id_solution: string;
+  name: string;
 };
 
 type Props = {
@@ -27,6 +27,9 @@ export default function SolutionSelector({
   const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
 
+  /* ---------------------------------------------------------
+     LOAD SOLUTIONS (API = snake_case)
+  --------------------------------------------------------- */
   useEffect(() => {
 
     async function load() {
@@ -39,8 +42,8 @@ export default function SolutionSelector({
 
         setOptions(
           (res.solutions || []).map((s: any) => ({
-            id: s.ID_SOLUTION,
-            label: s.NAME,
+            id: s.id_solution,
+            label: s.name,
           }))
         );
 
@@ -61,16 +64,23 @@ export default function SolutionSelector({
 
   }, []);
 
+  /* ---------------------------------------------------------
+     HANDLE CHANGE
+  --------------------------------------------------------- */
   function handleChange(selected: SelectOption[]) {
 
     onChange(
       selected.map((item) => ({
-        ID_SOLUTION: item.id,
-        NAME: item.label,
+        id_solution: item.id,
+        name: item.label,
       }))
     );
 
   }
+
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
 
   if (loading) {
     return (
@@ -86,8 +96,8 @@ export default function SolutionSelector({
       placeholder="Rechercher une ou plusieurs solutions…"
       options={options}
       values={values.map((v) => ({
-        id: v.ID_SOLUTION,
-        label: v.NAME,
+        id: v.id_solution,
+        label: v.name,
       }))}
       onChange={handleChange}
     />
