@@ -494,8 +494,8 @@ EXCERPT :
         text = run_llm(prompt)
 
         return {
-            "STATUS": "OK",
-            "TEXT": text.strip() if text else ""
+            "status": "ok",
+            "text": text.strip() if text else ""
         }
 
     except Exception as e:
