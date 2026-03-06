@@ -99,17 +99,32 @@ def list_topics():
 # GET ONE TOPIC
 # ============================================================
 def get_topic(topic_id: str):
-    """
-    Récupère un topic par ID.
-    """
+
     sql = f"""
         SELECT *
         FROM `{TABLE_TOPIC}`
         WHERE ID_TOPIC = @id
         LIMIT 1
     """
+
     rows = query_bq(sql, {"id": topic_id})
-    return rows[0] if rows else None
+
+    if not rows:
+        return None
+
+    r = rows[0]
+
+    return {
+        "id_topic": r["ID_TOPIC"],
+        "label": r["LABEL"],
+        "topic_axis": r.get("TOPIC_AXIS"),
+        "description": r.get("DESCRIPTION"),
+        "seo_title": r.get("SEO_TITLE"),
+        "seo_description": r.get("SEO_DESCRIPTION"),
+        "is_active": r.get("IS_ACTIVE", True),
+        "created_at": r.get("CREATED_AT"),
+        "updated_at": r.get("UPDATED_AT"),
+    }
 
 
 # ============================================================
