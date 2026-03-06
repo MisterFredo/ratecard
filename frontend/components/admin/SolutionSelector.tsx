@@ -19,7 +19,10 @@ type Props = {
   onChange: (solutions: Solution[]) => void;
 };
 
-export default function SolutionSelector({ values, onChange }: Props) {
+export default function SolutionSelector({
+  values,
+  onChange,
+}: Props) {
 
   const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,8 +40,9 @@ export default function SolutionSelector({ values, onChange }: Props) {
 
         const res = await api.get("/solution/list");
 
+        // ⚠️ API renvoie "solutions" (snake_case)
         setOptions(
-          (res.SOLUTIONS || []).map((s: any) => ({
+          (res.solutions || []).map((s: any) => ({
             id: s.ID_SOLUTION,
             label: s.NAME,
           }))
@@ -104,5 +108,4 @@ export default function SolutionSelector({ values, onChange }: Props) {
       onChange={handleChange}
     />
   );
-
 }
