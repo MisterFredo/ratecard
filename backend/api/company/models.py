@@ -1,79 +1,91 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
 
 # ============================================================
-# CREATE — création d'une société
+# CREATE
 # ============================================================
+
 class CompanyCreate(BaseModel):
     """
     Création d'une société.
-    ⚠️ Aucun champ média ici.
-    ⚠️ Champs alignés BQ
+    Contrat API 100% snake_case.
     """
-    NAME: str
-    DESCRIPTION: Optional[str] = None
 
-    LINKEDIN_URL: Optional[str] = None
-    WEBSITE_URL: Optional[str] = None
+    name: str = Field(..., min_length=1)
+    description: Optional[str] = None
 
-    IS_PARTNER: Optional[bool] = False
+    linkedin_url: Optional[str] = None
+    website_url: Optional[str] = None
+
+    is_partner: bool = False
+
+    class Config:
+        extra = "forbid"
 
 
 # ============================================================
-# UPDATE — mise à jour d'une société existante
+# UPDATE
 # ============================================================
+
 class CompanyUpdate(BaseModel):
     """
-    Mise à jour des données métier.
-    Les visuels restent gérés via /visuals/company/*
-    ⚠️ Champs alignés BQ
-    """
-    NAME: Optional[str] = None
-    DESCRIPTION: Optional[str] = None
-
-    LINKEDIN_URL: Optional[str] = None
-    WEBSITE_URL: Optional[str] = None
-
-    IS_PARTNER: Optional[bool] = None
-
-    # --- Wiki (bloc unique) ---
-    WIKI_CONTENT: Optional[str] = None
-
-
-# ============================================================
-# OUT — représentation alignée BQ
-# ============================================================
-class CompanyOut(BaseModel):
-    """
-    Représentation EXACTEMENT alignée avec RATECARD_COMPANY.
-    Aucun snake_case.
+    Mise à jour partielle.
+    Les médias restent gérés via /visuals/company/*
     """
 
-    ID_COMPANY: str
-    NAME: str
+    name: Optional[str] = None
+    description: Optional[str] = None
 
-    # --- Brand ---
-    DESCRIPTION: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    website_url: Optional[str] = None
+
+    is_partner: Optional[bool] = None
 
     # --- Wiki ---
-    WIKI_CONTENT: Optional[str] = None
-    WIKI_SOURCE_ID: Optional[str] = None
-    WIKI_UPDATED_AT: Optional[datetime] = None
-    WIKI_VECTORISED: Optional[bool] = False
+    wiki_content: Optional[str] = None
+
+    class Config:
+        extra = "forbid"
+
+
+# ============================================================
+# OUT
+# ============================================================
+
+class CompanyOut(BaseModel):
+    """
+    Représentation retournée par l’API.
+    Snake_case strict.
+    """
+
+    id_company: str
+    name: str
+
+    # --- Brand ---
+    description: Optional[str] = None
+
+    # --- Wiki ---
+    wiki_content: Optional[str] = None
+    wiki_source_id: Optional[str] = None
+    wiki_updated_at: Optional[datetime] = None
+    wiki_vectorised: bool = False
 
     # --- Media ---
-    MEDIA_LOGO_RECTANGLE_ID: Optional[str] = None
+    media_logo_rectangle_id: Optional[str] = None
 
     # --- Liens ---
-    LINKEDIN_URL: Optional[str] = None
-    WEBSITE_URL: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    website_url: Optional[str] = None
 
     # --- Statut ---
-    IS_PARTNER: Optional[bool] = False
-    IS_ACTIVE: Optional[bool] = True
+    is_partner: bool = False
+    is_active: bool = True
 
     # --- Dates ---
-    CREATED_AT: Optional[datetime] = None
-    UPDATED_AT: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        extra = "forbid"
