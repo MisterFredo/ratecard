@@ -152,7 +152,10 @@ def list_admin_route(
 def list_news_types_route():
     try:
         types = list_news_types()
-        return {"types": types}
+        return {
+            "status": "ok",
+            "types": types
+        }
     except Exception:
         logger.exception("Erreur chargement NEWS_TYPE")
         raise HTTPException(500, "Erreur chargement catégories éditoriales")
@@ -165,7 +168,10 @@ def list_news_types_route():
 def list_companies_route():
     try:
         data = list_companies_public()
-        return {"companies": data}
+        return {
+            "status": "ok",
+            "companies": data
+        }
     except Exception:
         logger.exception("Erreur liste sociétés public")
         raise HTTPException(400, "Erreur liste sociétés")
@@ -174,7 +180,7 @@ def list_companies_route():
 # SEARCH BREVES — FLUX UNIQUEMENT
 # ============================================================
 
-@router.get("/breves/search", response_model=BrevesSearchResponse)
+@router.get("/breves/search")
 def search_breves_route(
     topics: Optional[List[str]] = Query(default=None),
     news_types: Optional[List[str]] = Query(default=None),
@@ -183,7 +189,7 @@ def search_breves_route(
     cursor: Optional[str] = None,
 ):
     try:
-        data = search_breves_public(   # ⚠️ version FLUX uniquement
+        data = search_breves_public(
             topics=topics,
             news_types=news_types,
             companies=companies,
@@ -192,6 +198,7 @@ def search_breves_route(
         )
 
         return {
+            "status": "ok",
             "total_count": data.get("total_count", 0),
             "sponsorised": data.get("sponsorised", []),
             "items": data.get("items", []),
@@ -205,17 +212,17 @@ def search_breves_route(
 # STATS BRÈVES — FILTRES UNIQUEMENT
 # ============================================================
 
-@router.get("/breves/stats", response_model=BrevesStatsResponse)
+@router.get("/breves/stats")
 def breves_stats_route():
     try:
         data = get_breves_stats_public()
-        return data
-
+        return {
+            "status": "ok",
+            **data
+        }
     except Exception as e:
         logger.exception("Erreur stats brèves")
         raise HTTPException(400, str(e))
-
-
 
 
 # ============================================================
@@ -235,10 +242,10 @@ def list_breves(
     )
 
     return {
+        "status": "ok",
         "items": items,
         "next_cursor": items[-1]["published_at"] if items else None,
     }
-
 
 # ============================================================
 # UPDATE
@@ -415,7 +422,10 @@ SOURCE :
 def delete_news_route(news_id: str):
     try:
         delete_news(news_id)
-        return {"status": "ok"}
+        return {
+            "status": "ok",
+            "deleted": True
+        }
     except Exception as e:
         logger.exception("Erreur suppression news")
         raise HTTPException(400, f"Erreur suppression news : {e}")
