@@ -33,14 +33,13 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
       try {
 
-        // ✅ snake_case
-        const solRes = await api.get(`/solution/${id}`);
-        const sol = solRes.solution;
+        // ✅ GET retourne directement l'objet
+        const sol = await api.get(`/solution/${id}`);
 
-        setName(sol.name);
+        setName(sol.name || "");
         setDescription(sol.description || "");
-        setContent(sol.content);
-        setStatus(sol.status);
+        setContent(sol.content || "");
+        setStatus(sol.status || "DRAFT");
         setIdCompany(sol.id_company || null);
 
         const compRes = await api.get("/company/list");
@@ -70,10 +69,10 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
       await api.put(`/solution/update/${id}`, {
         name,
-        description,
+        description: description || null,
         content,
         status,
-        id_company: idCompany,
+        id_company: idCompany || null,
       });
 
       alert("Solution mise à jour");
