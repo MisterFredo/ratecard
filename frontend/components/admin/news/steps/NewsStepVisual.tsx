@@ -83,17 +83,27 @@ export default function NewsStepVisual({
     setLoading(false);
   }
 
+  // ------------------------------------------------------------
+  // LOGIQUE DÉTERMINISTE D’EMPLACEMENT
+  // ------------------------------------------------------------
+
+  const isCompanyVisual =
+    mediaId?.startsWith("COMPANY_") ||
+    (!mediaId && !!companyMediaId);
+
   const visualSrc = mediaId
-    ? `${GCS_BASE_URL}/news/${mediaId}`
+    ? mediaId.startsWith("COMPANY_")
+      ? `${GCS_BASE_URL}/companies/${mediaId}`
+      : `${GCS_BASE_URL}/news/${mediaId}`
     : companyMediaId
     ? `${GCS_BASE_URL}/companies/${companyMediaId}`
     : null;
 
-  const isCompanyFallback = !mediaId && !!companyMediaId;
-
-  const imageClass = isCompanyFallback
+  const imageClass = isCompanyVisual
     ? "absolute inset-0 w-full h-full object-contain p-2"
     : "absolute inset-0 w-full h-full object-cover";
+
+  // ------------------------------------------------------------
 
   return (
     <div className="space-y-4">
@@ -109,7 +119,7 @@ export default function NewsStepVisual({
         <div className="max-w-xl relative aspect-[16/9] overflow-hidden bg-ratecard-light border rounded">
           <img src={visualSrc} alt="Visuel news" className={imageClass} />
 
-          {isCompanyFallback && (
+          {isCompanyVisual && (
             <div className="absolute bottom-2 right-2 text-xs text-gray-500 bg-white/80 px-2 py-1 rounded">
               Visuel société (à confirmer)
             </div>
@@ -130,7 +140,7 @@ export default function NewsStepVisual({
       />
 
       <div className="pt-4 flex gap-3">
-        {isCompanyFallback && (
+        {isCompanyVisual && companyMediaId && (
           <button
             onClick={duplicateCompanyVisual}
             className="bg-gray-200 px-4 py-2 rounded"
@@ -141,7 +151,7 @@ export default function NewsStepVisual({
 
         <button
           onClick={async () => {
-            if (isCompanyFallback) {
+            if (isCompanyVisual && companyMediaId) {
               await duplicateCompanyVisual();
             } else {
               onNext();
