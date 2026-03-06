@@ -69,6 +69,7 @@ def create_news(data: NewsCreate) -> str:
     # ------------------------------------------------------------
 
     media_id = data.media_rectangle_id
+    print(">>> media_rectangle_id reçu:", repr(data.media_rectangle_id))
 
     # On considère None / "" / "   " comme absent
     if not media_id or not str(media_id).strip():
