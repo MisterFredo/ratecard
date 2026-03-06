@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
@@ -6,32 +6,26 @@ from datetime import datetime
 # ============================================================
 # CREATE
 # ============================================================
-
 class ConceptCreate(BaseModel):
     """
     Création d'un concept métier.
     Content = HTML complet.
-    Contrat API 100% snake_case.
     """
 
-    title: str = Field(..., min_length=1)
+    title: str
     description: Optional[str] = None
     content: Optional[str] = None
 
-    status: str = "DRAFT"
-    vectorise: bool = False
+    status: Optional[str] = "DRAFT"
+    vectorise: Optional[bool] = False
 
-    # Mono-topic (0 ou 1)
+    # 🔥 Nouveau : 0 ou 1 topic
     id_topic: Optional[str] = None
-
-    class Config:
-        extra = "forbid"
 
 
 # ============================================================
 # UPDATE
 # ============================================================
-
 class ConceptUpdate(BaseModel):
     """
     Mise à jour partielle d'un concept.
@@ -44,35 +38,28 @@ class ConceptUpdate(BaseModel):
     status: Optional[str] = None
     vectorise: Optional[bool] = None
 
+    # 🔥 Mono-topic
     id_topic: Optional[str] = None
-
-    class Config:
-        extra = "forbid"
 
 
 # ============================================================
 # OUT
 # ============================================================
-
 class ConceptOut(BaseModel):
     """
-    Représentation retournée par l’API.
-    Snake_case strict.
+    Représentation côté API.
     """
 
     id_concept: str
     title: str
-
     description: Optional[str] = None
     content: Optional[str] = None
 
-    status: str
-    vectorise: bool
+    status: Optional[str] = None
+    vectorise: Optional[bool] = False
 
+    # 🔥 Mono-topic
     id_topic: Optional[str] = None
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-
-    class Config:
-        extra = "forbid"
