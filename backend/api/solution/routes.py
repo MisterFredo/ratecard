@@ -40,16 +40,22 @@ def list_route():
 
 
 # ============================================================
-# GET ONE
+# GET ONE  ⬅️ ALIGNÉ SUR COMPANY
 # ============================================================
-@router.get("/{id_solution}", response_model=SolutionOut)
+@router.get("/{id_solution}")
 def get_route(id_solution: str):
-    solution = get_solution(id_solution)
+    try:
+        solution = get_solution(id_solution)
 
-    if not solution:
-        raise HTTPException(404, "Solution introuvable")
+        if not solution:
+            raise HTTPException(404, "Solution introuvable")
 
-    return solution
+        return {"status": "ok", "solution": solution}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Erreur récupération solution : {e}")
 
 
 # ============================================================
@@ -72,6 +78,7 @@ def update_route(id_solution: str, data: SolutionUpdate):
         raise
     except Exception as e:
         raise HTTPException(400, f"Erreur mise à jour solution : {e}")
+
 
 # ============================================================
 # DELETE
