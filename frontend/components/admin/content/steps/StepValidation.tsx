@@ -172,7 +172,7 @@ export default function StepValidation({
         values={selectedCompanies}
         onChange={(vals) =>
           onChange({
-            companies: vals.map((v) => v.id_company),
+            companies: vals.map((v) => v.ID_COMPANY),
           })
         }
       />
@@ -184,7 +184,7 @@ export default function StepValidation({
         topicIds={topics}
         onChange={(vals) =>
           onChange({
-            concepts: vals.map((v) => v.id_concept),
+            concepts: vals.map((v) => v.ID_CONCEPT),
           })
         }
       />
@@ -195,7 +195,7 @@ export default function StepValidation({
         values={selectedSolutions}
         onChange={(vals) =>
           onChange({
-            solutions: vals.map((v) => v.id_solution),
+            solutions: vals.map((v) => v.ID_SOLUTION),
           })
         }
       />
