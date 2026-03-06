@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import EditableList from "@/components/admin/content/steps/EditableList";
 
@@ -31,24 +31,44 @@ type Props = {
 export default function StepSummary(props: Props) {
 
   const [loading, setLoading] = useState(false);
+  const [topicsMap, setTopicsMap] = useState<Record<string, string>>({});
+
+  // =====================================================
+  // LOAD TOPIC LABELS (ID → LABEL mapping)
+  // =====================================================
+
+  useEffect(() => {
+    async function loadTopics() {
+      try {
+        const res = await api.get("/topic/list");
+        const map: Record<string, string> = {};
+
+        (res.topics || []).forEach((t: any) => {
+          map[t.ID_TOPIC] = t.LABEL;
+        });
+
+        setTopicsMap(map);
+      } catch (e) {
+        console.error("Erreur chargement topics", e);
+      }
+    }
+
+    loadTopics();
+  }, []);
 
   // =====================================================
   // Helpers
   // =====================================================
 
   function normalizeList(input: any): string[] {
-
     if (!input) return [];
 
     if (Array.isArray(input)) {
-
       return input
         .flatMap((item) => {
-
           if (typeof item === "string") {
             return item.split(/[,;\n]/);
           }
-
           if (typeof item === "object" && item !== null) {
             return (
               item.label ||
@@ -60,7 +80,6 @@ export default function StepSummary(props: Props) {
               ""
             );
           }
-
           return [];
         })
         .map((x) => String(x).trim())
@@ -141,7 +160,6 @@ export default function StepSummary(props: Props) {
       {/* HEADER */}
 
       <div className="flex justify-between items-center border-b pb-3">
-
         <h2 className="text-base font-semibold">
           Synthèse & Analyse
         </h2>
@@ -153,7 +171,6 @@ export default function StepSummary(props: Props) {
         >
           {loading ? "Génération..." : "Générer"}
         </button>
-
       </div>
 
       {/* ================= ÉDITORIAL ================= */}
@@ -200,7 +217,7 @@ export default function StepSummary(props: Props) {
 
           <EditableList
             label="Topics suggérés"
-            items={props.topics}
+            items={props.topics.map(t => topicsMap[t] || t)}
             onChange={(items) =>
               props.onChange({ topics: items })
             }
@@ -258,41 +275,57 @@ export default function StepSummary(props: Props) {
           Analyse stratégique
         </h3>
 
-        <textarea
-          placeholder="Mécanique expliquée"
-          value={props.mecanique}
-          onChange={(e) =>
-            props.onChange({ mecanique: e.target.value })
-          }
-          className="w-full border rounded p-3 min-h-[110px] text-sm"
-        />
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Mécanique expliquée
+          </label>
+          <textarea
+            value={props.mecanique}
+            onChange={(e) =>
+              props.onChange({ mecanique: e.target.value })
+            }
+            className="w-full border rounded p-3 min-h-[110px] text-sm"
+          />
+        </div>
 
-        <textarea
-          placeholder="Enjeu stratégique"
-          value={props.enjeu}
-          onChange={(e) =>
-            props.onChange({ enjeu: e.target.value })
-          }
-          className="w-full border rounded p-3 min-h-[110px] text-sm"
-        />
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Enjeu stratégique
+          </label>
+          <textarea
+            value={props.enjeu}
+            onChange={(e) =>
+              props.onChange({ enjeu: e.target.value })
+            }
+            className="w-full border rounded p-3 min-h-[110px] text-sm"
+          />
+        </div>
 
-        <textarea
-          placeholder="Point de friction"
-          value={props.friction}
-          onChange={(e) =>
-            props.onChange({ friction: e.target.value })
-          }
-          className="w-full border rounded p-3 min-h-[90px] text-sm"
-        />
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Point de friction
+          </label>
+          <textarea
+            value={props.friction}
+            onChange={(e) =>
+              props.onChange({ friction: e.target.value })
+            }
+            className="w-full border rounded p-3 min-h-[90px] text-sm"
+          />
+        </div>
 
-        <textarea
-          placeholder="Signal analytique"
-          value={props.signal}
-          onChange={(e) =>
-            props.onChange({ signal: e.target.value })
-          }
-          className="w-full border rounded p-3 min-h-[110px] text-sm"
-        />
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Signal analytique
+          </label>
+          <textarea
+            value={props.signal}
+            onChange={(e) =>
+              props.onChange({ signal: e.target.value })
+            }
+            className="w-full border rounded p-3 min-h-[110px] text-sm"
+          />
+        </div>
 
       </div>
 
@@ -306,7 +339,5 @@ export default function StepSummary(props: Props) {
       </button>
 
     </div>
-
   );
-
 }
