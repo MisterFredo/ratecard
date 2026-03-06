@@ -6,8 +6,8 @@ import { api } from "@/lib/api";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
 type Company = {
-  ID_COMPANY: string;
-  NAME: string;
+  id_company: string;
+  name: string;
 };
 
 export default function EditSolution({ params }: { params: { id: string } }) {
@@ -17,15 +17,15 @@ export default function EditSolution({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [NAME, setNAME] = useState("");
-  const [DESCRIPTION, setDESCRIPTION] = useState("");
-  const [CONTENT, setCONTENT] = useState("");
-  const [STATUS, setSTATUS] =
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [content, setContent] = useState("");
+  const [status, setStatus] =
     useState<"DRAFT" | "PUBLISHED">("DRAFT");
-  const [ID_COMPANY, setID_COMPANY] =
+  const [idCompany, setIdCompany] =
     useState<string | null>(null);
 
-  const [COMPANIES, setCOMPANIES] = useState<Company[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
 
   useEffect(() => {
 
@@ -33,19 +33,18 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
       try {
 
-        // 🔹 Solution (snake_case côté API)
+        // ✅ snake_case
         const solRes = await api.get(`/solution/${id}`);
         const sol = solRes.solution;
 
-        setNAME(sol.NAME);
-        setDESCRIPTION(sol.DESCRIPTION || "");
-        setCONTENT(sol.CONTENT);
-        setSTATUS(sol.STATUS);
-        setID_COMPANY(sol.ID_COMPANY || null);
+        setName(sol.name);
+        setDescription(sol.description || "");
+        setContent(sol.content);
+        setStatus(sol.status);
+        setIdCompany(sol.id_company || null);
 
-        // 🔹 Companies list (snake_case côté API)
         const compRes = await api.get("/company/list");
-        setCOMPANIES(compRes.companies || []);
+        setCompanies(compRes.companies || []);
 
       } catch (e) {
 
@@ -70,11 +69,11 @@ export default function EditSolution({ params }: { params: { id: string } }) {
       setSaving(true);
 
       await api.put(`/solution/update/${id}`, {
-        NAME,
-        DESCRIPTION,
-        CONTENT,
-        STATUS,
-        ID_COMPANY,
+        name,
+        description,
+        content,
+        status,
+        id_company: idCompany,
       });
 
       alert("Solution mise à jour");
@@ -108,40 +107,40 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
       <input
         className="border p-2 w-full rounded"
-        value={NAME}
-        onChange={(e) => setNAME(e.target.value)}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
       />
 
       <select
         className="border p-2 rounded w-full"
-        value={ID_COMPANY || ""}
+        value={idCompany || ""}
         onChange={(e) =>
-          setID_COMPANY(e.target.value || null)
+          setIdCompany(e.target.value || null)
         }
       >
         <option value="">— Aucune société —</option>
-        {COMPANIES.map((c) => (
-          <option key={c.ID_COMPANY} value={c.ID_COMPANY}>
-            {c.NAME}
+        {companies.map((c) => (
+          <option key={c.id_company} value={c.id_company}>
+            {c.name}
           </option>
         ))}
       </select>
 
       <textarea
         className="border p-2 w-full rounded h-24"
-        value={DESCRIPTION}
+        value={description}
         onChange={(e) =>
-          setDESCRIPTION(e.target.value)
+          setDescription(e.target.value)
         }
       />
 
-      <HtmlEditor value={CONTENT} onChange={setCONTENT} />
+      <HtmlEditor value={content} onChange={setContent} />
 
       <select
         className="border p-2 rounded"
-        value={STATUS}
+        value={status}
         onChange={(e) =>
-          setSTATUS(
+          setStatus(
             e.target.value as "DRAFT" | "PUBLISHED"
           )
         }
