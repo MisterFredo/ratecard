@@ -6,17 +6,17 @@ import { api } from "@/lib/api";
 import { Pencil, Trash2 } from "lucide-react";
 
 type ConceptRow = {
-  ID_CONCEPT: string;
-  TITLE: string;
-  STATUS: "DRAFT" | "PUBLISHED";
-  VECTORISE?: boolean;
-  ID_TOPIC?: string | null;
-  UPDATED_AT?: string;
+  id_concept: string;
+  title: string;
+  status: "DRAFT" | "PUBLISHED";
+  vectorise?: boolean;
+  id_topic?: string | null;
+  updated_at?: string;
 };
 
 type Topic = {
-  ID_TOPIC: string;
-  LABEL: string;
+  id_topic: string;
+  label: string;
 };
 
 export default function ConceptList() {
@@ -25,9 +25,6 @@ export default function ConceptList() {
   const [topicsMap, setTopicsMap] = useState<Record<string, string>>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  /* ---------------------------------------------------------
-     LOAD DATA
-  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       try {
@@ -40,7 +37,7 @@ export default function ConceptList() {
 
         const map: Record<string, string> = {};
         (topicRes.topics || []).forEach((t: Topic) => {
-          map[t.ID_TOPIC] = t.LABEL;
+          map[t.id_topic] = t.label;
         });
 
         setTopicsMap(map);
@@ -55,9 +52,6 @@ export default function ConceptList() {
     load();
   }, []);
 
-  /* ---------------------------------------------------------
-     DELETE
-  --------------------------------------------------------- */
   async function handleDelete(id: string) {
     const confirmDelete = window.confirm(
       "Confirmer la suppression de ce concept ?\n\nCette action est irréversible."
@@ -70,9 +64,8 @@ export default function ConceptList() {
     try {
       await api.delete(`/concept/${id}`);
 
-      // Suppression optimiste du state
       setConcepts((prev) =>
-        prev.filter((c) => c.ID_CONCEPT !== id)
+        prev.filter((c) => c.id_concept !== id)
       );
     } catch (e) {
       console.error(e);
@@ -84,12 +77,8 @@ export default function ConceptList() {
 
   if (loading) return <p>Chargement…</p>;
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
     <div className="space-y-8">
-      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold">
           Concepts
@@ -103,7 +92,6 @@ export default function ConceptList() {
         </Link>
       </div>
 
-      {/* TABLE */}
       <div className="border rounded overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-100 text-left">
@@ -120,58 +108,48 @@ export default function ConceptList() {
           <tbody>
             {concepts.map((c) => (
               <tr
-                key={c.ID_CONCEPT}
+                key={c.id_concept}
                 className="border-t hover:bg-gray-50"
               >
-                {/* TITLE */}
                 <td className="p-3 font-medium">
-                  {c.TITLE}
+                  {c.title}
                 </td>
 
-                {/* TOPIC */}
                 <td className="p-3 text-gray-600">
-                  {c.ID_TOPIC
-                    ? topicsMap[c.ID_TOPIC] || "—"
+                  {c.id_topic
+                    ? topicsMap[c.id_topic] || "—"
                     : "—"}
                 </td>
 
-                {/* STATUS */}
                 <td className="p-3">
                   <span
                     className={`px-2 py-1 rounded text-xs ${
-                      c.STATUS === "PUBLISHED"
+                      c.status === "PUBLISHED"
                         ? "bg-green-100 text-green-700"
                         : "bg-gray-200 text-gray-600"
                     }`}
                   >
-                    {c.STATUS}
+                    {c.status}
                   </span>
                 </td>
 
-                {/* VECTORISE */}
                 <td className="p-3">
-                  {c.VECTORISE ? (
-                    <span className="text-green-600">
-                      ✔
-                    </span>
+                  {c.vectorise ? (
+                    <span className="text-green-600">✔</span>
                   ) : (
-                    <span className="text-gray-400">
-                      —
-                    </span>
+                    <span className="text-gray-400">—</span>
                   )}
                 </td>
 
-                {/* UPDATED */}
                 <td className="p-3 text-gray-500">
-                  {c.UPDATED_AT
-                    ? new Date(c.UPDATED_AT).toLocaleDateString()
+                  {c.updated_at
+                    ? new Date(c.updated_at).toLocaleDateString()
                     : "-"}
                 </td>
 
-                {/* ACTIONS */}
                 <td className="p-3 flex items-center gap-3">
                   <Link
-                    href={`/admin/concept/edit/${c.ID_CONCEPT}`}
+                    href={`/admin/concept/edit/${c.id_concept}`}
                     className="text-blue-600 hover:text-blue-800"
                   >
                     <Pencil size={16} />
@@ -179,9 +157,9 @@ export default function ConceptList() {
 
                   <button
                     onClick={() =>
-                      handleDelete(c.ID_CONCEPT)
+                      handleDelete(c.id_concept)
                     }
-                    disabled={deletingId === c.ID_CONCEPT}
+                    disabled={deletingId === c.id_concept}
                     className="text-red-600 hover:text-red-800 disabled:opacity-50"
                   >
                     <Trash2 size={16} />
