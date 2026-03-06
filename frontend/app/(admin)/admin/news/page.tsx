@@ -10,22 +10,22 @@ import { Pencil, Trash2, Linkedin } from "lucide-react";
 ========================================================= */
 
 type NewsLite = {
-  ID_NEWS: string;
-  TITLE: string;
-  STATUS: string;
-  PUBLISHED_AT?: string | null;
-  NEWS_KIND: "NEWS" | "BRIEF";
-  NEWS_TYPE?: string | null;
-  COMPANY_NAME: string;
+  id_news: string;
+  title: string;
+  status: string;
+  published_at?: string | null;
+  news_kind: "NEWS" | "BRIEF";
+  news_type?: string | null;
+  company_name: string;
 };
 
 type NewsStats = {
-  TOTAL: number;
-  TOTAL_PUBLISHED: number;
-  TOTAL_DRAFT: number;
-  TOTAL_NEWS: number;
-  TOTAL_BRIEVES: number;
-  TOTAL_PUBLISHED_THIS_YEAR: number;
+  total: number;
+  total_published: number;
+  total_draft: number;
+  total_news: number;
+  total_brieves: number;
+  total_published_this_year: number;
 };
 
 /* ========================================================= */
@@ -117,19 +117,19 @@ export default function NewsListPage() {
       PUBLISHED: 3,
     } as Record<string, number>;
 
-    const aOrder = order[a.STATUS] ?? 99;
-    const bOrder = order[b.STATUS] ?? 99;
+    const aOrder = order[a.status] ?? 99;
+    const bOrder = order[b.status] ?? 99;
 
     if (aOrder !== bOrder) {
       return aOrder - bOrder;
     }
 
-    const aDate = a.PUBLISHED_AT
-      ? new Date(a.PUBLISHED_AT).getTime()
+    const aDate = a.published_at
+      ? new Date(a.published_at).getTime()
       : 0;
 
-    const bDate = b.PUBLISHED_AT
-      ? new Date(b.PUBLISHED_AT).getTime()
+    const bDate = b.published_at
+      ? new Date(b.published_at).getTime()
       : 0;
 
     return bDate - aDate;
@@ -156,14 +156,14 @@ export default function NewsListPage() {
       {/* ================= STATS ================= */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-          <StatCard label="Total" value={stats.TOTAL} />
-          <StatCard label="Publiés" value={stats.TOTAL_PUBLISHED} green />
-          <StatCard label="Drafts" value={stats.TOTAL_DRAFT} yellow />
-          <StatCard label="News" value={stats.TOTAL_NEWS} purple />
-          <StatCard label="Brèves" value={stats.TOTAL_BRIEVES} blue />
+          <StatCard label="Total" value={stats.total} />
+          <StatCard label="Publiés" value={stats.total_published} green />
+          <StatCard label="Drafts" value={stats.total_draft} yellow />
+          <StatCard label="News" value={stats.total_news} purple />
+          <StatCard label="Brèves" value={stats.total_brieves} blue />
           <StatCard
             label="Publiés (année)"
-            value={stats.TOTAL_PUBLISHED_THIS_YEAR}
+            value={stats.total_published_this_year}
           />
         </div>
       )}
@@ -236,58 +236,58 @@ export default function NewsListPage() {
 
             <tbody>
               {sortedNews.map((n) => (
-                <tr key={n.ID_NEWS} className="border-b hover:bg-gray-50">
-                  <td className="p-2 font-medium">{n.TITLE}</td>
+                <tr key={n.id_news} className="border-b hover:bg-gray-50">
+                  <td className="p-2 font-medium">{n.title}</td>
 
                   <td className="p-2 text-gray-600">
-                    {n.NEWS_TYPE || "—"}
+                    {n.news_type || "—"}
                   </td>
 
                   <td className="p-2">
-                    <NewsKindBadge kind={n.NEWS_KIND} />
+                    <NewsKindBadge kind={n.news_kind} />
                   </td>
 
                   <td className="p-2 text-gray-600">
-                    {n.COMPANY_NAME}
+                    {n.company_name}
                   </td>
 
                   <td className="p-2">
                     <span
                       className={`px-2 py-1 rounded text-xs font-medium ${
-                        n.STATUS === "PUBLISHED"
+                        n.status === "PUBLISHED"
                           ? "bg-green-100 text-green-700"
-                          : n.STATUS === "DRAFT"
+                          : n.status === "DRAFT"
                           ? "bg-yellow-100 text-yellow-700"
-                          : n.STATUS === "SCHEDULED"
+                          : n.status === "SCHEDULED"
                           ? "bg-purple-100 text-purple-700"
                           : "bg-gray-200 text-gray-600"
                       }`}
                     >
-                      {n.STATUS}
+                      {n.status}
                     </span>
                   </td>
 
                   <td className="p-2">
-                    {n.PUBLISHED_AT
-                      ? new Date(n.PUBLISHED_AT).toLocaleDateString("fr-FR")
+                    {n.published_at
+                      ? new Date(n.published_at).toLocaleDateString("fr-FR")
                       : "—"}
                   </td>
 
                   <td className="p-2 text-right">
                     <div className="flex items-center justify-end gap-3 whitespace-nowrap">
-                      <Link href={`/admin/news/edit/${n.ID_NEWS}`}>
+                      <Link href={`/admin/news/edit/${n.id_news}`}>
                         <Pencil size={16} />
                       </Link>
 
-                      {n.NEWS_KIND === "NEWS" && (
+                      {n.news_kind === "NEWS" && (
                         <Link
-                          href={`/admin/news/edit/${n.ID_NEWS}?step=LINKEDIN`}
+                          href={`/admin/news/edit/${n.id_news}?step=LINKEDIN`}
                         >
                           <Linkedin size={16} />
                         </Link>
                       )}
 
-                      <button onClick={() => deleteNews(n.ID_NEWS)}>
+                      <button onClick={() => deleteNews(n.id_news)}>
                         <Trash2 size={16} />
                       </button>
                     </div>
