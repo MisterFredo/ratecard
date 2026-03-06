@@ -3,14 +3,8 @@ from typing import Optional
 from datetime import datetime
 
 
-# ============================================================
-# CREATE — création d'une société
-# ============================================================
+# CREATE
 class CompanyCreate(BaseModel):
-    """
-    Création d'une société.
-    ⚠️ Aucun champ média ici.
-    """
 
     name: str
     description: Optional[str] = None
@@ -18,17 +12,14 @@ class CompanyCreate(BaseModel):
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
 
-    is_partner: Optional[bool] = False
+    is_partner: bool = False
+
+    class Config:
+        extra = "forbid"
 
 
-# ============================================================
-# UPDATE — mise à jour d'une société existante
-# ============================================================
+# UPDATE
 class CompanyUpdate(BaseModel):
-    """
-    Mise à jour des données métier.
-    Les visuels restent gérés via /visuals/company/*
-    """
 
     name: Optional[str] = None
     description: Optional[str] = None
@@ -38,42 +29,35 @@ class CompanyUpdate(BaseModel):
 
     is_partner: Optional[bool] = None
 
-    # --- Wiki (bloc unique) ---
     wiki_content: Optional[str] = None
 
+    class Config:
+        extra = "forbid"
 
-# ============================================================
-# OUT — représentation API (snake_case)
-# ============================================================
+
+# OUT
 class CompanyOut(BaseModel):
-    """
-    Représentation côté API.
-    Snake_case uniquement.
-    """
 
     id_company: str
     name: str
 
-    # --- Brand ---
     description: Optional[str] = None
 
-    # --- Wiki ---
     wiki_content: Optional[str] = None
     wiki_source_id: Optional[str] = None
     wiki_updated_at: Optional[datetime] = None
     wiki_vectorised: Optional[bool] = False
 
-    # --- Media ---
     media_logo_rectangle_id: Optional[str] = None
 
-    # --- Liens ---
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
 
-    # --- Statut ---
-    is_partner: Optional[bool] = False
-    is_active: Optional[bool] = True
+    is_partner: bool = False
+    is_active: bool = True
 
-    # --- Dates ---
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    class Config:
+        extra = "forbid"
