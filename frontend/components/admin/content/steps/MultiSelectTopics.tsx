@@ -1,6 +1,6 @@
 "use client";
 
-type Topic = {
+export type Topic = {
   ID_TOPIC: string;
   LABEL: string;
 };
@@ -21,15 +21,17 @@ export default function MultiSelectTopics({
 
     if (selected.includes(id)) {
       onChange(selected.filter((x) => x !== id));
-    } else {
-      if (selected.length >= 3) return;
-      onChange([...selected, id]);
+      return;
     }
 
+    if (selected.length >= 3) return;
+
+    onChange([...selected, id]);
   }
 
   return (
     <div className="space-y-2">
+
       <label className="block text-sm font-medium">
         Topics (max 3)
       </label>
@@ -43,11 +45,12 @@ export default function MultiSelectTopics({
           return (
             <button
               key={t.ID_TOPIC}
+              type="button"
               onClick={() => toggle(t.ID_TOPIC)}
-              className={`px-3 py-1 rounded-full text-sm border ${
+              className={`px-3 py-1 rounded-full text-sm border transition ${
                 active
-                  ? "bg-black text-white"
-                  : "bg-white text-gray-700"
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
               }`}
             >
               {t.LABEL}
@@ -56,6 +59,7 @@ export default function MultiSelectTopics({
         })}
 
       </div>
+
     </div>
   );
 }
