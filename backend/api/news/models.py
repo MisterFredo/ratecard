@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List, Literal
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -64,9 +64,6 @@ class NewsUpdate(BaseModel):
 class NewsPublish(BaseModel):
     publish_at: Optional[datetime] = None
 
-    class Config:
-        extra = "forbid"
-
 
 # ============================================================
 # MINI STRUCTURES — PAGE SIGNAUX
@@ -77,33 +74,21 @@ class CompanyMini(BaseModel):
     name: str
     is_partner: bool
 
-    class Config:
-        extra = "forbid"
-
 
 class TopicMini(BaseModel):
     id_topic: str
     label: str
     axis: Optional[str] = None
 
-    class Config:
-        extra = "forbid"
-
 
 class ConceptMini(BaseModel):
     id_concept: str
     title: str
 
-    class Config:
-        extra = "forbid"
-
 
 class SolutionMini(BaseModel):
     id_solution: str
     title: str
-
-    class Config:
-        extra = "forbid"
 
 
 # ============================================================
@@ -124,9 +109,6 @@ class BreveOut(BaseModel):
     concepts: List[ConceptMini] = Field(default_factory=list)
     solutions: List[SolutionMini] = Field(default_factory=list)
 
-    class Config:
-        extra = "forbid"
-
 
 # ============================================================
 # STATS — PAGE SIGNAUX
@@ -140,9 +122,6 @@ class BreveCompanyStat(BaseModel):
     last_7_days: int
     last_30_days: int
 
-    class Config:
-        extra = "forbid"
-
 
 class BreveTopicStat(BaseModel):
     id_topic: str
@@ -151,18 +130,12 @@ class BreveTopicStat(BaseModel):
     last_7_days: int
     last_30_days: int
 
-    class Config:
-        extra = "forbid"
-
 
 class BreveTypeStat(BaseModel):
     news_type: Optional[str] = None
     total: int
     last_7_days: int
     last_30_days: int
-
-    class Config:
-        extra = "forbid"
 
 
 # ============================================================
@@ -173,9 +146,6 @@ class BrevesSearchResponse(BaseModel):
     total_count: int = 0
     sponsorised: List[BreveOut] = Field(default_factory=list)
     items: List[BreveOut] = Field(default_factory=list)
-
-    class Config:
-        extra = "forbid"
 
 
 # ============================================================
@@ -191,9 +161,6 @@ class BrevesStatsResponse(BaseModel):
     types_stats: List[BreveTypeStat] = Field(default_factory=list)
     top_companies: List[BreveCompanyStat] = Field(default_factory=list)
 
-    class Config:
-        extra = "forbid"
-
 
 # ============================================================
 # NEWS TYPE — RÉFÉRENTIEL
@@ -203,15 +170,9 @@ class NewsTypeOut(BaseModel):
     code: str
     label: str
 
-    class Config:
-        extra = "forbid"
-
 
 class NewsTypeListResponse(BaseModel):
     types: List[NewsTypeOut]
-
-    class Config:
-        extra = "forbid"
 
 
 # ============================================================
@@ -220,15 +181,9 @@ class NewsTypeListResponse(BaseModel):
 
 class NewsLinkedInPost(BaseModel):
     text: str
-    mode: Literal["manual", "ai"]
-
-    class Config:
-        extra = "forbid"
+    mode: str  # "manual" | "ai"
 
 
 class NewsLinkedInPostResponse(BaseModel):
     text: Optional[str] = None
     mode: Optional[str] = None
-
-    class Config:
-        extra = "forbid"
