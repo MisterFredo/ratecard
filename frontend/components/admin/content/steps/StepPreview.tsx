@@ -110,21 +110,21 @@ export default function StepPreview({
                 <div>
                   <strong>Topics :</strong>{" "}
                   {content.topics?.length
-                    ? content.topics.map((t: any) => t.LABEL).join(", ")
+                    ? content.topics.map((t: any) => t.label).join(", ")
                     : "—"}
                 </div>
 
                 <div>
                   <strong>Sociétés :</strong>{" "}
                   {content.companies?.length
-                    ? content.companies.map((c: any) => c.NAME).join(", ")
+                    ? content.companies.map((c: any) => c.name).join(", ")
                     : "—"}
                 </div>
 
                 <div>
                   <strong>Solutions :</strong>{" "}
                   {content.solutions?.length
-                    ? content.solutions.map((s: any) => s.NAME).join(", ")
+                    ? content.solutions.map((s: any) => s.name).join(", ")
                     : "—"}
                 </div>
 
