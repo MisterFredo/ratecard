@@ -14,9 +14,9 @@ type TopicRef = {
 };
 
 type Props = {
-  topicsRaw: string[]; // IDs gouvernés
+  topicsRaw: string[];
   acteursRaw: string[];
-  conceptsRaw: any[];  // concepts LLM structurés
+  conceptsRaw: any[];
   solutionsRaw: string[];
 
   topics: string[];
@@ -47,14 +47,14 @@ export default function StepValidation({
   onSave,
 }: Props) {
 
-  // =========================
-  // Governed data
-  // =========================
-
   const [allTopics, setAllTopics] = useState<TopicRef[]>([]);
   const [allCompanies, setAllCompanies] = useState<Company[]>([]);
   const [allConcepts, setAllConcepts] = useState<Concept[]>([]);
   const [allSolutions, setAllSolutions] = useState<Solution[]>([]);
+
+  // =========================
+  // LOAD + NORMALIZE API DATA
+  // =========================
 
   useEffect(() => {
     async function load() {
@@ -72,9 +72,29 @@ export default function StepValidation({
         ]);
 
         setAllTopics(topicRes?.topics || []);
-        setAllCompanies(companyRes?.companies || []);
-        setAllConcepts(conceptRes?.concepts || []);
-        setAllSolutions(solutionRes?.solutions || []);
+
+        // 🔁 Normalisation snake_case
+        setAllCompanies(
+          (companyRes?.companies || []).map((c: any) => ({
+            id_company: c.ID_COMPANY,
+            name: c.NAME,
+          }))
+        );
+
+        setAllConcepts(
+          (conceptRes?.concepts || []).map((c: any) => ({
+            id_concept: c.ID_CONCEPT,
+            title: c.TITLE,
+          }))
+        );
+
+        setAllSolutions(
+          (solutionRes?.solutions || []).map((s: any) => ({
+            id_solution: s.ID_SOLUTION,
+            name: s.NAME,
+          }))
+        );
+
       } catch (e) {
         console.error("Erreur chargement validation", e);
       }
@@ -84,30 +104,32 @@ export default function StepValidation({
   }, []);
 
   // =========================
-  // AUTO-SELECT LLM TOPICS (once)
+  // AUTO-INJECT LLM TOPICS (ONCE)
   // =========================
+
+  const [autoInjected, setAutoInjected] = useState(false);
 
   useEffect(() => {
-    if (topics.length === 0 && topicsRaw?.length > 0) {
+    if (!autoInjected && topicsRaw?.length > 0) {
       onChange({ topics: topicsRaw });
+      setAutoInjected(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topicsRaw]);
+  }, [topicsRaw, autoInjected, onChange]);
 
   // =========================
-  // Mapping IDs → Objects
+  // MAPPING IDS → OBJECTS
   // =========================
 
-  const selectedCompanies = allCompanies.filter((c: any) =>
-    companies.includes(c.ID_COMPANY)
+  const selectedCompanies = allCompanies.filter((c) =>
+    companies.includes(c.id_company)
   );
 
-  const selectedConcepts = allConcepts.filter((c: any) =>
-    concepts.includes(c.ID_CONCEPT)
+  const selectedConcepts = allConcepts.filter((c) =>
+    concepts.includes(c.id_concept)
   );
 
-  const selectedSolutions = allSolutions.filter((s: any) =>
-    solutions.includes(s.ID_SOLUTION)
+  const selectedSolutions = allSolutions.filter((s) =>
+    solutions.includes(s.id_solution)
   );
 
   // =========================
@@ -121,7 +143,7 @@ export default function StepValidation({
         Validation structurante
       </div>
 
-      {/* ================= RAW DISPLAY ================= */}
+      {/* RAW DISPLAY */}
 
       <div className="space-y-2 text-xs text-gray-500 border-b pb-3">
 
@@ -156,7 +178,7 @@ export default function StepValidation({
 
       </div>
 
-      {/* ================= TOPICS ================= */}
+      {/* TOPICS */}
 
       <MultiSelectTopics
         topics={allTopics}
@@ -166,41 +188,41 @@ export default function StepValidation({
         }
       />
 
-      {/* ================= COMPANIES ================= */}
+      {/* COMPANIES */}
 
       <CompanySelector
         values={selectedCompanies}
         onChange={(vals) =>
           onChange({
-            companies: vals.map((v) => v.ID_COMPANY),
+            companies: vals.map((v) => v.id_company),
           })
         }
       />
 
-      {/* ================= CONCEPTS ================= */}
+      {/* CONCEPTS */}
 
       <ConceptSelector
         values={selectedConcepts}
         topicIds={topics}
         onChange={(vals) =>
           onChange({
-            concepts: vals.map((v) => v.ID_CONCEPT),
+            concepts: vals.map((v) => v.id_concept),
           })
         }
       />
 
-      {/* ================= SOLUTIONS ================= */}
+      {/* SOLUTIONS */}
 
       <SolutionSelector
         values={selectedSolutions}
         onChange={(vals) =>
           onChange({
-            solutions: vals.map((v) => v.ID_SOLUTION),
+            solutions: vals.map((v) => v.id_solution),
           })
         }
       />
 
-      {/* ================= SAVE ================= */}
+      {/* SAVE */}
 
       <button
         onClick={onSave}
