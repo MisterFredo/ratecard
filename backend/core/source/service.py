@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from google.cloud import bigquery
 
@@ -38,20 +37,19 @@ def create_source(data: SourceCreate) -> str:
 
     client = get_bigquery_client()
 
-    job = client.load_table_from_json(
+    client.load_table_from_json(
         row,
         TABLE_SOURCE,
         job_config=bigquery.LoadJobConfig(
             write_disposition="WRITE_APPEND"
         ),
-    )
-
-    job.result()
+    ).result()
 
     return source_id
 
+
 # ============================================================
-# LIST SOURCES
+# LIST SOURCES (snake_case contractuel)
 # ============================================================
 def list_sources():
 
@@ -69,16 +67,38 @@ def list_sources():
         ORDER BY NAME ASC
     """
 
-    return query_bq(sql)
+    rows = query_bq(sql)
+
+    return [
+        {
+            "source_id": r["SOURCE_ID"],
+            "name": r["NAME"],
+            "type_source": r["TYPE_SOURCE"],
+            "description": r["DESCRIPTION"],
+            "domain": r["DOMAIN"],
+            "author": r["AUTHOR"],
+            "author_profile": r["AUTHOR_PROFILE"],
+            "created_at": r["CREATED_AT"],
+        }
+        for r in rows
+    ]
 
 
 # ============================================================
-# GET ONE SOURCE
+# GET ONE SOURCE (snake_case contractuel)
 # ============================================================
 def get_source(source_id: str):
 
     sql = f"""
-        SELECT *
+        SELECT
+            SOURCE_ID,
+            NAME,
+            TYPE_SOURCE,
+            DESCRIPTION,
+            DOMAIN,
+            AUTHOR,
+            AUTHOR_PROFILE,
+            CREATED_AT
         FROM `{TABLE_SOURCE}`
         WHERE SOURCE_ID = @id
         LIMIT 1
@@ -89,7 +109,18 @@ def get_source(source_id: str):
     if not rows:
         return None
 
-    return rows[0]
+    r = rows[0]
+
+    return {
+        "source_id": r["SOURCE_ID"],
+        "name": r["NAME"],
+        "type_source": r["TYPE_SOURCE"],
+        "description": r["DESCRIPTION"],
+        "domain": r["DOMAIN"],
+        "author": r["AUTHOR"],
+        "author_profile": r["AUTHOR_PROFILE"],
+        "created_at": r["CREATED_AT"],
+    }
 
 
 # ============================================================
@@ -122,6 +153,8 @@ def update_source(source_id: str, data: SourceUpdate) -> bool:
         fields=bq_values,
         where={"SOURCE_ID": source_id},
     )
+
+
 # ============================================================
 # DELETE SOURCE
 # ============================================================
