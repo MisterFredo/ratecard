@@ -116,10 +116,10 @@ export default function NewsStepContent({
 
         setAllPersons(
           (res.persons || []).map((p: any) => ({
-            id_person: p.ID_PERSON,
-            name: p.NAME,
-            title: p.TITLE || "",
-            id_company: p.ID_COMPANY || null,
+            id_person: p.id_person,
+            name: p.name,
+            title: p.title || "",
+            id_company: p.id_company || null,
           }))
         );
       } catch (e) {
@@ -162,15 +162,13 @@ export default function NewsStepContent({
 
         const fetched = res.concepts || [];
 
-        // Mapping API → UI snake_case
         const mapped: Concept[] = fetched.map((c: any) => ({
-          id_concept: c.ID_CONCEPT,
-          title: c.TITLE,
+          id_concept: c.id_concept,
+          title: c.title,
         }));
 
         setAvailableConcepts(mapped);
 
-        // 🔒 Nettoyage automatique des concepts devenus invalides
         const validIds = new Set(mapped.map((c) => c.id_concept));
 
         const filtered = concepts.filter((c) =>
