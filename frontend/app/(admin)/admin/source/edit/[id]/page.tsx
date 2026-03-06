@@ -10,57 +10,43 @@ export default function EditSource() {
   const params = useParams();
   const sourceId = params?.id as string;
 
-  const [NAME, setNAME] = useState("");
-  const [TYPE_SOURCE, setTYPE_SOURCE] = useState("");
-  const [DESCRIPTION, setDESCRIPTION] = useState("");
-  const [DOMAIN, setDOMAIN] = useState("");
-  const [AUTHOR, setAUTHOR] = useState("");
-  const [AUTHOR_PROFILE, setAUTHOR_PROFILE] = useState("");
+  const [name, setName] = useState("");
+  const [typeSource, setTypeSource] = useState("");
+  const [description, setDescription] = useState("");
+  const [domain, setDomain] = useState("");
+  const [author, setAuthor] = useState("");
+  const [authorProfile, setAuthorProfile] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  /* ---------------------------------------------------------
-     LOAD SOURCE
-  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
-
       try {
-
         const res = await api.get(`/source/${sourceId}`);
 
-        setNAME(res.NAME || "");
-        setTYPE_SOURCE(res.TYPE_SOURCE || "");
-        setDESCRIPTION(res.DESCRIPTION || "");
-        setDOMAIN(res.DOMAIN || "");
-        setAUTHOR(res.AUTHOR || "");
-        setAUTHOR_PROFILE(res.AUTHOR_PROFILE || "");
-
+        setName(res.name || "");
+        setTypeSource(res.type_source || "");
+        setDescription(res.description || "");
+        setDomain(res.domain || "");
+        setAuthor(res.author || "");
+        setAuthorProfile(res.author_profile || "");
       } catch (e) {
-
         console.error(e);
         alert("Erreur chargement source");
-
       } finally {
-
         setLoading(false);
-
       }
     }
 
     if (sourceId) {
       load();
     }
-
   }, [sourceId]);
 
-  /* ---------------------------------------------------------
-     SAVE
-  --------------------------------------------------------- */
   async function save() {
 
-    if (!NAME.trim()) {
+    if (!name.trim()) {
       alert("Nom requis");
       return;
     }
@@ -70,12 +56,12 @@ export default function EditSource() {
       setSaving(true);
 
       await api.put(`/source/update/${sourceId}`, {
-        NAME,
-        TYPE_SOURCE: TYPE_SOURCE || null,
-        DESCRIPTION: DESCRIPTION || null,
-        DOMAIN: DOMAIN || null,
-        AUTHOR: AUTHOR || null,
-        AUTHOR_PROFILE: AUTHOR_PROFILE || null,
+        name,
+        type_source: typeSource || null,
+        description: description || null,
+        domain: domain || null,
+        author: author || null,
+        author_profile: authorProfile || null,
       });
 
       alert("Source mise à jour");
@@ -92,9 +78,6 @@ export default function EditSource() {
     }
   }
 
-  /* ---------------------------------------------------------
-     DELETE
-  --------------------------------------------------------- */
   async function remove() {
 
     if (!confirm("Supprimer cette source ?")) {
@@ -117,10 +100,6 @@ export default function EditSource() {
     }
   }
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
-
   if (loading) {
     return <div>Chargement...</div>;
   }
@@ -128,7 +107,6 @@ export default function EditSource() {
   return (
     <div className="space-y-10">
 
-      {/* HEADER */}
       <div className="flex justify-between items-center">
 
         <h1 className="text-2xl font-semibold">
@@ -144,8 +122,6 @@ export default function EditSource() {
 
       </div>
 
-
-      {/* NAME */}
       <div className="space-y-2 max-w-xl">
         <label className="block text-sm font-medium">
           Nom
@@ -153,13 +129,11 @@ export default function EditSource() {
 
         <input
           className="border p-2 w-full rounded"
-          value={NAME}
-          onChange={(e) => setNAME(e.target.value)}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
         />
       </div>
 
-
-      {/* TYPE */}
       <div className="space-y-2 max-w-md">
         <label className="block text-sm font-medium">
           Type de source
@@ -167,13 +141,11 @@ export default function EditSource() {
 
         <input
           className="border p-2 w-full rounded"
-          value={TYPE_SOURCE}
-          onChange={(e) => setTYPE_SOURCE(e.target.value)}
+          value={typeSource}
+          onChange={(e) => setTypeSource(e.target.value)}
         />
       </div>
 
-
-      {/* DOMAIN */}
       <div className="space-y-2 max-w-md">
         <label className="block text-sm font-medium">
           Domaine
@@ -181,13 +153,11 @@ export default function EditSource() {
 
         <input
           className="border p-2 w-full rounded"
-          value={DOMAIN}
-          onChange={(e) => setDOMAIN(e.target.value)}
+          value={domain}
+          onChange={(e) => setDomain(e.target.value)}
         />
       </div>
 
-
-      {/* AUTHOR */}
       <div className="space-y-2 max-w-md">
         <label className="block text-sm font-medium">
           Auteur
@@ -195,13 +165,11 @@ export default function EditSource() {
 
         <input
           className="border p-2 w-full rounded"
-          value={AUTHOR}
-          onChange={(e) => setAUTHOR(e.target.value)}
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
         />
       </div>
 
-
-      {/* AUTHOR PROFILE */}
       <div className="space-y-2 max-w-xl">
         <label className="block text-sm font-medium">
           Profil auteur
@@ -209,13 +177,11 @@ export default function EditSource() {
 
         <input
           className="border p-2 w-full rounded"
-          value={AUTHOR_PROFILE}
-          onChange={(e) => setAUTHOR_PROFILE(e.target.value)}
+          value={authorProfile}
+          onChange={(e) => setAuthorProfile(e.target.value)}
         />
       </div>
 
-
-      {/* DESCRIPTION */}
       <div className="space-y-2 max-w-3xl">
         <label className="block text-sm font-medium">
           Description
@@ -223,13 +189,11 @@ export default function EditSource() {
 
         <textarea
           className="border p-2 w-full rounded h-24"
-          value={DESCRIPTION}
-          onChange={(e) => setDESCRIPTION(e.target.value)}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
         />
       </div>
 
-
-      {/* ACTIONS */}
       <div className="flex gap-4">
 
         <button
