@@ -230,7 +230,6 @@ def _search_analyses_digest(
     sql = f"""
         SELECT
             C.ID_CONTENT,
-            C.ANGLE_TITLE,
             C.EXCERPT,
             C.PUBLISHED_AT
         FROM `{TABLE_CONTENT}` C
@@ -244,7 +243,6 @@ def _search_analyses_digest(
     return [
         {
             "id": r.get("ID_CONTENT"),
-            "title": r.get("ANGLE_TITLE"),
             "excerpt": r.get("EXCERPT"),
             "published_at": r.get("PUBLISHED_AT"),
         }
