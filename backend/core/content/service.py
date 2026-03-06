@@ -524,12 +524,9 @@ def publish_content(
     now_dt = datetime.now(timezone.utc)
 
     if published_at is None:
-
         status = "PUBLISHED"
         final_dt = now_dt
-
     else:
-
         if published_at.tzinfo is None:
             published_at = published_at.replace(
                 tzinfo=timezone.utc
@@ -543,7 +540,6 @@ def publish_content(
             else "SCHEDULED"
         )
 
-    # 👉 Conversion en ISO uniquement pour BigQuery
     update_bq(
         table=TABLE_CONTENT,
         fields={
