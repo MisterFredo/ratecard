@@ -6,12 +6,12 @@ import { api } from "@/lib/api";
 import { Pencil } from "lucide-react";
 
 type SourceRow = {
-  SOURCE_ID: string;
-  NAME: string;
-  TYPE_SOURCE?: string | null;
-  DOMAIN?: string | null;
-  AUTHOR?: string | null;
-  CREATED_AT?: string;
+  source_id: string;
+  name: string;
+  type_source?: string | null;
+  domain?: string | null;
+  author?: string | null;
+  created_at?: string;
 };
 
 export default function SourceList() {
@@ -19,9 +19,6 @@ export default function SourceList() {
   const [loading, setLoading] = useState(true);
   const [sources, setSources] = useState<SourceRow[]>([]);
 
-  /* ---------------------------------------------------------
-     LOAD SOURCES
-  --------------------------------------------------------- */
   useEffect(() => {
 
     async function load() {
@@ -48,10 +45,6 @@ export default function SourceList() {
 
   }, []);
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
-
   if (loading) {
     return <div>Chargement...</div>;
   }
@@ -59,7 +52,6 @@ export default function SourceList() {
   return (
     <div className="space-y-10">
 
-      {/* HEADER */}
       <div className="flex justify-between items-center">
 
         <h1 className="text-2xl font-semibold">
@@ -75,7 +67,6 @@ export default function SourceList() {
 
       </div>
 
-      {/* TABLE */}
       <table className="w-full border">
 
         <thead className="bg-gray-50">
@@ -107,27 +98,27 @@ export default function SourceList() {
         <tbody>
 
           {sources.map((s) => (
-            <tr key={s.SOURCE_ID} className="border-t">
+            <tr key={s.source_id} className="border-t">
 
               <td className="p-3 border">
-                {s.NAME}
+                {s.name}
               </td>
 
               <td className="p-3 border">
-                {s.TYPE_SOURCE || "—"}
+                {s.type_source || "—"}
               </td>
 
               <td className="p-3 border">
-                {s.DOMAIN || "—"}
+                {s.domain || "—"}
               </td>
 
               <td className="p-3 border">
-                {s.AUTHOR || "—"}
+                {s.author || "—"}
               </td>
 
               <td className="p-3 border text-center">
 
-                <Link href={`/admin/source/${s.SOURCE_ID}`}>
+                <Link href={`/admin/source/${s.source_id}`}>
                   <Pencil size={16} />
                 </Link>
 
