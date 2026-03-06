@@ -29,10 +29,6 @@ type Props = {
 export default function NewsStudio({ mode, newsId }: Props) {
   const searchParams = useSearchParams();
 
-  /* =========================================================
-     STATE
-  ========================================================= */
-
   const [newsKind, setNewsKind] = useState<"NEWS" | "BRIEF">("NEWS");
   const [newsType, setNewsType] = useState<string | null>(null);
 
@@ -94,29 +90,28 @@ export default function NewsStudio({ mode, newsId }: Props) {
         const res = await api.get(`/news/${newsId}`);
         const n = res.news;
 
-        setNewsKind(n.NEWS_KIND || "NEWS");
-        setNewsType(n.NEWS_TYPE || null);
+        setNewsKind(n.news_kind || "NEWS");
+        setNewsType(n.news_type || null);
 
-        setTitle(n.TITLE || "");
-        setExcerpt(n.EXCERPT || "");
-        setBody(n.BODY || "");
+        setTitle(n.title || "");
+        setExcerpt(n.excerpt || "");
+        setBody(n.body || "");
 
-        // 🔥 Normalisation company en UPPER_CASE
         setCompany(
-          n.ID_COMPANY
+          n.company?.id_company
             ? {
-                ID_COMPANY: n.ID_COMPANY,
-                NAME: n.COMPANY_NAME,
+                id_company: n.company.id_company,
+                name: n.company.name,
               }
             : null
         );
 
-        setTopics(n.TOPICS || []);
-        setPersons(n.PERSONS || []);
-        setConcepts(n.CONCEPTS || []);
-        setSolutions(n.SOLUTIONS || []);
+        setTopics(n.topics || []);
+        setPersons(n.persons || []);
+        setConcepts(n.concepts || []);
+        setSolutions(n.solutions || []);
 
-        setMediaId(n.MEDIA_RECTANGLE_ID || null);
+        setMediaId(n.media_rectangle_id || null);
 
         if (!searchParams.get("step")) {
           setStep("CONTENT");
@@ -135,8 +130,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
   ========================================================= */
 
   useEffect(() => {
-    const companyId =
-      company?.ID_COMPANY || company?.id_company;
+    const companyId = company?.id_company;
 
     if (!companyId) {
       setCompanyFull(null);
@@ -167,25 +161,24 @@ export default function NewsStudio({ mode, newsId }: Props) {
     setSaving(true);
 
     const payload = {
-      ID_COMPANY: company.ID_COMPANY || company.id_company,
-      NEWS_KIND: newsKind,
-      NEWS_TYPE: newsType ?? null,
+      id_company: company.id_company,
+      news_kind: newsKind,
+      news_type: newsType ?? null,
 
-      TITLE: title,
-      EXCERPT: excerpt,
-      BODY: newsKind === "NEWS" ? body : null,
+      title: title,
+      excerpt: excerpt,
+      body: newsKind === "NEWS" ? body : null,
 
-      TOPICS: topics.map((t) => t.ID_TOPIC || t.id_topic),
-      PERSONS: persons.map((p) => p.ID_PERSON || p.id_person),
-
-      CONCEPTS: concepts.map((c) => c.ID_CONCEPT || c.id_concept),
-      SOLUTIONS: solutions.map((s) => s.ID_SOLUTION || s.id_solution),
+      topics: topics.map((t) => t.id_topic),
+      persons: persons.map((p) => p.id_person),
+      concepts: concepts.map((c) => c.id_concept),
+      solutions: solutions.map((s) => s.id_solution),
     };
 
     try {
       if (!internalNewsId) {
         const res = await api.post("/news/create", payload);
-        setInternalNewsId(res.ID_NEWS);
+        setInternalNewsId(res.id_news);
       } else {
         await api.put(`/news/update/${internalNewsId}`, payload);
       }
@@ -209,7 +202,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
     if (
       newsKind === "NEWS" &&
       !mediaId &&
-      !companyFull?.MEDIA_LOGO_RECTANGLE_ID
+      !companyFull?.media_logo_rectangle_id
     ) {
       return alert("Visuel requis pour une news");
     }
@@ -298,7 +291,7 @@ export default function NewsStudio({ mode, newsId }: Props) {
             <NewsStepVisual
               newsId={internalNewsId}
               mediaId={mediaId}
-              companyMediaId={companyFull?.MEDIA_LOGO_RECTANGLE_ID || null}
+              companyMediaId={companyFull?.media_logo_rectangle_id || null}
               onUpdated={setMediaId}
               onNext={() => setStep("PREVIEW")}
             />
