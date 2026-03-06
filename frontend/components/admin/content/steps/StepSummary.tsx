@@ -4,6 +4,11 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import EditableList from "@/components/admin/content/steps/EditableList";
 
+type ConceptItem = {
+  label: string;
+  topic_id: string;
+};
+
 type Props = {
   sourceId: string | null;
   sourceText: string;
@@ -15,7 +20,7 @@ type Props = {
   chiffres: string[];
 
   acteurs: string[];
-  concepts: string[];
+  concepts: ConceptItem[];   // ⬅️ UPDATED
   solutions: string[];
   topics: string[];
 
@@ -130,9 +135,12 @@ export default function StepSummary(props: Props) {
         chiffres: normalizeList(res.chiffres),
 
         acteurs: normalizeList(res.acteurs_cites),
-        concepts: normalizeList(res.concepts),
+
+        // ⬇️ Concepts déjà structurés côté back
+        concepts: res.concepts || [],
+
         solutions: normalizeList(res.solutions),
-        topics: normalizeList(res.topics),
+        topics: res.topics || [],
 
         mecanique: res.mecanique_expliquee || "",
         enjeu: res.enjeu_strategique || "",
@@ -148,6 +156,15 @@ export default function StepSummary(props: Props) {
 
     setLoading(false);
   }
+
+  // =====================================================
+  // DISPLAY HELPERS
+  // =====================================================
+
+  const conceptLabels = props.concepts.map((c) => {
+    const topicLabel = topicsMap[c.topic_id] || c.topic_id;
+    return `${c.label} (${topicLabel})`;
+  });
 
   // =====================================================
   // RENDER
@@ -233,9 +250,14 @@ export default function StepSummary(props: Props) {
 
           <EditableList
             label="Concepts"
-            items={props.concepts}
+            items={conceptLabels}
             onChange={(items) =>
-              props.onChange({ concepts: items })
+              props.onChange({
+                concepts: items.map((label: string) => ({
+                  label,
+                  topic_id: "", // L’admin pourra corriger ensuite si besoin
+                })),
+              })
             }
           />
 
