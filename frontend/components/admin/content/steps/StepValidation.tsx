@@ -3,15 +3,21 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-import MultiSelectTopics from "@/components/admin/content/steps/MultiSelectTopics";
-import CompanySelector, { Company } from "@/components/admin/CompanySelector";
-import ConceptSelector, { Concept } from "@/components/admin/ConceptSelector";
-import SolutionSelector, { Solution } from "@/components/admin/SolutionSelector";
+import MultiSelectTopics, {
+  Topic,
+} from "@/components/admin/content/steps/MultiSelectTopics";
 
-type TopicRef = {
-  id_topic: string;
-  label: string;
-};
+import CompanySelector, {
+  Company,
+} from "@/components/admin/CompanySelector";
+
+import ConceptSelector, {
+  Concept,
+} from "@/components/admin/ConceptSelector";
+
+import SolutionSelector, {
+  Solution,
+} from "@/components/admin/SolutionSelector";
 
 type Props = {
   topicsRaw: string[];
@@ -47,19 +53,18 @@ export default function StepValidation({
   onSave,
 }: Props) {
 
-  const [allTopics, setAllTopics] = useState<TopicRef[]>([]);
+  const [allTopics, setAllTopics] = useState<Topic[]>([]);
   const [allCompanies, setAllCompanies] = useState<Company[]>([]);
   const [allConcepts, setAllConcepts] = useState<Concept[]>([]);
   const [allSolutions, setAllSolutions] = useState<Solution[]>([]);
 
-  // =========================
+  // ============================================================
   // LOAD + NORMALIZE API DATA
-  // =========================
+  // ============================================================
 
   useEffect(() => {
 
     async function load() {
-
       try {
 
         const [
@@ -100,31 +105,28 @@ export default function StepValidation({
       } catch (e) {
         console.error("Erreur chargement validation", e);
       }
-
     }
 
     load();
 
   }, []);
 
-  // =========================
+  // ============================================================
   // AUTO-INJECT LLM TOPICS (ONCE)
-  // =========================
+  // ============================================================
 
   const [autoInjected, setAutoInjected] = useState(false);
 
   useEffect(() => {
-
     if (!autoInjected && topicsRaw?.length > 0) {
       onChange({ topics: topicsRaw });
       setAutoInjected(true);
     }
-
   }, [topicsRaw, autoInjected, onChange]);
 
-  // =========================
+  // ============================================================
   // MAPPING IDS → OBJECTS
-  // =========================
+  // ============================================================
 
   const selectedCompanies = allCompanies.filter((c) =>
     companies.includes(c.id_company)
@@ -138,9 +140,9 @@ export default function StepValidation({
     solutions.includes(s.id_solution)
   );
 
-  // =========================
+  // ============================================================
   // UI
-  // =========================
+  // ============================================================
 
   return (
 
@@ -234,6 +236,7 @@ export default function StepValidation({
       <button
         onClick={onSave}
         className="w-full px-4 py-2 bg-black text-white rounded text-sm"
+        type="button"
       >
         Sauvegarder la validation
       </button>
