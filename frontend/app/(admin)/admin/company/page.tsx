@@ -8,15 +8,16 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 const COMPANY_MEDIA_PATH = "companies";
 
 type CompanyRow = {
-  ID_COMPANY: string;
-  NAME: string;
-  MEDIA_LOGO_RECTANGLE_ID?: string | null;
-  IS_PARTNER?: boolean | null;
-  HAS_DESCRIPTION?: boolean;
-  HAS_WIKI?: boolean;
+  id_company: string;
+  name: string;
+  media_logo_rectangle_id?: string | null;
+  is_partner?: boolean | null;
+  has_description?: boolean;
+  has_wiki?: boolean;
 };
 
 export default function CompanyList() {
+
   const [companies, setCompanies] = useState<CompanyRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,6 +40,7 @@ export default function CompanyList() {
 
   return (
     <div className="space-y-8">
+
       <div className="flex justify-between">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
           Sociétés
@@ -73,21 +75,22 @@ export default function CompanyList() {
 
           <tbody>
             {companies.map((c) => {
-              const isPartner = Boolean(c.IS_PARTNER);
 
-              const rectUrl = c.MEDIA_LOGO_RECTANGLE_ID
-                ? `${GCS_BASE_URL}/${COMPANY_MEDIA_PATH}/${c.MEDIA_LOGO_RECTANGLE_ID}`
+              const rectUrl = c.media_logo_rectangle_id
+                ? `${GCS_BASE_URL}/${COMPANY_MEDIA_PATH}/${c.media_logo_rectangle_id}`
                 : null;
 
               return (
                 <tr
-                  key={c.ID_COMPANY}
+                  key={c.id_company}
                   className="border-b hover:bg-gray-50"
                 >
-                  <td className="p-2 font-medium">{c.NAME}</td>
+                  <td className="p-2 font-medium">
+                    {c.name}
+                  </td>
 
                   <td className="p-2">
-                    {isPartner ? (
+                    {c.is_partner ? (
                       <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
                         Partenaire
                       </span>
@@ -98,18 +101,16 @@ export default function CompanyList() {
                     )}
                   </td>
 
-                  {/* DESCRIPTION STATUS */}
                   <td className="p-2">
-                    {c.HAS_DESCRIPTION ? (
+                    {c.has_description ? (
                       <span className="text-green-600 font-semibold">✓</span>
                     ) : (
                       <span className="text-gray-400">—</span>
                     )}
                   </td>
 
-                  {/* WIKI STATUS */}
                   <td className="p-2">
-                    {c.HAS_WIKI ? (
+                    {c.has_wiki ? (
                       <span className="text-blue-600 font-semibold">✓</span>
                     ) : (
                       <span className="text-gray-400">—</span>
@@ -120,7 +121,7 @@ export default function CompanyList() {
                     {rectUrl ? (
                       <img
                         src={rectUrl}
-                        alt={`Logo ${c.NAME}`}
+                        alt={`Logo ${c.name}`}
                         className="h-10 max-w-[120px] object-contain"
                       />
                     ) : (
@@ -130,7 +131,7 @@ export default function CompanyList() {
 
                   <td className="p-2 text-right">
                     <Link
-                      href={`/admin/company/edit/${c.ID_COMPANY}`}
+                      href={`/admin/company/edit/${c.id_company}`}
                       className="text-blue-600 hover:underline"
                     >
                       Modifier
@@ -138,10 +139,12 @@ export default function CompanyList() {
                   </td>
                 </tr>
               );
+
             })}
           </tbody>
         </table>
       )}
+
     </div>
   );
 }
