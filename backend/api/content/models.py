@@ -45,6 +45,9 @@ class ContentCreate(BaseModel):
     citations: List[str] = Field(default_factory=list)
     chiffres: List[str] = Field(default_factory=list)
     acteurs_cites: List[str] = Field(default_factory=list)
+    concepts_llm: List[str] = Field(default_factory=list)
+    solutions_llm: List[str] = Field(default_factory=list)
+    topics_llm: List[str] = Field(default_factory=list)
 
     # ---------------------------------------------------------
     # ANALYSE STRATÉGIQUE (NOUVEAU)
@@ -106,6 +109,9 @@ class ContentUpdate(BaseModel):
     citations: Optional[List[str]] = None
     chiffres: Optional[List[str]] = None
     acteurs_cites: Optional[List[str]] = None
+    concepts_llm: Optional[List[str]] = None
+    solutions_llm: Optional[List[str]] = None
+    topics_llm: Optional[List[str]] = None
 
     # ---------------------------------------------------------
     # ANALYSE STRATÉGIQUE (NOUVEAU)
@@ -174,6 +180,9 @@ class ContentOut(BaseModel):
     enjeu_strategique: Optional[str] = None
     point_de_friction: Optional[str] = None
     signal_analytique: Optional[str] = None
+    concepts_llm: List[str] = Field(default_factory=list)
+    solutions_llm: List[str] = Field(default_factory=list)
+    topics_llm: List[str] = Field(default_factory=list)
 
     published_at: Optional[datetime] = None
 
