@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 type Source = {
-  SOURCE_ID: string;
-  NAME: string;
+  source_id: string;
+  name: string;
 };
 
 type Props = {
@@ -37,9 +37,9 @@ export default function StepSource({ onCreate }: Props) {
         setSources(list);
 
         if (list.length) {
-          setSourceId(list[0].SOURCE_ID);
+          setSourceId(list[0].source_id);
           onCreate({
-            source_id: list[0].SOURCE_ID,
+            source_id: list[0].source_id,
             text: "",
           });
         }
@@ -65,7 +65,7 @@ export default function StepSource({ onCreate }: Props) {
       text: sourceText,
     });
 
-  }, [sourceId, sourceText]);
+  }, [sourceId, sourceText]); // eslint-disable-line
 
   // ==========================================================
   // RENDER
@@ -99,10 +99,10 @@ export default function StepSource({ onCreate }: Props) {
         >
           {sources.map((s) => (
             <option
-              key={s.SOURCE_ID}
-              value={s.SOURCE_ID}
+              key={s.source_id}
+              value={s.source_id}
             >
-              {s.NAME}
+              {s.name}
             </option>
           ))}
         </select>
