@@ -459,7 +459,7 @@ def list_news(news_kind: str | None = None):
             "body": r.get("BODY"),
 
             "published_at": (
-                r["PUBLISHED_AT"].isoformat()
+                r["PUBLISHED_AT"].strftime("%Y-%m-%dT%H:%M:%S")
                 if r.get("PUBLISHED_AT")
                 else None
             ),
