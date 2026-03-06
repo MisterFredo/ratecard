@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+from typing import List
 
 
 # ============================================================
@@ -44,6 +45,13 @@ class SourceUpdate(BaseModel):
 
     author: Optional[str] = None
     author_profile: Optional[str] = None
+
+    class Config:
+        extra = "forbid"
+
+class SourceListOut(BaseModel):
+    status: str
+    sources: List[SourceOut]
 
     class Config:
         extra = "forbid"
