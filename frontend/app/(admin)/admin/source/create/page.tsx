@@ -6,7 +6,6 @@ import { api } from "@/lib/api";
 
 export default function CreateSource() {
 
-  const [sourceId, setSourceId] = useState("");
   const [name, setName] = useState("");
   const [typeSource, setTypeSource] = useState("");
   const [description, setDescription] = useState("");
@@ -18,11 +17,6 @@ export default function CreateSource() {
 
   async function save() {
 
-    if (!sourceId.trim()) {
-      alert("SOURCE_ID requis");
-      return;
-    }
-
     if (!name.trim()) {
       alert("Nom requis");
       return;
@@ -33,7 +27,6 @@ export default function CreateSource() {
       setLoading(true);
 
       await api.post("/source/create", {
-        source_id: sourceId,
         name,
         type_source: typeSource || null,
         description: description || null,
@@ -44,7 +37,6 @@ export default function CreateSource() {
 
       alert("Source créée avec succès");
 
-      setSourceId("");
       setName("");
       setTypeSource("");
       setDescription("");
@@ -75,18 +67,6 @@ export default function CreateSource() {
         <Link href="/admin/source" className="underline">
           ← Retour
         </Link>
-      </div>
-
-      <div className="space-y-2 max-w-md">
-        <label className="block text-sm font-medium">
-          SOURCE_ID
-        </label>
-        <input
-          className="border p-2 w-full rounded"
-          value={sourceId}
-          onChange={(e) => setSourceId(e.target.value)}
-          placeholder="linkedin"
-        />
       </div>
 
       <div className="space-y-2 max-w-xl">
