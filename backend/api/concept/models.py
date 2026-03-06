@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
@@ -9,18 +9,21 @@ from datetime import datetime
 class ConceptCreate(BaseModel):
     """
     Création d'un concept métier.
-    Content = HTML complet.
+    Contrat API 100% snake_case.
     """
 
-    title: str
+    title: str = Field(..., min_length=1)
     description: Optional[str] = None
     content: Optional[str] = None
 
-    status: Optional[str] = "DRAFT"
-    vectorise: Optional[bool] = False
+    status: str = "DRAFT"
+    vectorise: bool = False
 
-    # 🔥 Nouveau : 0 ou 1 topic
+    # Mono-topic
     id_topic: Optional[str] = None
+
+    class Config:
+        extra = "forbid"
 
 
 # ============================================================
@@ -37,9 +40,10 @@ class ConceptUpdate(BaseModel):
 
     status: Optional[str] = None
     vectorise: Optional[bool] = None
-
-    # 🔥 Mono-topic
     id_topic: Optional[str] = None
+
+    class Config:
+        extra = "forbid"
 
 
 # ============================================================
@@ -47,19 +51,22 @@ class ConceptUpdate(BaseModel):
 # ============================================================
 class ConceptOut(BaseModel):
     """
-    Représentation côté API.
+    Représentation retournée par l’API.
     """
 
     id_concept: str
     title: str
+
     description: Optional[str] = None
     content: Optional[str] = None
 
-    status: Optional[str] = None
-    vectorise: Optional[bool] = False
+    status: str
+    vectorise: bool
 
-    # 🔥 Mono-topic
     id_topic: Optional[str] = None
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    class Config:
+        extra = "forbid"
