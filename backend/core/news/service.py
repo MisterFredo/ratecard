@@ -378,39 +378,35 @@ def list_news_types():
 # ============================================================
 # UPDATE NEWS / BRÈVE
 # ============================================================
+
 def update_news(id_news: str, data: NewsUpdate):
+
+    values = data.dict(exclude_unset=True)
+    if not values:
+        return True
+
+    field_map = {
+        "NEWS_KIND": "NEWS_KIND",
+        "NEWS_TYPE": "NEWS_TYPE",
+        "ID_COMPANY": "ID_COMPANY",
+        "TITLE": "TITLE",
+        "EXCERPT": "EXCERPT",
+        "BODY": "BODY",
+        "MEDIA_RECTANGLE_ID": "MEDIA_RECTANGLE_ID",
+        "SOURCE_URL": "SOURCE_URL",
+        "AUTHOR": "AUTHOR",
+    }
 
     fields = {}
 
-    if data.NEWS_KIND is not None:
-        fields["NEWS_KIND"] = data.NEWS_KIND
+    for k, v in values.items():
+        if k in field_map:
+            fields[field_map[k]] = v
 
-    if data.NEWS_TYPE is not None:
-        fields["NEWS_TYPE"] = data.NEWS_TYPE
+    if "MEDIA_RECTANGLE_ID" in values:
+        fields["HAS_VISUAL"] = bool(values["MEDIA_RECTANGLE_ID"])
 
-    if data.ID_COMPANY is not None:
-        fields["ID_COMPANY"] = data.ID_COMPANY
-
-    if data.TITLE is not None:
-        fields["TITLE"] = data.TITLE
-
-    if data.EXCERPT is not None:
-        fields["EXCERPT"] = data.EXCERPT
-
-    if data.BODY is not None:
-        fields["BODY"] = data.BODY
-
-    if data.MEDIA_RECTANGLE_ID is not None:
-        fields["MEDIA_RECTANGLE_ID"] = data.MEDIA_RECTANGLE_ID
-        fields["HAS_VISUAL"] = bool(data.MEDIA_RECTANGLE_ID)
-
-    if data.SOURCE_URL is not None:
-        fields["SOURCE_URL"] = data.SOURCE_URL
-
-    if data.AUTHOR is not None:
-        fields["AUTHOR"] = data.AUTHOR
-
-    fields["UPDATED_AT"] = datetime.utcnow()
+    fields["UPDATED_AT"] = datetime.utcnow().isoformat()
 
     if fields:
         update_bq(
@@ -421,9 +417,7 @@ def update_news(id_news: str, data: NewsUpdate):
 
     client = get_bigquery_client()
 
-    # ------------------------------------------------------------
     # TOPICS
-    # ------------------------------------------------------------
     if data.TOPICS is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_TOPIC}` WHERE ID_NEWS = @id",
@@ -440,9 +434,7 @@ def update_news(id_news: str, data: NewsUpdate):
                 [{"ID_NEWS": id_news, "ID_TOPIC": tid} for tid in data.TOPICS],
             )
 
-    # ------------------------------------------------------------
     # PERSONS
-    # ------------------------------------------------------------
     if data.PERSONS is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_PERSON}` WHERE ID_NEWS = @id",
@@ -459,9 +451,7 @@ def update_news(id_news: str, data: NewsUpdate):
                 [{"ID_NEWS": id_news, "ID_PERSON": pid} for pid in data.PERSONS],
             )
 
-    # ------------------------------------------------------------
     # CONCEPTS
-    # ------------------------------------------------------------
     if data.CONCEPTS is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_CONCEPT}` WHERE ID_NEWS = @id",
@@ -478,9 +468,7 @@ def update_news(id_news: str, data: NewsUpdate):
                 [{"ID_NEWS": id_news, "ID_CONCEPT": cid} for cid in data.CONCEPTS],
             )
 
-    # ------------------------------------------------------------
     # SOLUTIONS
-    # ------------------------------------------------------------
     if data.SOLUTIONS is not None:
         client.query(
             f"DELETE FROM `{TABLE_NEWS_SOLUTION}` WHERE ID_NEWS = @id",
