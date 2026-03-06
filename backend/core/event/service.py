@@ -102,25 +102,48 @@ def get_event(event_id: str):
 # UPDATE EVENT — ADMIN
 # ============================================================
 def update_event(id_event: str, data: EventUpdate) -> bool:
+
     values = data.dict(exclude_unset=True)
     if not values:
         return False
 
     now = datetime.utcnow().isoformat()
 
-    # 🧭 Gestion spécifique du contexte événementiel
-    if "context_html" in values:
-        values["context_updated_at"] = now
-        # context_author pourra être injecté plus tard
+    mapping = {
+        "label": "LABEL",
+        "description": "DESCRIPTION",
+        "home_label": "HOME_LABEL",
+        "home_order": "HOME_ORDER",
+        "is_active_home": "IS_ACTIVE_HOME",
+        "is_active_nav": "IS_ACTIVE_NAV",
+        "event_color": "EVENT_COLOR",
+        "external_url": "EXTERNAL_URL",
+        "media_square_id": "MEDIA_SQUARE_ID",
+        "media_rectangle_id": "MEDIA_RECTANGLE_ID",
+        "context_html": "CONTEXT_HTML",
+        "context_updated_at": "CONTEXT_UPDATED_AT",
+        "context_author": "CONTEXT_AUTHOR",
+        "seo_title": "SEO_TITLE",
+        "seo_description": "SEO_DESCRIPTION",
+        "is_active": "IS_ACTIVE",
+    }
 
-    values["updated_at"] = now
+    bq_values = {
+        mapping[k]: v
+        for k, v in values.items()
+        if k in mapping
+    }
+
+    if "CONTEXT_HTML" in bq_values:
+        bq_values["CONTEXT_UPDATED_AT"] = now
+
+    bq_values["UPDATED_AT"] = now
 
     return update_bq(
         table=TABLE_EVENT,
-        fields={k.upper(): v for k, v in values.items()},
+        fields=bq_values,
         where={"ID_EVENT": id_event},
     )
-
 
 # ============================================================
 # ======================  PUBLIC  ===========================
