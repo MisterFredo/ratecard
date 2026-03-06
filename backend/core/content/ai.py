@@ -57,7 +57,7 @@ def generate_summary(
     )
 
     # ============================================================
-    # PROMPT COMPLET
+    # PROMPT
     # ============================================================
 
     prompt = f"""
@@ -99,8 +99,11 @@ ACTEURS
 (Liste des entreprises citées ou "Aucun")
 
 CONCEPTS
-(Notions métier ou dynamiques marché.
-Ou "Aucun")
+(Liste des notions métier identifiées dans la source.
+Chaque concept doit être suivi de son topic entre parenthèses sous la forme exacte :
+"Nom du concept (Topic: Nom exact du topic)"
+Le topic doit obligatoirement être choisi parmi la liste autorisée.
+Si aucun concept pertinent, écrire "Aucun")
 
 SOLUTIONS
 (Noms de produits, plateformes ou offres.
@@ -194,6 +197,44 @@ SIGNAL
         return items
 
     # ============================================================
+    # CONCEPTS PARSER (STRUCTURÉ)
+    # ============================================================
+
+    def parse_concepts(block: str) -> List[Dict[str, str]]:
+
+        if not block:
+            return []
+
+        if block.strip().lower().startswith("aucun"):
+            return []
+
+        results = []
+
+        for line in block.splitlines():
+
+            line = line.strip()
+            line = re.sub(r"^[-•]\s*", "", line)
+
+            if not line:
+                continue
+
+            match = re.match(r"(.+?)\s*\(Topic:\s*(.+?)\)", line)
+
+            if not match:
+                continue
+
+            label = match.group(1).strip()
+            topic_label = match.group(2).strip()
+
+            if topic_label in allowed_topics:
+                results.append({
+                    "label": label,
+                    "topic_id": allowed_topics[topic_label],
+                })
+
+        return results
+
+    # ============================================================
     # CLEAN BODY
     # ============================================================
 
@@ -230,7 +271,7 @@ SIGNAL
         "citations": parse_list(sections["CITATIONS"]),
         "chiffres": parse_list(sections["CHIFFRES"]),
         "acteurs_cites": parse_list(sections["ACTEURS"]),
-        "concepts": parse_list(sections["CONCEPTS"]),
+        "concepts": parse_concepts(sections["CONCEPTS"]),
         "solutions": parse_list(sections["SOLUTIONS"]),
         "topics": topic_ids,
         "mecanique_expliquee": sections["MECANIQUE"].strip(),
