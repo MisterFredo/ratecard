@@ -39,7 +39,7 @@ export default function DigestPage() {
     useState<SelectOption[]>([]);
 
   /* =========================================
-     HEADER CONFIG — VERSION PROPRE
+     HEADER CONFIG
   ========================================= */
 
   const [headerConfig, setHeaderConfig] =
@@ -57,7 +57,7 @@ export default function DigestPage() {
     useState<EditorialItem[]>([]);
 
   /* =========================================
-     BAROMÈTRE — BACKEND (30 jours + total)
+     BAROMÈTRE (encapsulé backend)
   ========================================= */
 
   const [topicStats, setTopicStats] = useState<TopicStat[]>([]);
@@ -67,16 +67,17 @@ export default function DigestPage() {
       try {
         const res = await api.get("/news/breves/stats");
 
-        const topics: TopicStat[] = (res.topics_stats || [])
-          .map((t: any) => ({
-            label: t.label,
-            last_30_days: t.last_30_days ?? 0,
-            total: t.total ?? 0,
-          }))
-          .sort(
-            (a: TopicStat, b: TopicStat) =>
-              b.last_30_days - a.last_30_days
-          );
+        const topics: TopicStat[] =
+          (res.topics_stats || [])
+            .map((t: any) => ({
+              label: t.label,
+              last_30_days: t.last_30_days ?? 0,
+              total: t.total ?? 0,
+            }))
+            .sort(
+              (a: TopicStat, b: TopicStat) =>
+                b.last_30_days - a.last_30_days
+            );
 
         setTopicStats(topics);
       } catch (e) {
@@ -88,7 +89,7 @@ export default function DigestPage() {
   }, []);
 
   /* =========================================
-     SEARCH
+     SEARCH (ALIGNÉ BACKEND)
   ========================================= */
 
   async function handleSearch(filters: {
@@ -108,9 +109,11 @@ export default function DigestPage() {
         }
       );
 
-      setNews(json.news || []);
-      setBreves(json.breves || []);
-      setAnalyses(json.analyses || []);
+      const data = json.result || {};
+
+      setNews(data.news || []);
+      setBreves(data.breves || []);
+      setAnalyses(data.analyses || []);
       setEditorialOrder([]);
     } catch (e) {
       console.error("Erreur search digest", e);
@@ -201,7 +204,7 @@ export default function DigestPage() {
           />
         </div>
 
-        {/* RIGHT PANEL — PREVIEW */}
+        {/* RIGHT PANEL */}
         <div className="sticky top-6 h-[calc(100vh-4rem)] overflow-y-auto pr-2">
           <DigestPreviewPanel
             headerConfig={headerConfig}
