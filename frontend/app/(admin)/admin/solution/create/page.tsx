@@ -6,8 +6,8 @@ import { api } from "@/lib/api";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
 type Company = {
-  ID_COMPANY: string;
-  NAME: string;
+  id_company: string;
+  name: string;
 };
 
 export default function CreateSolution() {
@@ -50,7 +50,7 @@ export default function CreateSolution() {
         description: description || null,
         content,
         status,
-        id_company: idCompany,
+        id_company: idCompany || null,
       });
 
       alert("Solution créée");
@@ -103,8 +103,8 @@ export default function CreateSolution() {
           — Aucune société associée —
         </option>
         {companies.map((c) => (
-          <option key={c.ID_COMPANY} value={c.ID_COMPANY}>
-            {c.NAME}
+          <option key={c.id_company} value={c.id_company}>
+            {c.name}
           </option>
         ))}
       </select>
