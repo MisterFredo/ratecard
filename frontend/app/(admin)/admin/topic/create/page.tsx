@@ -3,34 +3,35 @@
 import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import VisualSectionTopic from "@/components/visuals/VisualSectionTopic";
-import EntityBaseForm from "@/components/forms/EntityBaseForm";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
-const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
-
 export default function CreateTopic() {
+
   const [label, setLabel] = useState("");
-  const [topicAxis, setTopicAxis] = useState<"BUSINESS" | "FIELD">("BUSINESS");
+  const [topicAxis, setTopicAxis] =
+    useState<"BUSINESS" | "FIELD">("BUSINESS");
 
   const [description, setDescription] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
 
-  const [topicId, setTopicId] = useState<string | null>(null);
-  const [squareUrl, setSquareUrl] = useState<string | null>(null);
-  const [rectUrl, setRectUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
      CREATE
   --------------------------------------------------------- */
   async function save() {
+
     if (!label.trim()) {
       alert("Label requis");
       return;
     }
 
     try {
+
+      setLoading(true);
+
       const res = await api.post("/topic/create", {
         label,
         topic_axis: topicAxis,
@@ -44,12 +45,28 @@ export default function CreateTopic() {
         return;
       }
 
-      setTopicId(res.id_topic);
-      alert("Topic créé. Vous pouvez ajouter des visuels.");
+      setCreatedId(res.id_topic);
+
+      alert("Topic créé avec succès");
+
+      // reset formulaire
+      setLabel("");
+      setTopicAxis("BUSINESS");
+      setDescription("");
+      setSeoTitle("");
+      setSeoDescription("");
+
     } catch (e) {
+
       console.error(e);
       alert("❌ Erreur création topic");
+
+    } finally {
+
+      setLoading(false);
+
     }
+
   }
 
   /* ---------------------------------------------------------
@@ -57,22 +74,30 @@ export default function CreateTopic() {
   --------------------------------------------------------- */
   return (
     <div className="space-y-10">
+
       {/* HEADER */}
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">
           Ajouter un topic
         </h1>
+
         <Link href="/admin/topic" className="underline">
           ← Retour
         </Link>
       </div>
 
       {/* LABEL */}
-      <EntityBaseForm
-        values={{ name: label }}
-        onChange={{ setName: setLabel }}
-        labels={{ name: "Label" }}
-      />
+      <div className="space-y-2 max-w-2xl">
+        <label className="block text-sm font-medium">
+          Label
+        </label>
+
+        <input
+          className="border p-2 w-full rounded"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+        />
+      </div>
 
       {/* AXIS */}
       <div className="space-y-2 max-w-2xl">
@@ -84,14 +109,16 @@ export default function CreateTopic() {
           className="border p-2 rounded w-full"
           value={topicAxis}
           onChange={(e) =>
-            setTopicAxis(e.target.value as "BUSINESS" | "FIELD")
+            setTopicAxis(
+              e.target.value as "BUSINESS" | "FIELD"
+            )
           }
         >
           <option value="BUSINESS">
             BUSINESS — enjeux métier, stratégie, monétisation
           </option>
           <option value="FIELD">
-            FIELD — canaux, terrains, environnements d’activation
+            FIELD — canaux, environnements d’activation
           </option>
         </select>
       </div>
@@ -110,10 +137,12 @@ export default function CreateTopic() {
 
       {/* SEO */}
       <div className="space-y-4 max-w-2xl">
+
         <div>
           <label className="block text-sm font-medium mb-1">
             SEO title
           </label>
+
           <input
             className="border p-2 w-full rounded"
             value={seoTitle}
@@ -126,6 +155,7 @@ export default function CreateTopic() {
           <label className="block text-sm font-medium mb-1">
             SEO description
           </label>
+
           <textarea
             className="border p-2 w-full rounded h-20"
             value={seoDescription}
@@ -135,37 +165,24 @@ export default function CreateTopic() {
             placeholder="Description meta (optionnelle)"
           />
         </div>
+
       </div>
 
       {/* ACTION */}
       <button
         onClick={save}
-        className="bg-ratecard-blue px-4 py-2 text-white rounded"
+        disabled={loading}
+        className="bg-ratecard-blue px-4 py-2 text-white rounded disabled:opacity-50"
       >
-        Créer
+        {loading ? "Création…" : "Créer"}
       </button>
 
-      {/* VISUALS — POST CRÉATION */}
-      {topicId && (
-        <VisualSectionTopic
-          topicId={topicId}
-          squareUrl={squareUrl}
-          rectUrl={rectUrl}
-          onUpdated={({ square, rectangle }) => {
-            setSquareUrl(
-              square
-                ? `${GCS}/topics/TOPIC_${topicId}_square.jpg`
-                : null
-            );
-            setRectUrl(
-              rectangle
-                ? `${GCS}/topics/TOPIC_${topicId}_rect.jpg`
-                : null
-            );
-          }}
-        />
+      {createdId && (
+        <p className="text-green-600 text-sm">
+          Topic créé (ID : {createdId})
+        </p>
       )}
+
     </div>
   );
 }
-
