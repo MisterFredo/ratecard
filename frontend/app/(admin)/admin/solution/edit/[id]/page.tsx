@@ -11,6 +11,7 @@ type Company = {
 };
 
 export default function EditSolution({ params }: { params: { id: string } }) {
+
   const { id } = params;
 
   const [loading, setLoading] = useState(true);
@@ -27,27 +28,45 @@ export default function EditSolution({ params }: { params: { id: string } }) {
   const [COMPANIES, setCOMPANIES] = useState<Company[]>([]);
 
   useEffect(() => {
+
     async function load() {
-      const solRes = await api.get(`/solution/${id}`);
-      const sol = solRes.SOLUTION;
 
-      setNAME(sol.NAME);
-      setDESCRIPTION(sol.DESCRIPTION || "");
-      setCONTENT(sol.CONTENT);
-      setSTATUS(sol.STATUS);
-      setID_COMPANY(sol.ID_COMPANY || null);
+      try {
 
-      const compRes = await api.get("/company/list");
-      setCOMPANIES(compRes.COMPANIES || []);
+        // 🔹 Solution (snake_case côté API)
+        const solRes = await api.get(`/solution/${id}`);
+        const sol = solRes.solution;
 
-      setLoading(false);
+        setNAME(sol.NAME);
+        setDESCRIPTION(sol.DESCRIPTION || "");
+        setCONTENT(sol.CONTENT);
+        setSTATUS(sol.STATUS);
+        setID_COMPANY(sol.ID_COMPANY || null);
+
+        // 🔹 Companies list (snake_case côté API)
+        const compRes = await api.get("/company/list");
+        setCOMPANIES(compRes.companies || []);
+
+      } catch (e) {
+
+        console.error("Erreur chargement solution", e);
+
+      } finally {
+
+        setLoading(false);
+
+      }
+
     }
 
     load();
+
   }, [id]);
 
   async function save() {
+
     try {
+
       setSaving(true);
 
       await api.put(`/solution/update/${id}`, {
@@ -59,17 +78,25 @@ export default function EditSolution({ params }: { params: { id: string } }) {
       });
 
       alert("Solution mise à jour");
+
     } catch (e) {
+
+      console.error(e);
       alert("Erreur mise à jour");
+
     } finally {
+
       setSaving(false);
+
     }
+
   }
 
   if (loading) return <p>Chargement…</p>;
 
   return (
     <div className="space-y-8">
+
       <div className="flex justify-between">
         <h1 className="text-3xl font-semibold">
           Modifier solution
@@ -125,10 +152,12 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
       <button
         onClick={save}
+        disabled={saving}
         className="bg-ratecard-blue px-6 py-2 text-white rounded"
       >
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
+
     </div>
   );
 }
