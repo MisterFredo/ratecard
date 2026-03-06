@@ -357,7 +357,24 @@ def list_contents_admin():
         """
     )
 
-    return rows
+    return [
+        {
+            "id_content": r["ID_CONTENT"],
+            "title": r["TITLE"],
+            "status": r["STATUS"],
+            "published_at": (
+                r["PUBLISHED_AT"].isoformat()
+                if r.get("PUBLISHED_AT")
+                else None
+            ),
+            "updated_at": (
+                r["UPDATED_AT"].isoformat()
+                if r.get("UPDATED_AT")
+                else None
+            ),
+        }
+        for r in rows
+    ]
 
 
 # ============================================================
