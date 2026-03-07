@@ -20,7 +20,7 @@ import SolutionSelector, {
 } from "@/components/admin/SolutionSelector";
 
 type Props = {
-  topicsRaw: string[];
+  topicsRaw: any[];
   acteursRaw: string[];
   conceptsRaw: any[];
   solutionsRaw: string[];
@@ -79,26 +79,35 @@ export default function StepValidation({
           api.get("/solution/list"),
         ]);
 
-        setAllTopics(topicRes?.topics || []);
+        // 🔥 TOPICS (snake / old format compatible)
+        setAllTopics(
+          (topicRes?.topics || []).map((t: any) => ({
+            ID_TOPIC: t.ID_TOPIC ?? t.id_topic,
+            LABEL: t.LABEL ?? t.label,
+          }))
+        );
 
+        // 🔥 COMPANIES
         setAllCompanies(
           (companyRes?.companies || []).map((c: any) => ({
-            id_company: c.id_company,
-            name: c.name,
+            id_company: c.id_company ?? c.ID_COMPANY,
+            name: c.name ?? c.NAME,
           }))
         );
 
+        // 🔥 CONCEPTS
         setAllConcepts(
           (conceptRes?.concepts || []).map((c: any) => ({
-            id_concept: c.id_concept,
-            title: c.title,
+            id_concept: c.id_concept ?? c.ID_CONCEPT,
+            title: c.title ?? c.TITLE,
           }))
         );
 
+        // 🔥 SOLUTIONS
         setAllSolutions(
           (solutionRes?.solutions || []).map((s: any) => ({
-            id_solution: s.id_solution,
-            name: s.name,
+            id_solution: s.id_solution ?? s.ID_SOLUTION,
+            name: s.name ?? s.NAME,
           }))
         );
 
@@ -112,16 +121,25 @@ export default function StepValidation({
   }, []);
 
   // ============================================================
-  // AUTO-INJECT LLM TOPICS (ONCE)
+  // AUTO-INJECT LLM TOPICS (ONCE, SAFE FORMAT)
   // ============================================================
 
   const [autoInjected, setAutoInjected] = useState(false);
 
   useEffect(() => {
+
     if (!autoInjected && topicsRaw?.length > 0) {
-      onChange({ topics: topicsRaw });
+
+      const normalized = topicsRaw.map((t: any) =>
+        typeof t === "string"
+          ? t
+          : t.id_topic ?? t.ID_TOPIC
+      );
+
+      onChange({ topics: normalized });
       setAutoInjected(true);
     }
+
   }, [topicsRaw, autoInjected, onChange]);
 
   // ============================================================
@@ -156,30 +174,39 @@ export default function StepValidation({
 
       <div className="space-y-2 text-xs text-gray-500 border-b pb-3">
 
-        {topicsRaw.length > 0 && (
+        {topicsRaw?.length > 0 && (
           <div>
-            <strong>Topics LLM :</strong> {topicsRaw.join(", ")}
-          </div>
-        )}
-
-        {acteursRaw.length > 0 && (
-          <div>
-            <strong>Acteurs LLM :</strong> {acteursRaw.join(", ")}
-          </div>
-        )}
-
-        {conceptsRaw.length > 0 && (
-          <div>
-            <strong>Concepts LLM :</strong>{" "}
-            {conceptsRaw
-              .map((c: any) =>
-                typeof c === "string" ? c : c.label
+            <strong>Topics LLM :</strong>{" "}
+            {topicsRaw
+              .map((t: any) =>
+                typeof t === "string"
+                  ? t
+                  : t.label ?? t.LABEL
               )
               .join(", ")}
           </div>
         )}
 
-        {solutionsRaw.length > 0 && (
+        {acteursRaw?.length > 0 && (
+          <div>
+            <strong>Acteurs LLM :</strong> {acteursRaw.join(", ")}
+          </div>
+        )}
+
+        {conceptsRaw?.length > 0 && (
+          <div>
+            <strong>Concepts LLM :</strong>{" "}
+            {conceptsRaw
+              .map((c: any) =>
+                typeof c === "string"
+                  ? c
+                  : c.label ?? c.LABEL
+              )
+              .join(", ")}
+          </div>
+        )}
+
+        {solutionsRaw?.length > 0 && (
           <div>
             <strong>Solutions LLM :</strong> {solutionsRaw.join(", ")}
           </div>
