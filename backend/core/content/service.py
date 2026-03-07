@@ -505,6 +505,34 @@ def store_raw_content(
 
     return raw_id
 
+def list_raw_stock():
+    query = """
+        SELECT
+            ID_RAW,
+            SOURCE_ID,
+            SOURCE_TITLE,
+            DATE_SOURCE,
+            STATUS,
+            CREATED_AT
+        FROM `adex-5555.RATECARD.RATECARD_CONTENT_RAW`
+        WHERE STATUS = 'STORED'
+        ORDER BY CREATED_AT ASC
+    """
+
+    rows = query_bq(query)
+
+    return [
+        {
+            "id_raw": r["ID_RAW"],
+            "source_id": r["SOURCE_ID"],
+            "source_title": r["SOURCE_TITLE"],
+            "date_source": r.get("DATE_SOURCE"),
+            "status": r["STATUS"],
+            "created_at": r["CREATED_AT"],
+        }
+        for r in rows
+    ]
+
 # ============================================================
 # RESET RELATIONS
 # ============================================================
