@@ -535,7 +535,6 @@ def list_raw_stock():
 
 def destock_raw_contents(limit: int = 10) -> int:
 
-    # 1️⃣ Récupérer les plus anciens RAW en attente
     query = f"""
         SELECT *
         FROM `adex-5555.RATECARD.RATECARD_CONTENT_RAW`
@@ -552,24 +551,43 @@ def destock_raw_contents(limit: int = 10) -> int:
     processed_count = 0
 
     for raw in raws:
+
+        raw_id = raw["ID_RAW"]
+
         try:
-            raw_id = raw["ID_RAW"]
             source_id = raw["SOURCE_ID"]
-            source_title = raw["SOURCE_TITLE"]
             raw_text = raw["RAW_TEXT"]
             date_source = raw.get("DATE_SOURCE")
 
-            # 2️⃣ Appel à ton moteur LLM existant
-            # Ici tu dois appeler ta fonction actuelle qui transforme une source en ContentCreate
-            content_data = transform_source_to_content(
+            # 1️⃣ Génération via TON moteur existant
+            summary = generate_summary(
                 source_id=source_id,
-                source_text=raw_text
+                source_text=raw_text,
             )
 
-            # 3️⃣ Créer le content éditorial
+            # 2️⃣ Construire le ContentCreate
+            content_data = ContentCreate(
+                source_id=source_id,
+                title=summary["title"],
+                excerpt=summary["excerpt"],
+                content_body=summary["content_body"],
+                citations=summary["citations"],
+                chiffres=summary["chiffres"],
+                acteurs_cites=summary["acteurs_cites"],
+                concepts_llm=[c["label"] for c in summary["concepts"]],
+                solutions_llm=summary["solutions"],
+                topics_llm=[],
+                mecanique_expliquee=summary["mecanique_expliquee"],
+                enjeu_strategique=summary["enjeu_strategique"],
+                point_de_friction=summary["point_de_friction"],
+                signal_analytique=summary["signal_analytique"],
+                topics=summary["topics"],
+            )
+
+            # 3️⃣ Création éditoriale
             content_id = create_content(content_data)
 
-            # 4️⃣ Mettre à jour le RAW
+            # 4️⃣ Update RAW
             update_query = """
                 UPDATE `adex-5555.RATECARD.RATECARD_CONTENT_RAW`
                 SET
@@ -592,7 +610,6 @@ def destock_raw_contents(limit: int = 10) -> int:
 
         except Exception as e:
 
-            # 5️⃣ En cas d'erreur, marquer ERROR
             error_query = """
                 UPDATE `adex-5555.RATECARD.RATECARD_CONTENT_RAW`
                 SET
@@ -607,7 +624,7 @@ def destock_raw_contents(limit: int = 10) -> int:
                 {
                     "error_message": str(e),
                     "processed_at": datetime.now(timezone.utc).isoformat(),
-                    "raw_id": raw["ID_RAW"],
+                    "raw_id": raw_id,
                 }
             )
 
