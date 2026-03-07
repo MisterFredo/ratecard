@@ -558,6 +558,14 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
 
         try:
 
+            print("\n==============================")
+            print("RAW ID:", raw_id)
+            print("SOURCE_ID:", raw.get("SOURCE_ID"))
+            print("RAW LENGTH:", len(raw.get("RAW_TEXT", "") or ""))
+            print("---- RAW TEXT AUTO ----")
+            print(raw.get("RAW_TEXT"))
+            print("-----------------------")
+
             # ====================================================
             # 1️⃣ PASS TO PROCESSING
             # ====================================================
@@ -570,9 +578,6 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
                 },
                 where={"ID_RAW": raw_id}
             )
-            print("---- RAW TEXT AUTO ----")
-            print(raw.get("RAW_TEXT"))
-            print("-----------------------")
 
             # ====================================================
             # 2️⃣ GENERATE SUMMARY
@@ -582,11 +587,28 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
                 source_id=raw.get("SOURCE_ID"),
                 source_text=raw.get("RAW_TEXT", "")
             )
-            print("SUMMARY DEBUG:", summary)
+
+            print("\n---- SUMMARY RETURN ----")
+            print(summary)
+            print("------------------------")
+
+            print("CONCEPTS RAW:", summary.get("concepts"))
+            print("SOLUTIONS RAW:", summary.get("solutions"))
+            print("TOPICS RAW:", summary.get("topics"))
 
             # ====================================================
             # 3️⃣ BUILD CONTENT MODEL (Pydantic)
             # ====================================================
+
+            concepts_llm = [c["label"] for c in summary.get("concepts", [])]
+            solutions_llm = summary.get("solutions", [])
+            topics_llm = summary.get("topics", [])
+
+            print("\n---- LLM ARRAYS ----")
+            print("concepts_llm:", concepts_llm)
+            print("solutions_llm:", solutions_llm)
+            print("topics_llm:", topics_llm)
+            print("--------------------")
 
             content_payload = ContentCreate(
                 title=summary.get("title"),
@@ -595,9 +617,9 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
                 citations=summary.get("citations", []),
                 chiffres=summary.get("chiffres", []),
                 acteurs_cites=summary.get("acteurs_cites", []),
-                concepts_llm=[c["label"] for c in summary.get("concepts", [])],
-                solutions_llm=summary.get("solutions", []),
-                topics_llm=summary.get("topics", []),
+                concepts_llm=concepts_llm,
+                solutions_llm=solutions_llm,
+                topics_llm=topics_llm,
                 mecanique_expliquee=summary.get("mecanique_expliquee"),
                 enjeu_strategique=summary.get("enjeu_strategique"),
                 point_de_friction=summary.get("point_de_friction"),
@@ -606,11 +628,17 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
                 author=None,
             )
 
+            print("\n---- CONTENT PAYLOAD DICT ----")
+            print(content_payload.model_dump())
+            print("--------------------------------")
+
             # ====================================================
             # 4️⃣ CREATE CONTENT
             # ====================================================
 
             content_id = create_content(content_payload)
+
+            print("CREATED CONTENT ID:", content_id)
 
             # ====================================================
             # 5️⃣ MARK RAW AS PROCESSED
@@ -631,6 +659,9 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
 
         except Exception as e:
 
+            print("\n❌ ERROR DURING DESTOCK")
+            print(str(e))
+
             update_bq(
                 TABLE_CONTENT_RAW,
                 {
@@ -641,6 +672,11 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
             )
 
             errors += 1
+
+    print("\n==== DESTOCK RESULT ====")
+    print("Processed:", processed)
+    print("Errors:", errors)
+    print("========================\n")
 
     return {
         "processed": processed,
