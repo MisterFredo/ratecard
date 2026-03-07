@@ -6,7 +6,8 @@ from api.content.models import (
     ContentUpdate,
     ContentPublish,
     ContentSummaryRequest,
-    ContentRawCreate,   # ⬅️ AJOUTER
+    ContentRawCreate,
+    ContentRawOut,
 )
 
 from core.content.service import (
