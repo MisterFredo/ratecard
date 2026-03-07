@@ -4,16 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Building2,
-  UserCircle,
   Tags,
-  CalendarDays,
   Layers,
   Newspaper,
   Mail,
   Share2,
   BookOpen,
   Puzzle,
-  Link as LinkIcon, // ✅ ajouté pour Sources
+  Link as LinkIcon,
+  Archive, // ⬅️ ajout icône pour Stock
 } from "lucide-react";
 
 export default function AdminShell({
@@ -30,6 +29,9 @@ export default function AdminShell({
 
   const navItems = [
     { href: "/admin/content", label: "Contenus", icon: Layers },
+
+    // ✅ NOUVELLE PAGE STOCK
+    { href: "/admin/content/stock", label: "Stock", icon: Archive },
 
     { href: "/admin/news", label: "News", icon: Newspaper },
 
@@ -49,21 +51,21 @@ export default function AdminShell({
 
     { href: "/admin/solution", label: "Solutions", icon: Puzzle },
 
-    { href: "/admin/person", label: "Personnes", icon: UserCircle },
+    // 🔒 TEMPORAIREMENT EN STAND-BY
+    // { href: "/admin/person", label: "Personnes", icon: UserCircle },
 
     { href: "/admin/topic", label: "Topics", icon: Tags },
 
     { href: "/admin/concept", label: "Concepts", icon: BookOpen },
 
-    { href: "/admin/event", label: "Événements", icon: CalendarDays },
+    // 🔒 TEMPORAIREMENT EN STAND-BY
+    // { href: "/admin/event", label: "Événements", icon: CalendarDays },
 
-    // ✅ NOUVEAU
     { href: "/admin/source", label: "Sources", icon: LinkIcon },
   ];
 
   return (
     <div className="min-h-screen flex">
-      {/* ===== SIDEBAR ===== */}
       <aside className="w-64 bg-ratecard-blue text-white p-6 space-y-10 flex flex-col">
         <div>
           <h1 className="text-xl font-semibold">
@@ -104,7 +106,6 @@ export default function AdminShell({
         </div>
       </aside>
 
-      {/* ===== MAIN ===== */}
       <main className="flex-1 p-10 bg-gray-50">
         {children}
       </main>
