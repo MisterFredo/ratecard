@@ -108,6 +108,31 @@ def create_content(data: ContentCreate) -> str:
         "UPDATED_AT": now,
     }]
 
+    # ===========================
+    # 🔎 DEBUG AVANT INSERT BQ
+    # ===========================
+
+    print("\n========== DEBUG CREATE_CONTENT ==========")
+    print("ID_CONTENT:", content_id)
+
+    debug_row = row[0]
+
+    for field in ["CONCEPTS_LLM", "SOLUTIONS_LLM", "TOPICS_LLM"]:
+        value = debug_row.get(field)
+        print(f"\nFIELD: {field}")
+        print("TYPE:", type(value))
+        print("VALUE:", value)
+
+        if isinstance(value, list):
+            for i, v in enumerate(value):
+                print(f"  [{i}] -> ({type(v)}) {v}")
+
+    print("\nFULL ROW TYPES:")
+    for k, v in debug_row.items():
+        print(k, "=>", type(v))
+
+    print("==========================================\n")
+
     client = get_bigquery_client()
 
     client.load_table_from_json(
@@ -117,6 +142,13 @@ def create_content(data: ContentCreate) -> str:
             write_disposition="WRITE_APPEND"
         ),
     ).result()
+
+    # ===========================
+    # 🔎 DEBUG APRÈS INSERT
+    # ===========================
+
+    print("✔ INSERT DONE FOR:", content_id)
+    print("==========================================\n")
 
     if data.topics:
         insert_bq(
