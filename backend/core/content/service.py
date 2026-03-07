@@ -536,102 +536,93 @@ def list_raw_stock():
         for r in rows
     ]
 
-def destock_raw_contents(limit: int = 10) -> int:
+def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
 
-    query = f"""
+    raws = query_bq(f"""
         SELECT *
-        FROM `adex-5555.RATECARD.RATECARD_CONTENT_RAW`
+        FROM `{TABLE_CONTENT_RAW}`
         WHERE STATUS = 'STORED'
         ORDER BY CREATED_AT ASC
         LIMIT {limit}
-    """
+    """)
 
-    raws = query_bq(query)
-
-    if not raws:
-        return 0
-
-    processed_count = 0
+    processed = 0
+    errors = 0
 
     for raw in raws:
 
         raw_id = raw["ID_RAW"]
 
         try:
-            source_id = raw["SOURCE_ID"]
-            raw_text = raw["RAW_TEXT"]
-            date_source = raw.get("DATE_SOURCE")
 
-            # 1️⃣ Génération via TON moteur existant
-            summary = generate_summary(
-                source_id=source_id,
-                source_text=raw_text,
-            )
-
-            # 2️⃣ Construire le ContentCreate
-            content_data = ContentCreate(
-                source_id=source_id,
-                title=summary["title"],
-                excerpt=summary["excerpt"],
-                content_body=summary["content_body"],
-                citations=summary["citations"],
-                chiffres=summary["chiffres"],
-                acteurs_cites=summary["acteurs_cites"],
-                concepts_llm=[c["label"] for c in summary["concepts"]],
-                solutions_llm=summary["solutions"],
-                topics_llm=[],
-                mecanique_expliquee=summary["mecanique_expliquee"],
-                enjeu_strategique=summary["enjeu_strategique"],
-                point_de_friction=summary["point_de_friction"],
-                signal_analytique=summary["signal_analytique"],
-                topics=summary["topics"],
-            )
-
-            # 3️⃣ Création éditoriale
-            content_id = create_content(content_data)
-
-            # 4️⃣ Update RAW
-            update_query = """
-                UPDATE `adex-5555.RATECARD.RATECARD_CONTENT_RAW`
-                SET
-                    STATUS = 'GENERATED',
-                    GENERATED_CONTENT_ID = @content_id,
-                    PROCESSED_AT = @processed_at
-                WHERE ID_RAW = @raw_id
-            """
+            # ====================================================
+            # 1️⃣ PASS TO PROCESSING
+            # ====================================================
 
             update_bq(
-                update_query,
+                TABLE_CONTENT_RAW,
                 {
-                    "content_id": content_id,
-                    "processed_at": datetime.now(timezone.utc).isoformat(),
-                    "raw_id": raw_id,
-                }
+                    "STATUS": "PROCESSING",
+                    "PROCESSING_AT": datetime.utcnow().isoformat(),
+                    "ERROR_MESSAGE": None,
+                },
+                where=f"ID_RAW = '{raw_id}' AND STATUS = 'STORED'"
             )
 
-            processed_count += 1
+            # ====================================================
+            # 2️⃣ GENERATE SUMMARY
+            # ====================================================
+
+            summary = generate_summary(
+                source_id=raw.get("SOURCE_ID"),
+                source_text=raw.get("RAW_TEXT", "")
+            )
+
+            # ====================================================
+            # 3️⃣ CREATE CONTENT
+            # ====================================================
+
+            content_id = create_content(summary)
+
+            # ====================================================
+            # 4️⃣ MARK AS PROCESSED
+            # ====================================================
+
+            update_bq(
+                TABLE_CONTENT_RAW,
+                {
+                    "STATUS": "PROCESSED",
+                    "PROCESSED_AT": datetime.utcnow().isoformat(),
+                    "GENERATED_CONTENT_ID": content_id,
+                    "ERROR_MESSAGE": None,
+                },
+                where=f"ID_RAW = '{raw_id}'"
+            )
+
+            processed += 1
 
         except Exception as e:
 
-            error_query = """
-                UPDATE `adex-5555.RATECARD.RATECARD_CONTENT_RAW`
-                SET
-                    STATUS = 'ERROR',
-                    ERROR_MESSAGE = @error_message,
-                    PROCESSED_AT = @processed_at
-                WHERE ID_RAW = @raw_id
-            """
+            # ====================================================
+            # 5️⃣ MARK AS ERROR
+            # ====================================================
 
             update_bq(
-                error_query,
+                TABLE_CONTENT_RAW,
                 {
-                    "error_message": str(e),
-                    "processed_at": datetime.now(timezone.utc).isoformat(),
-                    "raw_id": raw_id,
-                }
+                    "STATUS": "ERROR",
+                    "ERROR_MESSAGE": str(e),
+                },
+                where=f"ID_RAW = '{raw_id}'"
             )
 
-    return processed_count
+            errors += 1
+
+    return {
+        "processed": processed,
+        "errors": errors,
+        "total_selected": len(raws),
+    }
 
 def delete_raw_content(id_raw: str) -> None:
 
