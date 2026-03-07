@@ -479,6 +479,7 @@ def store_raw_content(
     row = [{
         "ID_RAW": raw_id,
         "SOURCE_ID": source_id,
+        "SOURCE_TITLE": source_title,
         "RAW_TEXT": raw_text.strip(),
         "DATE_SOURCE": date_source.isoformat() if date_source else None,
         "STATUS": "STORED",
