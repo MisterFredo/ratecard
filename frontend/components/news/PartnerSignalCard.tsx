@@ -75,7 +75,7 @@ export default function PartnerSignalCard({
     ? "border-ratecard-blue"
     : "border-ratecard-border";
 
-  const imageClass = "max-h-[85%] max-w-[85%] object-contain";
+  const imageClass = "absolute inset-0 w-full h-full object-cover";
 
   /* ========================================================
      DRAWER MODE
@@ -192,7 +192,7 @@ export default function PartnerSignalCard({
         border ${borderClass}
       `}
     >
-      <div className="relative h-44 w-full bg-white overflow-hidden flex items-center justify-center">
+      <div className="relative w-full aspect-[16/9] overflow-hidden">
         {visualSrc ? (
           <img
             src={visualSrc}
