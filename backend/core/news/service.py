@@ -64,10 +64,7 @@ def create_news(data: NewsCreate) -> str:
 
     client = get_bigquery_client()
 
-    # ------------------------------------------------------------
-    # 1️⃣ INSERT NEWS SANS VISUEL (provisoirement)
-    # ------------------------------------------------------------
-
+    # 1️⃣ INSERT NEWS (sans visuel)
     row = [{
         "ID_NEWS": news_id,
         "STATUS": "DRAFT",
@@ -90,40 +87,26 @@ def create_news(data: NewsCreate) -> str:
     client.load_table_from_json(
         row,
         TABLE_NEWS,
-        job_config=bigquery.LoadJobConfig(
-            write_disposition="WRITE_APPEND"
-        ),
+        job_config=bigquery.LoadJobConfig(write_disposition="WRITE_APPEND"),
     ).result()
 
-    # ------------------------------------------------------------
-    # 2️⃣ SI PAS D’UPLOAD → DUPLICATION LOGO SOCIÉTÉ
-    # ------------------------------------------------------------
+    # 2️⃣ DUPLICATION AUTOMATIQUE DU LOGO SOCIÉTÉ
+    logo_rows = query_bq(
+        f"""
+        SELECT MEDIA_LOGO_RECTANGLE_ID
+        FROM `{TABLE_COMPANY}`
+        WHERE ID_COMPANY = @company_id
+        LIMIT 1
+        """,
+        {"company_id": data.id_company},
+    )
 
-    if not data.media_rectangle_id:
+    if logo_rows:
+        logo = logo_rows[0].get("MEDIA_LOGO_RECTANGLE_ID")
+        if logo:
+            duplicate_company_visual_for_news(news_id, logo)
 
-        logo_rows = query_bq(
-            f"""
-            SELECT MEDIA_LOGO_RECTANGLE_ID
-            FROM `{TABLE_COMPANY}`
-            WHERE ID_COMPANY = @company_id
-            LIMIT 1
-            """,
-            {"company_id": data.id_company},
-        )
-
-        if logo_rows:
-            logo = logo_rows[0].get("MEDIA_LOGO_RECTANGLE_ID")
-
-            if logo:
-                new_filename = duplicate_company_visual_for_news(
-                    news_id,
-                    logo
-                )
-
-    # ------------------------------------------------------------
-    # RELATIONS CLASSIQUES
-    # ------------------------------------------------------------
-
+    # 3️⃣ RELATIONS
     if data.topics:
         insert_bq(
             TABLE_NEWS_TOPIC,
@@ -149,7 +132,6 @@ def create_news(data: NewsCreate) -> str:
         )
 
     return news_id
-
 # ============================================================
 # DUPLICATE COMPANY VISUAL FOR NEWS
 # ============================================================
