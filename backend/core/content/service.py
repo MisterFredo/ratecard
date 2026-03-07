@@ -555,7 +555,10 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
 
         try:
 
+            # ====================================================
             # 1️⃣ PASS TO PROCESSING
+            # ====================================================
+
             update_bq(
                 TABLE_CONTENT_RAW,
                 {
@@ -565,16 +568,47 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
                 where={"ID_RAW": raw_id}
             )
 
-            # 2️⃣ GENERATE
+            # ====================================================
+            # 2️⃣ GENERATE SUMMARY
+            # ====================================================
+
             summary = generate_summary(
                 source_id=raw.get("SOURCE_ID"),
                 source_text=raw.get("RAW_TEXT", "")
             )
 
-            # 3️⃣ CREATE CONTENT
-            content_id = create_content(summary)
+            # ====================================================
+            # 3️⃣ BUILD CONTENT MODEL (Pydantic)
+            # ====================================================
 
-            # 4️⃣ MARK PROCESSED
+            content_payload = ContentCreate(
+                title=summary.get("title"),
+                excerpt=summary.get("excerpt"),
+                content_body=summary.get("content_body"),
+                citations=summary.get("citations", []),
+                chiffres=summary.get("chiffres", []),
+                acteurs_cites=summary.get("acteurs_cites", []),
+                concepts_llm=[c["label"] for c in summary.get("concepts", [])],
+                solutions_llm=summary.get("solutions", []),
+                topics_llm=summary.get("topics", []),
+                mecanique_expliquee=summary.get("mecanique_expliquee"),
+                enjeu_strategique=summary.get("enjeu_strategique"),
+                point_de_friction=summary.get("point_de_friction"),
+                signal_analytique=summary.get("signal_analytique"),
+                source_id=raw.get("SOURCE_ID"),
+                author=None,
+            )
+
+            # ====================================================
+            # 4️⃣ CREATE CONTENT
+            # ====================================================
+
+            content_id = create_content(content_payload)
+
+            # ====================================================
+            # 5️⃣ MARK RAW AS PROCESSED
+            # ====================================================
+
             update_bq(
                 TABLE_CONTENT_RAW,
                 {
@@ -606,7 +640,6 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
         "errors": errors,
         "total_selected": len(raws),
     }
-
 def delete_raw_content(id_raw: str) -> None:
 
     if not id_raw:
