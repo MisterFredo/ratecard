@@ -580,6 +580,7 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
                 source_id=raw.get("SOURCE_ID"),
                 source_text=raw.get("RAW_TEXT", "")
             )
+            print("SUMMARY DEBUG:", summary)
 
             # ====================================================
             # 3️⃣ BUILD CONTENT MODEL (Pydantic)
@@ -644,6 +645,8 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
         "errors": errors,
         "total_selected": len(raws),
     }
+
+
 def delete_raw_content(id_raw: str) -> None:
 
     if not id_raw:
