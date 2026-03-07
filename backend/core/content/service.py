@@ -478,7 +478,8 @@ def store_raw_content(
         raise ValueError("raw_text vide")
 
     raw_id = str(uuid.uuid4())
-    now = datetime.utcnow()
+
+    now_iso = datetime.utcnow().isoformat()  # ✅ ISO STRING
 
     row = [{
         "ID_RAW": raw_id,
@@ -487,7 +488,7 @@ def store_raw_content(
         "RAW_TEXT": raw_text.strip(),
         "DATE_SOURCE": date_source.isoformat() if date_source else None,
         "STATUS": "STORED",
-        "CREATED_AT": now,
+        "CREATED_AT": now_iso,        # ✅ string
         "PROCESSED_AT": None,
         "GENERATED_CONTENT_ID": None,
         "ERROR_MESSAGE": None,
