@@ -463,12 +463,16 @@ def list_contents_admin():
 
 def store_raw_content(
     source_id: str,
+    source_title: str,
     raw_text: str,
     date_source: Optional[date] = None,
 ) -> str:
 
     if not source_id:
         raise ValueError("source_id obligatoire")
+
+    if not source_title or not source_title.strip():
+        raise ValueError("source_title obligatoire")
 
     if not raw_text or not raw_text.strip():
         raise ValueError("raw_text vide")
@@ -479,7 +483,7 @@ def store_raw_content(
     row = [{
         "ID_RAW": raw_id,
         "SOURCE_ID": source_id,
-        "SOURCE_TITLE": source_title,
+        "SOURCE_TITLE": source_title.strip(),
         "RAW_TEXT": raw_text.strip(),
         "DATE_SOURCE": date_source.isoformat() if date_source else None,
         "STATUS": "STORED",
@@ -500,7 +504,6 @@ def store_raw_content(
     ).result()
 
     return raw_id
-
 
 # ============================================================
 # RESET RELATIONS
