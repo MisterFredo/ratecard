@@ -555,10 +555,7 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
 
         try:
 
-            # ====================================================
-            # 1️⃣ PASS TO PROCESSING
-            # ====================================================
-
+            # 1️⃣ PROCESSING
             update_bq(
                 TABLE_CONTENT_RAW,
                 {
@@ -566,28 +563,19 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
                     "PROCESSING_AT": datetime.utcnow().isoformat(),
                     "ERROR_MESSAGE": None,
                 },
-                where=f"ID_RAW = '{raw_id}' AND STATUS = 'STORED'"
+                where={"ID_RAW": raw_id}
             )
 
-            # ====================================================
-            # 2️⃣ GENERATE SUMMARY
-            # ====================================================
-
+            # 2️⃣ GENERATE
             summary = generate_summary(
                 source_id=raw.get("SOURCE_ID"),
                 source_text=raw.get("RAW_TEXT", "")
             )
 
-            # ====================================================
             # 3️⃣ CREATE CONTENT
-            # ====================================================
-
             content_id = create_content(summary)
 
-            # ====================================================
-            # 4️⃣ MARK AS PROCESSED
-            # ====================================================
-
+            # 4️⃣ PROCESSED
             update_bq(
                 TABLE_CONTENT_RAW,
                 {
@@ -596,16 +584,12 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
                     "GENERATED_CONTENT_ID": content_id,
                     "ERROR_MESSAGE": None,
                 },
-                where=f"ID_RAW = '{raw_id}'"
+                where={"ID_RAW": raw_id}
             )
 
             processed += 1
 
         except Exception as e:
-
-            # ====================================================
-            # 5️⃣ MARK AS ERROR
-            # ====================================================
 
             update_bq(
                 TABLE_CONTENT_RAW,
@@ -613,7 +597,7 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
                     "STATUS": "ERROR",
                     "ERROR_MESSAGE": str(e),
                 },
-                where=f"ID_RAW = '{raw_id}'"
+                where={"ID_RAW": raw_id}
             )
 
             errors += 1
