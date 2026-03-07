@@ -22,6 +22,7 @@ from core.content.service import (
     get_content_stats,
     store_raw_content,
     list_raw_stock,
+    delete_raw_content,
 )
 
 from core.content.ai import generate_summary
@@ -197,6 +198,23 @@ def destock_raw_route(payload: ContentRawDestockRequest):
 
     except Exception as e:
         logger.exception("Erreur déstockage RAW")
+        raise HTTPException(400, str(e))
+
+# ============================================================
+# DELETE RAW CONTENT
+# ============================================================
+@router.delete("/raw/delete/{id_raw}")
+def delete_raw_route(id_raw: str):
+    try:
+        delete_raw_content(id_raw)
+
+        return {
+            "status": "ok",
+            "deleted_id": id_raw
+        }
+
+    except Exception as e:
+        logger.exception("Erreur suppression RAW")
         raise HTTPException(400, str(e))
 
 
