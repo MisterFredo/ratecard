@@ -59,7 +59,7 @@ def generate_summary(
     )
 
     # ============================================================
-    # PROMPT
+    # PROMPT (STRICTEMENT IDENTIQUE)
     # ============================================================
 
     prompt = f"""
@@ -140,7 +140,7 @@ SIGNAL
         raise ValueError("Réponse LLM vide")
 
     # ============================================================
-    # PARSING ROBUSTE
+    # PARSING ROBUSTE (SEULE PARTIE MODIFIÉE)
     # ============================================================
 
     sections = {
@@ -169,15 +169,22 @@ SIGNAL
 
         normalized = normalize_key(clean)
 
-        if normalized in sections:
-            current = normalized
+        # Header detection plus tolérant
+        matched = False
+        for key in sections.keys():
+            if normalized.startswith(key):
+                current = key
+                matched = True
+                break
+
+        if matched:
             continue
 
         if current:
             sections[current] += clean + "\n"
 
     # ============================================================
-    # LIST PARSER
+    # LIST PARSER ROBUSTE
     # ============================================================
 
     def parse_list(block: str) -> List[str]:
@@ -191,15 +198,22 @@ SIGNAL
         items = []
 
         for line in block.splitlines():
+
             line = line.strip()
+
+            # enlève bullets
             line = re.sub(r"^[-•]\s*", "", line)
+
+            # enlève numérotation 1. 2.
+            line = re.sub(r"^\d+\.\s*", "", line)
+
             if line and line.lower() != "aucun":
                 items.append(line)
 
         return items
 
     # ============================================================
-    # CONCEPTS PARSER (STRUCTURÉ)
+    # CONCEPTS PARSER ROBUSTE MAIS STRICT
     # ============================================================
 
     def parse_concepts(block: str) -> List[Dict[str, str]]:
@@ -216,19 +230,31 @@ SIGNAL
 
             line = line.strip()
             line = re.sub(r"^[-•]\s*", "", line)
+            line = re.sub(r"^\d+\.\s*", "", line)
 
             if not line:
                 continue
 
-            match = re.match(r"(.+?)\s*\(Topic:\s*(.+?)\)", line)
+            match = re.match(
+                r"(.+?)\s*\(\s*Topic\s*:\s*(.+?)\s*\)",
+                line,
+                re.IGNORECASE,
+            )
 
             if not match:
                 continue
 
             label = match.group(1).strip()
-            topic_label = match.group(2).strip()
+            topic_label_raw = match.group(2).strip()
 
-            if topic_label in allowed_topics:
+            # mapping strict insensible à la casse
+            topic_label = next(
+                (k for k in allowed_topics.keys()
+                 if k.lower() == topic_label_raw.lower()),
+                None
+            )
+
+            if topic_label:
                 results.append({
                     "label": label,
                     "topic_id": allowed_topics[topic_label],
@@ -248,15 +274,21 @@ SIGNAL
             body = "<ul>" + "".join(f"<li>{l}</li>" for l in lines) + "</ul>"
 
     # ============================================================
-    # TOPICS MAPPING
+    # TOPICS MAPPING STRICT MAIS CASE-INSENSITIVE
     # ============================================================
 
     raw_topics = parse_list(sections["TOPICS"])
 
-    valid_topics = [
-        t for t in raw_topics
-        if t in allowed_topics
-    ]
+    valid_topics = []
+
+    for t in raw_topics:
+        match = next(
+            (k for k in allowed_topics.keys()
+             if k.lower() == t.lower()),
+            None
+        )
+        if match:
+            valid_topics.append(match)
 
     topic_ids = [
         allowed_topics[t] for t in valid_topics
