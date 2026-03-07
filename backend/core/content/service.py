@@ -83,7 +83,6 @@ def create_content(data: ContentCreate) -> str:
             if data.source_published_at
             else None
         ),
-
         "TITLE": data.title.strip(),
         "EXCERPT": data.excerpt,
         "CONTENT_BODY": data.content_body,
