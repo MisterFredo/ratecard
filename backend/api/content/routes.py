@@ -14,6 +14,7 @@ from core.content.service import (
     get_content,
     update_content,
     archive_content,
+    delete_content,
     publish_content,
     get_content_stats,
 )
@@ -107,6 +108,16 @@ def archive_route(id_content: str):
         return {"status": "ok", "archived": True}
     except Exception as e:
         logger.exception("Erreur archivage content")
+        raise HTTPException(400, str(e))
+
+@router.delete("/delete/{id_content}")
+def delete_route(id_content: str):
+    try:
+        from core.content.service import delete_content
+        delete_content(id_content)
+        return {"status": "ok", "deleted": True}
+    except Exception as e:
+        logger.exception("Erreur suppression content")
         raise HTTPException(400, str(e))
 
 
