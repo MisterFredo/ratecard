@@ -49,22 +49,11 @@ export default function PartnerSignalCard({
   /* ---------------------------------------------------------
      VISUEL — PRIORITÉ NEWS > SOCIÉTÉ
   --------------------------------------------------------- */
-  const finalMediaId = visualRectId || companyVisualRectId || null;
-
-  let visualSrc: string | null = null;
-  let isNewsVisual = false;
-
-  if (finalMediaId) {
-    isNewsVisual = finalMediaId.startsWith("NEWS_");
-
-    visualSrc = isNewsVisual
-      ? `${GCS_BASE_URL}/news/${finalMediaId}`
-      : `${GCS_BASE_URL}/companies/${finalMediaId}`;
-  }
-
-  const imageClass = isNewsVisual
-    ? "absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-    : "max-h-[85%] max-w-[85%] object-contain";
+  const visualSrc = visualRectId
+    ? `${GCS_BASE_URL}/news/${visualRectId}`
+    : companyVisualRectId
+    ? `${GCS_BASE_URL}/companies/${companyVisualRectId}`
+    : null;
 
   function openNews() {
     if (fromInternalClick.current) return;
@@ -86,6 +75,8 @@ export default function PartnerSignalCard({
     ? "border-ratecard-blue"
     : "border-ratecard-border";
 
+  const imageClass = "max-h-[85%] max-w-[85%] object-contain";
+
   /* ========================================================
      DRAWER MODE
   ======================================================== */
@@ -102,11 +93,7 @@ export default function PartnerSignalCard({
             h-full grid grid-rows-[auto_1fr]
           `}
         >
-          <div
-            className={`relative w-full aspect-[3/2] bg-white overflow-hidden ${
-              isNewsVisual ? "" : "flex items-center justify-center"
-            }`}
-          >
+          <div className="relative w-full aspect-[3/2] bg-white overflow-hidden flex items-center justify-center">
             {visualSrc ? (
               <img src={visualSrc} alt={title} className={imageClass} />
             ) : (
@@ -155,11 +142,7 @@ export default function PartnerSignalCard({
           h-full flex flex-col
         `}
       >
-        <div
-          className={`relative h-40 w-full bg-white overflow-hidden ${
-            isNewsVisual ? "" : "flex items-center justify-center"
-          }`}
-        >
+        <div className="relative h-40 w-full bg-white overflow-hidden flex items-center justify-center">
           {visualSrc ? (
             <img src={visualSrc} alt={title} className={imageClass} />
           ) : (
@@ -209,13 +192,13 @@ export default function PartnerSignalCard({
         border ${borderClass}
       `}
     >
-      <div
-        className={`relative h-44 w-full bg-white overflow-hidden ${
-          isNewsVisual ? "" : "flex items-center justify-center"
-        }`}
-      >
+      <div className="relative h-44 w-full bg-white overflow-hidden flex items-center justify-center">
         {visualSrc ? (
-          <img src={visualSrc} alt={title} className={imageClass} />
+          <img
+            src={visualSrc}
+            alt={title}
+            className={`${imageClass} transition-transform duration-300 group-hover:scale-[1.02]`}
+          />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-sm text-gray-400">
             Aucun visuel
