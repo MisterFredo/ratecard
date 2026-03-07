@@ -12,6 +12,7 @@ type Props = {
   onCreate: (data: {
     source_id: string;
     text: string;
+    date_source?: string | null;
   }) => void;
 };
 
@@ -66,6 +67,7 @@ export default function StepSource({ onCreate }: Props) {
     onCreate({
       source_id: sourceId,
       text: sourceText,
+      date_source: sourcePublishedAt || null,
     });
 
   }, [sourceId, sourceText]); // eslint-disable-line
