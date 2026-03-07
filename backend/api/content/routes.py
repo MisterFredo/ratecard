@@ -141,6 +141,53 @@ def publish_route(id_content: str, payload: ContentPublish):
         logger.exception("Erreur publication content")
         raise HTTPException(400, str(e))
 
+# ============================================================
+# STORE CONTENT
+# ============================================================
+
+@router.post("/store-raw")
+def store_raw(payload: dict):
+    try:
+        source_id = payload.get("source_id")
+        raw_text = payload.get("raw_text")
+        date_source = payload.get("date_source")
+
+        if not source_id:
+            raise ValueError("source_id obligatoire")
+
+        if not raw_text or not raw_text.strip():
+            raise ValueError("raw_text vide")
+
+        raw_id = str(uuid.uuid4())
+        now = datetime.utcnow()
+
+        row = [{
+            "ID_RAW": raw_id,
+            "SOURCE_ID": source_id,
+            "RAW_TEXT": raw_text.strip(),
+            "DATE_SOURCE": date_source,
+            "STATUS": "STORED",
+            "CREATED_AT": now.isoformat(),
+            "PROCESSED_AT": None,
+            "GENERATED_CONTENT_ID": None,
+            "ERROR_MESSAGE": None,
+        }]
+
+        client = get_bigquery_client()
+
+        client.load_table_from_json(
+            row,
+            "adex-5555.RATECARD.RATECARD_CONTENT_RAW",
+            job_config=bigquery.LoadJobConfig(
+                write_disposition="WRITE_APPEND"
+            ),
+        ).result()
+
+        return {"status": "ok", "id_raw": raw_id}
+
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
 
 # ============================================================
 # IA — GENERATE CONTENT
