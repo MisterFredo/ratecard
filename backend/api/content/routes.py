@@ -8,6 +8,7 @@ from api.content.models import (
     ContentSummaryRequest,
     ContentRawCreate,
     ContentRawOut,
+    ContentRawDestockRequest,
 )
 
 from core.content.service import (
@@ -179,6 +180,23 @@ def list_raw_stock_route():
         }
     except Exception as e:
         logger.exception("Erreur récupération stock RAW")
+        raise HTTPException(400, str(e))
+
+# ============================================================
+# DESTOCK RAW (BATCH)
+# ============================================================
+@router.post("/raw/destock")
+def destock_raw_route(payload: ContentRawDestockRequest):
+    try:
+        result = destock_raw_contents(limit=payload.limit)
+
+        return {
+            "status": "ok",
+            "processed": result
+        }
+
+    except Exception as e:
+        logger.exception("Erreur déstockage RAW")
         raise HTTPException(400, str(e))
 
 
