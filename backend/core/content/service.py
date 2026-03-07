@@ -78,7 +78,11 @@ def create_content(data: ContentCreate) -> str:
         "AUTHOR": data.author,
 
         "SOURCE_ID": data.source_id,
-        "SOURCE_PUBLISHED_AT": data.source_published_at,  # ⬅️ NOUVEAU
+        "SOURCE_PUBLISHED_AT": 
+            data.source_published_at.isoformat()
+            if data.source_published_at
+            else None
+        ),
 
         "TITLE": data.title.strip(),
         "EXCERPT": data.excerpt,
