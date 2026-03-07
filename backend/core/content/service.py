@@ -555,12 +555,11 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
 
         try:
 
-            # 1️⃣ PROCESSING
+            # 1️⃣ PASS TO PROCESSING
             update_bq(
                 TABLE_CONTENT_RAW,
                 {
                     "STATUS": "PROCESSING",
-                    "PROCESSING_AT": datetime.utcnow().isoformat(),
                     "ERROR_MESSAGE": None,
                 },
                 where={"ID_RAW": raw_id}
@@ -575,7 +574,7 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
             # 3️⃣ CREATE CONTENT
             content_id = create_content(summary)
 
-            # 4️⃣ PROCESSED
+            # 4️⃣ MARK PROCESSED
             update_bq(
                 TABLE_CONTENT_RAW,
                 {
