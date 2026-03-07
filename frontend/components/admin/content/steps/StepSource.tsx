@@ -22,6 +22,7 @@ export default function StepSource({ onCreate }: Props) {
   const [sourceId, setSourceId] = useState("");
   const [sourceText, setSourceText] = useState("");
   const [sourcePublishedAt, setSourcePublishedAt] = useState("");
+  const [sourceTitle, setSourceTitle] = useState("");
 
   const [storing, setStoring] = useState(false);
 
@@ -83,6 +84,11 @@ export default function StepSource({ onCreate }: Props) {
       return;
     }
 
+    if (!sourceTitle.trim()) {
+      alert("Titre de la source obligatoire");
+      return;
+    }
+
     if (!sourceText.trim()) {
       alert("Texte vide");
       return;
@@ -94,15 +100,17 @@ export default function StepSource({ onCreate }: Props) {
 
       await api.post("/content/store-raw", {
         source_id: sourceId,
+        source_title: sourceTitle,
         raw_text: sourceText,
         date_source: sourcePublishedAt || null,
       });
 
       alert("Source stockée avec succès");
 
-      // Reset texte après stockage
+      // Reset après stockage
       setSourceText("");
       setSourcePublishedAt("");
+      setSourceTitle("");
 
     } catch (e) {
       console.error(e);
@@ -165,6 +173,22 @@ export default function StepSource({ onCreate }: Props) {
           value={sourcePublishedAt}
           onChange={(e) => setSourcePublishedAt(e.target.value)}
           className="border rounded p-2 w-full text-sm"
+        />
+      </div>
+
+      {/* TITLE SOURCE */}
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium">
+          Titre de la source
+        </label>
+
+        <input
+          type="text"
+          value={sourceTitle}
+          onChange={(e) => setSourceTitle(e.target.value)}
+          className="border rounded p-2 w-full text-sm"
+          placeholder="Ex : Amazon expands retail media strategy"
         />
       </div>
 
