@@ -19,6 +19,7 @@ from core.content.service import (
     publish_content,
     get_content_stats,
     store_raw_content,
+    list_raw_stock,
 )
 
 from core.content.ai import generate_summary
