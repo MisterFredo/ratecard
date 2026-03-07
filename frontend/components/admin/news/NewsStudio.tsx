@@ -178,7 +178,13 @@ export default function NewsStudio({ mode, newsId }: Props) {
     try {
       if (!internalNewsId) {
         const res = await api.post("/news/create", payload);
-        setInternalNewsId(res.id_news);
+        const newId = res.id_news;
+
+        setInternalNewsId(newId);
+
+        // 🔥 RELOAD pour récupérer MEDIA_RECTANGLE_ID
+        const reload = await api.get(`/news/${newId}`);
+        setMediaId(reload.news.media_rectangle_id || null);
       } else {
         await api.put(`/news/update/${internalNewsId}`, payload);
       }
