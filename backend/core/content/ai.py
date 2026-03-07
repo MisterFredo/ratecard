@@ -12,6 +12,14 @@ from utils.bigquery_utils import query_bq
 # ============================================================
 
 def normalize_key(text: str) -> str:
+    """
+    Normalise un header :
+    - supprime accents
+    - supprime #
+    - supprime :
+    - uppercase
+    - trim
+    """
     text = unicodedata.normalize("NFD", text)
     text = text.encode("ascii", "ignore").decode("utf-8")
     text = text.replace("#", "")
@@ -75,21 +83,55 @@ Source : {source_id or "inconnue"}
 ================ FORMAT OBLIGATOIRE ================
 
 TITLE
-EXCERPT
-POINTS CLES
-CITATIONS
-CHIFFRES
-ACTEURS
-CONCEPTS
-SOLUTIONS
-TOPICS
-MECANIQUE
-ENJEU
-FRICTION
-SIGNAL
+(Titre factuel.)
 
-TOPICS autorisés :
+EXCERPT
+(1 à 2 phrases synthétiques.)
+
+POINTS CLES
+(Liste factuelle. Les points clés doivent être séparés par des retours à la ligne.)
+
+CITATIONS
+(Liste exacte ou "Aucun")
+
+CHIFFRES
+(Liste exacte ou "Aucun")
+
+ACTEURS
+(Liste des entreprises citées ou "Aucun")
+
+CONCEPTS
+(Liste des notions métier identifiées dans la source.
+Chaque concept doit être suivi de son topic entre parenthèses sous la forme exacte :
+"Nom du concept (Topic: Nom exact du topic)"
+Le topic doit obligatoirement être choisi parmi la liste autorisée.
+Si aucun concept pertinent, écrire "Aucun")
+
+SOLUTIONS
+(Noms de produits, plateformes ou offres.
+Ou "Aucun")
+
+TOPICS
+(Choisir 1 à 3 topics uniquement parmi cette liste.
+Ne jamais inventer ni reformuler.)
+
 {topics_list_text}
+
+================ ANALYSE STRATEGIQUE ================
+
+MECANIQUE
+(Explique en 3 à 6 lignes la mécanique business ou opérationnelle décrite dans la source.
+Strictement basée sur le texte.)
+
+ENJEU
+(Quel est l’enjeu stratégique sous-jacent ? 2 à 4 lignes.)
+
+FRICTION
+(Quel point de tension, limite ou incertitude apparaît ? 1 à 3 lignes.
+Si aucun, écrire "Aucun")
+
+SIGNAL
+(Quel signal de marché cela révèle-t-il ? 2 à 4 lignes.)
 """
 
     raw = run_llm(prompt)
@@ -98,7 +140,7 @@ TOPICS autorisés :
         raise ValueError("Réponse LLM vide")
 
     # ============================================================
-    # PARSING ROBUSTE DES SECTIONS
+    # PARSING ROBUSTE
     # ============================================================
 
     sections = {
@@ -127,14 +169,8 @@ TOPICS autorisés :
 
         normalized = normalize_key(clean)
 
-        matched = None
-        for key in sections.keys():
-            if normalized.startswith(key):
-                matched = key
-                break
-
-        if matched:
-            current = matched
+        if normalized in sections:
+            current = normalized
             continue
 
         if current:
@@ -163,7 +199,7 @@ TOPICS autorisés :
         return items
 
     # ============================================================
-    # CONCEPTS PARSER STRICT MAIS ROBUSTE
+    # CONCEPTS PARSER (STRUCTURÉ)
     # ============================================================
 
     def parse_concepts(block: str) -> List[Dict[str, str]]:
@@ -184,11 +220,7 @@ TOPICS autorisés :
             if not line:
                 continue
 
-            match = re.search(
-                r"(.+?)\s*\(\s*topic\s*:\s*(.+?)\s*\)",
-                line,
-                re.IGNORECASE
-            )
+            match = re.match(r"(.+?)\s*\(Topic:\s*(.+?)\)", line)
 
             if not match:
                 continue
@@ -196,13 +228,11 @@ TOPICS autorisés :
             label = match.group(1).strip()
             topic_label = match.group(2).strip()
 
-            for allowed_label, topic_id in allowed_topics.items():
-                if topic_label.lower() == allowed_label.lower():
-                    results.append({
-                        "label": label,
-                        "topic_id": topic_id,
-                    })
-                    break
+            if topic_label in allowed_topics:
+                results.append({
+                    "label": label,
+                    "topic_id": allowed_topics[topic_label],
+                })
 
         return results
 
@@ -218,18 +248,19 @@ TOPICS autorisés :
             body = "<ul>" + "".join(f"<li>{l}</li>" for l in lines) + "</ul>"
 
     # ============================================================
-    # TOPICS MAPPING STRICT
+    # TOPICS MAPPING
     # ============================================================
 
     raw_topics = parse_list(sections["TOPICS"])
 
-    topic_ids = []
+    valid_topics = [
+        t for t in raw_topics
+        if t in allowed_topics
+    ]
 
-    for t in raw_topics:
-        for allowed_label, topic_id in allowed_topics.items():
-            if t.strip().lower() == allowed_label.strip().lower():
-                topic_ids.append(topic_id)
-                break
+    topic_ids = [
+        allowed_topics[t] for t in valid_topics
+    ]
 
     # ============================================================
     # RETURN STRUCTURED DATA
