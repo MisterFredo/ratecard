@@ -34,6 +34,16 @@ class ContentRawCreate(BaseModel):
     raw_text: str
     date_source: Optional[date] = None
 
+class ContentRawOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id_raw: str
+    source_id: str
+    source_title: str
+    date_source: Optional[date] = None
+    status: str
+    created_at: datetime
+
 
 # ============================================================
 # CREATE
