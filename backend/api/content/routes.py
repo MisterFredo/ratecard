@@ -22,6 +22,7 @@ from core.content.service import (
     get_content_stats,
     store_raw_content,
     list_raw_stock,
+    destock_raw_contents,
     delete_raw_content,
 )
 
