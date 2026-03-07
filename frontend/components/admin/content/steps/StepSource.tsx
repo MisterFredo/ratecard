@@ -20,6 +20,9 @@ export default function StepSource({ onCreate }: Props) {
   const [sources, setSources] = useState<Source[]>([]);
   const [sourceId, setSourceId] = useState("");
   const [sourceText, setSourceText] = useState("");
+  const [sourcePublishedAt, setSourcePublishedAt] = useState("");
+
+  const [storing, setStoring] = useState(false);
 
   const charCount = sourceText.length;
 
@@ -68,6 +71,46 @@ export default function StepSource({ onCreate }: Props) {
   }, [sourceId, sourceText]); // eslint-disable-line
 
   // ==========================================================
+  // STORE RAW
+  // ==========================================================
+
+  async function handleStore() {
+
+    if (!sourceId) {
+      alert("Source obligatoire");
+      return;
+    }
+
+    if (!sourceText.trim()) {
+      alert("Texte vide");
+      return;
+    }
+
+    setStoring(true);
+
+    try {
+
+      await api.post("/content/store-raw", {
+        source_id: sourceId,
+        raw_text: sourceText,
+        date_source: sourcePublishedAt || null,
+      });
+
+      alert("Source stockée avec succès");
+
+      // Reset texte après stockage
+      setSourceText("");
+      setSourcePublishedAt("");
+
+    } catch (e) {
+      console.error(e);
+      alert("Erreur lors du stockage");
+    }
+
+    setStoring(false);
+  }
+
+  // ==========================================================
   // RENDER
   // ==========================================================
 
@@ -108,6 +151,21 @@ export default function StepSource({ onCreate }: Props) {
         </select>
       </div>
 
+      {/* DATE SOURCE */}
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium">
+          Date de publication de la source
+        </label>
+
+        <input
+          type="date"
+          value={sourcePublishedAt}
+          onChange={(e) => setSourcePublishedAt(e.target.value)}
+          className="border rounded p-2 w-full text-sm"
+        />
+      </div>
+
       {/* TEXT AREA */}
 
       <div className="space-y-1">
@@ -125,6 +183,18 @@ export default function StepSource({ onCreate }: Props) {
         <p className="text-xs text-gray-500">
           Minimum recommandé : 80 caractères
         </p>
+      </div>
+
+      {/* STORE BUTTON */}
+
+      <div className="pt-2">
+        <button
+          onClick={handleStore}
+          disabled={storing}
+          className="px-4 py-2 bg-gray-800 text-white rounded text-sm"
+        >
+          {storing ? "Stockage..." : "Stocker"}
+        </button>
       </div>
 
     </div>
