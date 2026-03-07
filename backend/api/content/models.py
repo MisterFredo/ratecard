@@ -44,6 +44,11 @@ class ContentRawOut(BaseModel):
     status: str
     created_at: datetime
 
+class ContentRawDestockRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    limit: int = 20
+
 
 # ============================================================
 # CREATE
