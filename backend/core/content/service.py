@@ -76,6 +76,7 @@ def create_content(data: ContentCreate) -> str:
         "AUTHOR": data.author,
 
         "SOURCE_ID": data.source_id,
+        "SOURCE_PUBLISHED_AT": data.source_published_at,  # ⬅️ NOUVEAU
 
         "TITLE": data.title.strip(),
         "EXCERPT": data.excerpt,
@@ -192,7 +193,6 @@ def create_content(data: ContentCreate) -> str:
         )
 
     return content_id
-
 
 # ============================================================
 # GET CONTENT
@@ -455,6 +455,50 @@ def list_contents_admin():
         }
         for r in rows
     ]
+
+
+# ============================================================
+# STORE RAW CONTENT
+# ============================================================
+
+def store_raw_content(
+    source_id: str,
+    raw_text: str,
+    date_source: Optional[date] = None,
+) -> str:
+
+    if not source_id:
+        raise ValueError("source_id obligatoire")
+
+    if not raw_text or not raw_text.strip():
+        raise ValueError("raw_text vide")
+
+    raw_id = str(uuid.uuid4())
+    now = datetime.utcnow()
+
+    row = [{
+        "ID_RAW": raw_id,
+        "SOURCE_ID": source_id,
+        "RAW_TEXT": raw_text.strip(),
+        "DATE_SOURCE": date_source,
+        "STATUS": "STORED",
+        "CREATED_AT": now,
+        "PROCESSED_AT": None,
+        "GENERATED_CONTENT_ID": None,
+        "ERROR_MESSAGE": None,
+    }]
+
+    client = get_bigquery_client()
+
+    client.load_table_from_json(
+        row,
+        "adex-5555.RATECARD.RATECARD_CONTENT_RAW",
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
+    ).result()
+
+    return raw_id
 
 
 # ============================================================
