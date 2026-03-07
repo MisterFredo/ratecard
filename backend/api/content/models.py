@@ -30,6 +30,7 @@ class ContentRawCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     source_id: str
+    source_title : str
     raw_text: str
     date_source: Optional[date] = None
 
