@@ -6,6 +6,7 @@ from api.content.models import (
     ContentUpdate,
     ContentPublish,
     ContentSummaryRequest,
+    ContentRawCreate,   # ⬅️ AJOUTER
 )
 
 from core.content.service import (
@@ -17,6 +18,7 @@ from core.content.service import (
     delete_content,
     publish_content,
     get_content_stats,
+    store_raw_content,
 )
 
 from core.content.ai import generate_summary
