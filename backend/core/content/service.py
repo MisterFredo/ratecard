@@ -480,7 +480,7 @@ def store_raw_content(
         "ID_RAW": raw_id,
         "SOURCE_ID": source_id,
         "RAW_TEXT": raw_text.strip(),
-        "DATE_SOURCE": date_source,
+        "DATE_SOURCE": date_source.isoformat() if date_source else None,
         "STATUS": "STORED",
         "CREATED_AT": now,
         "PROCESSED_AT": None,
