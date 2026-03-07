@@ -36,6 +36,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [sourceText, setSourceText] = useState("");
+  const [sourcePublishedAt, setSourcePublishedAt] = useState<string | null>(null); // ⬅️ AJOUTÉ
 
   // =========================
   // LLM RAW (INFORMATIF)
@@ -102,6 +103,8 @@ export default function ContentStudio({ mode, contentId }: Props) {
       setFriction(c.point_de_friction || "");
       setSignal(c.signal_analytique || "");
 
+      setSourcePublishedAt(c.source_published_at || null); // ⬅️ AJOUTÉ
+
       // STRUCTURED IDS
       setTopics((c.topics || []).map((x: any) => x.ID_TOPIC));
       setCompanies((c.companies || []).map((x: any) => x.ID_COMPANY));
@@ -120,6 +123,10 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
   async function saveEditorial() {
     const payload = {
+      source_id: sourceId,                       // ⬅️ AJOUTÉ
+      source_text: sourceText,                   // ⬅️ AJOUTÉ
+      source_published_at: sourcePublishedAt,    // ⬅️ AJOUTÉ
+
       title: excerpt.slice(0, 120),
       excerpt,
       content_body: contentBody,
@@ -204,9 +211,10 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
         {!internalContentId && (
           <StepSource
-            onCreate={({ source_id, text }) => {
+            onCreate={({ source_id, text, date_source }) => { // ⬅️ MODIFIÉ
               setSourceId(source_id);
               setSourceText(text);
+              setSourcePublishedAt(date_source || null);
             }}
           />
         )}
@@ -244,7 +252,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
             if (d.topics !== undefined) {
               setTopicsRaw(d.topics);
-              setTopics(d.topics); // auto-preselect in validation
+              setTopics(d.topics);
             }
 
             if (d.mecanique !== undefined) setMecanique(d.mecanique);
