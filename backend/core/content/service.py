@@ -533,6 +533,86 @@ def list_raw_stock():
         for r in rows
     ]
 
+def destock_raw_contents(limit: int = 10) -> int:
+
+    # 1️⃣ Récupérer les plus anciens RAW en attente
+    query = f"""
+        SELECT *
+        FROM `adex-5555.RATECARD.RATECARD_CONTENT_RAW`
+        WHERE STATUS = 'STORED'
+        ORDER BY CREATED_AT ASC
+        LIMIT {limit}
+    """
+
+    raws = query_bq(query)
+
+    if not raws:
+        return 0
+
+    processed_count = 0
+
+    for raw in raws:
+        try:
+            raw_id = raw["ID_RAW"]
+            source_id = raw["SOURCE_ID"]
+            source_title = raw["SOURCE_TITLE"]
+            raw_text = raw["RAW_TEXT"]
+            date_source = raw.get("DATE_SOURCE")
+
+            # 2️⃣ Appel à ton moteur LLM existant
+            # Ici tu dois appeler ta fonction actuelle qui transforme une source en ContentCreate
+            content_data = transform_source_to_content(
+                source_id=source_id,
+                source_text=raw_text
+            )
+
+            # 3️⃣ Créer le content éditorial
+            content_id = create_content(content_data)
+
+            # 4️⃣ Mettre à jour le RAW
+            update_query = """
+                UPDATE `adex-5555.RATECARD.RATECARD_CONTENT_RAW`
+                SET
+                    STATUS = 'GENERATED',
+                    GENERATED_CONTENT_ID = @content_id,
+                    PROCESSED_AT = @processed_at
+                WHERE ID_RAW = @raw_id
+            """
+
+            update_bq(
+                update_query,
+                {
+                    "content_id": content_id,
+                    "processed_at": datetime.now(timezone.utc).isoformat(),
+                    "raw_id": raw_id,
+                }
+            )
+
+            processed_count += 1
+
+        except Exception as e:
+
+            # 5️⃣ En cas d'erreur, marquer ERROR
+            error_query = """
+                UPDATE `adex-5555.RATECARD.RATECARD_CONTENT_RAW`
+                SET
+                    STATUS = 'ERROR',
+                    ERROR_MESSAGE = @error_message,
+                    PROCESSED_AT = @processed_at
+                WHERE ID_RAW = @raw_id
+            """
+
+            update_bq(
+                error_query,
+                {
+                    "error_message": str(e),
+                    "processed_at": datetime.now(timezone.utc).isoformat(),
+                    "raw_id": raw["ID_RAW"],
+                }
+            )
+
+    return processed_count
+
 # ============================================================
 # RESET RELATIONS
 # ============================================================
