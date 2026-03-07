@@ -630,6 +630,23 @@ def destock_raw_contents(limit: int = 10) -> int:
 
     return processed_count
 
+def delete_raw_content(id_raw: str) -> None:
+
+    if not id_raw:
+        raise ValueError("id_raw obligatoire")
+
+    query = """
+        DELETE FROM `adex-5555.RATECARD.RATECARD_CONTENT_RAW`
+        WHERE ID_RAW = @id_raw
+    """
+
+    update_bq(
+        query,
+        {
+            "id_raw": id_raw
+        }
+    )
+
 # ============================================================
 # RESET RELATIONS
 # ============================================================
