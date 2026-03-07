@@ -164,6 +164,21 @@ def store_raw_route(payload: ContentRawCreate):
         logger.exception("Erreur stockage raw content")
         raise HTTPException(400, str(e))
 
+# ============================================================
+# LIST RAW STOCK
+# ============================================================
+@router.get("/raw/stock")
+def list_raw_stock_route():
+    try:
+        raws = list_raw_stock()
+        return {
+            "status": "ok",
+            "raws": raws
+        }
+    except Exception as e:
+        logger.exception("Erreur récupération stock RAW")
+        raise HTTPException(400, str(e))
+
 
 # ============================================================
 # IA — GENERATE CONTENT
