@@ -98,6 +98,16 @@ export default function ContentStudio({ mode, contentId }: Props) {
       setChiffres(c.chiffres || []);
       setActeursRaw(c.acteurs_cites || []);
 
+      setTopicsRaw(c.topics_llm || []);
+
+      setConceptsRaw(
+        (c.concepts_llm || []).map((label: string) => ({
+          label,
+          topic_id: "",
+        }))
+      );
+      setSolutionsRaw(c.solutions_llm || []);
+
       setMecanique(c.mecanique_expliquee || "");
       setEnjeu(c.enjeu_strategique || "");
       setFriction(c.point_de_friction || "");
