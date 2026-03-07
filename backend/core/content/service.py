@@ -782,3 +782,43 @@ def get_content_stats():
         "total_published_this_year": r.get("TOTAL_PUBLISHED_THIS_YEAR", 0),
         "total_published_this_month": r.get("TOTAL_PUBLISHED_THIS_MONTH", 0),
     }
+
+def delete_content(id_content: str):
+
+    client = get_bigquery_client()
+
+    tables = [
+        TABLE_CONTENT_TOPIC,
+        TABLE_CONTENT_COMPANY,
+        TABLE_CONTENT_CONCEPT,
+        TABLE_CONTENT_SOLUTION,
+    ]
+
+    for table in tables:
+        client.query(
+            f"""
+            DELETE FROM `{table}`
+            WHERE ID_CONTENT = @id
+            """,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter(
+                        "id", "STRING", id_content
+                    ),
+                ]
+            ),
+        ).result()
+
+    client.query(
+        f"""
+        DELETE FROM `{TABLE_CONTENT}`
+        WHERE ID_CONTENT = @id
+        """,
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter(
+                    "id", "STRING", id_content
+                ),
+            ]
+        ),
+    ).result()
