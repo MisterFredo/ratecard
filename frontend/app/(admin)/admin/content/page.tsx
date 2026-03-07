@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 type ContentLite = {
   id_content: string;
@@ -26,6 +26,7 @@ export default function ContentListPage() {
   const [contents, setContents] = useState<ContentLite[]>([]);
   const [stats, setStats] = useState<ContentStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -49,6 +50,25 @@ export default function ContentListPage() {
   useEffect(() => {
     load();
   }, []);
+
+  async function handleDelete(id: string) {
+    const confirmDelete = window.confirm(
+      "Supprimer définitivement ce contenu ?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      setDeletingId(id);
+      await api.delete(`/content/delete/${id}`);
+      await load();
+    } catch (e) {
+      console.error(e);
+      alert("Erreur suppression contenu");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   function formatDate(value?: string | null) {
     if (!value) return "—";
@@ -172,13 +192,21 @@ export default function ContentListPage() {
                   {formatDate(c.published_at)}
                 </td>
 
-                <td className="p-2 text-right">
+                <td className="p-2 text-right space-x-3">
                   <Link
                     href={`/admin/content/edit/${c.id_content}`}
-                    className="inline-flex items-center gap-1 text-ratecard-blue hover:text-ratecard-blue/80"
+                    className="inline-flex items-center text-ratecard-blue hover:text-ratecard-blue/80"
                   >
                     <Pencil size={16} />
                   </Link>
+
+                  <button
+                    onClick={() => handleDelete(c.id_content)}
+                    disabled={deletingId === c.id_content}
+                    className="inline-flex items-center text-red-600 hover:text-red-800"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </td>
               </tr>
             );
