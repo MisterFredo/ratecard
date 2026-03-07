@@ -570,6 +570,9 @@ def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
                 },
                 where={"ID_RAW": raw_id}
             )
+            print("---- RAW TEXT AUTO ----")
+            print(raw.get("RAW_TEXT"))
+            print("-----------------------")
 
             # ====================================================
             # 2️⃣ GENERATE SUMMARY
