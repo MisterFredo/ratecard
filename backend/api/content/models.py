@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date
 
 
 # ============================================================
@@ -24,6 +24,17 @@ class ContentSummaryRequest(BaseModel):
 
 
 # ============================================================
+# RAW — STORE
+# ============================================================
+class ContentRawCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source_id: str
+    raw_text: str
+    date_source: Optional[date] = None
+
+
+# ============================================================
 # CREATE
 # ============================================================
 class ContentCreate(BaseModel):
@@ -34,6 +45,7 @@ class ContentCreate(BaseModel):
     source_text: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
+    source_published_at: Optional[date] = None   # ⬅️ NOUVEAU
 
     # SUMMARY VALIDÉ
     title: str
@@ -83,6 +95,7 @@ class ContentUpdate(BaseModel):
     source_text: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
+    source_published_at: Optional[date] = None   # ⬅️ NOUVEAU
 
     # SUMMARY
     title: Optional[str] = None
@@ -142,6 +155,7 @@ class ContentOut(BaseModel):
     source_id: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
+    source_published_at: Optional[date] = None   # ⬅️ NOUVEAU
 
     title: Optional[str] = None
     excerpt: Optional[str] = None
