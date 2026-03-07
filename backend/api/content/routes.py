@@ -155,6 +155,7 @@ def store_raw_route(payload: ContentRawCreate):
     try:
         raw_id = store_raw_content(
             source_id=payload.source_id,
+            source_title=payload.source_title,
             raw_text=payload.raw_text,
             date_source=payload.date_source,
         )
