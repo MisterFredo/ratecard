@@ -101,10 +101,10 @@ export default function ContentStockPage() {
   // =========================
 
   async function handleDestockBatch() {
-    if (!window.confirm("Générer les 10 plus anciens contenus ?")) return;
+    if (!window.confirm("Générer les 20 plus anciens contenus ?")) return;
 
     setProcessing(true);
-    await api.post("/content/raw/destock", { limit: 10 });
+    await api.post("/content/raw/destock", { limit: 20 });
     await load();
     setProcessing(false);
   }
@@ -113,7 +113,7 @@ export default function ContentStockPage() {
     if (!window.confirm("Générer ce contenu ?")) return;
 
     setProcessing(true);
-    await api.post("/content/raw/destock-one", { id_raw: id });
+    await api.post("/content/raw/destock", { id_raw: id });
     await load();
     setProcessing(false);
   }
