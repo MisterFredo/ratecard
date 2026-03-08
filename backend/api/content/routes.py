@@ -293,13 +293,12 @@ def mark_ready_route(id_content: str):
         raise HTTPException(400, str(e))
 
 @router.post("/bulk/ready")
-def bulk_ready_route(payload: dict):
+def bulk_ready_route(payload: BulkIdsRequest):
     try:
-        ids = payload.get("ids", [])
-        if not ids:
+        if not payload.ids:
             raise ValueError("No ids provided")
 
-        updated = bulk_ready(ids)
+        updated = bulk_ready(payload.ids)
 
         return {
             "status": "ok",
@@ -310,13 +309,12 @@ def bulk_ready_route(payload: dict):
         raise HTTPException(400, str(e))
 
 @router.post("/bulk/publish")
-def bulk_publish_route(payload: dict):
+def bulk_publish_route(payload: BulkIdsRequest):
     try:
-        ids = payload.get("ids", [])
-        if not ids:
+        if not payload.ids:
             raise ValueError("No ids provided")
 
-        updated = bulk_publish(ids)
+        updated = bulk_publish(payload.ids)
 
         return {
             "status": "ok",
