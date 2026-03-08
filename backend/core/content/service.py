@@ -551,20 +551,20 @@ def store_raw_content(
     return raw_id
 
 def list_raw_stock(
-    source_id: Optional[str] = None,
+    source_name: Optional[str] = None,
     status: Optional[str] = None,
 ) -> List[dict]:
 
     conditions = []
     params = {}
 
-    if source_id:
-        conditions.append("r.SOURCE_ID = @source_id")
-        params["source_id"] = source_id
-
     if status:
         conditions.append("r.STATUS = @status")
         params["status"] = status
+
+    if source_name:
+        conditions.append("LOWER(s.NAME) LIKE LOWER(@source_name)")
+        params["source_name"] = f"%{source_name}%"
 
     where_clause = ""
     if conditions:
@@ -574,14 +574,14 @@ def list_raw_stock(
         SELECT
             r.ID_RAW,
             r.SOURCE_ID,
-            s.NAME as SOURCE_NAME,
+            s.NAME AS SOURCE_NAME,
             r.SOURCE_TITLE,
             r.DATE_SOURCE,
             r.STATUS,
             r.ERROR_MESSAGE,
             r.CREATED_AT
         FROM `{TABLE_CONTENT_RAW}` r
-        LEFT JOIN `adex-5555.RATECARD.RATECARD_SOURCE` s
+        LEFT JOIN `{TABLE_SOURCE}` s
             ON r.SOURCE_ID = s.SOURCE_ID
         {where_clause}
         ORDER BY
@@ -591,7 +591,7 @@ def list_raw_stock(
                 WHEN r.STATUS = 'PROCESSING' THEN 3
                 WHEN r.STATUS = 'PROCESSED' THEN 4
                 ELSE 5
-            END ASC,
+            END,
             r.CREATED_AT DESC
     """
 
