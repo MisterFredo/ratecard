@@ -759,6 +759,36 @@ def delete_raw_content(id_raw: str) -> None:
         {"id_raw": id_raw}
     )
 
+def retry_raw_content(id_raw: str) -> None:
+
+    if not id_raw:
+        raise ValueError("id_raw obligatoire")
+
+    # Vérifier que le RAW est bien en ERROR
+    check_query = f"""
+        SELECT STATUS
+        FROM `{TABLE_CONTENT_RAW}`
+        WHERE ID_RAW = @id_raw
+    """
+
+    rows = query_bq(check_query, {"id_raw": id_raw})
+
+    if not rows:
+        raise ValueError("RAW introuvable")
+
+    if rows[0]["STATUS"] != "ERROR":
+        raise ValueError("Retry autorisé uniquement pour les ERROR")
+
+    # Reset propre
+    update_bq(
+        TABLE_CONTENT_RAW,
+        {
+            "STATUS": "STORED",
+            "ERROR_MESSAGE": None,
+        },
+        where={"ID_RAW": id_raw}
+    )
+
 def get_raw_stats() -> dict:
 
     query = f"""
