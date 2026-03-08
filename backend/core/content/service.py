@@ -105,6 +105,11 @@ def create_content(data: ContentCreate) -> str:
 
         "PUBLISHED_AT": None,
         "CREATED_AT": now,
+        "SOURCE_DATE": (
+            data.source_date.isoformat()
+            if data.source_date
+            else None
+        ),
         "UPDATED_AT": now,
     }]
 
