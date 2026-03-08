@@ -282,3 +282,11 @@ def get_route(id_content: str):
         raise HTTPException(404, "Content introuvable")
 
     return {"status": "ok", "content": content}
+
+@router.post("/ready/{id_content}")
+def mark_ready_route(id_content: str):
+    try:
+        mark_content_ready(id_content)
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(400, str(e))
