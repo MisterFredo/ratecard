@@ -13,21 +13,40 @@ type RawItem = {
   created_at: string;
 };
 
+type RawStats = {
+  total: number;
+  total_stored: number;
+  total_processing: number;
+  total_error: number;
+};
+
+const PAGE_SIZE = 50;
+
 export default function ContentStockPage() {
   const [raws, setRaws] = useState<RawItem[]>([]);
+  const [stats, setStats] = useState<RawStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+
   async function load() {
     setLoading(true);
+
     try {
-      const res = await api.get("/content/raw/stock");
-      setRaws(res.raws || []);
+      const [listRes, statsRes] = await Promise.all([
+        api.get("/content/raw/stock"),
+        api.get("/content/raw/admin/stats"),
+      ]);
+
+      setRaws(listRes.raws || []);
+      setStats(statsRes.stats || null);
     } catch (e) {
       console.error(e);
       alert("Erreur chargement stock");
     }
+
     setLoading(false);
   }
 
@@ -36,63 +55,63 @@ export default function ContentStockPage() {
   }, []);
 
   // =========================
-  // DESTOCK BATCH
+  // PAGINATION
+  // =========================
+
+  const sortedRaws = [...raws].sort((a, b) => {
+    return (
+      new Date(b.created_at).getTime() -
+      new Date(a.created_at).getTime()
+    );
+  });
+
+  const totalPages = Math.ceil(sortedRaws.length / PAGE_SIZE);
+
+  const paginatedRaws = sortedRaws.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE
+  );
+
+  // =========================
+  // STATUS STYLE
+  // =========================
+
+  function getStatusClasses(status: string) {
+    if (status === "STORED")
+      return "bg-yellow-100 text-yellow-700";
+    if (status === "PROCESSING")
+      return "bg-blue-100 text-blue-700";
+    if (status === "PROCESSED")
+      return "bg-green-100 text-green-700";
+    if (status === "ERROR")
+      return "bg-red-100 text-red-700";
+    return "bg-gray-100 text-gray-700";
+  }
+
+  // =========================
+  // ACTIONS
   // =========================
 
   async function handleDestockBatch() {
-    const confirmRun = window.confirm(
-      "Générer les 10 plus anciens contenus en stock ?"
-    );
-
-    if (!confirmRun) return;
+    if (!window.confirm("Générer les 10 plus anciens contenus ?")) return;
 
     setProcessing(true);
-
-    try {
-      await api.post("/content/raw/destock", { limit: 10 });
-      await load();
-    } catch (e) {
-      console.error(e);
-      alert("Erreur déstockage");
-    }
-
+    await api.post("/content/raw/destock", { limit: 10 });
+    await load();
     setProcessing(false);
   }
-
-  // =========================
-  // DESTOCK ONE
-  // =========================
 
   async function handleDestockOne(id: string) {
-    const confirmRun = window.confirm(
-      "Générer ce contenu ?"
-    );
-
-    if (!confirmRun) return;
+    if (!window.confirm("Générer ce contenu ?")) return;
 
     setProcessing(true);
-
-    try {
-      await api.post("/content/raw/destock", { limit: 1 });
-      await load();
-    } catch (e) {
-      console.error(e);
-      alert("Erreur déstockage");
-    }
-
+    await api.post("/content/raw/destock-one", { id_raw: id });
+    await load();
     setProcessing(false);
   }
 
-  // =========================
-  // DELETE RAW
-  // =========================
-
   async function handleDelete(id: string) {
-    const confirmDelete = window.confirm(
-      "Supprimer définitivement cette source stockée ?"
-    );
-
-    if (!confirmDelete) return;
+    if (!window.confirm("Supprimer cette source ?")) return;
 
     try {
       setDeletingId(id);
@@ -116,6 +135,8 @@ export default function ContentStockPage() {
   return (
     <div className="space-y-8">
 
+      {/* HEADER */}
+
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
           Stock des sources
@@ -130,6 +151,19 @@ export default function ContentStockPage() {
         </button>
       </div>
 
+      {/* STATS */}
+
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard label="Total" value={stats.total} />
+          <StatCard label="En stock" value={stats.total_stored} yellow />
+          <StatCard label="En cours" value={stats.total_processing} />
+          <StatCard label="Erreurs" value={stats.total_error} red />
+        </div>
+      )}
+
+      {/* TABLE */}
+
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="bg-gray-100 border-b text-left text-gray-700">
@@ -142,11 +176,8 @@ export default function ContentStockPage() {
         </thead>
 
         <tbody>
-          {raws.map((r) => (
-            <tr
-              key={r.id_raw}
-              className="border-b hover:bg-gray-50 transition"
-            >
+          {paginatedRaws.map((r) => (
+            <tr key={r.id_raw} className="border-b hover:bg-gray-50 transition">
               <td className="p-2 font-medium">
                 {r.source_title}
               </td>
@@ -160,13 +191,12 @@ export default function ContentStockPage() {
               </td>
 
               <td className="p-2">
-                <span className="px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-700">
+                <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusClasses(r.status)}`}>
                   {r.status}
                 </span>
               </td>
 
               <td className="p-2 text-right space-x-3">
-
                 <button
                   onClick={() => handleDestockOne(r.id_raw)}
                   className="inline-flex items-center text-green-600 hover:text-green-800"
@@ -181,13 +211,71 @@ export default function ContentStockPage() {
                 >
                   <Trash2 size={16} />
                 </button>
-
               </td>
             </tr>
           ))}
         </tbody>
       </table>
 
+      {/* PAGINATION */}
+
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="px-3 py-1 border rounded disabled:opacity-40"
+          >
+            Précédent
+          </button>
+
+          <span className="text-sm">
+            Page {page} / {totalPages}
+          </span>
+
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="px-3 py-1 border rounded disabled:opacity-40"
+          >
+            Suivant
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  yellow,
+  red,
+}: {
+  label: string;
+  value: number;
+  yellow?: boolean;
+  red?: boolean;
+}) {
+  let bg = "bg-white";
+  let text = "text-gray-800";
+
+  if (yellow) {
+    bg = "bg-yellow-50";
+    text = "text-yellow-700";
+  }
+
+  if (red) {
+    bg = "bg-red-50";
+    text = "text-red-700";
+  }
+
+  return (
+    <div className={`${bg} rounded-lg p-4 border`}>
+      <div className="text-xs text-gray-500">{label}</div>
+      <div className={`text-2xl font-semibold ${text}`}>
+        {value}
+      </div>
     </div>
   );
 }
