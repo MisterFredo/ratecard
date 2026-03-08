@@ -61,7 +61,8 @@ class ContentCreate(BaseModel):
     source_text: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
-    source_published_at: Optional[date] = None   # ⬅️ NOUVEAU
+    source_published_at: Optional[date] = None
+    source_date: Optional[datetime]
 
     # SUMMARY VALIDÉ
     title: str
