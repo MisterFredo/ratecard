@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone, date
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from google.cloud import bigquery
 
