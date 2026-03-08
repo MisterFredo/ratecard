@@ -732,6 +732,36 @@ def delete_raw_content(id_raw: str) -> None:
         {"id_raw": id_raw}
     )
 
+def get_raw_stats() -> dict:
+
+    query = f"""
+        SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN STATUS = 'STORED' THEN 1 ELSE 0 END) AS total_stored,
+            SUM(CASE WHEN STATUS = 'PROCESSING' THEN 1 ELSE 0 END) AS total_processing,
+            SUM(CASE WHEN STATUS = 'ERROR' THEN 1 ELSE 0 END) AS total_error
+        FROM `{TABLE_CONTENT_RAW}`
+    """
+
+    rows = query_bq(query)
+
+    if not rows:
+        return {
+            "total": 0,
+            "total_stored": 0,
+            "total_processing": 0,
+            "total_error": 0,
+        }
+
+    r = rows[0]
+
+    return {
+        "total": r.get("total", 0),
+        "total_stored": r.get("total_stored", 0),
+        "total_processing": r.get("total_processing", 0),
+        "total_error": r.get("total_error", 0),
+    }
+
 # ============================================================
 # RESET RELATIONS
 # ============================================================
