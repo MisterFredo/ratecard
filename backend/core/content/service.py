@@ -566,14 +566,14 @@ def list_raw_stock(
         SELECT
             r.ID_RAW,
             r.SOURCE_ID,
-            s.NAME AS SOURCE_NAME,
+            s.NAME as SOURCE_NAME,
             r.SOURCE_TITLE,
             r.DATE_SOURCE,
             r.STATUS,
             r.ERROR_MESSAGE,
             r.CREATED_AT
         FROM `{TABLE_CONTENT_RAW}` r
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE` s
+        LEFT JOIN `adex-5555.RATECARD.RATECARD_SOURCE` s
             ON r.SOURCE_ID = s.SOURCE_ID
         {where_clause}
         ORDER BY
