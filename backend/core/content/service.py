@@ -1120,8 +1120,17 @@ def publish_content(
     # 3️⃣ NORMALISATION TIMEZONE
     # ============================================================
 
-    if published_at.tzinfo is None:
-        published_at = published_at.replace(tzinfo=timezone.utc)
+    if isinstance(published_at, date) and not isinstance(published_at, datetime):
+        # Si c'est un date pur → on le transforme en datetime UTC minuit
+        published_at = datetime.combine(
+            published_at,
+            datetime.min.time(),
+            tzinfo=timezone.utc
+        )
+
+    elif isinstance(published_at, datetime):
+        if published_at.tzinfo is None:
+            published_at = published_at.replace(tzinfo=timezone.utc)
 
     # ============================================================
     # 4️⃣ DÉTERMINATION STATUS
