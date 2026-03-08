@@ -515,8 +515,7 @@ def store_raw_content(
         raise ValueError("raw_text vide")
 
     raw_id = str(uuid.uuid4())
-
-    now_iso = datetime.utcnow().isoformat()  # ✅ ISO STRING
+    now_iso = datetime.utcnow().isoformat()
 
     row = [{
         "ID_RAW": raw_id,
@@ -525,7 +524,7 @@ def store_raw_content(
         "RAW_TEXT": raw_text.strip(),
         "DATE_SOURCE": date_source.isoformat() if date_source else None,
         "STATUS": "STORED",
-        "CREATED_AT": now_iso,        # ✅ string
+        "CREATED_AT": now_iso,
         "PROCESSED_AT": None,
         "GENERATED_CONTENT_ID": None,
         "ERROR_MESSAGE": None,
@@ -535,7 +534,7 @@ def store_raw_content(
 
     client.load_table_from_json(
         row,
-        "adex-5555.RATECARD.RATECARD_CONTENT_RAW",
+        TABLE_CONTENT_RAW,
         job_config=bigquery.LoadJobConfig(
             write_disposition="WRITE_APPEND"
         ),
@@ -544,7 +543,8 @@ def store_raw_content(
     return raw_id
 
 def list_raw_stock():
-    query = """
+
+    query = f"""
         SELECT
             ID_RAW,
             SOURCE_ID,
@@ -552,7 +552,7 @@ def list_raw_stock():
             DATE_SOURCE,
             STATUS,
             CREATED_AT
-        FROM `adex-5555.RATECARD.RATECARD_CONTENT_RAW`
+        FROM `{TABLE_CONTENT_RAW}`
         WHERE STATUS = 'STORED'
         ORDER BY CREATED_AT ASC
     """
