@@ -10,6 +10,7 @@ type RawItem = {
   source_title: string;
   date_source?: string | null;
   status: string;
+  error_message?: string | null;
   created_at: string;
 };
 
@@ -17,6 +18,7 @@ type RawStats = {
   total: number;
   total_stored: number;
   total_processing: number;
+  total_processed: number;
   total_error: number;
 };
 
@@ -31,12 +33,24 @@ export default function ContentStockPage() {
 
   const [page, setPage] = useState(1);
 
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [sourceFilter, setSourceFilter] = useState<string>("");
+
+  // =========================
+  // LOAD
+  // =========================
+
   async function load() {
     setLoading(true);
 
     try {
+      const queryParams = new URLSearchParams();
+
+      if (statusFilter) queryParams.append("status", statusFilter);
+      if (sourceFilter) queryParams.append("source_id", sourceFilter);
+
       const [listRes, statsRes] = await Promise.all([
-        api.get("/content/raw/stock"),
+        api.get(`/content/raw/stock?${queryParams.toString()}`),
         api.get("/content/raw/admin/stats"),
       ]);
 
@@ -52,22 +66,16 @@ export default function ContentStockPage() {
 
   useEffect(() => {
     load();
-  }, []);
+    setPage(1);
+  }, [statusFilter, sourceFilter]);
 
   // =========================
   // PAGINATION
   // =========================
 
-  const sortedRaws = [...raws].sort((a, b) => {
-    return (
-      new Date(b.created_at).getTime() -
-      new Date(a.created_at).getTime()
-    );
-  });
+  const totalPages = Math.ceil(raws.length / PAGE_SIZE);
 
-  const totalPages = Math.ceil(sortedRaws.length / PAGE_SIZE);
-
-  const paginatedRaws = sortedRaws.slice(
+  const paginatedRaws = raws.slice(
     (page - 1) * PAGE_SIZE,
     page * PAGE_SIZE
   );
@@ -154,23 +162,52 @@ export default function ContentStockPage() {
       {/* STATS */}
 
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <StatCard label="Total" value={stats.total} />
           <StatCard label="En stock" value={stats.total_stored} yellow />
           <StatCard label="En cours" value={stats.total_processing} />
+          <StatCard label="Traités" value={stats.total_processed} />
           <StatCard label="Erreurs" value={stats.total_error} red />
         </div>
       )}
+
+      {/* FILTERS */}
+
+      <div className="flex gap-4">
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="border rounded p-2 text-sm"
+        >
+          <option value="">Tous les statuts</option>
+          <option value="ERROR">Erreur</option>
+          <option value="STORED">Stored</option>
+          <option value="PROCESSING">Processing</option>
+          <option value="PROCESSED">Processed</option>
+        </select>
+
+        <input
+          type="text"
+          placeholder="Filtrer par source..."
+          value={sourceFilter}
+          onChange={(e) => setSourceFilter(e.target.value)}
+          className="border rounded p-2 text-sm"
+        />
+
+      </div>
 
       {/* TABLE */}
 
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="bg-gray-100 border-b text-left text-gray-700">
+            <th className="p-2">Source</th>
             <th className="p-2">Titre source</th>
             <th className="p-2">Date source</th>
             <th className="p-2">Créé le</th>
             <th className="p-2">Statut</th>
+            <th className="p-2">Erreur</th>
             <th className="p-2 text-right">Actions</th>
           </tr>
         </thead>
@@ -178,9 +215,9 @@ export default function ContentStockPage() {
         <tbody>
           {paginatedRaws.map((r) => (
             <tr key={r.id_raw} className="border-b hover:bg-gray-50 transition">
-              <td className="p-2 font-medium">
-                {r.source_title}
-              </td>
+              <td className="p-2 text-gray-600">{r.source_id}</td>
+
+              <td className="p-2 font-medium">{r.source_title}</td>
 
               <td className="p-2 text-gray-600">
                 {formatDate(r.date_source)}
@@ -196,13 +233,19 @@ export default function ContentStockPage() {
                 </span>
               </td>
 
+              <td className="p-2 text-xs text-red-600">
+                {r.status === "ERROR" ? r.error_message : ""}
+              </td>
+
               <td className="p-2 text-right space-x-3">
-                <button
-                  onClick={() => handleDestockOne(r.id_raw)}
-                  className="inline-flex items-center text-green-600 hover:text-green-800"
-                >
-                  <Play size={16} />
-                </button>
+                {r.status === "STORED" && (
+                  <button
+                    onClick={() => handleDestockOne(r.id_raw)}
+                    className="inline-flex items-center text-green-600 hover:text-green-800"
+                  >
+                    <Play size={16} />
+                  </button>
+                )}
 
                 <button
                   onClick={() => handleDelete(r.id_raw)}
