@@ -69,7 +69,7 @@ export default function ContentListPage() {
   }
 
   async function handleReady(id: string) {
-    await api.post(`/content/ready/${id}`);
+    await api.post(`/content/ready/${id}`, {});
     await load();
   }
 
