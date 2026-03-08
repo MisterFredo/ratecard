@@ -181,15 +181,20 @@ def store_raw_route(payload: ContentRawCreate):
 # ============================================================
 @router.get("/raw/stock")
 def raw_stock_route(
-    source_id: Optional[str] = None,
+    source_name: Optional[str] = None,
     status: Optional[str] = None,
 ):
     try:
         raws = list_raw_stock(
-            source_id=source_id,
+            source_name=source_name,
             status=status,
         )
-        return {"status": "ok", "raws": raws}
+
+        return {
+            "status": "ok",
+            "raws": raws
+        }
+
     except Exception as e:
         logger.exception("Erreur stock raw")
         raise HTTPException(400, str(e))
