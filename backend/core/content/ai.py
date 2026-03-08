@@ -86,10 +86,10 @@ TITLE
 (Titre factuel.)
 
 EXCERPT
-(1 à 2 phrases synthétiques.)
+(3 phrases synthétiques.)
 
 POINTS CLES
-(Liste factuelle. Les points clés doivent être séparés par des retours à la ligne.)
+(Liste factuelle. Les points clés doivent être séparés par des retours à la ligne.Tu dois être exhaustif en te limitant strictement à la source)
 
 CITATIONS
 (Liste exacte ou "Aucun")
