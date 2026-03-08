@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Pencil, Trash2 } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  CheckCircle,
+  Rocket,
+} from "lucide-react";
 
 const PAGE_SIZE = 20;
 
@@ -13,7 +18,6 @@ type ContentLite = {
   status: string;
   published_at?: string | null;
   source_date?: string | null;
-  concept?: string | null;
 };
 
 type ContentStats = {
@@ -128,13 +132,11 @@ export default function ContentListPage() {
     return "bg-gray-100 text-gray-700";
   }
 
-  // 🔵 FILTRAGE
   const filteredContents = useMemo(() => {
     if (statusFilter === "ALL") return contents;
     return contents.filter(c => getStatusLabel(c) === statusFilter);
   }, [contents, statusFilter]);
 
-  // 🟣 TRI
   const sortedContents = useMemo(() => {
     const arr = [...filteredContents];
 
@@ -149,8 +151,8 @@ export default function ContentListPage() {
     return arr;
   }, [filteredContents, sortBySourceDate]);
 
-  // 🟢 PAGINATION
   const totalPages = Math.ceil(sortedContents.length / PAGE_SIZE);
+
   const paginatedContents = sortedContents.slice(
     (page - 1) * PAGE_SIZE,
     page * PAGE_SIZE
@@ -161,6 +163,7 @@ export default function ContentListPage() {
   return (
     <div className="space-y-8">
 
+      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
           Contenus
@@ -192,7 +195,7 @@ export default function ContentListPage() {
         </div>
       )}
 
-      {/* FILTRE + TRI */}
+      {/* FILTER + SORT */}
       <div className="flex justify-between items-center">
         <select
           value={statusFilter}
@@ -217,25 +220,29 @@ export default function ContentListPage() {
         </button>
       </div>
 
-      {/* BULK ACTIONS */}
+      {/* BULK */}
       {selectedIds.length > 0 && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 bg-gray-50 border rounded px-3 py-2">
           <button
             onClick={bulkReady}
-            disabled={!selectedIds.length}
-            className="px-3 py-1.5 text-sm rounded border border-blue-300 text-blue-700 hover:bg-blue-50 disabled:opacity-40 transition"
+            className="p-2 rounded hover:bg-blue-100 text-blue-600 transition"
+            title="Mettre en READY"
           >
-            READY ({selectedIds.length})
+            <CheckCircle size={18} />
           </button>
 
           <button
             onClick={bulkPublish}
-            disabled={!selectedIds.length}
-            className="px-3 py-1.5 text-sm rounded border border-green-300 text-green-700 hover:bg-green-50 disabled:opacity-40 transition"
+            className="p-2 rounded hover:bg-green-100 text-green-600 transition"
+            title="Publier"
           >
-    PUBLISH ({selectedIds.length})
-  </button>
-</div>
+            <Rocket size={18} />
+          </button>
+
+          <span className="text-sm text-gray-500 ml-2">
+            {selectedIds.length} sélectionné(s)
+          </span>
+        </div>
       )}
 
       {/* TABLE */}
@@ -260,7 +267,9 @@ export default function ContentListPage() {
             <th className="p-2">Statut</th>
             <th className="p-2">SOURCE_DATE</th>
             <th className="p-2">Publication</th>
-            <th className="p-2 text-right w-[160px] whitespace-nowrap">Actions</th>
+            <th className="p-2 text-right w-[220px] whitespace-nowrap">
+              Actions
+            </th>
           </tr>
         </thead>
 
@@ -294,39 +303,43 @@ export default function ContentListPage() {
                   {formatDate(c.published_at)}
                 </td>
 
-                <td className="p-2 text-right space-x-2">
-                  {c.status === "DRAFT" && (
-                    <button
-                      onClick={() => handleReady(c.id_content)}
-                      className="text-blue-600"
+                <td className="p-2 text-right whitespace-nowrap">
+                  <div className="flex justify-end items-center gap-3">
+                    {c.status === "DRAFT" && (
+                      <button
+                        onClick={() => handleReady(c.id_content)}
+                        className="text-blue-600 hover:bg-blue-50 p-1 rounded transition"
+                        title="Mettre en READY"
+                      >
+                        <CheckCircle size={16} />
+                      </button>
+                    )}
+
+                    {c.status === "READY" && (
+                      <button
+                        onClick={() => handlePublish(c.id_content)}
+                        className="text-green-600 hover:bg-green-50 p-1 rounded transition"
+                        title="Publier"
+                      >
+                        <Rocket size={16} />
+                      </button>
+                    )}
+
+                    <Link
+                      href={`/admin/content/edit/${c.id_content}`}
+                      className="text-ratecard-blue"
                     >
-                      READY
-                    </button>
-                  )}
+                      <Pencil size={16} />
+                    </Link>
 
-                  {c.status === "READY" && (
                     <button
-                      onClick={() => handlePublish(c.id_content)}
-                      className="text-green-600"
+                      onClick={() => handleDelete(c.id_content)}
+                      disabled={deletingId === c.id_content}
+                      className="text-red-600"
                     >
-                      PUBLISH
+                      <Trash2 size={16} />
                     </button>
-                  )}
-
-                  <Link
-                    href={`/admin/content/edit/${c.id_content}`}
-                    className="text-ratecard-blue"
-                  >
-                    <Pencil size={16} />
-                  </Link>
-
-                  <button
-                    onClick={() => handleDelete(c.id_content)}
-                    disabled={deletingId === c.id_content}
-                    className="text-red-600"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  </div>
                 </td>
               </tr>
             );
