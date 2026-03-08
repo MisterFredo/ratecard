@@ -581,7 +581,7 @@ def list_raw_stock(
             r.ERROR_MESSAGE,
             r.CREATED_AT
         FROM `{TABLE_CONTENT_RAW}` r
-        LEFT JOIN `{TABLE_SOURCE}` s
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE` s
             ON r.SOURCE_ID = s.SOURCE_ID
         {where_clause}
         ORDER BY
@@ -591,7 +591,7 @@ def list_raw_stock(
                 WHEN r.STATUS = 'PROCESSING' THEN 3
                 WHEN r.STATUS = 'PROCESSED' THEN 4
                 ELSE 5
-            END,
+            END ASC,
             r.CREATED_AT DESC
     """
 
@@ -610,7 +610,6 @@ def list_raw_stock(
         }
         for r in rows
     ]
-
 
 def destock_raw_contents(
     limit: int = 5,
