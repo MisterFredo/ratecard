@@ -120,7 +120,7 @@ export default function ContentStockPage() {
   async function handleRetry(id: string) {
     if (!window.confirm("Relancer cette source en erreur ?")) return;
 
-    await api.post(`/content/raw/retry/${id}`);
+    await api.post(`/content/raw/retry/${id}`, {});
     await load();
   }
 
