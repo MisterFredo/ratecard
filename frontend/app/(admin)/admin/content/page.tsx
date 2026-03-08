@@ -219,21 +219,23 @@ export default function ContentListPage() {
 
       {/* BULK ACTIONS */}
       {selectedIds.length > 0 && (
-        <div className="flex gap-4">
+        <div className="flex items-center gap-3">
           <button
             onClick={bulkReady}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+            disabled={!selectedIds.length}
+            className="px-3 py-1.5 text-sm rounded border border-blue-300 text-blue-700 hover:bg-blue-50 disabled:opacity-40 transition"
           >
-            READY sélection ({selectedIds.length})
+            READY ({selectedIds.length})
           </button>
 
           <button
             onClick={bulkPublish}
-            className="bg-green-600 text-white px-4 py-2 rounded"
+            disabled={!selectedIds.length}
+            className="px-3 py-1.5 text-sm rounded border border-green-300 text-green-700 hover:bg-green-50 disabled:opacity-40 transition"
           >
-            PUBLISH sélection ({selectedIds.length})
-          </button>
-        </div>
+    PUBLISH ({selectedIds.length})
+  </button>
+</div>
       )}
 
       {/* TABLE */}
