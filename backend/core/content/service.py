@@ -1096,6 +1096,32 @@ def publish_content(
 
     return status
 
+def mark_content_ready(id_content: str):
+
+    rows = query_bq(
+        f"""
+        SELECT STATUS
+        FROM `{TABLE_CONTENT}`
+        WHERE ID_CONTENT = @id_content
+        """,
+        {"id_content": id_content}
+    )
+
+    if not rows:
+        raise ValueError("Content introuvable")
+
+    current_status = rows[0]["STATUS"]
+
+    if current_status != "DRAFT":
+        # On ignore silencieusement
+        return
+
+    update_bq(
+        TABLE_CONTENT,
+        {"STATUS": "READY"},
+        where={"ID_CONTENT": id_content}
+    )
+
 # ============================================================
 # CONTENT STATS
 # ============================================================
