@@ -13,7 +13,6 @@ type ContentLite = {
   status: string;
   published_at?: string | null;
   source_date?: string | null;
-  topics?: { label: string }[];
   concept?: string | null;
 };
 
