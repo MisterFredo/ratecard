@@ -1162,13 +1162,19 @@ def get_content_stats():
     sql = f"""
         SELECT
           COUNT(*) AS TOTAL,
-          COUNTIF(STATUS = 'PUBLISHED') AS TOTAL_PUBLISHED,
+
           COUNTIF(STATUS = 'DRAFT') AS TOTAL_DRAFT,
+          COUNTIF(STATUS = 'READY') AS TOTAL_READY,
+
+          COUNTIF(STATUS = 'PUBLISHED') AS TOTAL_PUBLISHED,
+          COUNTIF(STATUS = 'SCHEDULED') AS TOTAL_SCHEDULED,
+
           COUNTIF(
             STATUS = 'PUBLISHED'
             AND EXTRACT(YEAR FROM PUBLISHED_AT)
                 = EXTRACT(YEAR FROM CURRENT_DATE())
           ) AS TOTAL_PUBLISHED_THIS_YEAR,
+
           COUNTIF(
             STATUS = 'PUBLISHED'
             AND EXTRACT(YEAR FROM PUBLISHED_AT)
@@ -1176,6 +1182,7 @@ def get_content_stats():
             AND EXTRACT(MONTH FROM PUBLISHED_AT)
                 = EXTRACT(MONTH FROM CURRENT_DATE())
           ) AS TOTAL_PUBLISHED_THIS_MONTH
+
         FROM `{TABLE_CONTENT}`
     """
 
@@ -1184,8 +1191,10 @@ def get_content_stats():
     if not rows:
         return {
             "total": 0,
-            "total_published": 0,
             "total_draft": 0,
+            "total_ready": 0,
+            "total_published": 0,
+            "total_scheduled": 0,
             "total_published_this_year": 0,
             "total_published_this_month": 0,
         }
@@ -1194,8 +1203,10 @@ def get_content_stats():
 
     return {
         "total": r.get("TOTAL", 0),
-        "total_published": r.get("TOTAL_PUBLISHED", 0),
         "total_draft": r.get("TOTAL_DRAFT", 0),
+        "total_ready": r.get("TOTAL_READY", 0),
+        "total_published": r.get("TOTAL_PUBLISHED", 0),
+        "total_scheduled": r.get("TOTAL_SCHEDULED", 0),
         "total_published_this_year": r.get("TOTAL_PUBLISHED_THIS_YEAR", 0),
         "total_published_this_month": r.get("TOTAL_PUBLISHED_THIS_MONTH", 0),
     }
