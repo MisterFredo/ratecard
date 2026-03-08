@@ -195,22 +195,13 @@ def raw_stock_route(
 # ============================================================
 @router.post("/raw/destock")
 def destock_raw_route(payload: ContentRawDestockRequest):
-    try:
 
-        if payload.id_raw:
-            result = destock_raw_by_id(payload.id_raw)
-        else:
-            limit = payload.limit or 5
-            result = destock_raw_contents(limit=limit)
+    result = destock_raw_contents(
+        limit=payload.limit or 5,
+        specific_id=payload.id_raw
+    )
 
-        return {
-            "status": "ok",
-            "processed": result
-        }
-
-    except Exception as e:
-        logger.exception("Erreur déstockage RAW")
-        raise HTTPException(400, str(e))
+    return {"status": "ok", "processed": result}
 
 # ============================================================
 # DELETE RAW CONTENT
