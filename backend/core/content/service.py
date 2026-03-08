@@ -551,11 +551,11 @@ def list_raw_stock(
     params = {}
 
     if source_id:
-        conditions.append("SOURCE_ID = @source_id")
+        conditions.append("r.SOURCE_ID = @source_id")
         params["source_id"] = source_id
 
     if status:
-        conditions.append("STATUS = @status")
+        conditions.append("r.STATUS = @status")
         params["status"] = status
 
     where_clause = ""
@@ -564,24 +564,27 @@ def list_raw_stock(
 
     query = f"""
         SELECT
-            ID_RAW,
-            SOURCE_ID,
-            SOURCE_TITLE,
-            DATE_SOURCE,
-            STATUS,
-            ERROR_MESSAGE,
-            CREATED_AT
-        FROM `{TABLE_CONTENT_RAW}`
+            r.ID_RAW,
+            r.SOURCE_ID,
+            s.NAME AS SOURCE_NAME,
+            r.SOURCE_TITLE,
+            r.DATE_SOURCE,
+            r.STATUS,
+            r.ERROR_MESSAGE,
+            r.CREATED_AT
+        FROM `{TABLE_CONTENT_RAW}` r
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE` s
+            ON r.SOURCE_ID = s.SOURCE_ID
         {where_clause}
         ORDER BY
             CASE
-                WHEN STATUS = 'ERROR' THEN 1
-                WHEN STATUS = 'STORED' THEN 2
-                WHEN STATUS = 'PROCESSING' THEN 3
-                WHEN STATUS = 'PROCESSED' THEN 4
+                WHEN r.STATUS = 'ERROR' THEN 1
+                WHEN r.STATUS = 'STORED' THEN 2
+                WHEN r.STATUS = 'PROCESSING' THEN 3
+                WHEN r.STATUS = 'PROCESSED' THEN 4
                 ELSE 5
             END ASC,
-            CREATED_AT DESC
+            r.CREATED_AT DESC
     """
 
     rows = query_bq(query, params)
@@ -590,6 +593,7 @@ def list_raw_stock(
         {
             "id_raw": r["ID_RAW"],
             "source_id": r["SOURCE_ID"],
+            "source_name": r.get("SOURCE_NAME"),
             "source_title": r["SOURCE_TITLE"],
             "date_source": r.get("DATE_SOURCE"),
             "status": r["STATUS"],
@@ -598,6 +602,7 @@ def list_raw_stock(
         }
         for r in rows
     ]
+
 def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
 
     raws = query_bq(f"""
