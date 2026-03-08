@@ -27,6 +27,8 @@ from core.content.service import (
     retry_raw_content,
     get_raw_stats,
     mark_content_ready,
+    bulk_ready,
+    bulk_publish,
 )
 
 from core.content.ai import generate_summary
@@ -289,5 +291,39 @@ def mark_ready_route(id_content: str):
     try:
         mark_content_ready(id_content)
         return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
+@router.post("/bulk/ready")
+def bulk_ready_route(payload: dict):
+    try:
+        ids = payload.get("ids", [])
+        if not ids:
+            raise ValueError("No ids provided")
+
+        updated = bulk_ready(ids)
+
+        return {
+            "status": "ok",
+            "updated": updated
+        }
+
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
+@router.post("/bulk/publish")
+def bulk_publish_route(payload: dict):
+    try:
+        ids = payload.get("ids", [])
+        if not ids:
+            raise ValueError("No ids provided")
+
+        updated = bulk_publish(ids)
+
+        return {
+            "status": "ok",
+            "updated": updated
+        }
+
     except Exception as e:
         raise HTTPException(400, str(e))
