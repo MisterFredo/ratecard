@@ -610,6 +610,8 @@ def list_raw_stock(
         }
         for r in rows
     ]
+
+
 def destock_raw_contents(
     limit: int = 5,
     specific_id: Optional[str] = None
