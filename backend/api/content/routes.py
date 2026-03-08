@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from typing import List
+from typing import List, Dict, Optional
 
 from api.content.models import (
     ContentCreate,
