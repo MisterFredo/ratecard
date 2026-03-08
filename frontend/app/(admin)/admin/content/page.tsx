@@ -278,10 +278,6 @@ export default function ContentListPage() {
 
                 <td className="p-2 font-medium">{c.title}</td>
 
-                <td className="p-2 text-gray-600">
-                  {c.topics?.map(t => t.label).join(", ") || "—"}
-                </td>
-
                 <td className="p-2">
                   <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusClasses(status)}`}>
                     {status}
