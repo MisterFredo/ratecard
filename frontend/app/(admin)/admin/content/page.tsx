@@ -255,7 +255,6 @@ export default function ContentListPage() {
               />
             </th>
             <th className="p-2">Titre</th>
-            <th className="p-2">Topic</th>
             <th className="p-2">Statut</th>
             <th className="p-2">SOURCE_DATE</th>
             <th className="p-2">Publication</th>
