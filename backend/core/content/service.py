@@ -698,6 +698,7 @@ def destock_raw_contents(
                 point_de_friction=summary.get("point_de_friction"),
                 signal_analytique=summary.get("signal_analytique"),
                 source_id=raw.get("SOURCE_ID"),
+                source_date=raw.get("DATE_SOURCE"),
                 author=None,
             )
 
