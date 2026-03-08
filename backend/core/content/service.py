@@ -1156,20 +1156,53 @@ def mark_content_ready(id_content: str):
         where={"ID_CONTENT": id_content}
     )
 
+def bulk_ready(ids: list[str]) -> int:
 
-def bulk_publish(ids: list[str]) -> int:
+    if not ids:
+        return 0
+
+    now = datetime.now(timezone.utc)
+
+    query = f"""
+        UPDATE `{TABLE_CONTENT}`
+        SET
+            STATUS = 'READY',
+            UPDATED_AT = @now
+        WHERE
+            STATUS = 'DRAFT'
+            AND ID_CONTENT IN UNNEST(@ids)
+    """
+
+    query_bq(
+        query,
+        {
+            "ids": ids,
+            "now": now,
+        },
+    )
+
+    return len(ids)
+
+
+def bulk_publish(ids: List[str]) -> Dict[str, int]:
+
+    if not ids:
+        return {"updated": 0, "skipped": 0}
 
     updated = 0
+    skipped = 0
 
     for id_content in ids:
         try:
             publish_content(id_content)
             updated += 1
         except Exception:
-            # Ignore les non READY
-            continue
+            skipped += 1
 
-    return updated
+    return {
+        "updated": updated,
+        "skipped": skipped,
+    }
 
 # ============================================================
 # CONTENT STATS
