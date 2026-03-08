@@ -1061,34 +1061,74 @@ def publish_content(
     now_dt = datetime.now(timezone.utc)
 
     # ============================================================
-    # DÉTERMINATION DATE & STATUS
+    # 1️⃣ CHECK STATUS (READY obligatoire)
+    # ============================================================
+
+    rows = query_bq(
+        f"""
+        SELECT STATUS, SOURCE_ID
+        FROM `{TABLE_CONTENT}`
+        WHERE ID_CONTENT = @id_content
+        """,
+        {"id_content": id_content}
+    )
+
+    if not rows:
+        raise ValueError("Content introuvable")
+
+    current_status = rows[0]["STATUS"]
+    source_id = rows[0]["SOURCE_ID"]
+
+    if current_status != "READY":
+        raise ValueError("Content must be READY before publish")
+
+    # ============================================================
+    # 2️⃣ DATE PAR DÉFAUT = DATE_SOURCE
     # ============================================================
 
     if published_at is None:
-        final_dt = now_dt
-        status = "PUBLISHED"
 
-    else:
-        # Si datetime naïf → on force UTC
-        if published_at.tzinfo is None:
-            published_at = published_at.replace(tzinfo=timezone.utc)
+        raw_rows = query_bq(
+            f"""
+            SELECT DATE_SOURCE
+            FROM `{TABLE_CONTENT_RAW}`
+            WHERE SOURCE_ID = @source_id
+            ORDER BY CREATED_AT DESC
+            LIMIT 1
+            """,
+            {"source_id": source_id}
+        )
 
-        final_dt = published_at
-
-        if final_dt <= now_dt:
-            status = "PUBLISHED"
+        if raw_rows and raw_rows[0]["DATE_SOURCE"]:
+            published_at = raw_rows[0]["DATE_SOURCE"]
         else:
-            status = "SCHEDULED"
+            published_at = now_dt
 
     # ============================================================
-    # UPDATE BQ
+    # 3️⃣ NORMALISATION TIMEZONE
+    # ============================================================
+
+    if published_at.tzinfo is None:
+        published_at = published_at.replace(tzinfo=timezone.utc)
+
+    # ============================================================
+    # 4️⃣ DÉTERMINATION STATUS
+    # ============================================================
+
+    if published_at <= now_dt:
+        status = "PUBLISHED"
+    else:
+        status = "SCHEDULED"
+
+    # ============================================================
+    # 5️⃣ UPDATE BQ
     # ============================================================
 
     update_bq(
         table=TABLE_CONTENT,
         fields={
             "STATUS": status,
-            "PUBLISHED_AT": final_dt,
+            "PUBLISHED_AT": published_at,
             "UPDATED_AT": now_dt,
         },
         where={"ID_CONTENT": id_content},
