@@ -107,7 +107,7 @@ def create_content(data: ContentCreate) -> str:
         "PUBLISHED_AT": None,
         "CREATED_AT": now,
         "SOURCE_DATE": (
-            data.source_date.isoformat()
+            data.source_date.strftime("%Y-%m-%d")
             if data.source_date
             else None
         ),
