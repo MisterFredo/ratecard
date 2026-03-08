@@ -32,7 +32,6 @@ export default function ContentStockPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
-
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [sourceFilter, setSourceFilter] = useState<string>("");
 
@@ -118,6 +117,13 @@ export default function ContentStockPage() {
     setProcessing(false);
   }
 
+  async function handleRetry(id: string) {
+    if (!window.confirm("Relancer cette source en erreur ?")) return;
+
+    await api.post(`/content/raw/retry/${id}`);
+    await load();
+  }
+
   async function handleDelete(id: string) {
     if (!window.confirm("Supprimer cette source ?")) return;
 
@@ -174,7 +180,6 @@ export default function ContentStockPage() {
       {/* FILTERS */}
 
       <div className="flex gap-4">
-
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -194,7 +199,6 @@ export default function ContentStockPage() {
           onChange={(e) => setSourceFilter(e.target.value)}
           className="border rounded p-2 text-sm"
         />
-
       </div>
 
       {/* TABLE */}
@@ -215,9 +219,14 @@ export default function ContentStockPage() {
         <tbody>
           {paginatedRaws.map((r) => (
             <tr key={r.id_raw} className="border-b hover:bg-gray-50 transition">
-              <td className="p-2 text-gray-600">{r.source_id}</td>
 
-              <td className="p-2 font-medium">{r.source_title}</td>
+              <td className="p-2 text-gray-600">
+                {r.source_id}
+              </td>
+
+              <td className="p-2 font-medium">
+                {r.source_title}
+              </td>
 
               <td className="p-2 text-gray-600">
                 {formatDate(r.date_source)}
@@ -233,17 +242,27 @@ export default function ContentStockPage() {
                 </span>
               </td>
 
-              <td className="p-2 text-xs text-red-600">
+              <td className="p-2 text-xs text-red-600 max-w-xs truncate">
                 {r.status === "ERROR" ? r.error_message : ""}
               </td>
 
               <td className="p-2 text-right space-x-3">
+
                 {r.status === "STORED" && (
                   <button
                     onClick={() => handleDestockOne(r.id_raw)}
                     className="inline-flex items-center text-green-600 hover:text-green-800"
                   >
                     <Play size={16} />
+                  </button>
+                )}
+
+                {r.status === "ERROR" && (
+                  <button
+                    onClick={() => handleRetry(r.id_raw)}
+                    className="inline-flex items-center text-orange-600 hover:text-orange-800"
+                  >
+                    ↺
                   </button>
                 )}
 
@@ -254,6 +273,7 @@ export default function ContentStockPage() {
                 >
                   <Trash2 size={16} />
                 </button>
+
               </td>
             </tr>
           ))}
@@ -285,6 +305,7 @@ export default function ContentStockPage() {
           </button>
         </div>
       )}
+
     </div>
   );
 }
