@@ -7,6 +7,7 @@ import { Trash2, Play } from "lucide-react";
 type RawItem = {
   id_raw: string;
   source_id: string;
+  source_name?: string | null;
   source_title: string;
   date_source?: string | null;
   status: string;
@@ -46,7 +47,7 @@ export default function ContentStockPage() {
       const queryParams = new URLSearchParams();
 
       if (statusFilter) queryParams.append("status", statusFilter);
-      if (sourceFilter) queryParams.append("source_id", sourceFilter);
+      if (sourceFilter) queryParams.append("source_name", sourceFilter);
 
       const [listRes, statsRes] = await Promise.all([
         api.get(`/content/raw/stock?${queryParams.toString()}`),
