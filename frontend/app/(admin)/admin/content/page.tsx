@@ -260,7 +260,7 @@ export default function ContentListPage() {
             <th className="p-2">Statut</th>
             <th className="p-2">SOURCE_DATE</th>
             <th className="p-2">Publication</th>
-            <th className="p-2 text-right">Actions</th>
+            <th className="p-2 text-right w-[160px] whitespace-nowrap">Actions</th>
           </tr>
         </thead>
 
