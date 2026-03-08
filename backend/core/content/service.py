@@ -471,6 +471,7 @@ def list_contents_admin():
           ID_CONTENT,
           TITLE,
           STATUS,
+          SOURCE_DATE,
           PUBLISHED_AT,
           UPDATED_AT
         FROM `{TABLE_CONTENT}`
@@ -484,6 +485,7 @@ def list_contents_admin():
             "id_content": r["ID_CONTENT"],
             "title": r["TITLE"],
             "status": r["STATUS"],
+            "source_date": r.get("SOURCE_DATE"),
             "published_at": (
                 r["PUBLISHED_AT"].isoformat()
                 if r.get("PUBLISHED_AT")
