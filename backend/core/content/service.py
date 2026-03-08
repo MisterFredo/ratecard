@@ -1067,12 +1067,12 @@ def publish_content(
     now_dt = datetime.now(timezone.utc)
 
     # ============================================================
-    # 1️⃣ CHECK STATUS (READY obligatoire)
+    # 1️⃣ CHECK STATUS + RÉCUP SOURCE_DATE
     # ============================================================
 
     rows = query_bq(
         f"""
-        SELECT STATUS, SOURCE_ID
+        SELECT STATUS, SOURCE_DATE
         FROM `{TABLE_CONTENT}`
         WHERE ID_CONTENT = @id_content
         """,
@@ -1083,32 +1083,17 @@ def publish_content(
         raise ValueError("Content introuvable")
 
     current_status = rows[0]["STATUS"]
-    source_id = rows[0]["SOURCE_ID"]
+    source_date = rows[0]["SOURCE_DATE"]
 
     if current_status != "READY":
         raise ValueError("Content must be READY before publish")
 
     # ============================================================
-    # 2️⃣ DATE PAR DÉFAUT = DATE_SOURCE
+    # 2️⃣ DATE PAR DÉFAUT = SOURCE_DATE
     # ============================================================
 
     if published_at is None:
-
-        raw_rows = query_bq(
-            f"""
-            SELECT DATE_SOURCE
-            FROM `{TABLE_CONTENT_RAW}`
-            WHERE SOURCE_ID = @source_id
-            ORDER BY CREATED_AT DESC
-            LIMIT 1
-            """,
-            {"source_id": source_id}
-        )
-
-        if raw_rows and raw_rows[0]["DATE_SOURCE"]:
-            published_at = raw_rows[0]["DATE_SOURCE"]
-        else:
-            published_at = now_dt
+        published_at = source_date or now_dt
 
     # ============================================================
     # 3️⃣ NORMALISATION TIMEZONE
