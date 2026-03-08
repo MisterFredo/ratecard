@@ -1164,13 +1164,19 @@ def mark_content_ready(id_content: str):
 
     current_status = rows[0]["STATUS"]
 
-    if current_status != "DRAFT":
-        # On ignore silencieusement
+    if current_status == "READY":
+        # Déjà ready → OK
         return
+
+    if current_status not in ["DRAFT"]:
+        raise ValueError(f"Cannot mark READY from status {current_status}")
 
     update_bq(
         TABLE_CONTENT,
-        {"STATUS": "READY"},
+        {
+            "STATUS": "READY",
+            "UPDATED_AT": datetime.utcnow().isoformat()
+        },
         where={"ID_CONTENT": id_content}
     )
 
