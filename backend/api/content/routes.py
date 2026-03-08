@@ -29,6 +29,7 @@ from core.content.service import (
     get_raw_stats,
     mark_content_ready,
     bulk_publish,
+    bulk_ready,
 )
 
 from core.content.ai import generate_summary
@@ -310,18 +311,14 @@ def bulk_ready_route(payload: BulkIdsRequest):
     except Exception as e:
         raise HTTPException(400, str(e))
 
+
 @router.post("/bulk/publish")
 def bulk_publish_route(payload: BulkIdsRequest):
     try:
-        if not payload.ids:
-            raise ValueError("No ids provided")
-
-        updated = bulk_publish(payload.ids)
-
+        result = bulk_publish(payload.ids)
         return {
             "status": "ok",
-            "updated": updated
+            **result
         }
-
     except Exception as e:
         raise HTTPException(400, str(e))
