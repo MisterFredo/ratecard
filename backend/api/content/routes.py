@@ -9,6 +9,7 @@ from api.content.models import (
     ContentRawCreate,
     ContentRawOut,
     ContentRawDestockRequest,
+    BulkIdsRequest,
 )
 
 from core.content.service import (
