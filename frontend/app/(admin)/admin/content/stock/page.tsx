@@ -222,7 +222,7 @@ export default function ContentStockPage() {
             <tr key={r.id_raw} className="border-b hover:bg-gray-50 transition">
 
               <td className="p-2 text-gray-600">
-                {r.source_id}
+                {r.source_name || r.source_id}
               </td>
 
               <td className="p-2 font-medium">
