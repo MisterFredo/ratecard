@@ -1155,6 +1155,21 @@ def mark_content_ready(id_content: str):
         where={"ID_CONTENT": id_content}
     )
 
+
+def bulk_publish(ids: list[str]) -> int:
+
+    updated = 0
+
+    for id_content in ids:
+        try:
+            publish_content(id_content)
+            updated += 1
+        except Exception:
+            # Ignore les non READY
+            continue
+
+    return updated
+
 # ============================================================
 # CONTENT STATS
 # ============================================================
