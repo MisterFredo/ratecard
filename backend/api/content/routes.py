@@ -26,6 +26,7 @@ from core.content.service import (
     delete_raw_content,
     retry_raw_content,
     get_raw_stats,
+    mark_content_ready,
 )
 
 from core.content.ai import generate_summary
