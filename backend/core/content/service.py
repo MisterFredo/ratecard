@@ -542,7 +542,25 @@ def store_raw_content(
 
     return raw_id
 
-def list_raw_stock():
+def list_raw_stock(
+    source_id: Optional[str] = None,
+    status: Optional[str] = None,
+) -> List[dict]:
+
+    conditions = []
+    params = {}
+
+    if source_id:
+        conditions.append("SOURCE_ID = @source_id")
+        params["source_id"] = source_id
+
+    if status:
+        conditions.append("STATUS = @status")
+        params["status"] = status
+
+    where_clause = ""
+    if conditions:
+        where_clause = "WHERE " + " AND ".join(conditions)
 
     query = f"""
         SELECT
@@ -551,13 +569,22 @@ def list_raw_stock():
             SOURCE_TITLE,
             DATE_SOURCE,
             STATUS,
+            ERROR_MESSAGE,
             CREATED_AT
         FROM `{TABLE_CONTENT_RAW}`
-        WHERE STATUS = 'STORED'
-        ORDER BY CREATED_AT ASC
+        {where_clause}
+        ORDER BY
+            CASE
+                WHEN STATUS = 'ERROR' THEN 1
+                WHEN STATUS = 'STORED' THEN 2
+                WHEN STATUS = 'PROCESSING' THEN 3
+                WHEN STATUS = 'PROCESSED' THEN 4
+                ELSE 5
+            END ASC,
+            CREATED_AT DESC
     """
 
-    rows = query_bq(query)
+    rows = query_bq(query, params)
 
     return [
         {
@@ -566,11 +593,11 @@ def list_raw_stock():
             "source_title": r["SOURCE_TITLE"],
             "date_source": r.get("DATE_SOURCE"),
             "status": r["STATUS"],
+            "error_message": r.get("ERROR_MESSAGE"),
             "created_at": r["CREATED_AT"],
         }
         for r in rows
     ]
-
 def destock_raw_contents(limit: int = 5) -> Dict[str, Any]:
 
     raws = query_bq(f"""
