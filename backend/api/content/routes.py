@@ -24,6 +24,7 @@ from core.content.service import (
     list_raw_stock,
     destock_raw_contents,
     delete_raw_content,
+    retry_raw_content,
     get_raw_stats,
 )
 
@@ -221,6 +222,15 @@ def delete_raw_route(id_raw: str):
 
     except Exception as e:
         logger.exception("Erreur suppression RAW")
+        raise HTTPException(400, str(e))
+
+@router.post("/raw/retry/{id_raw}")
+def retry_raw_route(id_raw: str):
+    try:
+        retry_raw_content(id_raw)
+        return {"status": "ok"}
+    except Exception as e:
+        logger.exception("Erreur retry raw")
         raise HTTPException(400, str(e))
 
 # ============================================================
