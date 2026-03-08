@@ -24,6 +24,7 @@ from core.content.service import (
     list_raw_stock,
     destock_raw_contents,
     delete_raw_content,
+    get_raw_stats,
 )
 
 from core.content.ai import generate_summary
@@ -217,6 +218,18 @@ def delete_raw_route(id_raw: str):
 
     except Exception as e:
         logger.exception("Erreur suppression RAW")
+        raise HTTPException(400, str(e))
+
+# ============================================================
+# RAW STATS (ADMIN)
+# ============================================================
+@router.get("/raw/admin/stats")
+def raw_stats_route():
+    try:
+        stats = get_raw_stats()
+        return {"status": "ok", "stats": stats}
+    except Exception as e:
+        logger.exception("Erreur stats raw")
         raise HTTPException(400, str(e))
 
 
