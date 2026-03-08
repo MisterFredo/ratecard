@@ -611,6 +611,10 @@ def list_raw_stock(
         for r in rows
     ]
 
+from datetime import datetime
+from typing import Optional, Dict, Any
+
+
 def destock_raw_contents(
     limit: int = 5,
     specific_id: Optional[str] = None
@@ -688,6 +692,20 @@ def destock_raw_contents(
             topics_llm = summary.get("topics", [])
 
             # ====================================================
+            # CLEAN SOURCE_DATE (fix ISO → DATE)
+            # ====================================================
+
+            raw_source_date = raw.get("DATE_SOURCE")
+            source_date_clean = None
+
+            if raw_source_date:
+                if isinstance(raw_source_date, str):
+                    # Convertit "2026-01-25T00:00:00" → "2026-01-25"
+                    source_date_clean = raw_source_date.split("T")[0]
+                else:
+                    source_date_clean = raw_source_date
+
+            # ====================================================
             # BUILD CONTENT MODEL
             # ====================================================
 
@@ -706,7 +724,7 @@ def destock_raw_contents(
                 point_de_friction=summary.get("point_de_friction"),
                 signal_analytique=summary.get("signal_analytique"),
                 source_id=raw.get("SOURCE_ID"),
-                source_date=raw.get("DATE_SOURCE"),
+                source_date=source_date_clean,  # ✅ FIX ICI
                 author=None,
             )
 
