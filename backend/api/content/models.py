@@ -49,6 +49,8 @@ class ContentRawDestockRequest(BaseModel):
     id_raw: Optional[str] = None
     limit: int = 20
 
+class BulkIdsRequest(BaseModel):
+    ids: List[str]
 
 # ============================================================
 # CREATE
