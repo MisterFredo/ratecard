@@ -7,7 +7,7 @@ import { Trash2, Play } from "lucide-react";
 type RawItem = {
   id_raw: string;
   source_id: string;
-  source_name?: string | null;
+  source_name: string | null;
   source_title: string;
   date_source?: string | null;
   status: string;
