@@ -954,6 +954,10 @@ def collect_substack_posts_api(
 
         resp = requests.get(api_url, headers=headers, timeout=15)
         resp.raise_for_status()
+        print("API URL:", api_url)
+        print("STATUS:", resp.status_code)
+        print("CONTENT TYPE:", resp.headers.get("Content-Type"))
+        print("BODY START:", resp.text[:200])
 
         data = resp.json()
 
@@ -988,6 +992,8 @@ def collect_substack_posts_api(
         offset += page_size
 
     return posts
+
+
 def collect_substack_archive_urls(archive_url: str):
 
     resp = requests.get(
