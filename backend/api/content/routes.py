@@ -10,6 +10,7 @@ from api.content.models import (
     ContentRawOut,
     ContentRawDestockRequest,
     BulkIdsRequest,
+    ImportArchiveRequest,
 )
 
 from core.content.service import (
