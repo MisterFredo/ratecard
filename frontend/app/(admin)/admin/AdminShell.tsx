@@ -13,7 +13,6 @@ import {
   Puzzle,
   Link as LinkIcon,
   Archive, // ⬅️ ajout icône pour Stock
-  Download, // ⬅️ ajout icône pour Import
 } from "lucide-react";
 
 export default function AdminShell({
@@ -31,11 +30,8 @@ export default function AdminShell({
   const navItems = [
     { href: "/admin/content", label: "Contenus", icon: Layers },
 
-    // ✅ PAGE STOCK
+    // ✅ NOUVELLE PAGE STOCK
     { href: "/admin/content/stock", label: "Stock", icon: Archive },
-
-    // ✅ NOUVELLE PAGE IMPORT
-    { href: "/admin/content/import", label: "Import", icon: Download },
 
     { href: "/admin/news", label: "News", icon: Newspaper },
 
