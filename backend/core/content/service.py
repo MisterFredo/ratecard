@@ -928,14 +928,12 @@ def parse_substack_article(url: str):
         "raw_text": raw_text,
     }
 
-import json
-import re
-
-
 def collect_substack_posts_from_archive(
     archive_url: str,
     max_articles: int = 200,
 ):
+
+    base_url = archive_url.replace("/archive", "").rstrip("/")
 
     headers = {
         "User-Agent": (
@@ -943,61 +941,61 @@ def collect_substack_posts_from_archive(
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/122.0.0.0 Safari/537.36"
         ),
+        "Accept": "application/json",
         "Accept-Language": "en-US,en;q=0.9",
+        "Referer": base_url,
     }
 
-    resp = requests.get(archive_url, headers=headers, timeout=15)
-    resp.raise_for_status()
-
-    html = resp.text
-
-    # 🔥 Extraction JSON embarqué
-    match = re.search(
-        r'window\.__PRELOADED_STATE__\s*=\s*(\{.*?\});',
-        html,
-        re.DOTALL,
-    )
-
-    if not match:
-        raise ValueError("Substack JSON state not found")
-
-    json_data = json.loads(match.group(1))
-
-    posts_data = (
-        json_data
-        .get("archive", {})
-        .get("posts", [])
-    )
-
     posts = []
+    offset = 0
+    page_size = 20  # archive retourne 20 par page
 
-    for item in posts_data[:max_articles]:
+    while len(posts) < max_articles:
 
-        slug = item.get("slug")
-        title = item.get("title")
-        post_date = item.get("post_date")
+        api_url = f"{base_url}/api/v1/archive?offset={offset}"
 
-        if not slug or not title:
-            continue
+        resp = requests.get(api_url, headers=headers, timeout=15)
+        resp.raise_for_status()
 
-        try:
-            date_source = (
-                datetime.fromisoformat(
-                    post_date.replace("Z", "+00:00")
-                ).date()
-                if post_date
-                else None
-            )
-        except Exception:
-            date_source = None
+        data = resp.json()
 
-        posts.append({
-            "url": archive_url.replace("/archive", "") + f"/p/{slug}",
-            "title": title,
-            "date_source": date_source,
-        })
+        if not data.get("posts"):
+            break
+
+        for item in data["posts"]:
+
+            slug = item.get("slug")
+            title = item.get("title")
+            post_date = item.get("post_date")
+
+            if not slug or not title:
+                continue
+
+            try:
+                date_source = (
+                    datetime.fromisoformat(
+                        post_date.replace("Z", "+00:00")
+                    ).date()
+                    if post_date
+                    else None
+                )
+            except Exception:
+                date_source = None
+
+            posts.append({
+                "url": f"{base_url}/p/{slug}",
+                "title": title,
+                "date_source": date_source,
+            })
+
+            if len(posts) >= max_articles:
+                break
+
+        offset += page_size
 
     return posts
+
+
 
 def import_archive(
     source_id: str,
