@@ -1158,8 +1158,6 @@ def collect_beehiiv_posts(
 
     return posts
 
-
-
 def import_archive(
     source_id: str,
     archive_url: str,
@@ -1167,7 +1165,6 @@ def import_archive(
     date_min: Optional[date] = None,
 ) -> dict:
 
-    # On enlève /archive si présent
     urls = collect_archive_urls_html(
         archive_url=archive_url,
         max_articles=max_articles,
@@ -1177,47 +1174,32 @@ def import_archive(
     skipped = 0
     stopped_by_date = False
 
-    for post in posts:
+    for url in urls:
 
-        if inserted >= max_articles:
-            break
-
-        url = post["url"]
-        title = post["title"]
-        date_source = post["date_source"]
-
-        # 🔹 Stop intelligent si date_min atteinte
-        if date_min and date_source:
-            if date_source < date_min:
-                stopped_by_date = True
-                break
-
-        # 🔹 Skip si déjà en base
         if raw_url_exists(url):
             skipped += 1
             continue
 
-        # 🔹 On parse l’article pour récupérer le body complet
-        try:
-            parsed = parse_substack_article(url)
-        except Exception:
+        parsed = parse_substack_article(url)
+
+        if not parsed["title"] or not parsed["raw_text"]:
             skipped += 1
             continue
 
-        if not parsed.get("raw_text"):
-            skipped += 1
-            continue
+        if date_min and parsed["date_source"]:
+            if parsed["date_source"] < date_min:
+                stopped_by_date = True
+                break
 
-        # 🔹 Insert en stock
         insert_bq(
             TABLE_CONTENT_RAW,
             [{
                 "ID_RAW": str(uuid.uuid4()),
                 "SOURCE_ID": source_id,
                 "SOURCE_URL": url,
-                "SOURCE_TITLE": title,
+                "SOURCE_TITLE": parsed["title"],
                 "RAW_TEXT": parsed["raw_text"],
-                "DATE_SOURCE": date_source,
+                "DATE_SOURCE": parsed["date_source"],
                 "STATUS": "STORED",
                 "CREATED_AT": datetime.utcnow().isoformat(),
                 "PROCESSED_AT": None,
@@ -1229,7 +1211,7 @@ def import_archive(
         inserted += 1
 
     return {
-        "total_found": len(posts),
+        "total_found": len(urls),
         "inserted": inserted,
         "skipped_existing": skipped,
         "stopped_by_date": stopped_by_date,
