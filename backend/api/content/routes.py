@@ -262,7 +262,6 @@ def import_archive_route(payload: ImportArchiveRequest):
         result = import_archive(
             source_id=payload.source_id,
             archive_url=payload.archive_url,
-            max_articles=payload.max_articles,
             date_min=payload.date_min,
         )
         return result
