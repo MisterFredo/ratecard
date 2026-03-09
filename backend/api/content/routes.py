@@ -10,7 +10,6 @@ from api.content.models import (
     ContentRawOut,
     ContentRawDestockRequest,
     BulkIdsRequest,
-    ImportArchiveRequest,
 )
 
 from core.content.service import (
@@ -31,7 +30,6 @@ from core.content.service import (
     mark_content_ready,
     bulk_publish,
     bulk_ready,
-    import_archive,
 )
 
 from core.content.ai import generate_summary
