@@ -52,11 +52,6 @@ class ContentRawDestockRequest(BaseModel):
 class BulkIdsRequest(BaseModel):
     ids: List[str]
 
-class ImportArchiveRequest(BaseModel):
-    source_id: str
-    archive_url: str
-    max_articles: Optional[int] = 50
-    date_min: Optional[date] = None
 
 # ============================================================
 # CREATE
