@@ -995,6 +995,78 @@ def collect_substack_posts_from_archive(
 
     return posts
 
+def collect_beehiiv_posts(
+    base_url: str,
+    max_articles: int = 200,
+):
+    """
+    Récupère les posts via l'endpoint JSON Beehiiv.
+    """
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/122.0.0.0 Safari/537.36"
+        ),
+        "Accept": "application/json",
+    }
+
+    posts = []
+    page = 1
+    per_page = 20  # tu peux monter à 20 ou 25
+
+    while len(posts) < max_articles:
+
+        api_url = (
+            f"{base_url}/posts"
+            f"?page={page}"
+            f"&per_page={per_page}"
+            f"&_data=routes/__loaders__/posts"
+        )
+
+        resp = requests.get(api_url, headers=headers, timeout=15)
+        resp.raise_for_status()
+
+        data = resp.json()
+
+        page_posts = data.get("posts", [])
+        if not page_posts:
+            break
+
+        for item in page_posts:
+
+            slug = item.get("slug")
+            title = item.get("web_title")
+            post_date = item.get("override_scheduled_at") or item.get("created_at")
+
+            if not slug or not title:
+                continue
+
+            try:
+                date_source = (
+                    datetime.fromisoformat(
+                        post_date.replace("Z", "+00:00")
+                    ).date()
+                    if post_date
+                    else None
+                )
+            except Exception:
+                date_source = None
+
+            posts.append({
+                "url": f"{base_url}/p/{slug}",
+                "title": title,
+                "date_source": date_source,
+            })
+
+            if len(posts) >= max_articles:
+                break
+
+        page += 1
+
+    return posts
+
 
 
 def import_archive(
@@ -1008,8 +1080,10 @@ def import_archive(
     base_url = archive_url.replace("/archive", "").rstrip("/")
 
     # 🔹 Récupération via API JSON Substack
-    posts = collect_substack_posts_from_archive(
-        archive_url=archive_url,
+    base_url = archive_url.replace("/archive", "").rstrip("/")
+
+    posts = collect_beehiiv_posts(
+        base_url=base_url,
         max_articles=max_articles,
     )
 
