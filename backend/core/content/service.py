@@ -848,6 +848,135 @@ def get_raw_stats() -> dict:
     }
 
 # ============================================================
+# SUBSTACK
+# ============================================================
+
+def raw_url_exists(url: str) -> bool:
+    rows = query_bq(
+        f"""
+        SELECT 1
+        FROM `{TABLE_CONTENT_RAW}`
+        WHERE SOURCE_URL = @url
+        LIMIT 1
+        """,
+        {"url": url},
+    )
+    return bool(rows)
+
+def parse_substack_article(url: str):
+    resp = requests.get(url, timeout=10)
+    resp.raise_for_status()
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    # Title
+    title_tag = soup.find("h1")
+    title = title_tag.get_text(strip=True) if title_tag else None
+
+    # Date
+    time_tag = soup.find("time")
+    date_source = None
+    if time_tag and time_tag.get("datetime"):
+        date_source = datetime.fromisoformat(
+            time_tag["datetime"].replace("Z", "+00:00")
+        ).date()
+
+    # Article body
+    article = soup.find("article")
+    paragraphs = []
+    if article:
+        for p in article.find_all("p"):
+            text = p.get_text(strip=True)
+            if text:
+                paragraphs.append(text)
+
+    raw_text = "\n\n".join(paragraphs)
+
+    return {
+        "title": title,
+        "date_source": date_source,
+        "raw_text": raw_text,
+    }
+
+def collect_substack_archive_urls(archive_url: str):
+    resp = requests.get(archive_url, timeout=10)
+    resp.raise_for_status()
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    urls = []
+
+    for a in soup.find_all("a"):
+        href = a.get("href")
+        if href and "/p/" in href:
+            if href.startswith("/"):
+                base = archive_url.split("/archive")[0]
+                href = base + href
+            urls.append(href)
+
+    # Deduplicate
+    return list(dict.fromkeys(urls))
+
+def import_archive(
+    source_id: str,
+    archive_url: str,
+    max_articles: int = 50,
+    date_min: Optional[date] = None,
+) -> dict:
+
+    urls = collect_substack_archive_urls(archive_url)
+
+    inserted = 0
+    skipped = 0
+    stopped_by_date = False
+
+    for url in urls:
+
+        if inserted >= max_articles:
+            break
+
+        if raw_url_exists(url):
+            skipped += 1
+            continue
+
+        parsed = parse_substack_article(url)
+
+        if not parsed["title"] or not parsed["raw_text"]:
+            skipped += 1
+            continue
+
+        if date_min and parsed["date_source"]:
+            if parsed["date_source"] < date_min:
+                stopped_by_date = True
+                break
+
+        insert_bq(
+            TABLE_CONTENT_RAW,
+            [{
+                "ID_RAW": str(uuid.uuid4()),
+                "SOURCE_ID": source_id,
+                "SOURCE_URL": url,
+                "SOURCE_TITLE": parsed["title"],
+                "RAW_TEXT": parsed["raw_text"],
+                "DATE_SOURCE": parsed["date_source"],
+                "STATUS": "STORED",
+                "CREATED_AT": datetime.utcnow().isoformat(),
+                "PROCESSED_AT": None,
+                "GENERATED_CONTENT_ID": None,
+                "ERROR_MESSAGE": None,
+            }],
+        )
+
+        inserted += 1
+
+    return {
+        "total_found": len(urls),
+        "inserted": inserted,
+        "skipped_existing": skipped,
+        "stopped_by_date": stopped_by_date,
+    }
+
+# ============================================================
 # RESET RELATIONS
 # ============================================================
 
