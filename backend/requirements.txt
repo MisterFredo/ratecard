@@ -11,10 +11,13 @@ google-auth-oauthlib==1.2.1
 # --- HTTP requests ---
 requests==2.32.3
 
+# --- HTML parsing ---
+beautifulsoup4==4.12.3
+
 # --- Data / validation ---
 pydantic==2.9.2
 python-multipart==0.0.9
-email-validator==2.2.0   # ✅ requis pour EmailStr
+email-validator==2.2.0
 
 # --- HTML templates (newsletter / pdf futur) ---
 jinja2==3.1.4
