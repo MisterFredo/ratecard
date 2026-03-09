@@ -1203,14 +1203,14 @@ def collect_beehiiv_posts(
 def import_archive(
     source_id: str,
     archive_url: str,
-    max_articles: int = 50,
     date_min: Optional[date] = None,
 ) -> dict:
+    """
+    Importe uniquement les articles visibles sur la première page /archive.
+    (~5 articles SSR Beehiiv)
+    """
 
-    urls = collect_archive_urls_html(
-        archive_url=archive_url,
-        max_articles=max_articles,
-    )
+    urls = collect_archive_first_page(archive_url)
 
     inserted = 0
     skipped = 0
@@ -1218,21 +1218,29 @@ def import_archive(
 
     for url in urls:
 
+        # Ignore si déjà stocké
         if raw_url_exists(url):
             skipped += 1
             continue
 
-        parsed = parse_substack_article(url)
+        # Parse article
+        try:
+            parsed = parse_substack_article(url)
+        except Exception:
+            skipped += 1
+            continue
 
         if not parsed["title"] or not parsed["raw_text"]:
             skipped += 1
             continue
 
+        # Stop si date_min
         if date_min and parsed["date_source"]:
             if parsed["date_source"] < date_min:
                 stopped_by_date = True
                 break
 
+        # Insert BQ
         insert_bq(
             TABLE_CONTENT_RAW,
             [{
