@@ -995,13 +995,22 @@ def collect_substack_posts_from_archive(
 
     return posts
 
+import requests
+from datetime import datetime
+
+
 def collect_beehiiv_posts(
     base_url: str,
     max_articles: int = 200,
 ):
     """
     Récupère les posts via l'endpoint JSON Beehiiv.
+    Compatible anti-bot (headers + session).
     """
+
+    base_url = base_url.rstrip("/")
+
+    session = requests.Session()
 
     headers = {
         "User-Agent": (
@@ -1009,12 +1018,22 @@ def collect_beehiiv_posts(
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/122.0.0.0 Safari/537.36"
         ),
-        "Accept": "application/json",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": base_url,
+        "Origin": base_url,
+        "X-Requested-With": "XMLHttpRequest",
+        "Connection": "keep-alive",
     }
+
+    session.headers.update(headers)
 
     posts = []
     page = 1
-    per_page = 20  # tu peux monter à 20 ou 25
+    per_page = 20  # Beehiiv supporte 5 par défaut, mais 20 fonctionne
+
+    # 🔹 Important : premier call pour récupérer les cookies
+    session.get(base_url, timeout=15)
 
     while len(posts) < max_articles:
 
@@ -1025,10 +1044,17 @@ def collect_beehiiv_posts(
             f"&_data=routes/__loaders__/posts"
         )
 
-        resp = requests.get(api_url, headers=headers, timeout=15)
+        resp = session.get(api_url, timeout=15)
+
+        if resp.status_code == 403:
+            raise ValueError("Beehiiv API blocked (403)")
+
         resp.raise_for_status()
 
-        data = resp.json()
+        try:
+            data = resp.json()
+        except Exception:
+            raise ValueError("Invalid JSON response from Beehiiv")
 
         page_posts = data.get("posts", [])
         if not page_posts:
@@ -1038,7 +1064,10 @@ def collect_beehiiv_posts(
 
             slug = item.get("slug")
             title = item.get("web_title")
-            post_date = item.get("override_scheduled_at") or item.get("created_at")
+            post_date = (
+                item.get("override_scheduled_at")
+                or item.get("created_at")
+            )
 
             if not slug or not title:
                 continue
