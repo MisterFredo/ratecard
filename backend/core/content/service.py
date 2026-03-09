@@ -928,14 +928,14 @@ def parse_substack_article(url: str):
         "raw_text": raw_text,
     }
 
-def collect_substack_posts_api(
-    base_url: str,
+import json
+import re
+
+
+def collect_substack_posts_from_archive(
+    archive_url: str,
     max_articles: int = 200,
 ):
-
-    posts = []
-    offset = 0
-    page_size = 50
 
     headers = {
         "User-Agent": (
@@ -943,95 +943,61 @@ def collect_substack_posts_api(
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/122.0.0.0 Safari/537.36"
         ),
-        "Accept": "application/json",
         "Accept-Language": "en-US,en;q=0.9",
-        "Referer": base_url,
     }
 
-    while len(posts) < max_articles:
-
-        api_url = f"{base_url}/api/v1/posts?limit={page_size}&offset={offset}"
-
-        resp = requests.get(api_url, headers=headers, timeout=15)
-        resp.raise_for_status()
-        print("API URL:", api_url)
-        print("STATUS:", resp.status_code)
-        print("CONTENT TYPE:", resp.headers.get("Content-Type"))
-        print("BODY START:", resp.text[:200])
-
-        data = resp.json()
-
-        if not data:
-            break
-
-        for item in data:
-
-            slug = item.get("slug")
-            title = item.get("title")
-            post_date = item.get("post_date")
-
-            if not slug or not title:
-                continue
-
-            try:
-                date_source = datetime.fromisoformat(
-                    post_date.replace("Z", "+00:00")
-                ).date() if post_date else None
-            except Exception:
-                date_source = None
-
-            posts.append({
-                "url": f"{base_url}/p/{slug}",
-                "title": title,
-                "date_source": date_source,
-            })
-
-            if len(posts) >= max_articles:
-                break
-
-        offset += page_size
-
-    return posts
-
-
-def collect_substack_archive_urls(archive_url: str):
-
-    resp = requests.get(
-        archive_url,
-        headers=BROWSER_HEADERS,
-        timeout=15,
-    )
+    resp = requests.get(archive_url, headers=headers, timeout=15)
     resp.raise_for_status()
 
-    soup = BeautifulSoup(resp.text, "html.parser")
+    html = resp.text
 
-    urls = []
-    base = archive_url.split("/archive")[0]
+    # 🔥 Extraction JSON embarqué
+    match = re.search(
+        r'window\.__PRELOADED_STATE__\s*=\s*(\{.*?\});',
+        html,
+        re.DOTALL,
+    )
 
-    for a in soup.find_all("a"):
-        href = a.get("href")
+    if not match:
+        raise ValueError("Substack JSON state not found")
 
-        if not href:
+    json_data = json.loads(match.group(1))
+
+    posts_data = (
+        json_data
+        .get("archive", {})
+        .get("posts", [])
+    )
+
+    posts = []
+
+    for item in posts_data[:max_articles]:
+
+        slug = item.get("slug")
+        title = item.get("title")
+        post_date = item.get("post_date")
+
+        if not slug or not title:
             continue
 
-        if "/p/" not in href:
-            continue
+        try:
+            date_source = (
+                datetime.fromisoformat(
+                    post_date.replace("Z", "+00:00")
+                ).date()
+                if post_date
+                else None
+            )
+        except Exception:
+            date_source = None
 
-        # Normalise URL
-        full_url = urljoin(base, href)
+        posts.append({
+            "url": archive_url.replace("/archive", "") + f"/p/{slug}",
+            "title": title,
+            "date_source": date_source,
+        })
 
-        # On évite les tracking params
-        full_url = full_url.split("?")[0]
-
-        urls.append(full_url)
-
-    # Deduplicate propre
-    urls = list(dict.fromkeys(urls))
-
-    if not urls:
-        raise ValueError("No article URLs found in archive")
-
-    return urls
+    return posts
 
 def import_archive(
     source_id: str,
@@ -1044,8 +1010,8 @@ def import_archive(
     base_url = archive_url.replace("/archive", "").rstrip("/")
 
     # 🔹 Récupération via API JSON Substack
-    posts = collect_substack_posts_api(
-        base_url=base_url,
+    posts = collect_substack_posts_from_archive(
+        archive_url=archive_url,
         max_articles=max_articles,
     )
 
