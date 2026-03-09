@@ -863,27 +863,59 @@ def raw_url_exists(url: str) -> bool:
     )
     return bool(rows)
 
+
+from urllib.parse import urljoin
+BROWSER_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/122.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://www.google.com",
+}
+
+
 def parse_substack_article(url: str):
-    resp = requests.get(url, timeout=10)
+
+    resp = requests.get(
+        url,
+        headers=BROWSER_HEADERS,
+        timeout=15,
+    )
     resp.raise_for_status()
 
     soup = BeautifulSoup(resp.text, "html.parser")
 
-    # Title
+    # =========================
+    # TITLE
+    # =========================
+
     title_tag = soup.find("h1")
     title = title_tag.get_text(strip=True) if title_tag else None
 
-    # Date
-    time_tag = soup.find("time")
-    date_source = None
-    if time_tag and time_tag.get("datetime"):
-        date_source = datetime.fromisoformat(
-            time_tag["datetime"].replace("Z", "+00:00")
-        ).date()
+    # =========================
+    # DATE
+    # =========================
 
-    # Article body
+    date_source = None
+    time_tag = soup.find("time")
+
+    if time_tag and time_tag.get("datetime"):
+        try:
+            date_source = datetime.fromisoformat(
+                time_tag["datetime"].replace("Z", "+00:00")
+            ).date()
+        except Exception:
+            pass
+
+    # =========================
+    # ARTICLE BODY
+    # =========================
+
     article = soup.find("article")
     paragraphs = []
+
     if article:
         for p in article.find_all("p"):
             text = p.get_text(strip=True)
@@ -892,6 +924,9 @@ def parse_substack_article(url: str):
 
     raw_text = "\n\n".join(paragraphs)
 
+    if not raw_text:
+        raise ValueError("Empty article body")
+
     return {
         "title": title,
         "date_source": date_source,
@@ -899,23 +934,43 @@ def parse_substack_article(url: str):
     }
 
 def collect_substack_archive_urls(archive_url: str):
-    resp = requests.get(archive_url, timeout=10)
+
+    resp = requests.get(
+        archive_url,
+        headers=BROWSER_HEADERS,
+        timeout=15,
+    )
     resp.raise_for_status()
 
     soup = BeautifulSoup(resp.text, "html.parser")
 
     urls = []
+    base = archive_url.split("/archive")[0]
 
     for a in soup.find_all("a"):
         href = a.get("href")
-        if href and "/p/" in href:
-            if href.startswith("/"):
-                base = archive_url.split("/archive")[0]
-                href = base + href
-            urls.append(href)
 
-    # Deduplicate
-    return list(dict.fromkeys(urls))
+        if not href:
+            continue
+
+        if "/p/" not in href:
+            continue
+
+        # Normalise URL
+        full_url = urljoin(base, href)
+
+        # On évite les tracking params
+        full_url = full_url.split("?")[0]
+
+        urls.append(full_url)
+
+    # Deduplicate propre
+    urls = list(dict.fromkeys(urls))
+
+    if not urls:
+        raise ValueError("No article URLs found in archive")
+
+    return urls
 
 def import_archive(
     source_id: str,
