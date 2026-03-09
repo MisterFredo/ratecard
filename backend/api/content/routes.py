@@ -250,23 +250,6 @@ def raw_stats_route():
         logger.exception("Erreur stats raw")
         raise HTTPException(400, str(e))
 
-# ============================================================
-# RAW IMPORT AUTO SUB
-# ============================================================
-
-@router.post("/raw/import-archive")
-def import_archive_route(payload: ImportArchiveRequest):
-    try:
-        result = import_archive(
-            source_id=payload.source_id,
-            archive_url=payload.archive_url,
-            date_min=payload.date_min,
-        )
-        return result
-
-    except Exception as e:
-        print("IMPORT ERROR:", str(e))
-        raise HTTPException(400, str(e))
 
 # ============================================================
 # IA — GENERATE CONTENT
