@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from typing import Optional
 from datetime import datetime, timezone, date
 from typing import Optional, Dict, Any, List
+from urllib.parse import urljoin
 
 from google.cloud import bigquery
 
@@ -863,20 +864,6 @@ def raw_url_exists(url: str) -> bool:
     )
     return bool(rows)
 
-
-from urllib.parse import urljoin
-BROWSER_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/122.0.0.0 Safari/537.36"
-    ),
-    "Accept": "application/json",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Referer": base_url,
-}
-
-
 def parse_substack_article(url: str):
 
     resp = requests.get(
@@ -945,31 +932,33 @@ def collect_substack_posts_api(
     base_url: str,
     max_articles: int = 200,
 ):
-    """
-    Récupère les posts via l'API JSON Substack.
-    Pagination propre avec offset.
-    """
 
     posts = []
     offset = 0
-    page_size = 50  # Substack accepte 50
+    page_size = 50
 
-    headers = BROWSER_HEADERS
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/122.0.0.0 Safari/537.36"
+        ),
+        "Accept": "application/json",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": base_url,
+    }
 
     while len(posts) < max_articles:
 
         api_url = f"{base_url}/api/v1/posts?limit={page_size}&offset={offset}"
 
         resp = requests.get(api_url, headers=headers, timeout=15)
-        print("STATUS:", resp.status_code)
-        print("CONTENT-TYPE:", resp.headers.get("Content-Type"))
-        print("TEXT START:", resp.text[:300])
         resp.raise_for_status()
 
         data = resp.json()
 
         if not data:
-            break  # plus rien à récupérer
+            break
 
         for item in data:
 
@@ -999,7 +988,6 @@ def collect_substack_posts_api(
         offset += page_size
 
     return posts
-
 def collect_substack_archive_urls(archive_url: str):
 
     resp = requests.get(
