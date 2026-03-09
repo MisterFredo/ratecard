@@ -871,8 +871,9 @@ BROWSER_HEADERS = {
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/122.0.0.0 Safari/537.36"
     ),
+    "Accept": "application/json",
     "Accept-Language": "en-US,en;q=0.9",
-    "Referer": "https://www.google.com",
+    "Referer": base_url,
 }
 
 
@@ -960,6 +961,9 @@ def collect_substack_posts_api(
         api_url = f"{base_url}/api/v1/posts?limit={page_size}&offset={offset}"
 
         resp = requests.get(api_url, headers=headers, timeout=15)
+        print("STATUS:", resp.status_code)
+        print("CONTENT-TYPE:", resp.headers.get("Content-Type"))
+        print("TEXT START:", resp.text[:300])
         resp.raise_for_status()
 
         data = resp.json()
