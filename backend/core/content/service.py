@@ -1,4 +1,7 @@
 import uuid
+import requests
+from bs4 import BeautifulSoup
+from typing import Optional
 from datetime import datetime, timezone, date
 from typing import Optional, Dict, Any, List
 
