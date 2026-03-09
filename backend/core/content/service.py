@@ -890,14 +890,12 @@ def parse_substack_article(url: str):
     # =========================
     # TITLE
     # =========================
-
     title_tag = soup.find("h1")
     title = title_tag.get_text(strip=True) if title_tag else None
 
     # =========================
     # DATE
     # =========================
-
     date_source = None
     time_tag = soup.find("time")
 
@@ -910,22 +908,27 @@ def parse_substack_article(url: str):
             pass
 
     # =========================
-    # ARTICLE BODY
+    # BODY (Substack safe)
     # =========================
 
-    article = soup.find("article")
     paragraphs = []
 
-    if article:
-        for p in article.find_all("p"):
+    # Option 1: div contenant le contenu
+    content_div = soup.find("div", class_=lambda x: x and "body" in x)
+
+    if not content_div:
+        content_div = soup.find("div", class_=lambda x: x and "content" in x)
+
+    if content_div:
+        for p in content_div.find_all("p"):
             text = p.get_text(strip=True)
             if text:
                 paragraphs.append(text)
 
     raw_text = "\n\n".join(paragraphs)
 
-    if not raw_text:
-        raise ValueError("Empty article body")
+    if not raw_text or len(raw_text) < 200:
+        raise ValueError("Empty or too short article body")
 
     return {
         "title": title,
