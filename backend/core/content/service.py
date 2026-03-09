@@ -928,6 +928,72 @@ def parse_substack_article(url: str):
         "raw_text": raw_text,
     }
 
+
+def collect_archive_urls_html(
+    archive_url: str,
+    max_articles: int = 200,
+):
+    """
+    Récupère les URLs d'articles Beehiiv via parsing HTML archive.
+    Compatible Render (pas d'API interne).
+    """
+
+    session = requests.Session()
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/122.0.0.0 Safari/537.36"
+        )
+    }
+
+    session.headers.update(headers)
+
+    archive_url = archive_url.rstrip("/")
+    base_url = archive_url.replace("/archive", "").rstrip("/")
+
+    urls = []
+    page = 1
+
+    while len(urls) < max_articles:
+
+        if page == 1:
+            url = archive_url
+        else:
+            url = f"{archive_url}?page={page}"
+
+        resp = session.get(url, timeout=15)
+        resp.raise_for_status()
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        page_urls = []
+
+        for a in soup.find_all("a"):
+            href = a.get("href")
+            if href and href.startswith("/p/"):
+                full_url = urljoin(base_url, href)
+                page_urls.append(full_url)
+
+        # déduplication page
+        page_urls = list(dict.fromkeys(page_urls))
+
+        # si aucune nouvelle URL → fin pagination
+        new_urls = [u for u in page_urls if u not in urls]
+
+        if not new_urls:
+            break
+
+        urls.extend(new_urls)
+
+        if len(urls) >= max_articles:
+            break
+
+        page += 1
+
+    return urls[:max_articles]
+
 def collect_substack_posts_from_archive(
     archive_url: str,
     max_articles: int = 200,
@@ -994,10 +1060,6 @@ def collect_substack_posts_from_archive(
         offset += page_size
 
     return posts
-
-import requests
-from datetime import datetime
-
 
 def collect_beehiiv_posts(
     base_url: str,
@@ -1106,13 +1168,8 @@ def import_archive(
 ) -> dict:
 
     # On enlève /archive si présent
-    base_url = archive_url.replace("/archive", "").rstrip("/")
-
-    # 🔹 Récupération via API JSON Substack
-    base_url = archive_url.replace("/archive", "").rstrip("/")
-
-    posts = collect_beehiiv_posts(
-        base_url=base_url,
+    urls = collect_archive_urls_html(
+        archive_url=archive_url,
         max_articles=max_articles,
     )
 
