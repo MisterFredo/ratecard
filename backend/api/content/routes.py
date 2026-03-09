@@ -262,13 +262,14 @@ def import_archive_route(payload: ImportArchiveRequest):
         result = import_archive(
             source_id=payload.source_id,
             archive_url=payload.archive_url,
-            max_articles=payload.max_articles or 50,
+            max_articles=payload.max_articles,
             date_min=payload.date_min,
         )
-        return {"status": "ok", "result": result}
-    except Exception as e:
-        raise HTTPException(400, str(e))
+        return result
 
+    except Exception as e:
+        print("IMPORT ERROR:", str(e))
+        raise HTTPException(400, str(e))
 
 # ============================================================
 # IA — GENERATE CONTENT
