@@ -1,27 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
+type Source = {
+  ID_SOURCE: string;
+  NAME: string;
+  IS_ACTIVE?: boolean;
+};
+
 export default function ContentImportPage() {
+  const [sources, setSources] = useState<Source[]>([]);
+  const [selectedSource, setSelectedSource] = useState("");
   const [archiveUrl, setArchiveUrl] = useState("");
-  const [sourceId, setSourceId] = useState("");
   const [maxArticles, setMaxArticles] = useState(50);
   const [dateMin, setDateMin] = useState("");
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
+  // =========================
+  // LOAD SOURCES
+  // =========================
+
+  useEffect(() => {
+    async function loadSources() {
+      try {
+        const res = await api.get("/source/list");
+        const activeSources =
+          (res.sources || []).filter((s: Source) => s.IS_ACTIVE !== false);
+        setSources(activeSources);
+      } catch (e) {
+        console.error(e);
+        alert("Erreur chargement sources");
+      }
+    }
+
+    loadSources();
+  }, []);
+
+  // =========================
+  // IMPORT
+  // =========================
+
   async function handleImport() {
-    if (!archiveUrl || !sourceId) {
-      alert("Archive URL et Source obligatoires");
+    if (!selectedSource) {
+      alert("Sélectionnez une source");
+      return;
+    }
+
+    if (!archiveUrl.trim()) {
+      alert("Archive URL obligatoire");
       return;
     }
 
     setLoading(true);
+    setResult(null);
 
     try {
       const res = await api.post("/content/raw/import-archive", {
-        source_id: sourceId,
+        source_id: selectedSource,
         archive_url: archiveUrl,
         max_articles: maxArticles,
         date_min: dateMin || null,
@@ -37,57 +74,99 @@ export default function ContentImportPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-ratecard-blue">
-        Importer archive
-      </h1>
+    <div className="space-y-8 max-w-2xl">
 
-      <div className="space-y-4 max-w-xl">
+      <div>
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
+          Import d’archive
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Importer automatiquement les articles d’une archive (Substack MVP)
+        </p>
+      </div>
 
-        <input
-          type="text"
-          placeholder="Source ID"
-          value={sourceId}
-          onChange={(e) => setSourceId(e.target.value)}
-          className="border p-2 w-full rounded"
-        />
+      <div className="bg-white p-6 rounded-lg border space-y-6">
 
-        <input
-          type="text"
-          placeholder="Archive URL"
-          value={archiveUrl}
-          onChange={(e) => setArchiveUrl(e.target.value)}
-          className="border p-2 w-full rounded"
-        />
+        {/* SOURCE SELECTOR */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">
+            Source
+          </label>
+          <select
+            value={selectedSource}
+            onChange={(e) => setSelectedSource(e.target.value)}
+            className="w-full border rounded px-3 py-2 text-sm"
+          >
+            <option value="">Sélectionner une source</option>
+            {sources.map((s) => (
+              <option key={s.ID_SOURCE} value={s.ID_SOURCE}>
+                {s.NAME}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <input
-          type="number"
-          value={maxArticles}
-          onChange={(e) => setMaxArticles(Number(e.target.value))}
-          className="border p-2 w-full rounded"
-        />
+        {/* ARCHIVE URL */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">
+            Archive URL
+          </label>
+          <input
+            type="text"
+            value={archiveUrl}
+            onChange={(e) => setArchiveUrl(e.target.value)}
+            placeholder="https://www.retailmediabreakfastclub.com/archive"
+            className="w-full border rounded px-3 py-2 text-sm"
+          />
+        </div>
 
-        <input
-          type="date"
-          value={dateMin}
-          onChange={(e) => setDateMin(e.target.value)}
-          className="border p-2 w-full rounded"
-        />
+        {/* DATE MIN */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">
+            Date minimale (optionnel)
+          </label>
+          <input
+            type="date"
+            value={dateMin}
+            onChange={(e) => setDateMin(e.target.value)}
+            className="w-full border rounded px-3 py-2 text-sm"
+          />
+        </div>
 
+        {/* MAX ARTICLES */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">
+            Nombre maximum d’articles
+          </label>
+          <input
+            type="number"
+            value={maxArticles}
+            onChange={(e) => setMaxArticles(Number(e.target.value))}
+            className="w-full border rounded px-3 py-2 text-sm"
+            min={1}
+            max={200}
+          />
+        </div>
+
+        {/* BUTTON */}
         <button
           onClick={handleImport}
           disabled={loading}
-          className="bg-ratecard-green text-white px-4 py-2 rounded"
+          className="bg-ratecard-green text-white px-4 py-2 rounded shadow text-sm"
         >
           {loading ? "Import en cours..." : "Importer"}
         </button>
 
+        {/* RESULT */}
         {result && (
-          <div className="bg-gray-100 p-4 rounded text-sm">
-            <div>Total trouvés: {result.total_found}</div>
-            <div>Insérés: {result.inserted}</div>
-            <div>Ignorés (existants): {result.skipped_existing}</div>
-            <div>Arrêt par date: {result.stopped_by_date ? "Oui" : "Non"}</div>
+          <div className="bg-gray-50 p-4 rounded border text-sm space-y-1">
+            <div><strong>Total trouvés :</strong> {result.total_found}</div>
+            <div><strong>Insérés :</strong> {result.inserted}</div>
+            <div><strong>Ignorés (déjà existants) :</strong> {result.skipped_existing}</div>
+            <div>
+              <strong>Arrêt par date :</strong>{" "}
+              {result.stopped_by_date ? "Oui" : "Non"}
+            </div>
           </div>
         )}
       </div>
