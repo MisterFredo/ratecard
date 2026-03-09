@@ -994,6 +994,48 @@ def collect_archive_urls_html(
 
     return urls[:max_articles]
 
+BROWSER_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/122.0.0.0 Safari/537.36"
+    )
+}
+
+
+def collect_archive_first_page(archive_url: str):
+    """
+    Récupère uniquement les articles visibles
+    sur la première page /archive (≈5 articles).
+    Compatible Render.
+    """
+
+    archive_url = archive_url.rstrip("/")
+    base_url = archive_url.replace("/archive", "").rstrip("/")
+
+    resp = requests.get(
+        archive_url,
+        headers=BROWSER_HEADERS,
+        timeout=15,
+    )
+    resp.raise_for_status()
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    urls = []
+
+    for a in soup.find_all("a"):
+        href = a.get("href")
+
+        if href and href.startswith("/p/"):
+            full_url = urljoin(base_url, href)
+            urls.append(full_url)
+
+    # déduplication
+    urls = list(dict.fromkeys(urls))
+
+    return urls
+
 def collect_substack_posts_from_archive(
     archive_url: str,
     max_articles: int = 200,
