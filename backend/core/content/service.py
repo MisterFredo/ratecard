@@ -897,15 +897,19 @@ def parse_substack_article(url: str):
     # DATE
     # =========================
     date_source = None
+
     time_tag = soup.find("time")
 
-    if time_tag and time_tag.get("datetime"):
-        try:
-            date_source = datetime.fromisoformat(
-                time_tag["datetime"].replace("Z", "+00:00")
-            ).date()
-        except Exception:
-            pass
+    if time_tag:
+        dt_value = time_tag.get("datetime")
+
+        if dt_value:
+            try:
+                # Nettoie les millisecondes si présentes
+                dt_value = dt_value.replace("Z", "+00:00")
+                date_source = datetime.fromisoformat(dt_value).date()
+            except Exception:
+                pass
 
     # =========================
     # BODY (Substack safe)
@@ -935,6 +939,62 @@ def parse_substack_article(url: str):
         "date_source": date_source,
         "raw_text": raw_text,
     }
+
+def collect_substack_posts_api(
+    base_url: str,
+    max_articles: int = 200,
+):
+    """
+    Récupère les posts via l'API JSON Substack.
+    Pagination propre avec offset.
+    """
+
+    posts = []
+    offset = 0
+    page_size = 50  # Substack accepte 50
+
+    headers = BROWSER_HEADERS
+
+    while len(posts) < max_articles:
+
+        api_url = f"{base_url}/api/v1/posts?limit={page_size}&offset={offset}"
+
+        resp = requests.get(api_url, headers=headers, timeout=15)
+        resp.raise_for_status()
+
+        data = resp.json()
+
+        if not data:
+            break  # plus rien à récupérer
+
+        for item in data:
+
+            slug = item.get("slug")
+            title = item.get("title")
+            post_date = item.get("post_date")
+
+            if not slug or not title:
+                continue
+
+            try:
+                date_source = datetime.fromisoformat(
+                    post_date.replace("Z", "+00:00")
+                ).date() if post_date else None
+            except Exception:
+                date_source = None
+
+            posts.append({
+                "url": f"{base_url}/p/{slug}",
+                "title": title,
+                "date_source": date_source,
+            })
+
+            if len(posts) >= max_articles:
+                break
+
+        offset += page_size
+
+    return posts
 
 def collect_substack_archive_urls(archive_url: str):
 
@@ -982,41 +1042,60 @@ def import_archive(
     date_min: Optional[date] = None,
 ) -> dict:
 
-    urls = collect_substack_archive_urls(archive_url)
+    # On enlève /archive si présent
+    base_url = archive_url.replace("/archive", "").rstrip("/")
+
+    # 🔹 Récupération via API JSON Substack
+    posts = collect_substack_posts_api(
+        base_url=base_url,
+        max_articles=max_articles,
+    )
 
     inserted = 0
     skipped = 0
     stopped_by_date = False
 
-    for url in urls:
+    for post in posts:
 
         if inserted >= max_articles:
             break
 
+        url = post["url"]
+        title = post["title"]
+        date_source = post["date_source"]
+
+        # 🔹 Stop intelligent si date_min atteinte
+        if date_min and date_source:
+            if date_source < date_min:
+                stopped_by_date = True
+                break
+
+        # 🔹 Skip si déjà en base
         if raw_url_exists(url):
             skipped += 1
             continue
 
-        parsed = parse_substack_article(url)
-
-        if not parsed["title"] or not parsed["raw_text"]:
+        # 🔹 On parse l’article pour récupérer le body complet
+        try:
+            parsed = parse_substack_article(url)
+        except Exception:
             skipped += 1
             continue
 
-        if date_min and parsed["date_source"]:
-            if parsed["date_source"] < date_min:
-                stopped_by_date = True
-                break
+        if not parsed.get("raw_text"):
+            skipped += 1
+            continue
 
+        # 🔹 Insert en stock
         insert_bq(
             TABLE_CONTENT_RAW,
             [{
                 "ID_RAW": str(uuid.uuid4()),
                 "SOURCE_ID": source_id,
                 "SOURCE_URL": url,
-                "SOURCE_TITLE": parsed["title"],
+                "SOURCE_TITLE": title,
                 "RAW_TEXT": parsed["raw_text"],
-                "DATE_SOURCE": parsed["date_source"],
+                "DATE_SOURCE": date_source,
                 "STATUS": "STORED",
                 "CREATED_AT": datetime.utcnow().isoformat(),
                 "PROCESSED_AT": None,
@@ -1028,7 +1107,7 @@ def import_archive(
         inserted += 1
 
     return {
-        "total_found": len(urls),
+        "total_found": len(posts),
         "inserted": inserted,
         "skipped_existing": skipped,
         "stopped_by_date": stopped_by_date,
