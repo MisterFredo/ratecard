@@ -162,7 +162,7 @@ export default function ContentStockPage() {
           disabled={processing}
           className="bg-ratecard-green text-white px-4 py-2 rounded shadow"
         >
-          {processing ? "Traitement..." : "Déstocker les 10 plus anciens"}
+          {processing ? "Traitement..." : "Déstocker les 50 plus anciens"}
         </button>
       </div>
 
