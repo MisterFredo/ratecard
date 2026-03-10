@@ -101,10 +101,10 @@ export default function ContentStockPage() {
   // =========================
 
   async function handleDestockBatch() {
-    if (!window.confirm("Générer les 20 plus anciens contenus ?")) return;
+    if (!window.confirm("Générer les 50 plus anciens contenus ?")) return;
 
     setProcessing(true);
-    await api.post("/content/raw/destock", { limit: 20 });
+    await api.post("/content/raw/destock", { limit: 50 });
     await load();
     setProcessing(false);
   }
