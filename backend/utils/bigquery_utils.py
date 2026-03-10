@@ -154,11 +154,12 @@ def insert_bq(table: str, rows: list[dict]):
 # ---------------------------------------------------------
 def update_bq(table: str, fields: dict, where: dict) -> bool:
     """
-    Exécute un UPDATE BigQuery sécurisé avec paramètres.
+    Exécute un UPDATE BigQuery sécurisé avec paramètres typés.
 
     fields = {"COL": value}
     where = {"ID": value}
     """
+
     if not fields:
         return False
 
@@ -168,28 +169,148 @@ def update_bq(table: str, fields: dict, where: dict) -> bool:
     where_clause = []
     params = []
 
+    # ==========================================================
     # SET
+    # ==========================================================
     for k, v in fields.items():
+
         set_clause.append(f"{k} = @{k}")
-        params.append(
-            bigquery.ScalarQueryParameter(
-                k,
-                _infer_type(v),
-                v
-            )
-        )
 
+        # 🔥 ARRAY<STRING>
+        if isinstance(v, list):
+            params.append(
+                bigquery.ArrayQueryParameter(
+                    k,
+                    "STRING",
+                    v
+                )
+            )
+
+        # 🔥 TIMESTAMP
+        elif isinstance(v, datetime):
+            params.append(
+                bigquery.ScalarQueryParameter(
+                    k,
+                    "TIMESTAMP",
+                    v
+                )
+            )
+
+        # 🔥 DATE
+        elif isinstance(v, date):
+            params.append(
+                bigquery.ScalarQueryParameter(
+                    k,
+                    "DATE",
+                    v
+                )
+            )
+
+        # 🔥 BOOL
+        elif isinstance(v, bool):
+            params.append(
+                bigquery.ScalarQueryParameter(
+                    k,
+                    "BOOL",
+                    v
+                )
+            )
+
+        # 🔥 INT
+        elif isinstance(v, int):
+            params.append(
+                bigquery.ScalarQueryParameter(
+                    k,
+                    "INT64",
+                    v
+                )
+            )
+
+        # 🔥 FLOAT
+        elif isinstance(v, float):
+            params.append(
+                bigquery.ScalarQueryParameter(
+                    k,
+                    "FLOAT64",
+                    v
+                )
+            )
+
+        # 🔥 STRING / fallback
+        else:
+            params.append(
+                bigquery.ScalarQueryParameter(
+                    k,
+                    "STRING",
+                    v
+                )
+            )
+
+    # ==========================================================
     # WHERE
+    # ==========================================================
     for k, v in where.items():
-        where_clause.append(f"{k} = @where_{k}")
-        params.append(
-            bigquery.ScalarQueryParameter(
-                f"where_{k}",
-                _infer_type(v),
-                v
-            )
-        )
 
+        where_key = f"where_{k}"
+        where_clause.append(f"{k} = @{where_key}")
+
+        if isinstance(v, datetime):
+            params.append(
+                bigquery.ScalarQueryParameter(
+                    where_key,
+                    "TIMESTAMP",
+                    v
+                )
+            )
+
+        elif isinstance(v, date):
+            params.append(
+                bigquery.ScalarQueryParameter(
+                    where_key,
+                    "DATE",
+                    v
+                )
+            )
+
+        elif isinstance(v, bool):
+            params.append(
+                bigquery.ScalarQueryParameter(
+                    where_key,
+                    "BOOL",
+                    v
+                )
+            )
+
+        elif isinstance(v, int):
+            params.append(
+                bigquery.ScalarQueryParameter(
+                    where_key,
+                    "INT64",
+                    v
+                )
+            )
+
+        elif isinstance(v, float):
+            params.append(
+                bigquery.ScalarQueryParameter(
+                    where_key,
+                    "FLOAT64",
+                    v
+                )
+            )
+
+        else:
+            params.append(
+                bigquery.ScalarQueryParameter(
+                    where_key,
+                    "STRING",
+                    v
+                )
+            )
+
+    # ==========================================================
+    # EXECUTION
+    # ==========================================================
     sql = f"""
         UPDATE `{table}`
         SET {", ".join(set_clause)}
@@ -201,5 +322,5 @@ def update_bq(table: str, fields: dict, where: dict) -> bool:
     )
 
     client.query(sql, job_config=job_config).result()
-    return True
 
+    return True
