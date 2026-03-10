@@ -915,9 +915,6 @@ def update_content(id_content: str, data: ContentUpdate):
     if data.source_id is not None:
         fields["SOURCE_ID"] = data.source_id
 
-    if data.source_text is not None:
-        fields["SOURCE_TEXT"] = data.source_text
-
     if data.source_url is not None:
         fields["SOURCE_URL"] = data.source_url
 
