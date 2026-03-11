@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/lib/api";
 
 export default function AdminHome() {
 
@@ -61,14 +60,14 @@ export default function AdminHome() {
 
     try {
 
-      const res = await api.post(
-        "/content/raw/import",
-        form
-      );
+      const res = await fetch("/api/content/raw/import", {
+        method: "POST",
+        body: form
+      });
 
-      const imported = res?.imported ?? res?.data?.imported ?? 0;
+      const data = await res.json();
 
-      setResult(`Import réussi : ${imported} contenus`);
+      setResult(`Import réussi : ${data.imported} contenus`);
 
     } catch (e) {
 
@@ -86,6 +85,7 @@ export default function AdminHome() {
   // ============================================================
 
   return (
+
     <div className="space-y-10">
 
       {/* DASHBOARD */}
@@ -195,5 +195,7 @@ export default function AdminHome() {
       </div>
 
     </div>
+
   );
+
 }
