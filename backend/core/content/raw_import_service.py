@@ -60,82 +60,32 @@ def parse_date_fr(date_str: str):
 # PARSE RAW FILE
 # ============================================================
 
-def parse_raw_blocks(text: str) -> List[Dict]:
-
-    print("[RAW_IMPORT] Début parsing fichier")
-
-    text = text.replace("\r\n", "\n")
+def parse_raw_blocks(text):
 
     blocs = re.split(r"\n?\s*TITLE\s*:", text)
 
-    print(f"[RAW_IMPORT] Nombre de blocs détectés : {len(blocs)-1}")
+    rows = []
 
-    results = []
-
-    for i, bloc in enumerate(blocs[1:], start=1):
+    for bloc in blocs[1:]:
 
         bloc = bloc.strip()
 
-        try:
+        title = bloc.split("\n")[0].strip()
 
-            lines = bloc.split("\n")
+        date_match = re.search(r"DATE_SOURCE\s*:\s*([^\n]+)", bloc)
+        date_source = parse_date_fr(date_match.group(1)) if date_match else None
 
-            # -------------------------
-            # TITLE
-            # -------------------------
+        raw_text = re.sub(r"(DATE_SOURCE\s*:\s*[^\n]+)", "", bloc)
+        raw_text = re.sub(r"RAW_TEXT\s*:", "", raw_text)
+        raw_text = raw_text.replace(title, "", 1).strip()
 
-            title = lines[0].strip()
+        rows.append({
+            "TITLE": title,
+            "DATE_SOURCE": date_source,
+            "RAW_TEXT": raw_text
+        })
 
-            # -------------------------
-            # DATE_SOURCE
-            # -------------------------
-
-            date_source = None
-
-            date_match = re.search(
-                r"DATE_SOURCE\s*:\s*(.+)",
-                bloc
-            )
-
-            if date_match:
-                date_str = date_match.group(1).strip()
-
-                try:
-                    date_source = parse_date_fr(date_str)
-                except Exception:
-                    print(f"[RAW_IMPORT] Bloc #{i} date invalide : {date_str}")
-
-            # -------------------------
-            # RAW_TEXT
-            # -------------------------
-
-            raw_text = bloc
-
-            raw_text = raw_text.replace(title, "", 1)
-
-            raw_text = re.sub(r"RAW_TEXT\s*:", "", raw_text)
-            raw_text = re.sub(r"DATE_SOURCE\s*:\s*.+", "", raw_text)
-
-            raw_text = raw_text.strip()
-
-            if not raw_text:
-                print(f"[RAW_IMPORT] Bloc #{i} vide")
-                continue
-
-            results.append({
-                "TITLE": title,
-                "DATE_SOURCE": date_source,
-                "RAW_TEXT": raw_text
-            })
-
-        except Exception as e:
-
-            print(f"[RAW_IMPORT] Bloc #{i} erreur : {e}")
-
-    print(f"[RAW_IMPORT] Blocs valides : {len(results)}")
-
-    return results
-
+    return rows
 
 # ============================================================
 # INSERT BIGQUERY
