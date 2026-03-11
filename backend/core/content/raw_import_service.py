@@ -80,31 +80,24 @@ def parse_raw_blocks(text: str) -> List[Dict]:
         # TITLE
         # ----------------------------------------------------
 
-        title_match = re.search(r"^(.*?)\n", bloc)
+        lines = bloc.splitlines()
 
-        if not title_match:
-            print(f"[RAW_IMPORT] Bloc #{i} ignoré (pas de title)")
+        if not lines:
+            print(f"[RAW_IMPORT] Bloc #{i} ignoré (vide)")
             continue
 
-        title = title_match.group(1).strip()
+        title = lines[0].strip()
 
         print(f"[RAW_IMPORT] Title détecté : {title[:80]}")
 
         # ----------------------------------------------------
-        # RAW TEXT 1
+        # DATE_SOURCE
         # ----------------------------------------------------
 
-        raw1_match = re.search(r"RAW_TEXT\s*:(.*?)DATE_SOURCE", bloc, re.S)
-
-        raw1 = raw1_match.group(1).strip() if raw1_match else ""
-
-        print(f"[RAW_IMPORT] RAW_TEXT_1 length : {len(raw1)}")
-
-        # ----------------------------------------------------
-        # DATE
-        # ----------------------------------------------------
-
-        date_match = re.search(r"DATE_SOURCE\s*:(.*?)\n", bloc)
+        date_match = re.search(
+            r"DATE_SOURCE\s*:\s*([^\n\r]+)",
+            bloc
+        )
 
         if not date_match:
             print(f"[RAW_IMPORT] Bloc #{i} ignoré (pas de DATE_SOURCE)")
@@ -119,24 +112,22 @@ def parse_raw_blocks(text: str) -> List[Dict]:
             continue
 
         # ----------------------------------------------------
-        # RAW TEXT 2
+        # RAW_TEXT (toutes occurrences)
         # ----------------------------------------------------
 
-        raw2_match = re.search(
-            r"DATE_SOURCE\s*:.*?\n\s*RAW_TEXT\s*:(.*)",
+        raw_matches = re.findall(
+            r"RAW_TEXT\s*:\s*(.*?)(?=\n[A-Z_]+\s*:|$)",
             bloc,
-            re.S,
+            re.S
         )
 
-        raw2 = raw2_match.group(1).strip() if raw2_match else ""
+        raw_parts = [r.strip() for r in raw_matches if r.strip()]
 
-        print(f"[RAW_IMPORT] RAW_TEXT_2 length : {len(raw2)}")
+        if not raw_parts:
+            print(f"[RAW_IMPORT] Bloc #{i} ignoré (pas de RAW_TEXT)")
+            continue
 
-        # ----------------------------------------------------
-        # FINAL TEXT
-        # ----------------------------------------------------
-
-        raw_text = f"{raw1}\n\n{raw2}".strip()
+        raw_text = "\n\n".join(raw_parts)
 
         print(f"[RAW_IMPORT] RAW_TEXT final length : {len(raw_text)}")
 
