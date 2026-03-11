@@ -66,7 +66,7 @@ def parse_raw_blocks(text: str) -> List[Dict]:
 
     text = text.replace("\r\n", "\n")
 
-    blocs = text.split("TITLE :")
+    blocs = re.split(r"\n?\s*TITLE\s*:", text)
 
     print(f"[RAW_IMPORT] Nombre de blocs détectés : {len(blocs)-1}")
 
@@ -80,49 +80,53 @@ def parse_raw_blocks(text: str) -> List[Dict]:
 
             lines = bloc.split("\n")
 
+            # -------------------------
+            # TITLE
+            # -------------------------
+
             title = lines[0].strip()
 
             # -------------------------
-            # DATE
+            # DATE_SOURCE
             # -------------------------
+
+            date_source = None
 
             date_match = re.search(
                 r"DATE_SOURCE\s*:\s*(.+)",
                 bloc
             )
 
-            if not date_match:
-                print(f"[RAW_IMPORT] Bloc #{i} sans DATE_SOURCE")
-                continue
+            if date_match:
+                date_str = date_match.group(1).strip()
 
-            date_source = parse_date_fr(
-                date_match.group(1).strip()
-            )
+                try:
+                    date_source = parse_date_fr(date_str)
+                except Exception:
+                    print(f"[RAW_IMPORT] Bloc #{i} date invalide : {date_str}")
 
             # -------------------------
-            # RAW TEXT
+            # RAW_TEXT
             # -------------------------
 
             raw_text = bloc
 
-            raw_text = re.sub(r"DATE_SOURCE\s*:\s*.+", "", raw_text)
-            raw_text = re.sub(r"RAW_TEXT\s*:", "", raw_text)
-
             raw_text = raw_text.replace(title, "", 1)
+
+            raw_text = re.sub(r"RAW_TEXT\s*:", "", raw_text)
+            raw_text = re.sub(r"DATE_SOURCE\s*:\s*.+", "", raw_text)
 
             raw_text = raw_text.strip()
 
             if not raw_text:
-                print(f"[RAW_IMPORT] Bloc #{i} sans texte")
+                print(f"[RAW_IMPORT] Bloc #{i} vide")
                 continue
 
-            results.append(
-                {
-                    "TITLE": title,
-                    "DATE_SOURCE": date_source,
-                    "RAW_TEXT": raw_text,
-                }
-            )
+            results.append({
+                "TITLE": title,
+                "DATE_SOURCE": date_source,
+                "RAW_TEXT": raw_text
+            })
 
         except Exception as e:
 
