@@ -23,6 +23,11 @@ type RawStats = {
   total_error: number;
 };
 
+type SourceItem = {
+  id_source: string;
+  label: string;
+};
+
 const PAGE_SIZE = 50;
 
 export default function ContentStockPage() {
@@ -33,6 +38,7 @@ export default function ContentStockPage() {
 
   const [raws, setRaws] = useState<RawItem[]>([]);
   const [stats, setStats] = useState<RawStats | null>(null);
+  const [sources, setSources] = useState<SourceItem[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -50,7 +56,7 @@ export default function ContentStockPage() {
   const [importResult, setImportResult] = useState("");
 
   // =========================
-  // LOAD
+  // LOAD STOCK
   // =========================
 
   async function load() {
@@ -83,6 +89,23 @@ export default function ContentStockPage() {
   }, [statusFilter, sourceFilter]);
 
   // =========================
+  // LOAD SOURCES
+  // =========================
+
+  useEffect(() => {
+    async function loadSources() {
+      try {
+        const res = await api.get("/content/source/list");
+        setSources(res.sources || []);
+      } catch (e) {
+        console.error("Erreur chargement sources", e);
+      }
+    }
+
+    loadSources();
+  }, []);
+
+  // =========================
   // IMPORT RAW
   // =========================
 
@@ -101,7 +124,7 @@ export default function ContentStockPage() {
   async function handleImport() {
 
     if (!file) return alert("Choisissez un fichier");
-    if (!sourceId) return alert("Indiquez un ID_SOURCE");
+    if (!sourceId) return alert("Choisissez une source");
 
     setImportLoading(true);
     setImportResult("");
@@ -217,51 +240,53 @@ export default function ContentStockPage() {
         </button>
       </div>
 
-      {/* IMPORT BLOCK */}
-      <div className="border rounded-lg p-6 space-y-6 bg-gray-50">
-        <h2 className="text-lg font-semibold">Import RAW Content</h2>
+      {/* IMPORT COMPACT */}
+      <div className="border rounded-lg p-4 bg-gray-50">
+        <div className="flex flex-wrap items-center gap-4">
 
-        <div className="space-y-2">
-          <label>ID_SOURCE</label>
-          <input
-            type="text"
+          <select
             value={sourceId}
             onChange={(e) => setSourceId(e.target.value)}
-            className="border rounded px-3 py-2 w-full"
-            placeholder="JDN"
-          />
-        </div>
+            className="border rounded px-3 py-2 text-sm min-w-[180px]"
+          >
+            <option value="">Source</option>
+            {sources.map((s) => (
+              <option key={s.id_source} value={s.id_source}>
+                {s.label}
+              </option>
+            ))}
+          </select>
 
-        <div className="space-y-2">
-          <label>Fichier TXT</label>
           <input
             type="file"
             accept=".txt"
             onChange={(e) =>
               handleFileChange(e.target.files?.[0] || null)
             }
+            className="text-sm"
           />
+
+          {previewCount !== null && (
+            <span className="text-xs text-gray-500">
+              {previewCount} détectés
+            </span>
+          )}
+
+          <button
+            onClick={handleImport}
+            disabled={importLoading}
+            className="bg-black text-white px-4 py-2 rounded text-sm"
+          >
+            {importLoading ? "Import..." : "Importer"}
+          </button>
+
+          {importResult && (
+            <span className="text-xs font-medium">
+              {importResult}
+            </span>
+          )}
+
         </div>
-
-        {previewCount !== null && (
-          <div className="text-sm text-gray-600">
-            {previewCount} contenus détectés
-          </div>
-        )}
-
-        <button
-          onClick={handleImport}
-          disabled={importLoading}
-          className="bg-black text-white px-4 py-2 rounded"
-        >
-          {importLoading ? "Import..." : "Importer"}
-        </button>
-
-        {importResult && (
-          <div className="text-sm font-medium">
-            {importResult}
-          </div>
-        )}
       </div>
 
       {/* STATS */}
@@ -403,6 +428,7 @@ function StatCard({
   yellow?: boolean;
   red?: boolean;
 }) {
+
   let bg = "bg-white";
   let text = "text-gray-800";
 
