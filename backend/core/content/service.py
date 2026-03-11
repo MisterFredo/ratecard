@@ -627,7 +627,7 @@ def list_raw_stock(
         for r in rows
     ]
 
-def destock_all_raw_contents(batch_size: int = 50):
+def destock_all_raw_contents(batch_size: int = 10):
 
     total_processed = 0
     total_errors = 0
