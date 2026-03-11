@@ -768,7 +768,6 @@ def destock_raw_contents(
         "total_selected": len(raws),
     }
 
-
 def delete_raw_content(id_raw: str) -> None:
 
     if not id_raw:
