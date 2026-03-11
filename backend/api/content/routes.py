@@ -220,9 +220,17 @@ def raw_stock_route(
 @router.post("/raw/destock")
 def destock_raw_route(payload: ContentRawDestockRequest):
 
-    result = destock_raw_contents(
-        limit=payload.limit or 5,
-        specific_id=payload.id_raw
+    # 🔹 Si on destock un RAW précis → on garde le comportement actuel
+    if payload.id_raw:
+        result = destock_raw_contents(
+            limit=1,
+            specific_id=payload.id_raw
+        )
+        return {"status": "ok", "processed": result}
+
+    # 🔹 Sinon → on destock TOUT en batchs successifs
+    result = destock_all_raw_contents(
+        batch_size=payload.limit or 50
     )
 
     return {"status": "ok", "processed": result}
