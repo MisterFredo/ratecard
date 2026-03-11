@@ -156,7 +156,7 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
         payload.append(
             {
                 "ID_RAW": str(uuid.uuid4()),
-                "CREATED_AT": datetime.utcnow(),
+                "CREATED_AT": datetime.utcnow().isoformat(),
                 "STATUS": "STORED",
 
                 "SOURCE_TITLE": r["TITLE"],
@@ -168,17 +168,15 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
 
     print(f"[RAW_IMPORT] Nombre de lignes à insérer : {len(payload)}")
 
-    import pandas as pd
     from google.cloud import bigquery
 
-    df = pd.DataFrame(payload)
-
     job_config = bigquery.LoadJobConfig(
+        source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
         write_disposition="WRITE_APPEND"
     )
 
-    job = client.load_table_from_dataframe(
-        df,
+    job = client.load_table_from_json(
+        payload,
         table_id,
         job_config=job_config
     )
@@ -188,7 +186,6 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
     print("[RAW_IMPORT] Insertion BigQuery OK")
 
     return len(payload)
-
 # ============================================================
 # MAIN SERVICE
 # ============================================================
