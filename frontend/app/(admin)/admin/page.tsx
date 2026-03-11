@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { api } from "@/lib/api";
 
 export default function AdminHome() {
 
@@ -9,10 +10,6 @@ export default function AdminHome() {
   const [loading, setLoading] = useState(false);
   const [previewCount, setPreviewCount] = useState<number | null>(null);
   const [result, setResult] = useState("");
-
-  // ============================================================
-  // PREVIEW FILE
-  // ============================================================
 
   async function handleFileChange(f: File | null) {
 
@@ -26,17 +23,8 @@ export default function AdminHome() {
 
     const matches = text.match(/TITLE\s*:/g);
 
-    if (matches) {
-      setPreviewCount(matches.length);
-    } else {
-      setPreviewCount(0);
-    }
-
+    setPreviewCount(matches ? matches.length : 0);
   }
-
-  // ============================================================
-  // IMPORT
-  // ============================================================
 
   async function handleImport() {
 
@@ -60,34 +48,22 @@ export default function AdminHome() {
 
     try {
 
-      const res = await fetch("/api/content/raw/import", {
-        method: "POST",
-        body: form
-      });
+      const res = await api.post(
+        "/content/raw/import",
+        form
+      );
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text);
-      }
-
-      const data = await res.json();
-
-      setResult(`Import réussi : ${data.imported} contenus`);
+      setResult(`Import réussi : ${res.imported} contenus`);
 
     } catch (e: any) {
 
       console.error(e);
-      setResult(`Erreur : ${e.message}`);
+      setResult("Erreur import");
 
     }
 
     setLoading(false);
-
   }
-
-  // ============================================================
-  // UI
-  // ============================================================
 
   return (
 
@@ -103,41 +79,26 @@ export default function AdminHome() {
         </p>
       </div>
 
-      {/* IMPORT RAW */}
-
       <div className="border rounded-lg p-6 space-y-6 bg-gray-50">
 
-        <div>
-          <h2 className="text-xl font-semibold">
-            Import RAW Content (temporaire)
-          </h2>
-
-          <p className="text-sm text-gray-500">
-            Import ponctuel de fichiers structurés dans RATECARD_CONTENT_RAW
-          </p>
-        </div>
+        <h2 className="text-xl font-semibold">
+          Import RAW Content (temporaire)
+        </h2>
 
         <div className="space-y-2">
-
-          <label className="text-sm font-medium">
-            ID_SOURCE
-          </label>
+          <label>ID_SOURCE</label>
 
           <input
             type="text"
             value={sourceId}
             onChange={(e) => setSourceId(e.target.value)}
-            placeholder="ex : JDN"
             className="border rounded px-3 py-2 w-full"
+            placeholder="JDN"
           />
-
         </div>
 
         <div className="space-y-2">
-
-          <label className="text-sm font-medium">
-            Fichier TXT
-          </label>
+          <label>Fichier TXT</label>
 
           <input
             type="file"
@@ -146,27 +107,12 @@ export default function AdminHome() {
               handleFileChange(e.target.files?.[0] || null)
             }
           />
-
         </div>
 
         {previewCount !== null && (
-
           <div className="text-sm text-gray-600">
-
-            {previewCount === 0 && (
-              <span className="text-red-600">
-                Aucun bloc TITLE détecté
-              </span>
-            )}
-
-            {previewCount > 0 && (
-              <span>
-                {previewCount} contenus détectés dans le fichier
-              </span>
-            )}
-
+            {previewCount} contenus détectés
           </div>
-
         )}
 
         <button
@@ -174,13 +120,11 @@ export default function AdminHome() {
           disabled={loading}
           className="bg-black text-white px-4 py-2 rounded"
         >
-
-          {loading ? "Import en cours..." : "Importer"}
-
+          {loading ? "Import..." : "Importer"}
         </button>
 
         {result && (
-          <div className="text-sm font-medium text-gray-700">
+          <div className="text-sm font-medium">
             {result}
           </div>
         )}
@@ -188,7 +132,5 @@ export default function AdminHome() {
       </div>
 
     </div>
-
   );
-
 }
