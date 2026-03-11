@@ -172,7 +172,7 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
                 "TITLE": r["TITLE"],
                 "DATE_SOURCE": r["DATE_SOURCE"].isoformat(),
                 "RAW_TEXT": r["RAW_TEXT"],
-                "ID_SOURCE": id_source,
+                "SOURCE_ID": id_source,
             }
         )
 
