@@ -65,14 +65,19 @@ export default function AdminHome() {
         body: form
       });
 
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+
       const data = await res.json();
 
       setResult(`Import réussi : ${data.imported} contenus`);
 
-    } catch (e) {
+    } catch (e: any) {
 
       console.error(e);
-      alert("Erreur import");
+      setResult(`Erreur : ${e.message}`);
 
     }
 
@@ -88,8 +93,6 @@ export default function AdminHome() {
 
     <div className="space-y-10">
 
-      {/* DASHBOARD */}
-
       <div>
         <h1 className="text-2xl font-semibold mb-4">
           Dashboard Ratecard
@@ -100,7 +103,7 @@ export default function AdminHome() {
         </p>
       </div>
 
-      {/* IMPORT RAW TEMPORAIRE */}
+      {/* IMPORT RAW */}
 
       <div className="border rounded-lg p-6 space-y-6 bg-gray-50">
 
@@ -113,8 +116,6 @@ export default function AdminHome() {
             Import ponctuel de fichiers structurés dans RATECARD_CONTENT_RAW
           </p>
         </div>
-
-        {/* SOURCE */}
 
         <div className="space-y-2">
 
@@ -132,8 +133,6 @@ export default function AdminHome() {
 
         </div>
 
-        {/* FILE */}
-
         <div className="space-y-2">
 
           <label className="text-sm font-medium">
@@ -149,8 +148,6 @@ export default function AdminHome() {
           />
 
         </div>
-
-        {/* PREVIEW */}
 
         {previewCount !== null && (
 
@@ -172,8 +169,6 @@ export default function AdminHome() {
 
         )}
 
-        {/* BUTTON */}
-
         <button
           onClick={handleImport}
           disabled={loading}
@@ -184,10 +179,8 @@ export default function AdminHome() {
 
         </button>
 
-        {/* RESULT */}
-
         {result && (
-          <div className="text-green-600 font-medium">
+          <div className="text-sm font-medium text-gray-700">
             {result}
           </div>
         )}
