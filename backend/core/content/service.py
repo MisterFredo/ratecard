@@ -639,6 +639,11 @@ def destock_all_raw_contents(batch_size: int = 50):
         if result["total_selected"] == 0:
             break
 
+        # 🔐 Sécurité anti-boucle infinie
+        if result["processed"] == 0:
+            print("Aucun traitement réussi dans ce batch → arrêt de sécurité")
+            break
+
         total_processed += result["processed"]
         total_errors += result["errors"]
 
