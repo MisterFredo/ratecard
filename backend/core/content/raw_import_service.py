@@ -1,7 +1,10 @@
 import re
-from datetime import datetime
 import uuid
-from typing import List, Dict
+import requests
+from bs4 import BeautifulSoup
+from datetime import datetime, timezone, date
+from typing import Optional, Dict, Any, List
+from urllib.parse import urljoin
 
 from utils.bigquery_utils import get_bigquery_client
 from config import BQ_PROJECT, BQ_DATASET
