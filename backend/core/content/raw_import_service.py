@@ -3,14 +3,13 @@ from datetime import datetime
 from typing import List, Dict
 
 from utils.bigquery_utils import get_bigquery_client
+from config import BQ_PROJECT, BQ_DATASET
 
 
 # ============================================================
 # CONFIG
 # ============================================================
 
-PROJECT = "adex-5555"
-DATASET = "RATECARD"
 TABLE = "RATECARD_CONTENT_RAW"
 
 
@@ -61,9 +60,9 @@ def parse_raw_blocks(text: str) -> List[Dict]:
 
         bloc = bloc.strip()
 
-        # ----------------------------------------
+        # ----------------------------------------------------
         # TITLE
-        # ----------------------------------------
+        # ----------------------------------------------------
 
         title_match = re.search(r"^(.*?)\n", bloc)
 
@@ -72,17 +71,17 @@ def parse_raw_blocks(text: str) -> List[Dict]:
 
         title = title_match.group(1).strip()
 
-        # ----------------------------------------
-        # RAW TEXT 1 (avant DATE_SOURCE)
-        # ----------------------------------------
+        # ----------------------------------------------------
+        # RAW TEXT 1
+        # ----------------------------------------------------
 
         raw1_match = re.search(r"RAW_TEXT\s*:(.*?)DATE_SOURCE", bloc, re.S)
 
         raw1 = raw1_match.group(1).strip() if raw1_match else ""
 
-        # ----------------------------------------
+        # ----------------------------------------------------
         # DATE
-        # ----------------------------------------
+        # ----------------------------------------------------
 
         date_match = re.search(r"DATE_SOURCE\s*:(.*?)\n", bloc)
 
@@ -96,9 +95,9 @@ def parse_raw_blocks(text: str) -> List[Dict]:
         except Exception:
             continue
 
-        # ----------------------------------------
-        # RAW TEXT 2 (après DATE_SOURCE)
-        # ----------------------------------------
+        # ----------------------------------------------------
+        # RAW TEXT 2
+        # ----------------------------------------------------
 
         raw2_match = re.search(
             r"DATE_SOURCE\s*:.*?\n\s*RAW_TEXT\s*:(.*)",
@@ -108,9 +107,9 @@ def parse_raw_blocks(text: str) -> List[Dict]:
 
         raw2 = raw2_match.group(1).strip() if raw2_match else ""
 
-        # ----------------------------------------
+        # ----------------------------------------------------
         # FINAL TEXT
-        # ----------------------------------------
+        # ----------------------------------------------------
 
         raw_text = f"{raw1}\n\n{raw2}".strip()
 
@@ -133,7 +132,7 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
 
     client = get_bigquery_client()
 
-    table_id = f"{PROJECT}.{DATASET}.{TABLE}"
+    table_id = f"{BQ_PROJECT}.{BQ_DATASET}.{TABLE}"
 
     payload = []
 
