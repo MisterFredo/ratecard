@@ -99,8 +99,6 @@ RAW_TEXT :
 
 def parse_date_fr(date_str: str):
 
-    print(f"[RAW_IMPORT] Parsing date : {date_str}")
-
     mois = {
         "janvier": 1,
         "février": 2,
@@ -116,52 +114,120 @@ def parse_date_fr(date_str: str):
         "décembre": 12,
     }
 
-    parts = date_str.strip().split()
+    try:
 
-    if len(parts) != 3:
-        raise ValueError(f"[RAW_IMPORT] Format date invalide : {date_str}")
+        # nettoyage
+        date_str = date_str.strip().lower()
 
-    jour = int(parts[0])
-    mois_num = mois[parts[1].lower()]
-    annee = int(parts[2])
+        # suppression parasites éventuels
+        date_str = re.sub(r"[–\-].*$", "", date_str)
+        date_str = date_str.replace("  ", " ")
 
-    parsed = datetime(annee, mois_num, jour).date()
+        parts = date_str.split()
 
-    print(f"[RAW_IMPORT] Date parsed : {parsed}")
+        if len(parts) < 3:
+            return None
 
-    return parsed
+        jour = int(parts[0])
+        mois_num = mois.get(parts[1])
+        annee = int(parts[2])
 
+        if not mois_num:
+            return None
 
+        return datetime(annee, mois_num, jour).date()
+
+    except Exception:
+
+        print("[RAW_IMPORT] date ignorée:", date_str)
+
+        return None
 # ============================================================
 # PARSE RAW FILE
 # ============================================================
 
-def parse_raw_blocks(text):
+def parse_raw_blocks(text: str) -> List[Dict]:
+
+    print("[RAW_IMPORT] Début parsing fichier")
+
+    text = text.replace("\r\n", "\n")
 
     blocs = re.split(r"\n?\s*TITLE\s*:", text)
 
-    rows = []
+    print(f"[RAW_IMPORT] Nombre de blocs détectés : {len(blocs)-1}")
 
-    for bloc in blocs[1:]:
+    results = []
+
+    for i, bloc in enumerate(blocs[1:], start=1):
 
         bloc = bloc.strip()
 
-        title = bloc.split("\n")[0].strip()
+        try:
 
-        date_match = re.search(r"DATE_SOURCE\s*:\s*([^\n]+)", bloc)
-        date_source = parse_date_fr(date_match.group(1)) if date_match else None
+            lines = bloc.split("\n")
 
-        raw_text = re.sub(r"(DATE_SOURCE\s*:\s*[^\n]+)", "", bloc)
-        raw_text = re.sub(r"RAW_TEXT\s*:", "", raw_text)
-        raw_text = raw_text.replace(title, "", 1).strip()
+            if not lines:
+                continue
 
-        rows.append({
-            "TITLE": title,
-            "DATE_SOURCE": date_source,
-            "RAW_TEXT": raw_text
-        })
+            # --------------------------------
+            # TITLE
+            # --------------------------------
 
-    return rows
+            title = lines[0].strip()
+
+            # --------------------------------
+            # DATE_SOURCE
+            # --------------------------------
+
+            date_source = None
+
+            date_match = re.search(
+                r"DATE_SOURCE\s*:\s*([^\n]+)",
+                bloc
+            )
+
+            if date_match:
+
+                date_str = date_match.group(1).strip()
+
+                try:
+                    date_source = parse_date_fr(date_str)
+                except Exception:
+                    print("[RAW_IMPORT] date non parsée:", date_str)
+
+            # --------------------------------
+            # RAW TEXT
+            # --------------------------------
+
+            raw_text = bloc
+
+            raw_text = raw_text.replace(title, "", 1)
+
+            raw_text = re.sub(r"DATE_SOURCE\s*:\s*[^\n]+", "", raw_text)
+
+            raw_text = re.sub(r"RAW_TEXT\s*:", "", raw_text)
+
+            raw_text = raw_text.strip()
+
+            if not raw_text:
+                print(f"[RAW_IMPORT] Bloc #{i} vide")
+                continue
+
+            results.append(
+                {
+                    "TITLE": title,
+                    "DATE_SOURCE": date_source,
+                    "RAW_TEXT": raw_text,
+                }
+            )
+
+        except Exception as e:
+
+            print(f"[RAW_IMPORT] Bloc #{i} erreur : {e}")
+
+    print(f"[RAW_IMPORT] Blocs valides : {len(results)}")
+
+    return results
 
 # ============================================================
 # INSERT BIGQUERY
