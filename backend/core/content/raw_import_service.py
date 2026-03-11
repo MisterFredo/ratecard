@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+import uuid
 from typing import List, Dict
 
 from utils.bigquery_utils import get_bigquery_client
