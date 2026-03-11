@@ -182,26 +182,14 @@ def store_raw_route(payload: ContentRawCreate):
 # ============================================================
 
 @router.post("/raw/import")
-async def import_raw_route(
-    file: UploadFile = File(...),
-    id_source: str = Form(...)
-):
-    try:
+def import_raw_route(payload: dict):
 
-        content = await file.read()
-        text = content.decode("utf-8")
+    text = payload.get("text")
+    id_source = payload.get("id_source")
 
-        count = import_raw_content(text, id_source)
+    count = import_raw_content(text, id_source)
 
-        return {
-            "status": "ok",
-            "imported": count
-        }
-
-    except Exception as e:
-
-        logger.exception("Erreur import RAW")
-        raise HTTPException(400, str(e))
+    return {"imported": count}
 
 # ============================================================
 # LIST RAW STOCK
