@@ -3,6 +3,7 @@ import uuid
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone, date
+from dateutil.parser import parse
 from typing import Optional, Dict, Any, List
 from urllib.parse import urljoin
 
@@ -97,50 +98,24 @@ RAW_TEXT :
 # PARSE DATE (FR → ISO)
 # ============================================================
 
-def parse_date_fr(date_str: str):
+def parse_date_safe(date_str: str):
 
-    mois = {
-        "janvier": 1,
-        "février": 2,
-        "mars": 3,
-        "avril": 4,
-        "mai": 5,
-        "juin": 6,
-        "juillet": 7,
-        "août": 8,
-        "septembre": 9,
-        "octobre": 10,
-        "novembre": 11,
-        "décembre": 12,
-    }
+    if not date_str:
+        return None
 
     try:
 
-        # nettoyage
-        date_str = date_str.strip().lower()
-
-        # suppression parasites éventuels
+        # nettoyage léger
+        date_str = date_str.strip()
         date_str = re.sub(r"[–\-].*$", "", date_str)
-        date_str = date_str.replace("  ", " ")
+        date_str = date_str.replace(",", "")
 
-        parts = date_str.split()
-
-        if len(parts) < 3:
-            return None
-
-        jour = int(parts[0])
-        mois_num = mois.get(parts[1])
-        annee = int(parts[2])
-
-        if not mois_num:
-            return None
-
-        return datetime(annee, mois_num, jour).date()
+        # parsing intelligent
+        return parse(date_str, dayfirst=True).date()
 
     except Exception:
 
         print("[RAW_IMPORT] date ignorée:", date_str)
-
         return None
 # ============================================================
 # PARSE RAW FILE
@@ -191,7 +166,7 @@ def parse_raw_blocks(text: str) -> List[Dict]:
                 date_str = date_match.group(1).strip()
 
                 try:
-                    date_source = parse_date_fr(date_str)
+                    date_source = parse_date_safe(date_str)
                 except Exception:
                     print("[RAW_IMPORT] date non parsée:", date_str)
 
