@@ -98,25 +98,14 @@ RAW_TEXT :
 # PARSE DATE (FR → ISO)
 # ============================================================
 
-def parse_date_safe(date_str: str):
-
-    if not date_str:
-        return None
+def parse_date(date_str):
 
     try:
-
-        # nettoyage léger
-        date_str = date_str.strip()
-        date_str = re.sub(r"[–\-].*$", "", date_str)
-        date_str = date_str.replace(",", "")
-
-        # parsing intelligent
-        return parse(date_str, dayfirst=True).date()
-
+        return parse(date_str, dayfirst=True, fuzzy=True).date()
     except Exception:
-
         print("[RAW_IMPORT] date ignorée:", date_str)
         return None
+        
 # ============================================================
 # PARSE RAW FILE
 # ============================================================
@@ -166,7 +155,7 @@ def parse_raw_blocks(text: str) -> List[Dict]:
                 date_str = date_match.group(1).strip()
 
                 try:
-                    date_source = parse_date_safe(date_str)
+                    date_source = parse_date(date_str)
                 except Exception:
                     print("[RAW_IMPORT] date non parsée:", date_str)
 
