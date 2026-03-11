@@ -167,6 +167,10 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
 
         payload.append(
             {
+                "id_raw": str(uuid.uuid4()),
+                "created_at": datetime.utcnow().isoformat(),
+                "status": "STORED",
+
                 "SOURCE_TITLE": r["TITLE"],
                 "DATE_SOURCE": r["DATE_SOURCE"].isoformat(),
                 "RAW_TEXT": r["RAW_TEXT"],
