@@ -155,12 +155,12 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
 
         payload.append(
             {
-                "id_raw": str(uuid.uuid4()),
-                "created_at": datetime.utcnow().isoformat(),
-                "status": "STORED",
+                "ID_RAW": str(uuid.uuid4()),
+                "CREATED_AT": datetime.utcnow(),
+                "STATUS": "STORED",
 
                 "SOURCE_TITLE": r["TITLE"],
-                "DATE_SOURCE": r["DATE_SOURCE"].isoformat(),
+                "DATE_SOURCE": r["DATE_SOURCE"],
                 "RAW_TEXT": r["RAW_TEXT"],
                 "SOURCE_ID": id_source,
             }
@@ -168,16 +168,26 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
 
     print(f"[RAW_IMPORT] Nombre de lignes à insérer : {len(payload)}")
 
-    errors = client.insert_rows_json(table_id, payload)
+    import pandas as pd
+    from google.cloud import bigquery
 
-    if errors:
-        print(f"[RAW_IMPORT] Erreurs BigQuery : {errors}")
-        raise Exception(errors)
+    df = pd.DataFrame(payload)
+
+    job_config = bigquery.LoadJobConfig(
+        write_disposition="WRITE_APPEND"
+    )
+
+    job = client.load_table_from_dataframe(
+        df,
+        table_id,
+        job_config=job_config
+    )
+
+    job.result()
 
     print("[RAW_IMPORT] Insertion BigQuery OK")
 
     return len(payload)
-
 
 # ============================================================
 # MAIN SERVICE
