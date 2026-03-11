@@ -179,7 +179,7 @@ export default function ContentStockPage() {
     if (!window.confirm("Déstocker tout le stock ?")) return;
 
     setProcessing(true);
-    await api.post("/content/raw/destock", { limit: 10 });
+    await api.post("/content/raw/destock", { limit: 50 });
     await load();
     setProcessing(false);
   }
