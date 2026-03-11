@@ -64,9 +64,11 @@ def parse_raw_blocks(text: str) -> List[Dict]:
 
     print("[RAW_IMPORT] Début parsing fichier")
 
+    text = text.replace("\r\n", "\n")
+
     blocs = text.split("TITLE :")
 
-    print(f"[RAW_IMPORT] Nombre de blocs détectés (brut) : {len(blocs)-1}")
+    print(f"[RAW_IMPORT] Nombre de blocs détectés : {len(blocs)-1}")
 
     results = []
 
@@ -74,70 +76,57 @@ def parse_raw_blocks(text: str) -> List[Dict]:
 
         bloc = bloc.strip()
 
-        print(f"[RAW_IMPORT] Analyse bloc #{i}")
-
-        # ----------------------------------------------------
-        # TITLE
-        # ----------------------------------------------------
-
-        lines = bloc.splitlines()
-
-        if not lines:
-            print(f"[RAW_IMPORT] Bloc #{i} ignoré (vide)")
-            continue
-
-        title = lines[0].strip()
-
-        print(f"[RAW_IMPORT] Title détecté : {title[:80]}")
-
-        # ----------------------------------------------------
-        # DATE_SOURCE
-        # ----------------------------------------------------
-
-        date_match = re.search(
-            r"DATE_SOURCE\s*:\s*([^\n\r]+)",
-            bloc
-        )
-
-        if not date_match:
-            print(f"[RAW_IMPORT] Bloc #{i} ignoré (pas de DATE_SOURCE)")
-            continue
-
-        date_source_str = date_match.group(1).strip()
-
         try:
-            date_source = parse_date_fr(date_source_str)
+
+            lines = bloc.split("\n")
+
+            title = lines[0].strip()
+
+            # -------------------------
+            # DATE
+            # -------------------------
+
+            date_match = re.search(
+                r"DATE_SOURCE\s*:\s*(.+)",
+                bloc
+            )
+
+            if not date_match:
+                print(f"[RAW_IMPORT] Bloc #{i} sans DATE_SOURCE")
+                continue
+
+            date_source = parse_date_fr(
+                date_match.group(1).strip()
+            )
+
+            # -------------------------
+            # RAW TEXT
+            # -------------------------
+
+            raw_text = bloc
+
+            raw_text = re.sub(r"DATE_SOURCE\s*:\s*.+", "", raw_text)
+            raw_text = re.sub(r"RAW_TEXT\s*:", "", raw_text)
+
+            raw_text = raw_text.replace(title, "", 1)
+
+            raw_text = raw_text.strip()
+
+            if not raw_text:
+                print(f"[RAW_IMPORT] Bloc #{i} sans texte")
+                continue
+
+            results.append(
+                {
+                    "TITLE": title,
+                    "DATE_SOURCE": date_source,
+                    "RAW_TEXT": raw_text,
+                }
+            )
+
         except Exception as e:
-            print(f"[RAW_IMPORT] Erreur parsing date bloc #{i} : {e}")
-            continue
 
-        # ----------------------------------------------------
-        # RAW_TEXT (toutes occurrences)
-        # ----------------------------------------------------
-
-        raw_matches = re.findall(
-            r"RAW_TEXT\s*:\s*(.*?)(?=\n[A-Z_]+\s*:|$)",
-            bloc,
-            re.S
-        )
-
-        raw_parts = [r.strip() for r in raw_matches if r.strip()]
-
-        if not raw_parts:
-            print(f"[RAW_IMPORT] Bloc #{i} ignoré (pas de RAW_TEXT)")
-            continue
-
-        raw_text = "\n\n".join(raw_parts)
-
-        print(f"[RAW_IMPORT] RAW_TEXT final length : {len(raw_text)}")
-
-        results.append(
-            {
-                "TITLE": title,
-                "DATE_SOURCE": date_source,
-                "RAW_TEXT": raw_text,
-            }
-        )
+            print(f"[RAW_IMPORT] Bloc #{i} erreur : {e}")
 
     print(f"[RAW_IMPORT] Blocs valides : {len(results)}")
 
