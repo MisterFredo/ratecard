@@ -615,6 +615,30 @@ def list_raw_stock(
         for r in rows
     ]
 
+def destock_all_raw_contents(batch_size: int = 50):
+
+    total_processed = 0
+    total_errors = 0
+
+    while True:
+
+        result = destock_raw_contents(limit=batch_size)
+
+        if result["total_selected"] == 0:
+            break
+
+        total_processed += result["processed"]
+        total_errors += result["errors"]
+
+        print(
+            f"Batch terminé → processed: {result['processed']} | errors: {result['errors']}"
+        )
+
+    return {
+        "total_processed": total_processed,
+        "total_errors": total_errors,
+    }
+
 def destock_raw_contents(
     limit: int = 5,
     specific_id: Optional[str] = None
