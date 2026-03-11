@@ -26,15 +26,28 @@ type RawStats = {
 const PAGE_SIZE = 50;
 
 export default function ContentStockPage() {
+
+  // =========================
+  // STATE
+  // =========================
+
   const [raws, setRaws] = useState<RawItem[]>([]);
   const [stats, setStats] = useState<RawStats | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [sourceFilter, setSourceFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("");
+
+  // IMPORT
+  const [file, setFile] = useState<File | null>(null);
+  const [sourceId, setSourceId] = useState("");
+  const [importLoading, setImportLoading] = useState(false);
+  const [previewCount, setPreviewCount] = useState<number | null>(null);
+  const [importResult, setImportResult] = useState("");
 
   // =========================
   // LOAD
@@ -45,7 +58,6 @@ export default function ContentStockPage() {
 
     try {
       const queryParams = new URLSearchParams();
-
       if (statusFilter) queryParams.append("status", statusFilter);
       if (sourceFilter) queryParams.append("source_name", sourceFilter);
 
@@ -56,6 +68,7 @@ export default function ContentStockPage() {
 
       setRaws(listRes.raws || []);
       setStats(statsRes.stats || null);
+
     } catch (e) {
       console.error(e);
       alert("Erreur chargement stock");
@@ -68,6 +81,49 @@ export default function ContentStockPage() {
     load();
     setPage(1);
   }, [statusFilter, sourceFilter]);
+
+  // =========================
+  // IMPORT RAW
+  // =========================
+
+  async function handleFileChange(f: File | null) {
+    setFile(f);
+    setPreviewCount(null);
+    setImportResult("");
+
+    if (!f) return;
+
+    const text = await f.text();
+    const matches = text.match(/TITLE\s*:/g);
+    setPreviewCount(matches ? matches.length : 0);
+  }
+
+  async function handleImport() {
+
+    if (!file) return alert("Choisissez un fichier");
+    if (!sourceId) return alert("Indiquez un ID_SOURCE");
+
+    setImportLoading(true);
+    setImportResult("");
+
+    try {
+      const text = await file.text();
+
+      const json = await api.post("/content/raw/import", {
+        id_source: sourceId,
+        text: text,
+      });
+
+      setImportResult(`Import réussi : ${json.imported} contenus`);
+      await load();
+
+    } catch (e) {
+      console.error(e);
+      setImportResult("Erreur import");
+    }
+
+    setImportLoading(false);
+  }
 
   // =========================
   // PAGINATION
@@ -85,14 +141,10 @@ export default function ContentStockPage() {
   // =========================
 
   function getStatusClasses(status: string) {
-    if (status === "STORED")
-      return "bg-yellow-100 text-yellow-700";
-    if (status === "PROCESSING")
-      return "bg-blue-100 text-blue-700";
-    if (status === "PROCESSED")
-      return "bg-green-100 text-green-700";
-    if (status === "ERROR")
-      return "bg-red-100 text-red-700";
+    if (status === "STORED") return "bg-yellow-100 text-yellow-700";
+    if (status === "PROCESSING") return "bg-blue-100 text-blue-700";
+    if (status === "PROCESSED") return "bg-green-100 text-green-700";
+    if (status === "ERROR") return "bg-red-100 text-red-700";
     return "bg-gray-100 text-gray-700";
   }
 
@@ -101,7 +153,7 @@ export default function ContentStockPage() {
   // =========================
 
   async function handleDestockBatch() {
-    if (!window.confirm("Générer les 50 plus anciens contenus ?")) return;
+    if (!window.confirm("Déstocker tout le stock ?")) return;
 
     setProcessing(true);
     await api.post("/content/raw/destock", { limit: 50 });
@@ -148,10 +200,9 @@ export default function ContentStockPage() {
   if (loading) return <div>Chargement…</div>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
 
       {/* HEADER */}
-
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
           Stock des sources
@@ -162,12 +213,58 @@ export default function ContentStockPage() {
           disabled={processing}
           className="bg-ratecard-green text-white px-4 py-2 rounded shadow"
         >
-          {processing ? "Traitement..." : "Déstocker les 50 plus anciens"}
+          {processing ? "Traitement..." : "Déstocker tout le stock"}
         </button>
       </div>
 
-      {/* STATS */}
+      {/* IMPORT BLOCK */}
+      <div className="border rounded-lg p-6 space-y-6 bg-gray-50">
+        <h2 className="text-lg font-semibold">Import RAW Content</h2>
 
+        <div className="space-y-2">
+          <label>ID_SOURCE</label>
+          <input
+            type="text"
+            value={sourceId}
+            onChange={(e) => setSourceId(e.target.value)}
+            className="border rounded px-3 py-2 w-full"
+            placeholder="JDN"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label>Fichier TXT</label>
+          <input
+            type="file"
+            accept=".txt"
+            onChange={(e) =>
+              handleFileChange(e.target.files?.[0] || null)
+            }
+          />
+        </div>
+
+        {previewCount !== null && (
+          <div className="text-sm text-gray-600">
+            {previewCount} contenus détectés
+          </div>
+        )}
+
+        <button
+          onClick={handleImport}
+          disabled={importLoading}
+          className="bg-black text-white px-4 py-2 rounded"
+        >
+          {importLoading ? "Import..." : "Importer"}
+        </button>
+
+        {importResult && (
+          <div className="text-sm font-medium">
+            {importResult}
+          </div>
+        )}
+      </div>
+
+      {/* STATS */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <StatCard label="Total" value={stats.total} />
@@ -179,7 +276,6 @@ export default function ContentStockPage() {
       )}
 
       {/* FILTERS */}
-
       <div className="flex gap-4">
         <select
           value={statusFilter}
@@ -203,7 +299,6 @@ export default function ContentStockPage() {
       </div>
 
       {/* TABLE */}
-
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="bg-gray-100 border-b text-left text-gray-700">
@@ -220,33 +315,20 @@ export default function ContentStockPage() {
         <tbody>
           {paginatedRaws.map((r) => (
             <tr key={r.id_raw} className="border-b hover:bg-gray-50 transition">
-
               <td className="p-2 text-gray-600">
                 {r.source_name || r.source_id}
               </td>
-
-              <td className="p-2 font-medium">
-                {r.source_title}
-              </td>
-
-              <td className="p-2 text-gray-600">
-                {formatDate(r.date_source)}
-              </td>
-
-              <td className="p-2 text-gray-600">
-                {formatDate(r.created_at)}
-              </td>
-
+              <td className="p-2 font-medium">{r.source_title}</td>
+              <td className="p-2 text-gray-600">{formatDate(r.date_source)}</td>
+              <td className="p-2 text-gray-600">{formatDate(r.created_at)}</td>
               <td className="p-2">
                 <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusClasses(r.status)}`}>
                   {r.status}
                 </span>
               </td>
-
               <td className="p-2 text-xs text-red-600 max-w-xs truncate">
                 {r.status === "ERROR" ? r.error_message : ""}
               </td>
-
               <td className="p-2 text-right space-x-3">
 
                 {r.status === "STORED" && (
@@ -282,7 +364,6 @@ export default function ContentStockPage() {
       </table>
 
       {/* PAGINATION */}
-
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-4">
           <button
