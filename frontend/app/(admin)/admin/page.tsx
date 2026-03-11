@@ -63,15 +63,12 @@ export default function AdminHome() {
 
       const res = await api.post(
         "/content/raw/import",
-        form,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data"
-          }
-        }
+        form
       );
 
-      setResult(`Import réussi : ${res.imported} contenus`);
+      const imported = res?.imported ?? res?.data?.imported ?? 0;
+
+      setResult(`Import réussi : ${imported} contenus`);
 
     } catch (e) {
 
