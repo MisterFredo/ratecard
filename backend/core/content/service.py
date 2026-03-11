@@ -464,6 +464,17 @@ def list_contents():
         for r in rows
     ]
 
+def list_active_sources():
+
+    rows = query_bq(f"""
+        SELECT id_source, label
+        FROM `{TABLE_SOURCE}`
+        WHERE status = 'ACTIVE'
+        ORDER BY label
+    """)
+
+    return rows
+
 # ============================================================
 # LIST CONTENTS ADMIN
 # ============================================================
