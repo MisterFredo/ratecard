@@ -252,7 +252,7 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
                 "STATUS": "STORED",
 
                 "SOURCE_TITLE": r["TITLE"],
-                "DATE_SOURCE": r["DATE_SOURCE"].isoformat() if r["DATE_SOURCE"] else None,
+                "DATE_SOURCE": r["DATE_SOURCE"].strftime("%Y-%m-%dT00:00:00") if r["DATE_SOURCE"] else None,
                 "RAW_TEXT": r["RAW_TEXT"],
                 "SOURCE_ID": id_source,
             }
