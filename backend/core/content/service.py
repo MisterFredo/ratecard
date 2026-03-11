@@ -670,13 +670,15 @@ def destock_raw_contents(
             {"id_raw": specific_id}
         )
     else:
-        raws = query_bq(f"""
+        raws = query_bq(
+            f"""
             SELECT *
             FROM `{TABLE_CONTENT_RAW}`
             WHERE STATUS = 'STORED'
             ORDER BY CREATED_AT ASC
             LIMIT {limit}
-        """)
+            """
+        )
 
     processed = 0
     errors = 0
@@ -697,7 +699,7 @@ def destock_raw_contents(
             print("RAW LENGTH:", len(raw.get("RAW_TEXT", "") or ""))
             print("------------------------------")
 
-            # 🔐 Sécurité si specific_id
+            # 🔐 Sécurité
             if raw["STATUS"] not in ["STORED", "ERROR"]:
                 raise ValueError("RAW non traitable (status invalide)")
 
@@ -728,31 +730,30 @@ def destock_raw_contents(
             topics_llm = summary.get("topics", [])
 
             # ====================================================
-            # CLEAN SOURCE_DATE (fix ISO → DATE)
+            # CLEAN SOURCE_DATE (TIMESTAMP SAFE)
             # ====================================================
 
-            raw_source_date = raw.get("DATE_SOURCE")
-                source_date_clean = None
+            raw_source_date = raw.get("SOURCE_DATE")
+            source_date_clean = None
 
-                if raw_source_date:
+            if raw_source_date:
 
-                    # Cas où BigQuery renvoie déjà un datetime
-                    if isinstance(raw_source_date, datetime):
-                        source_date_clean = raw_source_date.replace(
-                            hour=0,
-                            minute=0,
-                            second=0,
-                            microsecond=0
-                        )
+                # Déjà un datetime (cas BigQuery)
+                if isinstance(raw_source_date, datetime):
+                    source_date_clean = raw_source_date.replace(
+                        hour=0,
+                        minute=0,
+                        second=0,
+                        microsecond=0
+                    )
 
-                    # Cas string type "2025-04-22" ou ISO
-                    elif isinstance(raw_source_date, str):
+                # String type "2025-04-22" ou ISO
+                elif isinstance(raw_source_date, str):
 
-                        date_part = raw_source_date.split("T")[0]
+                    date_part = raw_source_date.split("T")[0]
+                    dt = datetime.strptime(date_part, "%Y-%m-%d")
 
-                        dt = datetime.strptime(date_part, "%Y-%m-%d")
-
-                        source_date_clean = dt  # On envoie un vrai datetime
+                    source_date_clean = dt
 
             # ====================================================
             # BUILD CONTENT MODEL
@@ -773,7 +774,7 @@ def destock_raw_contents(
                 point_de_friction=summary.get("point_de_friction"),
                 signal_analytique=summary.get("signal_analytique"),
                 source_id=raw.get("SOURCE_ID"),
-                source_date=source_date_clean,  # ✅ FIX ICI
+                source_date=source_date_clean,
                 author=None,
             )
 
@@ -787,7 +788,7 @@ def destock_raw_contents(
                 TABLE_CONTENT_RAW,
                 {
                     "STATUS": "PROCESSED",
-                    "PROCESSED_AT": datetime.utcnow().isoformat(),
+                    "PROCESSED_AT": datetime.utcnow(),
                     "GENERATED_CONTENT_ID": content_id,
                     "ERROR_MESSAGE": None,
                 },
