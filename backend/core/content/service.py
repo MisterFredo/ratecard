@@ -703,11 +703,15 @@ def destock_raw_contents(
             source_date_clean = None
 
             if raw_source_date:
+
                 if isinstance(raw_source_date, str):
-                    # Convertit "2026-01-25T00:00:00" → "2026-01-25"
-                    source_date_clean = raw_source_date.split("T")[0]
+
+                    date_only = raw_source_date.split("T")[0]
+                    source_date_clean = f"{date_only} 00:00:00"
+
                 else:
-                    source_date_clean = raw_source_date
+
+                    source_date_clean = raw_source_date.strftime("%Y-%m-%d 00:00:00")
 
             # ====================================================
             # BUILD CONTENT MODEL
