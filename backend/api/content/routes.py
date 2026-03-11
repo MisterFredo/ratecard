@@ -21,6 +21,7 @@ from core.content.service import (
     delete_content,
     publish_content,
     get_content_stats,
+    list_active_sources,
     store_raw_content,
     list_raw_stock,
     destock_raw_contents,
@@ -87,12 +88,7 @@ def stats_route():
 @router.get("/source/list")
 def list_sources():
     try:
-        rows = query_bq("""
-            SELECT id_source, label
-            FROM RATECARD_SOURCE
-            WHERE status = 'ACTIVE'
-            ORDER BY label
-        """)
+        rows = list_active_sources()
         return {"status": "ok", "sources": rows}
     except Exception as e:
         logger.exception("Erreur liste sources")
