@@ -19,11 +19,16 @@ TABLE = "RATECARD_CONTENT_RAW"
 def clean_raw_file(text: str) -> str:
 
     """
-    Nettoie le fichier source pour garantir :
-    TITLE
-    DATE_SOURCE
-    RAW_TEXT
+    Nettoie le fichier brut avant parsing.
+
+    Objectif final pour chaque bloc :
+
+    TITLE :
+    DATE_SOURCE :
+    RAW_TEXT :
     """
+
+    import re
 
     text = text.replace("\r\n", "\n")
 
@@ -35,13 +40,16 @@ def clean_raw_file(text: str) -> str:
 
         bloc = bloc.strip()
 
+        if not bloc:
+            continue
+
         lines = bloc.split("\n")
 
         title = lines[0].strip()
 
-        # -------------------------
+        # -----------------------------
         # DATE_SOURCE
-        # -------------------------
+        # -----------------------------
 
         date_match = re.search(
             r"DATE_SOURCE\s*:\s*([^\n]+)",
@@ -53,15 +61,23 @@ def clean_raw_file(text: str) -> str:
         if date_match:
             date_line = f"DATE_SOURCE : {date_match.group(1).strip()}"
 
-        # -------------------------
-        # RAW TEXT
-        # -------------------------
+        # -----------------------------
+        # RAW TEXT (fusion)
+        # -----------------------------
 
         raw_text = bloc
 
         raw_text = raw_text.replace(title, "", 1)
 
         raw_text = re.sub(r"DATE_SOURCE\s*:\s*[^\n]+", "", raw_text)
+
+        raw_text = re.sub(r"RAW_TEXT\s*:", "", raw_text)
+
+        # suppression séparateurs
+        raw_text = raw_text.replace("________________", "")
+
+        # nettoyage espaces
+        raw_text = re.sub(r"\n{3,}", "\n\n", raw_text)
 
         raw_text = raw_text.strip()
 
@@ -76,7 +92,6 @@ RAW_TEXT :
         cleaned_blocks.append(cleaned_block.strip())
 
     return "\n\n".join(cleaned_blocks)
-
 
 # ============================================================
 # PARSE DATE (FR → ISO)
@@ -203,12 +218,13 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
 
 def import_raw_content(text: str, id_source: str):
 
-    # 1️⃣ nettoyage du fichier
+    # 1️⃣ nettoyage
     text = clean_raw_file(text)
 
-    # 2️⃣ parsing normal
+    # 2️⃣ parsing
     rows = parse_raw_blocks(text)
 
+    # 3️⃣ insertion BQ
     inserted = insert_raw_rows(rows, id_source)
 
     return inserted
