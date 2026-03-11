@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from typing import List, Dict, Optional
 
 from api.content.models import (
@@ -33,6 +33,7 @@ from core.content.service import (
 )
 
 from core.content.ai import generate_summary
+from core.content.raw_import_service import import_raw_content
 from utils.bigquery_utils import query_bq
 
 import logging
@@ -174,6 +175,32 @@ def store_raw_route(payload: ContentRawCreate):
 
     except Exception as e:
         logger.exception("Erreur stockage raw content")
+        raise HTTPException(400, str(e))
+
+# ============================================================
+# IMPORT RAW CONTENT
+# ============================================================
+
+@router.post("/raw/import")
+async def import_raw_route(
+    file: UploadFile = File(...),
+    id_source: str = Form(...)
+):
+    try:
+
+        content = await file.read()
+        text = content.decode("utf-8")
+
+        count = import_raw_content(text, id_source)
+
+        return {
+            "status": "ok",
+            "imported": count
+        }
+
+    except Exception as e:
+
+        logger.exception("Erreur import RAW")
         raise HTTPException(400, str(e))
 
 # ============================================================
