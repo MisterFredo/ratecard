@@ -467,10 +467,11 @@ def list_contents():
 def list_active_sources():
 
     rows = query_bq(f"""
-        SELECT id_source, label
+        SELECT
+            SOURCE_ID as id_source,
+            NAME as label
         FROM `{TABLE_SOURCE}`
-        WHERE status = 'ACTIVE'
-        ORDER BY label
+        ORDER BY NAME
     """)
 
     return rows
