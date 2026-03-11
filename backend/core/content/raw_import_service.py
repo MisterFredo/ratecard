@@ -203,17 +203,12 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
 
 def import_raw_content(text: str, id_source: str):
 
-    print("[RAW_IMPORT] ===== START IMPORT =====")
+    # 1️⃣ nettoyage du fichier
+    text = clean_raw_file(text)
 
+    # 2️⃣ parsing normal
     rows = parse_raw_blocks(text)
 
-    if not rows:
-        raise Exception("[RAW_IMPORT] Aucun bloc détecté dans le fichier")
-
     inserted = insert_raw_rows(rows, id_source)
-
-    print(f"[RAW_IMPORT] Import terminé : {inserted} lignes")
-
-    print("[RAW_IMPORT] ===== END IMPORT =====")
 
     return inserted
