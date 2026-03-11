@@ -732,14 +732,27 @@ def destock_raw_contents(
             # ====================================================
 
             raw_source_date = raw.get("DATE_SOURCE")
-            source_date_clean = None
+                source_date_clean = None
 
-            if raw_source_date:
-                if isinstance(raw_source_date, str):
-                    # Convertit "2026-01-25T00:00:00" → "2026-01-25"
-                    source_date_clean = raw_source_date.split("T")[0]
-                else:
-                    source_date_clean = raw_source_date
+                if raw_source_date:
+
+                    # Cas où BigQuery renvoie déjà un datetime
+                    if isinstance(raw_source_date, datetime):
+                        source_date_clean = raw_source_date.replace(
+                            hour=0,
+                            minute=0,
+                            second=0,
+                            microsecond=0
+                        )
+
+                    # Cas string type "2025-04-22" ou ISO
+                    elif isinstance(raw_source_date, str):
+
+                        date_part = raw_source_date.split("T")[0]
+
+                        dt = datetime.strptime(date_part, "%Y-%m-%d")
+
+                        source_date_clean = dt  # On envoie un vrai datetime
 
             # ====================================================
             # BUILD CONTENT MODEL
