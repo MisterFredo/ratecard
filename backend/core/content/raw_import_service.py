@@ -161,15 +161,13 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
 
     table_id = f"{BQ_PROJECT}.{BQ_DATASET}.{TABLE}"
 
-    print(f"[RAW_IMPORT] Table cible : {table_id}")
-
     payload = []
 
     for r in rows:
 
         payload.append(
             {
-                "TITLE": r["TITLE"],
+                "SOURCE_TITLE": r["TITLE"],
                 "DATE_SOURCE": r["DATE_SOURCE"].isoformat(),
                 "RAW_TEXT": r["RAW_TEXT"],
                 "SOURCE_ID": id_source,
