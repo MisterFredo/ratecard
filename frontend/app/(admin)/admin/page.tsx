@@ -38,26 +38,26 @@ export default function AdminHome() {
       return;
     }
 
-    const form = new FormData();
-
-    form.append("file", file);
-    form.append("id_source", sourceId);
-
     setLoading(true);
     setResult("");
 
     try {
 
-      const res = await api.post(
+      const text = await file.text();
+
+      const json = await api.post(
         "/content/raw/import",
-        form
+        {
+          id_source: sourceId,
+          text: text
+        }
       );
 
-      setResult(`Import réussi : ${res.imported} contenus`);
+      setResult(`Import réussi : ${json.imported} contenus`);
 
-    } catch (e: any) {
+    } catch (e) {
 
-      console.error(e);
+      console.error("Erreur import RAW", e);
       setResult("Erreur import");
 
     }
@@ -132,5 +132,6 @@ export default function AdminHome() {
       </div>
 
     </div>
+
   );
 }
