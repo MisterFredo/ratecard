@@ -16,6 +16,67 @@ from config import BQ_PROJECT, BQ_DATASET
 
 TABLE = "RATECARD_CONTENT_RAW"
 
+def clean_raw_file(text: str) -> str:
+
+    """
+    Nettoie le fichier source pour garantir :
+    TITLE
+    DATE_SOURCE
+    RAW_TEXT
+    """
+
+    text = text.replace("\r\n", "\n")
+
+    blocs = re.split(r"\n?\s*TITLE\s*:", text)
+
+    cleaned_blocks = []
+
+    for bloc in blocs[1:]:
+
+        bloc = bloc.strip()
+
+        lines = bloc.split("\n")
+
+        title = lines[0].strip()
+
+        # -------------------------
+        # DATE_SOURCE
+        # -------------------------
+
+        date_match = re.search(
+            r"DATE_SOURCE\s*:\s*([^\n]+)",
+            bloc
+        )
+
+        date_line = ""
+
+        if date_match:
+            date_line = f"DATE_SOURCE : {date_match.group(1).strip()}"
+
+        # -------------------------
+        # RAW TEXT
+        # -------------------------
+
+        raw_text = bloc
+
+        raw_text = raw_text.replace(title, "", 1)
+
+        raw_text = re.sub(r"DATE_SOURCE\s*:\s*[^\n]+", "", raw_text)
+
+        raw_text = raw_text.strip()
+
+        cleaned_block = f"""TITLE : {title}
+
+{date_line}
+
+RAW_TEXT :
+{raw_text}
+"""
+
+        cleaned_blocks.append(cleaned_block.strip())
+
+    return "\n\n".join(cleaned_blocks)
+
 
 # ============================================================
 # PARSE DATE (FR → ISO)
