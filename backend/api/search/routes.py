@@ -7,8 +7,8 @@ router = APIRouter()
 
 
 # SEARCH LAB
-@router.get("/search-lab")
-def search_lab(
+@router.get("/search")
+def search(
     q: str = Query(..., description="Search query"),
     limit: int = 20
 ):
@@ -59,4 +59,4 @@ def search_lab(
         return {"results": results}
 
     except Exception as e:
-        raise HTTPException(400, f"Erreur Search Lab : {e}")
+        raise HTTPException(400, f"Erreur Search : {e}")
