@@ -5,7 +5,7 @@ from core.search.service import search
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("/search")
 def search_route(
     q: str = Query(..., description="Search query"),
     limit: int = 20
