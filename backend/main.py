@@ -55,6 +55,7 @@ include_router("api.solution", "/api/solution", "SOLUTION")
 include_router("api.concept", "/api/concept", "CONCEPT")
 include_router("api.event", "/api/event", "EVENT")
 include_router("api.source", "/api/source", "SOURCE")
+include_router("api.search", "/api/search", "SEARCH")
 include_router("api.synthesis", "/api/synthesis", "SYNTHESIS")
 
 # --- FRONT PUBLIC (MEDIA)
