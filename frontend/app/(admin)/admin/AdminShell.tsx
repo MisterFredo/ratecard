@@ -12,7 +12,8 @@ import {
   BookOpen,
   Puzzle,
   Link as LinkIcon,
-  Archive, // ⬅️ ajout icône pour Stock
+  Archive,
+  Search, // ⬅️ ajout icône Search
 } from "lucide-react";
 
 export default function AdminShell({
@@ -30,10 +31,12 @@ export default function AdminShell({
   const navItems = [
     { href: "/admin/content", label: "Contenus", icon: Layers },
 
-    // ✅ NOUVELLE PAGE STOCK
     { href: "/admin/content/stock", label: "Stock", icon: Archive },
 
     { href: "/admin/news", label: "News", icon: Newspaper },
+
+    // ✅ NOUVELLE PAGE SEARCH
+    { href: "/admin/search", label: "Search", icon: Search },
 
     {
       href: "/admin/linkedin/compose",
@@ -51,15 +54,9 @@ export default function AdminShell({
 
     { href: "/admin/solution", label: "Solutions", icon: Puzzle },
 
-    // 🔒 TEMPORAIREMENT EN STAND-BY
-    // { href: "/admin/person", label: "Personnes", icon: UserCircle },
-
     { href: "/admin/topic", label: "Topics", icon: Tags },
 
     { href: "/admin/concept", label: "Concepts", icon: BookOpen },
-
-    // 🔒 TEMPORAIREMENT EN STAND-BY
-    // { href: "/admin/event", label: "Événements", icon: CalendarDays },
 
     { href: "/admin/source", label: "Sources", icon: LinkIcon },
   ];
