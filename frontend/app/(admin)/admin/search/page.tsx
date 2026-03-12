@@ -24,9 +24,7 @@ export default function AdminSearchPage() {
     setError(null);
 
     try {
-      const res = await api.get(
-        `/search?q=${encodeURIComponent(query)}`
-      );
+      const res = await api.get(`/search/search?q=${encodeURIComponent(query)}`)
 
       setResults(res.results || []);
     } catch (e: any) {
