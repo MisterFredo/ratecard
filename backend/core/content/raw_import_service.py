@@ -316,3 +316,125 @@ def import_raw_content(text: str, id_source: str):
     inserted = insert_raw_rows(rows, id_source)
 
     return inserted
+
+def clean_urls(urls_text: str) -> List[str]:
+
+    urls = list(
+        {u.strip() for u in urls_text.split("\n") if u.strip()}
+    )
+
+    return urls
+
+def url_already_exists(url: str) -> bool:
+
+    client = get_bigquery_client()
+
+    query = f"""
+        SELECT 1
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.{TABLE}`
+        WHERE SOURCE_URL = @url
+        LIMIT 1
+    """
+
+    from google.cloud import bigquery
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("url", "STRING", url)
+        ]
+    )
+
+    rows = list(client.query(query, job_config=job_config))
+
+    return len(rows) > 0
+
+def parse_article_from_url(url: str) -> Dict[str, Any]:
+
+    resp = requests.get(url, headers=HEADERS, timeout=15)
+    resp.raise_for_status()
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    # TITLE
+    title = soup.title.string.strip() if soup.title else "NO TITLE"
+
+    # DATE (tentative)
+    date_source = None
+
+    meta_date = soup.find("meta", {"property": "article:published_time"})
+    if meta_date and meta_date.get("content"):
+        try:
+            date_source = parse(meta_date["content"]).date()
+        except Exception:
+            pass
+
+    # RAW TEXT
+    paragraphs = soup.find_all("p")
+    raw_text = "\n".join(p.get_text() for p in paragraphs).strip()
+
+    if not raw_text:
+        raise Exception("RAW_TEXT vide")
+
+    return {
+        "TITLE": title,
+        "DATE_SOURCE": date_source,
+        "RAW_TEXT": raw_text,
+        "SOURCE_URL": url
+    }
+
+def import_urls_batch(urls_text: str, id_source: str):
+
+    urls = clean_urls(urls_text)
+
+    results = []
+    inserted_rows = []
+
+    print(f"[RAW_IMPORT_URL] URLs reçues : {len(urls)}")
+
+    for i, url in enumerate(urls, start=1):
+
+        try:
+
+            print(f"[RAW_IMPORT_URL] ({i}/{len(urls)}) {url}")
+
+            if url_already_exists(url):
+                results.append({"url": url, "status": "SKIPPED"})
+                continue
+
+            parsed = parse_article_from_url(url)
+
+            inserted_rows.append(
+                {
+                    "TITLE": parsed["TITLE"],
+                    "DATE_SOURCE": parsed["DATE_SOURCE"],
+                    "RAW_TEXT": parsed["RAW_TEXT"],
+                }
+            )
+
+            results.append({"url": url, "status": "READY"})
+
+            # délai sécurisé 7–12s
+            import time, random
+            time.sleep(random.uniform(7, 12))
+
+        except Exception as e:
+
+            print("[RAW_IMPORT_URL] erreur:", e)
+
+            results.append({
+                "url": url,
+                "status": "ERROR",
+                "error": str(e)
+            })
+
+    # insertion groupée
+    if inserted_rows:
+        inserted_count = insert_raw_rows(inserted_rows, id_source)
+    else:
+        inserted_count = 0
+
+    return {
+        "total": len(urls),
+        "inserted": inserted_count,
+        "details": results
+    }
