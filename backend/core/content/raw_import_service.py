@@ -384,6 +384,9 @@ def parse_article_from_url(url: str) -> Dict[str, Any]:
 
 def import_urls_batch(urls_text: str, id_source: str):
 
+    import time
+    import random
+
     urls = clean_urls(urls_text)
 
     results = []
@@ -397,24 +400,61 @@ def import_urls_batch(urls_text: str, id_source: str):
 
             print(f"[RAW_IMPORT_URL] ({i}/{len(urls)}) {url}")
 
+            # --------------------------------------------------
+            # SKIP si déjà existant
+            # --------------------------------------------------
             if url_already_exists(url):
-                results.append({"url": url, "status": "SKIPPED"})
+                results.append({
+                    "url": url,
+                    "status": "SKIPPED",
+                    "reason": "Already exists"
+                })
                 continue
 
+            # --------------------------------------------------
+            # PARSE
+            # --------------------------------------------------
             parsed = parse_article_from_url(url)
 
+            title = parsed.get("TITLE")
+            date_source = parsed.get("DATE_SOURCE")
+            raw_text = parsed.get("RAW_TEXT", "")
+
+            if not raw_text.strip():
+                raise Exception("RAW_TEXT vide après parsing")
+
+            word_count = len(raw_text.split())
+            raw_length = len(raw_text)
+
+            warnings = []
+
+            if word_count < 200:
+                warnings.append("Body court (<200 mots)")
+
+            # --------------------------------------------------
+            # Prépare insertion BQ
+            # --------------------------------------------------
             inserted_rows.append(
                 {
-                    "TITLE": parsed["TITLE"],
-                    "DATE_SOURCE": parsed["DATE_SOURCE"],
-                    "RAW_TEXT": parsed["RAW_TEXT"],
+                    "TITLE": title,
+                    "DATE_SOURCE": date_source,
+                    "RAW_TEXT": raw_text,
                 }
             )
 
-            results.append({"url": url, "status": "READY"})
+            results.append({
+                "url": url,
+                "status": "IMPORTED",
+                "title": title,
+                "date_source": date_source.isoformat() if date_source else None,
+                "word_count": word_count,
+                "raw_length": raw_length,
+                "warnings": warnings,
+            })
 
-            # délai sécurisé 7–12s
-            import time, random
+            # --------------------------------------------------
+            # Délai sécurisé (anti-bot)
+            # --------------------------------------------------
             time.sleep(random.uniform(7, 12))
 
         except Exception as e:
@@ -427,7 +467,9 @@ def import_urls_batch(urls_text: str, id_source: str):
                 "error": str(e)
             })
 
-    # insertion groupée
+    # ----------------------------------------------------------
+    # INSERTION GROUPÉE
+    # ----------------------------------------------------------
     if inserted_rows:
         inserted_count = insert_raw_rows(inserted_rows, id_source)
     else:
