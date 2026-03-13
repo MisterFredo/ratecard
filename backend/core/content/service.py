@@ -738,7 +738,7 @@ def destock_raw_contents(
             # CLEAN SOURCE_DATE (TIMESTAMP SAFE)
             # ====================================================
 
-            raw_source_date = raw.get("SOURCE_DATE")
+            raw_source_date = raw.get("DATE_SOURCE")
             source_date_clean = None
 
             if raw_source_date:
