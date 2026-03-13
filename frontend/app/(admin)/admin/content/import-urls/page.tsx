@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 type Source = {
-  ID_SOURCE: string;
-  NAME: string;
+  id_source: string;
+  label: string;
 };
 
 export default function ImportUrlsPage() {
@@ -15,15 +15,11 @@ export default function ImportUrlsPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  // ============================================================
-  // LOAD SOURCES
-  // ============================================================
+  // 🔹 Load sources
   useEffect(() => {
     async function loadSources() {
       try {
         const res = await api.get("/content/source/list");
-
-        // Compatible wrapper custom ou axios natif
         const data = res?.data ?? res;
 
         console.log("SOURCES RESPONSE:", data);
@@ -37,9 +33,6 @@ export default function ImportUrlsPage() {
     loadSources();
   }, []);
 
-  // ============================================================
-  // HANDLE IMPORT
-  // ============================================================
   async function handleImport() {
     if (!urlsText.trim()) {
       alert("URLs manquantes");
@@ -66,27 +59,20 @@ export default function ImportUrlsPage() {
 
       setResult(data);
     } catch (e: any) {
-      console.error("Erreur import:", e);
+      console.error(e);
       alert("Erreur import");
     }
 
     setLoading(false);
   }
 
-  // ============================================================
-  // RENDER
-  // ============================================================
   return (
     <div className="max-w-3xl space-y-6">
-      <h1 className="text-2xl font-semibold">
-        Import URLs (RAW)
-      </h1>
+      <h1 className="text-2xl font-semibold">Import URLs (RAW)</h1>
 
       {/* SOURCE SELECTOR */}
       <div>
-        <label className="block text-sm mb-1">
-          Source
-        </label>
+        <label className="block text-sm mb-1">Source</label>
 
         <select
           value={selectedSource}
@@ -95,8 +81,8 @@ export default function ImportUrlsPage() {
         >
           <option value="">-- Sélectionner une source --</option>
           {sources.map((s) => (
-            <option key={s.ID_SOURCE} value={s.ID_SOURCE}>
-              {s.NAME}
+            <option key={s.id_source} value={s.id_source}>
+              {s.label}
             </option>
           ))}
         </select>
