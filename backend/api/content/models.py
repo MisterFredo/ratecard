@@ -54,6 +54,7 @@ class BulkIdsRequest(BaseModel):
 
 class ImportUrlsRequest(BaseModel):
     urls_text: str
+    id_source: str
 
 
 # ============================================================
