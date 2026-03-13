@@ -256,13 +256,33 @@ def delete_raw_route(id_raw: str):
         logger.exception("Erreur suppression RAW")
         raise HTTPException(400, str(e))
 
-@router.post("/raw/retry/{id_raw}")
-def retry_raw_route(id_raw: str):
+# ============================================================
+# IMPORT RAW CONTENT FROM URLS (BATCH)
+# ============================================================
+
+@router.post("/raw/import-urls")
+def import_urls_route(payload: ImportUrlsRequest):
+
+    if not payload.urls_text.strip():
+        raise HTTPException(400, "URLs manquantes")
+
+    if not payload.id_source:
+        raise HTTPException(400, "Source obligatoire")
+
     try:
-        retry_raw_content(id_raw)
-        return {"status": "ok"}
+
+        result = import_urls_batch(
+            urls_text=payload.urls_text,
+            id_source=payload.id_source
+        )
+
+        return {
+            "status": "ok",
+            **result
+        }
+
     except Exception as e:
-        logger.exception("Erreur retry raw")
+        logger.exception("Erreur import URLs")
         raise HTTPException(400, str(e))
 
 # ============================================================
@@ -276,8 +296,6 @@ def raw_stats_route():
     except Exception as e:
         logger.exception("Erreur stats raw")
         raise HTTPException(400, str(e))
-
-router = APIRouter()
 
 @router.post("/import-urls")
 def import_urls_route(data: ImportUrlsRequest):
