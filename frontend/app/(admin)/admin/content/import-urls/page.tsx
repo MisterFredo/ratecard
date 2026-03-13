@@ -15,12 +15,20 @@ export default function ImportUrlsPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  // 🔹 Load sources
+  // ============================================================
+  // LOAD SOURCES
+  // ============================================================
   useEffect(() => {
     async function loadSources() {
       try {
         const res = await api.get("/content/source/list");
-        setSources(res.sources || []);
+
+        // Compatible wrapper custom ou axios natif
+        const data = res?.data ?? res;
+
+        console.log("SOURCES RESPONSE:", data);
+
+        setSources(data.sources || []);
       } catch (e) {
         console.error("Erreur load sources", e);
       }
@@ -29,6 +37,9 @@ export default function ImportUrlsPage() {
     loadSources();
   }, []);
 
+  // ============================================================
+  // HANDLE IMPORT
+  // ============================================================
   async function handleImport() {
     if (!urlsText.trim()) {
       alert("URLs manquantes");
@@ -49,15 +60,22 @@ export default function ImportUrlsPage() {
         id_source: selectedSource,
       });
 
-      setResult(res);
+      const data = res?.data ?? res;
+
+      console.log("IMPORT RESPONSE:", data);
+
+      setResult(data);
     } catch (e: any) {
-      console.error(e);
+      console.error("Erreur import:", e);
       alert("Erreur import");
     }
 
     setLoading(false);
   }
 
+  // ============================================================
+  // RENDER
+  // ============================================================
   return (
     <div className="max-w-3xl space-y-6">
       <h1 className="text-2xl font-semibold">
