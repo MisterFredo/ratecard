@@ -759,7 +759,7 @@ def destock_raw_contents(
                 summary.get("topics", [])
             )
 
-                acteurs_clean = normalize_llm_list(
+            acteurs_clean = normalize_llm_list(
                 summary.get("acteurs_cites", [])
             )
 
