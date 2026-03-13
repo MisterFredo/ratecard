@@ -296,13 +296,7 @@ def raw_stats_route():
         logger.exception("Erreur stats raw")
         raise HTTPException(400, str(e))
 
-@router.post("/import-urls")
-def import_urls_route(data: ImportUrlsRequest):
-    try:
-        result = import_urls_batch(data.urls_text)
-        return result
-    except Exception as e:
-        raise HTTPException(400, str(e))
+
 
 
 # ============================================================
