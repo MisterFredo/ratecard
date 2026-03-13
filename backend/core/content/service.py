@@ -566,6 +566,22 @@ def store_raw_content(
 
     return raw_id
 
+def normalize_llm_list(values):
+    output = []
+
+    for v in values or []:
+        if not v:
+            continue
+
+        parts = re.split(r",|;", v)
+
+        for p in parts:
+            clean = p.strip()
+            if clean:
+                output.append(clean)
+
+    return list(dict.fromkeys(output))
+
 def list_raw_stock(
     source_name: Optional[str] = None,
     status: Optional[str] = None,
@@ -656,6 +672,7 @@ def destock_all_raw_contents(batch_size: int = 50):
         "total_errors": total_errors,
     }
 
+
 def destock_raw_contents(
     limit: int = 5,
     specific_id: Optional[str] = None
@@ -730,9 +747,21 @@ def destock_raw_contents(
                 source_text=raw.get("RAW_TEXT", "")
             )
 
-            concepts_llm = [c["label"] for c in summary.get("concepts", [])]
-            solutions_llm = summary.get("solutions", [])
-            topics_llm = summary.get("topics", [])
+            concepts_llm = normalize_llm_list(
+                [c["label"] for c in summary.get("concepts", [])]
+            )
+
+            solutions_llm = normalize_llm_list(
+                summary.get("solutions", [])
+            )
+
+            topics_llm = normalize_llm_list(
+                summary.get("topics", [])
+            )
+
+                acteurs_clean = normalize_llm_list(
+                summary.get("acteurs_cites", [])
+            )
 
             # ====================================================
             # CLEAN SOURCE_DATE (TIMESTAMP SAFE)
