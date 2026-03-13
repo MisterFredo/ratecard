@@ -52,6 +52,9 @@ class ContentRawDestockRequest(BaseModel):
 class BulkIdsRequest(BaseModel):
     ids: List[str]
 
+class ImportUrlsRequest(BaseModel):
+    urls_text: str
+
 
 # ============================================================
 # CREATE
