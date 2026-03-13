@@ -13,7 +13,8 @@ import {
   Puzzle,
   Link as LinkIcon,
   Archive,
-  Search, // ⬅️ ajout icône Search
+  Search,
+  DownloadCloud, // ⬅️ icône import
 } from "lucide-react";
 
 export default function AdminShell({
@@ -33,9 +34,15 @@ export default function AdminShell({
 
     { href: "/admin/content/stock", label: "Stock", icon: Archive },
 
+    // ✅ NOUVEL IMPORT URLS
+    {
+      href: "/admin/content/import-urls",
+      label: "Import URLs",
+      icon: DownloadCloud,
+    },
+
     { href: "/admin/news", label: "News", icon: Newspaper },
 
-    // ✅ NOUVELLE PAGE SEARCH
     { href: "/admin/search", label: "Search", icon: Search },
 
     {
