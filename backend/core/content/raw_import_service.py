@@ -17,6 +17,18 @@ from config import BQ_PROJECT, BQ_DATASET
 
 TABLE = "RATECARD_CONTENT_RAW"
 
+# ============================================================
+# SCRAPING CONFIG
+# ============================================================
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    )
+}
+
 def clean_raw_file(text: str) -> str:
 
     """
