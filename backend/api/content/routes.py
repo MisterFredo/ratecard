@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from typing import List, Dict, Optional
 
+
+from fastapi import APIRouter, HTTPException
+from api.content.models import 
+
 from api.content.models import (
     ContentCreate,
     ContentUpdate,
@@ -9,6 +13,7 @@ from api.content.models import (
     ContentRawCreate,
     ContentRawOut,
     ContentRawDestockRequest,
+    ImportUrlsRequest,
     BulkIdsRequest,
 )
 
@@ -36,6 +41,8 @@ from core.content.service import (
 
 from core.content.ai import generate_summary
 from core.content.raw_import_service import import_raw_content
+from core.content.raw_import_service import import_urls_batch
+
 from utils.bigquery_utils import query_bq
 
 import logging
@@ -268,6 +275,16 @@ def raw_stats_route():
         return {"status": "ok", "stats": stats}
     except Exception as e:
         logger.exception("Erreur stats raw")
+        raise HTTPException(400, str(e))
+
+router = APIRouter()
+
+@router.post("/import-urls")
+def import_urls_route(data: ImportUrlsRequest):
+    try:
+        result = import_urls_batch(data.urls_text)
+        return result
+    except Exception as e:
         raise HTTPException(400, str(e))
 
 
