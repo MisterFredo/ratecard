@@ -199,12 +199,12 @@ def import_raw_route(payload: dict):
 # ============================================================
 @router.get("/raw/stock")
 def raw_stock_route(
-    source_name: Optional[str] = None,
+    source_id: Optional[str] = None,
     status: Optional[str] = None,
 ):
     try:
         raws = list_raw_stock(
-            source_name=source_name,
+            source_id=source_id,
             status=status,
         )
 
