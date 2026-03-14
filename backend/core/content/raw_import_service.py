@@ -8,6 +8,7 @@ from typing import Optional, Dict, Any, List
 from urllib.parse import urljoin
 
 from utils.bigquery_utils import get_bigquery_client
+from google.cloud import bigquery
 from config import BQ_PROJECT, BQ_DATASET
 
 
