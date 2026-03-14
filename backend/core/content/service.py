@@ -919,6 +919,46 @@ def retry_raw_content(id_raw: str) -> None:
         where={"ID_RAW": id_raw}
     )
 
+def get_raw_detail(id_raw: str):
+
+    if not id_raw:
+        raise ValueError("id_raw obligatoire")
+
+    query = f"""
+        SELECT
+            ID_RAW,
+            SOURCE_ID,
+            SOURCE_TITLE,
+            DATE_SOURCE,
+            RAW_TEXT,
+            STATUS,
+            ERROR_MESSAGE,
+            IMPORT_TYPE,
+            CREATED_AT
+        FROM `{TABLE_CONTENT_RAW}`
+        WHERE ID_RAW = @id_raw
+        LIMIT 1
+    """
+
+    rows = query_bq(query, {"id_raw": id_raw})
+
+    if not rows:
+        return None
+
+    r = rows[0]
+
+    return {
+        "id_raw": r["ID_RAW"],
+        "source_id": r["SOURCE_ID"],
+        "source_title": r["SOURCE_TITLE"],
+        "date_source": r.get("DATE_SOURCE"),
+        "raw_text": r.get("RAW_TEXT"),
+        "status": r["STATUS"],
+        "error_message": r.get("ERROR_MESSAGE"),
+        "import_type": r.get("IMPORT_TYPE"),
+        "created_at": r["CREATED_AT"],
+    }
+
 def update_raw_content(id_raw: str, date_source: Optional[str], source_title: Optional[str]):
 
     client = get_bigquery_client()
