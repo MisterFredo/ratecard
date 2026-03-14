@@ -17,6 +17,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState("");
+  const [type, setType] = useState("");
   const [description, setDescription] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
@@ -36,6 +37,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         const c = await api.get(`/company/${id}`);
 
         setName(c.name || "");
+        setType(c.type || "");
         setDescription(c.description || "");
         setLinkedinUrl(c.linkedin_url || "");
         setWebsiteUrl(c.website_url || "");
@@ -65,6 +67,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
     try {
       await api.put(`/company/update/${id}`, {
         name,
+        type: type || null,
         description: description || null,
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
@@ -122,6 +125,18 @@ export default function EditCompany({ params }: { params: { id: string } }) {
           setWebsiteUrl,
         }}
       />
+
+      <div className="space-y-2">
+        <label className="block font-medium">
+          Type
+        </label>
+        <input
+          type="text"
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          className="border px-3 py-2 rounded w-full max-w-md"
+        />
+      </div>
 
       <div className="space-y-2">
         <label className="block font-medium">
