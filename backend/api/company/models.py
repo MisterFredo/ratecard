@@ -7,6 +7,8 @@ from datetime import datetime
 class CompanyCreate(BaseModel):
 
     name: str
+    type: Optional[str] = None
+
     description: Optional[str] = None
 
     linkedin_url: Optional[str] = None
@@ -22,6 +24,8 @@ class CompanyCreate(BaseModel):
 class CompanyUpdate(BaseModel):
 
     name: Optional[str] = None
+    type: Optional[str] = None
+
     description: Optional[str] = None
 
     linkedin_url: Optional[str] = None
@@ -40,6 +44,8 @@ class CompanyOut(BaseModel):
 
     id_company: str
     name: str
+
+    type: Optional[str] = None
 
     description: Optional[str] = None
 
