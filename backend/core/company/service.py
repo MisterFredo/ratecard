@@ -99,6 +99,29 @@ def list_companies():
     ]
 
 
+def list_company_types():
+
+    client = get_bigquery_client()
+
+    query = f"""
+        SELECT
+            ID_TYPE,
+            LABEL
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_TYPE`
+        ORDER BY LABEL
+    """
+
+    rows = client.query(query).result()
+
+    return [
+        {
+            "id_type": row["ID_TYPE"],
+            "label": row["LABEL"],
+        }
+        for row in rows
+    ]
+
+
 # ============================================================
 # GET ONE COMPANY — BQ BRUT
 # ============================================================
