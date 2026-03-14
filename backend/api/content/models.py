@@ -184,6 +184,7 @@ class ContentOut(BaseModel):
     title: Optional[str] = None
     excerpt: Optional[str] = None
     content_body: Optional[str] = None
+    source_date: Optional[date] = None
 
     citations: List[str] = Field(default_factory=list)
     chiffres: List[str] = Field(default_factory=list)
