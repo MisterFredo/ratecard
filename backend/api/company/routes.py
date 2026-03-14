@@ -7,6 +7,7 @@ from core.company.service import (
     get_company,
     update_company,
     delete_company,
+    list_company_types,
 )
 
 router = APIRouter()
@@ -30,6 +31,16 @@ def list_route():
         return {"status": "ok", "companies": companies}
     except Exception as e:
         raise HTTPException(400, f"Erreur liste sociétés : {e}")
+
+
+# TYPES
+@router.get("/types")
+def list_types_route():
+    try:
+        types = list_company_types()
+        return {"status": "ok", "types": types}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur récupération types sociétés : {e}")
 
 
 # GET ONE
