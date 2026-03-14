@@ -284,6 +284,23 @@ def import_urls_route(payload: ImportUrlsRequest):
         logger.exception("Erreur import URLs")
         raise HTTPException(400, str(e))
 
+@router.put("/raw/update/{id_raw}")
+def update_raw(id_raw: str, payload: dict):
+
+    from core.content.service import update_raw_content
+
+    try:
+        update_raw_content(
+            id_raw=id_raw,
+            date_source=payload.get("date_source"),
+            source_title=payload.get("source_title")
+        )
+
+        return {"status": "ok"}
+
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
 # ============================================================
 # RAW STATS (ADMIN)
 # ============================================================
