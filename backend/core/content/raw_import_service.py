@@ -274,6 +274,7 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
                 "STATUS": "STORED",
 
                 "SOURCE_TITLE": r["TITLE"],
+                "IMPORT_TYPE": import_type,
                 "DATE_SOURCE": r["DATE_SOURCE"].strftime("%Y-%m-%d") if r["DATE_SOURCE"] else None,
                 "RAW_TEXT": r["RAW_TEXT"],
                 "SOURCE_ID": id_source,
@@ -281,8 +282,6 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
         )
 
     print(f"[RAW_IMPORT] Nombre de lignes à insérer : {len(payload)}")
-
-    from google.cloud import bigquery
 
     job_config = bigquery.LoadJobConfig(
         source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
