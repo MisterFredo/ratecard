@@ -34,13 +34,6 @@ export default function AdminShell({
 
     { href: "/admin/content/stock", label: "Stock", icon: Archive },
 
-    // ✅ NOUVEL IMPORT URLS
-    {
-      href: "/admin/content/import-urls",
-      label: "Import URLs",
-      icon: DownloadCloud,
-    },
-
     { href: "/admin/news", label: "News", icon: Newspaper },
 
     { href: "/admin/search", label: "Search", icon: Search },
