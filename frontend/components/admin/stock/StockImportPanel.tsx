@@ -15,17 +15,60 @@ export default function StockImportPanel({
   sources: SourceItem[];
   onImported: () => void;
 }) {
+
   const [file, setFile] = useState<File | null>(null);
   const [urlsText, setUrlsText] = useState("");
   const [sourceId, setSourceId] = useState("");
-  const [loading, setLoading] = useState(false);
+
+  const [loadingFile, setLoadingFile] = useState(false);
+  const [loadingUrl, setLoadingUrl] = useState(false);
+
+  const [previewCount, setPreviewCount] = useState<number | null>(null);
+  const [urlCount, setUrlCount] = useState<number | null>(null);
+
   const [message, setMessage] = useState("");
+
+  // =========================
+  // FILE CHANGE
+  // =========================
+
+  async function handleFileChange(f: File | null) {
+    setFile(f);
+    setPreviewCount(null);
+    setMessage("");
+
+    if (!f) return;
+
+    const text = await f.text();
+    const matches = text.match(/TITLE\s*:/g);
+    setPreviewCount(matches ? matches.length : 0);
+  }
+
+  // =========================
+  // URL CHANGE
+  // =========================
+
+  function handleUrlChange(value: string) {
+    setUrlsText(value);
+    setMessage("");
+
+    const lines = value
+      .split("\n")
+      .map(l => l.trim())
+      .filter(Boolean);
+
+    setUrlCount(lines.length);
+  }
+
+  // =========================
+  // FILE IMPORT
+  // =========================
 
   async function handleFileImport() {
     if (!file) return alert("Choisissez un fichier");
     if (!sourceId) return alert("Choisissez une source");
 
-    setLoading(true);
+    setLoadingFile(true);
     setMessage("");
 
     try {
@@ -37,20 +80,27 @@ export default function StockImportPanel({
       });
 
       setMessage(`✅ ${res.imported} contenu(s) importé(s)`);
+      setFile(null);
+      setPreviewCount(null);
       onImported();
+
     } catch (e) {
       console.error(e);
       setMessage("❌ Erreur import fichier");
     }
 
-    setLoading(false);
+    setLoadingFile(false);
   }
+
+  // =========================
+  // URL IMPORT
+  // =========================
 
   async function handleUrlImport() {
     if (!urlsText.trim()) return alert("URLs manquantes");
     if (!sourceId) return alert("Choisissez une source");
 
-    setLoading(true);
+    setLoadingUrl(true);
     setMessage("");
 
     try {
@@ -59,50 +109,60 @@ export default function StockImportPanel({
         urls_text: urlsText,
       });
 
-      setMessage(`✅ ${res.message}`);
+      setMessage(`✅ ${res.inserted} importé(s) sur ${res.total}`);
       setUrlsText("");
+      setUrlCount(null);
       onImported();
+
     } catch (e) {
       console.error(e);
       setMessage("❌ Erreur import URLs");
     }
 
-    setLoading(false);
+    setLoadingUrl(false);
   }
 
   return (
     <div className="border rounded-lg p-6 bg-gray-50 space-y-6">
 
-      <h2 className="text-lg font-semibold">Importer des contenus</h2>
+      <h2 className="text-lg font-semibold">
+        Importer des contenus
+      </h2>
 
-      <div className="flex gap-4 items-center">
-        <select
-          value={sourceId}
-          onChange={(e) => setSourceId(e.target.value)}
-          className="border rounded px-3 py-2"
-        >
-          <option value="">Source</option>
-          {sources.map((s) => (
-            <option key={s.id_source} value={s.id_source}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* SOURCE */}
+      <select
+        value={sourceId}
+        onChange={(e) => setSourceId(e.target.value)}
+        className="border rounded px-3 py-2"
+      >
+        <option value="">Source</option>
+        {sources.map((s) => (
+          <option key={s.id_source} value={s.id_source}>
+            {s.label}
+          </option>
+        ))}
+      </select>
 
       {/* FILE IMPORT */}
-      <div className="flex gap-4 items-center">
+      <div className="flex flex-wrap gap-4 items-center">
         <input
           type="file"
           accept=".txt"
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
         />
+
+        {previewCount !== null && (
+          <span className="text-xs text-gray-600">
+            {previewCount} bloc(s) détecté(s)
+          </span>
+        )}
+
         <button
           onClick={handleFileImport}
-          disabled={loading}
+          disabled={loadingFile}
           className="bg-black text-white px-4 py-2 rounded"
         >
-          Importer fichier
+          {loadingFile ? "Import..." : "Importer fichier"}
         </button>
       </div>
 
@@ -110,17 +170,24 @@ export default function StockImportPanel({
       <div className="space-y-2">
         <textarea
           value={urlsText}
-          onChange={(e) => setUrlsText(e.target.value)}
+          onChange={(e) => handleUrlChange(e.target.value)}
           placeholder="Une URL par ligne"
           rows={4}
           className="w-full border rounded p-2 text-sm"
         />
+
+        {urlCount !== null && (
+          <div className="text-xs text-gray-600">
+            {urlCount} URL(s) détectée(s)
+          </div>
+        )}
+
         <button
           onClick={handleUrlImport}
-          disabled={loading}
+          disabled={loadingUrl}
           className="bg-ratecard-blue text-white px-4 py-2 rounded"
         >
-          Importer URLs
+          {loadingUrl ? "Import..." : "Importer URLs"}
         </button>
       </div>
 
