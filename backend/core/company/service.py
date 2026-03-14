@@ -27,6 +27,7 @@ def create_company(data: CompanyCreate) -> str:
     row = [{
         "ID_COMPANY": company_id,
         "NAME": data.name,
+        "TYPE": data.type,
         "DESCRIPTION": data.description or None,
         "MEDIA_LOGO_RECTANGLE_ID": None,
         "LINKEDIN_URL": data.linkedin_url or None,
@@ -58,6 +59,7 @@ def list_companies():
         SELECT
             c.ID_COMPANY,
             c.NAME,
+            c.TYPE,
             CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
             c.MEDIA_LOGO_RECTANGLE_ID,
             COALESCE(m.NB_ANALYSES, 0) AS NB_ANALYSES,
@@ -85,6 +87,7 @@ def list_companies():
         {
             "id_company": r["ID_COMPANY"],
             "name": r["NAME"],
+            "type": r.get("TYPE"),
             "is_partner": r["IS_PARTNER"],
             "media_logo_rectangle_id": r["MEDIA_LOGO_RECTANGLE_ID"],
             "nb_analyses": r["NB_ANALYSES"],
@@ -94,6 +97,8 @@ def list_companies():
         }
         for r in rows
     ]
+
+
 # ============================================================
 # GET ONE COMPANY — BQ BRUT
 # ============================================================
@@ -116,6 +121,7 @@ def get_company(company_id: str):
     return {
         "id_company": r["ID_COMPANY"],
         "name": r["NAME"],
+        "type": r.get("TYPE"),
         "description": r.get("DESCRIPTION"),
 
         # Wiki
@@ -140,6 +146,7 @@ def get_company(company_id: str):
         "updated_at": r.get("UPDATED_AT"),
     }
 
+
 # ============================================================
 # UPDATE COMPANY
 # ============================================================
@@ -151,6 +158,7 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
 
     mapping = {
         "name": "NAME",
+        "type": "TYPE",
         "description": "DESCRIPTION",
         "linkedin_url": "LINKEDIN_URL",
         "website_url": "WEBSITE_URL",
@@ -175,6 +183,7 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
         fields=bq_values,
         where={"ID_COMPANY": id_company},
     )
+
 
 # ============================================================
 # DELETE COMPANY (SOFT DELETE)
