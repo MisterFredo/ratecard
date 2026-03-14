@@ -62,8 +62,11 @@ export default function CompanyList() {
 
   }
 
+  const q = search.toLowerCase();
+
   const filteredCompanies = companies.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
+    c.name.toLowerCase().includes(q) ||
+    (c.type || "").toLowerCase().includes(q)
   );
 
   return (
