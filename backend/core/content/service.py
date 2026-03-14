@@ -582,26 +582,42 @@ def normalize_llm_list(values):
 
     return list(dict.fromkeys(output))
 
+from typing import Optional, List
+from utils.bigquery_utils import query_bq
+from config import BQ_PROJECT, BQ_DATASET
+
+TABLE_CONTENT_RAW = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_RAW"
+
+
 def list_raw_stock(
-    source_name: Optional[str] = None,
+    source_id: Optional[str] = None,
     status: Optional[str] = None,
 ) -> List[dict]:
 
     conditions = []
     params = {}
 
+    # -----------------------------
+    # FILTER STATUS
+    # -----------------------------
     if status:
         conditions.append("r.STATUS = @status")
         params["status"] = status
 
-    if source_name:
-        conditions.append("LOWER(s.NAME) LIKE LOWER(@source_name)")
-        params["source_name"] = f"%{source_name}%"
+    # -----------------------------
+    # FILTER SOURCE_ID (propre)
+    # -----------------------------
+    if source_id:
+        conditions.append("r.SOURCE_ID = @source_id")
+        params["source_id"] = source_id
 
     where_clause = ""
     if conditions:
         where_clause = "WHERE " + " AND ".join(conditions)
 
+    # -----------------------------
+    # QUERY
+    # -----------------------------
     query = f"""
         SELECT
             r.ID_RAW,
@@ -611,7 +627,8 @@ def list_raw_stock(
             r.DATE_SOURCE,
             r.STATUS,
             r.ERROR_MESSAGE,
-            r.CREATED_AT
+            r.CREATED_AT,
+            r.IMPORT_TYPE
         FROM `{TABLE_CONTENT_RAW}` r
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE` s
             ON r.SOURCE_ID = s.SOURCE_ID
@@ -629,6 +646,9 @@ def list_raw_stock(
 
     rows = query_bq(query, params)
 
+    # -----------------------------
+    # FORMAT RESPONSE
+    # -----------------------------
     return [
         {
             "id_raw": r["ID_RAW"],
@@ -639,6 +659,7 @@ def list_raw_stock(
             "status": r["STATUS"],
             "error_message": r.get("ERROR_MESSAGE"),
             "created_at": r["CREATED_AT"],
+            "import_type": r.get("IMPORT_TYPE"),  # 🔥 nouveau
         }
         for r in rows
     ]
