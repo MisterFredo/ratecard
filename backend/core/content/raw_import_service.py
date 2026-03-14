@@ -255,7 +255,11 @@ def parse_raw_blocks(text: str) -> List[Dict]:
 # INSERT BIGQUERY
 # ============================================================
 
-def insert_raw_rows(rows: List[Dict], id_source: str):
+def insert_raw_rows(
+    rows: List[Dict],
+    id_source: str,
+    import_type: str = "FILE",
+):
 
     print("[RAW_IMPORT] Début insertion BigQuery")
 
@@ -274,8 +278,12 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
                 "STATUS": "STORED",
 
                 "SOURCE_TITLE": r["TITLE"],
-                "IMPORT_TYPE": import_type,
-                "DATE_SOURCE": r["DATE_SOURCE"].strftime("%Y-%m-%d") if r["DATE_SOURCE"] else None,
+                "IMPORT_TYPE": import_type,  # ✅ maintenant défini
+                "DATE_SOURCE": (
+                    r["DATE_SOURCE"].strftime("%Y-%m-%d")
+                    if r.get("DATE_SOURCE")
+                    else None
+                ),
                 "RAW_TEXT": r["RAW_TEXT"],
                 "SOURCE_ID": id_source,
             }
@@ -285,13 +293,13 @@ def insert_raw_rows(rows: List[Dict], id_source: str):
 
     job_config = bigquery.LoadJobConfig(
         source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
-        write_disposition="WRITE_APPEND"
+        write_disposition="WRITE_APPEND",
     )
 
     job = client.load_table_from_json(
         payload,
         table_id,
-        job_config=job_config
+        job_config=job_config,
     )
 
     job.result()
