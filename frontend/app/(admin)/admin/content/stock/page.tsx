@@ -43,9 +43,15 @@ export default function ContentStockPage() {
   const [processing, setProcessing] = useState(false);
   const [selectedRaw, setSelectedRaw] = useState<RawItem | null>(null);
 
-  const [filters, setFilters] = useState({
+  // ✅ Typage complet pour éviter toute erreur TS
+  const [filters, setFilters] = useState<{
+    status: string;
+    source_id: string;
+    import_type: string;
+  }>({
     status: "",
     source_id: "",
+    import_type: "",
   });
 
   // =========================
@@ -58,8 +64,17 @@ export default function ContentStockPage() {
     try {
       const queryParams = new URLSearchParams();
 
-      if (filters.status) queryParams.append("status", filters.status);
-      if (filters.source_id) queryParams.append("source_id", filters.source_id);
+      if (filters.status) {
+        queryParams.append("status", filters.status);
+      }
+
+      if (filters.source_id) {
+        queryParams.append("source_id", filters.source_id);
+      }
+
+      if (filters.import_type) {
+        queryParams.append("import_type", filters.import_type);
+      }
 
       const [listRes, statsRes] = await Promise.all([
         api.get(`/content/raw/stock?${queryParams.toString()}`),
@@ -83,9 +98,14 @@ export default function ContentStockPage() {
 
   useEffect(() => {
     async function loadSources() {
-      const res = await api.get("/content/source/list");
-      setSources(res.sources || []);
+      try {
+        const res = await api.get("/content/source/list");
+        setSources(res.sources || []);
+      } catch (e) {
+        console.error("Erreur chargement sources", e);
+      }
     }
+
     loadSources();
   }, []);
 
@@ -98,22 +118,43 @@ export default function ContentStockPage() {
 
     setProcessing(true);
 
-    await api.post("/content/raw/destock", id ? { id_raw: id } : { limit: 50 });
+    try {
+      await api.post(
+        "/content/raw/destock",
+        id ? { id_raw: id } : { limit: 50 }
+      );
 
-    await load();
+      await load();
+    } catch (e) {
+      console.error(e);
+      alert("Erreur destock");
+    }
+
     setProcessing(false);
   }
 
   async function handleRetry(id: string) {
     if (!confirm("Relancer cette entrée ?")) return;
-    await api.post(`/content/raw/retry/${id}`, {});
-    await load();
+
+    try {
+      await api.post(`/content/raw/retry/${id}`, {});
+      await load();
+    } catch (e) {
+      console.error(e);
+      alert("Erreur retry");
+    }
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Supprimer cette entrée ?")) return;
-    await api.delete(`/content/raw/delete/${id}`);
-    await load();
+
+    try {
+      await api.delete(`/content/raw/delete/${id}`);
+      await load();
+    } catch (e) {
+      console.error(e);
+      alert("Erreur suppression");
+    }
   }
 
   if (loading) return <div>Chargement…</div>;
