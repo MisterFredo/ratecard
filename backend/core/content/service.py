@@ -897,6 +897,30 @@ def retry_raw_content(id_raw: str) -> None:
         where={"ID_RAW": id_raw}
     )
 
+def update_raw_content(id_raw: str, date_source: Optional[str], source_title: Optional[str]):
+
+    client = get_bigquery_client()
+
+    table_id = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_RAW"
+
+    query = f"""
+        UPDATE `{table_id}`
+        SET
+            DATE_SOURCE = @date_source,
+            SOURCE_TITLE = @source_title
+        WHERE ID_RAW = @id_raw
+    """
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("date_source", "DATE", date_source),
+            bigquery.ScalarQueryParameter("source_title", "STRING", source_title),
+            bigquery.ScalarQueryParameter("id_raw", "STRING", id_raw),
+        ]
+    )
+
+    client.query(query, job_config=job_config).result()
+
 def get_raw_stats() -> dict:
 
     query = f"""
