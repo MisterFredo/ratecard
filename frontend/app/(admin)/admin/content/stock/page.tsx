@@ -120,8 +120,12 @@ export default function ContentStockPage() {
       <StockTable
         raws={raws}
         onDestock={handleDestock}
-        onRetry={(id) => api.post(`/content/raw/retry/${id}`).then(load)}
-        onDelete={(id) => api.delete(`/content/raw/delete/${id}`).then(load)}
+        onRetry={(id) =>
+          api.post(`/content/raw/retry/${id}`, {}).then(load)
+        }
+        onDelete={(id) =>
+          api.delete(`/content/raw/delete/${id}`).then(load)
+        }
         onOpen={(raw) => setSelectedRaw(raw)}
       />
 
