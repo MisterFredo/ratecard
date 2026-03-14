@@ -27,51 +27,111 @@ export default function ContentStockPage() {
     import_type: "",
   });
 
+  // =========================
+  // LOAD DATA
+  // =========================
+
   async function load() {
-    const offset = (page - 1) * PAGE_SIZE;
+    try {
+      const offset = (page - 1) * PAGE_SIZE;
 
-    const queryParams = new URLSearchParams();
+      const queryParams = new URLSearchParams();
 
-    if (filters.status) queryParams.append("status", filters.status);
-    if (filters.source_id) queryParams.append("source_id", filters.source_id);
-    if (filters.import_type) queryParams.append("import_type", filters.import_type);
+      if (filters.status) queryParams.append("status", filters.status);
+      if (filters.source_id) queryParams.append("source_id", filters.source_id);
+      if (filters.import_type) queryParams.append("import_type", filters.import_type);
 
-    queryParams.append("limit", PAGE_SIZE.toString());
-    queryParams.append("offset", offset.toString());
+      queryParams.append("limit", PAGE_SIZE.toString());
+      queryParams.append("offset", offset.toString());
 
-    const [listRes, statsRes] = await Promise.all([
-      api.get(`/content/raw/stock?${queryParams.toString()}`),
-      api.get("/content/raw/admin/stats"),
-    ]);
+      const [listRes, statsRes] = await Promise.all([
+        api.get(`/content/raw/stock?${queryParams.toString()}`),
+        api.get("/content/raw/admin/stats"),
+      ]);
 
-    setRaws(listRes.rows || []);
-    setTotal(listRes.total || 0);
-    setStats(statsRes.stats || null);
+      setRaws(listRes.rows || []);
+      setTotal(listRes.total || 0);
+      setStats(statsRes.stats || null);
+
+    } catch (e) {
+      console.error("Erreur chargement stock", e);
+      alert("Erreur chargement stock");
+    }
   }
 
   useEffect(() => { load(); }, [filters, page]);
 
+  // reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
+
   useEffect(() => {
     async function loadSources() {
-      const res = await api.get("/content/source/list");
-      setSources(res.sources || []);
+      try {
+        const res = await api.get("/content/source/list");
+        setSources(res.sources || []);
+      } catch (e) {
+        console.error("Erreur chargement sources", e);
+      }
     }
     loadSources();
   }, []);
 
+  // =========================
+  // ACTIONS
+  // =========================
+
   async function handleDestock(id?: string) {
-    if (!confirm("Confirmer ?")) return;
+    if (!confirm("Confirmer la génération ?")) return;
+
     setProcessing(true);
-    await api.post("/content/raw/destock", id ? { id_raw: id } : { limit: 50 });
-    await load();
+
+    try {
+      await api.post(
+        "/content/raw/destock",
+        id ? { id_raw: id } : { limit: 50 }
+      );
+
+      await load();
+    } catch (e) {
+      console.error("Erreur destock", e);
+      alert("Erreur destock");
+    }
+
     setProcessing(false);
+  }
+
+  async function handleRetry(id: string) {
+    if (!confirm("Relancer cette entrée ?")) return;
+
+    try {
+      await api.post(`/content/raw/retry/${id}`, {});
+      await load();
+    } catch (e) {
+      console.error("Erreur retry", e);
+      alert("Erreur retry");
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Supprimer cette entrée ?")) return;
+
+    try {
+      await api.delete(`/content/raw/delete/${id}`);
+      await load();
+    } catch (e) {
+      console.error("Erreur suppression", e);
+      alert("Erreur suppression");
+    }
   }
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-8 p-6">
 
+      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-ratecard-blue">
           Stock RAW
@@ -82,22 +142,32 @@ export default function ContentStockPage() {
           disabled={processing}
           className="bg-ratecard-green text-white px-3 py-2 rounded text-sm"
         >
-          Déstocker
+          {processing ? "Traitement..." : "Déstocker"}
         </button>
       </div>
 
-      {stats && (
-        <div className="flex gap-6 text-sm">
-          <span>Total: {stats.total}</span>
-          <span>Stock: {stats.total_stored}</span>
-          <span>Processing: {stats.total_processing}</span>
-          <span>OK: {stats.total_processed}</span>
-          <span className="text-red-600">Error: {stats.total_error}</span>
-        </div>
-      )}
+      {/* IMPORT FULL WIDTH */}
+      <div className="border rounded-lg p-6 bg-white shadow-sm">
+        <StockImportPanel
+          sources={sources}
+          onImported={load}
+        />
+      </div>
 
-      <div className="flex gap-4 border p-4 rounded bg-gray-50">
-        <StockImportPanel sources={sources} onImported={load} />
+      {/* STATS + FILTERS */}
+      <div className="flex flex-wrap justify-between items-center gap-6">
+
+        {stats && (
+          <div className="flex gap-6 text-sm">
+            <span>Total: <strong>{stats.total}</strong></span>
+            <span>Stock: <strong>{stats.total_stored}</strong></span>
+            <span>Processing: <strong>{stats.total_processing}</strong></span>
+            <span>OK: <strong>{stats.total_processed}</strong></span>
+            <span className="text-red-600">
+              Error: <strong>{stats.total_error}</strong>
+            </span>
+          </div>
+        )}
 
         <StockFilters
           sources={sources}
@@ -117,19 +187,18 @@ export default function ContentStockPage() {
         />
       </div>
 
-      <StockTable
-        raws={raws}
-        onDestock={handleDestock}
-        onRetry={(id) =>
-          api.post(`/content/raw/retry/${id}`, {}).then(load)
-        }
-        onDelete={(id) =>
-          api.delete(`/content/raw/delete/${id}`).then(load)
-        }
-        onOpen={(raw) => setSelectedRaw(raw)}
-      />
+      {/* TABLE */}
+      <div className="border rounded-lg overflow-hidden">
+        <StockTable
+          raws={raws}
+          onDestock={handleDestock}
+          onRetry={handleRetry}
+          onDelete={handleDelete}
+          onOpen={(raw) => setSelectedRaw(raw)}
+        />
+      </div>
 
-      {/* Pagination */}
+      {/* PAGINATION */}
       {totalPages > 1 && (
         <div className="flex justify-center gap-4 text-sm">
           <button
@@ -154,6 +223,7 @@ export default function ContentStockPage() {
         </div>
       )}
 
+      {/* DRAWER */}
       <RawDrawer
         raw={selectedRaw}
         onClose={() => setSelectedRaw(null)}
