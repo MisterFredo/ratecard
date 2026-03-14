@@ -46,7 +46,7 @@ export default function CompanyList() {
 
     try {
 
-      await api.delete(`/company/delete/${id}`);
+      await api.delete(`/company/${id}`);
 
       setCompanies((prev) =>
         prev.filter((c) => c.id_company !== id)
