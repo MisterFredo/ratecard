@@ -503,12 +503,20 @@ def list_contents_admin():
             "id_content": r["ID_CONTENT"],
             "title": r["TITLE"],
             "status": r["STATUS"],
-            "source_date": r.get("SOURCE_DATE"),
+
+            # ✅ FIX : sérialisation propre
+            "source_date": (
+                r["SOURCE_DATE"].isoformat()
+                if r.get("SOURCE_DATE")
+                else None
+            ),
+
             "published_at": (
                 r["PUBLISHED_AT"].isoformat()
                 if r.get("PUBLISHED_AT")
                 else None
             ),
+
             "updated_at": (
                 r["UPDATED_AT"].isoformat()
                 if r.get("UPDATED_AT")
@@ -517,7 +525,6 @@ def list_contents_admin():
         }
         for r in rows
     ]
-
 
 # ============================================================
 # STORE RAW CONTENT
