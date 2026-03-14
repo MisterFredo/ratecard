@@ -583,42 +583,33 @@ def normalize_llm_list(values):
 
     return list(dict.fromkeys(output))
 
-from typing import Optional, List
-from utils.bigquery_utils import query_bq
-from config import BQ_PROJECT, BQ_DATASET
-
-TABLE_CONTENT_RAW = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_RAW"
-
-
 def list_raw_stock(
-    source_id: Optional[str] = None,
     status: Optional[str] = None,
-) -> List[dict]:
+    source_id: Optional[str] = None,
+    import_type: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+):
 
     conditions = []
     params = {}
 
-    # -----------------------------
-    # FILTER STATUS
-    # -----------------------------
     if status:
         conditions.append("r.STATUS = @status")
         params["status"] = status
 
-    # -----------------------------
-    # FILTER SOURCE_ID (propre)
-    # -----------------------------
     if source_id:
         conditions.append("r.SOURCE_ID = @source_id")
         params["source_id"] = source_id
+
+    if import_type:
+        conditions.append("r.IMPORT_TYPE = @import_type")
+        params["import_type"] = import_type
 
     where_clause = ""
     if conditions:
         where_clause = "WHERE " + " AND ".join(conditions)
 
-    # -----------------------------
-    # QUERY
-    # -----------------------------
     query = f"""
         SELECT
             r.ID_RAW,
@@ -629,41 +620,41 @@ def list_raw_stock(
             r.STATUS,
             r.ERROR_MESSAGE,
             r.CREATED_AT,
-            r.IMPORT_TYPE
+            r.IMPORT_TYPE,
+            COUNT(*) OVER() AS TOTAL_COUNT
         FROM `{TABLE_CONTENT_RAW}` r
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE` s
             ON r.SOURCE_ID = s.SOURCE_ID
         {where_clause}
-        ORDER BY
-            CASE
-                WHEN r.STATUS = 'ERROR' THEN 1
-                WHEN r.STATUS = 'STORED' THEN 2
-                WHEN r.STATUS = 'PROCESSING' THEN 3
-                WHEN r.STATUS = 'PROCESSED' THEN 4
-                ELSE 5
-            END ASC,
-            r.CREATED_AT DESC
+        ORDER BY r.CREATED_AT DESC
+        LIMIT @limit
+        OFFSET @offset
     """
+
+    params["limit"] = limit
+    params["offset"] = offset
 
     rows = query_bq(query, params)
 
-    # -----------------------------
-    # FORMAT RESPONSE
-    # -----------------------------
-    return [
-        {
-            "id_raw": r["ID_RAW"],
-            "source_id": r["SOURCE_ID"],
-            "source_name": r.get("SOURCE_NAME"),
-            "source_title": r["SOURCE_TITLE"],
-            "date_source": r.get("DATE_SOURCE"),
-            "status": r["STATUS"],
-            "error_message": r.get("ERROR_MESSAGE"),
-            "created_at": r["CREATED_AT"],
-            "import_type": r.get("IMPORT_TYPE"),  # 🔥 nouveau
-        }
-        for r in rows
-    ]
+    total = rows[0]["TOTAL_COUNT"] if rows else 0
+
+    return {
+        "rows": [
+            {
+                "id_raw": r["ID_RAW"],
+                "source_id": r["SOURCE_ID"],
+                "source_name": r.get("SOURCE_NAME"),
+                "source_title": r["SOURCE_TITLE"],
+                "date_source": r.get("DATE_SOURCE"),
+                "status": r["STATUS"],
+                "error_message": r.get("ERROR_MESSAGE"),
+                "created_at": r["CREATED_AT"],
+                "import_type": r.get("IMPORT_TYPE"),
+            }
+            for r in rows
+        ],
+        "total": total,
+    }
 
 def destock_all_raw_contents(batch_size: int = 50):
 
