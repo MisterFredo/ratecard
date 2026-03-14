@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { Trash2, Play } from "lucide-react";
+
+import StockImportPanel from "@/components/admin/stock/StockImportPanel";
+import StockFilters from "@/components/admin/stock/StockFilters";
+import StockTable from "@/components/admin/stock/StockTable";
+import RawDrawer from "@/components/admin/stock/RawDrawer";
 
 type RawItem = {
   id_raw: string;
@@ -13,6 +17,7 @@ type RawItem = {
   status: string;
   error_message?: string | null;
   created_at: string;
+  import_type?: "FILE" | "URL" | null;
 };
 
 type RawStats = {
@@ -28,13 +33,7 @@ type SourceItem = {
   label: string;
 };
 
-const PAGE_SIZE = 50;
-
 export default function ContentStockPage() {
-
-  // =========================
-  // STATE
-  // =========================
 
   const [raws, setRaws] = useState<RawItem[]>([]);
   const [stats, setStats] = useState<RawStats | null>(null);
@@ -42,21 +41,15 @@ export default function ContentStockPage() {
 
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedRaw, setSelectedRaw] = useState<RawItem | null>(null);
 
-  const [page, setPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState("");
-  const [sourceFilter, setSourceFilter] = useState("");
-
-  // IMPORT
-  const [file, setFile] = useState<File | null>(null);
-  const [sourceId, setSourceId] = useState("");
-  const [importLoading, setImportLoading] = useState(false);
-  const [previewCount, setPreviewCount] = useState<number | null>(null);
-  const [importResult, setImportResult] = useState("");
+  const [filters, setFilters] = useState({
+    status: "",
+    source_id: "",
+  });
 
   // =========================
-  // LOAD STOCK
+  // LOAD DATA
   // =========================
 
   async function load() {
@@ -64,8 +57,9 @@ export default function ContentStockPage() {
 
     try {
       const queryParams = new URLSearchParams();
-      if (statusFilter) queryParams.append("status", statusFilter);
-      if (sourceFilter) queryParams.append("source_name", sourceFilter);
+
+      if (filters.status) queryParams.append("status", filters.status);
+      if (filters.source_id) queryParams.append("source_id", filters.source_id);
 
       const [listRes, statsRes] = await Promise.all([
         api.get(`/content/raw/stock?${queryParams.toString()}`),
@@ -85,139 +79,41 @@ export default function ContentStockPage() {
 
   useEffect(() => {
     load();
-    setPage(1);
-  }, [statusFilter, sourceFilter]);
-
-  // =========================
-  // LOAD SOURCES
-  // =========================
+  }, [filters]);
 
   useEffect(() => {
     async function loadSources() {
-      try {
-        const res = await api.get("/content/source/list");
-        setSources(res.sources || []);
-      } catch (e) {
-        console.error("Erreur chargement sources", e);
-      }
+      const res = await api.get("/content/source/list");
+      setSources(res.sources || []);
     }
-
     loadSources();
   }, []);
-
-  // =========================
-  // IMPORT RAW
-  // =========================
-
-  async function handleFileChange(f: File | null) {
-    setFile(f);
-    setPreviewCount(null);
-    setImportResult("");
-
-    if (!f) return;
-
-    const text = await f.text();
-    const matches = text.match(/TITLE\s*:/g);
-    setPreviewCount(matches ? matches.length : 0);
-  }
-
-  async function handleImport() {
-
-    if (!file) return alert("Choisissez un fichier");
-    if (!sourceId) return alert("Choisissez une source");
-
-    setImportLoading(true);
-    setImportResult("");
-
-    try {
-      const text = await file.text();
-
-      const json = await api.post("/content/raw/import", {
-        id_source: sourceId,
-        text: text,
-      });
-
-      setImportResult(`Import réussi : ${json.imported} contenus`);
-      await load();
-
-    } catch (e) {
-      console.error(e);
-      setImportResult("Erreur import");
-    }
-
-    setImportLoading(false);
-  }
-
-  // =========================
-  // PAGINATION
-  // =========================
-
-  const totalPages = Math.ceil(raws.length / PAGE_SIZE);
-
-  const paginatedRaws = raws.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
-
-  // =========================
-  // STATUS STYLE
-  // =========================
-
-  function getStatusClasses(status: string) {
-    if (status === "STORED") return "bg-yellow-100 text-yellow-700";
-    if (status === "PROCESSING") return "bg-blue-100 text-blue-700";
-    if (status === "PROCESSED") return "bg-green-100 text-green-700";
-    if (status === "ERROR") return "bg-red-100 text-red-700";
-    return "bg-gray-100 text-gray-700";
-  }
 
   // =========================
   // ACTIONS
   // =========================
 
-  async function handleDestockBatch() {
-    if (!window.confirm("Déstocker tout le stock ?")) return;
+  async function handleDestock(id?: string) {
+    if (!confirm("Confirmer la génération ?")) return;
 
     setProcessing(true);
-    await api.post("/content/raw/destock", { limit: 50 });
-    await load();
-    setProcessing(false);
-  }
 
-  async function handleDestockOne(id: string) {
-    if (!window.confirm("Générer ce contenu ?")) return;
+    await api.post("/content/raw/destock", id ? { id_raw: id } : { limit: 50 });
 
-    setProcessing(true);
-    await api.post("/content/raw/destock", { id_raw: id });
     await load();
     setProcessing(false);
   }
 
   async function handleRetry(id: string) {
-    if (!window.confirm("Relancer cette source en erreur ?")) return;
-
+    if (!confirm("Relancer cette entrée ?")) return;
     await api.post(`/content/raw/retry/${id}`, {});
     await load();
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm("Supprimer cette source ?")) return;
-
-    try {
-      setDeletingId(id);
-      await api.delete(`/content/raw/delete/${id}`);
-      await load();
-    } catch (e) {
-      console.error(e);
-      alert("Erreur suppression");
-    } finally {
-      setDeletingId(null);
-    }
-  }
-
-  function formatDate(value?: string | null) {
-    if (!value) return "—";
-    return new Date(value).toLocaleDateString("fr-FR");
+    if (!confirm("Supprimer cette entrée ?")) return;
+    await api.delete(`/content/raw/delete/${id}`);
+    await load();
   }
 
   if (loading) return <div>Chargement…</div>;
@@ -232,62 +128,19 @@ export default function ContentStockPage() {
         </h1>
 
         <button
-          onClick={handleDestockBatch}
+          onClick={() => handleDestock()}
           disabled={processing}
           className="bg-ratecard-green text-white px-4 py-2 rounded shadow"
         >
-          {processing ? "Traitement..." : "Déstocker tout le stock"}
+          {processing ? "Traitement..." : "Déstocker le stock"}
         </button>
       </div>
 
-      {/* IMPORT COMPACT */}
-      <div className="border rounded-lg p-4 bg-gray-50">
-        <div className="flex flex-wrap items-center gap-4">
-
-          <select
-            value={sourceId}
-            onChange={(e) => setSourceId(e.target.value)}
-            className="border rounded px-3 py-2 text-sm min-w-[180px]"
-          >
-            <option value="">Source</option>
-            {sources.map((s) => (
-              <option key={s.id_source} value={s.id_source}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="file"
-            accept=".txt"
-            onChange={(e) =>
-              handleFileChange(e.target.files?.[0] || null)
-            }
-            className="text-sm"
-          />
-
-          {previewCount !== null && (
-            <span className="text-xs text-gray-500">
-              {previewCount} détectés
-            </span>
-          )}
-
-          <button
-            onClick={handleImport}
-            disabled={importLoading}
-            className="bg-black text-white px-4 py-2 rounded text-sm"
-          >
-            {importLoading ? "Import..." : "Importer"}
-          </button>
-
-          {importResult && (
-            <span className="text-xs font-medium">
-              {importResult}
-            </span>
-          )}
-
-        </div>
-      </div>
+      {/* IMPORT */}
+      <StockImportPanel
+        sources={sources}
+        onImported={load}
+      />
 
       {/* STATS */}
       {stats && (
@@ -301,117 +154,27 @@ export default function ContentStockPage() {
       )}
 
       {/* FILTERS */}
-      <div className="flex gap-4">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="border rounded p-2 text-sm"
-        >
-          <option value="">Tous les statuts</option>
-          <option value="ERROR">Erreur</option>
-          <option value="STORED">Stored</option>
-          <option value="PROCESSING">Processing</option>
-          <option value="PROCESSED">Processed</option>
-        </select>
-
-        <input
-          type="text"
-          placeholder="Filtrer par source..."
-          value={sourceFilter}
-          onChange={(e) => setSourceFilter(e.target.value)}
-          className="border rounded p-2 text-sm"
-        />
-      </div>
+      <StockFilters
+        sources={sources}
+        filters={filters}
+        onChange={setFilters}
+      />
 
       {/* TABLE */}
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="bg-gray-100 border-b text-left text-gray-700">
-            <th className="p-2">Source</th>
-            <th className="p-2">Titre source</th>
-            <th className="p-2">Date source</th>
-            <th className="p-2">Créé le</th>
-            <th className="p-2">Statut</th>
-            <th className="p-2">Erreur</th>
-            <th className="p-2 text-right">Actions</th>
-          </tr>
-        </thead>
+      <StockTable
+        raws={raws}
+        onDestock={handleDestock}
+        onRetry={handleRetry}
+        onDelete={handleDelete}
+        onOpen={(raw) => setSelectedRaw(raw)}
+      />
 
-        <tbody>
-          {paginatedRaws.map((r) => (
-            <tr key={r.id_raw} className="border-b hover:bg-gray-50 transition">
-              <td className="p-2 text-gray-600">
-                {r.source_name || r.source_id}
-              </td>
-              <td className="p-2 font-medium">{r.source_title}</td>
-              <td className="p-2 text-gray-600">{formatDate(r.date_source)}</td>
-              <td className="p-2 text-gray-600">{formatDate(r.created_at)}</td>
-              <td className="p-2">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusClasses(r.status)}`}>
-                  {r.status}
-                </span>
-              </td>
-              <td className="p-2 text-xs text-red-600 max-w-xs truncate">
-                {r.status === "ERROR" ? r.error_message : ""}
-              </td>
-              <td className="p-2 text-right space-x-3">
-
-                {r.status === "STORED" && (
-                  <button
-                    onClick={() => handleDestockOne(r.id_raw)}
-                    className="inline-flex items-center text-green-600 hover:text-green-800"
-                  >
-                    <Play size={16} />
-                  </button>
-                )}
-
-                {r.status === "ERROR" && (
-                  <button
-                    onClick={() => handleRetry(r.id_raw)}
-                    className="inline-flex items-center text-orange-600 hover:text-orange-800"
-                  >
-                    ↺
-                  </button>
-                )}
-
-                <button
-                  onClick={() => handleDelete(r.id_raw)}
-                  disabled={deletingId === r.id_raw}
-                  className="inline-flex items-center text-red-600 hover:text-red-800"
-                >
-                  <Trash2 size={16} />
-                </button>
-
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* PAGINATION */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage((p) => p - 1)}
-            className="px-3 py-1 border rounded disabled:opacity-40"
-          >
-            Précédent
-          </button>
-
-          <span className="text-sm">
-            Page {page} / {totalPages}
-          </span>
-
-          <button
-            disabled={page === totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="px-3 py-1 border rounded disabled:opacity-40"
-          >
-            Suivant
-          </button>
-        </div>
-      )}
+      {/* DRAWER */}
+      <RawDrawer
+        raw={selectedRaw}
+        onClose={() => setSelectedRaw(null)}
+        onSaved={load}
+      />
 
     </div>
   );
