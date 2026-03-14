@@ -200,18 +200,25 @@ def import_raw_route(payload: dict):
 # ============================================================
 @router.get("/raw/stock")
 def raw_stock_route(
-    source_id: Optional[str] = None,
     status: Optional[str] = None,
+    source_id: Optional[str] = None,
+    import_type: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
 ):
     try:
-        raws = list_raw_stock(
-            source_id=source_id,
+        result = list_raw_stock(
             status=status,
+            source_id=source_id,
+            import_type=import_type,
+            limit=limit,
+            offset=offset,
         )
 
         return {
             "status": "ok",
-            "raws": raws
+            "rows": result["rows"],
+            "total": result["total"],
         }
 
     except Exception as e:
