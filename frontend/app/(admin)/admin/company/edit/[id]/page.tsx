@@ -10,6 +10,11 @@ import HtmlEditor from "@/components/admin/HtmlEditor";
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 const COMPANY_MEDIA_PATH = "companies";
 
+type CompanyType = {
+  id_type: string;
+  label: string;
+};
+
 export default function EditCompany({ params }: { params: { id: string } }) {
   const { id } = params;
 
@@ -25,6 +30,33 @@ export default function EditCompany({ params }: { params: { id: string } }) {
 
   const [wikiContent, setWikiContent] = useState("");
   const [logoFilename, setLogoFilename] = useState<string | null>(null);
+
+  const [types, setTypes] = useState<CompanyType[]>([]);
+
+  /* ---------------------------------------------------------
+     LOAD TYPES
+  --------------------------------------------------------- */
+  useEffect(() => {
+
+    async function loadTypes() {
+
+      try {
+
+        const res = await api.get("/company/types");
+        setTypes(res.types || []);
+
+      } catch (e) {
+
+        console.error(e);
+        alert("❌ Erreur chargement types");
+
+      }
+
+    }
+
+    loadTypes();
+
+  }, []);
 
   /* ---------------------------------------------------------
      LOAD
@@ -130,12 +162,22 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         <label className="block font-medium">
           Type
         </label>
-        <input
-          type="text"
+
+        <select
           value={type}
           onChange={(e) => setType(e.target.value)}
           className="border px-3 py-2 rounded w-full max-w-md"
-        />
+        >
+          <option value="">— Sélectionner —</option>
+
+          {types.map((t) => (
+            <option key={t.id_type} value={t.label}>
+              {t.label}
+            </option>
+          ))}
+
+        </select>
+
       </div>
 
       <div className="space-y-2">
