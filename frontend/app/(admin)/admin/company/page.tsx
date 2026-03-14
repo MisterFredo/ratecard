@@ -19,6 +19,7 @@ type CompanyRow = {
 export default function CompanyList() {
 
   const [companies, setCompanies] = useState<CompanyRow[]>([]);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,10 +39,36 @@ export default function CompanyList() {
     load();
   }, []);
 
+  async function deleteCompany(id: string, name: string) {
+
+    const ok = confirm(`Supprimer la société "${name}" ?`);
+    if (!ok) return;
+
+    try {
+
+      await api.delete(`/company/delete/${id}`);
+
+      setCompanies((prev) =>
+        prev.filter((c) => c.id_company !== id)
+      );
+
+    } catch (e) {
+
+      console.error(e);
+      alert("❌ Erreur suppression");
+
+    }
+
+  }
+
+  const filteredCompanies = companies.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="space-y-8">
 
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold text-ratecard-blue">
           Sociétés
         </h1>
@@ -54,14 +81,27 @@ export default function CompanyList() {
         </Link>
       </div>
 
+      {/* SEARCH */}
+
+      <div>
+        <input
+          type="text"
+          placeholder="Rechercher une société..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border px-3 py-2 rounded w-full max-w-md"
+        />
+      </div>
+
       {loading ? (
         <p className="text-gray-500">Chargement…</p>
-      ) : companies.length === 0 ? (
+      ) : filteredCompanies.length === 0 ? (
         <p className="italic text-gray-500">
           Aucune société.
         </p>
       ) : (
         <table className="w-full text-sm border-collapse">
+
           <thead>
             <tr className="bg-gray-100 border-b text-left">
               <th className="p-2">Nom</th>
@@ -74,17 +114,20 @@ export default function CompanyList() {
           </thead>
 
           <tbody>
-            {companies.map((c) => {
+
+            {filteredCompanies.map((c) => {
 
               const rectUrl = c.media_logo_rectangle_id
                 ? `${GCS_BASE_URL}/${COMPANY_MEDIA_PATH}/${c.media_logo_rectangle_id}`
                 : null;
 
               return (
+
                 <tr
                   key={c.id_company}
                   className="border-b hover:bg-gray-50"
                 >
+
                   <td className="p-2 font-medium">
                     {c.name}
                   </td>
@@ -129,19 +172,32 @@ export default function CompanyList() {
                     )}
                   </td>
 
-                  <td className="p-2 text-right">
+                  <td className="p-2 text-right space-x-3">
+
                     <Link
                       href={`/admin/company/edit/${c.id_company}`}
                       className="text-blue-600 hover:underline"
                     >
                       Modifier
                     </Link>
+
+                    <button
+                      onClick={() => deleteCompany(c.id_company, c.name)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Supprimer
+                    </button>
+
                   </td>
+
                 </tr>
+
               );
 
             })}
+
           </tbody>
+
         </table>
       )}
 
