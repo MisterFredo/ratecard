@@ -1,18 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Trash2, Play } from "lucide-react";
 
-type RawItem = {
-  id_raw: string;
-  source_id: string;
-  source_name: string | null;
-  source_title: string;
-  date_source?: string | null;
-  status: string;
-  error_message?: string | null;
-  created_at: string;
-  import_type?: string | null;
-};
+const PAGE_SIZE = 50;
 
 export default function StockTable({
   raws,
@@ -20,13 +11,16 @@ export default function StockTable({
   onRetry,
   onDelete,
   onOpen,
-}: {
-  raws: RawItem[];
-  onDestock: (id: string) => void;
-  onRetry: (id: string) => void;
-  onDelete: (id: string) => void;
-  onOpen: (raw: RawItem) => void;
-}) {
+}: any) {
+
+  const [page, setPage] = useState(1);
+
+  const totalPages = Math.ceil(raws.length / PAGE_SIZE);
+
+  const paginated = raws.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE
+  );
 
   function getStatusClasses(status: string) {
     if (status === "STORED") return "bg-yellow-100 text-yellow-700";
@@ -42,81 +36,119 @@ export default function StockTable({
   }
 
   return (
-    <table className="w-full border-collapse text-sm">
-      <thead>
-        <tr className="bg-gray-100 border-b text-left text-gray-700">
-          <th className="p-2">Source</th>
-          <th className="p-2">Titre</th>
-          <th className="p-2">Date</th>
-          <th className="p-2">Import</th>
-          <th className="p-2">Statut</th>
-          <th className="p-2 text-right">Actions</th>
-        </tr>
-      </thead>
+    <div className="space-y-4">
 
-      <tbody>
-        {raws.map((r) => (
-          <tr
-            key={r.id_raw}
-            className="border-b hover:bg-gray-50 transition cursor-pointer"
-            onClick={() => onOpen(r)}
-          >
-            <td className="p-2 text-gray-600">
-              {r.source_name || r.source_id}
-            </td>
-
-            <td className="p-2 font-medium">
-              {r.source_title}
-            </td>
-
-            <td className="p-2 text-gray-600">
-              {formatDate(r.date_source)}
-            </td>
-
-            <td className="p-2">
-              <span className="text-xs px-2 py-1 rounded bg-gray-200">
-                {r.import_type || "—"}
-              </span>
-            </td>
-
-            <td className="p-2">
-              <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusClasses(r.status)}`}>
-                {r.status}
-              </span>
-            </td>
-
-            <td
-              className="p-2 text-right space-x-3"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {r.status === "STORED" && (
-                <button
-                  onClick={() => onDestock(r.id_raw)}
-                  className="text-green-600 hover:text-green-800"
-                >
-                  <Play size={16} />
-                </button>
-              )}
-
-              {r.status === "ERROR" && (
-                <button
-                  onClick={() => onRetry(r.id_raw)}
-                  className="text-orange-600 hover:text-orange-800"
-                >
-                  ↺
-                </button>
-              )}
-
-              <button
-                onClick={() => onDelete(r.id_raw)}
-                className="text-red-600 hover:text-red-800"
-              >
-                <Trash2 size={16} />
-              </button>
-            </td>
+      <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr className="bg-gray-100 border-b text-left text-gray-700 sticky top-0">
+            <th className="p-2">Source</th>
+            <th className="p-2">Titre</th>
+            <th className="p-2">Date source</th>
+            <th className="p-2">Créé</th>
+            <th className="p-2">Import</th>
+            <th className="p-2">Statut</th>
+            <th className="p-2">Erreur</th>
+            <th className="p-2 text-right">Actions</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+
+        <tbody>
+          {paginated.map((r: any) => (
+            <tr
+              key={r.id_raw}
+              className="border-b hover:bg-gray-50 transition cursor-pointer"
+              onClick={() => onOpen(r)}
+            >
+              <td className="p-2 text-gray-600">
+                {r.source_name || r.source_id}
+              </td>
+
+              <td className="p-2 font-medium">
+                {r.source_title}
+              </td>
+
+              <td className="p-2 text-gray-600">
+                {formatDate(r.date_source)}
+              </td>
+
+              <td className="p-2 text-gray-600">
+                {formatDate(r.created_at)}
+              </td>
+
+              <td className="p-2">
+                <span className="text-xs px-2 py-1 rounded bg-gray-200">
+                  {r.import_type || "—"}
+                </span>
+              </td>
+
+              <td className="p-2">
+                <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusClasses(r.status)}`}>
+                  {r.status}
+                </span>
+              </td>
+
+              <td className="p-2 text-xs text-red-600 max-w-xs truncate">
+                {r.status === "ERROR" ? r.error_message : ""}
+              </td>
+
+              <td
+                className="p-2 text-right space-x-3"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {r.status === "STORED" && (
+                  <button
+                    onClick={() => onDestock(r.id_raw)}
+                    className="text-green-600"
+                  >
+                    <Play size={16} />
+                  </button>
+                )}
+
+                {r.status === "ERROR" && (
+                  <button
+                    onClick={() => onRetry(r.id_raw)}
+                    className="text-orange-600"
+                  >
+                    ↺
+                  </button>
+                )}
+
+                <button
+                  onClick={() => onDelete(r.id_raw)}
+                  className="text-red-600"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-4">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(p => p - 1)}
+            className="px-3 py-1 border rounded disabled:opacity-40"
+          >
+            Précédent
+          </button>
+
+          <span className="text-sm">
+            Page {page} / {totalPages}
+          </span>
+
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage(p => p + 1)}
+            className="px-3 py-1 border rounded disabled:opacity-40"
+          >
+            Suivant
+          </button>
+        </div>
+      )}
+
+    </div>
   );
 }
