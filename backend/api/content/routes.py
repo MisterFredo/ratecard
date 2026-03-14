@@ -28,6 +28,7 @@ from core.content.service import (
     list_active_sources,
     store_raw_content,
     list_raw_stock,
+    get_raw_detail,
     destock_raw_contents,
     destock_all_raw_contents,
     delete_raw_content,
@@ -215,6 +216,31 @@ def raw_stock_route(
 
     except Exception as e:
         logger.exception("Erreur stock raw")
+        raise HTTPException(400, str(e))
+
+# ============================================================
+# RAW DETAIL
+# ============================================================
+
+@router.get("/raw/detail/{id_raw}")
+def raw_detail_route(id_raw: str):
+    try:
+        from core.content.service import get_raw_detail
+
+        raw = get_raw_detail(id_raw)
+
+        if not raw:
+            raise HTTPException(404, "RAW introuvable")
+
+        return {
+            "status": "ok",
+            **raw
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Erreur récupération RAW detail")
         raise HTTPException(400, str(e))
 
 # ============================================================
