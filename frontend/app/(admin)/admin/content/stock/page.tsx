@@ -158,11 +158,16 @@ export default function ContentStockPage() {
         sources={sources}
         status={filters.status}
         sourceId={filters.source_id}
+        importType={filters.import_type}
+        total={raws.length}
         onStatusChange={(v) =>
           setFilters((prev) => ({ ...prev, status: v }))
         }
         onSourceChange={(v) =>
           setFilters((prev) => ({ ...prev, source_id: v }))
+        }
+        onImportTypeChange={(v) =>
+          setFilters((prev) => ({ ...prev, import_type: v }))
         }
       />
 
