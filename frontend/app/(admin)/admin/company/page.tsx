@@ -10,6 +10,7 @@ const COMPANY_MEDIA_PATH = "companies";
 type CompanyRow = {
   id_company: string;
   name: string;
+  type?: string | null;
   media_logo_rectangle_id?: string | null;
   is_partner?: boolean | null;
   has_description?: boolean;
@@ -105,6 +106,7 @@ export default function CompanyList() {
           <thead>
             <tr className="bg-gray-100 border-b text-left">
               <th className="p-2">Nom</th>
+              <th className="p-2">Type</th>
               <th className="p-2">Statut</th>
               <th className="p-2">Description</th>
               <th className="p-2">Wiki</th>
@@ -130,6 +132,10 @@ export default function CompanyList() {
 
                   <td className="p-2 font-medium">
                     {c.name}
+                  </td>
+
+                  <td className="p-2">
+                    {c.type || <span className="text-gray-400">—</span>}
                   </td>
 
                   <td className="p-2">
