@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from api.company.models import CompanyCreate, CompanyUpdate
+from api.company.models import CompanyCreate, CompanyUpdate, CompanyOut
 from core.company.service import (
     create_company,
     list_companies,
@@ -33,7 +33,7 @@ def list_route():
 
 
 # GET ONE
-@router.get("/{id_company}")
+@router.get("/{id_company}", response_model=CompanyOut)
 def get_route(id_company: str):
 
     company = get_company(id_company)
