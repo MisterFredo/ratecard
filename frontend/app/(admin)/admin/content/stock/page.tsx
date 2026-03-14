@@ -156,8 +156,14 @@ export default function ContentStockPage() {
       {/* FILTERS */}
       <StockFilters
         sources={sources}
-        filters={filters}
-        onChange={setFilters}
+        status={filters.status}
+        sourceId={filters.source_id}
+        onStatusChange={(v) =>
+          setFilters((prev) => ({ ...prev, status: v }))
+        }
+        onSourceChange={(v) =>
+          setFilters((prev) => ({ ...prev, source_id: v }))
+        }
       />
 
       {/* TABLE */}
