@@ -1,3 +1,4 @@
+import re
 import uuid
 import requests
 from bs4 import BeautifulSoup
