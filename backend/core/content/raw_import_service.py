@@ -388,8 +388,11 @@ def import_urls_batch(urls_text: str, id_source: str):
 
     urls = clean_urls(urls_text)
 
-    results = []
     inserted_rows = []
+
+    imported_count = 0
+    skipped_count = 0
+    error_count = 0
 
     print(f"[RAW_IMPORT_URL] URLs reçues : {len(urls)}")
 
@@ -403,11 +406,7 @@ def import_urls_batch(urls_text: str, id_source: str):
             # SKIP si déjà existant
             # --------------------------------------------------
             if url_already_exists(url):
-                results.append({
-                    "url": url,
-                    "status": "SKIPPED",
-                    "reason": "Already exists"
-                })
+                skipped_count += 1
                 continue
 
             # --------------------------------------------------
@@ -422,14 +421,6 @@ def import_urls_batch(urls_text: str, id_source: str):
             if not raw_text.strip():
                 raise Exception("RAW_TEXT vide après parsing")
 
-            word_count = len(raw_text.split())
-            raw_length = len(raw_text)
-
-            warnings = []
-
-            if word_count < 200:
-                warnings.append("Body court (<200 mots)")
-
             # --------------------------------------------------
             # Prépare insertion BQ
             # --------------------------------------------------
@@ -441,15 +432,7 @@ def import_urls_batch(urls_text: str, id_source: str):
                 }
             )
 
-            results.append({
-                "url": url,
-                "status": "IMPORTED",
-                "title": title,
-                "date_source": date_source.isoformat() if date_source else None,
-                "word_count": word_count,
-                "raw_length": raw_length,
-                "warnings": warnings,
-            })
+            imported_count += 1
 
             # --------------------------------------------------
             # Délai sécurisé (anti-bot)
@@ -459,23 +442,37 @@ def import_urls_batch(urls_text: str, id_source: str):
         except Exception as e:
 
             print("[RAW_IMPORT_URL] erreur:", e)
-
-            results.append({
-                "url": url,
-                "status": "ERROR",
-                "error": str(e)
-            })
+            error_count += 1
 
     # ----------------------------------------------------------
     # INSERTION GROUPÉE
     # ----------------------------------------------------------
     if inserted_rows:
-        inserted_count = insert_raw_rows(inserted_rows, id_source)
-    else:
-        inserted_count = 0
+        insert_raw_rows(
+            inserted_rows,
+            id_source=id_source,
+            import_type="URL"
+        )
+
+    # ----------------------------------------------------------
+    # MESSAGE SIMPLE POUR FRONT
+    # ----------------------------------------------------------
+    message_parts = []
+
+    if imported_count:
+        message_parts.append(f"{imported_count} importée(s)")
+    if skipped_count:
+        message_parts.append(f"{skipped_count} déjà existante(s)")
+    if error_count:
+        message_parts.append(f"{error_count} erreur(s)")
+
+    message = " / ".join(message_parts) if message_parts else "Aucune URL traitée"
 
     return {
+        "status": "ok",
         "total": len(urls),
-        "inserted": inserted_count,
-        "details": results
+        "inserted": imported_count,
+        "skipped": skipped_count,
+        "errors": error_count,
+        "message": message,
     }
