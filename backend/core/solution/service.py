@@ -67,6 +67,7 @@ def list_solutions():
         FROM `{TABLE_SOLUTION}` s
         LEFT JOIN `{TABLE_COMPANY}` c
           ON s.ID_COMPANY = c.ID_COMPANY
+        WHERE s.IS_ACTIVE = TRUE
         ORDER BY s.NAME ASC
     """
 
