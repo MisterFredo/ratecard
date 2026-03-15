@@ -78,7 +78,7 @@ export default function EditSolution({ params }: { params: { id: string } }) {
       await api.put(`/solution/update/${id}`, {
         name,
         description: description || null,
-        content,
+        content: content || null,
         status,
         id_company: idCompany || null,
       });
