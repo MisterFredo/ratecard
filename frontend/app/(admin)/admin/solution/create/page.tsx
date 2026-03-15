@@ -54,7 +54,7 @@ export default function CreateSolution() {
       const res = await api.post("/solution/create", {
         name,
         description: description || null,
-        content,
+        content: content || null,
         status,
         id_company: idCompany || null,
       });
