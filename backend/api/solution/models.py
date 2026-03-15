@@ -18,7 +18,7 @@ class SolutionCreate(BaseModel):
     id_company: Optional[str] = None
     description: Optional[str] = None
 
-    content: str = Field(..., min_length=1)
+    content: Optional[str] = Field(None)
 
     status: str = "DRAFT"
     vectorise: bool = False
