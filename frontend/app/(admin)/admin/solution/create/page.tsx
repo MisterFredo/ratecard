@@ -46,7 +46,6 @@ export default function CreateSolution() {
   async function save() {
 
     if (!name.trim()) return alert("Nom requis");
-    if (!content.trim()) return alert("Contenu requis");
 
     try {
 
