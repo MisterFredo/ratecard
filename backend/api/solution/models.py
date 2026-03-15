@@ -54,17 +54,13 @@ class SolutionUpdate(BaseModel):
 # ============================================================
 
 class SolutionOut(BaseModel):
-    """
-    Représentation retournée par l’API.
-    Snake_case strict.
-    """
 
     id_solution: str
     name: str
 
     id_company: Optional[str] = None
     description: Optional[str] = None
-    content: str
+    content: Optional[str] = None
 
     status: str
     vectorise: bool
