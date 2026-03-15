@@ -28,7 +28,7 @@ def create_solution(data: SolutionCreate) -> str:
         "NAME": data.name,
         "ID_COMPANY": data.id_company,
         "DESCRIPTION": data.description,
-        "CONTENT": data.content,
+        "CONTENT": data.content or None,
         "STATUS": data.status or "DRAFT",
         "VECTORISE": bool(data.vectorise),
         "CREATED_AT": now,
