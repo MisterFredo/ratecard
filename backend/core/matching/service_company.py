@@ -44,7 +44,7 @@ def list_unmatched_companies() -> List[Dict]:
         company,
         COUNT(*) AS count
     FROM `{TABLE_CONTENT}`,
-    UNNEST(COMPANIES_LLM) AS company
+    UNNEST(ACTEURS_CITES) AS company
     WHERE company IS NOT NULL
     AND TRIM(company) != ""
     GROUP BY company
