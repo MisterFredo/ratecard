@@ -39,114 +39,29 @@ def normalize(text: str) -> str:
 # LIST UNMATCHED SOLUTIONS
 # ===============================================
 
-def list_unmatched_solutions() -> List[Dict[str, Any]]:
+def list_unmatched_solutions() -> List[Dict]:
 
     sql = f"""
-    WITH extracted AS (
-
-        SELECT
-            TRIM(solution) AS solution
-
-        FROM `{TABLE_CONTENT}`
-
-        CROSS JOIN UNNEST(
-            SPLIT(
-                REGEXP_REPLACE(
-                    COALESCE(SOLUTIONS_LLM,''),
-                    r'[\\[\\]\"]',
-                    ''
-                ),
-                ','
-            )
-        ) AS solution
-
-    ),
-
-    cleaned AS (
-
-        SELECT solution
-        FROM extracted
-        WHERE solution IS NOT NULL
-        AND solution != ''
-
-    )
-
     SELECT
-        solution AS solution_llm,
+        solution,
         COUNT(*) AS count
-
-    FROM cleaned
-
+    FROM `{TABLE_CONTENT}`,
+    UNNEST(SOLUTIONS_LLM) AS solution
+    WHERE solution IS NOT NULL
+    AND TRIM(solution) != ""
     GROUP BY solution
     ORDER BY count DESC
     """
 
     rows = query_bq(sql)
 
-    client = get_bigquery_client()
-
-    # ---------------------------------
-    # Solutions existantes
-    # ---------------------------------
-
-    solutions = client.query(
-        f"""
-        SELECT
-            ID_SOLUTION,
-            NAME
-        FROM `{TABLE_SOLUTION}`
-        """
-    ).to_dataframe()
-
-    solution_map = {
-        normalize(r["NAME"]): {
-            "id_solution": r["ID_SOLUTION"],
-            "name": r["NAME"],
-        }
-        for _, r in solutions.iterrows()
-    }
-
-    # ---------------------------------
-    # Alias existants
-    # ---------------------------------
-
-    aliases = client.query(
-        f"""
-        SELECT ALIAS
-        FROM `{TABLE_ALIAS}`
-        """
-    ).to_dataframe()["ALIAS"].tolist()
-
-    alias_set = {normalize(a) for a in aliases}
-
-    # ---------------------------------
-    # Build results
-    # ---------------------------------
-
-    results = []
-
-    for r in rows:
-
-        raw = r["solution_llm"]
-
-        norm = normalize(raw)
-
-        # déjà mappé
-        if norm in alias_set:
-            continue
-
-        auto_match = None
-
-        if norm in solution_map:
-            auto_match = solution_map[norm]
-
-        results.append({
-            "value": raw,
+    return [
+        {
+            "value": r["solution"],
             "count": r["count"],
-            "auto_match": auto_match
-        })
-
-    return results
+        }
+        for r in rows
+    ]
 
 
 # ===============================================
