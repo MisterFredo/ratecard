@@ -58,31 +58,31 @@ def list_unmatched_solutions() -> List[Dict]:
     client = get_bigquery_client()
 
     # récupérer alias existants
-    alias_rows = client.query(
-        f"""
-        SELECT ALIAS
-        FROM `{TABLE_ALIAS}`
-        """
-    ).to_dataframe()
+    alias_query = f"""
+    SELECT ALIAS
+    FROM `{TABLE_ALIAS}`
+    """
+
+    alias_rows = client.query(alias_query).result()
 
     alias_set = {
-        normalize(a)
-        for a in alias_rows["ALIAS"].tolist()
-        if a
+        normalize(row["ALIAS"])
+        for row in alias_rows
+        if row["ALIAS"]
     }
 
     # récupérer solutions existantes
-    solution_rows = client.query(
-        f"""
-        SELECT NAME
-        FROM `{TABLE_SOLUTION}`
-        """
-    ).to_dataframe()
+    solution_query = f"""
+    SELECT NAME
+    FROM `{TABLE_SOLUTION}`
+    """
+
+    solution_rows = client.query(solution_query).result()
 
     solution_set = {
-        normalize(s)
-        for s in solution_rows["NAME"].tolist()
-        if s
+        normalize(row["NAME"])
+        for row in solution_rows
+        if row["NAME"]
     }
 
     results = []
@@ -96,9 +96,11 @@ def list_unmatched_solutions() -> List[Dict]:
 
         norm = normalize(raw)
 
+        # exclure alias déjà existants
         if norm in alias_set:
             continue
 
+        # exclure solutions déjà existantes
         if norm in solution_set:
             continue
 
