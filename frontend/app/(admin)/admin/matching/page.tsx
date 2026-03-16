@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-type LLMSolution = {
+
+type LLMItem = {
   value: string;
   count: number;
 };
@@ -13,15 +14,27 @@ type Solution = {
   name: string;
 };
 
+type Company = {
+  id_company: string;
+  name: string;
+};
+
+
 export default function MatchingPage() {
 
   const [loading, setLoading] = useState(true);
 
-  const [llmSolutions, setLLMSolutions] = useState<LLMSolution[]>([]);
-  const [solutions, setSolutions] = useState<Solution[]>([]);
+  const [tab, setTab] = useState<"solutions" | "companies">("solutions");
 
-  const [selected, setSelected] = useState<{[key:string]: string}>({});
+  const [llmSolutions, setLLMSolutions] = useState<LLMItem[]>([]);
+  const [llmCompanies, setLLMCompanies] = useState<LLMItem[]>([]);
+
+  const [solutions, setSolutions] = useState<Solution[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+
+  const [selected, setSelected] = useState<{ [key: string]: string }>({});
   const [processing, setProcessing] = useState<string | null>(null);
+
 
   /* ---------------------------------------------------------
      LOAD DATA
@@ -33,13 +46,23 @@ export default function MatchingPage() {
 
       try {
 
-        const [llmRes, solRes] = await Promise.all([
+        const [
+          llmSolRes,
+          llmCompRes,
+          solRes,
+          compRes
+        ] = await Promise.all([
           api.get("/matching/solutions"),
-          api.get("/solution/list")
+          api.get("/matching/companies"),
+          api.get("/solution/list"),
+          api.get("/company/list")
         ]);
 
-        setLLMSolutions(llmRes.solutions || []);
+        setLLMSolutions(llmSolRes.solutions || []);
+        setLLMCompanies(llmCompRes.companies || []);
+
         setSolutions(solRes.solutions || []);
+        setCompanies(compRes.companies || []);
 
       } catch (e) {
 
@@ -57,16 +80,17 @@ export default function MatchingPage() {
 
   }, []);
 
+
   /* ---------------------------------------------------------
      MATCH
   --------------------------------------------------------- */
 
   async function applyMatch(value: string) {
 
-    const idSolution = selected[value];
+    const id = selected[value];
 
-    if (!idSolution) {
-      alert("Sélectionner une solution");
+    if (!id) {
+      alert("Sélectionner une valeur");
       return;
     }
 
@@ -74,13 +98,27 @@ export default function MatchingPage() {
 
       setProcessing(value);
 
-      await api.post("/matching/solutions/match", {
-        alias: value,
-        id_solution: idSolution,
-        action: "MATCH"
-      });
+      if (tab === "solutions") {
 
-      setLLMSolutions(prev => prev.filter(v => v.value !== value));
+        await api.post("/matching/solutions/match", {
+          alias: value,
+          id_solution: id,
+          action: "MATCH"
+        });
+
+        setLLMSolutions(prev => prev.filter(v => v.value !== value));
+
+      } else {
+
+        await api.post("/matching/companies/match", {
+          alias: value,
+          id_company: id,
+          action: "MATCH"
+        });
+
+        setLLMCompanies(prev => prev.filter(v => v.value !== value));
+
+      }
 
     } catch (e) {
 
@@ -95,6 +133,7 @@ export default function MatchingPage() {
 
   }
 
+
   /* ---------------------------------------------------------
      IGNORE
   --------------------------------------------------------- */
@@ -105,12 +144,25 @@ export default function MatchingPage() {
 
       setProcessing(value);
 
-      await api.post("/matching/solutions/match", {
-        alias: value,
-        action: "IGNORE"
-      });
+      if (tab === "solutions") {
 
-      setLLMSolutions(prev => prev.filter(v => v.value !== value));
+        await api.post("/matching/solutions/match", {
+          alias: value,
+          action: "IGNORE"
+        });
+
+        setLLMSolutions(prev => prev.filter(v => v.value !== value));
+
+      } else {
+
+        await api.post("/matching/companies/match", {
+          alias: value,
+          action: "IGNORE"
+        });
+
+        setLLMCompanies(prev => prev.filter(v => v.value !== value));
+
+      }
 
     } catch (e) {
 
@@ -125,36 +177,90 @@ export default function MatchingPage() {
 
   }
 
+
+  /* ---------------------------------------------------------
+     CURRENT DATA
+  --------------------------------------------------------- */
+
+  const items = tab === "solutions" ? llmSolutions : llmCompanies;
+  const list = tab === "solutions" ? solutions : companies;
+
+
   /* ---------------------------------------------------------
      UI
   --------------------------------------------------------- */
 
   if (loading) return <p>Chargement…</p>;
 
+
   return (
 
     <div className="space-y-8">
 
       <h1 className="text-3xl font-semibold">
-        Matching des solutions LLM
+        Matching LLM
       </h1>
+
+
+      {/* ---------------------------------- */}
+      {/* TABS */}
+      {/* ---------------------------------- */}
+
+      <div className="flex gap-4">
+
+        <button
+          onClick={() => setTab("solutions")}
+          className={`px-4 py-2 rounded ${
+            tab === "solutions"
+              ? "bg-ratecard-blue text-white"
+              : "bg-gray-200"
+          }`}
+        >
+          Solutions
+        </button>
+
+        <button
+          onClick={() => setTab("companies")}
+          className={`px-4 py-2 rounded ${
+            tab === "companies"
+              ? "bg-ratecard-blue text-white"
+              : "bg-gray-200"
+          }`}
+        >
+          Sociétés
+        </button>
+
+      </div>
+
+
+      {/* ---------------------------------- */}
+      {/* TABLE */}
+      {/* ---------------------------------- */}
 
       <div className="border rounded overflow-hidden">
 
         <table className="w-full text-sm">
 
           <thead className="bg-gray-100 text-left">
+
             <tr>
+
               <th className="p-3">Valeur LLM</th>
               <th className="p-3">Nb contenus</th>
-              <th className="p-3">Solution</th>
-              <th className="p-3 w-40 text-right">Actions</th>
+              <th className="p-3">
+                {tab === "solutions" ? "Solution" : "Société"}
+              </th>
+              <th className="p-3 w-40 text-right">
+                Actions
+              </th>
+
             </tr>
+
           </thead>
 
           <tbody>
 
-            {llmSolutions.map((s) => (
+            {items.map((s) => (
 
               <tr key={s.value} className="border-t">
 
@@ -180,16 +286,26 @@ export default function MatchingPage() {
                   >
 
                     <option value="">
-                      Sélectionner solution
+                      Sélectionner
                     </option>
 
-                    {solutions.map(sol => (
+                    {list.map((item: any) => (
+
                       <option
-                        key={sol.id_solution}
-                        value={sol.id_solution}
+                        key={
+                          tab === "solutions"
+                            ? item.id_solution
+                            : item.id_company
+                        }
+                        value={
+                          tab === "solutions"
+                            ? item.id_solution
+                            : item.id_company
+                        }
                       >
-                        {sol.name}
+                        {item.name}
                       </option>
+
                     ))}
 
                   </select>
@@ -220,12 +336,21 @@ export default function MatchingPage() {
 
             ))}
 
-            {llmSolutions.length === 0 && (
+            {items.length === 0 && (
+
               <tr>
-                <td colSpan={4} className="p-6 text-center text-gray-400">
+
+                <td
+                  colSpan={4}
+                  className="p-6 text-center text-gray-400"
+                >
+
                   Rien à matcher
+
                 </td>
+
               </tr>
+
             )}
 
           </tbody>
