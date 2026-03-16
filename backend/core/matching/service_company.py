@@ -116,7 +116,6 @@ def list_unmatched_companies() -> List[Dict]:
 
 def match_company(data: CompanyMatch):
 
-    # IGNORE → on ne fait rien
     if data.action == "IGNORE":
         return
 
@@ -130,19 +129,42 @@ def match_company(data: CompanyMatch):
 
     alias = data.alias.strip()
 
-    sql = f"""
+    # 1️⃣ enregistrer alias
+
+    sql_alias = f"""
     INSERT INTO `{TABLE_ALIAS}`
     (ALIAS, ID_COMPANY)
     VALUES (@alias, @id_company)
     """
 
-    job_config = bigquery.QueryJobConfig(
+    job_config_alias = bigquery.QueryJobConfig(
         query_parameters=[
             bigquery.ScalarQueryParameter("alias", "STRING", alias),
             bigquery.ScalarQueryParameter("id_company", "STRING", data.id_company),
         ]
     )
 
-    client.query(sql, job_config=job_config).result()
+    client.query(sql_alias, job_config=job_config_alias).result()
 
-    client.query(sql, job_config=job_config).result()
+    # 2️⃣ créer relations contenu → company
+
+    sql_relation = f"""
+    INSERT INTO `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY`
+    (ID_CONTENT, ID_COMPANY)
+
+    SELECT
+        c.ID_CONTENT,
+        @id_company
+    FROM `{TABLE_CONTENT}` c,
+    UNNEST(c.ACTEURS_CITES) AS company
+    WHERE UPPER(TRIM(company)) = UPPER(@alias)
+    """
+
+    job_config_relation = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("alias", "STRING", alias),
+            bigquery.ScalarQueryParameter("id_company", "STRING", data.id_company),
+        ]
+    )
+
+    client.query(sql_relation, job_config=job_config_relation).result()
