@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict
 from google.cloud import bigquery
 
 import re
@@ -55,13 +55,39 @@ def list_unmatched_solutions() -> List[Dict]:
 
     rows = query_bq(sql)
 
-    return [
-        {
-            "value": r["solution"],
+    client = get_bigquery_client()
+
+    # ---------------------------------
+    # alias déjà existants
+    # ---------------------------------
+
+    alias_rows = client.query(
+        f"""
+        SELECT ALIAS
+        FROM `{TABLE_ALIAS}`
+        """
+    ).to_dataframe()
+
+    alias_set = {
+        normalize(a)
+        for a in alias_rows["ALIAS"].tolist()
+    }
+
+    results = []
+
+    for r in rows:
+
+        raw = r["solution"]
+
+        if normalize(raw) in alias_set:
+            continue
+
+        results.append({
+            "value": raw,
             "count": r["count"],
-        }
-        for r in rows
-    ]
+        })
+
+    return results
 
 
 # ===============================================
