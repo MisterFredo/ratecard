@@ -116,6 +116,10 @@ def list_unmatched_companies() -> List[Dict]:
 
 def match_company(data: CompanyMatch):
 
+    # IGNORE → on ne fait rien
+    if data.action == "IGNORE":
+        return
+
     if data.action != "MATCH":
         raise ValueError("Action inconnue")
 
@@ -138,5 +142,7 @@ def match_company(data: CompanyMatch):
             bigquery.ScalarQueryParameter("id_company", "STRING", data.id_company),
         ]
     )
+
+    client.query(sql, job_config=job_config).result()
 
     client.query(sql, job_config=job_config).result()
