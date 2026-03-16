@@ -118,6 +118,10 @@ def list_unmatched_solutions() -> List[Dict]:
 
 def match_solution(data: SolutionMatch):
 
+    # IGNORE → on ne fait rien
+    if data.action == "IGNORE":
+        return
+
     if data.action != "MATCH":
         raise ValueError("Action inconnue")
 
