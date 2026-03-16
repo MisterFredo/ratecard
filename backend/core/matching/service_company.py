@@ -53,15 +53,55 @@ def list_unmatched_companies() -> List[Dict]:
 
     rows = query_bq(sql)
 
+    client = get_bigquery_client()
+
+    # alias existants
+    alias_rows = client.query(
+        f"""
+        SELECT ALIAS
+        FROM `{TABLE_ALIAS}`
+        """
+    ).to_dataframe()
+
+    alias_set = {
+        normalize(a)
+        for a in alias_rows["ALIAS"].tolist()
+        if a
+    }
+
+    # sociétés existantes
+    company_rows = client.query(
+        f"""
+        SELECT NAME
+        FROM `{TABLE_COMPANY}`
+        """
+    ).to_dataframe()
+
+    company_set = {
+        normalize(c)
+        for c in company_rows["NAME"].tolist()
+        if c
+    }
+
     results = []
 
     for r in rows:
 
-        if not r["company"]:
+        raw = r["company"]
+
+        if not raw:
+            continue
+
+        norm = normalize(raw)
+
+        if norm in alias_set:
+            continue
+
+        if norm in company_set:
             continue
 
         results.append({
-            "value": r["company"],
+            "value": raw,
             "count": r["count"],
         })
 
