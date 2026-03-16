@@ -14,7 +14,7 @@ import {
   Link as LinkIcon,
   Archive,
   Search,
-  DownloadCloud, // ⬅️ icône import
+  Link2,
 } from "lucide-react";
 
 export default function AdminShell({
@@ -53,6 +53,9 @@ export default function AdminShell({
     { href: "/admin/company", label: "Sociétés", icon: Building2 },
 
     { href: "/admin/solution", label: "Solutions", icon: Puzzle },
+
+    // 🔗 NOUVEAU : matching LLM
+    { href: "/admin/matching", label: "Matching", icon: Link2 },
 
     { href: "/admin/topic", label: "Topics", icon: Tags },
 
