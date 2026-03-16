@@ -55,10 +55,12 @@ def list_unmatched_companies() -> List[Dict]:
 
     client = get_bigquery_client()
 
-    # récupérer alias existants
+    # récupérer alias déjà traités
+
     alias_query = f"""
     SELECT ALIAS
     FROM `{TABLE_ALIAS}`
+    WHERE MATCH_STATUS IN ('MATCH','NO_MATCH')
     """
 
     alias_rows = client.query(alias_query).result()
@@ -70,6 +72,7 @@ def list_unmatched_companies() -> List[Dict]:
     }
 
     # récupérer sociétés existantes
+
     company_query = f"""
     SELECT NAME
     FROM `{TABLE_COMPANY}`
@@ -94,7 +97,7 @@ def list_unmatched_companies() -> List[Dict]:
 
         norm = normalize(raw)
 
-        # exclure alias déjà existants
+        # exclure alias déjà traités
         if norm in alias_set:
             continue
 
@@ -116,8 +119,36 @@ def list_unmatched_companies() -> List[Dict]:
 
 def match_company(data: CompanyMatch):
 
+    client = get_bigquery_client()
+
+    alias = data.alias.strip()
+
+    # ---------------------------------------
+    # IGNORE
+    # ---------------------------------------
+
     if data.action == "IGNORE":
+
+        sql_ignore = f"""
+        INSERT INTO `{TABLE_ALIAS}`
+        (ALIAS, MATCH_STATUS)
+        VALUES (@alias, 'NO_MATCH')
+        """
+
+        job_config_ignore = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("alias", "STRING", alias),
+            ]
+        )
+
+        client.query(sql_ignore, job_config=job_config_ignore).result()
+
         return
+
+
+    # ---------------------------------------
+    # MATCH
+    # ---------------------------------------
 
     if data.action != "MATCH":
         raise ValueError("Action inconnue")
@@ -125,16 +156,12 @@ def match_company(data: CompanyMatch):
     if not data.id_company:
         raise ValueError("id_company obligatoire")
 
-    client = get_bigquery_client()
-
-    alias = data.alias.strip()
-
     # 1️⃣ enregistrer alias
 
     sql_alias = f"""
     INSERT INTO `{TABLE_ALIAS}`
-    (ALIAS, ID_COMPANY)
-    VALUES (@alias, @id_company)
+    (ALIAS, ID_COMPANY, MATCH_STATUS)
+    VALUES (@alias, @id_company, 'MATCH')
     """
 
     job_config_alias = bigquery.QueryJobConfig(
