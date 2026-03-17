@@ -42,7 +42,7 @@ export default function VectorPage() {
   const handleVectorize = async (id: string) => {
     setProcessingId(id);
     try {
-      await api.post(`/vector/news/${id}`);
+      await api.post(`/vector/news/${id}`, {}); // ✅ FIX
       await load();
     } catch (e) {
       console.error("Erreur vectorisation", e);
@@ -60,7 +60,7 @@ export default function VectorPage() {
     setLoading(true);
 
     try {
-      await api.post("/vector/news/batch", ids);
+      await api.post("/vector/news/batch", { ids }); // ✅ FIX
       await load();
     } catch (e) {
       console.error("Erreur batch", e);
