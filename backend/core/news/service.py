@@ -629,13 +629,11 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
     # 🔥 NORMALISATION VISUEL (NEWS + BRÈVES)
     # ============================================================
 
-    # Cas 1 : Aucun visuel → fallback société
     if not media_id:
         if not company_rect:
             raise ValueError("Un visuel est requis pour publier")
         media_id = company_rect
 
-    # Cas 2 : Si le visuel est un logo société → duplication physique
     if media_id.startswith("COMPANY_"):
 
         from google.cloud import storage
@@ -669,7 +667,6 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
 
         destination_blob.rewrite(source_blob)
 
-        # Mise à jour BQ avec le nouveau visuel
         update_bq(
             table=TABLE_NEWS,
             fields={
@@ -709,6 +706,21 @@ def publish_news(id_news: str, published_at: Optional[str] = None):
         },
         where={"ID_NEWS": id_news},
     )
+
+    # ============================================================
+    # 🚀 AUTO VECTORISATION (ONLY IF PUBLISHED)
+    # ============================================================
+
+    if status == "PUBLISHED":
+        try:
+            from core.vectorization.vector_service import vectorize_news
+
+            print("🚀 AUTO VECTORIZE NEWS (PUBLISH):", id_news)
+
+            vectorize_news(id_news)
+
+        except Exception as e:
+            print("❌ VECTORISATION ERROR:", str(e))
 
     return status
 # ============================================================
