@@ -240,24 +240,24 @@ def get_news_vector_status():
         FROM `{TABLE_NEWS}`
         WHERE STATUS = "PUBLISHED"
         ORDER BY UPDATED_AT DESC
-        LIMIT 200
+        LIMIT 20
     """
 
-    df = query_bq(query)
+    rows = query_bq(query)
 
-    # 👉 IMPORTANT : pandas
-    if df.empty:
+    # 👉 cas liste vide
+    if not rows:
         return {"items": []}
 
     return {
         "items": [
             {
-                "id_news": row["ID_NEWS"],
-                "title": row["TITLE"],
-                "status": row["STATUS"],
-                "is_vectorized": row["IS_VECTORIZED"],
-                "updated_at": str(row["UPDATED_AT"]),
+                "id_news": r.get("ID_NEWS"),
+                "title": r.get("TITLE"),
+                "status": r.get("STATUS"),
+                "is_vectorized": r.get("IS_VECTORIZED", False),
+                "updated_at": str(r.get("UPDATED_AT")),
             }
-            for _, row in df.iterrows()
+            for r in rows
         ]
     }
