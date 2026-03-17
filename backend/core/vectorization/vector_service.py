@@ -228,36 +228,42 @@ SOLUTIONS:
         "nb_vectors": len(vectors)
     }
 
-def get_news_vector_status():
+def get_news_vector_status(limit: int = 200):
 
-    query = f"""
-        SELECT
-            ID_NEWS,
-            TITLE,
-            STATUS,
-            IFNULL(IS_VECTORIZED, FALSE) AS IS_VECTORIZED,
-            UPDATED_AT
-        FROM `{TABLE_NEWS}`
-        WHERE STATUS = "PUBLISHED"
-        ORDER BY UPDATED_AT DESC
-        LIMIT 20
-    """
+    # 1️⃣ récupérer les news via ta fonction EXISTANTE
+    news_list = list_news_admin(limit=limit, offset=0)
 
-    rows = query_bq(query)
-
-    # 👉 cas liste vide
-    if not rows:
+    if not news_list:
         return {"items": []}
 
-    return {
-        "items": [
-            {
-                "id_news": r.get("ID_NEWS"),
-                "title": r.get("TITLE"),
-                "status": r.get("STATUS"),
-                "is_vectorized": r.get("IS_VECTORIZED", False),
-                "updated_at": str(r.get("UPDATED_AT")),
-            }
-            for r in rows
-        ]
+    # 2️⃣ récupérer les flags de vectorisation
+    ids = [n["id_news"] for n in news_list]
+
+    sql = f"""
+        SELECT
+            ID_NEWS,
+            IFNULL(IS_VECTORIZED, FALSE) AS IS_VECTORIZED
+        FROM `{TABLE_NEWS}`
+        WHERE ID_NEWS IN UNNEST(@ids)
+    """
+
+    rows = query_bq(sql, {"ids": ids})
+
+    vector_map = {
+        r["ID_NEWS"]: r["IS_VECTORIZED"]
+        for r in rows
     }
+
+    # 3️⃣ merge
+    items = []
+
+    for n in news_list:
+        items.append({
+            "id_news": n["id_news"],
+            "title": n["title"],
+            "status": n["status"],
+            "is_vectorized": vector_map.get(n["id_news"], False),
+            "updated_at": n.get("published_at"),
+        })
+
+    return {"items": items}
