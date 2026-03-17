@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
+from api.vector.models import VectorBatchRequest
 from core.vectorization.vector_service import (
     vectorize_news,
     get_news_vector_status,
@@ -30,10 +31,11 @@ def vectorize_news_route(news_id: str):
 # --------------------------------------------------
 
 @router.post("/news/batch")
-def vectorize_news_batch(news_ids: list[str]):
+def vectorize_news_batch(payload: VectorBatchRequest):
+
     results = []
 
-    for news_id in news_ids:
+    for news_id in payload.ids:
         try:
             res = vectorize_news(news_id)
             results.append(res)
