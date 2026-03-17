@@ -35,6 +35,9 @@ export default function MatchingPage() {
   const [selected, setSelected] = useState<{ [key: string]: string }>({});
   const [processing, setProcessing] = useState<string | null>(null);
 
+  // ✅ NEW
+  const [checked, setChecked] = useState<{ [key: string]: boolean }>({});
+
 
   /* ---------------------------------------------------------
      LOAD DATA
@@ -179,6 +182,69 @@ export default function MatchingPage() {
 
 
   /* ---------------------------------------------------------
+     BULK IGNORE (NEW)
+  --------------------------------------------------------- */
+
+  async function ignoreBulk() {
+
+    const values = Object.keys(checked).filter(k => checked[k]);
+
+    if (values.length === 0) {
+      alert("Aucune sélection");
+      return;
+    }
+
+    try {
+
+      setProcessing("bulk");
+
+      for (const value of values) {
+
+        if (tab === "solutions") {
+
+          await api.post("/matching/solutions/match", {
+            alias: value,
+            action: "IGNORE"
+          });
+
+        } else {
+
+          await api.post("/matching/companies/match", {
+            alias: value,
+            action: "IGNORE"
+          });
+
+        }
+
+      }
+
+      if (tab === "solutions") {
+        setLLMSolutions(prev =>
+          prev.filter(v => !values.includes(v.value))
+        );
+      } else {
+        setLLMCompanies(prev =>
+          prev.filter(v => !values.includes(v.value))
+        );
+      }
+
+      setChecked({});
+
+    } catch (e) {
+
+      console.error(e);
+      alert("Erreur ignore bulk");
+
+    } finally {
+
+      setProcessing(null);
+
+    }
+
+  }
+
+
+  /* ---------------------------------------------------------
      CURRENT DATA
   --------------------------------------------------------- */
 
@@ -234,6 +300,21 @@ export default function MatchingPage() {
 
 
       {/* ---------------------------------- */}
+      {/* BULK ACTION */}
+      {/* ---------------------------------- */}
+
+      <div className="flex gap-2">
+        <button
+          onClick={ignoreBulk}
+          disabled={processing === "bulk"}
+          className="bg-red-600 text-white px-4 py-2 rounded"
+        >
+          IGNORE sélection
+        </button>
+      </div>
+
+
+      {/* ---------------------------------- */}
       {/* TABLE */}
       {/* ---------------------------------- */}
 
@@ -244,6 +325,19 @@ export default function MatchingPage() {
           <thead className="bg-gray-100 text-left">
 
             <tr>
+
+              {/* NEW */}
+              <th className="p-3 w-10">
+                <input
+                  type="checkbox"
+                  onChange={(e) => {
+                    const checkedAll = e.target.checked;
+                    const newState: any = {};
+                    items.forEach(i => newState[i.value] = checkedAll);
+                    setChecked(newState);
+                  }}
+                />
+              </th>
 
               <th className="p-3">Valeur LLM</th>
               <th className="p-3">Nb contenus</th>
@@ -263,6 +357,20 @@ export default function MatchingPage() {
             {items.map((s) => (
 
               <tr key={s.value} className="border-t">
+
+                {/* NEW */}
+                <td className="p-3">
+                  <input
+                    type="checkbox"
+                    checked={checked[s.value] || false}
+                    onChange={(e) =>
+                      setChecked({
+                        ...checked,
+                        [s.value]: e.target.checked
+                      })
+                    }
+                  />
+                </td>
 
                 <td className="p-3 font-medium">
                   {s.value}
@@ -341,7 +449,7 @@ export default function MatchingPage() {
               <tr>
 
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="p-6 text-center text-gray-400"
                 >
 
