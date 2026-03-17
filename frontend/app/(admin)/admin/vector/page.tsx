@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 
 type NewsItem = {
@@ -15,6 +15,7 @@ export default function VectorPage() {
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [showOnlyNotVectorized, setShowOnlyNotVectorized] = useState(false);
 
   // ----------------------------------------
   // LOAD DATA
@@ -36,13 +37,38 @@ export default function VectorPage() {
   }, []);
 
   // ----------------------------------------
+  // FILTER + SORT
+  // ----------------------------------------
+
+  const filteredItems = useMemo(() => {
+    let data = [...items];
+
+    // filtre
+    if (showOnlyNotVectorized) {
+      data = data.filter((i) => !i.is_vectorized);
+    }
+
+    // tri : non vectorisés en premier
+    data.sort((a, b) => {
+      if (a.is_vectorized === b.is_vectorized) return 0;
+      return a.is_vectorized ? 1 : -1;
+    });
+
+    return data;
+  }, [items, showOnlyNotVectorized]);
+
+  const notVectorizedCount = useMemo(() => {
+    return items.filter((i) => !i.is_vectorized).length;
+  }, [items]);
+
+  // ----------------------------------------
   // ACTIONS
   // ----------------------------------------
 
   const handleVectorize = async (id: string) => {
     setProcessingId(id);
     try {
-      await api.post(`/vector/news/${id}`, {}); // ✅ FIX
+      await api.post(`/vector/news/${id}`, {});
       await load();
     } catch (e) {
       console.error("Erreur vectorisation", e);
@@ -51,7 +77,7 @@ export default function VectorPage() {
   };
 
   const handleVectorizeAll = async () => {
-    const ids = items
+    const ids = filteredItems
       .filter((i) => !i.is_vectorized)
       .map((i) => i.id_news);
 
@@ -60,7 +86,7 @@ export default function VectorPage() {
     setLoading(true);
 
     try {
-      await api.post("/vector/news/batch", { ids }); // ✅ FIX
+      await api.post("/vector/news/batch", { ids });
       await load();
     } catch (e) {
       console.error("Erreur batch", e);
@@ -78,11 +104,19 @@ export default function VectorPage() {
 
       {/* HEADER */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">
-          Vectorisation — News
-        </h1>
+
+        <div>
+          <h1 className="text-xl font-semibold">
+            Vectorisation — News
+          </h1>
+
+          <div className="text-sm text-gray-500">
+            {filteredItems.length} affichées / {items.length} total — {notVectorizedCount} à vectoriser
+          </div>
+        </div>
 
         <div className="flex gap-2">
+
           <button
             onClick={load}
             className="px-3 py-1 border rounded"
@@ -91,11 +125,21 @@ export default function VectorPage() {
           </button>
 
           <button
+            onClick={() => setShowOnlyNotVectorized((v) => !v)}
+            className={`px-3 py-1 border rounded ${
+              showOnlyNotVectorized ? "bg-black text-white" : ""
+            }`}
+          >
+            Non vectorisées
+          </button>
+
+          <button
             onClick={handleVectorizeAll}
             className="px-3 py-1 bg-black text-white rounded"
           >
-            Vectoriser tout
+            Vectoriser visibles
           </button>
+
         </div>
       </div>
 
@@ -116,7 +160,7 @@ export default function VectorPage() {
           </thead>
 
           <tbody>
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <tr key={item.id_news} className="border-t">
 
                 {/* TITLE */}
