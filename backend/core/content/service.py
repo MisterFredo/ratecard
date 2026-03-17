@@ -115,7 +115,7 @@ def create_content(data: ContentCreate) -> str:
             f"{data.source_date} 00:00:00"
             if data.source_date
             else None
-        )
+        ),
         "UPDATED_AT": now,
     }]
 
