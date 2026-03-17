@@ -288,7 +288,7 @@ SOLUTIONS:
         "nb_vectors": len(vectors)
     }
 
-def get_news_vector_status(limit: int = 20):
+def get_news_vector_status(limit: int = 50):
 
     # ----------------------------------------
     # DEBUG BQ CONTEXT
