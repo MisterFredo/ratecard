@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 
-type NewsItem = {
-  id_news: string;
+type Item = {
+  id: string;
   title: string;
   status: string;
   is_vectorized: boolean;
@@ -12,29 +12,48 @@ type NewsItem = {
 };
 
 export default function VectorPage() {
-  const [items, setItems] = useState<NewsItem[]>([]);
+
+  const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const [mode, setMode] = useState<"news" | "content">("news");
   const [showOnlyNotVectorized, setShowOnlyNotVectorized] = useState(false);
+  const [search, setSearch] = useState("");
 
   // ----------------------------------------
-  // LOAD DATA
+  // LOAD
   // ----------------------------------------
 
   const load = async () => {
     setLoading(true);
+
     try {
-      const res = await api.get("/vector/news/status");
-      setItems(res?.items ?? []);
+      const res =
+        mode === "news"
+          ? await api.get("/vector/news/status")
+          : await api.get("/vector/content/status");
+
+      const mapped = (res?.items ?? []).map((i: any) => ({
+        id: i.id_news || i.id_content,
+        title: i.title,
+        status: i.status,
+        is_vectorized: i.is_vectorized,
+        updated_at: i.updated_at,
+      }));
+
+      setItems(mapped);
+
     } catch (e) {
       console.error("Erreur chargement vectorisation", e);
     }
+
     setLoading(false);
   };
 
   useEffect(() => {
     load();
-  }, []);
+  }, [mode]);
 
   // ----------------------------------------
   // FILTER + SORT
@@ -43,19 +62,33 @@ export default function VectorPage() {
   const filteredItems = useMemo(() => {
     let data = [...items];
 
-    // filtre
+    // filtre vectorisation
     if (showOnlyNotVectorized) {
       data = data.filter((i) => !i.is_vectorized);
     }
 
-    // tri : non vectorisés en premier
+    // recherche
+    if (search.trim()) {
+      const s = search.toLowerCase();
+      data = data.filter((i) =>
+        i.title?.toLowerCase().includes(s)
+      );
+    }
+
+    // tri : non vectorisés d'abord + récents
     data.sort((a, b) => {
-      if (a.is_vectorized === b.is_vectorized) return 0;
-      return a.is_vectorized ? 1 : -1;
+
+      if (a.is_vectorized !== b.is_vectorized) {
+        return a.is_vectorized ? 1 : -1;
+      }
+
+      return new Date(b.updated_at || 0).getTime() -
+             new Date(a.updated_at || 0).getTime();
     });
 
     return data;
-  }, [items, showOnlyNotVectorized]);
+
+  }, [items, showOnlyNotVectorized, search]);
 
   const notVectorizedCount = useMemo(() => {
     return items.filter((i) => !i.is_vectorized).length;
@@ -66,27 +99,31 @@ export default function VectorPage() {
   // ----------------------------------------
 
   const handleVectorize = async (id: string) => {
+
     setProcessingId(id);
+
     try {
-      await api.post(`/vector/news/${id}`, {});
+      await api.post(`/vector/${mode}/${id}`, {});
       await load();
     } catch (e) {
       console.error("Erreur vectorisation", e);
     }
+
     setProcessingId(null);
   };
 
   const handleVectorizeAll = async () => {
+
     const ids = filteredItems
       .filter((i) => !i.is_vectorized)
-      .map((i) => i.id_news);
+      .map((i) => i.id);
 
     if (ids.length === 0) return;
 
     setLoading(true);
 
     try {
-      await api.post("/vector/news/batch", { ids });
+      await api.post(`/vector/${mode}/batch`, { ids });
       await load();
     } catch (e) {
       console.error("Erreur batch", e);
@@ -105,9 +142,9 @@ export default function VectorPage() {
       {/* HEADER */}
       <div className="flex items-center justify-between">
 
-        <div>
+        <div className="space-y-1">
           <h1 className="text-xl font-semibold">
-            Vectorisation — News
+            Vectorisation — {mode === "news" ? "News" : "Analyses"}
           </h1>
 
           <div className="text-sm text-gray-500">
@@ -117,13 +154,22 @@ export default function VectorPage() {
 
         <div className="flex gap-2">
 
+          {/* MODE */}
           <button
-            onClick={load}
-            className="px-3 py-1 border rounded"
+            onClick={() => setMode("news")}
+            className={`px-3 py-1 border rounded ${mode === "news" ? "bg-black text-white" : ""}`}
           >
-            Rafraîchir
+            News
           </button>
 
+          <button
+            onClick={() => setMode("content")}
+            className={`px-3 py-1 border rounded ${mode === "content" ? "bg-black text-white" : ""}`}
+          >
+            Analyses
+          </button>
+
+          {/* FILTER */}
           <button
             onClick={() => setShowOnlyNotVectorized((v) => !v)}
             className={`px-3 py-1 border rounded ${
@@ -133,15 +179,32 @@ export default function VectorPage() {
             Non vectorisées
           </button>
 
+          {/* REFRESH */}
+          <button
+            onClick={load}
+            className="px-3 py-1 border rounded"
+          >
+            Rafraîchir
+          </button>
+
+          {/* BATCH */}
           <button
             onClick={handleVectorizeAll}
             className="px-3 py-1 bg-black text-white rounded"
           >
-            Vectoriser visibles
+            Vectoriser ({filteredItems.filter(i => !i.is_vectorized).length})
           </button>
 
         </div>
       </div>
+
+      {/* SEARCH */}
+      <input
+        placeholder="Rechercher..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full border px-3 py-2 rounded text-sm"
+      />
 
       {/* TABLE */}
       {loading ? (
@@ -161,38 +224,31 @@ export default function VectorPage() {
 
           <tbody>
             {filteredItems.map((item) => (
-              <tr key={item.id_news} className="border-t">
+              <tr key={item.id} className="border-t">
 
-                {/* TITLE */}
                 <td className="p-2">
                   {item.title}
                 </td>
 
-                {/* STATUS */}
-                <td className="text-center">
+                <td className="text-center text-xs">
                   {item.status}
                 </td>
 
-                {/* VECTOR */}
                 <td className="text-center">
                   {item.is_vectorized ? "✅" : "❌"}
                 </td>
 
-                {/* UPDATED */}
                 <td className="text-center text-xs text-gray-500">
                   {item.updated_at}
                 </td>
 
-                {/* ACTION */}
                 <td className="text-center">
                   <button
-                    onClick={() => handleVectorize(item.id_news)}
-                    disabled={processingId === item.id_news}
+                    onClick={() => handleVectorize(item.id)}
+                    disabled={processingId === item.id}
                     className="px-3 py-1 bg-black text-white rounded disabled:opacity-50"
                   >
-                    {processingId === item.id_news
-                      ? "..."
-                      : "Vectoriser"}
+                    {processingId === item.id ? "..." : "Vectoriser"}
                   </button>
                 </td>
 
