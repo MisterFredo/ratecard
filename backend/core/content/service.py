@@ -244,21 +244,7 @@ def create_content(data: ContentCreate) -> str:
 
     print("✔ RELATIONS DONE FOR:", content_id)
 
-    # ===========================
-    # 🔥 VECTORISATION AUTO
-    # ===========================
 
-    try:
-        from core.vectorization.content_vector_service import vectorize_content
-
-        print("🚀 AUTO VECTORIZE CONTENT:", content_id)
-
-        vectorize_content(content_id)
-
-    except Exception as e:
-        print("❌ VECTORISATION ERROR:", str(e))
-
-    print("==========================================\n")
 
     return content_id
 
