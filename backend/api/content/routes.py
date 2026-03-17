@@ -326,7 +326,8 @@ def update_raw(id_raw: str, payload: dict):
         update_raw_content(
             id_raw=id_raw,
             date_source=payload.get("date_source"),
-            source_title=payload.get("source_title")
+            source_title=payload.get("source_title"),
+            raw_text=payload.get("raw_text"),
         )
 
         return {"status": "ok"}
