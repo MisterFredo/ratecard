@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq, update_bq
 from utils.pinecone_utils import get_pinecone_index, is_pinecone_enabled
+from core.news.service import list_news_admin
 
 from openai import OpenAI
 
