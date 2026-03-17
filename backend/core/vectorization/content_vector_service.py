@@ -285,6 +285,31 @@ CONCEPTS:
 
 def get_content_vector_status(limit: int = 20):
 
+    print("=== GET CONTENT VECTOR STATUS ===")
+
+    # ----------------------------------------
+    # DEBUG BQ CONTEXT
+    # ----------------------------------------
+
+    client = get_bigquery_client()
+    print("BQ PROJECT VECTOR:", client.project)
+    print("TABLE USED:", TABLE_CONTENT)
+
+    # ----------------------------------------
+    # TEST SIMPLE (COUNT)
+    # ----------------------------------------
+
+    count_rows = query_bq(f"""
+        SELECT COUNT(*) as c
+        FROM `{TABLE_CONTENT}`
+    """)
+
+    print("COUNT CONTENT:", count_rows)
+
+    # ----------------------------------------
+    # LOAD CONTENT (requête simple)
+    # ----------------------------------------
+
     sql = f"""
         SELECT
             ID_CONTENT,
@@ -292,14 +317,21 @@ def get_content_vector_status(limit: int = 20):
             STATUS,
             PUBLISHED_AT
         FROM `{TABLE_CONTENT}`
+        WHERE IS_ACTIVE = TRUE
         ORDER BY CREATED_AT DESC
         LIMIT {limit}
     """
 
     content_list = query_bq(sql)
 
+    print("CONTENT LIST:", content_list[:2] if content_list else "EMPTY")
+
     if not content_list:
         return {"items": []}
+
+    # ----------------------------------------
+    # FLAGS VECTORISATION
+    # ----------------------------------------
 
     ids = [c["ID_CONTENT"] for c in content_list]
 
@@ -313,10 +345,16 @@ def get_content_vector_status(limit: int = 20):
 
     rows = query_bq(sql_flags, {"ids": ids})
 
+    print("FLAGS:", rows[:2] if rows else "EMPTY")
+
     vector_map = {
         r["ID_CONTENT"]: r["IS_VECTORIZED"]
         for r in rows
     }
+
+    # ----------------------------------------
+    # MERGE FINAL
+    # ----------------------------------------
 
     items = []
 
@@ -328,5 +366,7 @@ def get_content_vector_status(limit: int = 20):
             "is_vectorized": vector_map.get(c["ID_CONTENT"], False),
             "updated_at": str(c.get("PUBLISHED_AT")) if c.get("PUBLISHED_AT") else None,
         })
+
+    print("FINAL ITEMS COUNT:", len(items))
 
     return {"items": items}
