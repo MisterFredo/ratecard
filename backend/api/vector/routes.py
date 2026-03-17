@@ -15,8 +15,13 @@ router = APIRouter()
 @router.post("/news/{news_id}")
 def vectorize_news_route(news_id: str):
     try:
-        return vectorize_news(news_id)
+        result = vectorize_news(news_id)
+        print("VECTOR RESULT:", result)
+        return result
     except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print("VECTOR ERROR:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
