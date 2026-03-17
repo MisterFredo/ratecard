@@ -60,6 +60,7 @@ export default function RawDrawer({
       await api.put(`/content/raw/update/${raw.id_raw}`, {
         source_title: title,
         date_source: date || null,
+        raw_text: rawText,
       });
 
       onSaved();
@@ -130,7 +131,7 @@ export default function RawDrawer({
           ) : (
             <textarea
               value={rawText}
-              readOnly
+              onChange={(e) => setRawText(e.target.value)}
               rows={14}
               className="w-full border rounded p-2 text-xs font-mono"
             />
