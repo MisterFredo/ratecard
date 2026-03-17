@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+type TopicAxis = "MEDIA" | "RETAIL" | "FOUNDATIONS";
+
 type TopicRow = {
   id_topic: string;
   label: string;
-  topic_axis?: "BUSINESS" | "FIELD";
+  topic_axis?: TopicAxis;
   nb_analyses?: number;
   delta_30d?: number;
 };
@@ -43,10 +45,39 @@ export default function TopicList() {
 
   }, []);
 
+  function renderAxis(axis?: TopicAxis) {
+
+    switch (axis) {
+
+      case "MEDIA":
+        return (
+          <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
+            MEDIA
+          </span>
+        );
+
+      case "RETAIL":
+        return (
+          <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-800">
+            RETAIL
+          </span>
+        );
+
+      case "FOUNDATIONS":
+      default:
+        return (
+          <span className="text-xs px-2 py-1 rounded bg-gray-200 text-gray-800">
+            FOUNDATIONS
+          </span>
+        );
+
+    }
+
+  }
+
   return (
     <div className="space-y-8">
 
-      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold">
           Topics
@@ -60,7 +91,6 @@ export default function TopicList() {
         </Link>
       </div>
 
-      {/* CONTENT */}
       {loading ? (
 
         <p className="text-gray-500">Chargement…</p>
@@ -92,35 +122,22 @@ export default function TopicList() {
                   key={t.id_topic}
                   className="border-t hover:bg-gray-50"
                 >
-                  {/* LABEL */}
                   <td className="p-3 font-medium">
                     {t.label}
                   </td>
 
-                  {/* AXIS */}
                   <td className="p-3">
-                    {t.topic_axis === "FIELD" ? (
-                      <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
-                        FIELD
-                      </span>
-                    ) : (
-                      <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800">
-                        BUSINESS
-                      </span>
-                    )}
+                    {renderAxis(t.topic_axis)}
                   </td>
 
-                  {/* NB_ANALYSES */}
                   <td className="p-3 text-gray-700">
                     {t.nb_analyses ?? 0}
                   </td>
 
-                  {/* DELTA_30D */}
                   <td className="p-3 text-gray-700">
                     {t.delta_30d ?? 0}
                   </td>
 
-                  {/* ACTION */}
                   <td className="p-3 text-right">
                     <Link
                       href={`/admin/topic/edit/${t.id_topic}`}
