@@ -5,6 +5,8 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
+type TopicAxis = "MEDIA" | "RETAIL" | "FOUNDATIONS";
+
 export default function EditTopic({ params }: { params: { id: string } }) {
 
   const { id } = params;
@@ -14,7 +16,7 @@ export default function EditTopic({ params }: { params: { id: string } }) {
 
   const [label, setLabel] = useState("");
   const [topicAxis, setTopicAxis] =
-    useState<"BUSINESS" | "FIELD">("BUSINESS");
+    useState<TopicAxis>("MEDIA");
 
   const [description, setDescription] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
@@ -29,11 +31,19 @@ export default function EditTopic({ params }: { params: { id: string } }) {
 
       try {
 
-        // GET retourne directement l'objet
         const t = await api.get(`/topic/${id}`);
 
         setLabel(t.label || "");
-        setTopicAxis(t.topic_axis || "BUSINESS");
+
+        // fallback pour anciens axes BUSINESS / FIELD
+        const axis: TopicAxis =
+          t.topic_axis === "RETAIL" ||
+          t.topic_axis === "FOUNDATIONS"
+            ? t.topic_axis
+            : "MEDIA";
+
+        setTopicAxis(axis);
+
         setDescription(t.description || "");
         setSeoTitle(t.seo_title || "");
         setSeoDescription(t.seo_description || "");
@@ -134,16 +144,19 @@ export default function EditTopic({ params }: { params: { id: string } }) {
           className="border p-2 rounded w-full"
           value={topicAxis}
           onChange={(e) =>
-            setTopicAxis(
-              e.target.value as "BUSINESS" | "FIELD"
-            )
+            setTopicAxis(e.target.value as TopicAxis)
           }
         >
-          <option value="BUSINESS">
-            BUSINESS — enjeux métier, stratégie, monétisation
+          <option value="MEDIA">
+            MEDIA — canaux, formats, environnements publicitaires
           </option>
-          <option value="FIELD">
-            FIELD — canaux, environnements d’activation
+
+          <option value="RETAIL">
+            RETAIL — e-commerce, marketplaces, retail media
+          </option>
+
+          <option value="FOUNDATIONS">
+            FOUNDATIONS — data, mesure, stratégie, IA
           </option>
         </select>
       </div>
