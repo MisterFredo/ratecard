@@ -2,8 +2,12 @@ from fastapi import APIRouter, HTTPException
 
 from api.vector.models import (
     VectorBatchRequest,
-    VectorBatchResponse,
-    VectorBatchItem,
+
+    VectorNewsBatchResponse,
+    VectorNewsBatchItem,
+
+    VectorContentBatchResponse,
+    VectorContentBatchItem,
 )
 
 # ==================================================
@@ -16,7 +20,7 @@ from core.vectorization.vector_service import (
     get_news_vector_status,
 )
 
-# CONTENT (analyses)
+# CONTENT
 from core.vectorization.content_vector_service import (
     vectorize_content,
     get_content_vector_status,
@@ -50,7 +54,7 @@ def vectorize_news_route(news_id: str):
 # VECTORIZE MULTIPLE NEWS
 # --------------------------------------------------
 
-@router.post("/news/batch", response_model=VectorBatchResponse)
+@router.post("/news/batch", response_model=VectorNewsBatchResponse)
 def vectorize_news_batch(payload: VectorBatchRequest):
 
     results = []
@@ -60,22 +64,22 @@ def vectorize_news_batch(payload: VectorBatchRequest):
             res = vectorize_news(news_id)
 
             results.append(
-                VectorBatchItem(
-                    id=news_id,
+                VectorNewsBatchItem(
+                    news_id=news_id,
                     status=res.get("status", "ok"),
                 )
             )
 
         except Exception as e:
             results.append(
-                VectorBatchItem(
-                    id=news_id,
+                VectorNewsBatchItem(
+                    news_id=news_id,
                     status="error",
                     error=str(e),
                 )
             )
 
-    return VectorBatchResponse(
+    return VectorNewsBatchResponse(
         status="done",
         results=results
     )
@@ -118,7 +122,7 @@ def vectorize_content_route(content_id: str):
 # VECTORIZE MULTIPLE CONTENT
 # --------------------------------------------------
 
-@router.post("/content/batch", response_model=VectorBatchResponse)
+@router.post("/content/batch", response_model=VectorContentBatchResponse)
 def vectorize_content_batch(payload: VectorBatchRequest):
 
     results = []
@@ -128,22 +132,22 @@ def vectorize_content_batch(payload: VectorBatchRequest):
             res = vectorize_content(content_id)
 
             results.append(
-                VectorBatchItem(
-                    id=content_id,
+                VectorContentBatchItem(
+                    content_id=content_id,
                     status=res.get("status", "ok"),
                 )
             )
 
         except Exception as e:
             results.append(
-                VectorBatchItem(
-                    id=content_id,
+                VectorContentBatchItem(
+                    content_id=content_id,
                     status="error",
                     error=str(e),
                 )
             )
 
-    return VectorBatchResponse(
+    return VectorContentBatchResponse(
         status="done",
         results=results
     )
