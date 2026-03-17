@@ -1,11 +1,11 @@
-from fastapi import APIRouter
-from utils.bigquery_utils import query_bq
-from config import BQ_PROJECT, BQ_DATASET
+from fastapi import APIRouter, HTTPException
 
-from core.vectorization.vector_service import vectorize_news
+from core.vectorization.vector_service import (
+    vectorize_news,
+    get_news_vector_status,
+)
 
 router = APIRouter()
-TABLE_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS"
 
 
 # --------------------------------------------------
@@ -15,8 +15,7 @@ TABLE_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS"
 @router.post("/news/{news_id}")
 def vectorize_news_route(news_id: str):
     try:
-        result = vectorize_news(news_id)
-        return result
+        return vectorize_news(news_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -45,33 +44,14 @@ def vectorize_news_batch(news_ids: list[str]):
         "results": results
     }
 
+
+# --------------------------------------------------
+# STATUS
+# --------------------------------------------------
+
 @router.get("/news/status")
-def get_news_vector_status():
-
-    query = f"""
-        SELECT
-            ID_NEWS,
-            TITLE,
-            STATUS,
-            IFNULL(IS_VECTORIZED, FALSE) AS IS_VECTORIZED,
-            UPDATED_AT
-        FROM `{TABLE_NEWS}`
-        WHERE STATUS = "PUBLISHED"
-        ORDER BY UPDATED_AT DESC
-        LIMIT 200
-    """
-
-    rows = query_bq(query)
-
-    return {
-        "items": [
-            {
-                "id_news": r["ID_NEWS"],
-                "title": r["TITLE"],
-                "status": r["STATUS"],
-                "is_vectorized": r["IS_VECTORIZED"],
-                "updated_at": str(r["UPDATED_AT"]),
-            }
-            for r in rows
-        ]
-    }
+def news_status():
+    try:
+        return get_news_vector_status()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
