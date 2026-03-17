@@ -15,26 +15,29 @@ TABLE_TOPIC_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC_METRICS"
 
 
 # ============================================================
+# CONSTANTES
+# ============================================================
+
+ALLOWED_AXES = {"MEDIA", "RETAIL", "FOUNDATIONS"}
+
+
+# ============================================================
 # CREATE TOPIC — DATA ONLY (LOAD JOB, NO STREAMING)
 # ============================================================
 def create_topic(data: TopicCreate) -> str:
-    """
-    Crée un topic.
 
-    Règles :
-    - aucun champ média au create
-    - insertion via LOAD JOB (pas de streaming)
-    """
+    if data.topic_axis not in ALLOWED_AXES:
+        raise ValueError(f"Invalid topic_axis: {data.topic_axis}")
+
     topic_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
 
     row = [{
         "ID_TOPIC": topic_id,
         "LABEL": data.label,
-        "TOPIC_AXIS": data.topic_axis,  # ⬅️ NOUVEAU
+        "TOPIC_AXIS": data.topic_axis,
         "DESCRIPTION": data.description,
 
-        # ⚠️ PAS DE MEDIA AU CREATE
         "MEDIA_SQUARE_ID": None,
         "MEDIA_RECTANGLE_ID": None,
 
@@ -54,7 +57,7 @@ def create_topic(data: TopicCreate) -> str:
             write_disposition="WRITE_APPEND"
         ),
     )
-    job.result()  # ⬅️ bloquant = ligne immédiatement stable
+    job.result()
 
     return topic_id
 
@@ -67,7 +70,7 @@ def list_topics():
         SELECT
             t.ID_TOPIC,
             t.LABEL,
-            t.TOPIC_AXIS,              -- ⬅️ NOUVEAU
+            t.TOPIC_AXIS,
 
             COALESCE(m.NB_ANALYSES, 0) AS NB_ANALYSES,
             COALESCE(m.LAST_30_DAYS, 0) AS DELTA_30D
@@ -91,8 +94,9 @@ def list_topics():
             "nb_analyses": r["NB_ANALYSES"],
             "delta_30d": r["DELTA_30D"],
         }
-    for r in rows
+        for r in rows
     ]
+
 
 # ============================================================
 # GET ONE TOPIC
@@ -136,6 +140,11 @@ def update_topic(id_topic: str, data: TopicUpdate) -> bool:
     if not values:
         return False
 
+    # 🔒 validation forte axis
+    if "topic_axis" in values:
+        if values["topic_axis"] not in ALLOWED_AXES:
+            raise ValueError(f"Invalid topic_axis: {values['topic_axis']}")
+
     now = datetime.utcnow().isoformat()
 
     mapping = {
@@ -163,6 +172,10 @@ def update_topic(id_topic: str, data: TopicUpdate) -> bool:
         where={"ID_TOPIC": id_topic},
     )
 
+
+# ============================================================
+# DELETE TOPIC (SOFT)
+# ============================================================
 def delete_topic(id_topic: str) -> bool:
 
     existing = query_bq(
