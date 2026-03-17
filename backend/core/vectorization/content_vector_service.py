@@ -164,7 +164,10 @@ def vectorize_content(content_id: str) -> Dict[str, Any]:
     companies = load_companies(content_id)
     print("✅ COMPANIES:", companies)
 
-    concepts_llm = content.get("CONCEPTS_LLM", []) or []
+    concepts_llm = [
+        str(c) for c in (content.get("CONCEPTS_LLM") or [])
+        if c
+    ]
     print("✅ CONCEPTS_LLM:", concepts_llm)
 
     blocs = build_content_blocks(content)
