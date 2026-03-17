@@ -969,7 +969,12 @@ def get_raw_detail(id_raw: str):
         "created_at": r["CREATED_AT"],
     }
 
-def update_raw_content(id_raw: str, date_source: Optional[str], source_title: Optional[str]):
+def update_raw_content(
+    id_raw: str,
+    date_source: Optional[str],
+    source_title: Optional[str],
+    raw_text: Optional[str] = None,
+):
 
     client = get_bigquery_client()
 
@@ -979,7 +984,8 @@ def update_raw_content(id_raw: str, date_source: Optional[str], source_title: Op
         UPDATE `{table_id}`
         SET
             DATE_SOURCE = @date_source,
-            SOURCE_TITLE = @source_title
+            SOURCE_TITLE = @source_title,
+            RAW_TEXT = @raw_text
         WHERE ID_RAW = @id_raw
     """
 
@@ -987,11 +993,13 @@ def update_raw_content(id_raw: str, date_source: Optional[str], source_title: Op
         query_parameters=[
             bigquery.ScalarQueryParameter("date_source", "DATE", date_source),
             bigquery.ScalarQueryParameter("source_title", "STRING", source_title),
+            bigquery.ScalarQueryParameter("raw_text", "STRING", raw_text),
             bigquery.ScalarQueryParameter("id_raw", "STRING", id_raw),
         ]
     )
 
     client.query(query, job_config=job_config).result()
+
 
 def get_raw_stats() -> dict:
 
