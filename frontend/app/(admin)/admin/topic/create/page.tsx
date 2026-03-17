@@ -9,7 +9,7 @@ export default function CreateTopic() {
 
   const [label, setLabel] = useState("");
   const [topicAxis, setTopicAxis] =
-    useState<"BUSINESS" | "FIELD">("BUSINESS");
+    useState<"MEDIA" | "RETAIL" | "FOUNDATIONS">("MEDIA");
 
   const [description, setDescription] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
@@ -51,7 +51,7 @@ export default function CreateTopic() {
 
       // reset formulaire
       setLabel("");
-      setTopicAxis("BUSINESS");
+      setTopicAxis("MEDIA");
       setDescription("");
       setSeoTitle("");
       setSeoDescription("");
@@ -110,15 +110,20 @@ export default function CreateTopic() {
           value={topicAxis}
           onChange={(e) =>
             setTopicAxis(
-              e.target.value as "BUSINESS" | "FIELD"
+              e.target.value as "MEDIA" | "RETAIL" | "FOUNDATIONS"
             )
           }
         >
-          <option value="BUSINESS">
-            BUSINESS — enjeux métier, stratégie, monétisation
+          <option value="MEDIA">
+            MEDIA — canaux, formats, environnements publicitaires
           </option>
-          <option value="FIELD">
-            FIELD — canaux, environnements d’activation
+
+          <option value="RETAIL">
+            RETAIL — e-commerce, marketplaces, retail media
+          </option>
+
+          <option value="FOUNDATIONS">
+            FOUNDATIONS — data, mesure, stratégie, IA
           </option>
         </select>
       </div>
