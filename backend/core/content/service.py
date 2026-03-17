@@ -1330,7 +1330,6 @@ def publish_content(
     # ============================================================
 
     if isinstance(published_at, date) and not isinstance(published_at, datetime):
-        # Si c'est un date pur → on le transforme en datetime UTC minuit
         published_at = datetime.combine(
             published_at,
             datetime.min.time(),
@@ -1363,6 +1362,25 @@ def publish_content(
         },
         where={"ID_CONTENT": id_content},
     )
+
+    # ============================================================
+    # 6️⃣ AUTO VECTORISATION (ONLY IF PUBLISHED)
+    # ============================================================
+
+    if status == "PUBLISHED":
+        try:
+            from core.vectorization.content_vector_service import vectorize_content
+
+            print("🚀 AUTO VECTORIZE CONTENT (PUBLISH):", id_content)
+
+            vectorize_content(id_content)
+
+        except Exception as e:
+            print("❌ VECTORISATION ERROR:", str(e))
+
+    # ============================================================
+    # END
+    # ============================================================
 
     return status
 
