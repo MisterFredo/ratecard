@@ -207,7 +207,17 @@ SOLUTIONS:
         })
 
     if vectors:
-        index.upsert(vectors)
+    index.upsert(vectors)
+
+    # update BigQuery
+        update_bq(
+            table=TABLE_NEWS,
+            rows=[{
+                "ID_NEWS": news_id,
+                "IS_VECTORIZED": True
+            }],
+            key_columns=["ID_NEWS"]
+        )
 
     return {
         "status": "ok",
