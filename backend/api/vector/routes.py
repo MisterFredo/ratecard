@@ -1,8 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
+from utils.bigquery_utils import query_bq
+from config import BQ_PROJECT, BQ_DATASET
 
 from core.vectorization.vector_service import vectorize_news
 
 router = APIRouter()
+TABLE_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS"
 
 
 # --------------------------------------------------
