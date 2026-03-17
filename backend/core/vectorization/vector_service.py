@@ -232,7 +232,7 @@ SOLUTIONS:
 def get_news_vector_status(limit: int = 200):
 
     # 1️⃣ récupérer les news via ta fonction EXISTANTE
-    news_list = list_news_admin(limit=limit, offset=0)
+    news_list = list_news_admin(limit=20)
 
     if not news_list:
         return {"items": []}
