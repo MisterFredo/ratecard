@@ -277,6 +277,7 @@ CONCEPTS:
 
     return {
         "status": "ok",
+        "type": "content",
         "content_id": content_id,
         "nb_vectors": len(vectors)
     }
