@@ -59,13 +59,12 @@ def load_news(news_id: str) -> Dict[str, Any]:
         LIMIT 1
     """
 
-    df = query_bq(query)
+    rows = query_bq(query)
 
-    if df.empty:
+    if not rows:
         raise ValueError(f"News not found: {news_id}")
 
-    return df.iloc[0].to_dict()
-
+    return rows[0]
 
 def load_news_topics(news_id: str) -> List[str]:
 
@@ -77,10 +76,9 @@ def load_news_topics(news_id: str) -> List[str]:
         WHERE nt.ID_NEWS = '{news_id}'
     """
 
-    df = query_bq(query)
+    rows = query_bq(query)
 
-    return df["LABEL"].dropna().tolist() if not df.empty else []
-
+    return [r["LABEL"] for r in rows if r.get("LABEL")]
 
 def load_news_solutions(news_id: str) -> List[str]:
 
@@ -92,9 +90,9 @@ def load_news_solutions(news_id: str) -> List[str]:
         WHERE ns.ID_NEWS = '{news_id}'
     """
 
-    df = query_bq(query)
+    rows = query_bq(query)
 
-    return df["NAME"].dropna().tolist() if not df.empty else []
+    return [r["NAME"] for r in rows if r.get("NAME")]
 
 
 def load_company(company_id: str) -> str:
@@ -109,12 +107,12 @@ def load_company(company_id: str) -> str:
         LIMIT 1
     """
 
-    df = query_bq(query)
+    rows = query_bq(query)
 
-    if df.empty:
+    if not rows:
         return ""
 
-    return df.iloc[0]["NAME"]
+    return rows[0]["NAME"]
 
 
 # --------------------------------------------------
