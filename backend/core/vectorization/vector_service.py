@@ -144,25 +144,53 @@ def build_news_blocks(news: Dict[str, Any]) -> Dict[str, str]:
 
 def vectorize_news(news_id: str) -> Dict[str, Any]:
 
+    print("=== VECTORIZE START ===", news_id)
+
     if not is_pinecone_enabled():
+        print("❌ Pinecone disabled")
         return {"status": "disabled"}
 
-    index = get_pinecone_index()
+    print("✅ Pinecone enabled")
 
-    # --- load data
+    # ----------------------------------------
+    # INIT INDEX
+    # ----------------------------------------
+
+    index = get_pinecone_index()
+    print("✅ Pinecone index loaded")
+
+    # ----------------------------------------
+    # LOAD DATA
+    # ----------------------------------------
+
     news = load_news(news_id)
+    print("✅ NEWS LOADED:", news.get("TITLE"))
+
     topics = load_news_topics(news_id)
+    print("✅ TOPICS:", topics)
+
     solutions = load_news_solutions(news_id)
+    print("✅ SOLUTIONS:", solutions)
+
     company_name = load_company(news.get("ID_COMPANY"))
+    print("✅ COMPANY:", company_name)
 
     blocs = build_news_blocks(news)
+    print("✅ BLOCS:", list(blocs.keys()))
 
     vectors = []
+
+    # ----------------------------------------
+    # BUILD VECTORS
+    # ----------------------------------------
 
     for bloc_type, text in blocs.items():
 
         if not text or text.strip() == "":
+            print(f"⚠️ EMPTY BLOCK SKIPPED: {bloc_type}")
             continue
+
+        print(f"➡️ PROCESS BLOCK: {bloc_type}")
 
         enriched_text = f"""
 TYPE: news
@@ -184,7 +212,11 @@ SOLUTIONS:
 {", ".join(solutions)}
         """.strip()
 
+        print("🧠 EMBEDDING START")
+
         embedding = embed_text(enriched_text)
+
+        print("✅ EMBEDDING DONE - size:", len(embedding))
 
         vector_id = f"news_{news_id}_{bloc_type}"
 
@@ -207,12 +239,20 @@ SOLUTIONS:
             "metadata": metadata
         })
 
+    print("📦 TOTAL VECTORS:", len(vectors))
+
     # ----------------------------------------
     # UPSERT + UPDATE BQ
     # ----------------------------------------
 
     if vectors:
+        print("🚀 UPSERT START")
+
         index.upsert(vectors)
+
+        print("✅ UPSERT DONE")
+
+        print("📝 UPDATE BQ START")
 
         update_bq(
             table=TABLE_NEWS,
@@ -222,6 +262,13 @@ SOLUTIONS:
             }],
             key_columns=["ID_NEWS"]
         )
+
+        print("✅ UPDATE BQ DONE")
+
+    else:
+        print("⚠️ NO VECTORS TO UPSERT")
+
+    print("=== VECTORIZE END ===")
 
     return {
         "status": "ok",
