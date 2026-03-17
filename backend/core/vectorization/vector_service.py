@@ -206,10 +206,13 @@ SOLUTIONS:
             "metadata": metadata
         })
 
-    if vectors:
-    index.upsert(vectors)
+    # ----------------------------------------
+    # UPSERT + UPDATE BQ
+    # ----------------------------------------
 
-    # update BigQuery
+    if vectors:
+        index.upsert(vectors)
+
         update_bq(
             table=TABLE_NEWS,
             rows=[{
