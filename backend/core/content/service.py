@@ -817,7 +817,7 @@ def destock_raw_contents(
                         source_date_clean = datetime.strptime(
                             raw_source_date.split("T")[0],
                             "%Y-%m-%d"
-                        ).date()
+                        )
                     except Exception:
                         source_date_clean = None
 
