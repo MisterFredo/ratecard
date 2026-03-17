@@ -13,7 +13,7 @@ import SearchableMultiSelect, {
 export type Topic = {
   id_topic: string;
   label: string;
-  topic_axis?: "BUSINESS" | "FIELD" | null;
+  topic_axis?: "MEDIA" | "RETAIL" | "FOUNDATIONS" | null;
 };
 
 type Props = {
@@ -38,57 +38,57 @@ export default function TopicSelector({ values, onChange }: Props) {
 
       try {
         const res = await api.get("/topic/list");
-        const topics = res.topics || [];
+        const topics = res.data?.topics || [];
 
-        const businessTopics = topics.filter(
-          (t: any) => t.topic_axis === "BUSINESS"
+        const mediaTopics = topics.filter(
+          (t: any) => t.topic_axis === "MEDIA"
         );
 
-        const fieldTopics = topics.filter(
-          (t: any) => t.topic_axis === "FIELD"
+        const retailTopics = topics.filter(
+          (t: any) => t.topic_axis === "RETAIL"
         );
 
-        const otherTopics = topics.filter(
-          (t: any) => !t.topic_axis
+        const foundationTopics = topics.filter(
+          (t: any) => t.topic_axis === "FOUNDATIONS"
         );
 
         const groupedOptions: SelectOption[] = [
-          ...(businessTopics.length
+          ...(mediaTopics.length
             ? [
                 {
-                  id: "__group_business__",
-                  label: "— Angles métier (BUSINESS)",
+                  id: "__group_media__",
+                  label: "— Media",
                   disabled: true,
                 },
-                ...businessTopics.map((t: any) => ({
+                ...mediaTopics.map((t: any) => ({
                   id: t.id_topic,
                   label: t.label,
                 })),
               ]
             : []),
 
-          ...(fieldTopics.length
+          ...(retailTopics.length
             ? [
                 {
-                  id: "__group_field__",
-                  label: "— Terrains & écosystèmes (FIELD)",
+                  id: "__group_retail__",
+                  label: "— Retail",
                   disabled: true,
                 },
-                ...fieldTopics.map((t: any) => ({
+                ...retailTopics.map((t: any) => ({
                   id: t.id_topic,
                   label: t.label,
                 })),
               ]
             : []),
 
-          ...(otherTopics.length
+          ...(foundationTopics.length
             ? [
                 {
-                  id: "__group_other__",
-                  label: "— Autres topics (à qualifier)",
+                  id: "__group_foundations__",
+                  label: "— Foundations",
                   disabled: true,
                 },
-                ...otherTopics.map((t: any) => ({
+                ...foundationTopics.map((t: any) => ({
                   id: t.id_topic,
                   label: t.label,
                 })),
