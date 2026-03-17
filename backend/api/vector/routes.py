@@ -41,3 +41,34 @@ def vectorize_news_batch(news_ids: list[str]):
         "status": "done",
         "results": results
     }
+
+@router.get("/news/status")
+def get_news_vector_status():
+
+    query = f"""
+        SELECT
+            ID_NEWS,
+            TITLE,
+            STATUS,
+            IFNULL(IS_VECTORIZED, FALSE) AS IS_VECTORIZED,
+            UPDATED_AT
+        FROM `{TABLE_NEWS}`
+        WHERE STATUS = "PUBLISHED"
+        ORDER BY UPDATED_AT DESC
+        LIMIT 200
+    """
+
+    rows = query_bq(query)
+
+    return {
+        "items": [
+            {
+                "id_news": r["ID_NEWS"],
+                "title": r["TITLE"],
+                "status": r["STATUS"],
+                "is_vectorized": r["IS_VECTORIZED"],
+                "updated_at": str(r["UPDATED_AT"]),
+            }
+            for r in rows
+        ]
+    }
