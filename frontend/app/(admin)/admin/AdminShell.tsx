@@ -15,6 +15,7 @@ import {
   Archive,
   Search,
   Link2,
+  Database, // ✅ ajout
 } from "lucide-react";
 
 export default function AdminShell({
@@ -38,6 +39,9 @@ export default function AdminShell({
 
     { href: "/admin/search", label: "Search", icon: Search },
 
+    // ✅ NOUVEAU : Vectorisation
+    { href: "/admin/vector", label: "Vectorisation", icon: Database },
+
     {
       href: "/admin/linkedin/compose",
       label: "LinkedIn",
@@ -54,7 +58,6 @@ export default function AdminShell({
 
     { href: "/admin/solution", label: "Solutions", icon: Puzzle },
 
-    // 🔗 NOUVEAU : matching LLM
     { href: "/admin/matching", label: "Matching", icon: Link2 },
 
     { href: "/admin/topic", label: "Topics", icon: Tags },
