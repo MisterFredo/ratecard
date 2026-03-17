@@ -11,21 +11,42 @@ class VectorBatchRequest(BaseModel):
 
 
 # ============================================================
-# RESPONSES
+# NEWS
 # ============================================================
 
-class VectorSingleResponse(BaseModel):
+class VectorNewsResponse(BaseModel):
     status: str
-    id: str
+    news_id: str
     nb_vectors: int
 
 
-class VectorBatchItem(BaseModel):
-    id: str
+class VectorNewsBatchItem(BaseModel):
+    news_id: str
     status: str
     error: Optional[str] = None
 
 
-class VectorBatchResponse(BaseModel):
+class VectorNewsBatchResponse(BaseModel):
     status: str
-    results: List[VectorBatchItem]
+    results: List[VectorNewsBatchItem]
+
+
+# ============================================================
+# CONTENT
+# ============================================================
+
+class VectorContentResponse(BaseModel):
+    status: str
+    content_id: str
+    nb_vectors: int
+
+
+class VectorContentBatchItem(BaseModel):
+    content_id: str
+    status: str
+    error: Optional[str] = None
+
+
+class VectorContentBatchResponse(BaseModel):
+    status: str
+    results: List[VectorContentBatchItem]
