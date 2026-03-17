@@ -243,20 +243,21 @@ def get_news_vector_status():
         LIMIT 200
     """
 
-    rows = query_bq(query)
+    df = query_bq(query)
 
-    if not rows:
+    # 👉 IMPORTANT : pandas
+    if df.empty:
         return {"items": []}
 
     return {
         "items": [
             {
-                "id_news": r.get("ID_NEWS"),
-                "title": r.get("TITLE"),
-                "status": r.get("STATUS"),
-                "is_vectorized": r.get("IS_VECTORIZED", False),
-                "updated_at": str(r.get("UPDATED_AT")),
+                "id_news": row["ID_NEWS"],
+                "title": row["TITLE"],
+                "status": row["STATUS"],
+                "is_vectorized": row["IS_VECTORIZED"],
+                "updated_at": str(row["UPDATED_AT"]),
             }
-            for r in rows
+            for _, row in df.iterrows()
         ]
     }
