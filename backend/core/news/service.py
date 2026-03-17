@@ -143,20 +143,6 @@ def create_news(data: NewsCreate) -> str:
         )
 
     # ============================================================
-    # 4️⃣ VECTORISATION (NON BLOQUANTE)
-    # ============================================================
-
-    try:
-        from core.vectorization.vector_service import vectorize_news
-
-        print("🚀 AUTO VECTORIZE:", news_id)
-
-        vectorize_news(news_id)
-
-    except Exception as e:
-        print("⚠️ VECTORIZE FAILED:", str(e))
-
-    # ============================================================
     # DONE
     # ============================================================
 
