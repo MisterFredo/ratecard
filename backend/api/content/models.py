@@ -34,6 +34,13 @@ class ContentRawCreate(BaseModel):
     raw_text: str
     date_source: Optional[date] = None
 
+class ContentRawUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source_title: Optional[str] = None
+    date_source: Optional[date] = None
+    raw_text: Optional[str] = None
+
 class ContentRawOut(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
