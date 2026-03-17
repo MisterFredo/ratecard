@@ -229,30 +229,51 @@ SOLUTIONS:
         "nb_vectors": len(vectors)
     }
 
-def get_news_vector_status(limit: int = 200):
+def get_news_vector_status(limit: int = 20):
 
     # ----------------------------------------
-    # 1️⃣ récupérer les news (requête simple)
+    # DEBUG BQ CONTEXT
+    # ----------------------------------------
+
+    client = get_bigquery_client()
+    print("BQ PROJECT VECTOR:", client.project)
+    print("TABLE USED:", TABLE_NEWS)
+
+    # ----------------------------------------
+    # TEST SIMPLE (COUNT)
+    # ----------------------------------------
+
+    count_rows = query_bq(f"""
+        SELECT COUNT(*) as c
+        FROM `{TABLE_NEWS}`
+    """)
+
+    print("COUNT VECTOR:", count_rows)
+
+    # ----------------------------------------
+    # LOAD NEWS (requête simple sans params)
     # ----------------------------------------
 
     sql = f"""
         SELECT
-            n.ID_NEWS,
-            n.TITLE,
-            n.STATUS,
-            n.PUBLISHED_AT
-        FROM `{TABLE_NEWS}` n
-        ORDER BY n.CREATED_AT DESC
+            ID_NEWS,
+            TITLE,
+            STATUS,
+            PUBLISHED_AT
+        FROM `{TABLE_NEWS}`
+        ORDER BY CREATED_AT DESC
         LIMIT {limit}
     """
 
     news_list = query_bq(sql)
 
+    print("NEWS LIST VECTOR:", news_list[:2] if news_list else "EMPTY")
+
     if not news_list:
         return {"items": []}
 
     # ----------------------------------------
-    # 2️⃣ récupérer les flags de vectorisation
+    # FLAGS VECTORISATION
     # ----------------------------------------
 
     ids = [n["ID_NEWS"] for n in news_list]
@@ -267,13 +288,15 @@ def get_news_vector_status(limit: int = 200):
 
     rows = query_bq(sql_flags, {"ids": ids})
 
+    print("FLAGS:", rows[:2] if rows else "EMPTY")
+
     vector_map = {
         r["ID_NEWS"]: r["IS_VECTORIZED"]
         for r in rows
     }
 
     # ----------------------------------------
-    # 3️⃣ merge
+    # MERGE FINAL
     # ----------------------------------------
 
     items = []
@@ -287,4 +310,7 @@ def get_news_vector_status(limit: int = 200):
             "updated_at": str(n.get("PUBLISHED_AT")) if n.get("PUBLISHED_AT") else None,
         })
 
+    print("FINAL ITEMS COUNT:", len(items))
+
+    return {"items": items}
     return {"items": items}
