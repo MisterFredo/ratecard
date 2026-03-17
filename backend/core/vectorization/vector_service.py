@@ -222,10 +222,16 @@ SOLUTIONS:
             "type": "news",
             "id_news": news_id,
             "bloc_type": bloc_type,
+
             "title": news.get("TITLE"),
+            "excerpt": news.get("EXCERPT"),  # 🔥 AJOUT
+
+            "content": text[:500],  # 🔥 CRUCIAL (preview bloc)
+
             "company": company_name,
             "topics": topics,
             "solutions": solutions,
+
             "news_type": news.get("NEWS_TYPE"),
             "news_kind": news.get("NEWS_KIND"),
             "published_at": str(news.get("PUBLISHED_AT")),
