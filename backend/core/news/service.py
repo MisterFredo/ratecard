@@ -50,6 +50,7 @@ def serialize_row(row: dict) -> dict:
 # ============================================================
 
 def create_news(data: NewsCreate) -> str:
+
     if not data.id_company:
         raise ValueError("id_company obligatoire")
 
@@ -64,7 +65,10 @@ def create_news(data: NewsCreate) -> str:
 
     client = get_bigquery_client()
 
-    # 1️⃣ INSERT NEWS (sans visuel)
+    # ============================================================
+    # 1️⃣ INSERT NEWS
+    # ============================================================
+
     row = [{
         "ID_NEWS": news_id,
         "STATUS": "DRAFT",
@@ -82,6 +86,7 @@ def create_news(data: NewsCreate) -> str:
         "PUBLISHED_AT": None,
         "CREATED_AT": now,
         "UPDATED_AT": now,
+        "IS_VECTORIZED": False,  # 🔥 important
     }]
 
     client.load_table_from_json(
@@ -90,7 +95,10 @@ def create_news(data: NewsCreate) -> str:
         job_config=bigquery.LoadJobConfig(write_disposition="WRITE_APPEND"),
     ).result()
 
-    # 2️⃣ DUPLICATION AUTOMATIQUE DU LOGO SOCIÉTÉ
+    # ============================================================
+    # 2️⃣ LOGO SOCIÉTÉ
+    # ============================================================
+
     logo_rows = query_bq(
         f"""
         SELECT MEDIA_LOGO_RECTANGLE_ID
@@ -106,7 +114,10 @@ def create_news(data: NewsCreate) -> str:
         if logo:
             duplicate_company_visual_for_news(news_id, logo)
 
+    # ============================================================
     # 3️⃣ RELATIONS
+    # ============================================================
+
     if data.topics:
         insert_bq(
             TABLE_NEWS_TOPIC,
@@ -131,7 +142,27 @@ def create_news(data: NewsCreate) -> str:
             [{"ID_NEWS": news_id, "ID_SOLUTION": sid} for sid in data.solutions],
         )
 
+    # ============================================================
+    # 4️⃣ VECTORISATION (NON BLOQUANTE)
+    # ============================================================
+
+    try:
+        from core.vectorization.vector_service import vectorize_news
+
+        print("🚀 AUTO VECTORIZE:", news_id)
+
+        vectorize_news(news_id)
+
+    except Exception as e:
+        print("⚠️ VECTORIZE FAILED:", str(e))
+
+    # ============================================================
+    # DONE
+    # ============================================================
+
     return news_id
+
+
 # ============================================================
 # DUPLICATE COMPANY VISUAL FOR NEWS
 # ============================================================
