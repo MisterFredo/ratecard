@@ -227,3 +227,36 @@ SOLUTIONS:
         "news_id": news_id,
         "nb_vectors": len(vectors)
     }
+
+def get_news_vector_status():
+
+    query = f"""
+        SELECT
+            ID_NEWS,
+            TITLE,
+            STATUS,
+            IFNULL(IS_VECTORIZED, FALSE) AS IS_VECTORIZED,
+            UPDATED_AT
+        FROM `{TABLE_NEWS}`
+        WHERE STATUS = "PUBLISHED"
+        ORDER BY UPDATED_AT DESC
+        LIMIT 200
+    """
+
+    rows = query_bq(query)
+
+    if not rows:
+        return {"items": []}
+
+    return {
+        "items": [
+            {
+                "id_news": r.get("ID_NEWS"),
+                "title": r.get("TITLE"),
+                "status": r.get("STATUS"),
+                "is_vectorized": r.get("IS_VECTORIZED", False),
+                "updated_at": str(r.get("UPDATED_AT")),
+            }
+            for r in rows
+        ]
+    }
