@@ -77,13 +77,6 @@ def create_content(data: ContentCreate) -> str:
     content_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
 
-    # ===========================
-    # NORMALISATION LLM
-    # ===========================
-    concepts_llm = normalize_array(data.concepts_llm)
-    solutions_llm = normalize_array(data.solutions_llm)
-    topics_llm = normalize_array(data.topics_llm)
-
     row = [{
         "ID_CONTENT": content_id,
         "STATUS": "DRAFT",
@@ -96,7 +89,6 @@ def create_content(data: ContentCreate) -> str:
             if data.source_published_at
             else None
         ),
-
         "TITLE": data.title.strip(),
         "EXCERPT": data.excerpt,
         "CONTENT_BODY": data.content_body,
@@ -105,9 +97,9 @@ def create_content(data: ContentCreate) -> str:
         "CHIFFRES": normalize_array(data.chiffres),
         "ACTEURS_CITES": normalize_array(data.acteurs_cites),
 
-        "CONCEPTS_LLM": concepts_llm,
-        "SOLUTIONS_LLM": solutions_llm,
-        "TOPICS_LLM": topics_llm,
+        "CONCEPTS_LLM": normalize_array(data.concepts_llm),
+        "SOLUTIONS_LLM": normalize_array(data.solutions_llm),
+        "TOPICS_LLM": normalize_array(data.topics_llm),
 
         "MECANIQUE_EXPLIQUEE": data.mecanique_expliquee,
         "ENJEU_STRATEGIQUE": data.enjeu_strategique,
@@ -119,18 +111,39 @@ def create_content(data: ContentCreate) -> str:
 
         "PUBLISHED_AT": None,
         "CREATED_AT": now,
-        "UPDATED_AT": now,
-
         "SOURCE_DATE": (
             data.source_date.isoformat()
             if data.source_date
             else None
         ),
+        "UPDATED_AT": now,
     }]
 
     # ===========================
-    # INSERT CONTENT
+    # 🔎 DEBUG AVANT INSERT BQ
     # ===========================
+
+    print("\n========== DEBUG CREATE_CONTENT ==========")
+    print("ID_CONTENT:", content_id)
+
+    debug_row = row[0]
+
+    for field in ["CONCEPTS_LLM", "SOLUTIONS_LLM", "TOPICS_LLM"]:
+        value = debug_row.get(field)
+        print(f"\nFIELD: {field}")
+        print("TYPE:", type(value))
+        print("VALUE:", value)
+
+        if isinstance(value, list):
+            for i, v in enumerate(value):
+                print(f"  [{i}] -> ({type(v)}) {v}")
+
+    print("\nFULL ROW TYPES:")
+    for k, v in debug_row.items():
+        print(k, "=>", type(v))
+
+    print("==========================================\n")
+
     client = get_bigquery_client()
 
     client.load_table_from_json(
@@ -142,10 +155,17 @@ def create_content(data: ContentCreate) -> str:
     ).result()
 
     # ===========================
-    # TOPICS → CONTENT_TOPIC (CRITIQUE)
+    # 🔎 DEBUG APRÈS INSERT
     # ===========================
-    # priorité user > fallback LLM
-    final_topics = data.topics if data.topics else topics_llm
+
+    print("✔ INSERT DONE FOR:", content_id)
+    print("==========================================\n")
+
+    # ===========================
+    # 🔥 TOPICS (SEUL CHANGEMENT)
+    # ===========================
+
+    final_topics = data.topics if data.topics else data.topics_llm
 
     if final_topics:
         insert_bq(
@@ -154,15 +174,15 @@ def create_content(data: ContentCreate) -> str:
                 {
                     "ID_CONTENT": content_id,
                     "ID_TOPIC": tid,
-                    "CREATED_AT": now,
+                    "CREATED_AT": now
                 }
-                for tid in set(final_topics)  # 🔥 anti-doublon direct
+                for tid in set(final_topics)  # anti-doublon
                 if tid
             ],
         )
 
     # ===========================
-    # AUTRES RELATIONS
+    # RESTE INCHANGÉ
     # ===========================
 
     if data.events:
@@ -174,7 +194,7 @@ def create_content(data: ContentCreate) -> str:
                     "ID_EVENT": eid,
                     "CREATED_AT": now
                 }
-                for eid in set(data.events)
+                for eid in data.events
             ],
         )
 
@@ -187,7 +207,7 @@ def create_content(data: ContentCreate) -> str:
                     "ID_COMPANY": cid,
                     "CREATED_AT": now
                 }
-                for cid in set(data.companies)
+                for cid in data.companies
             ],
         )
 
@@ -214,7 +234,7 @@ def create_content(data: ContentCreate) -> str:
                     "ID_CONCEPT": cid,
                     "CREATED_AT": now
                 }
-                for cid in set(data.concepts)
+                for cid in data.concepts
             ],
         )
 
@@ -227,7 +247,7 @@ def create_content(data: ContentCreate) -> str:
                     "ID_SOLUTION": sid,
                     "CREATED_AT": now
                 }
-                for sid in set(data.solutions)
+                for sid in data.solutions
             ],
         )
 
