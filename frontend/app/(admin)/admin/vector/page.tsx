@@ -24,7 +24,7 @@ export default function VectorPage() {
     setLoading(true);
     try {
       const res = await api.get("/vector/news/status");
-      setItems(res?.data?.items ?? []);
+      setItems(res?.items ?? []);
     } catch (e) {
       console.error("Erreur chargement vectorisation", e);
     }
