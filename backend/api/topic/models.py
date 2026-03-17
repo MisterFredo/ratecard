@@ -4,6 +4,13 @@ from datetime import datetime
 
 
 # ============================================================
+# TYPE CENTRALISÉ
+# ============================================================
+
+TopicAxis = Literal["MEDIA", "RETAIL", "FOUNDATIONS"]
+
+
+# ============================================================
 # CREATE
 # ============================================================
 
@@ -15,7 +22,7 @@ class TopicCreate(BaseModel):
 
     label: str = Field(..., min_length=1)
 
-    topic_axis: Literal["BUSINESS", "FIELD"]
+    topic_axis: TopicAxis
 
     description: Optional[str] = None
 
@@ -36,7 +43,7 @@ class TopicUpdate(BaseModel):
     """
 
     label: Optional[str] = None
-    topic_axis: Optional[Literal["BUSINESS", "FIELD"]] = None
+    topic_axis: Optional[TopicAxis] = None
 
     description: Optional[str] = None
 
@@ -62,7 +69,7 @@ class TopicOut(BaseModel):
 
     id_topic: str
     label: str
-    topic_axis: Optional[str] = None
+    topic_axis: Optional[TopicAxis] = None
 
     description: Optional[str] = None
 
