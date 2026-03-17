@@ -254,11 +254,12 @@ SOLUTIONS:
 
         update_bq(
             table=TABLE_NEWS,
-            rows=[{
-                "ID_NEWS": news_id,
+            fields={
                 "IS_VECTORIZED": True
-            }],
-            key_columns=["ID_NEWS"]
+            },
+            where={
+                "ID_NEWS": news_id
+            }
         )
 
         print("✅ UPDATE BQ DONE")
