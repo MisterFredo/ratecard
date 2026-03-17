@@ -231,16 +231,33 @@ SOLUTIONS:
 
 def get_news_vector_status(limit: int = 200):
 
-    # 1️⃣ récupérer les news via ta fonction EXISTANTE
-    news_list = list_news_admin(limit=20)
+    # ----------------------------------------
+    # 1️⃣ récupérer les news (requête simple)
+    # ----------------------------------------
+
+    sql = f"""
+        SELECT
+            n.ID_NEWS,
+            n.TITLE,
+            n.STATUS,
+            n.PUBLISHED_AT
+        FROM `{TABLE_NEWS}` n
+        ORDER BY n.CREATED_AT DESC
+        LIMIT {limit}
+    """
+
+    news_list = query_bq(sql)
 
     if not news_list:
         return {"items": []}
 
+    # ----------------------------------------
     # 2️⃣ récupérer les flags de vectorisation
-    ids = [n["id_news"] for n in news_list]
+    # ----------------------------------------
 
-    sql = f"""
+    ids = [n["ID_NEWS"] for n in news_list]
+
+    sql_flags = f"""
         SELECT
             ID_NEWS,
             IFNULL(IS_VECTORIZED, FALSE) AS IS_VECTORIZED
@@ -248,23 +265,26 @@ def get_news_vector_status(limit: int = 200):
         WHERE ID_NEWS IN UNNEST(@ids)
     """
 
-    rows = query_bq(sql, {"ids": ids})
+    rows = query_bq(sql_flags, {"ids": ids})
 
     vector_map = {
         r["ID_NEWS"]: r["IS_VECTORIZED"]
         for r in rows
     }
 
+    # ----------------------------------------
     # 3️⃣ merge
+    # ----------------------------------------
+
     items = []
 
     for n in news_list:
         items.append({
-            "id_news": n["id_news"],
-            "title": n["title"],
-            "status": n["status"],
-            "is_vectorized": vector_map.get(n["id_news"], False),
-            "updated_at": n.get("published_at"),
+            "id_news": n["ID_NEWS"],
+            "title": n["TITLE"],
+            "status": n["STATUS"],
+            "is_vectorized": vector_map.get(n["ID_NEWS"], False),
+            "updated_at": str(n.get("PUBLISHED_AT")) if n.get("PUBLISHED_AT") else None,
         })
 
     return {"items": items}
