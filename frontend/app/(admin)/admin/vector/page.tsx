@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 
 type Item = {
   id: string;
+  type: "news" | "content";
   title: string;
   status: string;
   is_vectorized: boolean;
@@ -35,7 +36,8 @@ export default function VectorPage() {
           : await api.get("/vector/content/status");
 
       const mapped = (res?.items ?? []).map((i: any) => ({
-        id: i.id_news || i.id_content,
+        id: mode === "news" ? i.id_news : i.id_content, // ✅ FIX CRITIQUE
+        type: mode,
         title: i.title,
         status: i.status,
         is_vectorized: i.is_vectorized,
@@ -56,18 +58,25 @@ export default function VectorPage() {
   }, [mode]);
 
   // ----------------------------------------
+  // RESET UI ON MODE CHANGE
+  // ----------------------------------------
+
+  useEffect(() => {
+    setSearch("");
+    setShowOnlyNotVectorized(false);
+  }, [mode]);
+
+  // ----------------------------------------
   // FILTER + SORT
   // ----------------------------------------
 
   const filteredItems = useMemo(() => {
     let data = [...items];
 
-    // filtre vectorisation
     if (showOnlyNotVectorized) {
       data = data.filter((i) => !i.is_vectorized);
     }
 
-    // recherche
     if (search.trim()) {
       const s = search.toLowerCase();
       data = data.filter((i) =>
@@ -75,7 +84,6 @@ export default function VectorPage() {
       );
     }
 
-    // tri : non vectorisés d'abord + récents
     data.sort((a, b) => {
 
       if (a.is_vectorized !== b.is_vectorized) {
@@ -89,6 +97,10 @@ export default function VectorPage() {
     return data;
 
   }, [items, showOnlyNotVectorized, search]);
+
+  const remaining = useMemo(() => {
+    return filteredItems.filter((i) => !i.is_vectorized).length;
+  }, [filteredItems]);
 
   const notVectorizedCount = useMemo(() => {
     return items.filter((i) => !i.is_vectorized).length;
@@ -116,7 +128,8 @@ export default function VectorPage() {
 
     const ids = filteredItems
       .filter((i) => !i.is_vectorized)
-      .map((i) => i.id);
+      .map((i) => i.id)
+      .filter(Boolean); // ✅ SAFE
 
     if (ids.length === 0) return;
 
@@ -190,9 +203,10 @@ export default function VectorPage() {
           {/* BATCH */}
           <button
             onClick={handleVectorizeAll}
-            className="px-3 py-1 bg-black text-white rounded"
+            disabled={remaining === 0}
+            className="px-3 py-1 bg-black text-white rounded disabled:opacity-30"
           >
-            Vectoriser ({filteredItems.filter(i => !i.is_vectorized).length})
+            Vectoriser ({remaining})
           </button>
 
         </div>
