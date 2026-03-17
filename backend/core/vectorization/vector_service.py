@@ -77,7 +77,11 @@ def load_news_topics(news_id: str) -> List[str]:
 
     rows = query_bq(query)
 
-    return [r["LABEL"] for r in rows if r.get("LABEL")]
+    return [
+        str(r["LABEL"])
+        for r in rows
+        if r.get("LABEL")
+    ]
 
 def load_news_solutions(news_id: str) -> List[str]:
 
