@@ -120,7 +120,7 @@ def create_content(data: ContentCreate) -> str:
     }]
 
     # ===========================
-    # 🔎 DEBUG AVANT INSERT BQ
+    # DEBUG AVANT INSERT
     # ===========================
 
     print("\n========== DEBUG CREATE_CONTENT ==========")
@@ -154,15 +154,10 @@ def create_content(data: ContentCreate) -> str:
         ),
     ).result()
 
-    # ===========================
-    # 🔎 DEBUG APRÈS INSERT
-    # ===========================
-
     print("✔ INSERT DONE FOR:", content_id)
-    print("==========================================\n")
 
     # ===========================
-    # 🔥 TOPICS (SEUL CHANGEMENT)
+    # RELATIONS
     # ===========================
 
     final_topics = data.topics if data.topics else data.topics_llm
@@ -176,14 +171,10 @@ def create_content(data: ContentCreate) -> str:
                     "ID_TOPIC": tid,
                     "CREATED_AT": now
                 }
-                for tid in set(final_topics)  # anti-doublon
+                for tid in set(final_topics)
                 if tid
             ],
         )
-
-    # ===========================
-    # RESTE INCHANGÉ
-    # ===========================
 
     if data.events:
         insert_bq(
@@ -250,6 +241,24 @@ def create_content(data: ContentCreate) -> str:
                 for sid in data.solutions
             ],
         )
+
+    print("✔ RELATIONS DONE FOR:", content_id)
+
+    # ===========================
+    # 🔥 VECTORISATION AUTO
+    # ===========================
+
+    try:
+        from core.vectorization.content_vector_service import vectorize_content
+
+        print("🚀 AUTO VECTORIZE CONTENT:", content_id)
+
+        vectorize_content(content_id)
+
+    except Exception as e:
+        print("❌ VECTORISATION ERROR:", str(e))
+
+    print("==========================================\n")
 
     return content_id
 
