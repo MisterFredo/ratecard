@@ -95,7 +95,11 @@ def load_news_solutions(news_id: str) -> List[str]:
 
     rows = query_bq(query)
 
-    return [r["NAME"] for r in rows if r.get("NAME")]
+    return [
+        str(r["NAME"])
+        for r in rows
+        if r.get("NAME")
+    ]
 
 
 def load_company(company_id: str) -> str:
