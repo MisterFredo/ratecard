@@ -38,7 +38,7 @@ export default function TopicSelector({ values, onChange }: Props) {
 
       try {
         const res = await api.get("/topic/list");
-        const topics = res.data?.topics || [];
+        const topics = res.topics || [];
 
         const mediaTopics = topics.filter(
           (t: any) => t.topic_axis === "MEDIA"
