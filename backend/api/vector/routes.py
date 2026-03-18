@@ -18,12 +18,14 @@ from api.vector.models import (
 from core.vectorization.vector_service import (
     vectorize_news,
     get_news_vector_status,
+    get_news_to_vectorize,   # 👈 à ajouter côté service
 )
 
 # CONTENT
 from core.vectorization.content_vector_service import (
     vectorize_content,
     get_content_vector_status,
+    get_content_to_vectorize,  # 👈 à ajouter côté service
 )
 
 router = APIRouter()
@@ -41,12 +43,8 @@ router = APIRouter()
 def vectorize_news_route(news_id: str):
     try:
         result = vectorize_news(news_id)
-        print("VECTOR NEWS RESULT:", result)
         return result
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("VECTOR NEWS ERROR:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -58,31 +56,60 @@ def vectorize_news_route(news_id: str):
 def vectorize_news_batch(payload: VectorBatchRequest):
 
     results = []
+    success = 0
+    error = 0
 
-    for news_id in payload.ids:
-        try:
-            res = vectorize_news(news_id)
+    try:
+        # =========================
+        # SOURCE DES IDS
+        # =========================
+        if payload.ids:
+            news_ids = payload.ids
 
-            results.append(
-                VectorNewsBatchItem(
-                    news_id=news_id,
-                    status=res.get("status", "ok"),
-                )
+        else:
+            news_ids = get_news_to_vectorize(
+                limit=payload.limit,
+                offset=payload.offset,
+                status=payload.status,
             )
 
-        except Exception as e:
-            results.append(
-                VectorNewsBatchItem(
-                    news_id=news_id,
-                    status="error",
-                    error=str(e),
-                )
-            )
+        # =========================
+        # PROCESS
+        # =========================
+        for news_id in news_ids:
+            try:
+                res = vectorize_news(news_id)
 
-    return VectorNewsBatchResponse(
-        status="done",
-        results=results
-    )
+                results.append(
+                    VectorNewsBatchItem(
+                        news_id=news_id,
+                        status=res.get("status", "ok"),
+                        nb_vectors=res.get("nb_vectors"),
+                    )
+                )
+
+                success += 1
+
+            except Exception as e:
+                results.append(
+                    VectorNewsBatchItem(
+                        news_id=news_id,
+                        status="error",
+                        error=str(e),
+                    )
+                )
+                error += 1
+
+        return VectorNewsBatchResponse(
+            status="done",
+            processed=len(news_ids),
+            success=success,
+            error=error,
+            results=results
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # --------------------------------------------------
@@ -109,12 +136,8 @@ def news_status():
 def vectorize_content_route(content_id: str):
     try:
         result = vectorize_content(content_id)
-        print("VECTOR CONTENT RESULT:", result)
         return result
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("VECTOR CONTENT ERROR:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -126,31 +149,60 @@ def vectorize_content_route(content_id: str):
 def vectorize_content_batch(payload: VectorBatchRequest):
 
     results = []
+    success = 0
+    error = 0
 
-    for content_id in payload.ids:
-        try:
-            res = vectorize_content(content_id)
+    try:
+        # =========================
+        # SOURCE DES IDS
+        # =========================
+        if payload.ids:
+            content_ids = payload.ids
 
-            results.append(
-                VectorContentBatchItem(
-                    content_id=content_id,
-                    status=res.get("status", "ok"),
-                )
+        else:
+            content_ids = get_content_to_vectorize(
+                limit=payload.limit,
+                offset=payload.offset,
+                status=payload.status,
             )
 
-        except Exception as e:
-            results.append(
-                VectorContentBatchItem(
-                    content_id=content_id,
-                    status="error",
-                    error=str(e),
-                )
-            )
+        # =========================
+        # PROCESS
+        # =========================
+        for content_id in content_ids:
+            try:
+                res = vectorize_content(content_id)
 
-    return VectorContentBatchResponse(
-        status="done",
-        results=results
-    )
+                results.append(
+                    VectorContentBatchItem(
+                        content_id=content_id,
+                        status=res.get("status", "ok"),
+                        nb_vectors=res.get("nb_vectors"),
+                    )
+                )
+
+                success += 1
+
+            except Exception as e:
+                results.append(
+                    VectorContentBatchItem(
+                        content_id=content_id,
+                        status="error",
+                        error=str(e),
+                    )
+                )
+                error += 1
+
+        return VectorContentBatchResponse(
+            status="done",
+            processed=len(content_ids),
+            success=success,
+            error=error,
+            results=results
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # --------------------------------------------------
