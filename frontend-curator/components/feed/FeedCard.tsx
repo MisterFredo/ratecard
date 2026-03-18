@@ -7,24 +7,27 @@ type Props = {
   item: FeedItem;
   onSelect?: () => void;
   onBadgeClick?: (label: string) => void;
+  onAddToLibrary?: () => void;
 };
 
 export default function FeedCard({
   item,
   onSelect,
   onBadgeClick,
+  onAddToLibrary,
 }: Props) {
   return (
     <div
       className="
         bg-white border rounded-xl p-4 shadow-sm
-        hover:shadow-md transition cursor-pointer
-        flex flex-col gap-2
+        hover:shadow-md transition flex flex-col gap-3
       "
-      onClick={onSelect}
     >
-      {/* TITLE + DATE */}
-      <div className="space-y-1">
+      {/* HEADER */}
+      <div
+        className="cursor-pointer"
+        onClick={onSelect}
+      >
         <h3 className="font-semibold text-sm line-clamp-2 text-gray-900">
           {item.title}
         </h3>
@@ -45,7 +48,7 @@ export default function FeedCard({
 
       {/* BADGES */}
       {item.badges?.length > 0 && (
-        <div className="flex flex-wrap gap-1 pt-1">
+        <div className="flex flex-wrap gap-1">
           {item.badges.map((badge, i) => (
             <BadgeLabel
               key={i}
@@ -53,13 +56,24 @@ export default function FeedCard({
               type={badge.type}
               clickable
               onClick={(e) => {
-                e.stopPropagation(); // 🔥 important
+                e.stopPropagation();
                 onBadgeClick?.(badge.label);
               }}
             />
           ))}
         </div>
       )}
+
+      {/* ACTION */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onAddToLibrary?.();
+        }}
+        className="text-xs text-teal-600 hover:underline mt-2"
+      >
+        + Ajouter au dossier
+      </button>
     </div>
   );
 }
