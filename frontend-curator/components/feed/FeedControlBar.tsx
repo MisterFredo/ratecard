@@ -1,46 +1,106 @@
 "use client";
 
-import { Input } from "@/components/ui/Input";
-import ModeToggle from "./ModeToggle";
+import type { Dispatch, SetStateAction } from "react";
 
-import type { FeedFilters } from "@/types/feed";
+/* =========================================================
+   TYPES (temporaire — on factorisera plus tard)
+========================================================= */
+type FeedFilters = {
+  query: string;
+  mode: "explore" | "watch";
+};
 
 type Props = {
   filters: FeedFilters;
-  onChange: (f: FeedFilters) => void;
+  onChange: (filters: FeedFilters) => void;
 };
 
 export default function FeedControlBar({
   filters,
   onChange,
 }: Props) {
-  return (
-    <div className="flex flex-col gap-4 p-4 bg-white border rounded-lg">
+  /* =====================================================
+     HANDLERS
+  ===================================================== */
 
-      {/* TOP ROW */}
+  function handleQueryChange(value: string) {
+    onChange({
+      ...filters,
+      query: value,
+    });
+  }
+
+  function handleModeChange(mode: "explore" | "watch") {
+    onChange({
+      ...filters,
+      mode,
+    });
+  }
+
+  /* =====================================================
+     RENDER
+  ===================================================== */
+
+  return (
+    <div className="bg-white border rounded-lg p-4 space-y-4">
+
+      {/* ================================
+          TOP ROW
+      ================================= */}
       <div className="flex items-center gap-3">
 
-        {/* SEARCH */}
-        <Input
-          placeholder="Rechercher un sujet, une entreprise..."
+        {/* SEARCH INPUT */}
+        <input
+          type="text"
           value={filters.query}
-          onChange={(e) =>
-            onChange({ ...filters, query: e.target.value })
-          }
+          onChange={(e) => handleQueryChange(e.target.value)}
+          placeholder="Rechercher un sujet, une entreprise..."
+          className="
+            flex-1
+            border rounded-md px-3 py-2 text-sm
+            focus:outline-none focus:ring-2 focus:ring-teal-500
+          "
         />
 
-        {/* MODE */}
-        <ModeToggle
-          value={filters.mode}
-          onChange={(mode) =>
-            onChange({ ...filters, mode })
-          }
-        />
+        {/* MODE TOGGLE */}
+        <div className="flex border rounded-md overflow-hidden text-sm">
+
+          <button
+            onClick={() => handleModeChange("explore")}
+            className={`
+              px-3 py-1.5 transition
+              ${
+                filters.mode === "explore"
+                  ? "bg-teal-600 text-white"
+                  : "bg-white text-gray-600 hover:bg-gray-100"
+              }
+            `}
+          >
+            Explorer
+          </button>
+
+          <button
+            onClick={() => handleModeChange("watch")}
+            className={`
+              px-3 py-1.5 transition
+              ${
+                filters.mode === "watch"
+                  ? "bg-teal-600 text-white"
+                  : "bg-white text-gray-600 hover:bg-gray-100"
+              }
+            `}
+          >
+            Suivi
+          </button>
+
+        </div>
       </div>
 
-      {/* FILTER CHIPS (V1 simple → à enrichir ensuite) */}
+      {/* ================================
+          PLACEHOLDER FILTRES
+      ================================= */}
       <div className="text-xs text-gray-500">
-        Filtres avancés à venir (topics, sociétés…)
+        Filtres avancés (topics, sociétés, solutions) à venir
       </div>
 
     </div>
