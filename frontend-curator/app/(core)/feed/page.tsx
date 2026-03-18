@@ -23,7 +23,7 @@ type FeedFilters = {
   query: string;
   mode: "explore" | "watch";
   badge?: string;
-  contentType?: "all" | "analysis" | "source"; // ✅ NEW
+  contentType?: "all" | "analysis" | "news"; // ✅ NEW
 };
 
 export default function FeedPage() {
@@ -142,7 +142,7 @@ export default function FeedPage() {
         />
       )}
 
-      {selectedItem?.type === "source" && (
+      {selectedItem?.type === "news" && (
         <NewsDrawer
           id={selectedItem.id}
           onClose={() => setSelectedItem(null)}
