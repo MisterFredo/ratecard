@@ -374,3 +374,65 @@ def get_content_vector_status(limit: int = 20):
     print("FINAL ITEMS COUNT:", len(items))
 
     return {"items": items}
+
+# --------------------------------------------------
+# BACKLOG SELECTION
+# --------------------------------------------------
+
+def get_content_to_vectorize(
+    limit: int = 50,
+    offset: int = 0,
+    status: str = None
+) -> List[str]:
+
+    print("=== GET CONTENT TO VECTORIZE ===")
+
+    conditions = []
+
+    # ----------------------------------------
+    # FILTER VECTOR STATUS
+    # ----------------------------------------
+
+    if status == "NOT_VECTORIZED":
+        conditions.append("IFNULL(IS_VECTORIZED, FALSE) = FALSE")
+
+    elif status == "VECTORIZED":
+        conditions.append("IFNULL(IS_VECTORIZED, FALSE) = TRUE")
+
+    elif status == "ERROR":
+        # même logique pour l’instant (évolutif)
+        conditions.append("IFNULL(IS_VECTORIZED, FALSE) = FALSE")
+
+    # ----------------------------------------
+    # FILTRES MÉTIER (IMPORTANT)
+    # ----------------------------------------
+
+    conditions.append("IS_ACTIVE = TRUE")
+    conditions.append("STATUS = 'PUBLISHED'")
+
+    where_clause = ""
+    if conditions:
+        where_clause = "WHERE " + " AND ".join(conditions)
+
+    # ----------------------------------------
+    # QUERY
+    # ----------------------------------------
+
+    sql = f"""
+        SELECT ID_CONTENT
+        FROM `{TABLE_CONTENT}`
+        {where_clause}
+        ORDER BY CREATED_AT DESC
+        LIMIT {limit}
+        OFFSET {offset}
+    """
+
+    print("SQL:", sql)
+
+    rows = query_bq(sql)
+
+    ids = [r["ID_CONTENT"] for r in rows]
+
+    print("FOUND:", len(ids))
+
+    return ids
