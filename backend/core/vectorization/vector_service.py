@@ -372,3 +372,64 @@ def get_news_vector_status(limit: int = 50):
     print("FINAL ITEMS COUNT:", len(items))
 
     return {"items": items}
+
+# --------------------------------------------------
+# BACKLOG SELECTION
+# --------------------------------------------------
+
+def get_news_to_vectorize(
+    limit: int = 50,
+    offset: int = 0,
+    status: str = None
+) -> List[str]:
+
+    print("=== GET NEWS TO VECTORIZE ===")
+
+    conditions = []
+
+    # ----------------------------------------
+    # FILTER STATUS VECTOR
+    # ----------------------------------------
+
+    if status == "NOT_VECTORIZED":
+        conditions.append("IFNULL(IS_VECTORIZED, FALSE) = FALSE")
+
+    elif status == "VECTORIZED":
+        conditions.append("IFNULL(IS_VECTORIZED, FALSE) = TRUE")
+
+    elif status == "ERROR":
+        # si tu ajoutes un champ plus tard
+        conditions.append("IFNULL(IS_VECTORIZED, FALSE) = FALSE")
+
+    # ----------------------------------------
+    # BASE FILTER (important)
+    # ----------------------------------------
+
+    conditions.append("STATUS = 'PUBLISHED'")
+
+    where_clause = ""
+    if conditions:
+        where_clause = "WHERE " + " AND ".join(conditions)
+
+    # ----------------------------------------
+    # QUERY
+    # ----------------------------------------
+
+    sql = f"""
+        SELECT ID_NEWS
+        FROM `{TABLE_NEWS}`
+        {where_clause}
+        ORDER BY CREATED_AT DESC
+        LIMIT {limit}
+        OFFSET {offset}
+    """
+
+    print("SQL:", sql)
+
+    rows = query_bq(sql)
+
+    ids = [r["ID_NEWS"] for r in rows]
+
+    print("FOUND:", len(ids))
+
+    return ids
