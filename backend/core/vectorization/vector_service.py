@@ -288,7 +288,7 @@ SOLUTIONS:
         "nb_vectors": len(vectors)
     }
 
-def get_news_vector_status(limit: int = 50):
+def get_news_vector_status(limit: int = 50, offset: int = 0):
 
     # ----------------------------------------
     # DEBUG BQ CONTEXT
@@ -297,6 +297,7 @@ def get_news_vector_status(limit: int = 50):
     client = get_bigquery_client()
     print("BQ PROJECT VECTOR:", client.project)
     print("TABLE USED:", TABLE_NEWS)
+    print("LIMIT:", limit, "OFFSET:", offset)
 
     # ----------------------------------------
     # TEST SIMPLE (COUNT)
@@ -310,7 +311,7 @@ def get_news_vector_status(limit: int = 50):
     print("COUNT VECTOR:", count_rows)
 
     # ----------------------------------------
-    # LOAD NEWS (requête simple sans params)
+    # LOAD NEWS (AVEC OFFSET 🔥)
     # ----------------------------------------
 
     sql = f"""
@@ -322,7 +323,10 @@ def get_news_vector_status(limit: int = 50):
         FROM `{TABLE_NEWS}`
         ORDER BY CREATED_AT DESC
         LIMIT {limit}
+        OFFSET {offset}
     """
+
+    print("SQL:", sql)
 
     news_list = query_bq(sql)
 
