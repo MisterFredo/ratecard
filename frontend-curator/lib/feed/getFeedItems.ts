@@ -24,7 +24,6 @@ export async function getFeedItems({
   query.append("offset", String((page - 1) * pageSize));
 
   try {
-    // 🔥 2 appels distincts
     const [newsRes, contentRes] = await Promise.all([
       fetch(apiUrl(`/feed/news?${query.toString()}`)),
       fetch(apiUrl(`/feed/content?${query.toString()}`)),
@@ -33,7 +32,6 @@ export async function getFeedItems({
     const newsJson = await newsRes.json();
     const contentJson = await contentRes.json();
 
-    // 🔁 mapping
     const newsItems: FeedItem[] = (newsJson.items || []).map((n: any) => ({
       id: n.id_news,
       type: "source",
@@ -43,19 +41,18 @@ export async function getFeedItems({
       badges: n.badges || [],
     }));
 
-    const contentItems: FeedItem[] = (contentJson.items || []).map((c: any) => ({
-      id: c.id_content,
-      type: "analysis",
-      title: c.title,
-      excerpt: c.excerpt,
-      date: c.published_at,
-      badges: c.badges || [],
-    }));
+    const contentItems: FeedItem[] = (c: any) =>
+      (contentJson.items || []).map((c: any) => ({
+        id: c.id_content,
+        type: "analysis",
+        title: c.title,
+        excerpt: c.excerpt,
+        date: c.published_at,
+        badges: c.badges || [],
+      }));
 
-    // 🔥 merge intelligent (simple V1)
     const merged = [...contentItems, ...newsItems];
 
-    // tri par date
     merged.sort((a, b) =>
       new Date(b.date || 0).getTime() -
       new Date(a.date || 0).getTime()
