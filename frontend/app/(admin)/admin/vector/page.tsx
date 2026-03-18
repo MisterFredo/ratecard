@@ -72,40 +72,7 @@ export default function VectorPage() {
   }, [mode]);
 
   // ----------------------------------------
-  // SELECTION
-  // ----------------------------------------
-
-  function toggleSelect(id: string) {
-    setSelectedIds(prev =>
-      prev.includes(id)
-        ? prev.filter(i => i !== id)
-        : [...prev, id]
-    );
-  }
-
-  function selectAllVisible() {
-    const ids = filteredItems.map(i => i.id);
-    setSelectedIds(ids);
-  }
-
-  function unselectAll() {
-    setSelectedIds([]);
-  }
-
-  const isAllSelected =
-    filteredItems.length > 0 &&
-    filteredItems.every(i => selectedIds.includes(i.id));
-
-  function toggleSelectAll() {
-    if (isAllSelected) {
-      unselectAll();
-    } else {
-      selectAllVisible();
-    }
-  }
-
-  // ----------------------------------------
-  // FILTER + SORT
+  // FILTER + SORT (DOIT ÊTRE AVANT SELECTION)
   // ----------------------------------------
 
   const filteredItems = useMemo(() => {
@@ -139,6 +106,39 @@ export default function VectorPage() {
   const remaining = useMemo(() => {
     return items.filter(i => !i.is_vectorized).length;
   }, [items]);
+
+  // ----------------------------------------
+  // SELECTION
+  // ----------------------------------------
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev =>
+      prev.includes(id)
+        ? prev.filter(i => i !== id)
+        : [...prev, id]
+    );
+  }
+
+  function selectAllVisible() {
+    const ids = filteredItems.map(i => i.id);
+    setSelectedIds(ids);
+  }
+
+  function unselectAll() {
+    setSelectedIds([]);
+  }
+
+  const isAllSelected =
+    filteredItems.length > 0 &&
+    filteredItems.every(i => selectedIds.includes(i.id));
+
+  function toggleSelectAll() {
+    if (isAllSelected) {
+      unselectAll();
+    } else {
+      selectAllVisible();
+    }
+  }
 
   // ----------------------------------------
   // ACTIONS
