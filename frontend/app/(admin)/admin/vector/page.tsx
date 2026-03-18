@@ -11,6 +11,8 @@ type Item = {
   updated_at: string;
 };
 
+const PAGE_SIZE = 50;
+
 export default function VectorPage() {
 
   const [items, setItems] = useState<Item[]>([]);
@@ -18,8 +20,12 @@ export default function VectorPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const [mode, setMode] = useState<"news" | "content">("news");
-  const [showOnlyNotVectorized, setShowOnlyNotVectorized] = useState(false);
+
   const [search, setSearch] = useState("");
+  const [showOnlyNotVectorized, setShowOnlyNotVectorized] = useState(false);
+
+  const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // ----------------------------------------
   // LOAD
@@ -29,13 +35,15 @@ export default function VectorPage() {
     setLoading(true);
 
     try {
+      const offset = (page - 1) * PAGE_SIZE;
+
       const res =
         mode === "news"
-          ? await api.get("/vector/news/status")
-          : await api.get("/vector/content/status");
+          ? await api.get(`/vector/news/status?limit=${PAGE_SIZE}&offset=${offset}`)
+          : await api.get(`/vector/content/status?limit=${PAGE_SIZE}&offset=${offset}`);
 
       const mapped = (res?.items ?? []).map((i: any) => ({
-        id: mode === "news" ? i.id_news : i.id_content, // ✅ FIX CRITIQUE
+        id: mode === "news" ? i.id_news : i.id_content,
         title: i.title,
         status: i.status,
         is_vectorized: i.is_vectorized,
@@ -53,16 +61,35 @@ export default function VectorPage() {
 
   useEffect(() => {
     load();
-  }, [mode]);
+  }, [mode, page]);
 
-  // ----------------------------------------
-  // RESET UI ON MODE CHANGE
-  // ----------------------------------------
-
+  // reset UI on mode change
   useEffect(() => {
     setSearch("");
     setShowOnlyNotVectorized(false);
+    setSelectedIds([]);
+    setPage(1);
   }, [mode]);
+
+  // ----------------------------------------
+  // SELECTION
+  // ----------------------------------------
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev =>
+      prev.includes(id)
+        ? prev.filter(i => i !== id)
+        : [...prev, id]
+    );
+  }
+
+  function selectPage() {
+    setSelectedIds(items.map(i => i.id));
+  }
+
+  function clearSelection() {
+    setSelectedIds([]);
+  }
 
   // ----------------------------------------
   // FILTER + SORT
@@ -72,12 +99,12 @@ export default function VectorPage() {
     let data = [...items];
 
     if (showOnlyNotVectorized) {
-      data = data.filter((i) => !i.is_vectorized);
+      data = data.filter(i => !i.is_vectorized);
     }
 
     if (search.trim()) {
       const s = search.toLowerCase();
-      data = data.filter((i) =>
+      data = data.filter(i =>
         i.title?.toLowerCase().includes(s)
       );
     }
@@ -97,11 +124,7 @@ export default function VectorPage() {
   }, [items, showOnlyNotVectorized, search]);
 
   const remaining = useMemo(() => {
-    return filteredItems.filter((i) => !i.is_vectorized).length;
-  }, [filteredItems]);
-
-  const notVectorizedCount = useMemo(() => {
-    return items.filter((i) => !i.is_vectorized).length;
+    return items.filter(i => !i.is_vectorized).length;
   }, [items]);
 
   // ----------------------------------------
@@ -122,22 +145,41 @@ export default function VectorPage() {
     setProcessingId(null);
   };
 
-  const handleVectorizeAll = async () => {
+  const handleVectorizeSelected = async () => {
 
-    const ids = filteredItems
-      .filter((i) => !i.is_vectorized)
-      .map((i) => i.id)
-      .filter(Boolean); // ✅ SAFE
-
-    if (ids.length === 0) return;
+    if (!selectedIds.length) return;
 
     setLoading(true);
 
     try {
-      await api.post(`/vector/${mode}/batch`, { ids });
+      await api.post(`/vector/${mode}/batch`, {
+        ids: selectedIds
+      });
+
+      clearSelection();
       await load();
+
     } catch (e) {
-      console.error("Erreur batch", e);
+      console.error("Erreur batch sélection", e);
+    }
+
+    setLoading(false);
+  };
+
+  const handleVectorizeBacklog = async () => {
+
+    setLoading(true);
+
+    try {
+      await api.post(`/vector/${mode}/batch`, {
+        limit: PAGE_SIZE,
+        status: "NOT_VECTORIZED"
+      });
+
+      await load();
+
+    } catch (e) {
+      console.error("Erreur backlog", e);
     }
 
     setLoading(false);
@@ -159,11 +201,11 @@ export default function VectorPage() {
           </h1>
 
           <div className="text-sm text-gray-500">
-            {filteredItems.length} affichées / {items.length} total — {notVectorizedCount} à vectoriser
+            {items.length} affichées — {remaining} à vectoriser
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
 
           {/* MODE */}
           <button
@@ -182,7 +224,7 @@ export default function VectorPage() {
 
           {/* FILTER */}
           <button
-            onClick={() => setShowOnlyNotVectorized((v) => !v)}
+            onClick={() => setShowOnlyNotVectorized(v => !v)}
             className={`px-3 py-1 border rounded ${
               showOnlyNotVectorized ? "bg-black text-white" : ""
             }`}
@@ -198,13 +240,35 @@ export default function VectorPage() {
             Rafraîchir
           </button>
 
+          {/* SELECTION */}
+          <button
+            onClick={selectPage}
+            className="px-3 py-1 border rounded"
+          >
+            Sélectionner page
+          </button>
+
+          <button
+            onClick={clearSelection}
+            className="px-3 py-1 border rounded"
+          >
+            Clear
+          </button>
+
           {/* BATCH */}
           <button
-            onClick={handleVectorizeAll}
-            disabled={remaining === 0}
+            onClick={handleVectorizeSelected}
+            disabled={!selectedIds.length}
             className="px-3 py-1 bg-black text-white rounded disabled:opacity-30"
           >
-            Vectoriser ({remaining})
+            Vectoriser sélection ({selectedIds.length})
+          </button>
+
+          <button
+            onClick={handleVectorizeBacklog}
+            className="px-3 py-1 border rounded"
+          >
+            Vectoriser 50
           </button>
 
         </div>
@@ -226,6 +290,7 @@ export default function VectorPage() {
 
           <thead>
             <tr className="bg-gray-100 text-left">
+              <th className="p-2"></th>
               <th className="p-2">Title</th>
               <th>Status</th>
               <th>Vectorisé</th>
@@ -237,6 +302,14 @@ export default function VectorPage() {
           <tbody>
             {filteredItems.map((item) => (
               <tr key={item.id} className="border-t">
+
+                <td className="text-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(item.id)}
+                    onChange={() => toggleSelect(item.id)}
+                  />
+                </td>
 
                 <td className="p-2">
                   {item.title}
@@ -270,6 +343,27 @@ export default function VectorPage() {
 
         </table>
       )}
+
+      {/* PAGINATION */}
+      <div className="flex justify-center gap-4 text-sm">
+        <button
+          disabled={page === 1}
+          onClick={() => setPage(p => p - 1)}
+          className="px-3 py-1 border rounded"
+        >
+          Précédent
+        </button>
+
+        <span>Page {page}</span>
+
+        <button
+          onClick={() => setPage(p => p + 1)}
+          className="px-3 py-1 border rounded"
+        >
+          Suivant
+        </button>
+      </div>
+
     </div>
   );
 }
