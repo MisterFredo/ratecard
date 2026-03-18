@@ -1,13 +1,12 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
-
 /* =========================================================
-   TYPES (temporaire — on factorisera plus tard)
+   TYPES
 ========================================================= */
 type FeedFilters = {
   query: string;
   mode: "explore" | "watch";
+  contentType?: "all" | "analysis" | "news"; // ✅ ajouté
 };
 
 type Props = {
@@ -19,6 +18,7 @@ export default function FeedControlBar({
   filters,
   onChange,
 }: Props) {
+
   /* =====================================================
      HANDLERS
   ===================================================== */
@@ -37,6 +37,15 @@ export default function FeedControlBar({
     });
   }
 
+  function handleContentTypeChange(
+    type: "all" | "analysis" | "news"
+  ) {
+    onChange({
+      ...filters,
+      contentType: type,
+    });
+  }
+
   /* =====================================================
      RENDER
   ===================================================== */
@@ -49,7 +58,7 @@ export default function FeedControlBar({
       ================================= */}
       <div className="flex items-center gap-3">
 
-        {/* SEARCH INPUT */}
+        {/* SEARCH */}
         <input
           type="text"
           value={filters.query}
@@ -62,7 +71,7 @@ export default function FeedControlBar({
           "
         />
 
-        {/* MODE TOGGLE */}
+        {/* MODE */}
         <div className="flex border rounded-md overflow-hidden text-sm">
 
           <button
@@ -97,7 +106,43 @@ export default function FeedControlBar({
       </div>
 
       {/* ================================
-          PLACEHOLDER FILTRES
+          CONTENT TYPE (🔥 NOUVEAU)
+      ================================= */}
+      <div className="flex gap-2">
+
+        {[
+          { key: "all", label: "Tout" },
+          { key: "analysis", label: "Analyses" },
+          { key: "news", label: "News" },
+        ].map((item) => {
+          const active = filters.contentType === item.key;
+
+          return (
+            <button
+              key={item.key}
+              onClick={() =>
+                handleContentTypeChange(
+                  item.key as "all" | "analysis" | "news"
+                )
+              }
+              className={`
+                px-3 py-1 text-sm border rounded transition
+                ${
+                  active
+                    ? "bg-black text-white"
+                    : "hover:bg-gray-50 text-gray-700"
+                }
+              `}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+
+      </div>
+
+      {/* ================================
+          PLACEHOLDER
       ================================= */}
       <div className="text-xs text-gray-500">
         Filtres avancés (topics, sociétés, solutions) à venir
