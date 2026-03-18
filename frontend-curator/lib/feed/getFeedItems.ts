@@ -40,8 +40,9 @@ export async function getFeedItems({
 }> {
   const query = new URLSearchParams();
 
-  if (filters.query) query.append("query", filters.query);
-  if (filters.mode) query.append("mode", filters.mode);
+   if (filters.query) query.append("query", filters.query);
+   if (filters.mode) query.append("mode", filters.mode);
+   if (filters.badge) query.append("badge", filters.badge);
 
   query.append("limit", String(pageSize));
   query.append("offset", String((page - 1) * pageSize));
