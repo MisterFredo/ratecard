@@ -38,7 +38,7 @@ export async function getFeedItems({
 
     const newsItems: FeedItem[] = (newsJson.items || []).map((n: any) => ({
       id: n.id_news,
-      type: "source",
+      type: "news",
       title: n.title,
       excerpt: n.excerpt,
       date: n.published_at,
