@@ -5,7 +5,7 @@ export type FeedBadge = {
 
 export type FeedItem = {
   id: string;
-  type: "analysis" | "source";
+  type: "analysis" | "news"; // ✅ aligné
 
   title: string;
   excerpt?: string;
