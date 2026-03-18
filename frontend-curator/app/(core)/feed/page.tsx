@@ -10,7 +10,7 @@ import ActiveFilters from "@/components/feed/ActiveFilters";
 import PaginationControls from "@/components/ui/PaginationControls";
 
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
-import SourceDrawer from "@/components/drawers/SourceDrawer";
+import SourceDrawer from "@/components/drawers/NewsDrawer";
 
 import { getFeedItems } from "@/lib/feed/getFeedItems";
 import { addToLibrary } from "@/lib/library/addToLibrary";
