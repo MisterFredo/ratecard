@@ -52,15 +52,15 @@ export async function getFeedItems({
     // ANALYSES
     // ================================
     if (filters.contentType !== "news") {
-      const contentRes = await api.get(`/feed/content?${qs}`);
+      const contentRes = await api.get(`/public/analysis/list?${qs}`);
 
       const contentItems: FeedItem[] = (contentRes?.items || []).map((c: any) => ({
-        id: c.id_content,
+        id: c.id, // ✅ CORRECT
         type: "analysis",
         title: c.title,
         excerpt: c.excerpt,
         date: c.published_at,
-        badges: c.badges || [],
+        badges: c.topics || [], // ⚠️ adaptation
       }));
 
       items.push(...contentItems);
