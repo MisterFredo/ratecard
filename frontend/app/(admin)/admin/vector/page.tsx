@@ -36,7 +36,6 @@ export default function VectorPage() {
 
       const mapped = (res?.items ?? []).map((i: any) => ({
         id: mode === "news" ? i.id_news : i.id_content, // ✅ FIX CRITIQUE
-        type: mode,
         title: i.title,
         status: i.status,
         is_vectorized: i.is_vectorized,
