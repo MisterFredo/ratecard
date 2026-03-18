@@ -3,11 +3,19 @@ from typing import List, Optional
 
 
 # ============================================================
-# REQUESTS
+# COMMON REQUESTS
 # ============================================================
 
 class VectorBatchRequest(BaseModel):
-    ids: List[str]
+    # sélection manuelle
+    ids: Optional[List[str]] = None
+
+    # mode automatique (backlog)
+    limit: Optional[int] = None
+    offset: Optional[int] = None
+
+    # filtres optionnels
+    status: Optional[str] = None   # ex: NOT_VECTORIZED / ERROR
 
 
 # ============================================================
@@ -23,11 +31,15 @@ class VectorNewsResponse(BaseModel):
 class VectorNewsBatchItem(BaseModel):
     news_id: str
     status: str
+    nb_vectors: Optional[int] = None
     error: Optional[str] = None
 
 
 class VectorNewsBatchResponse(BaseModel):
     status: str
+    processed: int
+    success: int
+    error: int
     results: List[VectorNewsBatchItem]
 
 
@@ -44,9 +56,13 @@ class VectorContentResponse(BaseModel):
 class VectorContentBatchItem(BaseModel):
     content_id: str
     status: str
+    nb_vectors: Optional[int] = None
     error: Optional[str] = None
 
 
 class VectorContentBatchResponse(BaseModel):
     status: str
+    processed: int
+    success: int
+    error: int
     results: List[VectorContentBatchItem]
