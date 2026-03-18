@@ -32,6 +32,10 @@ export async function getFeedItems({
     const newsJson = await newsRes.json();
     const contentJson = await contentRes.json();
 
+    /* ============================
+       MAPPING
+    ============================ */
+
     const newsItems: FeedItem[] = (newsJson.items || []).map((n: any) => ({
       id: n.id_news,
       type: "source",
@@ -41,22 +45,39 @@ export async function getFeedItems({
       badges: n.badges || [],
     }));
 
-    const contentItems: FeedItem[] = (c: any) =>
-      (contentJson.items || []).map((c: any) => ({
-        id: c.id_content,
-        type: "analysis",
-        title: c.title,
-        excerpt: c.excerpt,
-        date: c.published_at,
-        badges: c.badges || [],
-      }));
+    const contentItems: FeedItem[] = (contentJson.items || []).map((c: any) => ({
+      id: c.id_content,
+      type: "analysis",
+      title: c.title,
+      excerpt: c.excerpt,
+      date: c.published_at,
+      badges: c.badges || [],
+    }));
 
-    const merged = [...contentItems, ...newsItems];
+    /* ============================
+       MERGE
+    ============================ */
 
-    merged.sort((a, b) =>
-      new Date(b.date || 0).getTime() -
-      new Date(a.date || 0).getTime()
-    );
+    const merged: FeedItem[] = [...contentItems, ...newsItems];
+
+    /* ============================
+       SCORING (🔥 clé curator)
+    ============================ */
+
+    function getScore(item: FeedItem): number {
+      const dateScore = new Date(item.date || 0).getTime();
+
+      // 🔥 boost analyses
+      const typeBoost = item.type === "analysis" ? 10_000_000_000 : 0;
+
+      return typeBoost + dateScore;
+    }
+
+    merged.sort((a, b) => getScore(b) - getScore(a));
+
+    /* ============================
+       RETURN
+    ============================ */
 
     return {
       items: merged,
