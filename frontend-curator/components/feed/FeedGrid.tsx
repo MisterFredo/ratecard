@@ -18,11 +18,12 @@ export default function FeedGrid({
   onBadgeClick,
   onAddToLibrary,
 }: Props) {
+
   if (isLoading) {
     return <div className="text-sm text-gray-400">Chargement…</div>;
   }
 
-  if (!items || items.length === 0) {
+  if (!items.length) {
     return <div className="text-sm text-gray-500 italic">Aucun résultat</div>;
   }
 
@@ -30,7 +31,7 @@ export default function FeedGrid({
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {items.map((item) => (
         <FeedCard
-          key={item.id}
+          key={`${item.type}-${item.id}`}
           item={item}
           onSelect={() => onSelectItem?.(item)}
           onBadgeClick={onBadgeClick}
