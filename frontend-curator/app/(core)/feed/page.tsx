@@ -1,17 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import FeedHeader from "@/components/feed/FeedHeader";
 import FeedControlBar from "@/components/feed/FeedControlBar";
+import FeedGrid from "@/components/feed/FeedGrid";
 
 import PaginationControls from "@/components/ui/PaginationControls";
 import FicheDrawer from "@/components/home/FicheDrawer";
 
+import { getFeedItems } from "@/lib/feed/getFeedItems";
+
 import type { FeedItem } from "@/types/home";
 
 /* =========================================================
-   TYPES LOCAUX (temporaire → on externalisera plus tard)
+   TYPES LOCAUX (V1 — simple)
 ========================================================= */
 type FeedFilters = {
   query: string;
@@ -31,10 +34,35 @@ export default function FeedPage() {
   const [page, setPage] = useState(1);
   const pageSize = 16;
 
+  const [items, setItems] = useState<FeedItem[]>([]);
   const [totalItems, setTotalItems] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const [selectedFiche, setSelectedFiche] =
     useState<FeedItem | null>(null);
+
+  /* =====================================================
+     DATA LOADING
+  ===================================================== */
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+
+      const res = await getFeedItems({
+        filters,
+        page,
+        pageSize,
+      });
+
+      setItems(res.items);
+      setTotalItems(res.total);
+
+      setLoading(false);
+    }
+
+    load();
+  }, [filters, page]);
 
   /* =====================================================
      RENDER
@@ -55,10 +83,12 @@ export default function FeedPage() {
         }}
       />
 
-      {/* FEED GRID (placeholder pour l’instant) */}
-      <div className="border rounded-lg p-6 bg-white text-sm text-gray-500">
-        Feed à venir (grid de fiches)
-      </div>
+      {/* FEED GRID */}
+      <FeedGrid
+        items={items}
+        isLoading={loading}
+        onSelectItem={setSelectedFiche}
+      />
 
       {/* PAGINATION */}
       <PaginationControls
