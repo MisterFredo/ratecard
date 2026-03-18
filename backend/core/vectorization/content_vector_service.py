@@ -287,7 +287,7 @@ CONCEPTS:
 # STATUS
 # --------------------------------------------------
 
-def get_content_vector_status(limit: int = None):
+def get_content_vector_status(limit: int = 50, offset: int = 0):
 
     print("=== GET CONTENT VECTOR STATUS ===")
 
@@ -298,6 +298,7 @@ def get_content_vector_status(limit: int = None):
     client = get_bigquery_client()
     print("BQ PROJECT VECTOR:", client.project)
     print("TABLE USED:", TABLE_CONTENT)
+    print("LIMIT:", limit, "OFFSET:", offset)
 
     # ----------------------------------------
     # TEST SIMPLE (COUNT)
@@ -311,7 +312,7 @@ def get_content_vector_status(limit: int = None):
     print("COUNT CONTENT:", count_rows)
 
     # ----------------------------------------
-    # LOAD CONTENT (requête simple)
+    # LOAD CONTENT (AVEC OFFSET 🔥)
     # ----------------------------------------
 
     sql = f"""
@@ -324,7 +325,10 @@ def get_content_vector_status(limit: int = None):
         WHERE IS_ACTIVE = TRUE
         ORDER BY CREATED_AT DESC
         LIMIT {limit}
+        OFFSET {offset}
     """
+
+    print("SQL:", sql)
 
     content_list = query_bq(sql)
 
