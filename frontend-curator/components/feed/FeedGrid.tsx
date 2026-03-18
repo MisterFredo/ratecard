@@ -8,6 +8,7 @@ type Props = {
   isLoading?: boolean;
   onSelectItem?: (item: FeedItem) => void;
   onBadgeClick?: (label: string) => void;
+  onAddToLibrary?: (item: FeedItem) => void;
 };
 
 export default function FeedGrid({
@@ -15,21 +16,14 @@ export default function FeedGrid({
   isLoading = false,
   onSelectItem,
   onBadgeClick,
+  onAddToLibrary,
 }: Props) {
   if (isLoading) {
-    return (
-      <div className="text-sm text-gray-400">
-        Chargement…
-      </div>
-    );
+    return <div className="text-sm text-gray-400">Chargement…</div>;
   }
 
   if (!items || items.length === 0) {
-    return (
-      <div className="text-sm text-gray-500 italic">
-        Aucun résultat
-      </div>
-    );
+    return <div className="text-sm text-gray-500 italic">Aucun résultat</div>;
   }
 
   return (
@@ -40,6 +34,7 @@ export default function FeedGrid({
           item={item}
           onSelect={() => onSelectItem?.(item)}
           onBadgeClick={onBadgeClick}
+          onAddToLibrary={() => onAddToLibrary?.(item)}
         />
       ))}
     </div>
