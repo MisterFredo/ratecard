@@ -63,7 +63,7 @@ export default function VectorPage() {
     load();
   }, [mode, page]);
 
-  // reset UI on mode change
+  // reset UI
   useEffect(() => {
     setSearch("");
     setShowOnlyNotVectorized(false);
@@ -83,12 +83,25 @@ export default function VectorPage() {
     );
   }
 
-  function selectPage() {
-    setSelectedIds(items.map(i => i.id));
+  function selectAllVisible() {
+    const ids = filteredItems.map(i => i.id);
+    setSelectedIds(ids);
   }
 
-  function clearSelection() {
+  function unselectAll() {
     setSelectedIds([]);
+  }
+
+  const isAllSelected =
+    filteredItems.length > 0 &&
+    filteredItems.every(i => selectedIds.includes(i.id));
+
+  function toggleSelectAll() {
+    if (isAllSelected) {
+      unselectAll();
+    } else {
+      selectAllVisible();
+    }
   }
 
   // ----------------------------------------
@@ -156,30 +169,11 @@ export default function VectorPage() {
         ids: selectedIds
       });
 
-      clearSelection();
+      setSelectedIds([]);
       await load();
 
     } catch (e) {
       console.error("Erreur batch sélection", e);
-    }
-
-    setLoading(false);
-  };
-
-  const handleVectorizeBacklog = async () => {
-
-    setLoading(true);
-
-    try {
-      await api.post(`/vector/${mode}/batch`, {
-        limit: PAGE_SIZE,
-        status: "NOT_VECTORIZED"
-      });
-
-      await load();
-
-    } catch (e) {
-      console.error("Erreur backlog", e);
     }
 
     setLoading(false);
@@ -242,14 +236,14 @@ export default function VectorPage() {
 
           {/* SELECTION */}
           <button
-            onClick={selectPage}
+            onClick={selectAllVisible}
             className="px-3 py-1 border rounded"
           >
             Sélectionner page
           </button>
 
           <button
-            onClick={clearSelection}
+            onClick={unselectAll}
             className="px-3 py-1 border rounded"
           >
             Clear
@@ -261,14 +255,7 @@ export default function VectorPage() {
             disabled={!selectedIds.length}
             className="px-3 py-1 bg-black text-white rounded disabled:opacity-30"
           >
-            Vectoriser sélection ({selectedIds.length})
-          </button>
-
-          <button
-            onClick={handleVectorizeBacklog}
-            className="px-3 py-1 border rounded"
-          >
-            Vectoriser 50
+            Vectoriser ({selectedIds.length})
           </button>
 
         </div>
@@ -290,7 +277,13 @@ export default function VectorPage() {
 
           <thead>
             <tr className="bg-gray-100 text-left">
-              <th className="p-2"></th>
+              <th className="p-2 text-center">
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  onChange={toggleSelectAll}
+                />
+              </th>
               <th className="p-2">Title</th>
               <th>Status</th>
               <th>Vectorisé</th>
@@ -311,9 +304,7 @@ export default function VectorPage() {
                   />
                 </td>
 
-                <td className="p-2">
-                  {item.title}
-                </td>
+                <td className="p-2">{item.title}</td>
 
                 <td className="text-center text-xs">
                   {item.status}
