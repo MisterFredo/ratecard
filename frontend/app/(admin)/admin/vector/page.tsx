@@ -5,7 +5,6 @@ import { api } from "@/lib/api";
 
 type Item = {
   id: string;
-  type: "news" | "content";
   title: string;
   status: string;
   is_vectorized: boolean;
