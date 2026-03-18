@@ -16,14 +16,17 @@ export async function getFeedItems({
   page,
   pageSize,
 }: Params): Promise<{ items: FeedItem[]; total: number }> {
-  try {
-    const params: any = {
-      limit: pageSize,
-      offset: (page - 1) * pageSize,
-    };
 
-    if (filters.query) params.query = filters.query;
-    if (filters.badge) params.badge = filters.badge;
+  try {
+    const query = new URLSearchParams();
+
+    if (filters.query) query.append("query", filters.query);
+    if (filters.badge) query.append("badge", filters.badge);
+
+    query.append("limit", String(pageSize));
+    query.append("offset", String((page - 1) * pageSize));
+
+    const qs = query.toString();
 
     const items: FeedItem[] = [];
 
@@ -31,7 +34,7 @@ export async function getFeedItems({
     // NEWS
     // ================================
     if (filters.contentType !== "analysis") {
-      const newsRes = await api.get("/feed/news", { params });
+      const newsRes = await api.get(`/feed/news?${qs}`);
 
       const newsItems: FeedItem[] = (newsRes?.items || []).map((n: any) => ({
         id: n.id_news,
@@ -49,7 +52,7 @@ export async function getFeedItems({
     // ANALYSES
     // ================================
     if (filters.contentType !== "news") {
-      const contentRes = await api.get("/feed/content", { params });
+      const contentRes = await api.get(`/feed/content?${qs}`);
 
       const contentItems: FeedItem[] = (contentRes?.items || []).map((c: any) => ({
         id: c.id_content,
@@ -64,7 +67,7 @@ export async function getFeedItems({
     }
 
     // ================================
-    // SORT
+    // SORT GLOBAL
     // ================================
     items.sort(
       (a, b) =>
