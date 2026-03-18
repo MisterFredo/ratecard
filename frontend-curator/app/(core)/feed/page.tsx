@@ -10,7 +10,7 @@ import ActiveFilters from "@/components/feed/ActiveFilters";
 import PaginationControls from "@/components/ui/PaginationControls";
 
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
-import SourceDrawer from "@/components/drawers/NewsDrawer";
+import NewsDrawer from "@/components/drawers/NewsDrawer"; // ✅ renommé
 
 import { getFeedItems } from "@/lib/feed/getFeedItems";
 import { addToLibrary } from "@/lib/library/addToLibrary";
@@ -23,12 +23,14 @@ type FeedFilters = {
   query: string;
   mode: "explore" | "watch";
   badge?: string;
+  contentType?: "all" | "analysis" | "source"; // ✅ NEW
 };
 
 export default function FeedPage() {
   const [filters, setFilters] = useState<FeedFilters>({
     query: "",
     mode: "explore",
+    contentType: "all", // ✅ NEW
   });
 
   const [page, setPage] = useState(1);
@@ -41,7 +43,9 @@ export default function FeedPage() {
   const [selectedItem, setSelectedItem] =
     useState<FeedItem | null>(null);
 
-  /* ============================ */
+  /* ============================
+     DATA LOADING
+  ============================ */
 
   useEffect(() => {
     async function load() {
@@ -62,13 +66,16 @@ export default function FeedPage() {
     load();
   }, [filters, page]);
 
-  /* ============================ */
+  /* ============================
+     HANDLERS
+  ============================ */
 
   function handleBadgeClick(label: string) {
     setFilters({
       query: "",
       mode: "explore",
       badge: label,
+      contentType: "all", // reset logique
     });
     setPage(1);
   }
@@ -78,6 +85,7 @@ export default function FeedPage() {
       query: "",
       mode: "explore",
       badge: undefined,
+      contentType: "all",
     });
     setPage(1);
   }
@@ -86,7 +94,9 @@ export default function FeedPage() {
     await addToLibrary(item);
   }
 
-  /* ============================ */
+  /* ============================
+     RENDER
+  ============================ */
 
   return (
     <div className="space-y-8">
@@ -121,6 +131,10 @@ export default function FeedPage() {
         onPageChange={setPage}
       />
 
+      {/* ============================
+         DRAWERS
+      ============================ */}
+
       {selectedItem?.type === "analysis" && (
         <AnalysisDrawer
           id={selectedItem.id}
@@ -129,7 +143,7 @@ export default function FeedPage() {
       )}
 
       {selectedItem?.type === "source" && (
-        <SourceDrawer
+        <NewsDrawer
           id={selectedItem.id}
           onClose={() => setSelectedItem(null)}
         />
