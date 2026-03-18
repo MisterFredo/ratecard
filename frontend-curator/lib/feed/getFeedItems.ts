@@ -1,84 +1,73 @@
 import { apiUrl } from "@/lib/config";
-
-/* =========================================================
-   TYPES
-========================================================= */
-
-export type FeedFilters = {
-  query?: string;
-  mode?: "explore" | "watch";
-};
-
-export type FeedItem = {
-  id: string;
-  title: string;
-  excerpt?: string;
-  date?: string;
-  badges?: {
-    label: string;
-    type: string;
-  }[];
-};
+import type { FeedItem } from "@/types/home";
 
 type Params = {
-  filters: FeedFilters;
+  filters: {
+    query?: string;
+    badge?: string;
+  };
   page: number;
   pageSize: number;
 };
-
-/* =========================================================
-   MAIN FUNCTION
-========================================================= */
 
 export async function getFeedItems({
   filters,
   page,
   pageSize,
-}: Params): Promise<{
-  items: FeedItem[];
-  total: number;
-}> {
+}: Params): Promise<{ items: FeedItem[]; total: number }> {
+
   const query = new URLSearchParams();
 
-   if (filters.query) query.append("query", filters.query);
-   if (filters.mode) query.append("mode", filters.mode);
-   if (filters.badge) query.append("badge", filters.badge);
-
+  if (filters.query) query.append("query", filters.query);
+  if (filters.badge) query.append("badge", filters.badge);
   query.append("limit", String(pageSize));
   query.append("offset", String((page - 1) * pageSize));
 
   try {
-    const res = await fetch(
-      apiUrl(`/api/v1/fiches?${query.toString()}`),
-      {
-        cache: "no-store",
-      }
-    );
+    // 🔥 2 appels distincts
+    const [newsRes, contentRes] = await Promise.all([
+      fetch(apiUrl(`/feed/news?${query.toString()}`)),
+      fetch(apiUrl(`/feed/content?${query.toString()}`)),
+    ]);
 
-    if (!res.ok) {
-      throw new Error("Erreur API Feed");
-    }
+    const newsJson = await newsRes.json();
+    const contentJson = await contentRes.json();
 
-    const data = await res.json();
-
-    /* =====================================================
-       MAPPING
-    ===================================================== */
-
-    const items: FeedItem[] = (data.items || []).map((f: any) => ({
-      id: f.id,
-      title: f.title,
-      excerpt: f.excerpt,
-      date: f.date,
-      badges: f.badges || [],
+    // 🔁 mapping
+    const newsItems: FeedItem[] = (newsJson.items || []).map((n: any) => ({
+      id: n.id_news,
+      type: "source",
+      title: n.title,
+      excerpt: n.excerpt,
+      date: n.published_at,
+      badges: n.badges || [],
     }));
 
+    const contentItems: FeedItem[] = (contentJson.items || []).map((c: any) => ({
+      id: c.id_content,
+      type: "analysis",
+      title: c.title,
+      excerpt: c.excerpt,
+      date: c.published_at,
+      badges: c.badges || [],
+    }));
+
+    // 🔥 merge intelligent (simple V1)
+    const merged = [...contentItems, ...newsItems];
+
+    // tri par date
+    merged.sort((a, b) =>
+      new Date(b.date || 0).getTime() -
+      new Date(a.date || 0).getTime()
+    );
+
     return {
-      items,
-      total: data.total || items.length,
+      items: merged,
+      total: merged.length,
     };
+
   } catch (e) {
-    console.error("❌ getFeedItems error:", e);
+    console.error("❌ feed error", e);
     return { items: [], total: 0 };
   }
 }
