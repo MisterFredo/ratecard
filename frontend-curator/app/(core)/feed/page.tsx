@@ -8,16 +8,17 @@ import FeedGrid from "@/components/feed/FeedGrid";
 import ActiveFilters from "@/components/feed/ActiveFilters";
 
 import PaginationControls from "@/components/ui/PaginationControls";
-import FicheDrawer from "@/components/home/FicheDrawer";
+
+import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
+import SourceDrawer from "@/components/drawers/SourceDrawer";
 
 import { getFeedItems } from "@/lib/feed/getFeedItems";
 import { addToLibrary } from "@/lib/library/addToLibrary";
 
 import type { FeedItem } from "@/types/home";
 
-/* =========================================================
-   TYPES
-========================================================= */
+/* ========================================================= */
+
 type FeedFilters = {
   query: string;
   mode: "explore" | "watch";
@@ -37,12 +38,11 @@ export default function FeedPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const [selectedFiche, setSelectedFiche] =
+  const [selectedItem, setSelectedItem] =
     useState<FeedItem | null>(null);
 
-  /* ============================
-     DATA
-  ============================ */
+  /* ============================ */
+
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -62,9 +62,7 @@ export default function FeedPage() {
     load();
   }, [filters, page]);
 
-  /* ============================
-     HANDLERS
-  ============================ */
+  /* ============================ */
 
   function handleBadgeClick(label: string) {
     setFilters({
@@ -75,25 +73,20 @@ export default function FeedPage() {
     setPage(1);
   }
 
-   function handleClearFilters() {
-     setFilters({
-       query: "",
-       mode: "explore",
-       badge: undefined,
-     });
-
-     setPage(1);
-   }
+  function handleClearFilters() {
+    setFilters({
+      query: "",
+      mode: "explore",
+      badge: undefined,
+    });
+    setPage(1);
+  }
 
   async function handleAddToLibrary(item: FeedItem) {
     await addToLibrary(item);
   }
 
-   
-
-  /* ============================
-     RENDER
-  ============================ */
+  /* ============================ */
 
   return (
     <div className="space-y-8">
@@ -116,7 +109,7 @@ export default function FeedPage() {
       <FeedGrid
         items={items}
         isLoading={loading}
-        onSelectItem={setSelectedFiche}
+        onSelectItem={setSelectedItem}
         onBadgeClick={handleBadgeClick}
         onAddToLibrary={handleAddToLibrary}
       />
@@ -128,10 +121,17 @@ export default function FeedPage() {
         onPageChange={setPage}
       />
 
-      {selectedFiche && (
-        <FicheDrawer
-          fiche={selectedFiche}
-          onClose={() => setSelectedFiche(null)}
+      {selectedItem?.type === "analysis" && (
+        <AnalysisDrawer
+          id={selectedItem.id}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
+
+      {selectedItem?.type === "source" && (
+        <SourceDrawer
+          id={selectedItem.id}
+          onClose={() => setSelectedItem(null)}
         />
       )}
     </div>
