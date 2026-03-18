@@ -210,8 +210,8 @@ def vectorize_content_batch(payload: VectorBatchRequest):
 # --------------------------------------------------
 
 @router.get("/content/status")
-def content_status():
+def content_status(limit: int = 50, offset: int = 0):
     try:
-        return get_content_vector_status()
+        return get_content_vector_status(limit=limit, offset=offset)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
