@@ -16,18 +16,24 @@ export default function FeedCard({
   onBadgeClick,
   onAddToLibrary,
 }: Props) {
+
+  const isAnalysis = item.type === "analysis";
+
   return (
     <div
-      className="
+      className={`
         bg-white border rounded-xl p-4 shadow-sm
         hover:shadow-md transition flex flex-col gap-3
-      "
+        ${isAnalysis ? "border-teal-200" : "border-gray-200"}
+      `}
     >
+      {/* TYPE */}
+      <div className="text-xs uppercase text-gray-400">
+        {isAnalysis ? "Analyse" : "Source"}
+      </div>
+
       {/* HEADER */}
-      <div
-        className="cursor-pointer"
-        onClick={onSelect}
-      >
+      <div className="cursor-pointer" onClick={onSelect}>
         <h3 className="font-semibold text-sm line-clamp-2 text-gray-900">
           {item.title}
         </h3>
