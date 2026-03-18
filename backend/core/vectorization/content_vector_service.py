@@ -287,7 +287,7 @@ CONCEPTS:
 # STATUS
 # --------------------------------------------------
 
-def get_content_vector_status(limit: int = none):
+def get_content_vector_status(limit: int = None):
 
     print("=== GET CONTENT VECTOR STATUS ===")
 
