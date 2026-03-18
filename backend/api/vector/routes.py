@@ -117,9 +117,9 @@ def vectorize_news_batch(payload: VectorBatchRequest):
 # --------------------------------------------------
 
 @router.get("/news/status")
-def news_status():
+def news_status(limit: int = 50, offset: int = 0):
     try:
-        return get_news_vector_status()
+        return get_news_vector_status(limit=limit, offset=offset)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
