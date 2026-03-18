@@ -35,5 +35,10 @@ def _get_pinecone_client():
 
 def get_pinecone_index():
     pc = _get_pinecone_client()
-    index_name = os.getenv("PINECONE_INDEX_NAME", "ratecard-content")
+
+    index_name = os.getenv("PINECONE_INDEX_NAME")
+
+    if not index_name:
+        raise ValueError("⚠️ PINECONE_INDEX_NAME manquant")
+
     return pc.Index(index_name)
