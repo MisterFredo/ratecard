@@ -10,22 +10,20 @@ import PaginationControls from "@/components/ui/PaginationControls";
 import FicheDrawer from "@/components/home/FicheDrawer";
 
 import { getFeedItems } from "@/lib/feed/getFeedItems";
+import { addToLibrary } from "@/lib/library/addToLibrary";
 
 import type { FeedItem } from "@/types/home";
 
 /* =========================================================
-   TYPES LOCAUX (V1 — simple)
+   TYPES
 ========================================================= */
 type FeedFilters = {
   query: string;
   mode: "explore" | "watch";
+  badge?: string;
 };
 
 export default function FeedPage() {
-  /* =====================================================
-     STATE
-  ===================================================== */
-
   const [filters, setFilters] = useState<FeedFilters>({
     query: "",
     mode: "explore",
@@ -41,10 +39,9 @@ export default function FeedPage() {
   const [selectedFiche, setSelectedFiche] =
     useState<FeedItem | null>(null);
 
-  /* =====================================================
-     DATA LOADING
-  ===================================================== */
-
+  /* ============================
+     DATA
+  ============================ */
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -64,33 +61,48 @@ export default function FeedPage() {
     load();
   }, [filters, page]);
 
-  /* =====================================================
+  /* ============================
+     HANDLERS
+  ============================ */
+
+  function handleBadgeClick(label: string) {
+    setFilters({
+      query: "",
+      mode: "explore",
+      badge: label,
+    });
+    setPage(1);
+  }
+
+  async function handleAddToLibrary(item: FeedItem) {
+    await addToLibrary(item);
+  }
+
+  /* ============================
      RENDER
-  ===================================================== */
+  ============================ */
 
   return (
     <div className="space-y-8">
 
-      {/* HEADER */}
       <FeedHeader />
 
-      {/* CONTROL BAR */}
       <FeedControlBar
         filters={filters}
         onChange={(next) => {
           setFilters(next);
-          setPage(1); // reset pagination
+          setPage(1);
         }}
       />
 
-      {/* FEED GRID */}
       <FeedGrid
         items={items}
         isLoading={loading}
         onSelectItem={setSelectedFiche}
+        onBadgeClick={handleBadgeClick}
+        onAddToLibrary={handleAddToLibrary}
       />
 
-      {/* PAGINATION */}
       <PaginationControls
         page={page}
         pageSize={pageSize}
@@ -98,7 +110,6 @@ export default function FeedPage() {
         onPageChange={setPage}
       />
 
-      {/* DRAWER */}
       {selectedFiche && (
         <FicheDrawer
           fiche={selectedFiche}
