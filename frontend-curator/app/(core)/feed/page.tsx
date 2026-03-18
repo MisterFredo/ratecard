@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import FeedHeader from "@/components/feed/FeedHeader";
 import FeedControlBar from "@/components/feed/FeedControlBar";
 import FeedGrid from "@/components/feed/FeedGrid";
+import ActiveFilters from "@/components/feed/ActiveFilters";
 
 import PaginationControls from "@/components/ui/PaginationControls";
 import FicheDrawer from "@/components/home/FicheDrawer";
@@ -74,9 +75,21 @@ export default function FeedPage() {
     setPage(1);
   }
 
+   function handleClearFilters() {
+     setFilters({
+       query: "",
+       mode: "explore",
+       badge: undefined,
+     });
+
+     setPage(1);
+   }
+
   async function handleAddToLibrary(item: FeedItem) {
     await addToLibrary(item);
   }
+
+   
 
   /* ============================
      RENDER
@@ -93,6 +106,11 @@ export default function FeedPage() {
           setFilters(next);
           setPage(1);
         }}
+      />
+
+      <ActiveFilters
+        badge={filters.badge}
+        onClear={handleClearFilters}
       />
 
       <FeedGrid
