@@ -8,7 +8,10 @@ import FeedList from "@/components/feed/FeedList";
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
 import NewsDrawer from "@/components/drawers/NewsDrawer";
 
+import FilterPanel from "@/components/feed/FilterPanel";
+
 import { getFeedItems } from "@/lib/feed/getFeedItems";
+import { getFeedMeta } from "@/lib/feed/getFeedMeta";
 
 import type { FeedItem } from "@/types/feed";
 
@@ -23,7 +26,15 @@ export default function FeedPage() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
-  // 🔥 état des filtres
+  // 🔥 META (cockpit)
+  const [meta, setMeta] = useState<any>({
+    topics: [],
+    companies: [],
+    solutions: [],
+    news_types: [],
+  });
+
+  // 🔥 filtres
   const [params, setParams] = useState({
     query: "",
     topic_ids: [] as string[],
@@ -33,14 +44,25 @@ export default function FeedPage() {
     news_types: [] as string[],
   });
 
-  // 🔥 trigger de reload contrôlé
   const [reloadKey, setReloadKey] = useState(0);
 
   const [selectedItem, setSelectedItem] =
     useState<FeedItem | null>(null);
 
   /* ============================
-     LOAD
+     LOAD META (cockpit)
+  ============================ */
+
+  useEffect(() => {
+    async function loadMeta() {
+      const res = await getFeedMeta();
+      setMeta(res);
+    }
+    loadMeta();
+  }, []);
+
+  /* ============================
+     LOAD FEED
   ============================ */
 
   async function load(reset = false) {
@@ -124,7 +146,7 @@ export default function FeedPage() {
   ============================ */
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
 
       {/* ============================
          HEADER
@@ -139,18 +161,37 @@ export default function FeedPage() {
         newsTypes={params.news_types}
         setNewsTypes={(v) => updateParams({ news_types: v })}
 
-        topicIds={params.topic_ids}
-        setTopicIds={(v) => updateParams({ topic_ids: v })}
-
-        companyIds={params.company_ids}
-        setCompanyIds={(v) => updateParams({ company_ids: v })}
-
-        solutionIds={params.solution_ids}
-        setSolutionIds={(v) => updateParams({ solution_ids: v })}
-
         onSearch={triggerSearch}
         onReset={handleReset}
       />
+
+      {/* ============================
+         COCKPIT FILTERS
+      ============================ */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        <FilterPanel
+          title="Topics"
+          items={meta.topics || []}
+          selected={params.topic_ids}
+          onChange={(v) => updateParams({ topic_ids: v })}
+        />
+
+        <FilterPanel
+          title="Companies"
+          items={meta.companies || []}
+          selected={params.company_ids}
+          onChange={(v) => updateParams({ company_ids: v })}
+        />
+
+        <FilterPanel
+          title="Solutions"
+          items={meta.solutions || []}
+          selected={params.solution_ids}
+          onChange={(v) => updateParams({ solution_ids: v })}
+        />
+
+      </div>
 
       {/* ============================
          FEED
