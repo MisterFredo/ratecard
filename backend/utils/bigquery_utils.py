@@ -65,15 +65,12 @@ def query_bq(sql: str, params: dict = None) -> list[dict]:
 
             # 🔥 CAS ARRAY (LIST)
             if isinstance(value, list):
-                if len(value) == 0:
-                    # BigQuery n'aime pas les arrays vides
-                    continue
 
                 query_parameters.append(
                     bigquery.ArrayQueryParameter(
                         name,
-                        "STRING",  # tes filtres sont des STRING
-                        value
+                        "STRING",
+                        value  # ✅ même si []
                     )
                 )
 
@@ -87,7 +84,7 @@ def query_bq(sql: str, params: dict = None) -> list[dict]:
                     )
                 )
 
-            # 🔥 CAS AUTRES (STRING, TIMESTAMP, etc.)
+            # 🔥 CAS AUTRES
             else:
                 query_parameters.append(
                     bigquery.ScalarQueryParameter(
@@ -103,8 +100,6 @@ def query_bq(sql: str, params: dict = None) -> list[dict]:
 
     job = client.query(sql, job_config=job_config)
     return [dict(row) for row in job.result()]
-
-
 
 # ---------------------------------------------------------
 # Insertion BigQuery (INSERT SQL, PAS de streaming)
