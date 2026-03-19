@@ -107,9 +107,9 @@ export default function FeedPage() {
   function handleReset() {
     setParams({
       query: "",
-      topics: [],
-      companies: [],
-      solutions: [],
+      topic_ids: [],
+      company_ids: [],
+      solution_ids: [],
       types: [],
       news_types: [],
     });
