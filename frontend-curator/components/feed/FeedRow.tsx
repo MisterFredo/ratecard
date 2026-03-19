@@ -1,6 +1,6 @@
 "use client";
 
-import type { FeedItem } from "@/types/home";
+import type { FeedItem } from "@/types/feed";
 
 /* ========================================================= */
 
