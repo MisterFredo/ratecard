@@ -1,11 +1,16 @@
 from typing import List, Dict, Optional
-from datetime import datetime
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 
 
 TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
+TABLE_CONTENT_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC"
+TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
+TABLE_CONTENT_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY"
+TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
+TABLE_CONTENT_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_SOLUTION"
+TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
 
 
 # ============================================================
@@ -17,102 +22,143 @@ def list_contents(
     offset: int = 0,
     topic_id: Optional[str] = None,
 ):
-    """
-    Retourne les contenus publiés (feed Curator).
-    """
-
-    filters = [
-        "STATUS = 'PUBLISHED'",
-        "IS_ACTIVE = TRUE"
-    ]
 
     params = {
         "limit": limit,
         "offset": offset,
     }
 
-    if topic_id:
-        filters.append("ARRAY_CONTAINS(TOPICS, @topic_id)")
-        params["topic_id"] = topic_id
+    join = ""
+    where_topic = ""
 
-    where_clause = " AND ".join(filters)
+    if topic_id:
+        join = f"""
+            JOIN {TABLE_CONTENT_TOPIC} ct
+              ON c.ID_CONTENT = ct.ID_CONTENT
+        """
+        where_topic = "AND ct.ID_TOPIC = @topic_id"
+        params["topic_id"] = topic_id
 
     sql = f"""
         SELECT
-            ID_CONTENT,
-            TITLE,
-            EXCERPT,
-            SIGNAL,
-            CONCEPT,
-            PUBLISHED_AT,
-            TOPICS,
-            KEY_METRICS
-        FROM `{TABLE_CONTENT}`
-        WHERE {where_clause}
-        ORDER BY PUBLISHED_AT DESC
+            c.ID_CONTENT,
+            c.TITLE,
+            c.EXCERPT,
+            c.SIGNAL_ANALYTIQUE,
+            c.CONCEPT,
+            c.PUBLISHED_AT
+        FROM {TABLE_CONTENT} c
+        {join}
+        WHERE
+            c.STATUS = 'PUBLISHED'
+            AND c.IS_ACTIVE = TRUE
+            {where_topic}
+        ORDER BY c.PUBLISHED_AT DESC
         LIMIT @limit OFFSET @offset
     """
 
     rows = query_bq(sql, params)
 
-    items = []
-    for r in rows:
-        items.append({
+    return [
+        {
             "id": r["ID_CONTENT"],
             "title": r["TITLE"],
             "excerpt": r.get("EXCERPT"),
-            "signal": r.get("SIGNAL"),
+            "signal": r.get("SIGNAL_ANALYTIQUE"),
             "concept": r.get("CONCEPT"),
             "published_at": r["PUBLISHED_AT"],
-            "topics": r.get("TOPICS") or [],
-            "key_metrics": r.get("KEY_METRICS") or [],
-        })
-
-    return items
+        }
+        for r in rows
+    ]
 
 
 # ============================================================
 # READ CONTENT (DRAWER CURATOR)
 # ============================================================
 
-def get_content(id_content: str) -> Dict:
-    """
-    Retourne un contenu détaillé (drawer Curator).
-    """
+# ============================================================
+# READ CONTENT (DRAWER CURATOR)
+# ============================================================
 
-    sql = f"""
+def get_content(id_content: str) -> Dict:
+
+    rows = query_bq(
+        f"""
         SELECT
             ID_CONTENT,
             TITLE,
-            SIGNAL,
+            SIGNAL_ANALYTIQUE,
             EXCERPT,
             CONCEPT,
             CONTENT_BODY,
             CHIFFRES,
             CITATIONS,
             ACTEURS_CITES,
-            PUBLISHED_AT,
-            TOPICS,
-            KEY_METRICS
-        FROM `{TABLE_CONTENT}`
+            PUBLISHED_AT
+        FROM {TABLE_CONTENT}
         WHERE
             ID_CONTENT = @id_content
             AND STATUS = 'PUBLISHED'
             AND IS_ACTIVE = TRUE
         LIMIT 1
-    """
-
-    rows = query_bq(sql, {"id_content": id_content})
+        """,
+        {"id_content": id_content},
+    )
 
     if not rows:
         return None
 
     r = rows[0]
 
+    # ============================================================
+    # TOPICS
+    # ============================================================
+
+    topic_rows = query_bq(
+        f"""
+        SELECT T.ID_TOPIC, T.LABEL
+        FROM {TABLE_CONTENT_TOPIC} CT
+        JOIN {TABLE_TOPIC} T
+          ON CT.ID_TOPIC = T.ID_TOPIC
+        WHERE CT.ID_CONTENT = @id
+        """,
+        {"id": id_content},
+    )
+
+    # ============================================================
+    # COMPANIES
+    # ============================================================
+
+    company_rows = query_bq(
+        f"""
+        SELECT C.ID_COMPANY, C.NAME
+        FROM {BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY CC
+        JOIN {BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY C
+          ON CC.ID_COMPANY = C.ID_COMPANY
+        WHERE CC.ID_CONTENT = @id
+        """,
+        {"id": id_content},
+    )
+
+    # ============================================================
+    # SOLUTIONS
+    # ============================================================
+
+    solution_rows = query_bq(
+        f"""
+        SELECT S.ID_SOLUTION, S.NAME
+        FROM {BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_SOLUTION CS
+        JOIN {BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION S
+          ON CS.ID_SOLUTION = S.ID_SOLUTION
+        WHERE CS.ID_CONTENT = @id
+        """,
+        {"id": id_content},
+    )
+
     return {
         "id_content": r["ID_CONTENT"],
         "title": r["TITLE"],
-        "signal": r.get("SIGNAL"),
+        "signal": r.get("SIGNAL_ANALYTIQUE"),
         "excerpt": r.get("EXCERPT"),
         "concept": r.get("CONCEPT"),
         "content_body": r.get("CONTENT_BODY"),
@@ -120,6 +166,29 @@ def get_content(id_content: str) -> Dict:
         "citations": r.get("CITATIONS") or [],
         "acteurs_cites": r.get("ACTEURS_CITES") or [],
         "published_at": r["PUBLISHED_AT"],
-        "topics": r.get("TOPICS") or [],
-        "key_metrics": r.get("KEY_METRICS") or [],
+
+        # 🔵 enrichissements
+        "topics": [
+            {
+                "id_topic": t["ID_TOPIC"],
+                "label": t["LABEL"],
+            }
+            for t in topic_rows
+        ],
+
+        "companies": [
+            {
+                "id_company": c["ID_COMPANY"],
+                "name": c["NAME"],
+            }
+            for c in company_rows
+        ],
+
+        "solutions": [
+            {
+                "id_solution": s["ID_SOLUTION"],
+                "name": s["NAME"],
+            }
+            for s in solution_rows
+        ],
     }
