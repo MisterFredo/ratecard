@@ -39,30 +39,24 @@ export default function FeedHeader({
   onSearch,
   onReset,
 }: Props) {
+
   const [input, setInput] = useState(query);
 
   /* =========================================================
      HELPERS
   ========================================================= */
 
-  function toggle(
-    list: string[],
-    set: (v: string[]) => void,
-    value: string,
-    trigger?: () => void
-  ) {
-    let next;
-
+  function toggle(list: string[], set: (v: string[]) => void, value: string) {
     if (list.includes(value)) {
-      next = list.filter((v) => v !== value);
+      set(list.filter((v) => v !== value));
     } else {
-      next = [...list, value];
+      set([...list, value]);
     }
+  }
 
-    set(next);
-
-    // 🔥 déclenche reload
-    if (trigger) trigger();
+  function handleSearch() {
+    setQuery(input);   // sync avec parent
+    onSearch();        // déclenche reload
   }
 
   /* =========================================================
@@ -113,7 +107,7 @@ export default function FeedHeader({
             key={t}
             label={t}
             active={types.includes(t)}
-            onClick={() => toggle(types, setTypes, t, onSearch)}
+            onClick={() => toggle(types, setTypes, t)}
           />
         ))}
       </FilterGroup>
@@ -127,7 +121,7 @@ export default function FeedHeader({
             key={t.id}
             label={`${t.label} (${t.count})`}
             active={newsTypes.includes(t.id)}
-            onClick={() => toggle(newsTypes, setNewsTypes, t.id, onSearch)}
+            onClick={() => toggle(newsTypes, setNewsTypes, t.id)}
           />
         ))}
       </FilterGroup>
@@ -151,11 +145,6 @@ function FilterGroup({
       <div className="flex gap-2 flex-wrap">{children}</div>
     </div>
   );
-}
-
-function handleSearch() {
-  setQuery(input);   // met à jour le query dans le parent
-  onSearch();        // déclenche le reload
 }
 
 /* ========================================================= */
