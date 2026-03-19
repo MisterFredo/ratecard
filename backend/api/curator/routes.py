@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 
-from core.feed.service import get_feed_items
+from core.feed.service import get_feed_items, get_feed_meta
 from core.content.public_service import get_content
 
 router = APIRouter()
@@ -32,6 +32,15 @@ def get_feed_route(
         limit=limit,
         offset=offset,
     )
+
+
+# ============================================================
+# META (FILTRES DYNAMIQUES)
+# ============================================================
+
+@router.get("/meta")
+def get_meta_route():
+    return get_feed_meta()
 
 
 # ============================================================
