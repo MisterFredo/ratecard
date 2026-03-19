@@ -8,6 +8,7 @@ import CuratorNewsFeed from "@/components/feed/CuratorNewsFeed";
 import PaginationControls from "@/components/ui/PaginationControls";
 
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
+import NewsDrawer from "@/components/drawers/NewsDrawer";
 
 import { getFeedItems } from "@/lib/feed/getFeedItems";
 
@@ -34,6 +35,7 @@ export default function FeedPage() {
       setLoading(true);
 
       const res = await getFeedItems({
+        filters: {}, // ✅ FIX IMPORTANT
         page,
         pageSize,
       });
@@ -51,10 +53,18 @@ export default function FeedPage() {
   ============================ */
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
 
       <FeedHeader />
 
+      {/* ============================
+         🔥 NEWS (haut de page)
+      ============================ */}
+      <CuratorNewsFeed />
+
+      {/* ============================
+         🔥 ANALYSES
+      ============================ */}
       <FeedGrid
         items={items}
         isLoading={loading}
@@ -69,11 +79,18 @@ export default function FeedPage() {
       />
 
       {/* ============================
-         DRAWER
+         DRAWERS
       ============================ */}
 
-      {selectedItem && (
+      {selectedItem?.type === "analysis" && (
         <AnalysisDrawer
+          id={selectedItem.id}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
+
+      {selectedItem?.type === "news" && (
+        <NewsDrawer
           id={selectedItem.id}
           onClose={() => setSelectedItem(null)}
         />
