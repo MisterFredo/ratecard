@@ -23,7 +23,7 @@ export default function FeedPage() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
-  // 🔥 état central (clean)
+  // 🔥 état des filtres
   const [params, setParams] = useState({
     query: "",
     topic_ids: [] as string[],
@@ -32,6 +32,9 @@ export default function FeedPage() {
     types: [] as string[],
     news_types: [] as string[],
   });
+
+  // 🔥 trigger de reload contrôlé
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [selectedItem, setSelectedItem] =
     useState<FeedItem | null>(null);
@@ -67,7 +70,16 @@ export default function FeedPage() {
   }
 
   /* ============================
-     AUTO RELOAD (filters)
+     INITIAL LOAD
+  ============================ */
+
+  useEffect(() => {
+    load(true);
+    // eslint-disable-next-line
+  }, []);
+
+  /* ============================
+     RELOAD CONTROLLED
   ============================ */
 
   useEffect(() => {
@@ -77,31 +89,21 @@ export default function FeedPage() {
 
     load(true);
     // eslint-disable-next-line
-  }, [JSON.stringify(params)]);
+  }, [reloadKey]);
 
   /* ============================
-     HANDLERS HEADER
+     HELPERS
   ============================ */
 
-  function handleSearch(query: string) {
+  function updateParams(patch: Partial<typeof params>) {
     setParams((prev) => ({
       ...prev,
-      query,
+      ...patch,
     }));
   }
 
-  function handleTypes(types: string[]) {
-    setParams((prev) => ({
-      ...prev,
-      types,
-    }));
-  }
-
-  function handleNewsTypes(news_types: string[]) {
-    setParams((prev) => ({
-      ...prev,
-      news_types,
-    }));
+  function triggerSearch() {
+    setReloadKey((k) => k + 1);
   }
 
   function handleReset() {
@@ -113,13 +115,8 @@ export default function FeedPage() {
       types: [],
       news_types: [],
     });
-  }
 
-  function updateParams(patch: Partial<typeof params>) {
-    setParams((prev) => ({
-      ...prev,
-      ...patch,
-    }));
+    setReloadKey((k) => k + 1);
   }
 
   /* ============================
@@ -151,18 +148,8 @@ export default function FeedPage() {
         solutionIds={params.solution_ids}
         setSolutionIds={(v) => updateParams({ solution_ids: v })}
 
-        onSearch={() => load(true)}
-
-        onReset={() => {
-          setParams({
-            query: "",
-            topic_ids: [],
-            company_ids: [],
-            solution_ids: [],
-            types: [],
-            news_types: [],
-          });
-        }}
+        onSearch={triggerSearch}
+        onReset={handleReset}
       />
 
       {/* ============================
