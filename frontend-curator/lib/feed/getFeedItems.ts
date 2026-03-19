@@ -25,6 +25,18 @@ type Response = {
 };
 
 /* =========================================================
+   HELPERS
+========================================================= */
+
+function cleanArray(arr?: string[]) {
+  if (!arr || arr.length === 0) return [];
+
+  return arr
+    .map((v) => String(v))
+    .filter((v) => v && v !== "undefined" && v !== "null");
+}
+
+/* =========================================================
    API CALL
 ========================================================= */
 
@@ -51,28 +63,35 @@ export async function getFeedItems(
     }
 
     /* ============================
-       ARRAY FIELDS (⚠️ align backend)
+       ARRAY FIELDS (SAFE STRING ONLY)
     ============================ */
 
-    params.topic_ids?.forEach((t) =>
+    cleanArray(params.topic_ids).forEach((t) =>
       query.append("topic_ids", t)
     );
 
-    params.company_ids?.forEach((c) =>
+    cleanArray(params.company_ids).forEach((c) =>
       query.append("company_ids", c)
     );
 
-    params.solution_ids?.forEach((s) =>
+    cleanArray(params.solution_ids).forEach((s) =>
       query.append("solution_ids", s)
     );
 
-    params.types?.forEach((t) =>
+    cleanArray(params.types).forEach((t) =>
       query.append("types", t)
     );
 
-    params.news_types?.forEach((nt) =>
+    cleanArray(params.news_types).forEach((nt) =>
       query.append("news_types", nt)
     );
+
+    /* ============================
+       DEBUG (à retirer après test)
+    ============================ */
+
+    console.log("FEED PARAMS", params);
+    console.log("QUERY STRING", query.toString());
 
     /* ============================
        REQUEST
@@ -109,6 +128,7 @@ export async function getFeedItems(
       items,
       count: res?.count ?? items.length,
     };
+
   } catch (e) {
     console.error("❌ getFeedItems error", e);
 
