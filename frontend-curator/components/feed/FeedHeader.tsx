@@ -153,6 +153,11 @@ function FilterGroup({
   );
 }
 
+function handleSearch() {
+  setQuery(input);   // met à jour le query dans le parent
+  onSearch();        // déclenche le reload
+}
+
 /* ========================================================= */
 
 function FilterChip({
