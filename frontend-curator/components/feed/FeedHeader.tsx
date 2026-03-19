@@ -127,7 +127,7 @@ export default function FeedHeader({
             key={t.id}
             label={`${t.label} (${t.count})`}
             active={newsTypes.includes(t.id)}
-            onClick={() => toggle(newsTypes, setNewsTypes, t.id)}
+            onClick={() => toggle(newsTypes, setNewsTypes, t.id, onSearch)}
           />
         ))}
       </FilterGroup>
