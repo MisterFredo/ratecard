@@ -5,11 +5,18 @@ export type FeedBadge = {
 
 export type FeedItem = {
   id: string;
-  type: "analysis" | "news"; // ✅ aligné
+  type: "analysis" | "news";
 
   title: string;
   excerpt?: string;
-  date?: string;
 
-  badges?: FeedBadge[];
+  // 🔥 ajout clé
+  signal?: string;
+  concept?: string;
+
+  // meta
+  published_at?: string;
+
+  // spécifique news
+  company?: string;
 };
