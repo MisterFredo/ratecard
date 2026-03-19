@@ -1,3 +1,6 @@
+import { api } from "@/lib/api";
+import type { FeedItem } from "@/types/feed";
+
 type FeedResponse = {
   items: FeedItem[];
   count: number;
