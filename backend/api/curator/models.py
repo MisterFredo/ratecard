@@ -3,37 +3,84 @@ from typing import List, Optional
 
 
 # ============================================================
-# INPUT — FEED QUERY (ALIGNÉ API + FRONT)
+# INPUT — FEED QUERY
 # ============================================================
 
 class FeedQuery(BaseModel):
     """
-    Représente la requête utilisateur côté Curator.
-    Aligné avec les query params FastAPI.
+    Requête utilisateur Curator.
+    Utilisée pour news ET content.
     """
 
     query: Optional[str] = None
 
-    # 🔥 IMPORTANT → alignement backend SQL
     topic_ids: List[str] = Field(default_factory=list)
     company_ids: List[str] = Field(default_factory=list)
     solution_ids: List[str] = Field(default_factory=list)
 
-    types: List[str] = Field(default_factory=list)        # ["news", "analysis"]
-    news_types: List[str] = Field(default_factory=list)   # ["PRODUCT", "CORPORATE", ...]
+    # 🔥 uniquement pour NEWS
+    news_types: List[str] = Field(default_factory=list)
 
     limit: int = 20
     offset: int = 0
 
 
 # ============================================================
-# OUTPUT — FEED ITEM
+# OUTPUT — BASE ITEM (COMMUN)
+# ============================================================
+
+class BaseItem(BaseModel):
+    id: str
+    title: str
+    excerpt: Optional[str] = None
+    published_at: Optional[str] = None
+
+    company_id: Optional[str] = None
+    company_name: Optional[str] = None
+
+
+# ============================================================
+# OUTPUT — NEWS
+# ============================================================
+
+class NewsItem(BaseItem):
+    type: str = "news"
+
+    news_type: Optional[str] = None
+
+    has_visual: Optional[bool] = None
+    media_id: Optional[str] = None
+
+
+# ============================================================
+# OUTPUT — ANALYSIS
+# ============================================================
+
+class ContentItem(BaseItem):
+    type: str = "analysis"
+
+
+# ============================================================
+# OUTPUT — RESPONSES
+# ============================================================
+
+class NewsResponse(BaseModel):
+    items: List[NewsItem]
+    count: int
+
+
+class ContentResponse(BaseModel):
+    items: List[ContentItem]
+    count: int
+
+
+# ============================================================
+# OUTPUT — UNIFIED (OPTIONNEL FRONT)
 # ============================================================
 
 class FeedItem(BaseModel):
     """
-    Item unifié (news + analysis)
-    utilisé dans le feed Curator.
+    Format unifié pour le front (merge possible)
     """
 
     id: str
@@ -43,35 +90,25 @@ class FeedItem(BaseModel):
     excerpt: Optional[str] = None
     published_at: Optional[str] = None
 
-    # 🔥 aligné avec service.py
     company_id: Optional[str] = None
-
-    # enrichissements futurs
     company_name: Optional[str] = None
 
-    # visuel (news principalement)
+    news_type: Optional[str] = None
     has_visual: Optional[bool] = None
     media_id: Optional[str] = None
 
-    # spécifique news
-    news_type: Optional[str] = None
-
-
-# ============================================================
-# OUTPUT — FEED RESPONSE
-# ============================================================
 
 class FeedResponse(BaseModel):
     """
-    Réponse standard du feed Curator.
+    Utilisé uniquement si tu veux un feed mixé
+    (facultatif)
     """
-
     items: List[FeedItem]
     count: int
 
 
 # ============================================================
-# OUTPUT — META (COCKPIT)
+# META (COCKPIT)
 # ============================================================
 
 class MetaItem(BaseModel):
@@ -81,10 +118,6 @@ class MetaItem(BaseModel):
 
 
 class FeedMetaResponse(BaseModel):
-    """
-    Structure cockpit pour les filtres dynamiques.
-    """
-
     topics: List[MetaItem]
     companies: List[MetaItem]
     solutions: List[MetaItem]
