@@ -42,6 +42,99 @@ def clean_array(value):
 # FEED
 # ============================================================
 
+def get_news_items(
+    query=None,
+    topic_ids=None,
+    company_ids=None,
+    solution_ids=None,
+    news_types=None,
+    limit=20,
+    offset=0,
+):
+
+    topic_ids = topic_ids or []
+    company_ids = company_ids or []
+    solution_ids = solution_ids or []
+    news_types = news_types or []
+
+    sql = f"""
+    SELECT
+        n.ID_NEWS as id,
+        'news' as type,
+        n.TITLE,
+        n.EXCERPT,
+        n.PUBLISHED_AT,
+        n.NEWS_TYPE,
+        n.ID_COMPANY
+    FROM `{TABLE_NEWS}` n
+    WHERE n.STATUS = 'PUBLISHED'
+
+    AND (@query IS NULL OR SEARCH(n, @query))
+
+    AND (
+        ARRAY_LENGTH(@news_types) = 0
+        OR n.NEWS_TYPE IN UNNEST(@news_types)
+    )
+
+    AND (
+        ARRAY_LENGTH(@company_ids) = 0
+        OR n.ID_COMPANY IN UNNEST(@company_ids)
+    )
+
+    AND (
+        ARRAY_LENGTH(@topic_ids) = 0
+        OR EXISTS (
+            SELECT 1
+            FROM `{TABLE_NEWS_TOPIC}` nt
+            WHERE nt.ID_NEWS = n.ID_NEWS
+            AND nt.ID_TOPIC IN UNNEST(@topic_ids)
+        )
+    )
+
+    AND (
+        ARRAY_LENGTH(@solution_ids) = 0
+        OR EXISTS (
+            SELECT 1
+            FROM `{TABLE_NEWS_SOLUTION}` ns
+            WHERE ns.ID_NEWS = n.ID_NEWS
+            AND ns.ID_SOLUTION IN UNNEST(@solution_ids)
+        )
+    )
+
+    ORDER BY n.PUBLISHED_AT DESC
+    LIMIT @limit
+    OFFSET @offset
+    """
+
+    rows = query_bq(
+        sql,
+        {
+            "query": query,
+            "topic_ids": topic_ids,
+            "company_ids": company_ids,
+            "solution_ids": solution_ids,
+            "news_types": news_types,
+            "limit": limit,
+            "offset": offset,
+        },
+    )
+
+    return {
+        "items": [
+            {
+                "id": r["id"],
+                "type": "news",
+                "title": r["TITLE"],
+                "excerpt": r["EXCERPT"],
+                "published_at": r["PUBLISHED_AT"],
+                "news_type": r["NEWS_TYPE"],
+                "company_id": r["ID_COMPANY"],
+            }
+            for r in rows
+        ],
+        "count": len(rows),
+    }
+
 def get_feed_items(
     query: Optional[str] = None,
     topic_ids: Optional[List[str]] = None,
