@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import FeedHeader from "@/components/feed/FeedHeader";
 import FeedGrid from "@/components/feed/FeedGrid";
+import CuratorNewsFeed from "@/components/feed/CuratorNewsFeed";
 import PaginationControls from "@/components/ui/PaginationControls";
 
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
