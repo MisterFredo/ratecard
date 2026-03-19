@@ -1,124 +1,104 @@
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 
+from core.news.service import get_news_items, get_news
+from core.content.public_service import get_content_items, get_content
+from core.feed.service import get_feed_meta
 
-# ============================================================
-# INPUT — QUERY (COMMUNE)
-# ============================================================
-
-class FeedQuery(BaseModel):
-    """
-    Requête utilisée pour news ET content.
-    """
-
-    query: Optional[str] = None
-
-    topic_ids: List[str] = Field(default_factory=list)
-    company_ids: List[str] = Field(default_factory=list)
-    solution_ids: List[str] = Field(default_factory=list)
-
-    # 🔥 spécifique NEWS uniquement
-    news_types: List[str] = Field(default_factory=list)
-
-    limit: int = 20
-    offset: int = 0
+router = APIRouter()
 
 
 # ============================================================
-# BASE ITEM (COMMUN)
+# NEWS FEED
 # ============================================================
 
-class BaseItem(BaseModel):
-    id: str
+@router.get("/news")
+def get_news_route(
+    query: Optional[str] = None,
 
-    title: str
-    excerpt: Optional[str] = None
-    published_at: Optional[str] = None
+    topic_ids: Optional[List[str]] = Query(default=None),
+    company_ids: Optional[List[str]] = Query(default=None),
+    solution_ids: Optional[List[str]] = Query(default=None),
+    news_types: Optional[List[str]] = Query(default=None),
 
-    company_id: Optional[str] = None
-    company_name: Optional[str] = None
-
-
-# ============================================================
-# NEWS ITEM
-# ============================================================
-
-class NewsItem(BaseItem):
-    type: str = "news"
-
-    news_type: Optional[str] = None
-
-    has_visual: Optional[bool] = None
-    media_id: Optional[str] = None
-
-
-# ============================================================
-# CONTENT ITEM (ANALYSIS)
-# ============================================================
-
-class ContentItem(BaseItem):
-    type: str = "analysis"
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    return get_news_items(
+        query=query,
+        topic_ids=topic_ids,
+        company_ids=company_ids,
+        solution_ids=solution_ids,
+        news_types=news_types,
+        limit=limit,
+        offset=offset,
+    )
 
 
 # ============================================================
-# RESPONSES SÉPARÉES
+# CONTENT FEED (ANALYSES)
 # ============================================================
 
-class NewsResponse(BaseModel):
-    items: List[NewsItem]
-    count: int
+@router.get("/content")
+def get_content_route(
+    query: Optional[str] = None,
 
+    topic_ids: Optional[List[str]] = Query(default=None),
+    company_ids: Optional[List[str]] = Query(default=None),
+    solution_ids: Optional[List[str]] = Query(default=None),
 
-class ContentResponse(BaseModel):
-    items: List[ContentItem]
-    count: int
-
-
-# ============================================================
-# FORMAT UNIFIÉ (FRONT UNIQUEMENT)
-# ============================================================
-
-class FeedItem(BaseModel):
-    """
-    Format utilisé si tu merges côté front
-    """
-
-    id: str
-    type: str  # "news" | "analysis"
-
-    title: str
-    excerpt: Optional[str] = None
-    published_at: Optional[str] = None
-
-    company_id: Optional[str] = None
-    company_name: Optional[str] = None
-
-    # spécifique news (optionnel)
-    news_type: Optional[str] = None
-    has_visual: Optional[bool] = None
-    media_id: Optional[str] = None
-
-
-class FeedResponse(BaseModel):
-    """
-    OPTIONNEL : si tu veux renvoyer un feed mixé
-    """
-    items: List[FeedItem]
-    count: int
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    return get_content_items(
+        query=query,
+        topic_ids=topic_ids,
+        company_ids=company_ids,
+        solution_ids=solution_ids,
+        limit=limit,
+        offset=offset,
+    )
 
 
 # ============================================================
 # META (FILTRES)
 # ============================================================
 
-class MetaItem(BaseModel):
-    id: str
-    label: str
-    count: int
+@router.get("/meta")
+def get_meta_route():
+    try:
+        data = get_feed_meta()
+        return {
+            "status": "ok",
+            **data
+        }
+    except Exception as e:
+        raise HTTPException(400, f"Erreur meta feed : {e}")
 
 
-class FeedMetaResponse(BaseModel):
-    topics: List[MetaItem]
-    companies: List[MetaItem]
-    solutions: List[MetaItem]
-    news_types: List[MetaItem]
+# ============================================================
+# DRAWER NEWS
+# ============================================================
+
+@router.get("/news/{id_news}")
+def read_news(id_news: str):
+    item = get_news(id_news)
+
+    if not item:
+        raise HTTPException(status_code=404, detail="News not found")
+
+    return item
+
+
+# ============================================================
+# DRAWER CONTENT
+# ============================================================
+
+@router.get("/content/{id_content}")
+def read_content(id_content: str):
+    item = get_content(id_content)
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Content not found")
+
+    return item
