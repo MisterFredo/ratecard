@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 from core.content.public_service import get_content
 from core.feed.service import list_feed
+from core.news.service import list_news_feed  # ✅ FIX
 
 router = APIRouter()
 
@@ -28,6 +29,11 @@ def read_content(id_content: str):
 
     return item
 
+
+# ============================================================
+# NEWS FEED (BREVES STYLE)
+# ============================================================
+
 @router.get("/news")
-def list_news(limit: int = 20, cursor: str | None = None):
+def get_news_route(limit: int = 20, cursor: str | None = None):
     return list_news_feed(limit=limit, cursor=cursor)
