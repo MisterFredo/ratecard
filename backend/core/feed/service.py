@@ -159,14 +159,14 @@ def get_feed_items(
         sql,
         params={
             "query": query,
-            "topic_ids": topic_ids,
-            "company_ids": company_ids,
-            "solution_ids": solution_ids,
-            "types": types,
-            "news_types": news_types,
+            "topic_ids": safe_array(topic_ids),
+            "company_ids": safe_array(company_ids),
+            "solution_ids": safe_array(solution_ids),
+            "types": safe_array(types),
+            "news_types": safe_array(news_types),
             "limit": limit,
             "offset": offset,
-        },
+        }
     )
 
     items = []
