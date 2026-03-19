@@ -1,66 +1,124 @@
-from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
-from core.feed.service import get_feed_items, get_feed_meta
-from core.content.public_service import get_content
 
-router = APIRouter()
+# ============================================================
+# INPUT — QUERY (COMMUNE)
+# ============================================================
+
+class FeedQuery(BaseModel):
+    """
+    Requête utilisée pour news ET content.
+    """
+
+    query: Optional[str] = None
+
+    topic_ids: List[str] = Field(default_factory=list)
+    company_ids: List[str] = Field(default_factory=list)
+    solution_ids: List[str] = Field(default_factory=list)
+
+    # 🔥 spécifique NEWS uniquement
+    news_types: List[str] = Field(default_factory=list)
+
+    limit: int = 20
+    offset: int = 0
 
 
 # ============================================================
-# FEED (MOTEUR CURATOR)
+# BASE ITEM (COMMUN)
 # ============================================================
 
-@router.get("/feed")
-def get_feed_route(
-    query: Optional[str] = None,
+class BaseItem(BaseModel):
+    id: str
 
-    topic_ids: Optional[List[str]] = Query(default=None),
-    company_ids: Optional[List[str]] = Query(default=None),
-    solution_ids: Optional[List[str]] = Query(default=None),
+    title: str
+    excerpt: Optional[str] = None
+    published_at: Optional[str] = None
 
-    types: Optional[List[str]] = Query(default=None),
-    news_types: Optional[List[str]] = Query(default=None),
-
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
-):
-    return get_feed_items(
-        query=query,
-        topic_ids=topic_ids,
-        company_ids=company_ids,
-        solution_ids=solution_ids,
-        news_types=news_types,
-        limit=limit,
-        offset=offset,
-    )
+    company_id: Optional[str] = None
+    company_name: Optional[str] = None
 
 
 # ============================================================
-# META (FILTRES COCKPIT)
+# NEWS ITEM
 # ============================================================
 
-@router.get("/feed/meta")
-def get_meta_route():
-    try:
-        data = get_feed_meta()
-        return {
-            "status": "ok",
-            **data
-        }
-    except Exception as e:
-        raise HTTPException(400, f"Erreur meta feed : {e}")
+class NewsItem(BaseItem):
+    type: str = "news"
+
+    news_type: Optional[str] = None
+
+    has_visual: Optional[bool] = None
+    media_id: Optional[str] = None
 
 
 # ============================================================
-# DRAWER ANALYSIS
+# CONTENT ITEM (ANALYSIS)
 # ============================================================
 
-@router.get("/content/{id_content}")
-def read_content(id_content: str):
-    item = get_content(id_content)
+class ContentItem(BaseItem):
+    type: str = "analysis"
 
-    if not item:
-        raise HTTPException(status_code=404, detail="Content not found")
 
-    return item
+# ============================================================
+# RESPONSES SÉPARÉES
+# ============================================================
+
+class NewsResponse(BaseModel):
+    items: List[NewsItem]
+    count: int
+
+
+class ContentResponse(BaseModel):
+    items: List[ContentItem]
+    count: int
+
+
+# ============================================================
+# FORMAT UNIFIÉ (FRONT UNIQUEMENT)
+# ============================================================
+
+class FeedItem(BaseModel):
+    """
+    Format utilisé si tu merges côté front
+    """
+
+    id: str
+    type: str  # "news" | "analysis"
+
+    title: str
+    excerpt: Optional[str] = None
+    published_at: Optional[str] = None
+
+    company_id: Optional[str] = None
+    company_name: Optional[str] = None
+
+    # spécifique news (optionnel)
+    news_type: Optional[str] = None
+    has_visual: Optional[bool] = None
+    media_id: Optional[str] = None
+
+
+class FeedResponse(BaseModel):
+    """
+    OPTIONNEL : si tu veux renvoyer un feed mixé
+    """
+    items: List[FeedItem]
+    count: int
+
+
+# ============================================================
+# META (FILTRES)
+# ============================================================
+
+class MetaItem(BaseModel):
+    id: str
+    label: str
+    count: int
+
+
+class FeedMetaResponse(BaseModel):
+    topics: List[MetaItem]
+    companies: List[MetaItem]
+    solutions: List[MetaItem]
+    news_types: List[MetaItem]
