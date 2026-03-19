@@ -4,7 +4,6 @@ from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 
 
-
 TABLE_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS"
 TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
 
@@ -38,26 +37,21 @@ def clean_array(value):
 
     return [value]
 
-def safe_array(arr):
-    return arr if arr else []
-
 
 def get_feed_items(
     query: Optional[str] = None,
     topic_ids: Optional[List[str]] = None,
     company_ids: Optional[List[str]] = None,
     solution_ids: Optional[List[str]] = None,
-    types: Optional[List[str]] = None,
     news_types: Optional[List[str]] = None,
     limit: int = 20,
     offset: int = 0,
 ) -> Dict:
 
-    # 🔒 NORMALISATION (ARRAY UNIQUEMENT)
+    # 🔒 NORMALISATION
     topic_ids = clean_array(topic_ids)
     company_ids = clean_array(company_ids)
     solution_ids = clean_array(solution_ids)
-    types = clean_array(types)
     news_types = clean_array(news_types)
 
     sql = f"""
@@ -97,12 +91,6 @@ def get_feed_items(
       @query IS NULL
       OR LOWER(TITLE) LIKE CONCAT('%', LOWER(@query), '%')
       OR LOWER(EXCERPT) LIKE CONCAT('%', LOWER(@query), '%')
-    )
-
-    -- TYPE
-    AND (
-      ARRAY_LENGTH(@types) = 0
-      OR type IN UNNEST(@types)
     )
 
     -- NEWS TYPE
@@ -162,11 +150,10 @@ def get_feed_items(
         sql,
         params={
             "query": query,
-            "topic_ids": safe_array(topic_ids),
-            "company_ids": safe_array(company_ids),
-            "solution_ids": safe_array(solution_ids),
-            "types": safe_array(types),
-            "news_types": safe_array(news_types),
+            "topic_ids": topic_ids,
+            "company_ids": company_ids,
+            "solution_ids": solution_ids,
+            "news_types": news_types,
             "limit": limit,
             "offset": offset,
         }
@@ -188,6 +175,8 @@ def get_feed_items(
         "items": items,
         "count": len(items),
     }
+
+
 # ============================================================
 # META (FILTRES)
 # ============================================================
@@ -195,57 +184,33 @@ def get_feed_items(
 def get_feed_meta() -> Dict:
 
     sql = f"""
-    -- ============================
-    -- TOPICS
-    -- ============================
     SELECT
         'topic' AS type,
-        t.ID_TOPIC AS id,
-        t.LABEL AS label,
-        COUNT(*) AS count
-    FROM `{TABLE_TOPIC}` t
-    LEFT JOIN `{TABLE_CONTENT_TOPIC}` ct ON t.ID_TOPIC = ct.ID_TOPIC
-    LEFT JOIN `{TABLE_NEWS_TOPIC}` nt ON t.ID_TOPIC = nt.ID_TOPIC
-    WHERE ct.ID_CONTENT IS NOT NULL OR nt.ID_NEWS IS NOT NULL
-    GROUP BY t.ID_TOPIC, t.LABEL
+        ID_TOPIC AS id,
+        LABEL AS label,
+        0 AS count
+    FROM `{TABLE_TOPIC}`
 
     UNION ALL
 
-    -- ============================
-    -- COMPANIES
-    -- ============================
     SELECT
         'company' AS type,
-        c.ID_COMPANY AS id,
-        c.NAME AS label,
-        COUNT(*) AS count
-    FROM `{TABLE_COMPANY}` c
-    LEFT JOIN `{TABLE_NEWS}` n ON c.ID_COMPANY = n.ID_COMPANY
-    LEFT JOIN `{TABLE_CONTENT_COMPANY}` cc ON c.ID_COMPANY = cc.ID_COMPANY
-    WHERE n.ID_NEWS IS NOT NULL OR cc.ID_CONTENT IS NOT NULL
-    GROUP BY c.ID_COMPANY, c.NAME
+        ID_COMPANY AS id,
+        NAME AS label,
+        0 AS count
+    FROM `{TABLE_COMPANY}`
 
     UNION ALL
 
-    -- ============================
-    -- SOLUTIONS
-    -- ============================
     SELECT
         'solution' AS type,
-        s.ID_SOLUTION AS id,
-        s.NAME AS label,
-        COUNT(*) AS count
-    FROM `{TABLE_SOLUTION}` s
-    LEFT JOIN `{TABLE_CONTENT_SOLUTION}` cs ON s.ID_SOLUTION = cs.ID_SOLUTION
-    LEFT JOIN `{TABLE_NEWS_SOLUTION}` ns ON s.ID_SOLUTION = ns.ID_SOLUTION
-    WHERE cs.ID_CONTENT IS NOT NULL OR ns.ID_NEWS IS NOT NULL
-    GROUP BY s.ID_SOLUTION, s.NAME
+        ID_SOLUTION AS id,
+        NAME AS label,
+        0 AS count
+    FROM `{TABLE_SOLUTION}`
 
     UNION ALL
 
-    -- ============================
-    -- NEWS TYPES
-    -- ============================
     SELECT
         'news_type' AS type,
         NEWS_TYPE AS id,
@@ -266,34 +231,15 @@ def get_feed_meta() -> Dict:
     }
 
     for r in rows:
-        t = r["type"]  # pas de lower, on garde exact BQ
+        t = r["type"]
 
         if t == "topic":
-            result["topics"].append({
-                "id": r["id"],
-                "label": r["label"],
-                "count": r["count"],
-            })
-
+            result["topics"].append(r)
         elif t == "company":
-            result["companies"].append({
-                "id": r["id"],
-                "label": r["label"],
-                "count": r["count"],
-            })
-
+            result["companies"].append(r)
         elif t == "solution":
-            result["solutions"].append({
-                "id": r["id"],
-                "label": r["label"],
-                "count": r["count"],
-            })
-
+            result["solutions"].append(r)
         elif t == "news_type":
-            result["news_types"].append({
-                "id": r["id"],
-                "label": r["label"],
-                "count": r["count"],
-            })
+            result["news_types"].append(r)
 
     return result
