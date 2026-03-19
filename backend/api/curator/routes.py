@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 
-from core.news.service import get_news_items, get_news
-from core.content.public_service import get_content_items, get_content
-from core.feed.service import get_feed_meta
+from core.news.service import get_news
+from core.content.public_service import get_content
+from core.feed.service import get_feed_meta, get_news_items, get_content_items
 
 router = APIRouter()
 
