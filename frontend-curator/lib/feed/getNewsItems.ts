@@ -1,4 +1,11 @@
-export async function getNewsItems(params: Params): Promise<Response> {
+type FeedResponse = {
+  items: FeedItem[];
+  count: number;
+};
+
+export async function getNewsItems(
+  params: Params
+): Promise<FeedResponse> {
   try {
     const query = new URLSearchParams();
 
@@ -21,12 +28,19 @@ export async function getNewsItems(params: Params): Promise<Response> {
       excerpt: item.excerpt || null,
       published_at: item.published_at || null,
 
-      company: item.company || null,
+      // 🔵 sécurisation company
+      company:
+        typeof item.company === "string"
+          ? item.company
+          : item.company?.name || null,
 
       has_visual: item.has_visual || false,
       media_id: item.media_id || null,
 
       news_type: item.news_type || null,
+
+      // 🔥 BADGES (clé pour ton UI)
+      badges: item.badges || [],
     }));
 
     return {
