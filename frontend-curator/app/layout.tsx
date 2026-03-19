@@ -1,5 +1,7 @@
 import "./globals.css";
 
+import CuratorShell from "@/components/layout/CuratorShell";
+
 export default function RootLayout({
   children,
 }: {
@@ -7,7 +9,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body>{children}</body>
+      <body>
+        <CuratorShell>{children}</CuratorShell>
+      </body>
     </html>
   );
 }
