@@ -133,14 +133,14 @@ export default function FeedPage() {
   ============================ */
 
   function updateParams(patch: Partial<typeof params>) {
-    setParams((prev) => ({
-      ...prev,
-      ...patch,
-    }));
-  }
+    setParams((prev) => {
+      const next = { ...prev, ...patch };
 
-  function triggerSearch() {
-    setReloadKey((k) => k + 1);
+      // 🔥 déclenche reload automatique
+      setReloadKey((k) => k + 1);
+
+      return next;
+    });
   }
 
   function handleReset() {
