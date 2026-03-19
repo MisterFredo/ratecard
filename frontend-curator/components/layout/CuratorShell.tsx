@@ -117,7 +117,7 @@ export default function WorkspaceShell({
           </span>
         </div>
 
-        <div className="p-4 md:p-10 max-w-6xl mx-auto">
+        <div className="p-4 md:p-8 w-full">
           {children}
         </div>
       </main>
