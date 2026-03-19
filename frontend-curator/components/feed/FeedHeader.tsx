@@ -113,7 +113,7 @@ export default function FeedHeader({
             key={t}
             label={t}
             active={types.includes(t)}
-            onClick={() => toggle(types, setTypes, t)}
+            onClick={() => toggle(types, setTypes, t, onSearch)}
           />
         ))}
       </FilterGroup>
