@@ -41,7 +41,7 @@ export default function FeedPage() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
-  // 🔥 META (cockpit)
+  // 🔥 META
   const [meta, setMeta] = useState<Meta>({
     topics: [],
     companies: [],
@@ -49,13 +49,12 @@ export default function FeedPage() {
     news_types: [],
   });
 
-  // 🔥 filtres
+  // 🔥 PARAMS (SANS types)
   const [params, setParams] = useState({
     query: "",
     topic_ids: [] as string[],
     company_ids: [] as string[],
     solution_ids: [] as string[],
-    types: [] as string[],
     news_types: [] as string[],
   });
 
@@ -136,7 +135,7 @@ export default function FeedPage() {
     setParams((prev) => {
       const next = { ...prev, ...patch };
 
-      // 🔥 déclenche reload automatique
+      // 🔥 trigger reload
       setReloadKey((k) => k + 1);
 
       return next;
@@ -149,7 +148,6 @@ export default function FeedPage() {
       topic_ids: [],
       company_ids: [],
       solution_ids: [],
-      types: [],
       news_types: [],
     });
 
@@ -170,9 +168,6 @@ export default function FeedPage() {
         query={params.query}
         setQuery={(v) => updateParams({ query: v })}
 
-        types={params.types}
-        setTypes={(v) => updateParams({ types: v })}
-
         newsTypes={params.news_types}
         setNewsTypes={(v) => updateParams({ news_types: v })}
 
@@ -183,7 +178,7 @@ export default function FeedPage() {
       />
 
       {/* ============================
-         COCKPIT FILTERS
+         FILTERS
       ============================ */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
