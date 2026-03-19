@@ -24,27 +24,18 @@ TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
 # ============================================================
 
 def clean_array(value):
-    """
-    Garantit un ARRAY propre pour BigQuery :
-    - None → None
-    - [] → None
-    - "" → None
-    - "x" → ["x"]
-    - ["x"] → ["x"]
-    """
     if value is None:
-        return None
+        return []
 
     if isinstance(value, list):
-        return value if len(value) > 0 else None
+        return value
 
     if isinstance(value, str):
         if value.strip() == "":
-            return None
+            return []
         return [value]
 
     return [value]
-
 
 # ============================================================
 # FEED CURATOR (MOTEUR PRINCIPAL)
