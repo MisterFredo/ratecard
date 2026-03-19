@@ -189,56 +189,85 @@ def get_feed_items(
 def get_feed_meta() -> Dict:
 
     sql = f"""
-    SELECT DISTINCT
+    -- ============================
+    -- TOPICS
+    -- ============================
+    SELECT
+        'topic' as type,
+        t.ID_TOPIC as id,
+        t.LABEL as label,
+        COUNT(*) as count
+    FROM `{TABLE_TOPIC}` t
+    LEFT JOIN `{TABLE_CONTENT_TOPIC}` ct ON t.ID_TOPIC = ct.ID_TOPIC
+    LEFT JOIN `{TABLE_NEWS_TOPIC}` nt ON t.ID_TOPIC = nt.ID_TOPIC
+    WHERE ct.ID_CONTENT IS NOT NULL OR nt.ID_NEWS IS NOT NULL
+    GROUP BY id, label
+
+    UNION ALL
+
+    -- ============================
+    -- COMPANIES
+    -- ============================
+    SELECT
+        'company' as type,
+        c.ID_COMPANY as id,
+        c.NAME as label,
+        COUNT(*) as count
+    FROM `{TABLE_COMPANY}` c
+    LEFT JOIN `{TABLE_NEWS}` n ON c.ID_COMPANY = n.ID_COMPANY
+    LEFT JOIN `{TABLE_CONTENT_COMPANY}` cc ON c.ID_COMPANY = cc.ID_COMPANY
+    WHERE n.ID_NEWS IS NOT NULL OR cc.ID_CONTENT IS NOT NULL
+    GROUP BY id, label
+
+    UNION ALL
+
+    -- ============================
+    -- SOLUTIONS
+    -- ============================
+    SELECT
+        'solution' as type,
+        s.ID_SOLUTION as id,
+        s.NAME as label,
+        COUNT(*) as count
+    FROM `{TABLE_SOLUTION}` s
+    LEFT JOIN `{TABLE_CONTENT_SOLUTION}` cs ON s.ID_SOLUTION = cs.ID_SOLUTION
+    LEFT JOIN `{TABLE_NEWS_SOLUTION}` ns ON s.ID_SOLUTION = ns.ID_SOLUTION
+    WHERE cs.ID_CONTENT IS NOT NULL OR ns.ID_NEWS IS NOT NULL
+    GROUP BY id, label
+
+    UNION ALL
+
+    -- ============================
+    -- NEWS TYPES
+    -- ============================
+    SELECT
         'news_type' as type,
-        NEWS_TYPE as value,
-        NEWS_TYPE as label
+        NEWS_TYPE as id,
+        NEWS_TYPE as label,
+        COUNT(*) as count
     FROM `{TABLE_NEWS}`
     WHERE STATUS = 'PUBLISHED'
-      AND NEWS_TYPE IS NOT NULL
-
-    UNION ALL
-
-    SELECT DISTINCT
-        'company' as type,
-        c.ID_COMPANY as value,
-        c.NAME as label
-    FROM `{TABLE_COMPANY}` c
-    WHERE c.ID_COMPANY IN (
-        SELECT ID_COMPANY FROM `{TABLE_NEWS}` WHERE STATUS = 'PUBLISHED'
-        UNION DISTINCT
-        SELECT ID_COMPANY FROM `{TABLE_CONTENT_COMPANY}`
-    )
-
-    UNION ALL
-
-    SELECT DISTINCT
-        'topic' as type,
-        t.ID_TOPIC as value,
-        t.LABEL as label
-    FROM `{TABLE_TOPIC}` t
-    WHERE t.ID_TOPIC IN (
-        SELECT ID_TOPIC FROM `{TABLE_NEWS_TOPIC}`
-        UNION DISTINCT
-        SELECT ID_TOPIC FROM `{TABLE_CONTENT_TOPIC}`
-    )
-
-    UNION ALL
-
-    SELECT DISTINCT
-        'solution' as type,
-        s.ID_SOLUTION as value,
-        s.NAME as label
-    FROM `{TABLE_SOLUTION}` s
-    WHERE s.ID_SOLUTION IN (
-        SELECT ID_SOLUTION FROM `{TABLE_NEWS_SOLUTION}`
-        UNION DISTINCT
-        SELECT ID_SOLUTION FROM `{TABLE_CONTENT_SOLUTION}`
-    )
+    GROUP BY NEWS_TYPE
     """
 
     rows = query_bq(sql)
 
-    return {
-        "items": rows
+    # regroupement par type
+    result = {
+        "topics": [],
+        "companies": [],
+        "solutions": [],
+        "news_types": []
     }
+
+    for r in rows:
+        if r["type"] == "topic":
+            result["topics"].append(r)
+        elif r["type"] == "company":
+            result["companies"].append(r)
+        elif r["type"] == "solution":
+            result["solutions"].append(r)
+        elif r["type"] == "news_type":
+            result["news_types"].append(r)
+
+    return result
