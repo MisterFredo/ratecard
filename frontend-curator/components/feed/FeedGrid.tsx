@@ -7,16 +7,12 @@ type Props = {
   items: FeedItem[];
   isLoading?: boolean;
   onSelectItem?: (item: FeedItem) => void;
-  onBadgeClick?: (label: string) => void;
-  onAddToLibrary?: (item: FeedItem) => void;
 };
 
 export default function FeedGrid({
   items,
   isLoading = false,
   onSelectItem,
-  onBadgeClick,
-  onAddToLibrary,
 }: Props) {
 
   if (isLoading) {
@@ -34,8 +30,6 @@ export default function FeedGrid({
           key={`${item.type}-${item.id}`}
           item={item}
           onSelect={() => onSelectItem?.(item)}
-          onBadgeClick={onBadgeClick}
-          onAddToLibrary={() => onAddToLibrary?.(item)}
         />
       ))}
     </div>
