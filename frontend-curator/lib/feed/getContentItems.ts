@@ -1,6 +1,19 @@
 import { api } from "@/lib/api";
 import type { FeedItem } from "@/types/feed";
 
+type Params = {
+  query?: string;
+
+  topic_ids?: string[];
+  company_ids?: string[];
+  solution_ids?: string[];
+
+  news_types?: string[];
+
+  limit?: number;
+  offset?: number;
+};
+
 type FeedResponse = {
   items: FeedItem[];
   count: number;
