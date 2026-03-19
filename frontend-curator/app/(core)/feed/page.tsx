@@ -17,6 +17,21 @@ import type { FeedItem } from "@/types/feed";
 
 /* ========================================================= */
 
+type MetaItem = {
+  id: string;
+  label: string;
+  count: number;
+};
+
+type Meta = {
+  topics: MetaItem[];
+  companies: MetaItem[];
+  solutions: MetaItem[];
+  news_types: MetaItem[];
+};
+
+/* ========================================================= */
+
 export default function FeedPage() {
   const LIMIT = 20;
 
@@ -27,7 +42,7 @@ export default function FeedPage() {
   const [hasMore, setHasMore] = useState(true);
 
   // 🔥 META (cockpit)
-  const [meta, setMeta] = useState<any>({
+  const [meta, setMeta] = useState<Meta>({
     topics: [],
     companies: [],
     solutions: [],
@@ -50,7 +65,7 @@ export default function FeedPage() {
     useState<FeedItem | null>(null);
 
   /* ============================
-     LOAD META (cockpit)
+     LOAD META
   ============================ */
 
   useEffect(() => {
@@ -161,6 +176,8 @@ export default function FeedPage() {
         newsTypes={params.news_types}
         setNewsTypes={(v) => updateParams({ news_types: v })}
 
+        newsTypeOptions={meta.news_types || []}
+
         onSearch={triggerSearch}
         onReset={handleReset}
       />
@@ -172,21 +189,21 @@ export default function FeedPage() {
 
         <FilterPanel
           title="Topics"
-          items={meta.topics || []}
+          items={meta.topics}
           selected={params.topic_ids}
           onChange={(v) => updateParams({ topic_ids: v })}
         />
 
         <FilterPanel
           title="Companies"
-          items={meta.companies || []}
+          items={meta.companies}
           selected={params.company_ids}
           onChange={(v) => updateParams({ company_ids: v })}
         />
 
         <FilterPanel
           title="Solutions"
-          items={meta.solutions || []}
+          items={meta.solutions}
           selected={params.solution_ids}
           onChange={(v) => updateParams({ solution_ids: v })}
         />
