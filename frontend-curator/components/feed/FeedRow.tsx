@@ -16,6 +16,10 @@ export default function FeedRow({ item, onClick }: Props) {
 
   const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL;
 
+  const formattedDate = item.published_at
+    ? new Date(item.published_at).toLocaleDateString("fr-FR")
+    : null;
+
   return (
     <article
       onClick={onClick}
@@ -50,17 +54,14 @@ export default function FeedRow({ item, onClick }: Props) {
           <div className="flex justify-between text-[11px] text-gray-400">
 
             <span>
-              {item.published_at
-                ? new Date(item.published_at).toLocaleDateString("fr-FR")
-                : ""}
+              {formattedDate || ""}
             </span>
 
             <span
-              className={`uppercase tracking-wide ${
-                isNews
-                  ? "text-blue-600"
-                  : "text-green-600"
-              }`}
+              className={`
+                uppercase tracking-wide font-medium
+                ${isNews ? "text-blue-600" : "text-green-600"}
+              `}
             >
               {isNews ? "NEWS" : "ANALYSIS"}
             </span>
@@ -69,7 +70,9 @@ export default function FeedRow({ item, onClick }: Props) {
           {/* COMPANY (NEWS ONLY) */}
           {isNews && item.company && (
             <div className="text-xs font-medium text-gray-700">
-              {item.company}
+              {typeof item.company === "string"
+                ? item.company
+                : item.company?.name}
             </div>
           )}
 
@@ -87,7 +90,7 @@ export default function FeedRow({ item, onClick }: Props) {
 
           {/* NEWS TYPE */}
           {isNews && item.news_type && (
-            <div className="text-[10px] text-gray-400 uppercase">
+            <div className="text-[10px] text-gray-400 uppercase tracking-wide">
               {item.news_type}
             </div>
           )}
