@@ -1,22 +1,22 @@
 from fastapi import APIRouter, HTTPException
 
-from core.content.public_service import list_contents, get_content
+from core.content.public_service import get_content
+from core.feed.service import list_feed
 
 router = APIRouter()
 
 
 # ============================================================
-# FEED
+# FEED (UNIFIÉ)
 # ============================================================
 
-@router.get("/content")
-def get_feed(limit: int = 20, offset: int = 0):
-    items = list_contents(limit=limit, offset=offset)
-    return {"items": items}
+@router.get("/feed")
+def get_feed_route(limit: int = 20, offset: int = 0):
+    return list_feed(limit=limit, offset=offset)
 
 
 # ============================================================
-# DRAWER
+# DRAWER (CONTENT)
 # ============================================================
 
 @router.get("/content/{id_content}")
