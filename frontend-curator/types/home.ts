@@ -1,6 +1,8 @@
+// frontend-curator/types/home.ts
+
 export type FeedBadge = {
   label: string;
-  type: "SELECTION" | "SOCIETE" | "SOLUTION";
+  type: "TOPIC" | "COMPANY" | "SOLUTION";
 };
 
 export type FeedItem = {
@@ -8,15 +10,20 @@ export type FeedItem = {
   type: "analysis" | "news";
 
   title: string;
-  excerpt?: string;
+  excerpt?: string | null;
 
-  // 🔥 ajout clé
+  // 🔥 meta
+  published_at?: string | null;
+
+  // 🔥 news spécifique
+  company?: string | null;
+  news_type?: string | null;
+
+  // 🔥 visuel (clé UX)
+  has_visual?: boolean;
+  media_id?: string | null;
+
+  // ⚠️ LEGACY (à supprimer plus tard)
   signal?: string;
   concept?: string;
-
-  // meta
-  published_at?: string;
-
-  // spécifique news
-  company?: string;
 };
