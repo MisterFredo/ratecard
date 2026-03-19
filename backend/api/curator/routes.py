@@ -43,7 +43,14 @@ def get_feed_route(
 
 @router.get("/feed/meta")
 def get_meta_route():
-    return get_feed_meta()
+    try:
+        data = get_feed_meta()
+        return {
+            "status": "ok",
+            **data
+        }
+    except Exception as e:
+        raise HTTPException(400, f"Erreur meta feed : {e}")
 
 
 # ============================================================
