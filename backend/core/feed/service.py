@@ -38,6 +38,10 @@ def clean_array(value):
     return [value]
 
 
+# ============================================================
+# FEED
+# ============================================================
+
 def get_feed_items(
     query: Optional[str] = None,
     topic_ids: Optional[List[str]] = None,
@@ -48,14 +52,13 @@ def get_feed_items(
     offset: int = 0,
 ) -> Dict:
 
-    # 🔒 NORMALISATION
     topic_ids = clean_array(topic_ids)
     company_ids = clean_array(company_ids)
     solution_ids = clean_array(solution_ids)
     news_types = clean_array(news_types)
 
     sql = f"""
-    WITH base AS (
+    WITH base_news AS (
 
       SELECT
         n.ID_NEWS as id,
@@ -68,7 +71,40 @@ def get_feed_items(
       FROM `{TABLE_NEWS}` n
       WHERE n.STATUS = 'PUBLISHED'
 
-      UNION ALL
+      AND (@query IS NULL OR SEARCH(n, @query))
+
+      AND (
+        ARRAY_LENGTH(@news_types) = 0
+        OR n.NEWS_TYPE IN UNNEST(@news_types)
+      )
+
+      AND (
+        ARRAY_LENGTH(@company_ids) = 0
+        OR n.ID_COMPANY IN UNNEST(@company_ids)
+      )
+
+      AND (
+        ARRAY_LENGTH(@topic_ids) = 0
+        OR EXISTS (
+          SELECT 1
+          FROM `{TABLE_NEWS_TOPIC}` nt
+          WHERE nt.ID_NEWS = n.ID_NEWS
+          AND nt.ID_TOPIC IN UNNEST(@topic_ids)
+        )
+      )
+
+      AND (
+        ARRAY_LENGTH(@solution_ids) = 0
+        OR EXISTS (
+          SELECT 1
+          FROM `{TABLE_NEWS_SOLUTION}` ns
+          WHERE ns.ID_NEWS = n.ID_NEWS
+          AND ns.ID_SOLUTION IN UNNEST(@solution_ids)
+        )
+      )
+    ),
+
+    base_content AS (
 
       SELECT
         c.ID_CONTENT as id,
@@ -80,84 +116,62 @@ def get_feed_items(
         NULL as ID_COMPANY
       FROM `{TABLE_CONTENT}` c
       WHERE c.STATUS = 'PUBLISHED'
+
+      AND (@query IS NULL OR SEARCH(c, @query))
+
+      AND (
+        ARRAY_LENGTH(@company_ids) = 0
+        OR EXISTS (
+          SELECT 1
+          FROM `{TABLE_CONTENT_COMPANY}` cc
+          WHERE cc.ID_CONTENT = c.ID_CONTENT
+          AND cc.ID_COMPANY IN UNNEST(@company_ids)
+        )
+      )
+
+      AND (
+        ARRAY_LENGTH(@topic_ids) = 0
+        OR EXISTS (
+          SELECT 1
+          FROM `{TABLE_CONTENT_TOPIC}` ct
+          WHERE ct.ID_CONTENT = c.ID_CONTENT
+          AND ct.ID_TOPIC IN UNNEST(@topic_ids)
+        )
+      )
+
+      AND (
+        ARRAY_LENGTH(@solution_ids) = 0
+        OR EXISTS (
+          SELECT 1
+          FROM `{TABLE_CONTENT_SOLUTION}` cs
+          WHERE cs.ID_CONTENT = c.ID_CONTENT
+          AND cs.ID_SOLUTION IN UNNEST(@solution_ids)
+        )
+      )
     )
 
     SELECT *
-    FROM base
-    WHERE 1=1
-
-    -- QUERY
-    AND (
-      @query IS NULL
-      OR LOWER(TITLE) LIKE CONCAT('%', LOWER(@query), '%')
-      OR LOWER(EXCERPT) LIKE CONCAT('%', LOWER(@query), '%')
+    FROM (
+      SELECT * FROM base_news
+      UNION ALL
+      SELECT * FROM base_content
     )
-
-    -- NEWS TYPE
-    AND (
-      type != 'news'
-      OR ARRAY_LENGTH(@news_types) = 0
-      OR NEWS_TYPE IN UNNEST(@news_types)
-    )
-
-    -- COMPANY
-    AND (
-      ARRAY_LENGTH(@company_ids) = 0
-      OR ID_COMPANY IN UNNEST(@company_ids)
-      OR id IN (
-        SELECT ID_CONTENT
-        FROM `{TABLE_CONTENT_COMPANY}`
-        WHERE ID_COMPANY IN UNNEST(@company_ids)
-      )
-    )
-
-    -- TOPIC
-    AND (
-      ARRAY_LENGTH(@topic_ids) = 0
-      OR id IN (
-        SELECT ID_NEWS
-        FROM `{TABLE_NEWS_TOPIC}`
-        WHERE ID_TOPIC IN UNNEST(@topic_ids)
-      )
-      OR id IN (
-        SELECT ID_CONTENT
-        FROM `{TABLE_CONTENT_TOPIC}`
-        WHERE ID_TOPIC IN UNNEST(@topic_ids)
-      )
-    )
-
-    -- SOLUTION
-    AND (
-      ARRAY_LENGTH(@solution_ids) = 0
-      OR id IN (
-        SELECT ID_NEWS
-        FROM `{TABLE_NEWS_SOLUTION}`
-        WHERE ID_SOLUTION IN UNNEST(@solution_ids)
-      )
-      OR id IN (
-        SELECT ID_CONTENT
-        FROM `{TABLE_CONTENT_SOLUTION}`
-        WHERE ID_SOLUTION IN UNNEST(@solution_ids)
-      )
-    )
-
     ORDER BY PUBLISHED_AT DESC
     LIMIT @limit
     OFFSET @offset
     """
 
-    rows = query_bq(
-        sql,
-        params={
-            "query": query,
-            "topic_ids": topic_ids,
-            "company_ids": company_ids,
-            "solution_ids": solution_ids,
-            "news_types": news_types,
-            "limit": limit,
-            "offset": offset,
-        }
-    )
+    params = {
+        "query": query if query else None,
+        "topic_ids": topic_ids,
+        "company_ids": company_ids,
+        "solution_ids": solution_ids,
+        "news_types": news_types,
+        "limit": limit,
+        "offset": offset,
+    }
+
+    rows = query_bq(sql, params=params)
 
     items = []
     for r in rows:
@@ -178,7 +192,7 @@ def get_feed_items(
 
 
 # ============================================================
-# META (FILTRES)
+# META
 # ============================================================
 
 def get_feed_meta() -> Dict:
@@ -187,9 +201,6 @@ def get_feed_meta() -> Dict:
     SELECT *
     FROM (
 
-        -- ============================
-        -- TOPICS
-        -- ============================
         SELECT
             'topic' AS type,
             ID_TOPIC AS id,
@@ -199,9 +210,6 @@ def get_feed_meta() -> Dict:
 
         UNION ALL
 
-        -- ============================
-        -- COMPANIES
-        -- ============================
         SELECT
             'company' AS type,
             ID_COMPANY AS id,
@@ -211,9 +219,6 @@ def get_feed_meta() -> Dict:
 
         UNION ALL
 
-        -- ============================
-        -- SOLUTIONS
-        -- ============================
         SELECT
             'solution' AS type,
             ID_SOLUTION AS id,
@@ -223,9 +228,6 @@ def get_feed_meta() -> Dict:
 
         UNION ALL
 
-        -- ============================
-        -- NEWS TYPES
-        -- ============================
         SELECT
             'news_type' AS type,
             NEWS_TYPE AS id,
