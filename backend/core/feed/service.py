@@ -184,41 +184,59 @@ def get_feed_items(
 def get_feed_meta() -> Dict:
 
     sql = f"""
-    SELECT
-        'topic' AS type,
-        ID_TOPIC AS id,
-        LABEL AS label,
-        0 AS count
-    FROM `{TABLE_TOPIC}`
+    SELECT *
+    FROM (
 
-    UNION ALL
+        -- ============================
+        -- TOPICS
+        -- ============================
+        SELECT
+            'topic' AS type,
+            ID_TOPIC AS id,
+            LABEL AS label,
+            0 AS count
+        FROM `{TABLE_TOPIC}`
 
-    SELECT
-        'company' AS type,
-        ID_COMPANY AS id,
-        NAME AS label,
-        0 AS count
-    FROM `{TABLE_COMPANY}`
+        UNION ALL
 
-    UNION ALL
+        -- ============================
+        -- COMPANIES
+        -- ============================
+        SELECT
+            'company' AS type,
+            ID_COMPANY AS id,
+            NAME AS label,
+            0 AS count
+        FROM `{TABLE_COMPANY}`
 
-    SELECT
-        'solution' AS type,
-        ID_SOLUTION AS id,
-        NAME AS label,
-        0 AS count
-    FROM `{TABLE_SOLUTION}`
+        UNION ALL
 
-    UNION ALL
+        -- ============================
+        -- SOLUTIONS
+        -- ============================
+        SELECT
+            'solution' AS type,
+            ID_SOLUTION AS id,
+            NAME AS label,
+            0 AS count
+        FROM `{TABLE_SOLUTION}`
 
-    SELECT
-        'news_type' AS type,
-        NEWS_TYPE AS id,
-        NEWS_TYPE AS label,
-        COUNT(*) AS count
-    FROM `{TABLE_NEWS}`
-    WHERE STATUS = 'PUBLISHED'
-    GROUP BY NEWS_TYPE
+        UNION ALL
+
+        -- ============================
+        -- NEWS TYPES
+        -- ============================
+        SELECT
+            'news_type' AS type,
+            NEWS_TYPE AS id,
+            NEWS_TYPE AS label,
+            COUNT(*) AS count
+        FROM `{TABLE_NEWS}`
+        WHERE STATUS = 'PUBLISHED'
+        GROUP BY NEWS_TYPE
+
+    )
+    ORDER BY type, label
     """
 
     rows = query_bq(sql)
@@ -231,15 +249,22 @@ def get_feed_meta() -> Dict:
     }
 
     for r in rows:
-        t = r["type"]
+        item = {
+            "id": r["id"],
+            "label": r["label"],
+            "count": r["count"],
+        }
 
-        if t == "topic":
-            result["topics"].append(r)
-        elif t == "company":
-            result["companies"].append(r)
-        elif t == "solution":
-            result["solutions"].append(r)
-        elif t == "news_type":
-            result["news_types"].append(r)
+        if r["type"] == "topic":
+            result["topics"].append(item)
+
+        elif r["type"] == "company":
+            result["companies"].append(item)
+
+        elif r["type"] == "solution":
+            result["solutions"].append(item)
+
+        elif r["type"] == "news_type":
+            result["news_types"].append(item)
 
     return result
