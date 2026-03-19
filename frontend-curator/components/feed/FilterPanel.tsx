@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from "react";
 
+/* ========================================================= */
+
 type Item = {
   id: string;
   label: string;
@@ -15,6 +17,8 @@ type Props = {
   onChange: (ids: string[]) => void;
 };
 
+/* ========================================================= */
+
 export default function FilterPanel({
   title,
   items,
@@ -24,7 +28,7 @@ export default function FilterPanel({
   const [search, setSearch] = useState("");
 
   /* =========================================================
-     FILTER + SORT (ALPHABETIQUE)
+     FILTER + SORT (ALPHABETIQUE + SAFE)
   ========================================================= */
 
   const filtered = useMemo(() => {
@@ -32,7 +36,7 @@ export default function FilterPanel({
       .filter((i) =>
         i.label.toLowerCase().includes(search.toLowerCase())
       )
-      .sort((a, b) => a.label.localeCompare(b.label)); // ✅ FIX
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [items, search]);
 
   /* =========================================================
@@ -48,16 +52,33 @@ export default function FilterPanel({
   };
 
   /* =========================================================
+     ACTIONS
+  ========================================================= */
+
+  const handleClear = () => {
+    onChange([]);
+  };
+
+  const handleSelectAll = () => {
+    onChange(filtered.map((i) => i.id));
+  };
+
+  /* =========================================================
      RENDER
   ========================================================= */
 
   return (
     <div className="border rounded-xl p-3 bg-white">
+
+      {/* TITLE */}
       <div className="font-semibold mb-2">{title}</div>
 
       {/* SEARCH */}
       <input
-        className="w-full border px-2 py-1 mb-2 text-sm rounded"
+        className="
+          w-full border px-2 py-1 mb-2 text-sm rounded
+          focus:outline-none focus:ring-2 focus:ring-black/10
+        "
         placeholder="Search..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
@@ -65,12 +86,16 @@ export default function FilterPanel({
 
       {/* ACTIONS */}
       <div className="flex justify-between mb-2 text-xs text-gray-500">
-        <button onClick={() => onChange([])}>
+        <button
+          onClick={handleClear}
+          className="hover:text-black"
+        >
           Clear
         </button>
 
         <button
-          onClick={() => onChange(filtered.map((i) => i.id))}
+          onClick={handleSelectAll}
+          className="hover:text-black"
         >
           Select all
         </button>
@@ -85,8 +110,12 @@ export default function FilterPanel({
             <label
               key={item.id}
               className={`
-                flex justify-between items-center cursor-pointer text-sm px-2 py-1 rounded
-                ${isActive ? "bg-black text-white" : "hover:bg-gray-100"}
+                flex justify-between items-center cursor-pointer text-sm px-2 py-1 rounded transition
+                ${
+                  isActive
+                    ? "bg-black text-white"
+                    : "hover:bg-gray-100"
+                }
               `}
             >
               <div className="flex items-center gap-2">
@@ -98,15 +127,15 @@ export default function FilterPanel({
                 {item.label}
               </div>
 
-              {item.count > 0 && (
-                <span className="text-xs opacity-60">
-                  {item.count}
-                </span>
-              )}
+              {/* ✅ toujours afficher count (cohérence UX) */}
+              <span className="text-xs opacity-60">
+                {item.count}
+              </span>
             </label>
           );
         })}
       </div>
+
     </div>
   );
 }
