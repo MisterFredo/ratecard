@@ -14,17 +14,24 @@ export default function FeedGrid({
   isLoading = false,
   onSelectItem,
 }: Props) {
-
   if (isLoading) {
-    return <div className="text-sm text-gray-400">Chargement…</div>;
+    return (
+      <div className="text-sm text-gray-400">
+        Chargement…
+      </div>
+    );
   }
 
   if (!items.length) {
-    return <div className="text-sm text-gray-500 italic">Aucun résultat</div>;
+    return (
+      <div className="text-sm text-gray-500 italic">
+        Aucun résultat
+      </div>
+    );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="space-y-6">
       {items.map((item) => (
         <FeedCard
           key={`${item.type}-${item.id}`}
