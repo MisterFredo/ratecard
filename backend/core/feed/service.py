@@ -27,7 +27,6 @@ def list_feed(limit: int = 20, offset: int = 0) -> Dict:
             TITLE,
             EXCERPT,
             SIGNAL_ANALYTIQUE as signal,
-            CONCEPT,
             PUBLISHED_AT
         FROM {TABLE_CONTENT}
         WHERE
@@ -51,7 +50,6 @@ def list_feed(limit: int = 20, offset: int = 0) -> Dict:
             n.TITLE,
             n.EXCERPT,
             NULL as signal,
-            NULL as concept,
             n.PUBLISHED_AT,
             c.NAME as company_name
         FROM {TABLE_NEWS} n
@@ -78,7 +76,6 @@ def list_feed(limit: int = 20, offset: int = 0) -> Dict:
             "title": r["TITLE"],
             "excerpt": r.get("EXCERPT"),
             "signal": r.get("signal"),
-            "concept": r.get("CONCEPT"),
             "published_at": r["PUBLISHED_AT"],
         })
 
