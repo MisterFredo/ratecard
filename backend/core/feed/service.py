@@ -4,6 +4,7 @@ from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 
 
+
 TABLE_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS"
 TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
 
@@ -37,6 +38,8 @@ def clean_array(value):
 
     return [value]
 
+def safe_array(arr):
+    return arr if arr else []
 
 
 def get_feed_items(
