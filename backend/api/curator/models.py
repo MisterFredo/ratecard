@@ -1,19 +1,22 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime
 
 
 class FeedItem(BaseModel):
     id: str
+    type: str  # "news" | "analysis"
     title: str
     excerpt: Optional[str]
     signal: Optional[str]
     concept: Optional[str]
-    published_at: datetime
+    published_at: Optional[str]
+
+    company: Optional[str] = None
 
 
 class FeedResponse(BaseModel):
     items: List[FeedItem]
+    total: int
 
 
 class ContentDetail(BaseModel):
@@ -26,8 +29,8 @@ class ContentDetail(BaseModel):
     chiffres: List[str]
     citations: List[str]
     acteurs_cites: List[str]
-    published_at: datetime
+    published_at: Optional[str]
 
-    topics: List[dict]
-    companies: List[dict]
-    solutions: List[dict]
+    topics: List[dict] = []
+    companies: List[dict] = []
+    solutions: List[dict] = []
