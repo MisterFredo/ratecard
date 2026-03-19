@@ -28,11 +28,11 @@ def get_feed_items(
     offset: int = 0,
 ) -> Dict:
 
-    topic_ids = topic_ids or []
-    company_ids = company_ids or []
-    solution_ids = solution_ids or []
-    types = types or []
-    news_types = news_types or []
+    types = types or None
+    news_types = news_types or None
+    topic_ids = topic_ids or None
+    company_ids = company_ids or None
+    solution_ids = solution_ids or None
 
     sql = f"""
     WITH unified AS (
