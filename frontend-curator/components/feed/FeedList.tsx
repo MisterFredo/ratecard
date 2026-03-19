@@ -18,8 +18,23 @@ export default function FeedList({
   onLoadMore,
   onSelectItem,
 }: Props) {
+
+  function handleLoadMore() {
+    if (loading) return; // 🔥 sécurité
+    onLoadMore();
+  }
+
   return (
     <div className="space-y-4">
+
+      {/* ============================
+         EMPTY STATE
+      ============================ */}
+      {!loading && items.length === 0 && (
+        <div className="text-center text-sm text-gray-400 py-10">
+          Aucun résultat
+        </div>
+      )}
 
       {/* ============================
          ITEMS
@@ -35,10 +50,10 @@ export default function FeedList({
       {/* ============================
          LOAD MORE
       ============================ */}
-      {hasMore && (
+      {hasMore && !loading && items.length > 0 && (
         <div className="flex justify-center pt-4">
           <button
-            onClick={onLoadMore}
+            onClick={handleLoadMore}
             className="text-sm text-gray-500 hover:text-black transition"
           >
             Charger plus
@@ -46,8 +61,11 @@ export default function FeedList({
         </div>
       )}
 
+      {/* ============================
+         LOADING
+      ============================ */}
       {loading && (
-        <div className="text-center text-sm text-gray-400">
+        <div className="text-center text-sm text-gray-400 py-4">
           Chargement…
         </div>
       )}
