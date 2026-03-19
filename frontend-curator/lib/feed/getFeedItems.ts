@@ -1,16 +1,3 @@
-import { api } from "@/lib/api";
-import type { FeedItem } from "@/types/home";
-
-type Params = {
-  filters: {
-    query?: string;
-    badge?: string;
-    contentType?: "all" | "analysis" | "news";
-  };
-  page: number;
-  pageSize: number;
-};
-
 export async function getFeedItems({
   page,
   pageSize,
