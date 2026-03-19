@@ -37,9 +37,7 @@ def clean_array(value):
 
     return [value]
 
-# ============================================================
-# FEED CURATOR (MOTEUR PRINCIPAL)
-# ============================================================
+
 
 def get_feed_items(
     query: Optional[str] = None,
@@ -52,24 +50,15 @@ def get_feed_items(
     offset: int = 0,
 ) -> Dict:
 
-    # 🔒 NORMALISATION
+    # 🔒 NORMALISATION (ARRAY UNIQUEMENT)
     topic_ids = clean_array(topic_ids)
     company_ids = clean_array(company_ids)
     solution_ids = clean_array(solution_ids)
     types = clean_array(types)
     news_types = clean_array(news_types)
 
-    # 🔒 ASSERT (anti bugs futurs)
-    assert query is None or isinstance(query, str)
-    assert topic_ids is None or isinstance(topic_ids, list)
-    assert company_ids is None or isinstance(company_ids, list)
-    assert solution_ids is None or isinstance(solution_ids, list)
-    assert types is None or isinstance(types, list)
-    assert news_types is None or isinstance(news_types, list)
-
     sql = f"""
-    SELECT *
-    FROM (
+    WITH base AS (
 
       SELECT
         n.ID_NEWS as id,
@@ -94,9 +83,10 @@ def get_feed_items(
         NULL as ID_COMPANY
       FROM `{TABLE_CONTENT}` c
       WHERE c.STATUS = 'PUBLISHED'
-
     )
 
+    SELECT *
+    FROM base
     WHERE 1=1
 
     -- QUERY
@@ -108,20 +98,20 @@ def get_feed_items(
 
     -- TYPE
     AND (
-      @types IS NULL
+      ARRAY_LENGTH(@types) = 0
       OR type IN UNNEST(@types)
     )
 
     -- NEWS TYPE
     AND (
       type != 'news'
-      OR @news_types IS NULL
+      OR ARRAY_LENGTH(@news_types) = 0
       OR NEWS_TYPE IN UNNEST(@news_types)
     )
 
     -- COMPANY
     AND (
-      @company_ids IS NULL
+      ARRAY_LENGTH(@company_ids) = 0
       OR ID_COMPANY IN UNNEST(@company_ids)
       OR id IN (
         SELECT ID_CONTENT
@@ -132,7 +122,7 @@ def get_feed_items(
 
     -- TOPIC
     AND (
-      @topic_ids IS NULL
+      ARRAY_LENGTH(@topic_ids) = 0
       OR id IN (
         SELECT ID_NEWS
         FROM `{TABLE_NEWS_TOPIC}`
@@ -147,7 +137,7 @@ def get_feed_items(
 
     -- SOLUTION
     AND (
-      @solution_ids IS NULL
+      ARRAY_LENGTH(@solution_ids) = 0
       OR id IN (
         SELECT ID_NEWS
         FROM `{TABLE_NEWS_SOLUTION}`
@@ -195,7 +185,6 @@ def get_feed_items(
         "items": items,
         "count": len(items),
     }
-
 # ============================================================
 # META (FILTRES)
 # ============================================================
@@ -207,15 +196,15 @@ def get_feed_meta() -> Dict:
     -- TOPICS
     -- ============================
     SELECT
-        'topic' as type,
-        t.ID_TOPIC as id,
-        t.LABEL as label,
-        COUNT(*) as count
+        'topic' AS type,
+        t.ID_TOPIC AS id,
+        t.LABEL AS label,
+        COUNT(*) AS count
     FROM `{TABLE_TOPIC}` t
     LEFT JOIN `{TABLE_CONTENT_TOPIC}` ct ON t.ID_TOPIC = ct.ID_TOPIC
     LEFT JOIN `{TABLE_NEWS_TOPIC}` nt ON t.ID_TOPIC = nt.ID_TOPIC
     WHERE ct.ID_CONTENT IS NOT NULL OR nt.ID_NEWS IS NOT NULL
-    GROUP BY id, label
+    GROUP BY t.ID_TOPIC, t.LABEL
 
     UNION ALL
 
@@ -223,15 +212,15 @@ def get_feed_meta() -> Dict:
     -- COMPANIES
     -- ============================
     SELECT
-        'company' as type,
-        c.ID_COMPANY as id,
-        c.NAME as label,
-        COUNT(*) as count
+        'company' AS type,
+        c.ID_COMPANY AS id,
+        c.NAME AS label,
+        COUNT(*) AS count
     FROM `{TABLE_COMPANY}` c
     LEFT JOIN `{TABLE_NEWS}` n ON c.ID_COMPANY = n.ID_COMPANY
     LEFT JOIN `{TABLE_CONTENT_COMPANY}` cc ON c.ID_COMPANY = cc.ID_COMPANY
     WHERE n.ID_NEWS IS NOT NULL OR cc.ID_CONTENT IS NOT NULL
-    GROUP BY id, label
+    GROUP BY c.ID_COMPANY, c.NAME
 
     UNION ALL
 
@@ -239,15 +228,15 @@ def get_feed_meta() -> Dict:
     -- SOLUTIONS
     -- ============================
     SELECT
-        'solution' as type,
-        s.ID_SOLUTION as id,
-        s.NAME as label,
-        COUNT(*) as count
+        'solution' AS type,
+        s.ID_SOLUTION AS id,
+        s.NAME AS label,
+        COUNT(*) AS count
     FROM `{TABLE_SOLUTION}` s
     LEFT JOIN `{TABLE_CONTENT_SOLUTION}` cs ON s.ID_SOLUTION = cs.ID_SOLUTION
     LEFT JOIN `{TABLE_NEWS_SOLUTION}` ns ON s.ID_SOLUTION = ns.ID_SOLUTION
     WHERE cs.ID_CONTENT IS NOT NULL OR ns.ID_NEWS IS NOT NULL
-    GROUP BY id, label
+    GROUP BY s.ID_SOLUTION, s.NAME
 
     UNION ALL
 
@@ -255,10 +244,10 @@ def get_feed_meta() -> Dict:
     -- NEWS TYPES
     -- ============================
     SELECT
-        'news_type' as type,
-        NEWS_TYPE as id,
-        NEWS_TYPE as label,
-        COUNT(*) as count
+        'news_type' AS type,
+        NEWS_TYPE AS id,
+        NEWS_TYPE AS label,
+        COUNT(*) AS count
     FROM `{TABLE_NEWS}`
     WHERE STATUS = 'PUBLISHED'
     GROUP BY NEWS_TYPE
@@ -266,7 +255,6 @@ def get_feed_meta() -> Dict:
 
     rows = query_bq(sql)
 
-    # regroupement par type
     result = {
         "topics": [],
         "companies": [],
@@ -275,13 +263,34 @@ def get_feed_meta() -> Dict:
     }
 
     for r in rows:
-        if r["type"] == "topic":
-            result["topics"].append(r)
-        elif r["type"] == "company":
-            result["companies"].append(r)
-        elif r["type"] == "solution":
-            result["solutions"].append(r)
-        elif r["type"] == "news_type":
-            result["news_types"].append(r)
+        t = r["type"]  # pas de lower, on garde exact BQ
+
+        if t == "topic":
+            result["topics"].append({
+                "id": r["id"],
+                "label": r["label"],
+                "count": r["count"],
+            })
+
+        elif t == "company":
+            result["companies"].append({
+                "id": r["id"],
+                "label": r["label"],
+                "count": r["count"],
+            })
+
+        elif t == "solution":
+            result["solutions"].append({
+                "id": r["id"],
+                "label": r["label"],
+                "count": r["count"],
+            })
+
+        elif t == "news_type":
+            result["news_types"].append({
+                "id": r["id"],
+                "label": r["label"],
+                "count": r["count"],
+            })
 
     return result
