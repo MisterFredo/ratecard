@@ -35,7 +35,6 @@ export default function FeedPage() {
       setLoading(true);
 
       const res = await getFeedItems({
-        filters: {}, // ✅ FIX IMPORTANT
         page,
         pageSize,
       });
