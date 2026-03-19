@@ -52,6 +52,12 @@ export default function NewsDrawer({ id, onClose }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
   /* =========================================================
+     CONTEXT (RATECARD vs CURATOR)
+  ========================================================= */
+
+  const isCurator = pathname.startsWith("/feed");
+
+  /* =========================================================
      CLOSE
   ========================================================= */
 
@@ -80,6 +86,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
       news_id: data.id_news,
       company_id: data.company.id_company,
       company_name: data.company.name,
+      source: isCurator ? "curator" : "ratecard",
     });
 
     openLeftDrawer("member", data.company.id_company, "silent");
@@ -92,13 +99,19 @@ export default function NewsDrawer({ id, onClose }: Props) {
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get(`/public/news/${id}`);
+        const res = await api.get(
+          isCurator
+            ? `/curator/news/${id}`
+            : `/public/news/${id}`
+        );
+
         setData(res);
 
         trackEvent("view_news_drawer", {
           news_id: res.id_news,
           news_title: res.title,
           company_name: res.company?.name || null,
+          source: isCurator ? "curator" : "ratecard",
         });
 
         requestAnimationFrame(() => setIsOpen(true));
@@ -108,7 +121,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
     }
 
     load();
-  }, [id]);
+  }, [id, isCurator]);
 
   if (!data) return null;
 
@@ -170,15 +183,15 @@ export default function NewsDrawer({ id, onClose }: Props) {
         {/* HERO */}
         {visualSrc && (
           <div className="w-full bg-white flex items-center justify-center overflow-hidden border-b border-gray-200">
-             <div className="w-full max-w-[680px] h-[260px] flex items-center justify-center">
-               <img
-                 src={visualSrc}
-                 alt={data.title}
-                 className="max-h-[85%] max-w-[85%] object-contain"
-               />
-             </div>
-           </div>
-)}
+            <div className="w-full max-w-[680px] h-[260px] flex items-center justify-center">
+              <img
+                src={visualSrc}
+                alt={data.title}
+                className="max-h-[85%] max-w-[85%] object-contain"
+              />
+            </div>
+          </div>
+        )}
 
         {/* CONTENT */}
         <div className="px-5 py-6 space-y-8">
@@ -208,7 +221,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
           )}
 
           {/* =====================================================
-              CTA NEWSLETTER
+              CTA NEWSLETTER (désactivable plus tard côté Curator si besoin)
           ===================================================== */}
           <div className="border border-gray-200 rounded-xl bg-gray-50 p-6 text-center space-y-3">
             <p className="text-xs uppercase tracking-wide text-gray-500">
@@ -223,7 +236,7 @@ export default function NewsDrawer({ id, onClose }: Props) {
             <button
               onClick={() => {
                 trackEvent("newsletter_cta_click", {
-                  source: "news_drawer",
+                  source: isCurator ? "curator" : "ratecard",
                   news_id: data.id_news,
                   news_title: data.title,
                 });
