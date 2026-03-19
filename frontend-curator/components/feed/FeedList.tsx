@@ -3,13 +3,20 @@
 import FeedRow from "@/components/feed/FeedRow";
 import type { FeedItem } from "@/types/feed";
 
+/* ========================================================= */
+
 type Props = {
   items: FeedItem[];
   loading: boolean;
   hasMore: boolean;
   onLoadMore: () => void;
   onSelectItem: (item: FeedItem) => void;
+
+  // 🔵 optionnel → pour affichage (News / Analyses)
+  title?: string;
 };
+
+/* ========================================================= */
 
 export default function FeedList({
   items,
@@ -17,15 +24,29 @@ export default function FeedList({
   hasMore,
   onLoadMore,
   onSelectItem,
+  title,
 }: Props) {
 
   function handleLoadMore() {
-    if (loading) return; // 🔥 sécurité
+    if (loading) return;
     onLoadMore();
   }
 
+  /* =========================================================
+     RENDER
+  ========================================================= */
+
   return (
     <div className="space-y-4">
+
+      {/* ============================
+         TITLE (OPTIONAL)
+      ============================ */}
+      {title && (
+        <div className="text-sm font-semibold text-gray-500">
+          {title}
+        </div>
+      )}
 
       {/* ============================
          EMPTY STATE
@@ -69,6 +90,7 @@ export default function FeedList({
           Chargement…
         </div>
       )}
+
     </div>
   );
 }
