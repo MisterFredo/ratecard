@@ -23,7 +23,7 @@ export default function FeedPage() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
-  // 🔥 état des filtres (aligné avec FeedQuery)
+  // 🔥 état central (clean)
   const [params, setParams] = useState({
     query: "",
     topics: [] as string[],
@@ -37,7 +37,7 @@ export default function FeedPage() {
     useState<FeedItem | null>(null);
 
   /* ============================
-     LOAD (reset)
+     LOAD
   ============================ */
 
   async function load(reset = false) {
@@ -61,26 +61,59 @@ export default function FeedPage() {
       setOffset((prev) => prev + LIMIT);
     }
 
-    if (res.items.length < LIMIT) {
-      setHasMore(false);
-    } else {
-      setHasMore(true);
-    }
+    setHasMore(res.items.length === LIMIT);
 
     setLoading(false);
   }
 
   /* ============================
-     RESET ON FILTER CHANGE
+     AUTO RELOAD (filters)
   ============================ */
 
   useEffect(() => {
     setItems([]);
     setOffset(0);
     setHasMore(true);
+
     load(true);
     // eslint-disable-next-line
   }, [JSON.stringify(params)]);
+
+  /* ============================
+     HANDLERS HEADER
+  ============================ */
+
+  function handleSearch(query: string) {
+    setParams((prev) => ({
+      ...prev,
+      query,
+    }));
+  }
+
+  function handleTypes(types: string[]) {
+    setParams((prev) => ({
+      ...prev,
+      types,
+    }));
+  }
+
+  function handleNewsTypes(news_types: string[]) {
+    setParams((prev) => ({
+      ...prev,
+      news_types,
+    }));
+  }
+
+  function handleReset() {
+    setParams({
+      query: "",
+      topics: [],
+      companies: [],
+      solutions: [],
+      types: [],
+      news_types: [],
+    });
+  }
 
   /* ============================
      RENDER
@@ -90,15 +123,21 @@ export default function FeedPage() {
     <div className="space-y-8">
 
       {/* ============================
-         HEADER (search + filtres)
+         HEADER
       ============================ */}
       <FeedHeader
-        params={params}
-        onChange={setParams}
+        query={params.query}
+        setQuery={handleSearch}
+        types={params.types}
+        setTypes={handleTypes}
+        newsTypes={params.news_types}
+        setNewsTypes={handleNewsTypes}
+        onSearch={() => {}}
+        onReset={handleReset}
       />
 
       {/* ============================
-         FEED UNIFIÉ
+         FEED
       ============================ */}
       <FeedList
         items={items}
