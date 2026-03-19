@@ -30,7 +30,6 @@ def get_feed_route(
         topic_ids=topic_ids,
         company_ids=company_ids,
         solution_ids=solution_ids,
-        types=types,
         news_types=news_types,
         limit=limit,
         offset=offset,
