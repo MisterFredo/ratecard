@@ -19,166 +19,127 @@ TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
 TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
 
 
+# ============================================================
+# FEED CURATOR (MOTEUR PRINCIPAL)
+# ============================================================
 
 def get_feed_items(
     query: Optional[str] = None,
     topic_ids: Optional[List[str]] = None,
     company_ids: Optional[List[str]] = None,
     solution_ids: Optional[List[str]] = None,
-    types: Optional[List[str]] = None,         # ["news"], ["analysis"], ["news","analysis"]
-    news_types: Optional[List[str]] = None,    # ["PRODUCT", "CORPORATE", ...]
+    types: Optional[List[str]] = None,
+    news_types: Optional[List[str]] = None,
     limit: int = 20,
     offset: int = 0,
 ) -> Dict:
 
-    types = types or None
-    news_types = news_types or None
-    topic_ids = topic_ids or None
-    company_ids = company_ids or None
-    solution_ids = solution_ids or None
-
     sql = f"""
-    WITH unified AS (
+    WITH
 
-        -- ============================
-        -- NEWS
-        -- ============================
-        SELECT
-            n.ID_NEWS as id,
-            'news' as type,
-            n.TITLE,
-            n.EXCERPT,
-            n.PUBLISHED_AT,
-            n.ID_COMPANY,
-            c.NAME as company_name,
-            n.MEDIA_RECTANGLE_ID,
-            n.HAS_VISUAL,
-            n.NEWS_TYPE
-        FROM {TABLE_NEWS} n
-        LEFT JOIN {TABLE_COMPANY} c
-            ON n.ID_COMPANY = c.ID_COMPANY
-        WHERE
-            n.STATUS = 'PUBLISHED'
-            AND n.IS_ACTIVE = TRUE
+    params AS (
+      SELECT
+        @types AS types,
+        @news_types AS news_types,
+        @topic_ids AS topic_ids,
+        @company_ids AS company_ids,
+        @solution_ids AS solution_ids,
+        @query AS query
+    ),
 
-            -- TYPE FILTER (global)
-            AND (
-                ARRAY_LENGTH(@types) = 0
-                OR 'news' IN UNNEST(@types)
-            )
+    base AS (
 
-            -- SEARCH
-            AND (
-                @query IS NULL
-                OR SEARCH(n, @query)
-            )
+      SELECT
+        n.ID_NEWS as id,
+        'news' as type,
+        n.TITLE,
+        n.EXCERPT,
+        n.PUBLISHED_AT,
+        n.NEWS_TYPE,
+        n.ID_COMPANY
+      FROM `{TABLE_NEWS}` n
+      WHERE n.STATUS = 'PUBLISHED'
 
-            -- COMPANY FILTER
-            AND (
-                ARRAY_LENGTH(@company_ids) = 0
-                OR n.ID_COMPANY IN UNNEST(@company_ids)
-            )
+      UNION ALL
 
-            -- TOPIC FILTER
-            AND (
-                ARRAY_LENGTH(@topic_ids) = 0
-                OR EXISTS (
-                    SELECT 1
-                    FROM {TABLE_NEWS_TOPIC} nt
-                    WHERE nt.ID_NEWS = n.ID_NEWS
-                      AND nt.ID_TOPIC IN UNNEST(@topic_ids)
-                )
-            )
+      SELECT
+        c.ID_CONTENT as id,
+        'analysis' as type,
+        c.TITLE,
+        c.EXCERPT,
+        c.PUBLISHED_AT,
+        NULL as NEWS_TYPE,
+        NULL as ID_COMPANY
+      FROM `{TABLE_CONTENT}` c
+      WHERE c.STATUS = 'PUBLISHED'
+    ),
 
-            -- SOLUTION FILTER
-            AND (
-                ARRAY_LENGTH(@solution_ids) = 0
-                OR EXISTS (
-                    SELECT 1
-                    FROM {TABLE_NEWS_SOLUTION} ns
-                    WHERE ns.ID_NEWS = n.ID_NEWS
-                      AND ns.ID_SOLUTION IN UNNEST(@solution_ids)
-                )
-            )
+    filtered AS (
+      SELECT *
+      FROM base, params
+      WHERE
 
-            -- NEWS_TYPE FILTER
-            AND (
-                ARRAY_LENGTH(@news_types) = 0
-                OR n.NEWS_TYPE IN UNNEST(@news_types)
-            )
+        -- TYPE
+        (params.types IS NULL OR type IN UNNEST(params.types))
 
+        -- NEWS TYPE
+        AND (
+          type != 'news'
+          OR params.news_types IS NULL
+          OR NEWS_TYPE IN UNNEST(params.news_types)
+        )
 
-        UNION ALL
+        -- QUERY
+        AND (
+          params.query IS NULL
+          OR LOWER(TITLE) LIKE '%' || LOWER(params.query) || '%'
+          OR LOWER(EXCERPT) LIKE '%' || LOWER(params.query) || '%'
+        )
 
+        -- COMPANY
+        AND (
+          params.company_ids IS NULL
+          OR ID_COMPANY IN UNNEST(params.company_ids)
+          OR id IN (
+            SELECT ID_CONTENT
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY`
+            WHERE ID_COMPANY IN UNNEST(params.company_ids)
+          )
+        )
 
-        -- ============================
-        -- ANALYSES
-        -- ============================
-        SELECT
-            c.ID_CONTENT as id,
-            'analysis' as type,
-            c.TITLE,
-            c.EXCERPT,
-            c.PUBLISHED_AT,
-            NULL as ID_COMPANY,
-            NULL as company_name,
-            NULL as MEDIA_RECTANGLE_ID,
-            FALSE as HAS_VISUAL,
-            NULL as NEWS_TYPE
-        FROM {TABLE_CONTENT} c
-        WHERE
-            c.STATUS = 'PUBLISHED'
-            AND c.IS_ACTIVE = TRUE
+        -- TOPIC
+        AND (
+          params.topic_ids IS NULL
+          OR id IN (
+            SELECT ID_NEWS
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_TOPIC`
+            WHERE ID_TOPIC IN UNNEST(params.topic_ids)
+          )
+          OR id IN (
+            SELECT ID_CONTENT
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC`
+            WHERE ID_TOPIC IN UNNEST(params.topic_ids)
+          )
+        )
 
-            -- TYPE FILTER
-            AND (
-                ARRAY_LENGTH(@types) = 0
-                OR 'analysis' IN UNNEST(@types)
-            )
-
-            -- SEARCH
-            AND (
-                @query IS NULL
-                OR SEARCH(c, @query)
-            )
-
-            -- COMPANY FILTER
-            AND (
-                ARRAY_LENGTH(@company_ids) = 0
-                OR EXISTS (
-                    SELECT 1
-                    FROM {TABLE_CONTENT_COMPANY} cc
-                    WHERE cc.ID_CONTENT = c.ID_CONTENT
-                      AND cc.ID_COMPANY IN UNNEST(@company_ids)
-                )
-            )
-
-            -- TOPIC FILTER
-            AND (
-                ARRAY_LENGTH(@topic_ids) = 0
-                OR EXISTS (
-                    SELECT 1
-                    FROM {TABLE_CONTENT_TOPIC} ct
-                    WHERE ct.ID_CONTENT = c.ID_CONTENT
-                      AND ct.ID_TOPIC IN UNNEST(@topic_ids)
-                )
-            )
-
-            -- SOLUTION FILTER
-            AND (
-                ARRAY_LENGTH(@solution_ids) = 0
-                OR EXISTS (
-                    SELECT 1
-                    FROM {TABLE_CONTENT_SOLUTION} cs
-                    WHERE cs.ID_CONTENT = c.ID_CONTENT
-                      AND cs.ID_SOLUTION IN UNNEST(@solution_ids)
-                )
-            )
-
+        -- SOLUTION
+        AND (
+          params.solution_ids IS NULL
+          OR id IN (
+            SELECT ID_NEWS
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_SOLUTION`
+            WHERE ID_SOLUTION IN UNNEST(params.solution_ids)
+          )
+          OR id IN (
+            SELECT ID_CONTENT
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_SOLUTION`
+            WHERE ID_SOLUTION IN UNNEST(params.solution_ids)
+          )
+        )
     )
 
     SELECT *
-    FROM unified
+    FROM filtered
     ORDER BY PUBLISHED_AT DESC
     LIMIT @limit
     OFFSET @offset
@@ -186,7 +147,7 @@ def get_feed_items(
 
     rows = query_bq(
         sql,
-        {
+        params={
             "query": query,
             "topic_ids": topic_ids,
             "company_ids": company_ids,
@@ -198,24 +159,25 @@ def get_feed_items(
         },
     )
 
-    items = []
+    # ============================================================
+    # MAPPING FRONT
+    # ============================================================
 
+    items = []
     for r in rows:
         items.append({
             "id": r["id"],
             "type": r["type"],
-            "title": r["TITLE"],
+            "title": r.get("TITLE"),
             "excerpt": r.get("EXCERPT"),
-            "published_at": r["PUBLISHED_AT"],
-            "company": r.get("company_name"),
-            "has_visual": r.get("HAS_VISUAL"),
-            "media_id": r.get("MEDIA_RECTANGLE_ID"),
+            "published_at": r.get("PUBLISHED_AT"),
             "news_type": r.get("NEWS_TYPE"),
+            "company_id": r.get("ID_COMPANY"),
         })
 
     return {
         "items": items,
-        "count": len(items),
+        "total": len(items),  # simple pour l’instant
     }
 
 def get_feed_meta() -> Dict:
