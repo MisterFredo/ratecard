@@ -45,17 +45,24 @@ export default function FeedHeader({
      HELPERS
   ========================================================= */
 
-  function toggle(list: string[], set: (v: string[]) => void, value: string) {
-    if (list.includes(value)) {
-      set(list.filter((v) => v !== value));
-    } else {
-      set([...list, value]);
-    }
-  }
+  function toggle(
+    list: string[],
+    set: (v: string[]) => void,
+    value: string,
+    trigger?: () => void
+  ) {
+    let next;
 
-  function handleSearch() {
-    setQuery(input);
-    onSearch();
+    if (list.includes(value)) {
+      next = list.filter((v) => v !== value);
+    } else {
+      next = [...list, value];
+    }
+
+    set(next);
+
+    // 🔥 déclenche reload
+    if (trigger) trigger();
   }
 
   /* =========================================================
