@@ -41,12 +41,19 @@ export default function FeedHeader({
      HELPERS
   ========================================================= */
 
-  function toggle(list: string[], set: (v: string[]) => void, value: string) {
-    if (list.includes(value)) {
-      set(list.filter((v) => v !== value));
+  function toggle(value: string) {
+    let next: string[];
+
+    if (newsTypes.includes(value)) {
+      next = newsTypes.filter((v) => v !== value);
     } else {
-      set([...list, value]);
+      next = [...newsTypes, value];
     }
+
+    setNewsTypes(next);
+
+    // 🔥 TRIGGER RELOAD
+    onSearch();
   }
 
   function handleSearch() {
@@ -94,7 +101,7 @@ export default function FeedHeader({
       </div>
 
       {/* ============================
-         NEWS TYPES (dynamique BQ)
+         NEWS TYPES
       ============================ */}
       <FilterGroup label="News type">
         {newsTypeOptions.map((t) => (
@@ -102,7 +109,7 @@ export default function FeedHeader({
             key={t.id}
             label={`${t.label} (${t.count})`}
             active={newsTypes.includes(t.id)}
-            onClick={() => toggle(newsTypes, setNewsTypes, t.id)}
+            onClick={() => toggle(t.id)}
           />
         ))}
       </FilterGroup>
