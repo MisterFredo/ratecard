@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useDrawer } from "@/contexts/DrawerContext";
 
 import MyCuratorDashboard from "@/components/my-curator/MyCuratorDashboard";
 import PartnerSignalCard from "@/components/news/PartnerSignalCard";
