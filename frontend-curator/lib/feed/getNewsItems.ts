@@ -1,6 +1,14 @@
 import { api } from "@/lib/api";
 import type { FeedItem } from "@/types/feed";
 
+function cleanArray(arr?: string[]) {
+  if (!arr || arr.length === 0) return [];
+
+  return arr
+    .map((v) => String(v))
+    .filter((v) => v && v !== "undefined" && v !== "null");
+}
+
 type Params = {
   query?: string;
 
