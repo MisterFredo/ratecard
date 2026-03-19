@@ -1,4 +1,11 @@
-export async function getContentItems(params: Params): Promise<Response> {
+type FeedResponse = {
+  items: FeedItem[];
+  count: number;
+};
+
+export async function getContentItems(
+  params: Params
+): Promise<FeedResponse> {
   try {
     const query = new URLSearchParams();
 
@@ -20,12 +27,16 @@ export async function getContentItems(params: Params): Promise<Response> {
       excerpt: item.excerpt || null,
       published_at: item.published_at || null,
 
+      // 🔵 cohérent avec content
       company: null,
 
       has_visual: false,
       media_id: null,
 
       news_type: null,
+
+      // 🔥 BADGES (clé UI)
+      badges: item.badges || [],
     }));
 
     return {
