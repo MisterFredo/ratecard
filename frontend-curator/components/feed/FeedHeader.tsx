@@ -14,9 +14,6 @@ type Props = {
   query: string;
   setQuery: (v: string) => void;
 
-  types: string[];
-  setTypes: (v: string[]) => void;
-
   newsTypes: string[];
   setNewsTypes: (v: string[]) => void;
 
@@ -31,8 +28,6 @@ type Props = {
 export default function FeedHeader({
   query,
   setQuery,
-  types,
-  setTypes,
   newsTypes,
   setNewsTypes,
   newsTypeOptions,
@@ -55,8 +50,8 @@ export default function FeedHeader({
   }
 
   function handleSearch() {
-    setQuery(input);   // sync avec parent
-    onSearch();        // déclenche reload
+    setQuery(input);
+    onSearch();
   }
 
   /* =========================================================
@@ -97,20 +92,6 @@ export default function FeedHeader({
           Reset
         </button>
       </div>
-
-      {/* ============================
-         TYPES (global)
-      ============================ */}
-      <FilterGroup label="Type">
-        {["news", "analysis"].map((t) => (
-          <FilterChip
-            key={t}
-            label={t}
-            active={types.includes(t)}
-            onClick={() => toggle(types, setTypes, t)}
-          />
-        ))}
-      </FilterGroup>
 
       {/* ============================
          NEWS TYPES (dynamique BQ)
