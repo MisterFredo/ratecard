@@ -41,7 +41,8 @@ export async function getContentItems(
     cleanArray(params.company_ids).forEach((c) => query.append("company_ids", c));
     cleanArray(params.solution_ids).forEach((s) => query.append("solution_ids", s));
 
-    const res = await api.get(`/curator/content?${query.toString()}`);
+    // ✅ FIX ICI UNIQUEMENT
+    const res = await api.get(`/curator/contents?${query.toString()}`);
 
     const items: FeedItem[] = (res?.items || []).map((item: any) => ({
       id: item.id,
@@ -51,15 +52,11 @@ export async function getContentItems(
       excerpt: item.excerpt || null,
       published_at: item.published_at || null,
 
-      // 🔵 cohérent avec content
       company: null,
-
       has_visual: false,
       media_id: null,
-
       news_type: null,
 
-      // 🔥 BADGES (clé UI)
       badges: item.badges || [],
     }));
 
