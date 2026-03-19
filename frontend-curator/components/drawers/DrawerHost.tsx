@@ -2,7 +2,6 @@
 
 import { useDrawer } from "@/contexts/DrawerContext";
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
-import DashboardDrawer from "@/components/drawers/DashboardDrawer";
 import SourceDrawer from "@/components/drawers/SourceDrawer";
 
 /* =========================================================
