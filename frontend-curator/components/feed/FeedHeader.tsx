@@ -20,15 +20,6 @@ type Props = {
   newsTypes: string[];
   setNewsTypes: (v: string[]) => void;
 
-  topicIds: string[];
-  setTopicIds: (v: string[]) => void;
-
-  companyIds: string[];
-  setCompanyIds: (v: string[]) => void;
-
-  solutionIds: string[];
-  setSolutionIds: (v: string[]) => void;
-
   onSearch: () => void;
   onReset: () => void;
 };
