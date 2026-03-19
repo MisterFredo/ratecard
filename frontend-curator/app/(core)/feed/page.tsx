@@ -178,7 +178,7 @@ export default function FeedPage() {
 
         newsTypeOptions={meta.news_types || []}
 
-        onSearch={triggerSearch}
+        onSearch={() => setReloadKey((k) => k + 1)}
         onReset={handleReset}
       />
 
