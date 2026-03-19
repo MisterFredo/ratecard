@@ -7,23 +7,21 @@ export type FeedBadge = {
 
 export type FeedItem = {
   id: string;
-  type: "analysis" | "news";
+  type: "news" | "analysis";
 
   title: string;
   excerpt?: string | null;
-
-  // 🔥 meta
   published_at?: string | null;
 
-  // 🔥 news spécifique
+  // 🔵 news uniquement
   company?: string | null;
-  news_type?: string | null;
-
-  // 🔥 visuel (clé UX)
   has_visual?: boolean;
   media_id?: string | null;
+  news_type?: string | null;
 
-  // ⚠️ LEGACY (à supprimer plus tard)
-  signal?: string;
-  concept?: string;
+  // 🔥 NOUVEAU → badges unifiés
+  badges?: {
+    label: string;
+    type: "news_type" | "company" | "solution" | "topic";
+  }[];
 };
