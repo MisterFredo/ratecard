@@ -23,6 +23,25 @@ TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
 # FEED CURATOR (MOTEUR PRINCIPAL)
 # ============================================================
 
+def clean_array(v):
+    if not v:
+        return None
+    if isinstance(v, list):
+        return v
+    return [v]
+
+
+params = {
+    "query": query,
+    "topic_ids": clean_array(topic_ids),
+    "company_ids": clean_array(company_ids),
+    "solution_ids": clean_array(solution_ids),
+    "types": clean_array(types),
+    "news_types": clean_array(news_types),
+    "limit": limit,
+    "offset": offset,
+}
+
 def get_feed_items(
     query: Optional[str] = None,
     topic_ids: Optional[List[str]] = None,
