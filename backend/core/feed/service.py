@@ -13,8 +13,11 @@ TABLE_NEWS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_SOLUTION"
 TABLE_CONTENT_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC"
 TABLE_CONTENT_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_SOLUTION"
 TABLE_CONTENT_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY"
-
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
+
+TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
+TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
+
 
 
 def get_feed_items(
@@ -213,4 +216,80 @@ def get_feed_items(
     return {
         "items": items,
         "count": len(items),
+    }
+
+def get_feed_meta() -> Dict:
+
+    sql = f"""
+    -- ============================
+    -- NEWS TYPES
+    -- ============================
+    SELECT DISTINCT
+        'news_type' as type,
+        NEWS_TYPE as value,
+        NEWS_TYPE as label
+    FROM {TABLE_NEWS}
+    WHERE STATUS = 'PUBLISHED'
+      AND NEWS_TYPE IS NOT NULL
+
+    UNION ALL
+
+    -- ============================
+    -- COMPANIES (NEWS + CONTENT)
+    -- ============================
+    SELECT DISTINCT
+        'company' as type,
+        c.ID_COMPANY as value,
+        c.NAME as label
+    FROM {TABLE_COMPANY} c
+    WHERE c.ID_COMPANY IN (
+        SELECT ID_COMPANY FROM {TABLE_NEWS}
+        WHERE STATUS = 'PUBLISHED'
+
+        UNION DISTINCT
+
+        SELECT ID_COMPANY FROM {TABLE_CONTENT_COMPANY}
+    )
+
+    UNION ALL
+
+    -- ============================
+    -- TOPICS (NEWS + CONTENT)
+    -- ============================
+    SELECT DISTINCT
+        'topic' as type,
+        t.ID_TOPIC as value,
+        t.LABEL as label
+    FROM {TABLE_TOPIC} t
+    WHERE t.ID_TOPIC IN (
+        SELECT ID_TOPIC FROM {TABLE_NEWS_TOPIC}
+
+        UNION DISTINCT
+
+        SELECT ID_TOPIC FROM {TABLE_CONTENT_TOPIC}
+    )
+
+    UNION ALL
+
+    -- ============================
+    -- SOLUTIONS (NEWS + CONTENT)
+    -- ============================
+    SELECT DISTINCT
+        'solution' as type,
+        s.ID_SOLUTION as value,
+        s.NAME as label
+    FROM {TABLE_SOLUTION} s
+    WHERE s.ID_SOLUTION IN (
+        SELECT ID_SOLUTION FROM {TABLE_NEWS_SOLUTION}
+
+        UNION DISTINCT
+
+        SELECT ID_SOLUTION FROM {TABLE_CONTENT_SOLUTION}
+    )
+    """
+
+    rows = query_bq(sql)
+
+    return {
+        "items": rows
     }
