@@ -1,5 +1,6 @@
 "use client";
 
+import FeedRow from "@/components/feed/FeedRow";
 import type { FeedItem } from "@/types/feed";
 
 type Props = {
