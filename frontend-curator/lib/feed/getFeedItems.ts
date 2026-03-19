@@ -16,7 +16,6 @@ export async function getFeedItems({
   page,
   pageSize,
 }: Params): Promise<{ items: FeedItem[]; total: number }> {
-
   try {
     const query = new URLSearchParams();
 
@@ -28,39 +27,60 @@ export async function getFeedItems({
 
     const qs = query.toString();
 
-    const items: FeedItem[] = [];
+    let items: FeedItem[] = [];
 
     // ================================
-    // NEWS
+    // NEWS (fallback-safe)
     // ================================
     if (filters.contentType !== "analysis") {
-      const newsRes = await api.get(`/feed/news?${qs}`);
+      try {
+        const newsRes = await api.get(`/feed/news?${qs}`);
 
-      const newsItems: FeedItem[] = (newsRes?.items || []).map((n: any) => ({
-        id: n.id_news,
-        type: "news",
-        title: n.title,
-        excerpt: n.excerpt,
-        date: n.published_at,
-        badges: n.badges || [],
-      }));
+        console.log("🟡 RAW NEWS:", newsRes);
 
-      items.push(...newsItems);
+        const rawNews = newsRes?.items || newsRes || [];
+
+        const newsItems: FeedItem[] = rawNews.map((n: any) => ({
+          id: n.id_news || n.id || crypto.randomUUID(),
+          type: "news",
+          title: n.title || "No title",
+          excerpt: n.excerpt || n.summary || "",
+          date: n.published_at || n.date || null,
+          badges: n.badges || n.topics || [],
+        }));
+
+        items.push(...newsItems);
+      } catch (e) {
+        console.warn("⚠️ news fetch failed (non bloquant)");
+      }
     }
 
     // ================================
-    // ANALYSES
+    // ANALYSES (clé du sujet)
     // ================================
     if (filters.contentType !== "news") {
       const contentRes = await api.get(`/public/analysis/list?${qs}`);
 
-      const contentItems: FeedItem[] = (contentRes?.items || []).map((c: any) => ({
-        id: c.id, // ✅ CORRECT
+      console.log("🟢 RAW ANALYSIS:", contentRes);
+
+      // ⚠️ très important : on sécurise tous les formats possibles
+      const rawContent =
+        contentRes?.items ||
+        contentRes?.data ||
+        contentRes ||
+        [];
+
+      const contentItems: FeedItem[] = rawContent.map((c: any) => ({
+        id: c.id || c.id_content || crypto.randomUUID(),
         type: "analysis",
-        title: c.title,
-        excerpt: c.excerpt,
-        date: c.published_at,
-        badges: c.topics || [], // ⚠️ adaptation
+        title: c.title || "No title",
+        excerpt: c.excerpt || c.summary || c.chapo || "",
+        date: c.published_at || c.date || c.created_at || null,
+        badges:
+          c.badges ||
+          c.topics ||
+          c.topics_labels ||
+          [],
       }));
 
       items.push(...contentItems);
@@ -69,17 +89,16 @@ export async function getFeedItems({
     // ================================
     // SORT GLOBAL
     // ================================
-    items.sort(
-      (a, b) =>
-        new Date(b.date || 0).getTime() -
-        new Date(a.date || 0).getTime()
-    );
+    items.sort((a, b) => {
+      const da = new Date(a.date || 0).getTime();
+      const db = new Date(b.date || 0).getTime();
+      return db - da;
+    });
 
     return {
       items,
       total: items.length,
     };
-
   } catch (e) {
     console.error("❌ feed error", e);
     return { items: [], total: 0 };
