@@ -10,7 +10,8 @@ import NewsDrawer from "@/components/drawers/NewsDrawer";
 
 import FilterPanel from "@/components/feed/FilterPanel";
 
-import { getFeedItems } from "@/lib/feed/getFeedItems";
+import { getNewsItems } from "@/lib/feed/getNewsItems";
+import { getContentItems } from "@/lib/feed/getContentItems";
 import { getFeedMeta } from "@/lib/feed/getFeedMeta";
 
 import type { FeedItem } from "@/types/feed";
