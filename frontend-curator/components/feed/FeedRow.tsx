@@ -20,6 +20,30 @@ export default function FeedRow({ item, onClick }: Props) {
     ? new Date(item.published_at).toLocaleDateString("fr-FR")
     : null;
 
+  /* =========================================================
+     BADGES (STRUCTURATION)
+  ========================================================= */
+
+  const badges = item.badges || [];
+
+  function getBadgeClass(type?: string) {
+    switch (type) {
+      case "news_type":
+        return "bg-black text-white";
+      case "company":
+        return "bg-blue-100 text-blue-700";
+      case "solution":
+        return "bg-purple-100 text-purple-700";
+      case "topic":
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  }
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
+
   return (
     <article
       onClick={onClick}
@@ -48,14 +72,12 @@ export default function FeedRow({ item, onClick }: Props) {
         {/* ============================
            CONTENT
         ============================ */}
-        <div className="flex-1 space-y-1.5">
+        <div className="flex-1 space-y-2">
 
           {/* META */}
           <div className="flex justify-between text-[11px] text-gray-400">
 
-            <span>
-              {formattedDate || ""}
-            </span>
+            <span>{formattedDate || ""}</span>
 
             <span
               className={`
@@ -67,12 +89,20 @@ export default function FeedRow({ item, onClick }: Props) {
             </span>
           </div>
 
-          {/* COMPANY (NEWS ONLY) */}
-          {isNews && item.company && (
-            <div className="text-xs font-medium text-gray-700">
-              {typeof item.company === "string"
-                ? item.company
-                : item.company?.name}
+          {/* BADGES */}
+          {badges.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {badges.map((b: any, i: number) => (
+                <span
+                  key={i}
+                  className={`
+                    px-2 py-0.5 text-[10px] rounded-full uppercase tracking-wide
+                    ${getBadgeClass(b.type)}
+                  `}
+                >
+                  {b.label}
+                </span>
+              ))}
             </div>
           )}
 
@@ -86,13 +116,6 @@ export default function FeedRow({ item, onClick }: Props) {
             <p className="text-sm text-gray-600 line-clamp-2">
               {item.excerpt}
             </p>
-          )}
-
-          {/* NEWS TYPE */}
-          {isNews && item.news_type && (
-            <div className="text-[10px] text-gray-400 uppercase tracking-wide">
-              {item.news_type}
-            </div>
           )}
         </div>
       </div>
