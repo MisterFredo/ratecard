@@ -1,11 +1,20 @@
-function FeedRow({
-  item,
-  onClick,
-}: {
+"use client";
+
+import type { FeedItem } from "@/types/home";
+
+/* ========================================================= */
+
+type Props = {
   item: FeedItem;
   onClick: () => void;
-}) {
+};
+
+/* ========================================================= */
+
+export default function FeedRow({ item, onClick }: Props) {
   const isNews = item.type === "news";
+
+  const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL;
 
   return (
     <article
@@ -25,8 +34,8 @@ function FeedRow({
         {isNews && item.has_visual && item.media_id && (
           <div className="w-[140px] h-[80px] bg-gray-100 flex-shrink-0 overflow-hidden rounded">
             <img
-              src={`${process.env.NEXT_PUBLIC_GCS_BASE_URL}/news/${item.media_id}`}
-              alt=""
+              src={`${GCS_BASE_URL}/news/${item.media_id}`}
+              alt={item.title}
               className="w-full h-full object-cover"
             />
           </div>
@@ -57,7 +66,7 @@ function FeedRow({
             </span>
           </div>
 
-          {/* COMPANY (NEWS) */}
+          {/* COMPANY (NEWS ONLY) */}
           {isNews && item.company && (
             <div className="text-xs font-medium text-gray-700">
               {item.company}
@@ -76,7 +85,7 @@ function FeedRow({
             </p>
           )}
 
-          {/* NEWS TYPE BADGE */}
+          {/* NEWS TYPE */}
           {isNews && item.news_type && (
             <div className="text-[10px] text-gray-400 uppercase">
               {item.news_type}
