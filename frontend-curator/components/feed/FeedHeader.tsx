@@ -14,6 +14,7 @@ type Props = {
   query: string;
   setQuery: (v: string) => void;
 
+  // 🔵 APPLIQUE UNIQUEMENT AUX NEWS
   newsTypes: string[];
   setNewsTypes: (v: string[]) => void;
 
@@ -52,13 +53,15 @@ export default function FeedHeader({
 
     setNewsTypes(next);
 
-    // 🔥 TRIGGER RELOAD
-    onSearch();
+    // 🔥 reload après update
+    setTimeout(onSearch, 0);
   }
 
   function handleSearch() {
     setQuery(input);
-    onSearch();
+
+    // 🔥 garantit que query est bien synchro avant reload
+    setTimeout(onSearch, 0);
   }
 
   /* =========================================================
@@ -101,9 +104,9 @@ export default function FeedHeader({
       </div>
 
       {/* ============================
-         NEWS TYPES
+         NEWS FILTERS (ONLY NEWS)
       ============================ */}
-      <FilterGroup label="News type">
+      <FilterGroup label="News filters">
         {newsTypeOptions.map((t) => (
           <FilterChip
             key={t.id}
