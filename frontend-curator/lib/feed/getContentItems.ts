@@ -42,7 +42,7 @@ export async function getContentItems(
     cleanArray(params.solution_ids).forEach((s) => query.append("solution_ids", s));
 
     // ✅ FIX ICI UNIQUEMENT
-    const res = await api.get(`/curator/contents?${query.toString()}`);
+    const res = await api.get(`/curator/content?${query.toString()}`);
 
     const items: FeedItem[] = (res?.items || []).map((item: any) => ({
       id: item.id,
