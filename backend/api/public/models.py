@@ -3,52 +3,42 @@ from typing import List, Optional
 from datetime import datetime
 
 # =======================================================
-# HOME — NEWS (CARTES)
+# ANALYSIS — FEED
 # =======================================================
 
-class HomeNewsItem(BaseModel):
+class AnalysisItem(BaseModel):
     id: str
     title: str
     excerpt: Optional[str]
     published_at: datetime
 
-    # 🔑 VISUEL NEWS
-    visual_rect_id: Optional[str] = None
 
-
-class HomeNewsResponse(BaseModel):
-    items: List[HomeNewsItem]
+class AnalysisListResponse(BaseModel):
+    items: List[AnalysisItem]
 
 
 # =======================================================
-# HOME — ANALYSES (LIGNES PAR EVENT)
+# ANALYSIS — DETAIL
 # =======================================================
 
-class HomeEventInfo(BaseModel):
-    id: str
-    label: str
-    home_label: str
-    event_color: Optional[str] = None
-
-    # 🧭 CONTEXTE ÉVÉNEMENTIEL (HOME)
-    context_html: Optional[str] = None
-
-
-class HomeAnalysisLine(BaseModel):
-    id: str
+class ContentDetailResponse(BaseModel):
+    id_content: str
     title: str
-    published_at: datetime
-    topics: Optional[List[str]] = None
-    key_metrics: Optional[List[str]] = None
+    excerpt: Optional[str]
+    content_body: Optional[str]
 
+    chiffres: List[str]
+    citations: List[str]
+    acteurs_cites: List[str]
 
-class HomeEventBlock(BaseModel):
-    event: HomeEventInfo
-    analyses: List[HomeAnalysisLine]
+    concepts_llm: List[str]
+    solutions_llm: List[str]
+    topics_llm: List[str]
 
+    published_at: Optional[datetime]
 
-class HomeEventsResponse(BaseModel):
-    events: List[HomeEventBlock]
+    topics: Optional[List[dict]] = None
+    companies: Optional[List[dict]] = None
 
 
 # =======================================================
@@ -61,62 +51,12 @@ class DrawerNewsResponse(BaseModel):
     excerpt: Optional[str]
     body: Optional[str]
     published_at: datetime
-
-    # 🔑 VISUEL NEWS
     visual_rect_id: Optional[str] = None
-
     company: dict
 
 
 # =======================================================
-# DRAWER — ANALYSE
-# =======================================================
-
-class DrawerAnalysisResponse(BaseModel):
-    id_content: str
-    angle_title: str
-    angle_signal: str
-    excerpt: Optional[str]
-    concept: Optional[str]
-    content_body: Optional[str]
-    chiffres: List[str]
-    citations: List[str]
-    acteurs_cites: List[str]
-    published_at: datetime
-    event: Optional[dict]
-
-
-# =======================================================
-# LINKEDIN — GÉNÉRATION DE POST (IA)
-# =======================================================
-
-class LinkedInSource(BaseModel):
-    """
-    Source utilisée pour la génération d’un post LinkedIn.
-    ⚠️ Doit rester STRICTEMENT limitée à ces champs.
-    """
-    type: str  # "news" | "analysis"
-    title: str
-    excerpt: Optional[str] = None
-
-
-class LinkedInGenerateRequest(BaseModel):
-    """
-    Payload pour la génération d’un post LinkedIn via IA.
-    """
-    sources: List[LinkedInSource]
-
-
-class LinkedInGenerateResponse(BaseModel):
-    """
-    Réponse de génération LinkedIn.
-    ⚠️ Toujours du texte brut.
-    """
-    text: str
-
-
-# =======================================================
-# MEMBERS — LISTE DES PARTENAIRES (PUBLIC)
+# MEMBERS
 # =======================================================
 
 class PublicMemberItem(BaseModel):
@@ -129,10 +69,6 @@ class PublicMemberItem(BaseModel):
 class PublicMembersResponse(BaseModel):
     items: List[PublicMemberItem]
 
-
-# =======================================================
-# MEMBER — DRAWER PARTENAIRE (PUBLIC)
-# =======================================================
 
 class PublicMemberNewsItem(BaseModel):
     id_news: str
@@ -148,8 +84,9 @@ class PublicMemberResponse(BaseModel):
     media_logo_rectangle_id: Optional[str] = None
     news: List[PublicMemberNewsItem]
 
+
 # =======================================================
-# NEWSLETTER — SUBSCRIBE
+# NEWSLETTER
 # =======================================================
 
 class NewsletterSubscribeRequest(BaseModel):
@@ -162,4 +99,3 @@ class NewsletterSubscribeRequest(BaseModel):
 
 class NewsletterSubscribeResponse(BaseModel):
     success: bool
-
