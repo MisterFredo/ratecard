@@ -24,10 +24,25 @@ TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
 # ============================================================
 
 def clean_array(value):
-    if not value:
+    """
+    Garantit un ARRAY propre pour BigQuery :
+    - None → None
+    - [] → None
+    - "" → None
+    - "x" → ["x"]
+    - ["x"] → ["x"]
+    """
+    if value is None:
         return None
+
     if isinstance(value, list):
-        return value
+        return value if len(value) > 0 else None
+
+    if isinstance(value, str):
+        if value.strip() == "":
+            return None
+        return [value]
+
     return [value]
 
 
@@ -46,11 +61,20 @@ def get_feed_items(
     offset: int = 0,
 ) -> Dict:
 
+    # 🔒 NORMALISATION
     topic_ids = clean_array(topic_ids)
     company_ids = clean_array(company_ids)
     solution_ids = clean_array(solution_ids)
     types = clean_array(types)
     news_types = clean_array(news_types)
+
+    # 🔒 ASSERT (anti bugs futurs)
+    assert query is None or isinstance(query, str)
+    assert topic_ids is None or isinstance(topic_ids, list)
+    assert company_ids is None or isinstance(company_ids, list)
+    assert solution_ids is None or isinstance(solution_ids, list)
+    assert types is None or isinstance(types, list)
+    assert news_types is None or isinstance(news_types, list)
 
     sql = f"""
     SELECT *
@@ -87,8 +111,8 @@ def get_feed_items(
     -- QUERY
     AND (
       @query IS NULL
-      OR LOWER(TITLE) LIKE '%' || LOWER(@query) || '%'
-      OR LOWER(EXCERPT) LIKE '%' || LOWER(@query) || '%'
+      OR LOWER(TITLE) LIKE CONCAT('%', LOWER(@query), '%')
+      OR LOWER(EXCERPT) LIKE CONCAT('%', LOWER(@query), '%')
     )
 
     -- TYPE
@@ -180,7 +204,6 @@ def get_feed_items(
         "items": items,
         "count": len(items),
     }
-
 
 # ============================================================
 # META (FILTRES)
