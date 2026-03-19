@@ -27,3 +27,7 @@ def read_content(id_content: str):
         raise HTTPException(404, "Content not found")
 
     return item
+
+@router.get("/news")
+def list_news(limit: int = 20, cursor: str | None = None):
+    return list_news_feed(limit=limit, cursor=cursor)
