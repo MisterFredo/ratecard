@@ -14,13 +14,16 @@ router = APIRouter()
 @router.get("/feed")
 def get_feed_route(
     query: Optional[str] = None,
+
     topic_ids: Optional[List[str]] = Query(default=None),
     company_ids: Optional[List[str]] = Query(default=None),
     solution_ids: Optional[List[str]] = Query(default=None),
+
     types: Optional[List[str]] = Query(default=None),
     news_types: Optional[List[str]] = Query(default=None),
-    limit: int = 20,
-    offset: int = 0,
+
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
 ):
     return get_feed_items(
         query=query,
@@ -35,10 +38,10 @@ def get_feed_route(
 
 
 # ============================================================
-# META (FILTRES DYNAMIQUES)
+# META (FILTRES COCKPIT)
 # ============================================================
 
-@router.get("/meta")
+@router.get("/feed/meta")
 def get_meta_route():
     return get_feed_meta()
 
@@ -52,6 +55,6 @@ def read_content(id_content: str):
     item = get_content(id_content)
 
     if not item:
-        raise HTTPException(404, "Content not found")
+        raise HTTPException(status_code=404, detail="Content not found")
 
     return item
