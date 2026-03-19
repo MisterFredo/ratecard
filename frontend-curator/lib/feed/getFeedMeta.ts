@@ -3,7 +3,9 @@ import { api } from "@/lib/api";
 export async function getFeedMeta() {
   try {
     const res = await api.get("/api/curator/feed/meta");
-    return res.data;
+
+    return res; // ✅ déjà normalisé
+
   } catch (e) {
     console.error("❌ getFeedMeta error", e);
 
