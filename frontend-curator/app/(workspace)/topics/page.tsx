@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useDrawer } from "@/contexts/DrawerContext";
 import TopicCard from "@/components/topics/TopicCard";
 
 type TopicItem = {
