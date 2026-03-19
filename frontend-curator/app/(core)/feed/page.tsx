@@ -36,13 +36,21 @@ type Meta = {
 export default function FeedPage() {
   const LIMIT = 20;
 
-  const [items, setItems] = useState<FeedItem[]>([]);
+  /* ============================
+     STATES
+  ============================ */
+
+  const [newsItems, setNewsItems] = useState<FeedItem[]>([]);
+  const [contentItems, setContentItems] = useState<FeedItem[]>([]);
+
   const [loading, setLoading] = useState(false);
 
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+  const [offsetNews, setOffsetNews] = useState(0);
+  const [offsetContent, setOffsetContent] = useState(0);
 
-  // 🔥 META
+  const [hasMoreNews, setHasMoreNews] = useState(true);
+  const [hasMoreContent, setHasMoreContent] = useState(true);
+
   const [meta, setMeta] = useState<Meta>({
     topics: [],
     companies: [],
@@ -50,7 +58,6 @@ export default function FeedPage() {
     news_types: [],
   });
 
-  // 🔥 PARAMS (SANS types)
   const [params, setParams] = useState({
     query: "",
     topic_ids: [] as string[],
@@ -77,7 +84,7 @@ export default function FeedPage() {
   }, []);
 
   /* ============================
-     LOAD FEED
+     LOAD
   ============================ */
 
   async function load(reset = false) {
@@ -85,23 +92,38 @@ export default function FeedPage() {
 
     setLoading(true);
 
-    const currentOffset = reset ? 0 : offset;
+    const currentNewsOffset = reset ? 0 : offsetNews;
+    const currentContentOffset = reset ? 0 : offsetContent;
 
-    const res = await getFeedItems({
-      ...params,
-      limit: LIMIT,
-      offset: currentOffset,
-    });
+    const [newsRes, contentRes] = await Promise.all([
+      getNewsItems({
+        ...params,
+        limit: LIMIT,
+        offset: currentNewsOffset,
+      }),
+      getContentItems({
+        ...params,
+        limit: LIMIT,
+        offset: currentContentOffset,
+      }),
+    ]);
 
     if (reset) {
-      setItems(res.items);
-      setOffset(LIMIT);
+      setNewsItems(newsRes.items);
+      setContentItems(contentRes.items);
+
+      setOffsetNews(LIMIT);
+      setOffsetContent(LIMIT);
     } else {
-      setItems((prev) => [...prev, ...res.items]);
-      setOffset((prev) => prev + LIMIT);
+      setNewsItems((prev) => [...prev, ...newsRes.items]);
+      setContentItems((prev) => [...prev, ...contentRes.items]);
+
+      setOffsetNews((prev) => prev + LIMIT);
+      setOffsetContent((prev) => prev + LIMIT);
     }
 
-    setHasMore(res.items.length === LIMIT);
+    setHasMoreNews(newsRes.items.length === LIMIT);
+    setHasMoreContent(contentRes.items.length === LIMIT);
 
     setLoading(false);
   }
@@ -112,20 +134,23 @@ export default function FeedPage() {
 
   useEffect(() => {
     load(true);
-    // eslint-disable-next-line
   }, []);
 
   /* ============================
-     RELOAD CONTROLLED
+     RELOAD
   ============================ */
 
   useEffect(() => {
-    setItems([]);
-    setOffset(0);
-    setHasMore(true);
+    setNewsItems([]);
+    setContentItems([]);
+
+    setOffsetNews(0);
+    setOffsetContent(0);
+
+    setHasMoreNews(true);
+    setHasMoreContent(true);
 
     load(true);
-    // eslint-disable-next-line
   }, [reloadKey]);
 
   /* ============================
@@ -135,10 +160,7 @@ export default function FeedPage() {
   function updateParams(patch: Partial<typeof params>) {
     setParams((prev) => {
       const next = { ...prev, ...patch };
-
-      // 🔥 trigger reload
       setReloadKey((k) => k + 1);
-
       return next;
     });
   }
@@ -160,11 +182,9 @@ export default function FeedPage() {
   ============================ */
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
 
-      {/* ============================
-         HEADER
-      ============================ */}
+      {/* HEADER */}
       <FeedHeader
         query={params.query}
         setQuery={(v) => updateParams({ query: v })}
@@ -178,11 +198,8 @@ export default function FeedPage() {
         onReset={handleReset}
       />
 
-      {/* ============================
-         FILTERS
-      ============================ */}
+      {/* FILTERS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
         <FilterPanel
           title="Topics"
           items={meta.topics}
@@ -203,24 +220,29 @@ export default function FeedPage() {
           selected={params.solution_ids}
           onChange={(v) => updateParams({ solution_ids: v })}
         />
-
       </div>
 
-      {/* ============================
-         FEED
-      ============================ */}
+      {/* NEWS */}
       <FeedList
-        items={items}
+        title="News"
+        items={newsItems}
         loading={loading}
-        onSelectItem={setSelectedItem}
+        hasMore={hasMoreNews}
         onLoadMore={() => load(false)}
-        hasMore={hasMore}
+        onSelectItem={setSelectedItem}
       />
 
-      {/* ============================
-         DRAWERS
-      ============================ */}
+      {/* ANALYSES */}
+      <FeedList
+        title="Analyses"
+        items={contentItems}
+        loading={loading}
+        hasMore={hasMoreContent}
+        onLoadMore={() => load(false)}
+        onSelectItem={setSelectedItem}
+      />
 
+      {/* DRAWERS */}
       {selectedItem?.type === "analysis" && (
         <AnalysisDrawer
           id={selectedItem.id}
