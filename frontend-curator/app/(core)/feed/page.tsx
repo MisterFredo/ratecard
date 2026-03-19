@@ -26,9 +26,9 @@ export default function FeedPage() {
   // 🔥 état central (clean)
   const [params, setParams] = useState({
     query: "",
-    topics: [] as string[],
-    companies: [] as string[],
-    solutions: [] as string[],
+    topic_ids: [] as string[],
+    company_ids: [] as string[],
+    solution_ids: [] as string[],
     types: [] as string[],
     news_types: [] as string[],
   });
@@ -113,6 +113,13 @@ export default function FeedPage() {
       types: [],
       news_types: [],
     });
+  }
+
+  function updateParams(patch: Partial<typeof params>) {
+    setParams((prev) => ({
+      ...prev,
+      ...patch,
+    }));
   }
 
   /* ============================
