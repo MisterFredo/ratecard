@@ -134,13 +134,35 @@ export default function FeedPage() {
       ============================ */}
       <FeedHeader
         query={params.query}
-        setQuery={handleSearch}
+        setQuery={(v) => updateParams({ query: v })}
+
         types={params.types}
-        setTypes={handleTypes}
+        setTypes={(v) => updateParams({ types: v })}
+
         newsTypes={params.news_types}
-        setNewsTypes={handleNewsTypes}
-        onSearch={() => {}}
-        onReset={handleReset}
+        setNewsTypes={(v) => updateParams({ news_types: v })}
+
+        topicIds={params.topic_ids}
+        setTopicIds={(v) => updateParams({ topic_ids: v })}
+
+        companyIds={params.company_ids}
+        setCompanyIds={(v) => updateParams({ company_ids: v })}
+
+        solutionIds={params.solution_ids}
+        setSolutionIds={(v) => updateParams({ solution_ids: v })}
+
+        onSearch={() => load(true)}
+
+        onReset={() => {
+          setParams({
+            query: "",
+            topic_ids: [],
+            company_ids: [],
+            solution_ids: [],
+            types: [],
+            news_types: [],
+          });
+        }}
       />
 
       {/* ============================
