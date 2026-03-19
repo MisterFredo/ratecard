@@ -8,9 +8,9 @@ import type { FeedItem } from "@/types/feed";
 type Params = {
   query?: string;
 
-  topics?: string[];
-  companies?: string[];
-  solutions?: string[];
+  topic_ids?: string[];
+  company_ids?: string[];
+  solution_ids?: string[];
 
   types?: string[];
   news_types?: string[];
@@ -42,28 +42,28 @@ export async function getFeedItems(
       query.append("query", params.query);
     }
 
-    if (params.limit) {
+    if (params.limit !== undefined) {
       query.append("limit", String(params.limit));
     }
 
-    if (params.offset) {
+    if (params.offset !== undefined) {
       query.append("offset", String(params.offset));
     }
 
     /* ============================
-       ARRAY FIELDS
+       ARRAY FIELDS (⚠️ align backend)
     ============================ */
 
-    params.topics?.forEach((t) =>
-      query.append("topics", t)
+    params.topic_ids?.forEach((t) =>
+      query.append("topic_ids", t)
     );
 
-    params.companies?.forEach((c) =>
-      query.append("companies", c)
+    params.company_ids?.forEach((c) =>
+      query.append("company_ids", c)
     );
 
-    params.solutions?.forEach((s) =>
-      query.append("solutions", s)
+    params.solution_ids?.forEach((s) =>
+      query.append("solution_ids", s)
     );
 
     params.types?.forEach((t) =>
@@ -90,7 +90,7 @@ export async function getFeedItems(
 
     const items: FeedItem[] = rawItems.map((item: any) => ({
       id: item.id,
-      type: item.type, // "news" | "analysis"
+      type: item.type,
 
       title: item.title,
       excerpt: item.excerpt || null,
