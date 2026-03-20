@@ -31,6 +31,10 @@ export default function FeedPage() {
   const [selectedItem, setSelectedItem] =
     useState<FeedItem | null>(null);
 
+  // 🔥 NEW → loading item (UX)
+  const [loadingItemId, setLoadingItemId] =
+    useState<string | null>(null);
+
   /* ============================
      LOAD
   ============================ */
@@ -43,15 +47,17 @@ export default function FeedPage() {
 
     setLoading(true);
 
-    const res = await searchCurator({
-      query: finalQuery,
-      limit: LIMIT,
-    });
+    try {
+      const res = await searchCurator({
+        query: finalQuery,
+        limit: LIMIT,
+      });
 
-    setItems(res.items);
-    setTotal(res.count ?? res.items.length);
-
-    setLoading(false);
+      setItems(res.items);
+      setTotal(res.count ?? res.items.length);
+    } finally {
+      setLoading(false);
+    }
   }
 
   /* ============================
@@ -60,7 +66,17 @@ export default function FeedPage() {
 
   function handleSearch() {
     setItems([]);
-    load();
+    load(query); // ✅ FIX double clic
+  }
+
+  function handleSelectItem(item: FeedItem) {
+    setLoadingItemId(item.id); // 🔥 feedback immédiat
+    setSelectedItem(item);
+
+    // petit délai pour laisser le temps au drawer de monter
+    setTimeout(() => {
+      setLoadingItemId(null);
+    }, 300);
   }
 
   /* ============================
@@ -73,7 +89,7 @@ export default function FeedPage() {
       <FeedHeader
         query={query}
         setQuery={setQuery}
-        onSearch={handleSearch}
+        onSearch={() => load(query)} // ✅ FIX ici aussi
       />
 
       <FeedList
@@ -81,9 +97,12 @@ export default function FeedPage() {
         items={items}
         total={total}
         loading={loading}
-        hasMore={false} // 🔥 pas de pagination
-        onLoadMore={() => {}} // 🔥 FIX SIMPLE
-        onSelectItem={setSelectedItem}
+        hasMore={false}
+        onLoadMore={() => {}}
+        onSelectItem={handleSelectItem}
+
+        // 🔥 NEW → pour feedback visuel
+        loadingItemId={loadingItemId}
       />
 
       {selectedItem?.type === "analysis" && (
