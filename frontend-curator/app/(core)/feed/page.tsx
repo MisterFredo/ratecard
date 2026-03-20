@@ -9,7 +9,7 @@ import FilterPanel from "@/components/feed/FilterPanel";
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
 import NewsDrawer from "@/components/drawers/NewsDrawer";
 
-import { searchCurator } from "@/lib/search"; // 🔥 nouveau chemin
+import { searchCurator } from "@/lib/search";
 import { getFeedMeta } from "@/lib/meta";
 
 import type { FeedItem } from "@/types/feed";
@@ -28,6 +28,8 @@ export default function FeedPage() {
 
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+
+  const [total, setTotal] = useState(0); // 🔥 FIX
 
   const [meta, setMeta] = useState({
     topics: [],
@@ -95,6 +97,9 @@ export default function FeedPage() {
       setOffset((prev) => prev + LIMIT);
     }
 
+    // 🔥 FIX total
+    setTotal(res.count ?? newItems.length);
+
     setHasMore(newItems.length === LIMIT);
     setLoading(false);
   }
@@ -161,6 +166,37 @@ export default function FeedPage() {
   }
 
   /* ============================
+     BADGE CLICK (🔥 NEW)
+  ============================ */
+
+  function handleClickBadge(badge: any) {
+    setMode("filters");
+
+    if (badge.type === "topic") {
+      updateParams({ topic_ids: [badge.id] });
+    }
+
+    if (badge.type === "company") {
+      updateParams({ company_ids: [badge.id] });
+    }
+
+    if (badge.type === "solution") {
+      updateParams({ solution_ids: [badge.id] });
+    }
+
+    if (badge.type === "news_type") {
+      updateParams({ news_types: [badge.id] });
+    }
+
+    // reload
+    setItems([]);
+    setOffset(0);
+    setHasMore(true);
+
+    load(true);
+  }
+
+  /* ============================
      RENDER
   ============================ */
 
@@ -177,19 +213,9 @@ export default function FeedPage() {
         newsTypeOptions={meta.news_types}
 
         onSearch={handleSearchText}
-        onApplyFilters={handleApplyFilters} 
+        onApplyFilters={handleApplyFilters}
         onReset={handleReset}
       />
-
-      {/* 🔥 bouton FILTERS séparé */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleApplyFilters}
-          className="px-4 py-2 bg-black text-white rounded-lg"
-        >
-          Apply Filters
-        </button>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FilterPanel
@@ -223,6 +249,7 @@ export default function FeedPage() {
         hasMore={hasMore}
         onLoadMore={() => load(false)}
         onSelectItem={setSelectedItem}
+        onClickBadge={handleClickBadge} // 🔥 interaction
       />
 
       {selectedItem?.type === "analysis" && (
