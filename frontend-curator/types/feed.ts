@@ -1,7 +1,5 @@
-// frontend-curator/types/feed.ts
-
 /* =========================================================
-   BADGES (gardé pour futur)
+   BADGES (UI LAYER)
 ========================================================= */
 
 export type FeedBadgeType =
@@ -18,11 +16,22 @@ export type FeedBadge = {
 
 
 /* =========================================================
-   COMPANY (gardé pour futur enrichissement)
+   BADGES STRUCTURÉS (ALIGNÉS BACKEND)
 ========================================================= */
 
-export type FeedCompany = {
-  id: string;
+export type Topic = {
+  id_topic: string;
+  label: string;
+  axis?: string;
+};
+
+export type Company = {
+  id_company: string;
+  name: string;
+};
+
+export type Solution = {
+  id_solution: string;
   name: string;
 };
 
@@ -41,26 +50,25 @@ export type FeedItem = {
   excerpt?: string | null;
   published_at?: string | null;
 
-  // 🔥 NOUVEAU → enrichissement backend (badges)
-  topics?: string[];
-  companies?: string[];
-  solutions?: string[];
+  // 🔥 badges structurés
+  topics?: Topic[];
+  companies?: Company[];
+  solutions?: Solution[];
 
-  // 🔥 déjà présent côté NEWS
+  // 🔥 spécifique news
   news_type?: string | null;
 
-  // 🔻 FUTUR (non utilisé pour l’instant)
-  company?: FeedCompany | null;
+  // 🔻 FUTUR (non bloquant)
   has_visual?: boolean;
   media_id?: string | null;
 
-  // 🔻 optionnel (si un jour tu veux pré-calculer côté backend)
+  // 🔻 couche UI optionnelle
   badges?: FeedBadge[];
 };
 
 
 /* =========================================================
-   META
+   META (FUTUR — FILTRES / FACETS)
 ========================================================= */
 
 export type MetaItem = {
