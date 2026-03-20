@@ -129,7 +129,7 @@ def search_curator(
     )
 
     AND (
-        ARRAY_LENGTH(@topic_ids) = 0
+        @topic_ids IS NULL OR ARRAY_LENGTH(@topic_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_CONTENT_TOPIC}` ct
