@@ -39,10 +39,10 @@ def search_curator(
 
     query = query.strip().lower() if query and query.strip() != "" else None
 
-    topic_ids = topic_ids or []
-    company_ids = company_ids or []
-    solution_ids = solution_ids or []
-    news_types = news_types or []
+    topic_ids = topic_ids if topic_ids else None
+    company_ids = company_ids if company_ids else None
+    solution_ids = solution_ids if solution_ids else None
+    news_types = news_types if news_types else None
 
     # ============================================================
     # SQL
