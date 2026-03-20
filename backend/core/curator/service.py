@@ -37,37 +37,55 @@ TABLE_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS"
 TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
 
 
+from typing import List, Dict
+
+from config import BQ_PROJECT, BQ_DATASET
+from utils.bigquery_utils import query_bq
+
+TABLE_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS"
+TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
+
+TABLE_NEWS_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_TOPIC"
+TABLE_CONTENT_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC"
+TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
+
+TABLE_NEWS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_SOLUTION"
+TABLE_CONTENT_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_SOLUTION"
+TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
+
+TABLE_CONTENT_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY"
+TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
+
+
+# ============================================================
+# 1. SEARCH (rapide)
+# ============================================================
+
 def search(q: str, limit: int = 20) -> List[Dict]:
 
     sql = f"""
-    -- NEWS
     SELECT
         n.ID_NEWS as ID,
+        'NEWS' as SOURCE_TYPE,
         n.TITLE,
         n.EXCERPT,
-        'NEWS' as SOURCE_TYPE,
         n.PUBLISHED_AT,
-
-        -- 🔥 BADGE SIMPLE
-        [STRUCT(n.NEWS_TYPE as label, 'news_type' as type)] as BADGES
-
+        n.NEWS_TYPE,
+        n.ID_COMPANY
     FROM `{TABLE_NEWS}` n
     WHERE n.STATUS = 'PUBLISHED'
       AND SEARCH(n, @query)
 
     UNION ALL
 
-    -- ANALYSES
     SELECT
         c.ID_CONTENT as ID,
+        'ANALYSIS' as SOURCE_TYPE,
         c.TITLE,
         c.EXCERPT,
-        'ANALYSIS' as SOURCE_TYPE,
         c.PUBLISHED_AT,
-
-        -- 🔥 BADGE SIMPLE (juste type)
-        [STRUCT('Analysis' as label, 'analysis' as type)] as BADGES
-
+        NULL as NEWS_TYPE,
+        NULL as ID_COMPANY
     FROM `{TABLE_CONTENT}` c
     WHERE c.STATUS = 'PUBLISHED'
       AND SEARCH(c, @query)
@@ -76,14 +94,139 @@ def search(q: str, limit: int = 20) -> List[Dict]:
     LIMIT @limit
     """
 
-    return query_bq(
-        sql,
-        {
-            "query": q,
-            "limit": limit,
-        }
+    return query_bq(sql, {"query": q, "limit": limit})
+
+
+# ============================================================
+# 2. ENRICH
+# ============================================================
+
+def enrich(ids_news: List[str], ids_content: List[str]) -> Dict[str, Dict]:
+
+    if not ids_news and not ids_content:
+        return {}
+
+    sql = f"""
+    WITH
+
+    topics AS (
+        SELECT
+            nt.ID_NEWS as id,
+            ARRAY_AGG(DISTINCT t.LABEL) as topics
+        FROM `{TABLE_NEWS_TOPIC}` nt
+        JOIN `{TABLE_TOPIC}` t
+          ON nt.ID_TOPIC = t.ID_TOPIC
+        WHERE nt.ID_NEWS IN UNNEST(@ids_news)
+        GROUP BY nt.ID_NEWS
+
+        UNION ALL
+
+        SELECT
+            ct.ID_CONTENT as id,
+            ARRAY_AGG(DISTINCT t.LABEL) as topics
+        FROM `{TABLE_CONTENT_TOPIC}` ct
+        JOIN `{TABLE_TOPIC}` t
+          ON ct.ID_TOPIC = t.ID_TOPIC
+        WHERE ct.ID_CONTENT IN UNNEST(@ids_content)
+        GROUP BY ct.ID_CONTENT
+    ),
+
+    companies AS (
+        SELECT
+            cc.ID_CONTENT as id,
+            ARRAY_AGG(DISTINCT c.NAME) as companies
+        FROM `{TABLE_CONTENT_COMPANY}` cc
+        JOIN `{TABLE_COMPANY}` c
+          ON cc.ID_COMPANY = c.ID_COMPANY
+        WHERE cc.ID_CONTENT IN UNNEST(@ids_content)
+        GROUP BY cc.ID_CONTENT
+    ),
+
+    solutions AS (
+        SELECT
+            ns.ID_NEWS as id,
+            ARRAY_AGG(DISTINCT s.NAME) as solutions
+        FROM `{TABLE_NEWS_SOLUTION}` ns
+        JOIN `{TABLE_SOLUTION}` s
+          ON ns.ID_SOLUTION = s.ID_SOLUTION
+        WHERE ns.ID_NEWS IN UNNEST(@ids_news)
+        GROUP BY ns.ID_NEWS
+
+        UNION ALL
+
+        SELECT
+            cs.ID_CONTENT as id,
+            ARRAY_AGG(DISTINCT s.NAME) as solutions
+        FROM `{TABLE_CONTENT_SOLUTION}` cs
+        JOIN `{TABLE_SOLUTION}` s
+          ON cs.ID_SOLUTION = s.ID_SOLUTION
+        WHERE cs.ID_CONTENT IN UNNEST(@ids_content)
+        GROUP BY cs.ID_CONTENT
     )
 
+    SELECT
+        id,
+        ANY_VALUE(topics) as topics,
+        ANY_VALUE(companies) as companies,
+        ANY_VALUE(solutions) as solutions
+    FROM (
+        SELECT id, topics, NULL as companies, NULL as solutions FROM topics
+        UNION ALL
+        SELECT id, NULL, companies, NULL FROM companies
+        UNION ALL
+        SELECT id, NULL, NULL, solutions FROM solutions
+    )
+    GROUP BY id
+    """
+
+    rows = query_bq(
+        sql,
+        {
+            "ids_news": ids_news,
+            "ids_content": ids_content,
+        },
+    )
+
+    return {r["id"]: r for r in rows}
+
+
+# ============================================================
+# 3. FINAL API
+# ============================================================
+
+def search_with_enrichment(q: str, limit: int = 20) -> List[Dict]:
+
+    base = search(q, limit)
+
+    ids_news = [r["ID"] for r in base if r["SOURCE_TYPE"] == "NEWS"]
+    ids_content = [r["ID"] for r in base if r["SOURCE_TYPE"] == "ANALYSIS"]
+
+    enriched = enrich(ids_news, ids_content)
+
+    final = []
+
+    for r in base:
+        extra = enriched.get(r["ID"], {})
+
+        final.append({
+            "id": r["ID"],
+            "type": r["SOURCE_TYPE"].lower(),
+            "title": r["TITLE"],
+            "excerpt": r["EXCERPT"],
+            "published_at": (
+                r["PUBLISHED_AT"].isoformat()
+                if r.get("PUBLISHED_AT")
+                else None
+            ),
+
+            # 🔥 badges
+            "news_type": r.get("NEWS_TYPE"),
+            "topics": extra.get("topics") or [],
+            "companies": extra.get("companies") or [],
+            "solutions": extra.get("solutions") or [],
+        })
+
+    return final
 def get_content_curator(id_content: str):
 
     rows = query_bq(
