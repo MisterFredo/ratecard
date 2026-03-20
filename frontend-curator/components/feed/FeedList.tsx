@@ -17,6 +17,8 @@ type Props = {
   title?: string;
   total?: number;          // 🔥 NEW (count backend)
   mode?: "text" | "filters"; // 🔥 NEW (UX)
+
+  onClickBadge?: (badge: any) => void;
 };
 
 /* ========================================================= */
