@@ -1,5 +1,3 @@
-// frontend-curator/lib/feed/searchCurator.ts
-
 import { api } from "@/lib/api";
 import type { FeedItem } from "@/types/feed";
 
@@ -57,9 +55,17 @@ export async function searchCurator(
       query.append("news_types", n)
     );
 
-    const res = await api.get(`/search?${query.toString()}`);
+    const res = await api.get(`/curator/search?${query.toString()}`);
 
-    return (res || []) as FeedItem[];
+    const data = res?.data ?? res;
+
+    // 🔒 SAFE EXTRACTION
+    if (!data || !Array.isArray(data.items)) {
+      console.warn("⚠️ searchCurator: invalid response", data);
+      return [];
+    }
+
+    return data.items as FeedItem[];
 
   } catch (e) {
     console.error("❌ searchCurator error", e);
