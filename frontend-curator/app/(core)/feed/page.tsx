@@ -80,6 +80,7 @@ export default function FeedPage() {
         total={total}
         loading={loading}
         hasMore={false} // 🔥 pas de pagination
+        onLoadMore={() => {}} // 🔥 FIX SIMPLE
         onSelectItem={setSelectedItem}
       />
 
