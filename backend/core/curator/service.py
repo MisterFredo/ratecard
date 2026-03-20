@@ -30,7 +30,6 @@ TABLE_NEWS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_SOLUTION"
 def search(q: str, limit: int = 20) -> List[Dict]:
 
     sql = f"""
-
     WITH base AS (
 
         -- NEWS
@@ -152,24 +151,32 @@ def search(q: str, limit: int = 20) -> List[Dict]:
     )
 
     # ============================================================
-    # 🔥 NORMALISATION (CRITIQUE)
+    # 🔥 NORMALISATION (SAFE + MINIMALE)
     # ============================================================
 
     normalized = []
 
     for r in rows:
+
+        # 👉 sécurité ID (plus jamais undefined)
+        _id = r.get("id") or r.get("ID")
+        if not _id:
+            continue  # skip ligne cassée
+
         normalized.append({
-            "id": r.get("id"),
+            "id": _id,
             "type": r.get("type"),
+
             "title": r.get("TITLE"),
             "excerpt": r.get("EXCERPT"),
+
             "published_at": (
                 r.get("PUBLISHED_AT").isoformat()
                 if r.get("PUBLISHED_AT")
                 else None
             ),
 
-            # 🔥 BADGES
+            # 👉 badges (safe)
             "news_type": r.get("NEWS_TYPE"),
             "topics": r.get("topics") or [],
             "companies": r.get("companies") or [],
