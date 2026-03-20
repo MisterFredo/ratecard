@@ -19,6 +19,7 @@ type Props = {
 
   newsTypeOptions: Option[];
 
+  onSearch: () => void; 
   onReset: () => void;
 };
 
