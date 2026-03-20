@@ -27,163 +27,62 @@ TABLE_NEWS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_SOLUTION"
 # SEARCH (NEWS + ANALYSES)
 # ============================================================
 
+from typing import List, Dict
+
+from config import BQ_PROJECT, BQ_DATASET
+from utils.bigquery_utils import query_bq
+
+
+TABLE_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS"
+TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
+
+
 def search(q: str, limit: int = 20) -> List[Dict]:
 
     sql = f"""
-    WITH base AS (
-
-        -- NEWS
-        SELECT
-            n.ID_NEWS as id,
-            'news' as type,
-            n.TITLE,
-            n.EXCERPT,
-            n.PUBLISHED_AT,
-            n.NEWS_TYPE,
-            n.ID_COMPANY
-        FROM `{TABLE_NEWS}` n
-        WHERE n.STATUS = 'PUBLISHED'
-          AND SEARCH(n, @query)
-
-        UNION ALL
-
-        -- ANALYSIS
-        SELECT
-            c.ID_CONTENT as id,
-            'analysis' as type,
-            c.TITLE,
-            c.EXCERPT,
-            c.PUBLISHED_AT,
-            NULL as NEWS_TYPE,
-            NULL as ID_COMPANY
-        FROM `{TABLE_CONTENT}` c
-        WHERE c.STATUS = 'PUBLISHED'
-          AND SEARCH(c, @query)
-    )
-
-    , topics_map AS (
-        SELECT
-            nt.ID_NEWS as id,
-            ARRAY_AGG(DISTINCT t.LABEL) as topics
-        FROM `{TABLE_NEWS_TOPIC}` nt
-        JOIN `{TABLE_TOPIC}` t
-          ON nt.ID_TOPIC = t.ID_TOPIC
-        GROUP BY nt.ID_NEWS
-
-        UNION ALL
-
-        SELECT
-            ct.ID_CONTENT as id,
-            ARRAY_AGG(DISTINCT t.LABEL) as topics
-        FROM `{TABLE_CONTENT_TOPIC}` ct
-        JOIN `{TABLE_TOPIC}` t
-          ON ct.ID_TOPIC = t.ID_TOPIC
-        GROUP BY ct.ID_CONTENT
-    )
-
-    , company_map AS (
-        SELECT
-            n.ID_NEWS as id,
-            ARRAY_AGG(DISTINCT c.NAME) as companies
-        FROM `{TABLE_NEWS}` n
-        JOIN `{TABLE_COMPANY}` c
-          ON n.ID_COMPANY = c.ID_COMPANY
-        GROUP BY n.ID_NEWS
-
-        UNION ALL
-
-        SELECT
-            cc.ID_CONTENT as id,
-            ARRAY_AGG(DISTINCT c.NAME) as companies
-        FROM `{TABLE_CONTENT_COMPANY}` cc
-        JOIN `{TABLE_COMPANY}` c
-          ON cc.ID_COMPANY = c.ID_COMPANY
-        GROUP BY cc.ID_CONTENT
-    )
-
-    , solution_map AS (
-        SELECT
-            ns.ID_NEWS as id,
-            ARRAY_AGG(DISTINCT s.NAME) as solutions
-        FROM `{TABLE_NEWS_SOLUTION}` ns
-        JOIN `{TABLE_SOLUTION}` s
-          ON ns.ID_SOLUTION = s.ID_SOLUTION
-        GROUP BY ns.ID_NEWS
-
-        UNION ALL
-
-        SELECT
-            cs.ID_CONTENT as id,
-            ARRAY_AGG(DISTINCT s.NAME) as solutions
-        FROM `{TABLE_CONTENT_SOLUTION}` cs
-        JOIN `{TABLE_SOLUTION}` s
-          ON cs.ID_SOLUTION = s.ID_SOLUTION
-        GROUP BY cs.ID_CONTENT
-    )
-
+    -- NEWS
     SELECT
-        base.*,
-        topics_map.topics,
-        company_map.companies,
-        solution_map.solutions
+        n.ID_NEWS as ID,
+        n.TITLE,
+        n.EXCERPT,
+        'NEWS' as SOURCE_TYPE,
+        n.PUBLISHED_AT,
 
-    FROM base
+        -- 🔥 BADGE SIMPLE
+        [STRUCT(n.NEWS_TYPE as label, 'news_type' as type)] as BADGES
 
-    LEFT JOIN topics_map
-      ON topics_map.id = base.id
+    FROM `{TABLE_NEWS}` n
+    WHERE n.STATUS = 'PUBLISHED'
+      AND SEARCH(n, @query)
 
-    LEFT JOIN company_map
-      ON company_map.id = base.id
+    UNION ALL
 
-    LEFT JOIN solution_map
-      ON solution_map.id = base.id
+    -- ANALYSES
+    SELECT
+        c.ID_CONTENT as ID,
+        c.TITLE,
+        c.EXCERPT,
+        'ANALYSIS' as SOURCE_TYPE,
+        c.PUBLISHED_AT,
+
+        -- 🔥 BADGE SIMPLE (juste type)
+        [STRUCT('Analysis' as label, 'analysis' as type)] as BADGES
+
+    FROM `{TABLE_CONTENT}` c
+    WHERE c.STATUS = 'PUBLISHED'
+      AND SEARCH(c, @query)
 
     ORDER BY PUBLISHED_AT DESC
     LIMIT @limit
     """
 
-    rows = query_bq(
+    return query_bq(
         sql,
         {
             "query": q,
             "limit": limit,
         }
     )
-
-    # ============================================================
-    # 🔥 NORMALISATION (SAFE + MINIMALE)
-    # ============================================================
-
-    normalized = []
-
-    for r in rows:
-
-        # 👉 sécurité ID (plus jamais undefined)
-        _id = r.get("id") or r.get("ID")
-        if not _id:
-            continue  # skip ligne cassée
-
-        normalized.append({
-            "id": _id,
-            "type": r.get("type"),
-
-            "title": r.get("TITLE"),
-            "excerpt": r.get("EXCERPT"),
-
-            "published_at": (
-                r.get("PUBLISHED_AT").isoformat()
-                if r.get("PUBLISHED_AT")
-                else None
-            ),
-
-            # 👉 badges (safe)
-            "news_type": r.get("NEWS_TYPE"),
-            "topics": r.get("topics") or [],
-            "companies": r.get("companies") or [],
-            "solutions": r.get("solutions") or [],
-        })
-
-    return normalized
 
 def get_content_curator(id_content: str):
 
