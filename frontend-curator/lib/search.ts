@@ -5,28 +5,9 @@ import type { FeedItem, FeedResponse } from "@/types/feed";
 
 /* ========================================================= */
 
-function cleanArray(arr?: string[]) {
-  if (!arr || arr.length === 0) return undefined;
-
-  const cleaned = arr
-    .map((v) => String(v))
-    .filter((v) => v && v !== "undefined" && v !== "null");
-
-  return cleaned.length > 0 ? cleaned : undefined;
-}
-
-/* ========================================================= */
-
 type Params = {
-  query?: string;
-
-  topic_ids?: string[];
-  company_ids?: string[];
-  solution_ids?: string[];
-  news_types?: string[];
-
+  query: string;
   limit?: number;
-  offset?: number;
 };
 
 /* ========================================================= */
@@ -35,60 +16,31 @@ export async function searchCurator(
   params: Params
 ): Promise<FeedResponse> {
   try {
-    const hasQuery = !!params.query && params.query.trim() !== "";
-
     const query = new URLSearchParams();
 
-    // pagination
-    if (params.limit !== undefined) query.append("limit", String(params.limit));
-    if (params.offset !== undefined) query.append("offset", String(params.offset));
-
-    let endpoint = "/curator/search/filters";
-
-    // =========================================================
-    // 🔍 MODE TEXTE
-    // =========================================================
-
-    if (hasQuery) {
-      endpoint = "/curator/search/text";
-      query.append("query", params.query!.trim());
+    if (!params.query || params.query.trim() === "") {
+      return { items: [], count: 0 };
     }
 
-    // =========================================================
-    // 🎯 MODE FILTRES
-    // =========================================================
+    query.append("q", params.query.trim());
 
-    else {
-      cleanArray(params.topic_ids)?.forEach((t) =>
-        query.append("topic_ids", t)
-      );
-
-      cleanArray(params.company_ids)?.forEach((c) =>
-        query.append("company_ids", c)
-      );
-
-      cleanArray(params.solution_ids)?.forEach((s) =>
-        query.append("solution_ids", s)
-      );
-
-      cleanArray(params.news_types)?.forEach((n) =>
-        query.append("news_types", n)
-      );
+    if (params.limit !== undefined) {
+      query.append("limit", String(params.limit));
     }
 
-    const res = await api.get(`${endpoint}?${query.toString()}`);
+    const res = await api.get(`/curator/search?${query.toString()}`);
 
     const data = res?.data ?? res;
 
-    // 🔒 SAFE RESPONSE
-    if (!data || !Array.isArray(data.items)) {
+    // 🔒 SAFE RESPONSE (aligné backend)
+    if (!data || !Array.isArray(data.results)) {
       console.warn("⚠️ searchCurator: invalid response", data);
       return { items: [], count: 0 };
     }
 
     return {
-      items: data.items as FeedItem[],
-      count: data.count ?? data.items.length ?? 0,
+      items: data.results as FeedItem[],
+      count: data.count ?? data.results.length ?? 0,
     };
 
   } catch (e) {
