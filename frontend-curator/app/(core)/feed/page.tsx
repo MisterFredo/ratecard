@@ -176,7 +176,8 @@ export default function FeedPage() {
 
         newsTypeOptions={meta.news_types}
 
-        onSearch={handleSearchText}       // 🔥 bouton SEARCH
+        onSearch={handleSearchText}
+        onApplyFilters={handleApplyFilters} 
         onReset={handleReset}
       />
 
