@@ -36,9 +36,7 @@ export default function FilterPanel({
 
     return items
       .filter((i) =>
-        (i.label || "")
-          .toLowerCase()
-          .includes(searchLower)
+        (i.label || "").toLowerCase().includes(searchLower)
       )
       .sort((a, b) =>
         a.label.localeCompare(b.label, "fr", {
@@ -71,7 +69,6 @@ export default function FilterPanel({
   function handleSelectAll() {
     const ids = filtered.map((i) => i.id);
 
-    // évite un rerender inutile
     if (
       ids.length === selected.length &&
       ids.every((id) => selected.includes(id))
@@ -87,24 +84,33 @@ export default function FilterPanel({
   ========================================================= */
 
   return (
-    <div className="border rounded-xl p-3 bg-white">
+    <div className="border rounded-xl p-3 bg-white space-y-3">
 
-      {/* TITLE */}
-      <div className="font-semibold mb-2">{title}</div>
+      {/* HEADER */}
+      <div className="flex justify-between items-center">
+        <div className="font-semibold">{title}</div>
+
+        {/* 🔥 compteur sélection */}
+        {selected.length > 0 && (
+          <span className="text-xs text-gray-400">
+            {selected.length} selected
+          </span>
+        )}
+      </div>
 
       {/* SEARCH */}
       <input
         className="
-          w-full border px-2 py-1 mb-2 text-sm rounded
+          w-full border px-2 py-1 text-sm rounded
           focus:outline-none focus:ring-2 focus:ring-black/10
         "
-        placeholder="Search..."
+        placeholder={`Search ${title.toLowerCase()}...`}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
 
       {/* ACTIONS */}
-      <div className="flex justify-between mb-2 text-xs text-gray-500">
+      <div className="flex justify-between text-xs text-gray-500">
         <button
           onClick={handleClear}
           className="hover:text-black transition"
@@ -146,10 +152,20 @@ export default function FilterPanel({
                     toggle(item.id);
                   }}
                 />
-                {item.label}
+
+                {/* 🔥 label safe */}
+                <span className="truncate">
+                  {item.label}
+                </span>
               </div>
 
-              <span className="text-xs opacity-60">
+              {/* 🔥 count plus lisible */}
+              <span
+                className={`
+                  text-xs
+                  ${isActive ? "text-white/70" : "text-gray-400"}
+                `}
+              >
                 {item.count}
               </span>
             </label>
@@ -157,6 +173,12 @@ export default function FilterPanel({
         })}
       </div>
 
+      {/* 🔥 EMPTY STATE */}
+      {filtered.length === 0 && (
+        <div className="text-xs text-gray-400 text-center py-4">
+          No results
+        </div>
+      )}
     </div>
   );
 }
