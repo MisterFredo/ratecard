@@ -1,7 +1,7 @@
 // frontend-curator/types/feed.ts
 
 /* =========================================================
-   BADGES
+   BADGES (gardé pour futur)
 ========================================================= */
 
 export type FeedBadgeType =
@@ -11,14 +11,14 @@ export type FeedBadgeType =
   | "news_type";
 
 export type FeedBadge = {
-  id?: string;              // 🔥 utile pour filtres / clic
+  id?: string;
   label: string;
   type: FeedBadgeType;
 };
 
 
 /* =========================================================
-   COMPANY (STRUCTURÉ)
+   COMPANY (gardé pour futur enrichissement)
 ========================================================= */
 
 export type FeedCompany = {
@@ -28,53 +28,33 @@ export type FeedCompany = {
 
 
 /* =========================================================
-   ITEM
+   ITEM (ALIGNÉ SEARCH BACKEND)
 ========================================================= */
 
 export type FeedItem = {
   id: string;
+
+  // 🔥 IMPORTANT → aligné avec backend
   type: "news" | "analysis";
 
   title: string;
   excerpt?: string | null;
   published_at?: string | null;
 
-  // 🔵 COMPANY (unifié news + content)
+  // 🔻 FUTUR (optionnel, non utilisé pour l’instant)
   company?: FeedCompany | null;
-
-  // 🔵 news uniquement
   has_visual?: boolean;
   media_id?: string | null;
   news_type?: string | null;
-
-  // 🔥 badges (source unique UI)
   badges?: FeedBadge[];
 };
 
 
 /* =========================================================
-   RESPONSE (NOUVEAU)
+   RESPONSE
 ========================================================= */
 
 export type FeedResponse = {
   items: FeedItem[];
   count: number;
-};
-
-
-/* =========================================================
-   META (FILTRES)
-========================================================= */
-
-export type MetaItem = {
-  id: string;
-  label: string;
-  count: number;
-};
-
-export type FeedMetaResponse = {
-  topics: MetaItem[];
-  companies: MetaItem[];
-  solutions: MetaItem[];
-  news_types: MetaItem[];
 };
