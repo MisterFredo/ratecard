@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 
 import FeedRow from "@/components/feed/FeedRow";
-import type { FeedItem } from "@/types/feed";
+import type { FeedItem, FeedBadge } from "@/types/feed";
 
 /* ========================================================= */
 
@@ -15,10 +15,11 @@ type Props = {
   onSelectItem: (item: FeedItem) => void;
 
   title?: string;
-  total?: number;          // 🔥 NEW (count backend)
-  mode?: "text" | "filters"; // 🔥 NEW (UX)
+  total?: number;
+  mode?: "text" | "filters";
 
-  onClickBadge?: (badge: any) => void;
+  // 🔥 typé proprement
+  onClickBadge?: (badge: FeedBadge) => void;
 };
 
 /* ========================================================= */
@@ -118,7 +119,7 @@ export default function FeedList({
           key={`${item.type}-${item.id}`}
           item={item}
           onClick={() => onSelectItem(item)}
-          onClickBadge={onClickBadge}
+          onClickBadge={onClickBadge} // 🔥 inchangé mais propre
         />
       ))}
 
