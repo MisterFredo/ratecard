@@ -11,26 +11,41 @@ VIEW_FEED = f"{BQ_PROJECT}.{BQ_DATASET}.V_FEED_UNIFIED"
 # SEARCH (GOOGLE-LIKE)
 # ============================================================
 
-def search(q: str, limit: int = 20) -> List[Dict]:
+def search(q: str, limit: int = 20):
 
     sql = f"""
     SELECT
-        id,
-        type,
+        id_news as id,
+        'news' as type,
         title,
         excerpt,
         published_at,
         news_type,
         topics,
+        ARRAY<STRUCT<id_company STRING, name STRING>>[
+          STRUCT(id_company, company_name)
+        ] as companies,
+        [] as solutions
+
+    FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED`
+    WHERE LOWER(title) LIKE LOWER(CONCAT('%', @query, '%'))
+
+    UNION ALL
+
+    SELECT
+        id_content as id,
+        'analysis' as type,
+        title,
+        excerpt,
+        published_at,
+        NULL as news_type,
+        topics,
         companies,
         solutions
-    FROM `{VIEW_FEED}`
-    WHERE
-        SEARCH(title, @query)
-        OR SEARCH(excerpt, @query)
-        OR SEARCH(TO_JSON_STRING(topics), @query)
-        OR SEARCH(TO_JSON_STRING(companies), @query)
-        OR SEARCH(TO_JSON_STRING(solutions), @query)
+
+    FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED`
+    WHERE LOWER(title) LIKE LOWER(CONCAT('%', @query, '%'))
+
     ORDER BY published_at DESC
     LIMIT @limit
     """
