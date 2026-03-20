@@ -1,16 +1,16 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 
-from core.search.service import search_curator
-from core.feed.service import get_feed_meta
+from core.feed.service import search_curator, get_feed_meta
+
 from core.news.service import get_news
 from core.content.public_service import get_content
 
-router = APIRouter()
+router = APIRouter(prefix="/curator", tags=["Curator"])
 
 
 # ============================================================
-# SEARCH (UNIFIÉ)
+# SEARCH (MOTEUR UNIQUE)
 # ============================================================
 
 @router.get("/search")
@@ -25,15 +25,24 @@ def search_route(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ):
-    return search_curator(
-        query=query,
-        topic_ids=topic_ids,
-        company_ids=company_ids,
-        solution_ids=solution_ids,
-        news_types=news_types,
-        limit=limit,
-        offset=offset,
-    )
+    try:
+        items = search_curator(
+            query=query,
+            topic_ids=topic_ids,
+            company_ids=company_ids,
+            solution_ids=solution_ids,
+            news_types=news_types,
+            limit=limit,
+            offset=offset,
+        )
+
+        return {
+            "items": items,
+            "count": len(items),  # simple pour l’instant
+        }
+
+    except Exception as e:
+        raise HTTPException(400, f"Search error: {e}")
 
 
 # ============================================================
@@ -44,12 +53,16 @@ def search_route(
 def get_meta_route():
     try:
         data = get_feed_meta()
+
         return {
-            "status": "ok",
-            **data
+            "topics": data.get("topics", []),
+            "companies": data.get("companies", []),
+            "solutions": data.get("solutions", []),
+            "news_types": data.get("news_types", []),
         }
+
     except Exception as e:
-        raise HTTPException(400, f"Erreur meta feed : {e}")
+        raise HTTPException(400, f"Meta error: {e}")
 
 
 # ============================================================
@@ -58,12 +71,16 @@ def get_meta_route():
 
 @router.get("/news/{id_news}")
 def read_news(id_news: str):
-    item = get_news(id_news)
+    try:
+        item = get_news(id_news)
 
-    if not item:
-        raise HTTPException(status_code=404, detail="News not found")
+        if not item:
+            raise HTTPException(404, "News not found")
 
-    return item
+        return item
+
+    except Exception as e:
+        raise HTTPException(400, f"News error: {e}")
 
 
 # ============================================================
@@ -72,9 +89,13 @@ def read_news(id_news: str):
 
 @router.get("/content/{id_content}")
 def read_content(id_content: str):
-    item = get_content(id_content)
+    try:
+        item = get_content(id_content)
 
-    if not item:
-        raise HTTPException(status_code=404, detail="Content not found")
+        if not item:
+            raise HTTPException(404, "Content not found")
 
-    return item
+        return item
+
+    except Exception as e:
+        raise HTTPException(400, f"Content error: {e}")
