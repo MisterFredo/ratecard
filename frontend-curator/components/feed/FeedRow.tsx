@@ -1,24 +1,24 @@
 "use client";
 
-import type { FeedItem } from "@/types/feed";
+import type { FeedItem, FeedBadge } from "@/types/feed";
 
 /* ========================================================= */
-
-type Badge = {
-  label: string;
-  type?: string;
-};
 
 type Props = {
-  item: FeedItem & {
-    badges?: Badge[];
-  };
+  item: FeedItem;
   onClick: () => void;
+
+  // 🔥 NEW → interaction filtres
+  onClickBadge?: (badge: FeedBadge) => void;
 };
 
 /* ========================================================= */
 
-export default function FeedRow({ item, onClick }: Props) {
+export default function FeedRow({
+  item,
+  onClick,
+  onClickBadge,
+}: Props) {
   const isNews = item.type === "news";
 
   const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL;
@@ -94,6 +94,10 @@ export default function FeedRow({ item, onClick }: Props) {
               src={imageUrl}
               alt={item.title}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                // 🔥 fallback image cassée
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
             />
           </div>
         )}
@@ -118,19 +122,34 @@ export default function FeedRow({ item, onClick }: Props) {
             </span>
           </div>
 
+          {/* COMPANY (🔥 NEW STRUCTURÉ) */}
+          {item.company?.name && (
+            <div className="text-xs text-gray-500">
+              {item.company.name}
+            </div>
+          )}
+
           {/* BADGES */}
           {badges.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {badges.map((b, i) => (
-                <span
+                <button
                   key={`${b.label}-${i}`}
+                  onClick={(e) => {
+                    e.stopPropagation(); // 🔥 empêche ouverture drawer
+
+                    if (onClickBadge) {
+                      onClickBadge(b); // 🔥 interaction filtre
+                    }
+                  }}
                   className={`
                     px-2 py-0.5 text-[10px] rounded-full uppercase tracking-wide
                     ${getBadgeClass(b.type)}
+                    hover:opacity-80 transition
                   `}
                 >
                   {b.label}
-                </span>
+                </button>
               ))}
             </div>
           )}
