@@ -1,14 +1,33 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, field_validator
+from typing import List, Optional, Union
 
 
 # ============================================================
-# INPUT — SEARCH QUERY (UNIFIÉ)
+# INPUT — SEARCH TEXT (MODE 1)
 # ============================================================
 
-class SearchQuery(BaseModel):
+class SearchTextQuery(BaseModel):
+    """
+    🔍 Mode SEARCH (index BigQuery)
+    - uniquement texte
+    - aucun filtre
+    """
 
-    query: Optional[str] = None
+    query: str
+    limit: int = 20
+    offset: int = 0
+
+
+# ============================================================
+# INPUT — SEARCH FILTERS (MODE 2)
+# ============================================================
+
+class SearchFilterQuery(BaseModel):
+    """
+    🎯 Mode FILTERS
+    - aucun texte
+    - uniquement filtres SQL
+    """
 
     topic_ids: Optional[Union[List[str], str]] = None
     company_ids: Optional[Union[List[str], str]] = None
@@ -18,7 +37,7 @@ class SearchQuery(BaseModel):
     limit: int = 20
     offset: int = 0
 
-    # 🔥 NORMALISATION AUTO
+    # 🔥 NORMALISATION AUTO (CRITIQUE)
     @field_validator(
         "topic_ids",
         "company_ids",
@@ -30,9 +49,17 @@ class SearchQuery(BaseModel):
     def ensure_list(cls, v):
         if v is None:
             return None
+
+        # cas string vide ou "null"
+        if isinstance(v, str):
+            if v.strip() == "" or v.lower() == "null":
+                return None
+            return [v]
+
         if isinstance(v, list):
-            return v
-        return [v]  # 🔥 string → list
+            return v if len(v) > 0 else None
+
+        return None
 
 
 # ============================================================
