@@ -264,6 +264,16 @@ def get_feed_meta() -> Dict:
             "count": r.get("count", 0),
         }
 
-        result[f"{r['type']}s"].append(item)
+        if r["type"] == "topic":
+            result["topics"].append(item)
 
-    return result
+        elif r["type"] == "company":
+            result["companies"].append(item)
+
+        elif r["type"] == "solution":
+            result["solutions"].append(item)
+
+        elif r["type"] == "news_type":
+            result["news_types"].append(item)
+
+        return result
