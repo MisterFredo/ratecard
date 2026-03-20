@@ -2,75 +2,83 @@ from fastapi import APIRouter, HTTPException, Query
 
 from core.curator.service import (
     search,
+    latest,
     get_item_curator,
     get_item_detail,
+    get_content_stats,
 )
 
 router = APIRouter()
 
 
 # ============================================================
-# SEARCH (GOOGLE-LIKE)
+# SEARCH
 # ============================================================
 
 @router.get("/search")
 def search_route(
-    q: str = Query(..., description="Search query"),
-    limit: int = Query(20, description="Max results")
+    q: str = Query(...),
+    limit: int = Query(20),
+    offset: int = Query(0)
 ):
     try:
-        items = search(q=q, limit=limit)
-
-        return {
-            "items": items,
-            "query": q,
-            "count": len(items)
-        }
-
+        items = search(q=q, limit=limit, offset=offset)
+        return {"items": items, "count": len(items)}
     except Exception as e:
         raise HTTPException(400, f"Search error: {e}")
 
 
 # ============================================================
-# ITEM (LIGHT — FEED)
+# LATEST
+# ============================================================
+
+@router.get("/latest")
+def latest_route(
+    limit: int = Query(20),
+    offset: int = Query(0)
+):
+    try:
+        items = latest(limit=limit, offset=offset)
+        return {"items": items, "count": len(items)}
+    except Exception as e:
+        raise HTTPException(400, f"Latest error: {e}")
+
+
+# ============================================================
+# STATS
+# ============================================================
+
+@router.get("/stats")
+def stats_route():
+    try:
+        stats = get_content_stats()
+        return {"status": "ok", "stats": stats}
+    except Exception:
+        raise HTTPException(400, "Erreur stats content")
+
+
+# ============================================================
+# ITEM
 # ============================================================
 
 @router.get("/item/{item_id}")
 def read_item(item_id: str):
-    try:
-        item = get_item_curator(item_id)
-
-        if not item:
-            raise HTTPException(404, "Item not found")
-
-        return item
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        print("❌ ITEM ERROR:", e)
-        raise HTTPException(400, f"Item error: {e}")
+    item = get_item_curator(item_id)
+    if not item:
+        raise HTTPException(404, "Item not found")
+    return item
 
 
 # ============================================================
-# ITEM DETAIL (DRAWER COMPLET)
+# DETAIL
 # ============================================================
 
 @router.get("/item/{item_id}/detail")
 def read_item_detail(
     item_id: str,
-    type: str = Query(..., description="news | analysis")
+    type: str = Query(...)
 ):
-    try:
-        item = get_item_detail(item_id, type)
-
-        if not item:
-            raise HTTPException(404, "Item not found")
-
-        return item
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        print("❌ DETAIL ERROR:", e)
-        raise HTTPException(400, f"Detail error: {e}")
+    item = get_item_detail(item_id, type)
+    if not item:
+        raise HTTPException(404, "Item not found")
+    return item
