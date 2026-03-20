@@ -33,6 +33,8 @@ type AnalysisData = {
   point_de_friction?: string;
   signal_analytique?: string;
 
+  concepts_llm?: string[];
+
   chiffres?: string[];
   citations?: string[];
   acteurs_cites?: string[];
