@@ -61,24 +61,33 @@ def search_curator(
     FROM `{TABLE_NEWS}` n
     WHERE n.STATUS = 'PUBLISHED'
 
+    -- QUERY
     AND (
         @query IS NULL
         OR LOWER(n.TITLE) LIKE CONCAT('%', @query, '%')
         OR LOWER(n.EXCERPT) LIKE CONCAT('%', @query, '%')
     )
 
+    -- NEWS TYPE
     AND (
-        ARRAY_LENGTH(@news_types) = 0
-        OR n.NEWS_TYPE IN UNNEST(@news_types)
+        @news_types IS NULL
+        OR ARRAY_LENGTH(@news_types) = 0
+        OR LOWER(n.NEWS_TYPE) IN UNNEST(
+            ARRAY(SELECT LOWER(x) FROM UNNEST(@news_types) x)
+        )
     )
 
+    -- COMPANY
     AND (
-        ARRAY_LENGTH(@company_ids) = 0
+        @company_ids IS NULL
+        OR ARRAY_LENGTH(@company_ids) = 0
         OR n.ID_COMPANY IN UNNEST(@company_ids)
     )
 
+    -- TOPIC
     AND (
-        @topic_ids IS NULL OR ARRAY_LENGTH(@topic_ids) = 0
+        @topic_ids IS NULL
+        OR ARRAY_LENGTH(@topic_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_NEWS_TOPIC}` nt
@@ -87,8 +96,10 @@ def search_curator(
         )
     )
 
+    -- SOLUTION
     AND (
-        ARRAY_LENGTH(@solution_ids) = 0
+        @solution_ids IS NULL
+        OR ARRAY_LENGTH(@solution_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_NEWS_SOLUTION}` ns
@@ -112,14 +123,17 @@ def search_curator(
     WHERE c.STATUS = 'PUBLISHED'
       AND c.IS_ACTIVE = TRUE
 
+    -- QUERY
     AND (
         @query IS NULL
         OR LOWER(c.TITLE) LIKE CONCAT('%', @query, '%')
         OR LOWER(c.EXCERPT) LIKE CONCAT('%', @query, '%')
     )
 
+    -- COMPANY
     AND (
-        ARRAY_LENGTH(@company_ids) = 0
+        @company_ids IS NULL
+        OR ARRAY_LENGTH(@company_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_CONTENT_COMPANY}` cc
@@ -128,8 +142,10 @@ def search_curator(
         )
     )
 
+    -- TOPIC
     AND (
-        @topic_ids IS NULL OR ARRAY_LENGTH(@topic_ids) = 0
+        @topic_ids IS NULL
+        OR ARRAY_LENGTH(@topic_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_CONTENT_TOPIC}` ct
@@ -138,8 +154,10 @@ def search_curator(
         )
     )
 
+    -- SOLUTION
     AND (
-        ARRAY_LENGTH(@solution_ids) = 0
+        @solution_ids IS NULL
+        OR ARRAY_LENGTH(@solution_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_CONTENT_SOLUTION}` cs
