@@ -18,8 +18,10 @@ type Props = {
   total?: number;
   mode?: "text" | "filters";
 
-  // 🔥 typé proprement
   onClickBadge?: (badge: FeedBadge) => void;
+
+  // 🔥 NEW → feedback UX
+  loadingItemId?: string | null;
 };
 
 /* ========================================================= */
@@ -34,6 +36,7 @@ export default function FeedList({
   total,
   mode = "filters",
   onClickBadge,
+  loadingItemId,
 }: Props) {
 
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -66,23 +69,40 @@ export default function FeedList({
   }
 
   /* =========================================================
-     HEADER LABEL
+     HEADER LABEL (plus premium)
   ========================================================= */
 
   const headerLabel = useMemo(() => {
     if (!title) return null;
 
-    let suffix = "";
+    return (
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-semibold text-gray-700">
+          {title}
+        </div>
 
-    if (total !== undefined) {
-      suffix = ` (${total})`;
-    }
+        {total !== undefined && (
+          <div className="text-xs text-gray-400">
+            {total} results
+          </div>
+        )}
+      </div>
+    );
+  }, [title, total]);
 
-    const modeLabel =
-      mode === "text" ? "Search results" : "Filtered results";
+  /* =========================================================
+     SKELETON (premium loading)
+  ========================================================= */
 
-    return `${title}${suffix} · ${modeLabel}`;
-  }, [title, total, mode]);
+  function SkeletonRow() {
+    return (
+      <div className="animate-pulse space-y-2 py-3 border-b border-gray-100">
+        <div className="h-3 bg-gray-200 rounded w-1/4" />
+        <div className="h-4 bg-gray-200 rounded w-3/4" />
+        <div className="h-3 bg-gray-200 rounded w-2/3" />
+      </div>
+    );
+  }
 
   /* =========================================================
      RENDER
@@ -94,62 +114,66 @@ export default function FeedList({
       {/* ============================
          HEADER
       ============================ */}
-      {headerLabel && (
-        <div className="text-sm font-semibold text-gray-500">
-          {headerLabel}
+      {headerLabel}
+
+      {/* ============================
+         EMPTY STATE (premium)
+      ============================ */}
+      {!loading && safeItems.length === 0 && (
+        <div className="text-center py-16">
+          <div className="text-sm text-gray-400">
+            {mode === "text"
+              ? "No results found"
+              : "No data for selected filters"}
+          </div>
         </div>
       )}
 
       {/* ============================
-         EMPTY STATE
+         LOADING SKELETON
       ============================ */}
-      {!loading && safeItems.length === 0 && (
-        <div className="text-center text-sm text-gray-400 py-10">
-          {mode === "text"
-            ? "No results for your search"
-            : "No results for selected filters"}
+      {loading && safeItems.length === 0 && (
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <SkeletonRow key={i} />
+          ))}
         </div>
       )}
 
       {/* ============================
          ITEMS
       ============================ */}
-      {safeItems.map((item) => (
-        <FeedRow
-          key={`${item.type}-${item.id}`}
-          item={item}
-          onClick={() => onSelectItem(item)}
-          onClickBadge={onClickBadge} // 🔥 inchangé mais propre
-        />
-      ))}
+      <div className="divide-y divide-gray-100 rounded-xl bg-white border border-gray-100 overflow-hidden">
+        {safeItems.map((item) => (
+          <FeedRow
+            key={`${item.type}-${item.id}`}
+            item={item}
+            onClick={() => onSelectItem(item)}
+            onClickBadge={onClickBadge}
+            loading={loadingItemId === item.id} // 🔥 NEW
+          />
+        ))}
+      </div>
 
       {/* ============================
          LOAD MORE
       ============================ */}
       {hasMore && !loading && safeItems.length > 0 && (
-        <div className="flex justify-center pt-4">
+        <div className="flex justify-center pt-6">
           <button
             onClick={handleLoadMore}
             disabled={isFetchingMore}
             className="
-              text-sm px-4 py-2 rounded-lg border border-gray-300
-              hover:bg-gray-100 transition disabled:opacity-50
+              text-sm px-5 py-2 rounded-full
+              bg-black text-white
+              hover:opacity-90 transition
+              disabled:opacity-50
             "
           >
-            {isFetchingMore ? "Loading..." : "Load more"}
+            {isFetchingMore ? "Loading…" : "Load more"}
           </button>
         </div>
       )}
-
-      {/* ============================
-         LOADING
-      ============================ */}
-      {loading && safeItems.length === 0 && (
-        <div className="text-center text-sm text-gray-400 py-10">
-          Loading...
-        </div>
-      )}
-
     </div>
   );
 }
