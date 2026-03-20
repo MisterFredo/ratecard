@@ -9,33 +9,23 @@ router = APIRouter()
 
 
 # ============================================================
-# SEARCH — MODE TEXTE (SEARCH INDEX)
+# SEARCH (FULL TEXT - IDENTIQUE ADMIN)
 # ============================================================
 
-@router.get("/search/text")
-def search_text_route(
-    query: str = Query(..., description="Search query"),
-    limit: int = 20,
-    offset: int = 0,
+@router.get("/search")
+def search_route(
+    q: str = Query(..., description="Search query"),
+    limit: int = Query(20, description="Max results")
 ):
-    """
-    🔥 Mode 1 — SEARCH (comme admin)
-    - basé sur index BigQuery
-    - rapide, robuste
-    - PAS de filtres relationnels
-    """
-
     try:
-        results = search_text(
-            query=query,
-            limit=limit,
-            offset=offset,
-        )
-        return results
-
+        results = search(q=q, limit=limit)
+        return {
+            "results": results,
+            "query": q,
+            "count": len(results)
+        }
     except Exception as e:
-        print("❌ SEARCH TEXT ERROR:", e)
-        raise HTTPException(400, f"Search text error: {e}")
+        raise HTTPException(400, f"Erreur search : {e}")
 
 
 # ============================================================
