@@ -3,48 +3,70 @@ from typing import List, Dict, Optional
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 
-# 🔥 vues unifiées
-VIEW_FEED = f"{BQ_PROJECT}.{BQ_DATASET}.V_FEED_UNIFIED"
+
+# ============================================================
+# VIEWS (SOURCE OF TRUTH)
+# ============================================================
+
+VIEW_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED"
+VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 
 
 # ============================================================
-# SEARCH (GOOGLE-LIKE)
+# SEARCH (UNION SIMPLE, ROBUSTE)
 # ============================================================
 
-def search(q: str, limit: int = 20):
+def search(q: str, limit: int = 20) -> List[Dict]:
 
     sql = f"""
+    -- ============================
+    -- NEWS
+    -- ============================
     SELECT
-        id_news as id,
-        'news' as type,
-        title,
-        excerpt,
-        published_at,
-        news_type,
-        topics,
-        ARRAY<STRUCT<id_company STRING, name STRING>>[
-          STRUCT(id_company, company_name)
-        ] as companies,
-        [] as solutions
+        n.id_news AS id,
+        'news' AS type,
+        n.title,
+        n.excerpt,
+        n.published_at,
+        n.news_type,
 
-    FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED`
-    WHERE LOWER(title) LIKE LOWER(CONCAT('%', @query, '%'))
+        n.topics,
+
+        ARRAY<STRUCT<id_company STRING, name STRING>>[
+          STRUCT(n.id_company, n.company_name)
+        ] AS companies,
+
+        [] AS solutions
+
+    FROM `{VIEW_NEWS}` n
+    WHERE
+        LOWER(n.title) LIKE LOWER(CONCAT('%', @query, '%'))
+        OR LOWER(n.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
+
 
     UNION ALL
 
-    SELECT
-        id_content as id,
-        'analysis' as type,
-        title,
-        excerpt,
-        published_at,
-        NULL as news_type,
-        topics,
-        companies,
-        solutions
 
-    FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED`
-    WHERE LOWER(title) LIKE LOWER(CONCAT('%', @query, '%'))
+    -- ============================
+    -- CONTENT (ANALYSES)
+    -- ============================
+    SELECT
+        c.id_content AS id,
+        'analysis' AS type,
+        c.title,
+        c.excerpt,
+        c.published_at,
+        NULL AS news_type,
+
+        c.topics,
+        c.companies,
+        c.solutions
+
+    FROM `{VIEW_CONTENT}` c
+    WHERE
+        LOWER(c.title) LIKE LOWER(CONCAT('%', @query, '%'))
+        OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
+
 
     ORDER BY published_at DESC
     LIMIT @limit
@@ -56,29 +78,46 @@ def search(q: str, limit: int = 20):
 
 
 # ============================================================
-# GET ITEM (LIGHT — FEED LEVEL)
+# ITEM (LIGHT — FEED LEVEL)
 # ============================================================
 
 def get_item_curator(item_id: str) -> Optional[Dict]:
 
-    rows = query_bq(
-        f"""
+    sql = f"""
+    SELECT * FROM (
         SELECT
-            id,
-            type,
-            title,
-            excerpt,
-            published_at,
-            news_type,
-            topics,
-            companies,
-            solutions
-        FROM `{VIEW_FEED}`
-        WHERE id = @id
-        LIMIT 1
-        """,
-        {"id": item_id},
+            n.id_news AS id,
+            'news' AS type,
+            n.title,
+            n.excerpt,
+            n.published_at,
+            n.news_type,
+            n.topics,
+            ARRAY<STRUCT<id_company STRING, name STRING>>[
+              STRUCT(n.id_company, n.company_name)
+            ] AS companies,
+            [] AS solutions
+        FROM `{VIEW_NEWS}` n
+
+        UNION ALL
+
+        SELECT
+            c.id_content AS id,
+            'analysis' AS type,
+            c.title,
+            c.excerpt,
+            c.published_at,
+            NULL AS news_type,
+            c.topics,
+            c.companies,
+            c.solutions
+        FROM `{VIEW_CONTENT}` c
     )
+    WHERE id = @id
+    LIMIT 1
+    """
+
+    rows = query_bq(sql, {"id": item_id})
 
     if not rows:
         return None
@@ -87,15 +126,11 @@ def get_item_curator(item_id: str) -> Optional[Dict]:
 
 
 # ============================================================
-# GET DETAIL (FULL — VIA ADMIN)
+# DETAIL (FULL — ADMIN DELEGATION)
 # ============================================================
 
 def get_item_detail(item_id: str, item_type: str) -> Optional[Dict]:
-    """
-    Route vers les fonctions admin existantes.
-    """
 
-    # ⚠️ import local pour éviter dépendances circulaires
     if item_type == "analysis":
         from core.content.public_service import get_content
         return get_content(item_id)
@@ -124,7 +159,7 @@ def _map_feed_row(r: Dict) -> Dict:
         "excerpt": r.get("excerpt"),
         "published_at": map_dt(r.get("published_at")),
 
-        # 🔥 badges (déjà enrichis côté BQ)
+        # 🔥 badges structurés (direct depuis BQ)
         "news_type": r.get("news_type"),
         "topics": r.get("topics") or [],
         "companies": r.get("companies") or [],
