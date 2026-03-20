@@ -1,10 +1,46 @@
+// frontend-curator/lib/feed/getFeedMeta.ts
+
 import { api } from "@/lib/api";
 
-export async function getFeedMeta() {
-  try {
-    const res = await api.get("/curator/meta"); // ✅ FIX ICI
+/* ========================================================= */
 
-    return res;
+type MetaItem = {
+  id: string;
+  label: string;
+  count: number;
+};
+
+export type FeedMeta = {
+  topics: MetaItem[];
+  companies: MetaItem[];
+  solutions: MetaItem[];
+  news_types: MetaItem[];
+};
+
+/* ========================================================= */
+
+function safeArray(value: any): MetaItem[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.map((v) => ({
+    id: String(v.id),
+    label: String(v.label),
+    count: Number(v.count ?? 0),
+  }));
+}
+
+/* ========================================================= */
+
+export async function getFeedMeta(): Promise<FeedMeta> {
+  try {
+    const res = await api.get("/curator/meta");
+
+    return {
+      topics: safeArray(res?.topics),
+      companies: safeArray(res?.companies),
+      solutions: safeArray(res?.solutions),
+      news_types: safeArray(res?.news_types),
+    };
 
   } catch (e) {
     console.error("❌ getFeedMeta error", e);
