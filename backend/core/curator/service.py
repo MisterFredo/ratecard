@@ -186,9 +186,9 @@ def get_content_stats():
 
     if global_rows:
         g = global_rows[0]
-        total_count = g.get("TOTAL", 0) or 0
-        last_7 = g.get("LAST_7_DAYS", 0) or 0
-        last_30 = g.get("LAST_30_DAYS", 0) or 0
+        total_count = g.get("total", 0) or 0
+        last_7 = g.get("last_7_days", 0) or 0
+        last_30 = g.get("last_30_days", 0) or 0
     else:
         total_count = 0
         last_7 = 0
@@ -201,19 +201,19 @@ def get_content_stats():
     topics_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_TOPIC`
-        ORDER BY TOTAL DESC
+        ORDER BY total DESC
     """)
 
     topics_stats = [
         {
-            "id_topic": r.get("ID_TOPIC"),
-            "label": r.get("LABEL"),
-            "total": r.get("TOTAL", 0) or 0,
-            "last_7_days": r.get("LAST_7_DAYS", 0) or 0,
-            "last_30_days": r.get("LAST_30_DAYS", 0) or 0,
+            "id_topic": r.get("id_topic"),
+            "label": r.get("label"),
+            "total": r.get("total", 0) or 0,
+            "last_7_days": r.get("last_7_days", 0) or 0,
+            "last_30_days": r.get("last_30_days", 0) or 0,
         }
         for r in topics_rows
-        if r.get("ID_TOPIC") and r.get("LABEL")
+        if r.get("id_topic") and r.get("label")
     ]
 
     # =====================================================
@@ -223,19 +223,19 @@ def get_content_stats():
     company_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY`
-        ORDER BY TOTAL DESC
+        ORDER BY total DESC
     """)
 
     top_companies = [
         {
-            "id_company": r.get("ID_COMPANY"),
-            "name": r.get("NAME"),
-            "total": r.get("TOTAL", 0) or 0,
-            "last_7_days": r.get("LAST_7_DAYS", 0) or 0,
-            "last_30_days": r.get("LAST_30_DAYS", 0) or 0,
+            "id_company": r.get("id_company"),
+            "name": r.get("name"),
+            "total": r.get("total", 0) or 0,
+            "last_7_days": r.get("last_7_days", 0) or 0,
+            "last_30_days": r.get("last_30_days", 0) or 0,
         }
         for r in company_rows
-        if r.get("ID_COMPANY") and r.get("NAME")
+        if r.get("id_company") and r.get("name")
     ]
 
     # =====================================================
@@ -245,19 +245,19 @@ def get_content_stats():
     solution_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION`
-        ORDER BY TOTAL DESC
+        ORDER BY total DESC
     """)
 
     top_solutions = [
         {
-            "id_solution": r.get("ID_SOLUTION"),
-            "name": r.get("NAME"),
-            "total": r.get("TOTAL", 0) or 0,
-            "last_7_days": r.get("LAST_7_DAYS", 0) or 0,
-            "last_30_days": r.get("LAST_30_DAYS", 0) or 0,
+            "id_solution": r.get("id_solution"),
+            "name": r.get("name"),
+            "total": r.get("total", 0) or 0,
+            "last_7_days": r.get("last_7_days", 0) or 0,
+            "last_30_days": r.get("last_30_days", 0) or 0,
         }
         for r in solution_rows
-        if r.get("ID_SOLUTION") and r.get("NAME")
+        if r.get("id_solution") and r.get("name")
     ]
 
     # =====================================================
