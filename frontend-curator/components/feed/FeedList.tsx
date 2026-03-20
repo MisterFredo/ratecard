@@ -8,13 +8,15 @@ import type { FeedItem } from "@/types/feed";
 /* ========================================================= */
 
 type Props = {
-  items: FeedItem[] | any; // 🔒 tolérance backend imparfait
+  items: FeedItem[] | any;
   loading: boolean;
   hasMore: boolean;
   onLoadMore: () => Promise<void> | void;
   onSelectItem: (item: FeedItem) => void;
 
   title?: string;
+  total?: number;          // 🔥 NEW (count backend)
+  mode?: "text" | "filters"; // 🔥 NEW (UX)
 };
 
 /* ========================================================= */
@@ -26,12 +28,14 @@ export default function FeedList({
   onLoadMore,
   onSelectItem,
   title,
+  total,
+  mode = "filters",
 }: Props) {
 
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   /* =========================================================
-     SAFE ITEMS (CRITIQUE)
+     SAFE ITEMS
   ========================================================= */
 
   const safeItems: FeedItem[] = useMemo(() => {
@@ -58,6 +62,25 @@ export default function FeedList({
   }
 
   /* =========================================================
+     HEADER LABEL
+  ========================================================= */
+
+  const headerLabel = useMemo(() => {
+    if (!title) return null;
+
+    let suffix = "";
+
+    if (total !== undefined) {
+      suffix = ` (${total})`;
+    }
+
+    const modeLabel =
+      mode === "text" ? "Search results" : "Filtered results";
+
+    return `${title}${suffix} · ${modeLabel}`;
+  }, [title, total, mode]);
+
+  /* =========================================================
      RENDER
   ========================================================= */
 
@@ -65,11 +88,11 @@ export default function FeedList({
     <div className="space-y-4">
 
       {/* ============================
-         TITLE (OPTIONAL)
+         HEADER
       ============================ */}
-      {title && (
+      {headerLabel && (
         <div className="text-sm font-semibold text-gray-500">
-          {title}
+          {headerLabel}
         </div>
       )}
 
@@ -78,7 +101,9 @@ export default function FeedList({
       ============================ */}
       {!loading && safeItems.length === 0 && (
         <div className="text-center text-sm text-gray-400 py-10">
-          Aucun résultat
+          {mode === "text"
+            ? "No results for your search"
+            : "No results for selected filters"}
         </div>
       )}
 
@@ -100,12 +125,13 @@ export default function FeedList({
         <div className="flex justify-center pt-4">
           <button
             onClick={handleLoadMore}
+            disabled={isFetchingMore}
             className="
               text-sm px-4 py-2 rounded-lg border border-gray-300
-              hover:bg-gray-100 transition
+              hover:bg-gray-100 transition disabled:opacity-50
             "
           >
-            Charger plus
+            {isFetchingMore ? "Loading..." : "Load more"}
           </button>
         </div>
       )}
@@ -113,9 +139,9 @@ export default function FeedList({
       {/* ============================
          LOADING
       ============================ */}
-      {(loading || isFetchingMore) && (
-        <div className="text-center text-sm text-gray-400 py-4">
-          Chargement…
+      {loading && safeItems.length === 0 && (
+        <div className="text-center text-sm text-gray-400 py-10">
+          Loading...
         </div>
       )}
 
