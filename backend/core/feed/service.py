@@ -34,24 +34,28 @@ def search_curator(
 ) -> List[Dict]:
 
     # ============================================================
-    # NORMALISATION (COMPATIBLE query_bq)
+    # NORMALISATION ROBUSTE (ANTI BUG)
     # ============================================================
+
+    def normalize_array(v):
+        if v is None:
+            return None
+        if isinstance(v, list):
+            return v if len(v) > 0 else None
+        return [v]  # 🔥 convert string → list
 
     query = query.strip() if query and query.strip() != "" else None
 
-    topic_ids = topic_ids or None
-    company_ids = company_ids or None
-    solution_ids = solution_ids or None
-    news_types = news_types or None
+    topic_ids = normalize_array(topic_ids)
+    company_ids = normalize_array(company_ids)
+    solution_ids = normalize_array(solution_ids)
+    news_types = normalize_array(news_types)
 
     # ============================================================
-    # SQL
+    # SQL (NE PAS TOUCHER)
     # ============================================================
 
     sql = f"""
-    -- =========================
-    -- NEWS
-    -- =========================
     SELECT
         n.ID_NEWS as id,
         'news' as type,
@@ -61,28 +65,13 @@ def search_curator(
     FROM `{TABLE_NEWS}` n
     WHERE n.STATUS = 'PUBLISHED'
 
-    -- SEARCH
-    AND (
-        @query IS NULL
-        OR SEARCH(n, @query)
-    )
+    AND (@query IS NULL OR SEARCH(n, @query))
 
-    -- NEWS TYPE
-    AND (
-        @news_types IS NULL
-        OR n.NEWS_TYPE IN UNNEST(@news_types)
-    )
+    AND (@news_types IS NULL OR n.NEWS_TYPE IN UNNEST(@news_types))
+    AND (@company_ids IS NULL OR n.ID_COMPANY IN UNNEST(@company_ids))
 
-    -- COMPANY
     AND (
-        @company_ids IS NULL
-        OR n.ID_COMPANY IN UNNEST(@company_ids)
-    )
-
-    -- TOPIC
-    AND (
-        @topic_ids IS NULL
-        OR EXISTS (
+        @topic_ids IS NULL OR EXISTS (
             SELECT 1
             FROM `{TABLE_NEWS_TOPIC}` nt
             WHERE nt.ID_NEWS = n.ID_NEWS
@@ -90,10 +79,8 @@ def search_curator(
         )
     )
 
-    -- SOLUTION
     AND (
-        @solution_ids IS NULL
-        OR EXISTS (
+        @solution_ids IS NULL OR EXISTS (
             SELECT 1
             FROM `{TABLE_NEWS_SOLUTION}` ns
             WHERE ns.ID_NEWS = n.ID_NEWS
@@ -103,9 +90,6 @@ def search_curator(
 
     UNION ALL
 
-    -- =========================
-    -- CONTENT
-    -- =========================
     SELECT
         c.ID_CONTENT as id,
         'analysis' as type,
@@ -116,16 +100,10 @@ def search_curator(
     WHERE c.STATUS = 'PUBLISHED'
       AND c.IS_ACTIVE = TRUE
 
-    -- SEARCH
-    AND (
-        @query IS NULL
-        OR SEARCH(c, @query)
-    )
+    AND (@query IS NULL OR SEARCH(c, @query))
 
-    -- COMPANY
     AND (
-        @company_ids IS NULL
-        OR EXISTS (
+        @company_ids IS NULL OR EXISTS (
             SELECT 1
             FROM `{TABLE_CONTENT_COMPANY}` cc
             WHERE cc.ID_CONTENT = c.ID_CONTENT
@@ -133,10 +111,8 @@ def search_curator(
         )
     )
 
-    -- TOPIC
     AND (
-        @topic_ids IS NULL
-        OR EXISTS (
+        @topic_ids IS NULL OR EXISTS (
             SELECT 1
             FROM `{TABLE_CONTENT_TOPIC}` ct
             WHERE ct.ID_CONTENT = c.ID_CONTENT
@@ -144,10 +120,8 @@ def search_curator(
         )
     )
 
-    -- SOLUTION
     AND (
-        @solution_ids IS NULL
-        OR EXISTS (
+        @solution_ids IS NULL OR EXISTS (
             SELECT 1
             FROM `{TABLE_CONTENT_SOLUTION}` cs
             WHERE cs.ID_CONTENT = c.ID_CONTENT
