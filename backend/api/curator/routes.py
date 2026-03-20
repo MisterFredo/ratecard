@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 
-from core.feed.service import search_text, search_filters, get_feed_meta
+from core.curator.service import search
 from core.news.service import get_news
 from core.content.public_service import get_content
 
@@ -26,72 +26,6 @@ def search_route(
         }
     except Exception as e:
         raise HTTPException(400, f"Erreur search : {e}")
-
-
-# ============================================================
-# SEARCH — MODE FILTRES (SQL PUR)
-# ============================================================
-
-@router.get("/search/filters")
-def search_filters_route(
-    topic_ids: Optional[List[str]] = Query(None),
-    company_ids: Optional[List[str]] = Query(None),
-    solution_ids: Optional[List[str]] = Query(None),
-    news_types: Optional[List[str]] = Query(None),
-    limit: int = 20,
-    offset: int = 0,
-):
-    """
-    🔥 Mode 2 — FILTERS
-    - aucun SEARCH
-    - uniquement filtres SQL (topic, company, etc.)
-    - robuste et déterministe
-    """
-
-    try:
-        results = search_filters(
-            topic_ids=topic_ids,
-            company_ids=company_ids,
-            solution_ids=solution_ids,
-            news_types=news_types,
-            limit=limit,
-            offset=offset,
-        )
-        return results
-
-    except Exception as e:
-        print("❌ SEARCH FILTER ERROR:", e)
-        raise HTTPException(400, f"Search filter error: {e}")
-
-
-# ============================================================
-# META (FILTRES)
-# ============================================================
-
-@router.get("/meta")
-def get_meta_route():
-    try:
-        data = get_feed_meta()
-
-        if not isinstance(data, dict):
-            print("⚠️ get_feed_meta returned non-dict:", type(data))
-            data = {}
-
-        return {
-            "topics": data.get("topics", []) or [],
-            "companies": data.get("companies", []) or [],
-            "solutions": data.get("solutions", []) or [],
-            "news_types": data.get("news_types", []) or [],
-        }
-
-    except Exception as e:
-        print("❌ META ERROR:", e)
-        return {
-            "topics": [],
-            "companies": [],
-            "solutions": [],
-            "news_types": [],
-        }
 
 
 # ============================================================
