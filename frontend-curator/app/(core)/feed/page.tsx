@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 import FeedHeader from "@/components/feed/FeedHeader";
 import FeedList from "@/components/feed/FeedList";
@@ -33,15 +33,19 @@ export default function FeedPage() {
   const [loadingItemId, setLoadingItemId] =
     useState<string | null>(null);
 
+  // 🔥 gestion requêtes concurrentes
+  const currentQueryRef = useRef("");
+
   /* ============================
-     LOAD
+     LOAD (CLEAN + SAFE)
   ============================ */
 
   async function load(q?: string) {
     const finalQuery = (q ?? query)?.trim();
 
-    if (loading) return;
     if (!finalQuery) return;
+
+    currentQueryRef.current = finalQuery;
 
     setLoading(true);
 
@@ -51,8 +55,14 @@ export default function FeedPage() {
         limit: LIMIT,
       });
 
+      // 🔥 ignore réponse obsolète
+      if (currentQueryRef.current !== finalQuery) return;
+
       setItems(res.items ?? []);
       setTotal(res.count ?? res.items?.length ?? 0);
+
+    } catch (e) {
+      console.error("❌ load error", e);
     } finally {
       setLoading(false);
     }
@@ -72,22 +82,20 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     BADGE CLICK → SEARCH TEXT (OPTION B)
+     BADGE CLICK → SEARCH TEXT
   ========================================================= */
 
   function handleBadgeClick(badge: FeedBadge) {
     const value = badge.label?.trim();
 
-    if (!value || loading) return;
+    if (!value) return;
 
-    // update UI immédiatement
     setQuery(value);
     setItems([]);
+    setTotal(0);
 
-    // UX
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    // relance search
     load(value);
   }
 
