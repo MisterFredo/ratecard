@@ -1,9 +1,8 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 
-from core.curator.service import search
+from core.curator.service import search, get_content_curator
 from core.news.service import get_news
-from core.content.public_service import get_content
 
 router = APIRouter()
 
