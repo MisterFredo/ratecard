@@ -34,20 +34,34 @@ export type FeedCompany = {
 export type FeedItem = {
   id: string;
 
-  // 🔥 IMPORTANT → aligné avec backend
+  // 🔥 aligné backend
   type: "news" | "analysis";
 
   title: string;
   excerpt?: string | null;
   published_at?: string | null;
 
-  // 🔻 FUTUR (optionnel, non utilisé pour l’instant)
+  // 🔥 NOUVEAU → enrichissement backend (badges)
+  topics?: string[];
+  companies?: string[];
+  solutions?: string[];
+
+  // 🔥 déjà présent côté NEWS
+  news_type?: string | null;
+
+  // 🔻 FUTUR (non utilisé pour l’instant)
   company?: FeedCompany | null;
   has_visual?: boolean;
   media_id?: string | null;
-  news_type?: string | null;
+
+  // 🔻 optionnel (si un jour tu veux pré-calculer côté backend)
   badges?: FeedBadge[];
 };
+
+
+/* =========================================================
+   META
+========================================================= */
 
 export type MetaItem = {
   id: string;
