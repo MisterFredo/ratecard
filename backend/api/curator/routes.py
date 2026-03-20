@@ -35,13 +35,22 @@ def search_route(
             offset=offset,
         )
 
+        # 🔒 SAFE GUARD (CRITIQUE)
+        if not isinstance(items, list):
+            print("⚠️ search_curator returned non-list:", type(items))
+            items = []
+
         return {
             "items": items,
             "count": len(items),
         }
 
     except Exception as e:
-        raise HTTPException(400, f"Search error: {e}")
+        print("❌ SEARCH ERROR:", e)
+        return {
+            "items": [],
+            "count": 0,
+        }
 
 
 # ============================================================
@@ -53,15 +62,25 @@ def get_meta_route():
     try:
         data = get_feed_meta()
 
+        if not isinstance(data, dict):
+            print("⚠️ get_feed_meta returned non-dict:", type(data))
+            data = {}
+
         return {
-            "topics": data.get("topics", []),
-            "companies": data.get("companies", []),
-            "solutions": data.get("solutions", []),
-            "news_types": data.get("news_types", []),
+            "topics": data.get("topics", []) or [],
+            "companies": data.get("companies", []) or [],
+            "solutions": data.get("solutions", []) or [],
+            "news_types": data.get("news_types", []) or [],
         }
 
     except Exception as e:
-        raise HTTPException(400, f"Meta error: {e}")
+        print("❌ META ERROR:", e)
+        return {
+            "topics": [],
+            "companies": [],
+            "solutions": [],
+            "news_types": [],
+        }
 
 
 # ============================================================
@@ -70,12 +89,19 @@ def get_meta_route():
 
 @router.get("/news/{id_news}")
 def read_news(id_news: str):
-    item = get_news(id_news)
+    try:
+        item = get_news(id_news)
 
-    if not item:
-        raise HTTPException(404, "News not found")
+        if not item:
+            raise HTTPException(404, "News not found")
 
-    return item
+        return item
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("❌ NEWS ERROR:", e)
+        raise HTTPException(400, f"News error: {e}")
 
 
 # ============================================================
@@ -84,9 +110,16 @@ def read_news(id_news: str):
 
 @router.get("/content/{id_content}")
 def read_content(id_content: str):
-    item = get_content(id_content)
+    try:
+        item = get_content(id_content)
 
-    if not item:
-        raise HTTPException(404, "Content not found")
+        if not item:
+            raise HTTPException(404, "Content not found")
 
-    return item
+        return item
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("❌ CONTENT ERROR:", e)
+        raise HTTPException(400, f"Content error: {e}")
