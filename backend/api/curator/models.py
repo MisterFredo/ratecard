@@ -89,6 +89,10 @@ class CompanyStats(StatsItem):
     id_company: str
     name: str
 
+class SolutionStats(StatsItem):
+    id_solution: str
+    name: str
+
 
 # ============================================================
 # STATS — RESPONSE
@@ -100,3 +104,4 @@ class ContentStatsResponse(BaseModel):
     last_30_days: int
     topics_stats: List[TopicStats]
     top_companies: List[CompanyStats]
+    top_solutions: List[SolutionStats]
