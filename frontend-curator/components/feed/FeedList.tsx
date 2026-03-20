@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 import FeedRow from "@/components/feed/FeedRow";
 import type { FeedItem } from "@/types/feed";
@@ -8,7 +8,7 @@ import type { FeedItem } from "@/types/feed";
 /* ========================================================= */
 
 type Props = {
-  items: FeedItem[];
+  items: FeedItem[] | any; // 🔒 tolérance backend imparfait
   loading: boolean;
   hasMore: boolean;
   onLoadMore: () => Promise<void> | void;
@@ -29,6 +29,18 @@ export default function FeedList({
 }: Props) {
 
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+  /* =========================================================
+     SAFE ITEMS (CRITIQUE)
+  ========================================================= */
+
+  const safeItems: FeedItem[] = useMemo(() => {
+    if (!Array.isArray(items)) {
+      console.warn("⚠️ FeedList received non-array items:", items);
+      return [];
+    }
+    return items;
+  }, [items]);
 
   /* =========================================================
      LOAD MORE
@@ -64,7 +76,7 @@ export default function FeedList({
       {/* ============================
          EMPTY STATE
       ============================ */}
-      {!loading && items.length === 0 && (
+      {!loading && safeItems.length === 0 && (
         <div className="text-center text-sm text-gray-400 py-10">
           Aucun résultat
         </div>
@@ -73,7 +85,7 @@ export default function FeedList({
       {/* ============================
          ITEMS
       ============================ */}
-      {items.map((item) => (
+      {safeItems.map((item) => (
         <FeedRow
           key={`${item.type}-${item.id}`}
           item={item}
@@ -84,7 +96,7 @@ export default function FeedList({
       {/* ============================
          LOAD MORE
       ============================ */}
-      {hasMore && !loading && items.length > 0 && (
+      {hasMore && !loading && safeItems.length > 0 && (
         <div className="flex justify-center pt-4">
           <button
             onClick={handleLoadMore}
