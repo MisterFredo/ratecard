@@ -23,7 +23,6 @@ export default function FeedPage() {
 
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
-
   const [total, setTotal] = useState(0);
 
   const [query, setQuery] = useState("");
@@ -73,13 +72,13 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     🔥 NEW — BADGE CLICK
+     BADGE CLICK → SEARCH TEXT (OPTION B)
   ========================================================= */
 
   function handleBadgeClick(badge: FeedBadge) {
-    const value = badge.label;
+    const value = badge.label?.trim();
 
-    if (!value) return;
+    if (!value || loading) return;
 
     // update UI immédiatement
     setQuery(value);
@@ -114,8 +113,6 @@ export default function FeedPage() {
         onLoadMore={() => {}}
         onSelectItem={handleSelectItem}
         loadingItemId={loadingItemId}
-
-        // 🔥 NEW
         onClickBadge={handleBadgeClick}
       />
 
