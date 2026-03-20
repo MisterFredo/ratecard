@@ -33,7 +33,7 @@ function safeArray(value: any): MetaItem[] {
 
 export async function getFeedMeta(): Promise<FeedMeta> {
   try {
-    const res = await api.get("/curator/meta");
+    const res = await api.get("/meta");
 
     return {
       topics: safeArray(res?.topics),
