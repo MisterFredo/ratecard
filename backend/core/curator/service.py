@@ -28,39 +28,128 @@ TABLE_NEWS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NEWS_SOLUTION"
 # ============================================================
 
 def search(q: str, limit: int = 20) -> List[Dict]:
-    """
-    Recherche full-text sur NEWS + ANALYSES
-    via BigQuery Search Index.
-
-    ⚠️ Repose sur des SEARCH INDEX créés sur :
-    - RATECARD_NEWS
-    - RATECARD_CONTENT
-    """
 
     sql = f"""
-    -- NEWS
-    SELECT
-        n.ID_NEWS as ID,
-        n.TITLE,
-        n.EXCERPT,
-        'NEWS' as SOURCE_TYPE,
-        n.PUBLISHED_AT
-    FROM `{TABLE_NEWS}` n
-    WHERE n.STATUS = 'PUBLISHED'
-      AND SEARCH(n, @query)
 
-    UNION ALL
+    WITH base AS (
 
-    -- ANALYSES
+        -- NEWS
+        SELECT
+            n.ID_NEWS as id,
+            'news' as type,
+            n.TITLE,
+            n.EXCERPT,
+            n.PUBLISHED_AT,
+            n.NEWS_TYPE,
+            n.ID_COMPANY
+        FROM `{TABLE_NEWS}` n
+        WHERE n.STATUS = 'PUBLISHED'
+          AND SEARCH(n, @query)
+
+        UNION ALL
+
+        -- ANALYSIS
+        SELECT
+            c.ID_CONTENT as id,
+            'analysis' as type,
+            c.TITLE,
+            c.EXCERPT,
+            c.PUBLISHED_AT,
+            NULL as NEWS_TYPE,
+            NULL as ID_COMPANY
+        FROM `{TABLE_CONTENT}` c
+        WHERE c.STATUS = 'PUBLISHED'
+          AND SEARCH(c, @query)
+    )
+
+    -- ============================
+    -- TOPICS
+    -- ============================
+
+    , topics_map AS (
+        SELECT
+            nt.ID_NEWS as id,
+            ARRAY_AGG(DISTINCT t.LABEL) as topics
+        FROM `{TABLE_NEWS_TOPIC}` nt
+        JOIN `{TABLE_TOPIC}` t
+          ON nt.ID_TOPIC = t.ID_TOPIC
+        GROUP BY nt.ID_NEWS
+
+        UNION ALL
+
+        SELECT
+            ct.ID_CONTENT as id,
+            ARRAY_AGG(DISTINCT t.LABEL) as topics
+        FROM `{TABLE_CONTENT_TOPIC}` ct
+        JOIN `{TABLE_TOPIC}` t
+          ON ct.ID_TOPIC = t.ID_TOPIC
+        GROUP BY ct.ID_CONTENT
+    )
+
+    -- ============================
+    -- COMPANIES
+    -- ============================
+
+    , company_map AS (
+        SELECT
+            n.ID_NEWS as id,
+            ARRAY_AGG(DISTINCT c.NAME) as companies
+        FROM `{TABLE_NEWS}` n
+        JOIN `{TABLE_COMPANY}` c
+          ON n.ID_COMPANY = c.ID_COMPANY
+        GROUP BY n.ID_NEWS
+
+        UNION ALL
+
+        SELECT
+            cc.ID_CONTENT as id,
+            ARRAY_AGG(DISTINCT c.NAME) as companies
+        FROM `{TABLE_CONTENT_COMPANY}` cc
+        JOIN `{TABLE_COMPANY}` c
+          ON cc.ID_COMPANY = c.ID_COMPANY
+        GROUP BY cc.ID_CONTENT
+    )
+
+    -- ============================
+    -- SOLUTIONS
+    -- ============================
+
+    , solution_map AS (
+        SELECT
+            ns.ID_NEWS as id,
+            ARRAY_AGG(DISTINCT s.NAME) as solutions
+        FROM `{TABLE_NEWS_SOLUTION}` ns
+        JOIN `{TABLE_SOLUTION}` s
+          ON ns.ID_SOLUTION = s.ID_SOLUTION
+        GROUP BY ns.ID_NEWS
+
+        UNION ALL
+
+        SELECT
+            cs.ID_CONTENT as id,
+            ARRAY_AGG(DISTINCT s.NAME) as solutions
+        FROM `{TABLE_CONTENT_SOLUTION}` cs
+        JOIN `{TABLE_SOLUTION}` s
+          ON cs.ID_SOLUTION = s.ID_SOLUTION
+        GROUP BY cs.ID_CONTENT
+    )
+
     SELECT
-        c.ID_CONTENT as ID,
-        c.TITLE,
-        c.EXCERPT,
-        'ANALYSIS' as SOURCE_TYPE,
-        c.PUBLISHED_AT
-    FROM `{TABLE_CONTENT}` c
-    WHERE c.STATUS = 'PUBLISHED'
-      AND SEARCH(c, @query)
+        base.*,
+        topics_map.topics,
+        company_map.companies,
+        solution_map.solutions
+
+    FROM base
+
+    LEFT JOIN topics_map
+      ON topics_map.id = base.id
+
+    LEFT JOIN company_map
+      ON company_map.id = base.id
+
+    LEFT JOIN solution_map
+      ON solution_map.id = base.id
 
     ORDER BY PUBLISHED_AT DESC
     LIMIT @limit
