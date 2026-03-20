@@ -117,6 +117,7 @@ export default function FeedList({
           key={`${item.type}-${item.id}`}
           item={item}
           onClick={() => onSelectItem(item)}
+          onClickBadge={onClickBadge}
         />
       ))}
 
