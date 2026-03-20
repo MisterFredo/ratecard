@@ -63,10 +63,10 @@ export default function FeedPage() {
 
       if (reset) {
         setItems(res.items);
-        setOffset(LIMIT);
+        setOffset(res.items.length);
       } else {
         setItems((prev) => [...prev, ...res.items]);
-        setOffset((prev) => prev + LIMIT);
+        setOffset((prev) => prev + res.items.length);
       }
 
       setTotal(res.count ?? 0);
@@ -85,6 +85,10 @@ export default function FeedPage() {
     load(true);
   }, []);
 
+  /* =========================================================
+     LOAD STATS
+  ========================================================= */
+
   useEffect(() => {
     async function loadStats() {
       const s = await getContentStats();
@@ -100,12 +104,22 @@ export default function FeedPage() {
 
   function handleBadgeClick(badge: FeedBadge) {
     const value = badge.label;
-
     if (!value) return;
 
     setQuery(value);
-    setOffset(0);
+    window.scrollTo({ top: 0 });
 
+    load(true, value);
+  }
+
+  /* =========================================================
+     STAT CLICK
+  ========================================================= */
+
+  function handleStatClick(value: string) {
+    if (!value) return;
+
+    setQuery(value);
     window.scrollTo({ top: 0 });
 
     load(true, value);
@@ -134,19 +148,12 @@ export default function FeedPage() {
       <FeedHeader
         query={query}
         setQuery={setQuery}
-        onSearch={() => {
-          setOffset(0);
-          load(true);
-        }}
+        onSearch={() => load(true, query)}
       />
 
       <StatsBar
         stats={stats}
-        onClickStat={(value) => {
-          setQuery(value);
-          setOffset(0);
-          load(true, value);
-        }}
+        onClickStat={handleStatClick}
       />
 
       <FeedList
