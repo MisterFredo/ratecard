@@ -29,7 +29,7 @@ export default function FeedPage() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
-  const [total, setTotal] = useState(0); // 🔥 FIX
+  const [total, setTotal] = useState(0);
 
   const [meta, setMeta] = useState({
     topics: [],
@@ -64,18 +64,22 @@ export default function FeedPage() {
   }, []);
 
   /* ============================
-     LOAD
+     LOAD (🔥 FIX CRITIQUE)
   ============================ */
 
-  async function load(reset = false) {
+  async function load(
+    reset = false,
+    forcedMode?: "text" | "filters"
+  ) {
     if (loading) return;
 
     setLoading(true);
 
     const currentOffset = reset ? 0 : offset;
+    const activeMode = forcedMode ?? mode;
 
     const res = await searchCurator({
-      ...(mode === "text"
+      ...(activeMode === "text"
         ? { query: params.query }
         : {
             topic_ids: params.topic_ids,
@@ -97,9 +101,7 @@ export default function FeedPage() {
       setOffset((prev) => prev + LIMIT);
     }
 
-    // 🔥 FIX total
     setTotal(res.count ?? newItems.length);
-
     setHasMore(newItems.length === LIMIT);
     setLoading(false);
   }
@@ -109,11 +111,11 @@ export default function FeedPage() {
   ============================ */
 
   useEffect(() => {
-    load(true);
+    load(true, "filters");
   }, []);
 
   /* ============================
-     ACTIONS
+     ACTIONS (🔥 FIX)
   ============================ */
 
   function handleSearchText() {
@@ -123,7 +125,7 @@ export default function FeedPage() {
     setOffset(0);
     setHasMore(true);
 
-    load(true);
+    load(true, "text"); // 🔥 FIX
   }
 
   function handleApplyFilters() {
@@ -133,25 +135,26 @@ export default function FeedPage() {
     setOffset(0);
     setHasMore(true);
 
-    load(true);
+    load(true, "filters"); // 🔥 FIX
   }
 
   function handleReset() {
-    setParams({
+    const empty = {
       query: "",
       topic_ids: [],
       company_ids: [],
       solution_ids: [],
       news_types: [],
-    });
+    };
 
+    setParams(empty);
     setMode("filters");
 
     setItems([]);
     setOffset(0);
     setHasMore(true);
 
-    load(true);
+    load(true, "filters"); // 🔥 FIX
   }
 
   /* ============================
@@ -166,34 +169,32 @@ export default function FeedPage() {
   }
 
   /* ============================
-     BADGE CLICK (🔥 NEW)
+     BADGE CLICK (🔥 FIX)
   ============================ */
 
   function handleClickBadge(badge: any) {
     setMode("filters");
 
-    if (badge.type === "topic") {
-      updateParams({ topic_ids: [badge.id] });
-    }
+    const next = {
+      query: "",
+      topic_ids: [],
+      company_ids: [],
+      solution_ids: [],
+      news_types: [],
+    };
 
-    if (badge.type === "company") {
-      updateParams({ company_ids: [badge.id] });
-    }
+    if (badge.type === "topic") next.topic_ids = [badge.id];
+    if (badge.type === "company") next.company_ids = [badge.id];
+    if (badge.type === "solution") next.solution_ids = [badge.id];
+    if (badge.type === "news_type") next.news_types = [badge.id];
 
-    if (badge.type === "solution") {
-      updateParams({ solution_ids: [badge.id] });
-    }
+    setParams(next);
 
-    if (badge.type === "news_type") {
-      updateParams({ news_types: [badge.id] });
-    }
-
-    // reload
     setItems([]);
     setOffset(0);
     setHasMore(true);
 
-    load(true);
+    load(true, "filters"); // 🔥 FIX
   }
 
   /* ============================
@@ -249,7 +250,7 @@ export default function FeedPage() {
         hasMore={hasMore}
         onLoadMore={() => load(false)}
         onSelectItem={setSelectedItem}
-        onClickBadge={handleClickBadge} // 🔥 interaction
+        onClickBadge={handleClickBadge}
       />
 
       {selectedItem?.type === "analysis" && (
