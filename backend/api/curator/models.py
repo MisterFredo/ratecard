@@ -3,7 +3,7 @@ from typing import List, Optional
 
 
 # ============================================================
-# INPUT — SEARCH TEXT
+# INPUT — SEARCH
 # ============================================================
 
 class SearchTextQuery(BaseModel):
@@ -12,7 +12,27 @@ class SearchTextQuery(BaseModel):
 
 
 # ============================================================
-# OUTPUT — ITEM (ALIGNÉ SEARCH + BADGES)
+# BADGES STRUCTURÉS (ALIGNÉS BQ)
+# ============================================================
+
+class Topic(BaseModel):
+    id_topic: str
+    label: str
+    axis: Optional[str] = None
+
+
+class Company(BaseModel):
+    id_company: str
+    name: str
+
+
+class Solution(BaseModel):
+    id_solution: str
+    name: str
+
+
+# ============================================================
+# OUTPUT — FEED ITEM
 # ============================================================
 
 class FeedItem(BaseModel):
@@ -23,10 +43,12 @@ class FeedItem(BaseModel):
     excerpt: Optional[str] = None
     published_at: Optional[str] = None
 
-    # 🔥 BADGES (ENRICHIS BACKEND)
-    topics: Optional[List[str]] = None
-    companies: Optional[List[str]] = None
-    solutions: Optional[List[str]] = None
+    # 🔥 BADGES STRUCTURÉS
+    topics: List[Topic] = []
+    companies: List[Company] = []
+    solutions: List[Solution] = []
+
+    # spécifique news
     news_type: Optional[str] = None
 
 
