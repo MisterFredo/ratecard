@@ -32,6 +32,7 @@ export default function FeedList({
   title,
   total,
   mode = "filters",
+  onClickBadge,
 }: Props) {
 
   const [isFetchingMore, setIsFetchingMore] = useState(false);
