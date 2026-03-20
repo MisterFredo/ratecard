@@ -31,7 +31,6 @@ export default function FeedPage() {
   const [selectedItem, setSelectedItem] =
     useState<FeedItem | null>(null);
 
-  // 🔥 NEW → loading item (UX)
   const [loadingItemId, setLoadingItemId] =
     useState<string | null>(null);
 
@@ -53,8 +52,8 @@ export default function FeedPage() {
         limit: LIMIT,
       });
 
-      setItems(res.items);
-      setTotal(res.count ?? res.items.length);
+      setItems(res.items ?? []);
+      setTotal(res.count ?? res.items?.length ?? 0);
     } finally {
       setLoading(false);
     }
@@ -64,16 +63,10 @@ export default function FeedPage() {
      ACTIONS
   ============================ */
 
-  function handleSearch() {
-    setItems([]);
-    load(query); // ✅ FIX double clic
-  }
-
   function handleSelectItem(item: FeedItem) {
-    setLoadingItemId(item.id); // 🔥 feedback immédiat
+    setLoadingItemId(item.id);
     setSelectedItem(item);
 
-    // petit délai pour laisser le temps au drawer de monter
     setTimeout(() => {
       setLoadingItemId(null);
     }, 300);
@@ -89,7 +82,7 @@ export default function FeedPage() {
       <FeedHeader
         query={query}
         setQuery={setQuery}
-        onSearch={() => load(query)} // ✅ FIX ici aussi
+        onSearch={() => load(query)}
       />
 
       <FeedList
@@ -100,23 +93,29 @@ export default function FeedPage() {
         hasMore={false}
         onLoadMore={() => {}}
         onSelectItem={handleSelectItem}
-
-        // 🔥 NEW → pour feedback visuel
         loadingItemId={loadingItemId}
       />
 
-      {selectedItem?.type === "analysis" && (
-        <AnalysisDrawer
-          id={selectedItem.id}
-          onClose={() => setSelectedItem(null)}
-        />
-      )}
+      {/* =========================================================
+         DRAWERS (LOGIQUE UNIFIÉE)
+      ========================================================= */}
 
-      {selectedItem?.type === "news" && (
-        <NewsDrawer
-          id={selectedItem.id}
-          onClose={() => setSelectedItem(null)}
-        />
+      {selectedItem && (
+        <>
+          {selectedItem.type === "analysis" && (
+            <AnalysisDrawer
+              id={selectedItem.id}
+              onClose={() => setSelectedItem(null)}
+            />
+          )}
+
+          {selectedItem.type === "news" && (
+            <NewsDrawer
+              id={selectedItem.id}
+              onClose={() => setSelectedItem(null)}
+            />
+          )}
+        </>
       )}
     </div>
   );
