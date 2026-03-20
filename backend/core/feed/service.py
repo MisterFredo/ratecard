@@ -134,3 +134,83 @@ def search_curator(
             "offset": offset,
         },
     )
+
+# ============================================================
+# META
+# ============================================================
+
+def get_feed_meta() -> Dict:
+
+    sql = f"""
+    SELECT *
+    FROM (
+
+        SELECT
+            'topic' AS type,
+            ID_TOPIC AS id,
+            LABEL AS label,
+            0 AS count
+        FROM `{TABLE_TOPIC}`
+
+        UNION ALL
+
+        SELECT
+            'company' AS type,
+            ID_COMPANY AS id,
+            NAME AS label,
+            0 AS count
+        FROM `{TABLE_COMPANY}`
+
+        UNION ALL
+
+        SELECT
+            'solution' AS type,
+            ID_SOLUTION AS id,
+            NAME AS label,
+            0 AS count
+        FROM `{TABLE_SOLUTION}`
+
+        UNION ALL
+
+        SELECT
+            'news_type' AS type,
+            NEWS_TYPE AS id,
+            NEWS_TYPE AS label,
+            COUNT(*) AS count
+        FROM `{TABLE_NEWS}`
+        WHERE STATUS = 'PUBLISHED'
+        GROUP BY NEWS_TYPE
+
+    )
+    ORDER BY type, label
+    """
+
+    rows = query_bq(sql)
+
+    result = {
+        "topics": [],
+        "companies": [],
+        "solutions": [],
+        "news_types": []
+    }
+
+    for r in rows:
+        item = {
+            "id": r["id"],
+            "label": r["label"],
+            "count": r["count"],
+        }
+
+        if r["type"] == "topic":
+            result["topics"].append(item)
+
+        elif r["type"] == "company":
+            result["companies"].append(item)
+
+        elif r["type"] == "solution":
+            result["solutions"].append(item)
+
+        elif r["type"] == "news_type":
+            result["news_types"].append(item)
+
+    return result
