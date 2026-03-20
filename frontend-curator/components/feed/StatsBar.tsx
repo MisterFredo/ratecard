@@ -21,7 +21,7 @@ export default function StatsBar({ stats, onClickStat }: Props) {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {stats.topics_stats.slice(0, 10).map((t: any) => (
+            {stats.topics_stats.slice(0, 20).map((t: any) => (
               <button
                 key={t.id_topic}
                 onClick={() => onClickStat?.(t.label)}
@@ -49,7 +49,7 @@ export default function StatsBar({ stats, onClickStat }: Props) {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {stats.top_companies.slice(0, 10).map((c: any) => (
+            {stats.top_companies.slice(0, 20).map((c: any) => (
               <button
                 key={c.id_company}
                 onClick={() => onClickStat?.(c.name)}
@@ -77,7 +77,7 @@ export default function StatsBar({ stats, onClickStat }: Props) {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {stats.top_solutions.slice(0, 10).map((s: any) => (
+            {stats.top_solutions.slice(0, 20).map((s: any) => (
               <button
                 key={s.id_solution}
                 onClick={() => onClickStat?.(s.name)}
