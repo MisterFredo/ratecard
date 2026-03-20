@@ -49,6 +49,19 @@ export type FeedItem = {
   badges?: FeedBadge[];
 };
 
+export type MetaItem = {
+  id: string;
+  label: string;
+  count: number;
+};
+
+export type FeedMetaResponse = {
+  topics: MetaItem[];
+  companies: MetaItem[];
+  solutions: MetaItem[];
+  news_types: MetaItem[];
+};
+
 
 /* =========================================================
    RESPONSE
