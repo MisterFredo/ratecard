@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import FeedHeader from "@/components/feed/FeedHeader";
 import FeedList from "@/components/feed/FeedList";
@@ -24,9 +24,6 @@ export default function FeedPage() {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-
   const [total, setTotal] = useState(0);
 
   const [query, setQuery] = useState("");
@@ -38,33 +35,20 @@ export default function FeedPage() {
      LOAD
   ============================ */
 
-  async function load(reset = false) {
+  async function load() {
     if (loading) return;
-
     if (!query || query.trim() === "") return;
 
     setLoading(true);
 
-    const currentOffset = reset ? 0 : offset;
-
     const res = await searchCurator({
       query,
       limit: LIMIT,
-      offset: currentOffset,
     });
 
-    const newItems = res.items;
+    setItems(res.items);
+    setTotal(res.count ?? res.items.length);
 
-    if (reset) {
-      setItems(newItems);
-      setOffset(LIMIT);
-    } else {
-      setItems((prev) => [...prev, ...newItems]);
-      setOffset((prev) => prev + LIMIT);
-    }
-
-    setTotal(res.count ?? newItems.length);
-    setHasMore(newItems.length === LIMIT);
     setLoading(false);
   }
 
@@ -74,10 +58,7 @@ export default function FeedPage() {
 
   function handleSearch() {
     setItems([]);
-    setOffset(0);
-    setHasMore(true);
-
-    load(true);
+    load();
   }
 
   /* ============================
@@ -98,8 +79,7 @@ export default function FeedPage() {
         items={items}
         total={total}
         loading={loading}
-        hasMore={hasMore}
-        onLoadMore={() => load(false)}
+        hasMore={false} // 🔥 pas de pagination
         onSelectItem={setSelectedItem}
       />
 
