@@ -1,9 +1,23 @@
-// frontend-curator/types/home.ts
+// frontend-curator/types/feed.ts
+
+/* =========================================================
+   BADGES
+========================================================= */
+
+export type FeedBadgeType =
+  | "topic"
+  | "company"
+  | "solution"
+  | "news_type";
 
 export type FeedBadge = {
   label: string;
-  type: "TOPIC" | "COMPANY" | "SOLUTION";
+  type: FeedBadgeType;
 };
+
+/* =========================================================
+   ITEM
+========================================================= */
 
 export type FeedItem = {
   id: string;
@@ -19,9 +33,6 @@ export type FeedItem = {
   media_id?: string | null;
   news_type?: string | null;
 
-  // 🔥 NOUVEAU → badges unifiés
-  badges?: {
-    label: string;
-    type: "news_type" | "company" | "solution" | "topic";
-  }[];
+  // 🔥 badges unifiés
+  badges?: FeedBadge[];
 };
