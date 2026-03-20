@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import FeedRow from "@/components/feed/FeedRow";
 import type { FeedItem } from "@/types/feed";
 
@@ -9,10 +11,9 @@ type Props = {
   items: FeedItem[];
   loading: boolean;
   hasMore: boolean;
-  onLoadMore: () => void;
+  onLoadMore: () => Promise<void> | void;
   onSelectItem: (item: FeedItem) => void;
 
-  // 🔵 optionnel → pour affichage (News / Analyses)
   title?: string;
 };
 
@@ -27,9 +28,21 @@ export default function FeedList({
   title,
 }: Props) {
 
-  function handleLoadMore() {
-    if (loading) return;
-    onLoadMore();
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+  /* =========================================================
+     LOAD MORE
+  ========================================================= */
+
+  async function handleLoadMore() {
+    if (loading || isFetchingMore) return;
+
+    try {
+      setIsFetchingMore(true);
+      await onLoadMore();
+    } finally {
+      setIsFetchingMore(false);
+    }
   }
 
   /* =========================================================
@@ -75,7 +88,10 @@ export default function FeedList({
         <div className="flex justify-center pt-4">
           <button
             onClick={handleLoadMore}
-            className="text-sm text-gray-500 hover:text-black transition"
+            className="
+              text-sm px-4 py-2 rounded-lg border border-gray-300
+              hover:bg-gray-100 transition
+            "
           >
             Charger plus
           </button>
@@ -85,7 +101,7 @@ export default function FeedList({
       {/* ============================
          LOADING
       ============================ */}
-      {loading && (
+      {(loading || isFetchingMore) && (
         <div className="text-center text-sm text-gray-400 py-4">
           Chargement…
         </div>
