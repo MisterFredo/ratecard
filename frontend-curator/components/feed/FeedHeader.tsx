@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 /* ========================================================= */
 
@@ -19,7 +19,8 @@ type Props = {
 
   newsTypeOptions: Option[];
 
-  onSearch: () => void; 
+  onSearch: () => void;      // 🔍 TEXT SEARCH
+  onApplyFilters: () => void; // 🎯 FILTERS
   onReset: () => void;
 };
 
@@ -31,10 +32,17 @@ export default function FeedHeader({
   newsTypes,
   setNewsTypes,
   newsTypeOptions,
+  onSearch,
+  onApplyFilters,
   onReset,
 }: Props) {
 
   const [input, setInput] = useState(query);
+
+  // 🔥 sync si reset externe
+  useEffect(() => {
+    setInput(query);
+  }, [query]);
 
   /* ========================================================= */
 
@@ -50,8 +58,15 @@ export default function FeedHeader({
     setNewsTypes(next);
   }
 
+  /* ========================================================= */
+
   function handleSearch() {
-    setQuery(input);
+    setQuery(input.trim());
+    onSearch(); // 🔥 déclenche mode TEXT
+  }
+
+  function handleApplyFilters() {
+    onApplyFilters(); // 🔥 déclenche mode FILTERS
   }
 
   /* ========================================================= */
@@ -59,7 +74,7 @@ export default function FeedHeader({
   return (
     <div className="space-y-5">
 
-      {/* SEARCH */}
+      {/* SEARCH BAR */}
       <div className="flex gap-3">
         <input
           value={input}
@@ -74,6 +89,7 @@ export default function FeedHeader({
           "
         />
 
+        {/* 🔍 TEXT SEARCH */}
         <button
           onClick={handleSearch}
           className="px-5 py-2.5 bg-black text-white text-sm rounded-lg"
@@ -81,6 +97,15 @@ export default function FeedHeader({
           Search
         </button>
 
+        {/* 🎯 FILTERS */}
+        <button
+          onClick={handleApplyFilters}
+          className="px-5 py-2.5 border border-black text-black text-sm rounded-lg"
+        >
+          Apply Filters
+        </button>
+
+        {/* RESET */}
         <button
           onClick={onReset}
           className="px-4 py-2.5 text-sm border border-gray-300 rounded-lg"
