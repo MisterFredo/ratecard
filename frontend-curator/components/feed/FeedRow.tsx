@@ -7,8 +7,10 @@ import type { FeedItem, FeedBadge } from "@/types/feed";
 type Props = {
   item: FeedItem;
   onClick: () => void;
-
   onClickBadge?: (badge: FeedBadge) => void;
+
+  // 🔥 NEW → feedback UX
+  loading?: boolean;
 };
 
 /* ========================================================= */
@@ -17,6 +19,7 @@ export default function FeedRow({
   item,
   onClick,
   onClickBadge,
+  loading = false,
 }: Props) {
   const isNews = item.type === "news";
 
@@ -37,7 +40,7 @@ export default function FeedRow({
   }
 
   /* =========================================================
-     BADGES (BUILD FROM BACKEND DATA)
+     BADGES
   ========================================================= */
 
   const badges: FeedBadge[] = [
@@ -62,7 +65,7 @@ export default function FeedRow({
   ];
 
   /* =========================================================
-     BADGE STYLE
+     BADGE STYLE (plus premium)
   ========================================================= */
 
   function getBadgeClass(type?: string) {
@@ -70,9 +73,9 @@ export default function FeedRow({
       case "news_type":
         return "bg-black text-white";
       case "company":
-        return "bg-blue-100 text-blue-700";
+        return "bg-blue-50 text-blue-600 border border-blue-100";
       case "solution":
-        return "bg-purple-100 text-purple-700";
+        return "bg-purple-50 text-purple-600 border border-purple-100";
       case "topic":
       default:
         return "bg-gray-100 text-gray-600";
@@ -80,7 +83,7 @@ export default function FeedRow({
   }
 
   /* =========================================================
-     IMAGE URL
+     IMAGE
   ========================================================= */
 
   const imageUrl =
@@ -98,18 +101,18 @@ export default function FeedRow({
   return (
     <article
       onClick={onClick}
-      className="
+      className={`
         cursor-pointer
-        border-b border-gray-100
-        pb-4
-        hover:bg-gray-50 transition
-      "
+        px-4 py-4
+        transition
+        ${loading ? "opacity-50" : "hover:bg-gray-50"}
+      `}
     >
-      <div className="flex gap-4">
+      <div className="flex gap-4 items-start">
 
         {/* IMAGE */}
         {imageUrl && (
-          <div className="w-[140px] h-[80px] bg-gray-100 flex-shrink-0 overflow-hidden rounded">
+          <div className="w-[140px] h-[80px] bg-gray-100 flex-shrink-0 overflow-hidden rounded-md">
             <img
               src={imageUrl}
               alt={item.title}
@@ -125,8 +128,17 @@ export default function FeedRow({
         <div className="flex-1 space-y-2">
 
           {/* META */}
-          <div className="flex justify-between text-[11px] text-gray-400">
-            <span>{formattedDate || ""}</span>
+          <div className="flex items-center justify-between text-[11px] text-gray-400">
+
+            <div className="flex items-center gap-2">
+              <span>{formattedDate || ""}</span>
+
+              {loading && (
+                <span className="animate-pulse text-gray-400">
+                  • Loading…
+                </span>
+              )}
+            </div>
 
             <span
               className={`
@@ -157,10 +169,7 @@ export default function FeedRow({
                   key={`${b.label}-${i}`}
                   onClick={(e) => {
                     e.stopPropagation();
-
-                    if (onClickBadge) {
-                      onClickBadge(b);
-                    }
+                    onClickBadge?.(b);
                   }}
                   className={`
                     px-2 py-0.5 text-[10px] rounded-full uppercase tracking-wide
@@ -175,7 +184,7 @@ export default function FeedRow({
           )}
 
           {/* TITLE */}
-          <h2 className="text-[15px] font-medium leading-snug">
+          <h2 className="text-[15px] font-medium leading-snug text-gray-900">
             {item.title}
           </h2>
 
