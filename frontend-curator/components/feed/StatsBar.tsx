@@ -12,32 +12,6 @@ export default function StatsBar({ stats, onClickStat }: Props) {
     <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-5">
 
       {/* =========================================================
-         GLOBAL
-      ========================================================= */}
-      <div className="flex gap-6 text-sm">
-        <div>
-          <div className="text-gray-400 text-xs">Total</div>
-          <div className="font-semibold text-gray-900">
-            {stats.total_count}
-          </div>
-        </div>
-
-        <div>
-          <div className="text-gray-400 text-xs">Last 7 days</div>
-          <div className="font-semibold text-gray-900">
-            {stats.last_7_days}
-          </div>
-        </div>
-
-        <div>
-          <div className="text-gray-400 text-xs">Last 30 days</div>
-          <div className="font-semibold text-gray-900">
-            {stats.last_30_days}
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================
          TOPICS
       ========================================================= */}
       {stats.topics_stats?.length > 0 && (
