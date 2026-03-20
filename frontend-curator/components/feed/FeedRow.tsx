@@ -119,8 +119,12 @@ export default function FeedRow({
 
             <span
               className={`
-                uppercase tracking-wide font-medium
-                ${isNews ? "text-blue-600" : "text-green-600"}
+                text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide font-medium
+                ${
+                  isNews
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-green-100 text-green-700"
+                }
               `}
             >
               {isNews ? "NEWS" : "ANALYSIS"}
