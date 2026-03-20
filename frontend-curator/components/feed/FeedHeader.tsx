@@ -31,7 +31,7 @@ export default function FeedHeader({
   function handleSearch() {
     const value = input.trim();
     setQuery(value);
-    onSearch();
+    onSearch(value);
   }
 
   /* ========================================================= */
