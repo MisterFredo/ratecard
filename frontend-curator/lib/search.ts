@@ -1,5 +1,3 @@
-// frontend-curator/lib/search.ts
-
 import { api } from "@/lib/api";
 import type { FeedItem, FeedResponse } from "@/types/feed";
 
@@ -11,16 +9,22 @@ type Params = {
 };
 
 /* ========================================================= */
-// 🔥 MAPPING CRITIQUE
+// 🔥 MAPPING NOUVEAU BACKEND
 /* ========================================================= */
 
 function mapItem(row: any): FeedItem {
   return {
-    id: row.ID,
-    title: row.TITLE,
-    excerpt: row.EXCERPT,
-    published_at: row.PUBLISHED_AT,
-    type: row.SOURCE_TYPE === "NEWS" ? "news" : "analysis",
+    id: row.id,
+    title: row.title,
+    excerpt: row.excerpt,
+    published_at: row.published_at,
+    type: row.type,
+
+    // 🔥 badges
+    topics: row.topics ?? [],
+    companies: row.companies ?? [],
+    solutions: row.solutions ?? [],
+    news_type: row.news_type ?? null,
   };
 }
 
@@ -46,13 +50,13 @@ export async function searchCurator(
 
     const data = res?.data ?? res;
 
-    // 🔒 SAFE RESPONSE
-    if (!data || !Array.isArray(data.results)) {
+    // ✅ FIX PRINCIPAL
+    if (!data || !Array.isArray(data.items)) {
       console.warn("⚠️ searchCurator: invalid response", data);
       return { items: [], count: 0 };
     }
 
-    const items = data.results.map(mapItem);
+    const items = data.items.map(mapItem);
 
     return {
       items,
