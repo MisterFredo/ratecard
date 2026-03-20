@@ -177,3 +177,115 @@ def get_content_curator(id_content: str):
     ]
 
     return content
+
+def get_news_curator(id_news: str):
+
+    rows = query_bq(
+        f"""
+        SELECT
+            n.ID_NEWS,
+            n.STATUS,
+            n.NEWS_KIND,
+            n.NEWS_TYPE,
+            n.TITLE,
+            n.EXCERPT,
+            n.BODY,
+            n.MEDIA_RECTANGLE_ID,
+            n.HAS_VISUAL,
+            n.SOURCE_URL,
+            n.AUTHOR,
+            n.PUBLISHED_AT,
+            c.ID_COMPANY,
+            c.NAME AS COMPANY_NAME,
+            c.IS_PARTNER
+        FROM `{TABLE_NEWS}` n
+        JOIN `{TABLE_COMPANY}` c
+          ON n.ID_COMPANY = c.ID_COMPANY
+        WHERE n.ID_NEWS = @id
+          AND n.STATUS = 'PUBLISHED'
+        LIMIT 1
+        """,
+        {"id": id_news},
+    )
+
+    if not rows:
+        return None
+
+    r = rows[0]
+
+    news = {
+        "id_news": r["ID_NEWS"],
+        "status": r.get("STATUS"),
+        "news_kind": r.get("NEWS_KIND"),
+        "news_type": r.get("NEWS_TYPE"),
+
+        "title": r.get("TITLE"),
+        "excerpt": r.get("EXCERPT"),
+        "body": r.get("BODY"),
+
+        "media_rectangle_id": r.get("MEDIA_RECTANGLE_ID"),
+        "has_visual": bool(r.get("HAS_VISUAL")),
+
+        "source_url": r.get("SOURCE_URL"),
+        "author": r.get("AUTHOR"),
+
+        "published_at": (
+            r["PUBLISHED_AT"].isoformat()
+            if r.get("PUBLISHED_AT")
+            else None
+        ),
+
+        "company": {
+            "id_company": r.get("ID_COMPANY"),
+            "name": r.get("COMPANY_NAME"),
+            "is_partner": bool(r.get("IS_PARTNER")),
+        },
+    }
+
+    # ============================================================
+    # TOPICS ✅
+    # ============================================================
+
+    topic_rows = query_bq(
+        f"""
+        SELECT T.ID_TOPIC, T.LABEL
+        FROM `{TABLE_NEWS_TOPIC}` NT
+        JOIN `{TABLE_TOPIC}` T
+          ON NT.ID_TOPIC = T.ID_TOPIC
+        WHERE NT.ID_NEWS = @id
+        """,
+        {"id": id_news},
+    )
+
+    news["topics"] = [
+        {
+            "id_topic": t["ID_TOPIC"],
+            "label": t["LABEL"],
+        }
+        for t in topic_rows
+    ]
+
+    # ============================================================
+    # SOLUTIONS ✅
+    # ============================================================
+
+    solution_rows = query_bq(
+        f"""
+        SELECT S.ID_SOLUTION, S.NAME
+        FROM `{TABLE_NEWS_SOLUTION}` NS
+        JOIN `{TABLE_SOLUTION}` S
+          ON NS.ID_SOLUTION = S.ID_SOLUTION
+        WHERE NS.ID_NEWS = @id
+        """,
+        {"id": id_news},
+    )
+
+    news["solutions"] = [
+        {
+            "id_solution": s["ID_SOLUTION"],
+            "name": s["NAME"],
+        }
+        for s in solution_rows
+    ]
+
+    return news
