@@ -9,22 +9,23 @@ type Params = {
 };
 
 /* ========================================================= */
-// 🔥 MAPPING NOUVEAU BACKEND
+// 🔥 MAPPING ALIGNÉ BACKEND
 /* ========================================================= */
 
 function mapItem(row: any): FeedItem {
   return {
     id: row.id,
+    type: row.type,
+
     title: row.title,
     excerpt: row.excerpt,
     published_at: row.published_at,
-    type: row.type,
 
-    // 🔥 badges
-    topics: row.topics ?? [],
-    companies: row.companies ?? [],
-    solutions: row.solutions ?? [],
-    news_type: row.news_type ?? null,
+    topics: row.topics,
+    companies: row.companies,
+    solutions: row.solutions,
+
+    news_type: row.news_type,
   };
 }
 
@@ -50,7 +51,6 @@ export async function searchCurator(
 
     const data = res?.data ?? res;
 
-    // ✅ FIX PRINCIPAL
     if (!data || !Array.isArray(data.items)) {
       console.warn("⚠️ searchCurator: invalid response", data);
       return { items: [], count: 0 };
