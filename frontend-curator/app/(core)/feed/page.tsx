@@ -9,25 +9,10 @@ import FilterPanel from "@/components/feed/FilterPanel";
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
 import NewsDrawer from "@/components/drawers/NewsDrawer";
 
-import { searchCurator } from "@/lib/feed/searchCurator";
-import { getFeedMeta } from "@/lib/feed/getFeedMeta";
+import { searchCurator } from "@/lib/search"; // 🔥 nouveau chemin
+import { getFeedMeta } from "@/lib/meta";
 
 import type { FeedItem } from "@/types/feed";
-
-/* ========================================================= */
-
-type MetaItem = {
-  id: string;
-  label: string;
-  count: number;
-};
-
-type Meta = {
-  topics: MetaItem[];
-  companies: MetaItem[];
-  solutions: MetaItem[];
-  news_types: MetaItem[];
-};
 
 /* ========================================================= */
 
@@ -44,7 +29,7 @@ export default function FeedPage() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
-  const [meta, setMeta] = useState<Meta>({
+  const [meta, setMeta] = useState({
     topics: [],
     companies: [],
     solutions: [],
@@ -53,15 +38,16 @@ export default function FeedPage() {
 
   const [params, setParams] = useState({
     query: "",
-    topic_ids: undefined as string[] | undefined,
-    company_ids: undefined as string[] | undefined,
-    solution_ids: undefined as string[] | undefined,
-    news_types: undefined as string[] | undefined,
+    topic_ids: [] as string[],
+    company_ids: [] as string[],
+    solution_ids: [] as string[],
+    news_types: [] as string[],
   });
 
-  const [reloadKey, setReloadKey] = useState(0);
   const [selectedItem, setSelectedItem] =
     useState<FeedItem | null>(null);
+
+  const [mode, setMode] = useState<"text" | "filters">("filters");
 
   /* ============================
      META
@@ -87,25 +73,34 @@ export default function FeedPage() {
     const currentOffset = reset ? 0 : offset;
 
     const res = await searchCurator({
-      ...params,
+      ...(mode === "text"
+        ? { query: params.query }
+        : {
+            topic_ids: params.topic_ids,
+            company_ids: params.company_ids,
+            solution_ids: params.solution_ids,
+            news_types: params.news_types,
+          }),
       limit: LIMIT,
       offset: currentOffset,
     });
 
+    const newItems = res.items;
+
     if (reset) {
-      setItems(res);
+      setItems(newItems);
       setOffset(LIMIT);
     } else {
-      setItems((prev) => [...prev, ...res]);
+      setItems((prev) => [...prev, ...newItems]);
       setOffset((prev) => prev + LIMIT);
     }
 
-    setHasMore(res.length === LIMIT);
+    setHasMore(newItems.length === LIMIT);
     setLoading(false);
   }
 
   /* ============================
-     INITIAL
+     INITIAL LOAD
   ============================ */
 
   useEffect(() => {
@@ -113,55 +108,56 @@ export default function FeedPage() {
   }, []);
 
   /* ============================
-     RELOAD
+     ACTIONS
   ============================ */
 
-  useEffect(() => {
+  function handleSearchText() {
+    setMode("text");
+
     setItems([]);
     setOffset(0);
     setHasMore(true);
 
     load(true);
-  }, [reloadKey]);
-
-  /* ============================
-     HELPERS
-  ============================ */
-
-  function normalizeArray(arr?: string[]) {
-    return arr && arr.length > 0 ? arr : undefined;
   }
 
-  function updateParams(patch: Partial<typeof params>) {
-    setParams((prev) => {
-      const next = {
-        ...prev,
-        ...patch,
-      };
+  function handleApplyFilters() {
+    setMode("filters");
 
-      // 🔥 IMPORTANT → éviter les []
-      return {
-        ...next,
-        topic_ids: normalizeArray(next.topic_ids),
-        company_ids: normalizeArray(next.company_ids),
-        solution_ids: normalizeArray(next.solution_ids),
-        news_types: normalizeArray(next.news_types),
-      };
-    });
+    setItems([]);
+    setOffset(0);
+    setHasMore(true);
 
-    setReloadKey((k) => k + 1);
+    load(true);
   }
 
   function handleReset() {
     setParams({
       query: "",
-      topic_ids: undefined,
-      company_ids: undefined,
-      solution_ids: undefined,
-      news_types: undefined,
+      topic_ids: [],
+      company_ids: [],
+      solution_ids: [],
+      news_types: [],
     });
 
-    setReloadKey((k) => k + 1);
+    setMode("filters");
+
+    setItems([]);
+    setOffset(0);
+    setHasMore(true);
+
+    load(true);
+  }
+
+  /* ============================
+     HELPERS
+  ============================ */
+
+  function updateParams(patch: Partial<typeof params>) {
+    setParams((prev) => ({
+      ...prev,
+      ...patch,
+    }));
   }
 
   /* ============================
@@ -175,34 +171,44 @@ export default function FeedPage() {
         query={params.query}
         setQuery={(v) => updateParams({ query: v })}
 
-        newsTypes={params.news_types || []}
+        newsTypes={params.news_types}
         setNewsTypes={(v) => updateParams({ news_types: v })}
 
-        newsTypeOptions={meta.news_types || []}
+        newsTypeOptions={meta.news_types}
 
-        onSearch={() => setReloadKey((k) => k + 1)}
+        onSearch={handleSearchText}       // 🔥 bouton SEARCH
         onReset={handleReset}
       />
+
+      {/* 🔥 bouton FILTERS séparé */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleApplyFilters}
+          className="px-4 py-2 bg-black text-white rounded-lg"
+        >
+          Apply Filters
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FilterPanel
           title="Topics"
           items={meta.topics}
-          selected={params.topic_ids || []}
+          selected={params.topic_ids}
           onChange={(v) => updateParams({ topic_ids: v })}
         />
 
         <FilterPanel
           title="Companies"
           items={meta.companies}
-          selected={params.company_ids || []}
+          selected={params.company_ids}
           onChange={(v) => updateParams({ company_ids: v })}
         />
 
         <FilterPanel
           title="Solutions"
           items={meta.solutions}
-          selected={params.solution_ids || []}
+          selected={params.solution_ids}
           onChange={(v) => updateParams({ solution_ids: v })}
         />
       </div>
