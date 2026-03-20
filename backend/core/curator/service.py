@@ -175,27 +175,72 @@ def get_item_detail(item_id: str, item_type: str) -> Optional[Dict]:
 
 def get_content_stats():
 
+    # =====================================================
     # GLOBAL
+    # =====================================================
+
     global_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_GLOBAL`
     """)
 
-    g = global_rows[0] if global_rows else {}
+    if global_rows:
+        g = global_rows[0]
+        total_count = g.get("TOTAL", 0) or 0
+        last_7 = g.get("LAST_7_DAYS", 0) or 0
+        last_30 = g.get("LAST_30_DAYS", 0) or 0
+    else:
+        total_count = 0
+        last_7 = 0
+        last_30 = 0
 
+    # =====================================================
     # TOPICS
+    # =====================================================
+
     topics_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_TOPIC`
         ORDER BY TOTAL DESC
     """)
 
+    topics_stats = [
+        {
+            "id_topic": r.get("ID_TOPIC"),
+            "label": r.get("LABEL"),
+            "total": r.get("TOTAL", 0) or 0,
+            "last_7_days": r.get("LAST_7_DAYS", 0) or 0,
+            "last_30_days": r.get("LAST_30_DAYS", 0) or 0,
+        }
+        for r in topics_rows
+        if r.get("ID_TOPIC") and r.get("LABEL")
+    ]
+
+    # =====================================================
     # COMPANIES
+    # =====================================================
+
     company_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY`
         ORDER BY TOTAL DESC
     """)
+
+    top_companies = [
+        {
+            "id_company": r.get("ID_COMPANY"),
+            "name": r.get("NAME"),
+            "total": r.get("TOTAL", 0) or 0,
+            "last_7_days": r.get("LAST_7_DAYS", 0) or 0,
+            "last_30_days": r.get("LAST_30_DAYS", 0) or 0,
+        }
+        for r in company_rows
+        if r.get("ID_COMPANY") and r.get("NAME")
+    ]
+
+    # =====================================================
+    # SOLUTIONS
+    # =====================================================
 
     solution_rows = query_bq(f"""
         SELECT *
@@ -203,15 +248,30 @@ def get_content_stats():
         ORDER BY TOTAL DESC
     """)
 
-    return {
-        "total_count": g.get("TOTAL", 0),
-        "last_7_days": g.get("LAST_7_DAYS", 0),
-        "last_30_days": g.get("LAST_30_DAYS", 0),
-        "topics_stats": topics_rows,
-        "top_companies": company_rows,
-        "top_solutions": solution_rows,
-    }
+    top_solutions = [
+        {
+            "id_solution": r.get("ID_SOLUTION"),
+            "name": r.get("NAME"),
+            "total": r.get("TOTAL", 0) or 0,
+            "last_7_days": r.get("LAST_7_DAYS", 0) or 0,
+            "last_30_days": r.get("LAST_30_DAYS", 0) or 0,
+        }
+        for r in solution_rows
+        if r.get("ID_SOLUTION") and r.get("NAME")
+    ]
 
+    # =====================================================
+    # RETURN
+    # =====================================================
+
+    return {
+        "total_count": total_count,
+        "last_7_days": last_7,
+        "last_30_days": last_30,
+        "topics_stats": topics_stats,
+        "top_companies": top_companies,
+        "top_solutions": top_solutions,
+    }
 
 # ============================================================
 # MAPPER
