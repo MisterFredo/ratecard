@@ -216,6 +216,8 @@ export default function FeedPage() {
       <FeedList
         title="Results"
         items={items}
+        total={total}
+        mode={mode}
         loading={loading}
         hasMore={hasMore}
         onLoadMore={() => load(false)}
