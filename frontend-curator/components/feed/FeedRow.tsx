@@ -4,8 +4,15 @@ import type { FeedItem } from "@/types/feed";
 
 /* ========================================================= */
 
+type Badge = {
+  label: string;
+  type?: string;
+};
+
 type Props = {
-  item: FeedItem;
+  item: FeedItem & {
+    badges?: Badge[];
+  };
   onClick: () => void;
 };
 
@@ -16,12 +23,22 @@ export default function FeedRow({ item, onClick }: Props) {
 
   const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL;
 
-  const formattedDate = item.published_at
-    ? new Date(item.published_at).toLocaleDateString("fr-FR")
-    : null;
+  /* =========================================================
+     DATE
+  ========================================================= */
+
+  let formattedDate: string | null = null;
+
+  try {
+    formattedDate = item.published_at
+      ? new Date(item.published_at).toLocaleDateString("fr-FR")
+      : null;
+  } catch {
+    formattedDate = null;
+  }
 
   /* =========================================================
-     BADGES (STRUCTURATION)
+     BADGES
   ========================================================= */
 
   const badges = item.badges || [];
@@ -41,6 +58,18 @@ export default function FeedRow({ item, onClick }: Props) {
   }
 
   /* =========================================================
+     IMAGE URL
+  ========================================================= */
+
+  const imageUrl =
+    isNews &&
+    item.has_visual &&
+    item.media_id &&
+    GCS_BASE_URL
+      ? `${GCS_BASE_URL}/news/${item.media_id}`
+      : null;
+
+  /* =========================================================
      RENDER
   ========================================================= */
 
@@ -57,12 +86,12 @@ export default function FeedRow({ item, onClick }: Props) {
       <div className="flex gap-4">
 
         {/* ============================
-           IMAGE (NEWS ONLY)
+           IMAGE
         ============================ */}
-        {isNews && item.has_visual && item.media_id && (
+        {imageUrl && (
           <div className="w-[140px] h-[80px] bg-gray-100 flex-shrink-0 overflow-hidden rounded">
             <img
-              src={`${GCS_BASE_URL}/news/${item.media_id}`}
+              src={imageUrl}
               alt={item.title}
               className="w-full h-full object-cover"
             />
@@ -92,9 +121,9 @@ export default function FeedRow({ item, onClick }: Props) {
           {/* BADGES */}
           {badges.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {badges.map((b: any, i: number) => (
+              {badges.map((b, i) => (
                 <span
-                  key={i}
+                  key={`${b.label}-${i}`}
                   className={`
                     px-2 py-0.5 text-[10px] rounded-full uppercase tracking-wide
                     ${getBadgeClass(b.type)}
