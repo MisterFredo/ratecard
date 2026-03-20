@@ -202,6 +202,29 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
             </div>
           )}
 
+          {/* CONCEPTS LLM */}
+            {data.concepts_llm?.length > 0 && (
+              <div>
+                <h3 className="text-xs uppercase text-gray-500 mb-2">
+                  Concepts clés
+                </h3>
+
+                <div className="flex flex-wrap gap-2">
+                  {data.concepts_llm.map((c, i) => (
+                    <span
+                      key={i}
+                      className="
+                        px-2 py-1 text-xs rounded
+                        bg-gray-100 text-gray-700
+                      "
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
           {/* MECANIQUE */}
           {data.mecanique_expliquee && (
             <div>
