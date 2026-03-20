@@ -52,6 +52,8 @@ def get_news_items(
     offset=0,
 ):
 
+    query = query if query and str(query).strip() != "" else None
+    
     topic_ids = topic_ids or []
     company_ids = company_ids or []
     solution_ids = solution_ids or []
@@ -144,6 +146,8 @@ def get_content_items(
     offset=0,
 ):
 
+    query = query if query and str(query).strip() != "" else None
+    
     topic_ids = topic_ids or []
     company_ids = company_ids or []
     solution_ids = solution_ids or []
