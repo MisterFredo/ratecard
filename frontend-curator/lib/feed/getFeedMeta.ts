@@ -1,5 +1,3 @@
-// frontend-curator/lib/feed/getFeedMeta.ts
-
 import { api } from "@/lib/api";
 
 /* ========================================================= */
@@ -23,9 +21,9 @@ function safeArray(value: any): MetaItem[] {
   if (!Array.isArray(value)) return [];
 
   return value.map((v) => ({
-    id: String(v.id),
-    label: String(v.label),
-    count: Number(v.count ?? 0),
+    id: String(v?.id ?? ""),
+    label: String(v?.label ?? ""),
+    count: Number(v?.count ?? 0),
   }));
 }
 
@@ -33,13 +31,15 @@ function safeArray(value: any): MetaItem[] {
 
 export async function getFeedMeta(): Promise<FeedMeta> {
   try {
-    const res = await api.get("/meta");
+    const res = await api.get("/curator/meta");
+
+    const data = res?.data ?? res;
 
     return {
-      topics: safeArray(res?.topics),
-      companies: safeArray(res?.companies),
-      solutions: safeArray(res?.solutions),
-      news_types: safeArray(res?.news_types),
+      topics: safeArray(data?.topics),
+      companies: safeArray(data?.companies),
+      solutions: safeArray(data?.solutions),
+      news_types: safeArray(data?.news_types),
     };
 
   } catch (e) {
