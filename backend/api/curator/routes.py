@@ -1,19 +1,20 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 
+from core.search.service import search_curator
+from core.feed.service import get_feed_meta
 from core.news.service import get_news
 from core.content.public_service import get_content
-from core.feed.service import get_feed_meta, get_news_items, get_content_items
 
 router = APIRouter()
 
 
 # ============================================================
-# NEWS FEED
+# SEARCH (UNIFIÉ)
 # ============================================================
 
-@router.get("/news")
-def get_news_route(
+@router.get("/search")
+def search_route(
     query: Optional[str] = None,
 
     topic_ids: Optional[List[str]] = Query(default=None),
@@ -24,37 +25,12 @@ def get_news_route(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ):
-    return get_news_items(
+    return search_curator(
         query=query,
         topic_ids=topic_ids,
         company_ids=company_ids,
         solution_ids=solution_ids,
         news_types=news_types,
-        limit=limit,
-        offset=offset,
-    )
-
-
-# ============================================================
-# CONTENT FEED (ANALYSES)
-# ============================================================
-
-@router.get("/content")
-def get_content_route(
-    query: Optional[str] = None,
-
-    topic_ids: Optional[List[str]] = Query(default=None),
-    company_ids: Optional[List[str]] = Query(default=None),
-    solution_ids: Optional[List[str]] = Query(default=None),
-
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
-):
-    return get_content_items(
-        query=query,
-        topic_ids=topic_ids,
-        company_ids=company_ids,
-        solution_ids=solution_ids,
         limit=limit,
         offset=offset,
     )
