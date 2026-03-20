@@ -57,7 +57,7 @@ export async function searchCurator(
       query.append("news_types", n)
     );
 
-    const res = await api.get(`/curator/search?${query.toString()}`);
+    const res = await api.get(`/search?${query.toString()}`);
 
     return (res || []) as FeedItem[];
 
