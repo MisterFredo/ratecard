@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 /* ========================================================= */
 
 type Props = {
   query: string;
-  setQuery: (v: string) => void;
-
+  setQuery: (q: string) => void;
   onSearch: () => void;
 };
 
@@ -18,49 +17,56 @@ export default function FeedHeader({
   setQuery,
   onSearch,
 }: Props) {
-
   const [input, setInput] = useState(query);
 
-  // sync si reset externe
-  useEffect(() => {
-    setInput(query);
-  }, [query]);
+  /* =========================================================
+     SEARCH
+  ========================================================= */
 
-  /* ========================================================= */
-
-  function handleSearch() {
+  function triggerSearch() {
     const value = input.trim();
     setQuery(value);
-    onSearch(value);
+    onSearch(); // ✅ no argument
   }
 
-  /* ========================================================= */
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
-    <div className="space-y-5">
+    <div className="flex items-center gap-3">
 
-      <div className="flex gap-3">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleSearch();
-          }}
-          placeholder="Search (Amazon, clean room, retail media...)"
-          className="
-            flex-1 border border-gray-300 px-4 py-2.5 rounded-lg text-sm
-            focus:outline-none focus:ring-2 focus:ring-black/10
-          "
-        />
+      <input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            triggerSearch();
+          }
+        }}
+        placeholder="Search…"
+        className="
+          flex-1
+          border border-gray-200
+          rounded-lg
+          px-4 py-2
+          text-sm
+          focus:outline-none focus:ring-2 focus:ring-black
+        "
+      />
 
-        <button
-          onClick={handleSearch}
-          className="px-5 py-2.5 bg-black text-white text-sm rounded-lg"
-        >
-          Search
-        </button>
-      </div>
-
+      <button
+        onClick={triggerSearch}
+        className="
+          px-4 py-2
+          rounded-lg
+          bg-black text-white
+          text-sm
+          hover:opacity-90 transition
+        "
+      >
+        Search
+      </button>
     </div>
   );
 }
