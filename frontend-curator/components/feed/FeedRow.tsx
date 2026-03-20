@@ -38,7 +38,7 @@ export default function FeedRow({
   }
 
   /* =========================================================
-     🔥 SAFE ARRAYS
+     🔥 SAFE ARRAYS (BACKEND STRUCTURE)
   ========================================================= */
 
   const topics = Array.isArray(item.topics) ? item.topics : [];
@@ -46,7 +46,7 @@ export default function FeedRow({
   const solutions = Array.isArray(item.solutions) ? item.solutions : [];
 
   /* =========================================================
-     BADGES (STRUCTURÉS)
+     🔥 BADGES STRUCTURÉS (ALIGNÉS BACK)
   ========================================================= */
 
   const badges: FeedBadge[] = [
@@ -54,19 +54,19 @@ export default function FeedRow({
       ? [{ label: item.news_type, type: "news_type" as const }]
       : []),
 
-    ...companies.map((c) => ({
+    ...companies.map((c: any) => ({
       id: c.id_company,
       label: c.name,
       type: "company" as const,
     })),
 
-    ...topics.map((t) => ({
+    ...topics.map((t: any) => ({
       id: t.id_topic,
       label: t.label,
       type: "topic" as const,
     })),
 
-    ...solutions.map((s) => ({
+    ...solutions.map((s: any) => ({
       id: s.id_solution,
       label: s.name,
       type: "solution" as const,
@@ -169,7 +169,7 @@ export default function FeedRow({
                 <button
                   key={`${b.type}-${b.id || b.label}-${i}`}
                   onClick={(e) => {
-                    e.stopPropagation();
+                    e.stopPropagation(); // 🔥 critique
                     onClickBadge?.(b);
                   }}
                   className={`
