@@ -12,7 +12,7 @@ class SearchTextQuery(BaseModel):
 
 
 # ============================================================
-# OUTPUT — ITEM (ALIGNÉ SEARCH)
+# OUTPUT — ITEM (ALIGNÉ SEARCH + BADGES)
 # ============================================================
 
 class FeedItem(BaseModel):
@@ -22,6 +22,12 @@ class FeedItem(BaseModel):
     title: str
     excerpt: Optional[str] = None
     published_at: Optional[str] = None
+
+    # 🔥 BADGES (ENRICHIS BACKEND)
+    topics: Optional[List[str]] = None
+    companies: Optional[List[str]] = None
+    solutions: Optional[List[str]] = None
+    news_type: Optional[str] = None
 
 
 # ============================================================
