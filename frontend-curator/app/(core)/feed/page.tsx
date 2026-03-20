@@ -10,7 +10,7 @@ import NewsDrawer from "@/components/drawers/NewsDrawer";
 
 import { searchCurator } from "@/lib/search";
 
-import type { FeedItem } from "@/types/feed";
+import type { FeedItem, FeedBadge } from "@/types/feed";
 
 /* ========================================================= */
 
@@ -72,6 +72,26 @@ export default function FeedPage() {
     }, 300);
   }
 
+  /* =========================================================
+     🔥 NEW — BADGE CLICK
+  ========================================================= */
+
+  function handleBadgeClick(badge: FeedBadge) {
+    const value = badge.label;
+
+    if (!value) return;
+
+    // update UI immédiatement
+    setQuery(value);
+    setItems([]);
+
+    // UX
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    // relance search
+    load(value);
+  }
+
   /* ============================
      RENDER
   ============================ */
@@ -94,10 +114,13 @@ export default function FeedPage() {
         onLoadMore={() => {}}
         onSelectItem={handleSelectItem}
         loadingItemId={loadingItemId}
+
+        // 🔥 NEW
+        onClickBadge={handleBadgeClick}
       />
 
       {/* =========================================================
-         DRAWERS (LOGIQUE UNIFIÉE)
+         DRAWERS
       ========================================================= */}
 
       {selectedItem && (
