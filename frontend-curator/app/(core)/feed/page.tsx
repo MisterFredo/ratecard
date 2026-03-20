@@ -35,14 +35,16 @@ export default function FeedPage() {
      LOAD
   ============================ */
 
-  async function load() {
+  async function load(q?: string) {
+    const finalQuery = (q ?? query)?.trim();
+
     if (loading) return;
-    if (!query || query.trim() === "") return;
+    if (!finalQuery) return;
 
     setLoading(true);
 
     const res = await searchCurator({
-      query,
+      query: finalQuery,
       limit: LIMIT,
     });
 
