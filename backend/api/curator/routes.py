@@ -2,11 +2,10 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 
 from core.feed.service import search_curator, get_feed_meta
-
 from core.news.service import get_news
 from core.content.public_service import get_content
 
-router = APIRouter(prefix="/curator", tags=["Curator"])
+router = APIRouter()
 
 
 # ============================================================
@@ -38,7 +37,7 @@ def search_route(
 
         return {
             "items": items,
-            "count": len(items),  # simple pour l’instant
+            "count": len(items),
         }
 
     except Exception as e:
@@ -46,7 +45,7 @@ def search_route(
 
 
 # ============================================================
-# META (FILTRES)
+# META
 # ============================================================
 
 @router.get("/meta")
@@ -71,16 +70,12 @@ def get_meta_route():
 
 @router.get("/news/{id_news}")
 def read_news(id_news: str):
-    try:
-        item = get_news(id_news)
+    item = get_news(id_news)
 
-        if not item:
-            raise HTTPException(404, "News not found")
+    if not item:
+        raise HTTPException(404, "News not found")
 
-        return item
-
-    except Exception as e:
-        raise HTTPException(400, f"News error: {e}")
+    return item
 
 
 # ============================================================
@@ -89,13 +84,9 @@ def read_news(id_news: str):
 
 @router.get("/content/{id_content}")
 def read_content(id_content: str):
-    try:
-        item = get_content(id_content)
+    item = get_content(id_content)
 
-        if not item:
-            raise HTTPException(404, "Content not found")
+    if not item:
+        raise HTTPException(404, "Content not found")
 
-        return item
-
-    except Exception as e:
-        raise HTTPException(400, f"Content error: {e}")
+    return item
