@@ -82,7 +82,20 @@ def search_filters(
 
     # 🔥 NORMALISATION SIMPLE ET SAFE
     def clean(v):
-        return v if v and len(v) > 0 else None
+        if v is None:
+            return None
+
+        # 🔥 string → list (CRITIQUE)
+        if isinstance(v, str):
+            if v.strip() == "":
+                return None
+            return [v]
+
+        # 🔥 list vide → None
+        if isinstance(v, list):
+            return v if len(v) > 0 else None
+
+        return None
 
     topic_ids = clean(topic_ids)
     company_ids = clean(company_ids)
