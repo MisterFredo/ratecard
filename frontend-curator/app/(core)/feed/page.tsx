@@ -8,6 +8,9 @@ import FeedList from "@/components/feed/FeedList";
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
 import NewsDrawer from "@/components/drawers/NewsDrawer";
 
+import { getContentStats } from "@/lib/stats";
+import StatsBar from "@/components/feed/StatsBar";
+
 import { searchCurator, getLatestCurator } from "@/lib/search";
 
 import type { FeedItem, FeedBadge } from "@/types/feed";
@@ -31,6 +34,7 @@ export default function FeedPage() {
     useState<string | null>(null);
 
   const [hasMore, setHasMore] = useState(true);
+  const [stats, setStats] = useState<any>(null);
 
   /* =========================================================
      LOAD (SEARCH ou LATEST)
@@ -81,6 +85,15 @@ export default function FeedPage() {
     load(true);
   }, []);
 
+  useEffect(() => {
+    async function loadStats() {
+      const s = await getContentStats();
+      setStats(s);
+    }
+
+    loadStats();
+  }, []);
+
   /* =========================================================
      BADGE CLICK
   ========================================================= */
@@ -126,6 +139,8 @@ export default function FeedPage() {
           load(true);
         }}
       />
+
+      <StatsBar stats={stats} />
 
       <FeedList
         title="Results"
