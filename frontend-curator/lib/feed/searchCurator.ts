@@ -1,5 +1,7 @@
+// frontend-curator/lib/search.ts
+
 import { api } from "@/lib/api";
-import type { FeedItem } from "@/types/feed";
+import type { FeedItem, FeedResponse } from "@/types/feed";
 
 /* ========================================================= */
 
@@ -31,44 +33,66 @@ type Params = {
 
 export async function searchCurator(
   params: Params
-): Promise<FeedItem[]> {
+): Promise<FeedResponse> {
   try {
+    const hasQuery = !!params.query && params.query.trim() !== "";
+
     const query = new URLSearchParams();
 
-    if (params.query) query.append("query", params.query);
+    // pagination
     if (params.limit !== undefined) query.append("limit", String(params.limit));
     if (params.offset !== undefined) query.append("offset", String(params.offset));
 
-    cleanArray(params.topic_ids)?.forEach((t) =>
-      query.append("topic_ids", t)
-    );
+    let endpoint = "/curator/search/filters";
 
-    cleanArray(params.company_ids)?.forEach((c) =>
-      query.append("company_ids", c)
-    );
+    // =========================================================
+    // 🔍 MODE TEXTE
+    // =========================================================
 
-    cleanArray(params.solution_ids)?.forEach((s) =>
-      query.append("solution_ids", s)
-    );
+    if (hasQuery) {
+      endpoint = "/curator/search/text";
+      query.append("query", params.query!.trim());
+    }
 
-    cleanArray(params.news_types)?.forEach((n) =>
-      query.append("news_types", n)
-    );
+    // =========================================================
+    // 🎯 MODE FILTRES
+    // =========================================================
 
-    const res = await api.get(`/curator/search?${query.toString()}`);
+    else {
+      cleanArray(params.topic_ids)?.forEach((t) =>
+        query.append("topic_ids", t)
+      );
+
+      cleanArray(params.company_ids)?.forEach((c) =>
+        query.append("company_ids", c)
+      );
+
+      cleanArray(params.solution_ids)?.forEach((s) =>
+        query.append("solution_ids", s)
+      );
+
+      cleanArray(params.news_types)?.forEach((n) =>
+        query.append("news_types", n)
+      );
+    }
+
+    const res = await api.get(`${endpoint}?${query.toString()}`);
 
     const data = res?.data ?? res;
 
-    // 🔒 SAFE EXTRACTION
+    // 🔒 SAFE RESPONSE
     if (!data || !Array.isArray(data.items)) {
       console.warn("⚠️ searchCurator: invalid response", data);
-      return [];
+      return { items: [], count: 0 };
     }
 
-    return data.items as FeedItem[];
+    return {
+      items: data.items as FeedItem[],
+      count: data.count ?? data.items.length ?? 0,
+    };
 
   } catch (e) {
     console.error("❌ searchCurator error", e);
-    return [];
+    return { items: [], count: 0 };
   }
 }
