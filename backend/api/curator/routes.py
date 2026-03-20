@@ -16,16 +16,16 @@ router = APIRouter()
 def search_route(
     query: Optional[str] = None,
 
-    topic_ids: Optional[List[str]] = Query(default=None),
-    company_ids: Optional[List[str]] = Query(default=None),
-    solution_ids: Optional[List[str]] = Query(default=None),
-    news_types: Optional[List[str]] = Query(default=None),
+    topic_ids: Optional[List[str]] = Query(None),
+    company_ids: Optional[List[str]] = Query(None),
+    solution_ids: Optional[List[str]] = Query(None),
+    news_types: Optional[List[str]] = Query(None),
 
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
+    limit: int = 20,
+    offset: int = 0,
 ):
     try:
-        items = search_curator(
+        results = search_curator(
             query=query,
             topic_ids=topic_ids,
             company_ids=company_ids,
@@ -34,24 +34,10 @@ def search_route(
             limit=limit,
             offset=offset,
         )
-
-        # 🔒 SAFE GUARD (CRITIQUE)
-        if not isinstance(items, list):
-            print("⚠️ search_curator returned non-list:", type(items))
-            items = []
-
-        return {
-            "items": items,
-            "count": len(items),
-        }
+        return results
 
     except Exception as e:
-        print("❌ SEARCH ERROR:", e)
-        return {
-            "items": [],
-            "count": 0,
-        }
-
+        raise HTTPException(400, f"Erreur search : {e}")
 
 # ============================================================
 # META
