@@ -4,12 +4,11 @@ import type { FeedItem, FeedResponse } from "@/types/feed";
 /* ========================================================= */
 
 type Params = {
-  query: string;
+  query?: string;
   limit?: number;
+  offset?: number;
 };
 
-/* ========================================================= */
-// 🔥 MAPPING ALIGNÉ BACKEND
 /* ========================================================= */
 
 function mapItem(row: any): FeedItem {
@@ -30,6 +29,8 @@ function mapItem(row: any): FeedItem {
 }
 
 /* ========================================================= */
+// SEARCH
+/* ========================================================= */
 
 export async function searchCurator(
   params: Params
@@ -37,34 +38,58 @@ export async function searchCurator(
   try {
     const query = new URLSearchParams();
 
-    if (!params.query || params.query.trim() === "") {
-      return { items: [], count: 0 };
+    if (params.query) {
+      query.append("q", params.query.trim());
     }
 
-    query.append("q", params.query.trim());
-
-    if (params.limit !== undefined) {
-      query.append("limit", String(params.limit));
-    }
+    query.append("limit", String(params.limit ?? 20));
+    query.append("offset", String(params.offset ?? 0));
 
     const res = await api.get(`/curator/search?${query.toString()}`);
-
     const data = res?.data ?? res;
 
     if (!data || !Array.isArray(data.items)) {
-      console.warn("⚠️ searchCurator: invalid response", data);
       return { items: [], count: 0 };
     }
 
-    const items = data.items.map(mapItem);
-
     return {
-      items,
-      count: data.count ?? items.length,
+      items: data.items.map(mapItem),
+      count: data.count ?? 0,
     };
 
   } catch (e) {
     console.error("❌ searchCurator error", e);
+    return { items: [], count: 0 };
+  }
+}
+
+/* ========================================================= */
+// LATEST
+/* ========================================================= */
+
+export async function getLatestCurator(
+  params?: Params
+): Promise<FeedResponse> {
+  try {
+    const query = new URLSearchParams();
+
+    query.append("limit", String(params?.limit ?? 20));
+    query.append("offset", String(params?.offset ?? 0));
+
+    const res = await api.get(`/curator/latest?${query.toString()}`);
+    const data = res?.data ?? res;
+
+    if (!data || !Array.isArray(data.items)) {
+      return { items: [], count: 0 };
+    }
+
+    return {
+      items: data.items.map(mapItem),
+      count: data.count ?? 0,
+    };
+
+  } catch (e) {
+    console.error("❌ latestCurator error", e);
     return { items: [], count: 0 };
   }
 }
