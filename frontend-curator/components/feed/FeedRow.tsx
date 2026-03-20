@@ -41,21 +41,26 @@ export default function FeedRow({
      BADGES
   ========================================================= */
 
-  const badges = item.badges || [];
+  const badges: FeedBadge[] = [
+    ...(item.news_type
+      ? [{ label: item.news_type, type: "news_type" as const }]
+      : []),
 
-  function getBadgeClass(type?: string) {
-    switch (type) {
-      case "news_type":
-        return "bg-black text-white";
-      case "company":
-        return "bg-blue-100 text-blue-700";
-      case "solution":
-        return "bg-purple-100 text-purple-700";
-      case "topic":
-      default:
-        return "bg-gray-100 text-gray-600";
-    }
-  }
+    ...(item.companies ?? []).map((c) => ({
+      label: c,
+      type: "company" as const,
+    })),
+
+    ...(item.topics ?? []).map((t) => ({
+      label: t,
+      type: "topic" as const,
+    })),
+
+    ...(item.solutions ?? []).map((s) => ({
+      label: s,
+      type: "solution" as const,
+    })),
+  ];
 
   /* =========================================================
      IMAGE URL
