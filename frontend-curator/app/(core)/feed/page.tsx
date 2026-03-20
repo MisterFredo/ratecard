@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 
 import FeedHeader from "@/components/feed/FeedHeader";
 import FeedList from "@/components/feed/FeedList";
@@ -8,7 +8,7 @@ import FeedList from "@/components/feed/FeedList";
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
 import NewsDrawer from "@/components/drawers/NewsDrawer";
 
-import { searchCurator } from "@/lib/search";
+import { searchCurator, getLatestCurator } from "@/lib/search";
 
 import type { FeedItem, FeedBadge } from "@/types/feed";
 
@@ -17,15 +17,12 @@ import type { FeedItem, FeedBadge } from "@/types/feed";
 export default function FeedPage() {
   const LIMIT = 20;
 
-  /* ============================
-     STATE
-  ============================ */
-
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
 
   const [query, setQuery] = useState("");
+  const [offset, setOffset] = useState(0);
 
   const [selectedItem, setSelectedItem] =
     useState<FeedItem | null>(null);
@@ -33,44 +30,77 @@ export default function FeedPage() {
   const [loadingItemId, setLoadingItemId] =
     useState<string | null>(null);
 
-  // 🔥 gestion requêtes concurrentes
-  const currentQueryRef = useRef("");
+  const [hasMore, setHasMore] = useState(true);
 
-  /* ============================
-     LOAD (CLEAN + SAFE)
-  ============================ */
+  /* =========================================================
+     LOAD (SEARCH ou LATEST)
+  ========================================================= */
 
-  async function load(q?: string) {
+  async function load(reset = false, q?: string) {
     const finalQuery = (q ?? query)?.trim();
 
-    if (!finalQuery) return;
-
-    currentQueryRef.current = finalQuery;
+    if (loading) return;
 
     setLoading(true);
 
     try {
-      const res = await searchCurator({
-        query: finalQuery,
-        limit: LIMIT,
-      });
+      const currentOffset = reset ? 0 : offset;
 
-      // 🔥 ignore réponse obsolète
-      if (currentQueryRef.current !== finalQuery) return;
+      const res = finalQuery
+        ? await searchCurator({
+            query: finalQuery,
+            limit: LIMIT,
+            offset: currentOffset,
+          })
+        : await getLatestCurator({
+            limit: LIMIT,
+            offset: currentOffset,
+          });
 
-      setItems(res.items ?? []);
-      setTotal(res.count ?? res.items?.length ?? 0);
+      if (reset) {
+        setItems(res.items);
+        setOffset(LIMIT);
+      } else {
+        setItems((prev) => [...prev, ...res.items]);
+        setOffset((prev) => prev + LIMIT);
+      }
 
-    } catch (e) {
-      console.error("❌ load error", e);
+      setTotal(res.count ?? 0);
+      setHasMore(res.items.length === LIMIT);
+
     } finally {
       setLoading(false);
     }
   }
 
-  /* ============================
-     ACTIONS
-  ============================ */
+  /* =========================================================
+     INITIAL LOAD (LATEST)
+  ========================================================= */
+
+  useEffect(() => {
+    load(true);
+  }, []);
+
+  /* =========================================================
+     BADGE CLICK
+  ========================================================= */
+
+  function handleBadgeClick(badge: FeedBadge) {
+    const value = badge.label;
+
+    if (!value) return;
+
+    setQuery(value);
+    setOffset(0);
+
+    window.scrollTo({ top: 0 });
+
+    load(true, value);
+  }
+
+  /* =========================================================
+     SELECT ITEM
+  ========================================================= */
 
   function handleSelectItem(item: FeedItem) {
     setLoadingItemId(item.id);
@@ -82,26 +112,8 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     BADGE CLICK → SEARCH TEXT
-  ========================================================= */
-
-  function handleBadgeClick(badge: FeedBadge) {
-    const value = badge.label?.trim();
-
-    if (!value) return;
-
-    setQuery(value);
-    setItems([]);
-    setTotal(0);
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-    load(value);
-  }
-
-  /* ============================
      RENDER
-  ============================ */
+  ========================================================= */
 
   return (
     <div className="space-y-8">
@@ -109,7 +121,10 @@ export default function FeedPage() {
       <FeedHeader
         query={query}
         setQuery={setQuery}
-        onSearch={() => load(query)}
+        onSearch={() => {
+          setOffset(0);
+          load(true);
+        }}
       />
 
       <FeedList
@@ -117,16 +132,12 @@ export default function FeedPage() {
         items={items}
         total={total}
         loading={loading}
-        hasMore={false}
-        onLoadMore={() => {}}
+        hasMore={hasMore}
+        onLoadMore={() => load(false)}
         onSelectItem={handleSelectItem}
-        loadingItemId={loadingItemId}
         onClickBadge={handleBadgeClick}
+        loadingItemId={loadingItemId}
       />
-
-      {/* =========================================================
-         DRAWERS
-      ========================================================= */}
 
       {selectedItem && (
         <>
