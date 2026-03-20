@@ -38,7 +38,7 @@ export default function FeedRow({
   }
 
   /* =========================================================
-     🔥 SAFE ARRAYS (CRITIQUE)
+     🔥 SAFE ARRAYS
   ========================================================= */
 
   const topics = Array.isArray(item.topics) ? item.topics : [];
@@ -46,7 +46,7 @@ export default function FeedRow({
   const solutions = Array.isArray(item.solutions) ? item.solutions : [];
 
   /* =========================================================
-     BADGES
+     BADGES (STRUCTURÉS)
   ========================================================= */
 
   const badges: FeedBadge[] = [
@@ -55,17 +55,20 @@ export default function FeedRow({
       : []),
 
     ...companies.map((c) => ({
-      label: c,
+      id: c.id_company,
+      label: c.name,
       type: "company" as const,
     })),
 
     ...topics.map((t) => ({
-      label: t,
+      id: t.id_topic,
+      label: t.label,
       type: "topic" as const,
     })),
 
     ...solutions.map((s) => ({
-      label: s,
+      id: s.id_solution,
+      label: s.name,
       type: "solution" as const,
     })),
   ];
@@ -99,12 +102,6 @@ export default function FeedRow({
     GCS_BASE_URL
       ? `${GCS_BASE_URL}/news/${item.media_id}`
       : null;
-
-  /* =========================================================
-     DEBUG (à enlever après validation)
-  ========================================================= */
-
-  // console.log("ITEM BADGES", item);
 
   /* =========================================================
      RENDER
@@ -165,19 +162,12 @@ export default function FeedRow({
             </span>
           </div>
 
-          {/* COMPANY */}
-          {item.company?.name && (
-            <div className="text-xs text-gray-500">
-              {item.company.name}
-            </div>
-          )}
-
           {/* BADGES */}
           {badges.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {badges.map((b, i) => (
                 <button
-                  key={`${b.label}-${i}`}
+                  key={`${b.type}-${b.id || b.label}-${i}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     onClickBadge?.(b);
