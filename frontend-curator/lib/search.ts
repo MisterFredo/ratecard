@@ -11,6 +11,20 @@ type Params = {
 };
 
 /* ========================================================= */
+// 🔥 MAPPING CRITIQUE
+/* ========================================================= */
+
+function mapItem(row: any): FeedItem {
+  return {
+    id: row.ID,
+    title: row.TITLE,
+    excerpt: row.EXCERPT,
+    published_at: row.PUBLISHED_AT,
+    type: row.SOURCE_TYPE === "NEWS" ? "news" : "analysis",
+  };
+}
+
+/* ========================================================= */
 
 export async function searchCurator(
   params: Params
@@ -32,15 +46,17 @@ export async function searchCurator(
 
     const data = res?.data ?? res;
 
-    // 🔒 SAFE RESPONSE (aligné backend)
+    // 🔒 SAFE RESPONSE
     if (!data || !Array.isArray(data.results)) {
       console.warn("⚠️ searchCurator: invalid response", data);
       return { items: [], count: 0 };
     }
 
+    const items = data.results.map(mapItem);
+
     return {
-      items: data.results as FeedItem[],
-      count: data.count ?? data.results.length ?? 0,
+      items,
+      count: data.count ?? items.length,
     };
 
   } catch (e) {
