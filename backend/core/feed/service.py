@@ -29,7 +29,20 @@ def search_curator(
     offset: int = 0,
 ) -> List[Dict]:
 
-    query = query if query and query.strip() != "" else None
+    # ============================================================
+    # NORMALISATION (CRITIQUE)
+    # ============================================================
+
+    query = query.strip().lower() if query and query.strip() != "" else None
+
+    topic_ids = topic_ids or []
+    company_ids = company_ids or []
+    solution_ids = solution_ids or []
+    news_types = news_types or []
+
+    # ============================================================
+    # SQL
+    # ============================================================
 
     sql = f"""
     -- =========================
@@ -44,14 +57,24 @@ def search_curator(
     FROM `{TABLE_NEWS}` n
     WHERE n.STATUS = 'PUBLISHED'
 
-    AND (@query IS NULL OR SEARCH(n, @query))
-
-    AND (@news_types IS NULL OR n.NEWS_TYPE IN UNNEST(@news_types))
-
-    AND (@company_ids IS NULL OR n.ID_COMPANY IN UNNEST(@company_ids))
+    AND (
+        @query IS NULL
+        OR LOWER(n.TITLE) LIKE CONCAT('%', @query, '%')
+        OR LOWER(n.EXCERPT) LIKE CONCAT('%', @query, '%')
+    )
 
     AND (
-        @topic_ids IS NULL
+        ARRAY_LENGTH(@news_types) = 0
+        OR n.NEWS_TYPE IN UNNEST(@news_types)
+    )
+
+    AND (
+        ARRAY_LENGTH(@company_ids) = 0
+        OR n.ID_COMPANY IN UNNEST(@company_ids)
+    )
+
+    AND (
+        ARRAY_LENGTH(@topic_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_NEWS_TOPIC}` nt
@@ -61,7 +84,7 @@ def search_curator(
     )
 
     AND (
-        @solution_ids IS NULL
+        ARRAY_LENGTH(@solution_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_NEWS_SOLUTION}` ns
@@ -85,10 +108,14 @@ def search_curator(
     WHERE c.STATUS = 'PUBLISHED'
       AND c.IS_ACTIVE = TRUE
 
-    AND (@query IS NULL OR SEARCH(c, @query))
+    AND (
+        @query IS NULL
+        OR LOWER(c.TITLE) LIKE CONCAT('%', @query, '%')
+        OR LOWER(c.EXCERPT) LIKE CONCAT('%', @query, '%')
+    )
 
     AND (
-        @company_ids IS NULL
+        ARRAY_LENGTH(@company_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_CONTENT_COMPANY}` cc
@@ -98,7 +125,7 @@ def search_curator(
     )
 
     AND (
-        @topic_ids IS NULL
+        ARRAY_LENGTH(@topic_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_CONTENT_TOPIC}` ct
@@ -108,7 +135,7 @@ def search_curator(
     )
 
     AND (
-        @solution_ids IS NULL
+        ARRAY_LENGTH(@solution_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_CONTENT_SOLUTION}` cs
@@ -121,6 +148,10 @@ def search_curator(
     LIMIT @limit
     OFFSET @offset
     """
+
+    # ============================================================
+    # EXECUTION
+    # ============================================================
 
     return query_bq(
         sql,
@@ -142,50 +173,66 @@ def search_curator(
 def get_feed_meta() -> Dict:
 
     sql = f"""
-    SELECT *
-    FROM (
+    -- =========================
+    -- TOPICS
+    -- =========================
+    SELECT
+        'topic' AS type,
+        t.ID_TOPIC AS id,
+        t.LABEL AS label,
+        0 AS count
+    FROM `{TABLE_TOPIC}` t
+    WHERE t.LABEL IS NOT NULL
 
-        SELECT
-            'topic' AS type,
-            ID_TOPIC AS id,
-            LABEL AS label,
-            0 AS count
-        FROM `{TABLE_TOPIC}`
+    UNION ALL
 
-        UNION ALL
+    -- =========================
+    -- COMPANIES
+    -- =========================
+    SELECT
+        'company' AS type,
+        c.ID_COMPANY AS id,
+        c.NAME AS label,
+        0 AS count
+    FROM `{TABLE_COMPANY}` c
+    WHERE c.NAME IS NOT NULL
 
-        SELECT
-            'company' AS type,
-            ID_COMPANY AS id,
-            NAME AS label,
-            0 AS count
-        FROM `{TABLE_COMPANY}`
+    UNION ALL
 
-        UNION ALL
+    -- =========================
+    -- SOLUTIONS
+    -- =========================
+    SELECT
+        'solution' AS type,
+        s.ID_SOLUTION AS id,
+        s.NAME AS label,
+        0 AS count
+    FROM `{TABLE_SOLUTION}` s
+    WHERE s.NAME IS NOT NULL
 
-        SELECT
-            'solution' AS type,
-            ID_SOLUTION AS id,
-            NAME AS label,
-            0 AS count
-        FROM `{TABLE_SOLUTION}`
+    UNION ALL
 
-        UNION ALL
+    -- =========================
+    -- NEWS TYPES (AVEC COUNT)
+    -- =========================
+    SELECT
+        'news_type' AS type,
+        n.NEWS_TYPE AS id,
+        n.NEWS_TYPE AS label,
+        COUNT(*) AS count
+    FROM `{TABLE_NEWS}` n
+    WHERE n.STATUS = 'PUBLISHED'
+      AND n.NEWS_TYPE IS NOT NULL
+    GROUP BY n.NEWS_TYPE
 
-        SELECT
-            'news_type' AS type,
-            NEWS_TYPE AS id,
-            NEWS_TYPE AS label,
-            COUNT(*) AS count
-        FROM `{TABLE_NEWS}`
-        WHERE STATUS = 'PUBLISHED'
-        GROUP BY NEWS_TYPE
-
-    )
     ORDER BY type, label
     """
 
     rows = query_bq(sql)
+
+    # ============================================================
+    # FORMATAGE
+    # ============================================================
 
     result = {
         "topics": [],
@@ -195,10 +242,13 @@ def get_feed_meta() -> Dict:
     }
 
     for r in rows:
+        if not r.get("id") or not r.get("label"):
+            continue  # sécurité supplémentaire
+
         item = {
             "id": r["id"],
             "label": r["label"],
-            "count": r["count"],
+            "count": r.get("count", 0),
         }
 
         if r["type"] == "topic":
