@@ -8,8 +8,6 @@ type Props = {
   item: FeedItem;
   onClick: () => void;
   onClickBadge?: (badge: FeedBadge) => void;
-
-  // 🔥 NEW → feedback UX
   loading?: boolean;
 };
 
@@ -40,6 +38,14 @@ export default function FeedRow({
   }
 
   /* =========================================================
+     🔥 SAFE ARRAYS (CRITIQUE)
+  ========================================================= */
+
+  const topics = Array.isArray(item.topics) ? item.topics : [];
+  const companies = Array.isArray(item.companies) ? item.companies : [];
+  const solutions = Array.isArray(item.solutions) ? item.solutions : [];
+
+  /* =========================================================
      BADGES
   ========================================================= */
 
@@ -48,24 +54,24 @@ export default function FeedRow({
       ? [{ label: item.news_type, type: "news_type" as const }]
       : []),
 
-    ...(item.companies ?? []).map((c) => ({
+    ...companies.map((c) => ({
       label: c,
       type: "company" as const,
     })),
 
-    ...(item.topics ?? []).map((t) => ({
+    ...topics.map((t) => ({
       label: t,
       type: "topic" as const,
     })),
 
-    ...(item.solutions ?? []).map((s) => ({
+    ...solutions.map((s) => ({
       label: s,
       type: "solution" as const,
     })),
   ];
 
   /* =========================================================
-     BADGE STYLE (plus premium)
+     BADGE STYLE
   ========================================================= */
 
   function getBadgeClass(type?: string) {
@@ -93,6 +99,12 @@ export default function FeedRow({
     GCS_BASE_URL
       ? `${GCS_BASE_URL}/news/${item.media_id}`
       : null;
+
+  /* =========================================================
+     DEBUG (à enlever après validation)
+  ========================================================= */
+
+  // console.log("ITEM BADGES", item);
 
   /* =========================================================
      RENDER
@@ -129,7 +141,6 @@ export default function FeedRow({
 
           {/* META */}
           <div className="flex items-center justify-between text-[11px] text-gray-400">
-
             <div className="flex items-center gap-2">
               <span>{formattedDate || ""}</span>
 
