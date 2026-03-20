@@ -197,12 +197,19 @@ def get_content_stats():
         ORDER BY TOTAL DESC
     """)
 
+    solution_rows = query_bq(f"""
+        SELECT *
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION`
+        ORDER BY TOTAL DESC
+    """)
+
     return {
         "total_count": g.get("TOTAL", 0),
         "last_7_days": g.get("LAST_7_DAYS", 0),
         "last_30_days": g.get("LAST_30_DAYS", 0),
         "topics_stats": topics_rows,
         "top_companies": company_rows,
+        "top_solutions": solution_rows,
     }
 
 
