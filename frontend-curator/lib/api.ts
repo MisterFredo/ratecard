@@ -27,7 +27,7 @@ const BASE_URL = RAW_BASE_URL.replace(/\/+$/, "");
 async function request(method: string, path: string, body?: any) {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
 
-  const url = `${BASE_URL}${cleanPath}`;
+  const url = `${BASE_URL}/api${cleanPath}`;
 
   // 🔍 DEBUG (tu peux retirer après validation)
   console.log("API CALL →", method, url);
