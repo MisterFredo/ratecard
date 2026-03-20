@@ -1,13 +1,16 @@
 from fastapi import APIRouter, HTTPException, Query
-from typing import List, Optional
 
-from core.curator.service import search, get_content_curator, get_news_curator
+from core.curator.service import (
+    search,
+    get_content_curator,
+    get_news_curator,
+)
 
 router = APIRouter()
 
 
 # ============================================================
-# SEARCH (FULL TEXT - IDENTIQUE ADMIN)
+# SEARCH
 # ============================================================
 
 @router.get("/search")
@@ -33,7 +36,7 @@ def search_route(
 @router.get("/news/{id_news}")
 def read_news(id_news: str):
     try:
-        item = get_news(id_news)
+        item = get_news_curator(id_news)
 
         if not item:
             raise HTTPException(404, "News not found")
@@ -54,7 +57,7 @@ def read_news(id_news: str):
 @router.get("/content/{id_content}")
 def read_content(id_content: str):
     try:
-        item = get_content(id_content)
+        item = get_content_curator(id_content)
 
         if not item:
             raise HTTPException(404, "Content not found")
