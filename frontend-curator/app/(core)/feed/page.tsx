@@ -140,7 +140,14 @@ export default function FeedPage() {
         }}
       />
 
-      <StatsBar stats={stats} />
+      <StatsBar
+        stats={stats}
+        onClickStat={(value) => {
+          setQuery(value);
+          setOffset(0);
+          load(true, value);
+        }}
+      />
 
       <FeedList
         title="Results"
