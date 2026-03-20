@@ -34,18 +34,18 @@ def search_curator(
 ) -> List[Dict]:
 
     # ============================================================
-    # NORMALISATION (CRITIQUE)
+    # NORMALISATION
     # ============================================================
 
-    query = query.strip().lower() if query and query.strip() != "" else None
+    query = query.strip() if query and query.strip() != "" else None
 
-    topic_ids = topic_ids if topic_ids else None
-    company_ids = company_ids if company_ids else None
-    solution_ids = solution_ids if solution_ids else None
-    news_types = news_types if news_types else None
+    topic_ids = topic_ids or []
+    company_ids = company_ids or []
+    solution_ids = solution_ids or []
+    news_types = news_types or []
 
     # ============================================================
-    # SQL
+    # SQL (SEARCH FIX)
     # ============================================================
 
     sql = f"""
@@ -61,33 +61,27 @@ def search_curator(
     FROM `{TABLE_NEWS}` n
     WHERE n.STATUS = 'PUBLISHED'
 
-    -- QUERY
+    -- 🔥 SEARCH (fix principal)
     AND (
         @query IS NULL
-        OR LOWER(n.TITLE) LIKE CONCAT('%', @query, '%')
-        OR LOWER(n.EXCERPT) LIKE CONCAT('%', @query, '%')
+        OR SEARCH(n, @query)
     )
 
     -- NEWS TYPE
     AND (
-        @news_types IS NULL
-        OR ARRAY_LENGTH(@news_types) = 0
-        OR LOWER(n.NEWS_TYPE) IN UNNEST(
-            ARRAY(SELECT LOWER(x) FROM UNNEST(@news_types) x)
-        )
+        ARRAY_LENGTH(@news_types) = 0
+        OR n.NEWS_TYPE IN UNNEST(@news_types)
     )
 
     -- COMPANY
     AND (
-        @company_ids IS NULL
-        OR ARRAY_LENGTH(@company_ids) = 0
+        ARRAY_LENGTH(@company_ids) = 0
         OR n.ID_COMPANY IN UNNEST(@company_ids)
     )
 
     -- TOPIC
     AND (
-        @topic_ids IS NULL
-        OR ARRAY_LENGTH(@topic_ids) = 0
+        ARRAY_LENGTH(@topic_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_NEWS_TOPIC}` nt
@@ -98,8 +92,7 @@ def search_curator(
 
     -- SOLUTION
     AND (
-        @solution_ids IS NULL
-        OR ARRAY_LENGTH(@solution_ids) = 0
+        ARRAY_LENGTH(@solution_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_NEWS_SOLUTION}` ns
@@ -123,17 +116,15 @@ def search_curator(
     WHERE c.STATUS = 'PUBLISHED'
       AND c.IS_ACTIVE = TRUE
 
-    -- QUERY
+    -- 🔥 SEARCH (fix principal)
     AND (
         @query IS NULL
-        OR LOWER(c.TITLE) LIKE CONCAT('%', @query, '%')
-        OR LOWER(c.EXCERPT) LIKE CONCAT('%', @query, '%')
+        OR SEARCH(c, @query)
     )
 
     -- COMPANY
     AND (
-        @company_ids IS NULL
-        OR ARRAY_LENGTH(@company_ids) = 0
+        ARRAY_LENGTH(@company_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_CONTENT_COMPANY}` cc
@@ -144,8 +135,7 @@ def search_curator(
 
     -- TOPIC
     AND (
-        @topic_ids IS NULL
-        OR ARRAY_LENGTH(@topic_ids) = 0
+        ARRAY_LENGTH(@topic_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_CONTENT_TOPIC}` ct
@@ -156,8 +146,7 @@ def search_curator(
 
     -- SOLUTION
     AND (
-        @solution_ids IS NULL
-        OR ARRAY_LENGTH(@solution_ids) = 0
+        ARRAY_LENGTH(@solution_ids) = 0
         OR EXISTS (
             SELECT 1
             FROM `{TABLE_CONTENT_SOLUTION}` cs
@@ -170,10 +159,6 @@ def search_curator(
     LIMIT @limit
     OFFSET @offset
     """
-
-    # ============================================================
-    # EXECUTION
-    # ============================================================
 
     return query_bq(
         sql,
