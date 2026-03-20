@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Literal
 
 
 # ============================================================
@@ -9,6 +9,7 @@ from typing import List, Optional
 class SearchTextQuery(BaseModel):
     query: str
     limit: int = 20
+    offset: int = 0
 
 
 # ============================================================
@@ -37,7 +38,7 @@ class Solution(BaseModel):
 
 class FeedItem(BaseModel):
     id: str
-    type: str  # "news" | "analysis"
+    type: Literal["news", "analysis"]
 
     title: str
     excerpt: Optional[str] = None
@@ -59,3 +60,43 @@ class FeedItem(BaseModel):
 class FeedResponse(BaseModel):
     items: List[FeedItem]
     count: int
+
+
+# ============================================================
+# STATS — BASE
+# ============================================================
+
+class StatsItem(BaseModel):
+    total: int
+    last_7_days: int
+    last_30_days: int
+
+
+# ============================================================
+# STATS — TOPICS
+# ============================================================
+
+class TopicStats(StatsItem):
+    id_topic: str
+    label: str
+
+
+# ============================================================
+# STATS — COMPANIES
+# ============================================================
+
+class CompanyStats(StatsItem):
+    id_company: str
+    name: str
+
+
+# ============================================================
+# STATS — RESPONSE
+# ============================================================
+
+class ContentStatsResponse(BaseModel):
+    total_count: int
+    last_7_days: int
+    last_30_days: int
+    topics_stats: List[TopicStats]
+    top_companies: List[CompanyStats]
