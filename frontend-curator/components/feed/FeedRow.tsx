@@ -8,7 +8,6 @@ type Props = {
   item: FeedItem;
   onClick: () => void;
 
-  // 🔥 NEW → interaction filtres
   onClickBadge?: (badge: FeedBadge) => void;
 };
 
@@ -38,7 +37,7 @@ export default function FeedRow({
   }
 
   /* =========================================================
-     BADGES
+     BADGES (BUILD FROM BACKEND DATA)
   ========================================================= */
 
   const badges: FeedBadge[] = [
@@ -61,6 +60,24 @@ export default function FeedRow({
       type: "solution" as const,
     })),
   ];
+
+  /* =========================================================
+     BADGE STYLE
+  ========================================================= */
+
+  function getBadgeClass(type?: string) {
+    switch (type) {
+      case "news_type":
+        return "bg-black text-white";
+      case "company":
+        return "bg-blue-100 text-blue-700";
+      case "solution":
+        return "bg-purple-100 text-purple-700";
+      case "topic":
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  }
 
   /* =========================================================
      IMAGE URL
@@ -90,9 +107,7 @@ export default function FeedRow({
     >
       <div className="flex gap-4">
 
-        {/* ============================
-           IMAGE
-        ============================ */}
+        {/* IMAGE */}
         {imageUrl && (
           <div className="w-[140px] h-[80px] bg-gray-100 flex-shrink-0 overflow-hidden rounded">
             <img
@@ -100,21 +115,17 @@ export default function FeedRow({
               alt={item.title}
               className="w-full h-full object-cover"
               onError={(e) => {
-                // 🔥 fallback image cassée
                 (e.currentTarget as HTMLImageElement).style.display = "none";
               }}
             />
           </div>
         )}
 
-        {/* ============================
-           CONTENT
-        ============================ */}
+        {/* CONTENT */}
         <div className="flex-1 space-y-2">
 
           {/* META */}
           <div className="flex justify-between text-[11px] text-gray-400">
-
             <span>{formattedDate || ""}</span>
 
             <span
@@ -131,7 +142,7 @@ export default function FeedRow({
             </span>
           </div>
 
-          {/* COMPANY (🔥 NEW STRUCTURÉ) */}
+          {/* COMPANY */}
           {item.company?.name && (
             <div className="text-xs text-gray-500">
               {item.company.name}
@@ -145,10 +156,10 @@ export default function FeedRow({
                 <button
                   key={`${b.label}-${i}`}
                   onClick={(e) => {
-                    e.stopPropagation(); // 🔥 empêche ouverture drawer
+                    e.stopPropagation();
 
                     if (onClickBadge) {
-                      onClickBadge(b); // 🔥 interaction filtre
+                      onClickBadge(b);
                     }
                   }}
                   className={`
