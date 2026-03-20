@@ -28,40 +28,59 @@ export default function FilterPanel({
   const [search, setSearch] = useState("");
 
   /* =========================================================
-     FILTER + SORT (ALPHABETIQUE + SAFE)
+     FILTER + SORT
   ========================================================= */
 
   const filtered = useMemo(() => {
+    const searchLower = search.toLowerCase();
+
     return items
       .filter((i) =>
-        i.label.toLowerCase().includes(search.toLowerCase())
+        (i.label || "")
+          .toLowerCase()
+          .includes(searchLower)
       )
-      .sort((a, b) => a.label.localeCompare(b.label));
+      .sort((a, b) =>
+        a.label.localeCompare(b.label, "fr", {
+          sensitivity: "base",
+        })
+      );
   }, [items, search]);
 
   /* =========================================================
      TOGGLE
   ========================================================= */
 
-  const toggle = (id: string) => {
+  function toggle(id: string) {
     if (selected.includes(id)) {
       onChange(selected.filter((x) => x !== id));
     } else {
       onChange([...selected, id]);
     }
-  };
+  }
 
   /* =========================================================
      ACTIONS
   ========================================================= */
 
-  const handleClear = () => {
+  function handleClear() {
+    if (selected.length === 0) return;
     onChange([]);
-  };
+  }
 
-  const handleSelectAll = () => {
-    onChange(filtered.map((i) => i.id));
-  };
+  function handleSelectAll() {
+    const ids = filtered.map((i) => i.id);
+
+    // évite un rerender inutile
+    if (
+      ids.length === selected.length &&
+      ids.every((id) => selected.includes(id))
+    ) {
+      return;
+    }
+
+    onChange(ids);
+  }
 
   /* =========================================================
      RENDER
@@ -88,21 +107,21 @@ export default function FilterPanel({
       <div className="flex justify-between mb-2 text-xs text-gray-500">
         <button
           onClick={handleClear}
-          className="hover:text-black"
+          className="hover:text-black transition"
         >
           Clear
         </button>
 
         <button
           onClick={handleSelectAll}
-          className="hover:text-black"
+          className="hover:text-black transition"
         >
           Select all
         </button>
       </div>
 
       {/* LIST */}
-      <div className="max-h-64 overflow-y-auto space-y-1">
+      <div className="max-h-64 overflow-y-auto space-y-1 pr-1">
         {filtered.map((item) => {
           const isActive = selected.includes(item.id);
 
@@ -122,12 +141,14 @@ export default function FilterPanel({
                 <input
                   type="checkbox"
                   checked={isActive}
-                  onChange={() => toggle(item.id)}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    toggle(item.id);
+                  }}
                 />
                 {item.label}
               </div>
 
-              {/* ✅ toujours afficher count (cohérence UX) */}
               <span className="text-xs opacity-60">
                 {item.count}
               </span>
