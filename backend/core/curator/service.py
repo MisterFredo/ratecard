@@ -62,10 +62,6 @@ def search(q: str, limit: int = 20) -> List[Dict]:
           AND SEARCH(c, @query)
     )
 
-    -- ============================
-    -- TOPICS
-    -- ============================
-
     , topics_map AS (
         SELECT
             nt.ID_NEWS as id,
@@ -86,10 +82,6 @@ def search(q: str, limit: int = 20) -> List[Dict]:
         GROUP BY ct.ID_CONTENT
     )
 
-    -- ============================
-    -- COMPANIES
-    -- ============================
-
     , company_map AS (
         SELECT
             n.ID_NEWS as id,
@@ -109,10 +101,6 @@ def search(q: str, limit: int = 20) -> List[Dict]:
           ON cc.ID_COMPANY = c.ID_COMPANY
         GROUP BY cc.ID_CONTENT
     )
-
-    -- ============================
-    -- SOLUTIONS
-    -- ============================
 
     , solution_map AS (
         SELECT
@@ -155,13 +143,40 @@ def search(q: str, limit: int = 20) -> List[Dict]:
     LIMIT @limit
     """
 
-    return query_bq(
+    rows = query_bq(
         sql,
         {
             "query": q,
             "limit": limit,
         }
     )
+
+    # ============================================================
+    # 🔥 NORMALISATION (CRITIQUE)
+    # ============================================================
+
+    normalized = []
+
+    for r in rows:
+        normalized.append({
+            "id": r.get("id"),
+            "type": r.get("type"),
+            "title": r.get("TITLE"),
+            "excerpt": r.get("EXCERPT"),
+            "published_at": (
+                r.get("PUBLISHED_AT").isoformat()
+                if r.get("PUBLISHED_AT")
+                else None
+            ),
+
+            # 🔥 BADGES
+            "news_type": r.get("NEWS_TYPE"),
+            "topics": r.get("topics") or [],
+            "companies": r.get("companies") or [],
+            "solutions": r.get("solutions") or [],
+        })
+
+    return normalized
 
 def get_content_curator(id_content: str):
 
