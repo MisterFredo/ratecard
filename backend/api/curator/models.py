@@ -7,19 +7,32 @@ from typing import List, Optional
 # ============================================================
 
 class SearchQuery(BaseModel):
-    """
-    Requête unique Curator
-    """
 
     query: Optional[str] = None
 
-    topic_ids: Optional[List[str]] = None
-    company_ids: Optional[List[str]] = None
-    solution_ids: Optional[List[str]] = None
-    news_types: Optional[List[str]] = None
+    topic_ids: Optional[Union[List[str], str]] = None
+    company_ids: Optional[Union[List[str], str]] = None
+    solution_ids: Optional[Union[List[str], str]] = None
+    news_types: Optional[Union[List[str], str]] = None
 
     limit: int = 20
     offset: int = 0
+
+    # 🔥 NORMALISATION AUTO
+    @field_validator(
+        "topic_ids",
+        "company_ids",
+        "solution_ids",
+        "news_types",
+        mode="before"
+    )
+    @classmethod
+    def ensure_list(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, list):
+            return v
+        return [v]  # 🔥 string → list
 
 
 # ============================================================
