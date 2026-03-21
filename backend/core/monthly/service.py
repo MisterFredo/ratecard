@@ -6,10 +6,6 @@ from openai import OpenAI
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client
 
-from api.monthly.models import (
-    MonthlyInsightInput,
-)
-
 client = OpenAI()
 
 TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_MONTHLY"
