@@ -4,13 +4,12 @@ import { useDrawer } from "@/contexts/DrawerContext";
 
 // LEFT DRAWERS
 import CompanyDrawer from "@/components/drawers/CompanyDrawer";
-// (à venir)
 import TopicDrawer from "@/components/drawers/TopicDrawer";
 import SolutionDrawer from "@/components/drawers/SolutionDrawer";
 
 // RIGHT DRAWERS
 import NewsDrawer from "@/components/drawers/NewsDrawer";
-import AnalysisDrawerAdmin from "@/components/drawers/AnalysisDrawer";
+import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
 
 /* =========================================================
    HOST — CURATOR
@@ -37,7 +36,7 @@ export default function DrawerHost() {
       )}
 
       {/* =========================================
-          LEFT — TOPIC (future)
+          LEFT — TOPIC
       ========================================= */}
       {leftDrawer.type === "topic" && leftDrawer.id && (
         <TopicDrawer
@@ -47,7 +46,7 @@ export default function DrawerHost() {
       )}
 
       {/* =========================================
-          LEFT — SOLUTION (future)
+          LEFT — SOLUTION
       ========================================= */}
       {leftDrawer.type === "solution" && leftDrawer.id && (
         <SolutionDrawer
