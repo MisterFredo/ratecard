@@ -76,7 +76,7 @@ export default function DrawerHost() {
       ========================================= */}
       {rightType === "analysis" && rightId && (
         <AnalysisDrawer
-          Id={rightId}
+          id={rightId}
           onClose={closeRightDrawer}
         />
       )}
