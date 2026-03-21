@@ -432,15 +432,17 @@ def generate_monthly_insight(
         print("❌ JSON parsing failed:", raw)
         return {"status": "error", "raw": raw}
 
-    # 🔥 6. SAVE
-    insight_id = create_monthly_insight({
-        "entity_type": entity_type,
-        "entity_id": entity_id,
-        "year": year,
-        "month": month,
-        "key_points": key_points,
-        "status": "GENERATED",
-    })
+    # 🔥 6. SAVE (FIX PRINCIPAL ICI)
+    insight_id = create_monthly_insight(
+        MonthlyInsightInput(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            year=year,
+            month=month,
+            key_points=key_points,
+            status="GENERATED",
+        )
+    )
 
     return {
         "status": "ok",
