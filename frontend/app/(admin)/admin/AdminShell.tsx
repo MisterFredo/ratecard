@@ -15,7 +15,8 @@ import {
   Archive,
   Search,
   Link2,
-  Database, // ✅ ajout
+  Database,
+  Calendar, // ✅ ajout Monthly
 } from "lucide-react";
 
 export default function AdminShell({
@@ -39,7 +40,7 @@ export default function AdminShell({
 
     { href: "/admin/search", label: "Search", icon: Search },
 
-    // ✅ NOUVEAU : Vectorisation
+    // ✅ Vectorisation
     { href: "/admin/vector", label: "Vectorisation", icon: Database },
 
     {
@@ -52,6 +53,13 @@ export default function AdminShell({
       href: "/admin/digest",
       label: "Digest",
       icon: Mail,
+    },
+
+    // ✅ NEW — Monthly Insights
+    {
+      href: "/admin/monthly",
+      label: "Monthly",
+      icon: Calendar,
     },
 
     { href: "/admin/company", label: "Sociétés", icon: Building2 },
