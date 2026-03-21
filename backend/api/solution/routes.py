@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException
+
 from api.solution.models import (
     SolutionCreate,
     SolutionUpdate,
     SolutionOut,
 )
+
 from core.solution.service import (
     create_solution,
     list_solutions,
@@ -11,6 +13,9 @@ from core.solution.service import (
     update_solution,
     delete_solution,
 )
+
+# 🔥 CURATOR
+from core.curator.entity_service import get_solution_view
 
 router = APIRouter()
 
@@ -40,7 +45,7 @@ def list_route():
 
 
 # ============================================================
-# GET ONE  ⬅️ ALIGNÉ SUR COMPANY
+# GET ONE (ADMIN / CRUD)
 # ============================================================
 @router.get("/{id_solution}")
 def get_route(id_solution: str):
@@ -56,6 +61,25 @@ def get_route(id_solution: str):
         raise
     except Exception as e:
         raise HTTPException(400, f"Erreur récupération solution : {e}")
+
+
+# ============================================================
+# GET VIEW (CURATOR)
+# ============================================================
+@router.get("/{id_solution}/view")
+def get_view_route(id_solution: str):
+    try:
+        solution = get_solution_view(id_solution)
+
+        if not solution:
+            raise HTTPException(404, "Solution introuvable")
+
+        return solution
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Erreur récupération solution view : {e}")
 
 
 # ============================================================
