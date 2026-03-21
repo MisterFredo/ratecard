@@ -66,6 +66,7 @@ include_router("api.public", "/api/public", "PUBLIC")
 
 # --- ADMIN AUTH
 include_router("api.admin", "/api/admin", "ADMIN")
+include_router("api.monthly", "/api/monthly", "MONTHLY")
 
 # --- SUPPORT
 include_router("api.visuals", "/api/visuals", "VISUALS")
