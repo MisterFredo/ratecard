@@ -154,9 +154,10 @@ export default function SolutionsPage() {
               key={s.id_solution}
               id={s.id_solution}
               name={s.name}
-              visualRectId={s.company_logo}
-              totalAnalyses={s.nb_analyses}
+              visualRectId={s.media_logo_rectangle_id}
+              nbAnalyses={s.nb_analyses}
               delta30d={s.delta_30d}
+              isPartner={s.is_partner}
             />
           ))}
         </div>
