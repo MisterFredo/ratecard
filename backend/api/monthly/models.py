@@ -56,7 +56,7 @@ class MonthlyInsightInput:
 
 
 # ============================================================
-# GENERATION PAYLOAD (LLM)
+# GENERATION INPUT (LLM)
 # ============================================================
 
 class MonthlyInsightGenerationInput:
@@ -66,17 +66,17 @@ class MonthlyInsightGenerationInput:
         entity_id: str,
         year: int,
         month: int,
-        force_regenerate: bool = False,
+        force: bool = False,
     ):
         self.entity_type = entity_type
         self.entity_id = entity_id
         self.year = year
         self.month = month
-        self.force_regenerate = force_regenerate
+        self.force = force
 
 
 # ============================================================
-# OUTPUT (STRUCTURED)
+# OUTPUT (STRUCTURÉ LLM)
 # ============================================================
 
 class MonthlyInsightOutput:
