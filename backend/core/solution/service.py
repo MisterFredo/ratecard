@@ -61,7 +61,8 @@ def list_solutions():
             s.STATUS,
             s.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
-            c.MEDIA_LOGO_RECTANGLE_ID AS COMPANY_LOGO,
+            c.MEDIA_LOGO_RECTANGLE_ID AS MEDIA_LOGO_RECTANGLE_ID,  -- ✅ ALIGNÉ
+            CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER, 
             s.VECTORISE,
             s.CREATED_AT,
             s.UPDATED_AT,
@@ -91,7 +92,8 @@ def list_solutions():
             "status": r["STATUS"],
             "id_company": r["ID_COMPANY"],
             "company_name": r["COMPANY_NAME"],
-            "company_logo": r["COMPANY_LOGO"],
+            "media_logo_rectangle_id": r["MEDIA_LOGO_RECTANGLE_ID"],  # ✅ FIX
+            "is_partner": r["IS_PARTNER"], 
             "vectorise": r["VECTORISE"],
             "created_at": r["CREATED_AT"],
             "updated_at": r["UPDATED_AT"],
