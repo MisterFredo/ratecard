@@ -6,12 +6,10 @@ import { api } from "@/lib/api";
 import { X } from "lucide-react";
 import { useDrawer } from "@/contexts/DrawerContext";
 
-const logoUrl = data.media_logo_rectangle_id
-  ? `${GCS_BASE_URL}/companies/${data.media_logo_rectangle_id}`
-  : null;
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 /* =========================================================
-   TYPES (alignés backend VIEW)
+   TYPES
 ========================================================= */
 
 type FeedItem = {
@@ -26,16 +24,13 @@ type SolutionData = {
   id_solution: string;
   name: string;
 
-  // 🔥 contexte société
   company_name?: string;
   media_logo_rectangle_id?: string | null;
   is_partner?: boolean;
 
-  // 🔥 stats
   nb_analyses?: number;
   delta_30d?: number;
 
-  // 🔥 contenu
   items?: FeedItem[];
 };
 
@@ -59,6 +54,9 @@ export default function SolutionDrawer({ id, onClose }: Props) {
   } = useDrawer();
 
   const [data, setData] = useState<SolutionData | null>(null);
+  const [items, setItems] = useState<FeedItem[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
   /* =========================================================
@@ -79,14 +77,20 @@ export default function SolutionDrawer({ id, onClose }: Props) {
   }
 
   /* =========================================================
-     LOAD
+     LOAD INITIAL
   ========================================================= */
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get(`/solution/${id}/view`);
+        const res = await api.get(
+          `/solution/${id}/view?limit=20&offset=0`
+        );
+
         setData(res);
+        setItems(res.items ?? []);
+        setOffset(20);
+
         requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
         console.error("❌ SolutionDrawer load error", e);
@@ -96,13 +100,35 @@ export default function SolutionDrawer({ id, onClose }: Props) {
     load();
   }, [id]);
 
+  /* =========================================================
+     LOAD MORE
+  ========================================================= */
+
+  async function loadMore() {
+    setLoadingMore(true);
+
+    try {
+      const res = await api.get(
+        `/solution/${id}/view?limit=20&offset=${offset}`
+      );
+
+      const newItems = res.items ?? [];
+
+      setItems((prev) => [...prev, ...newItems]);
+      setOffset((prev) => prev + 20);
+
+    } catch (e) {
+      console.error("❌ loadMore error", e);
+    }
+
+    setLoadingMore(false);
+  }
+
   if (!data) return null;
 
   /* =========================================================
      DERIVED
   ========================================================= */
-
-  const items = data.items ?? [];
 
   const logoUrl = data.media_logo_rectangle_id
     ? `${GCS_BASE_URL}/companies/${data.media_logo_rectangle_id}`
@@ -130,7 +156,7 @@ export default function SolutionDrawer({ id, onClose }: Props) {
         `}
       >
         {/* =====================================================
-            HEADER + CONTEXTE + STATS
+            HEADER
         ===================================================== */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 space-y-2">
 
@@ -140,9 +166,8 @@ export default function SolutionDrawer({ id, onClose }: Props) {
                 {data.name}
               </h1>
 
-              {/* 🔥 société */}
               {data.company_name && (
-                <p className="text-xs text-gray-500">
+                <p className="text-sm text-gray-500">
                   {data.company_name}
                 </p>
               )}
@@ -153,7 +178,7 @@ export default function SolutionDrawer({ id, onClose }: Props) {
             </button>
           </div>
 
-          {/* 🔥 stats */}
+          {/* STATS */}
           <div className="flex gap-4 text-xs text-gray-500">
             {typeof data.nb_analyses === "number" && (
               <span>{data.nb_analyses} analyses</span>
@@ -168,7 +193,7 @@ export default function SolutionDrawer({ id, onClose }: Props) {
         </div>
 
         {/* =====================================================
-            LOGO SOCIÉTÉ
+            LOGO
         ===================================================== */}
         {logoUrl && (
           <div className="w-full bg-white border-b border-gray-200 flex items-center justify-center">
@@ -187,7 +212,6 @@ export default function SolutionDrawer({ id, onClose }: Props) {
         ===================================================== */}
         <div className="px-6 py-8 space-y-10">
 
-          {/* CONTENUS */}
           <section className="space-y-4">
             <h2 className="text-sm font-semibold uppercase text-gray-500">
               Contenus liés
@@ -198,51 +222,69 @@ export default function SolutionDrawer({ id, onClose }: Props) {
                 Aucun contenu disponible pour cette solution.
               </p>
             ) : (
-              <ul className="space-y-3">
-                {items.map((item) => (
-                  <li
-                    key={item.id}
-                    onClick={() =>
-                      openRightDrawer(
-                        item.type === "news"
-                          ? "news"
-                          : "analysis",
-                        item.id,
-                        "silent"
-                      )
-                    }
+              <>
+                <ul className="space-y-3">
+                  {items.map((item) => (
+                    <li
+                      key={item.id}
+                      onClick={() =>
+                        openRightDrawer(
+                          item.type === "news"
+                            ? "news"
+                            : "analysis",
+                          item.id,
+                          "silent"
+                        )
+                      }
+                      className="
+                        cursor-pointer p-4 rounded-lg
+                        border border-gray-200
+                        hover:bg-gray-50 transition
+                      "
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-medium text-gray-900">
+                          {item.title}
+                        </h3>
+
+                        <span className="text-[10px] uppercase text-gray-400">
+                          {item.type}
+                        </span>
+                      </div>
+
+                      {item.excerpt && (
+                        <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                          {item.excerpt}
+                        </p>
+                      )}
+
+                      {item.published_at && (
+                        <div className="mt-1 text-xs text-gray-400">
+                          {new Date(
+                            item.published_at
+                          ).toLocaleDateString("fr-FR")}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* LOAD MORE */}
+                <div className="flex justify-center pt-4">
+                  <button
+                    onClick={loadMore}
                     className="
-                      cursor-pointer p-4 rounded-lg
+                      text-xs px-4 py-2 rounded
                       border border-gray-200
-                      hover:bg-gray-50 transition
+                      hover:bg-gray-50
                     "
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-sm font-medium text-gray-900">
-                        {item.title}
-                      </h3>
-
-                      <span className="text-[10px] uppercase text-gray-400">
-                        {item.type}
-                      </span>
-                    </div>
-
-                    {item.excerpt && (
-                      <p className="mt-1 text-sm text-gray-600 line-clamp-2">
-                        {item.excerpt}
-                      </p>
-                    )}
-
-                    {item.published_at && (
-                      <div className="mt-1 text-xs text-gray-400">
-                        {new Date(
-                          item.published_at
-                        ).toLocaleDateString("fr-FR")}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
+                    {loadingMore
+                      ? "Chargement..."
+                      : "Voir plus"}
+                  </button>
+                </div>
+              </>
             )}
           </section>
 
