@@ -6,8 +6,11 @@ import { useDrawer } from "@/contexts/DrawerContext";
 type Props = {
   id: string;
   name: string;
-  visualRectId?: string | null; // 🔥 futur (fallback company)
+
+  visualRectId?: string | null; // logo société
   nbAnalyses?: number;
+  delta30d?: number;
+  isPartner?: boolean;
 };
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
@@ -17,6 +20,8 @@ export default function SolutionCard({
   name,
   visualRectId,
   nbAnalyses,
+  delta30d,
+  isPartner,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -27,10 +32,8 @@ export default function SolutionCard({
     : null;
 
   function handleClick() {
-    // 1️⃣ ouverture drawer
     openLeftDrawer("solution", id);
 
-    // 2️⃣ synchro URL
     router.replace(
       `${pathname}?solution_id=${id}`,
       { scroll: false }
@@ -45,8 +48,26 @@ export default function SolutionCard({
         border border-ratecard-border
         bg-white shadow-card transition
         hover:shadow-cardHover overflow-hidden
+        relative
       "
     >
+      {/* =====================================================
+          BADGES (TOP RIGHT)
+      ===================================================== */}
+      <div className="absolute top-2 right-2 flex gap-1 z-10">
+        {isPartner && (
+          <span className="text-[9px] px-2 py-0.5 rounded bg-teal-600 text-white">
+            Partner
+          </span>
+        )}
+
+        {typeof delta30d === "number" && delta30d > 0 && (
+          <span className="text-[9px] px-2 py-0.5 rounded bg-orange-100 text-orange-600">
+            +{delta30d}
+          </span>
+        )}
+      </div>
+
       {/* =====================================================
           VISUEL
       ===================================================== */}
