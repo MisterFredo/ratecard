@@ -86,7 +86,7 @@ def _get_entity_feed(
 # COMPANY
 # ============================================================
 
-def get_company_feed(company_id: str, limit: int = 50) -> List[Dict]:
+def get_company_feed(company_id: str, limit: int = 50, offset: int = 0) -> List[Dict]:
 
     return _get_entity_feed(
         where_clause_news="n.id_company = @company_id",
@@ -135,7 +135,7 @@ def get_company_view(company_id: str) -> Optional[Dict]:
 # TOPIC
 # ============================================================
 
-def get_topic_feed(topic_id: str, limit: int = 50) -> List[Dict]:
+def get_topic_feed(topic_id: str, limit: int = 50, offset: int = 0) -> List[Dict]:
 
     return _get_entity_feed(
         where_clause_news="""
