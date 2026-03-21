@@ -14,6 +14,7 @@ from core.monthly.service import (
     list_monthly_insights,
     update_monthly_insight,
     delete_monthly_insight,
+    generate_monthly_insight,
 )
 
 router = APIRouter()
