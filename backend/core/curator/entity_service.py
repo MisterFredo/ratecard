@@ -13,6 +13,11 @@ from core.company.service import get_company
 VIEW_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED"
 VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 
+# 🔥 STATS VIEWS
+VIEW_STATS_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY"
+VIEW_STATS_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_TOPIC"
+VIEW_STATS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION"
+
 
 # ============================================================
 # INTERNAL — FEED BUILDER (GENERIC)
@@ -98,10 +103,24 @@ def get_company_view(company_id: str) -> Optional[Dict]:
     if not company:
         return None
 
+    # 🔥 AJOUT STATS (SAFE)
+    stats_rows = query_bq(f"""
+        SELECT
+            COALESCE(total, 0) AS NB_ANALYSES,
+            COALESCE(last_30_days, 0) AS DELTA_30D
+        FROM `{VIEW_STATS_COMPANY}`
+        WHERE id_company = @company_id
+        LIMIT 1
+    """, {"company_id": company_id})
+
+    stats = stats_rows[0] if stats_rows else {}
+
     items = get_company_feed(company_id)
 
     return {
         **company,
+        "nb_analyses": stats.get("NB_ANALYSES", 0),
+        "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
     }
 
@@ -134,10 +153,24 @@ def get_topic_feed(topic_id: str, limit: int = 50) -> List[Dict]:
 
 def get_topic_view(topic_id: str) -> Dict:
 
+    # 🔥 AJOUT STATS
+    stats_rows = query_bq(f"""
+        SELECT
+            COALESCE(total, 0) AS NB_ANALYSES,
+            COALESCE(last_30_days, 0) AS DELTA_30D
+        FROM `{VIEW_STATS_TOPIC}`
+        WHERE id_topic = @topic_id
+        LIMIT 1
+    """, {"topic_id": topic_id})
+
+    stats = stats_rows[0] if stats_rows else {}
+
     items = get_topic_feed(topic_id)
 
     return {
         "id_topic": topic_id,
+        "nb_analyses": stats.get("NB_ANALYSES", 0),
+        "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
     }
 
@@ -149,7 +182,7 @@ def get_topic_view(topic_id: str) -> Dict:
 def get_solution_feed(solution_id: str, limit: int = 50) -> List[Dict]:
 
     return _get_entity_feed(
-        where_clause_news="FALSE",  # pas de lien direct côté news
+        where_clause_news="FALSE",
         where_clause_content="""
             EXISTS (
                 SELECT 1
@@ -164,10 +197,24 @@ def get_solution_feed(solution_id: str, limit: int = 50) -> List[Dict]:
 
 def get_solution_view(solution_id: str) -> Dict:
 
+    # 🔥 AJOUT STATS
+    stats_rows = query_bq(f"""
+        SELECT
+            COALESCE(total, 0) AS NB_ANALYSES,
+            COALESCE(last_30_days, 0) AS DELTA_30D
+        FROM `{VIEW_STATS_SOLUTION}`
+        WHERE id_solution = @solution_id
+        LIMIT 1
+    """, {"solution_id": solution_id})
+
+    stats = stats_rows[0] if stats_rows else {}
+
     items = get_solution_feed(solution_id)
 
     return {
         "id_solution": solution_id,
+        "nb_analyses": stats.get("NB_ANALYSES", 0),
+        "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
     }
 
