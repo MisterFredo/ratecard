@@ -66,24 +66,22 @@ def create_topic(data: TopicCreate) -> str:
 # LIST TOPICS
 # ============================================================
 def list_topics():
-
     sql = f"""
-    SELECT
-        t.ID_TOPIC,
-        t.LABEL,
-        t.TOPIC_AXIS,
+        SELECT
+            t.ID_TOPIC,
+            t.LABEL,
+            t.TOPIC_AXIS,
 
-        COALESCE(s.total, 0) AS NB_ANALYSES,
-        COALESCE(s.last_30_days, 0) AS DELTA_30D
+            COALESCE(m.total, 0) AS NB_ANALYSES,
+            COALESCE(m.last_30_days, 0) AS DELTA_30D
 
-    FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC` t
+        FROM {TABLE_TOPIC} t
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_TOPIC` m
+          ON m.id_topic = t.ID_TOPIC
 
-    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_TOPIC` s
-      ON s.id_topic = t.ID_TOPIC
+        WHERE COALESCE(t.IS_ACTIVE, TRUE) = TRUE
 
-    WHERE t.IS_ACTIVE = TRUE
-
-    ORDER BY t.LABEL ASC
+        ORDER BY NB_ANALYSES DESC, t.LABEL ASC
     """
 
     rows = query_bq(sql)
@@ -92,13 +90,12 @@ def list_topics():
         {
             "id_topic": r["ID_TOPIC"],
             "label": r["LABEL"],
-            "axis": r["TOPIC_AXIS"],
+            "topic_axis": r.get("TOPIC_AXIS"),
             "nb_analyses": r["NB_ANALYSES"],
             "delta_30d": r["DELTA_30D"],
         }
         for r in rows
     ]
-
 
 # ============================================================
 # GET ONE TOPIC
