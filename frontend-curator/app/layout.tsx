@@ -2,6 +2,7 @@ import "./globals.css";
 
 import CuratorShell from "@/components/layout/CuratorShell";
 import { DrawerProvider } from "@/contexts/DrawerContext";
+import DrawerHost from "@/components/drawers/DrawerHost";
 
 export default function RootLayout({
   children,
@@ -13,6 +14,9 @@ export default function RootLayout({
       <body>
         <DrawerProvider>
           <CuratorShell>{children}</CuratorShell>
+
+          {/* 🔥 DRAWERS */}
+          <DrawerHost />
         </DrawerProvider>
       </body>
     </html>
