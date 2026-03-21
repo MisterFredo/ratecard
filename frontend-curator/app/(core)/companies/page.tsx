@@ -8,7 +8,7 @@ import CompanyCard from "@/components/companies/CompanyCard";
 export const dynamic = "force-dynamic";
 
 /* =========================================================
-   TYPES (alignés backend)
+   TYPES
 ========================================================= */
 
 type Company = {
@@ -16,10 +16,11 @@ type Company = {
   name: string;
   description?: string | null;
   media_logo_rectangle_id?: string | null;
+  is_partner: boolean;
 };
 
 /* =========================================================
-   FETCH (Curator source of truth)
+   FETCH
 ========================================================= */
 
 async function fetchCompanies(): Promise<Company[]> {
@@ -73,13 +74,25 @@ export default function CompaniesPage() {
     openLeftDrawer("company", companyId);
   }, [searchParams, openLeftDrawer]);
 
+  /* ---------------------------------------------------------
+     SPLIT + SORT
+  --------------------------------------------------------- */
+
+  const partners = companies
+    .filter((c) => c.is_partner)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const others = companies
+    .filter((c) => !c.is_partner)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   /* =========================================================
      RENDER
   ========================================================= */
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-10">
+      {/* HEADER */}
       <div>
         <h1 className="text-lg font-semibold text-gray-900">
           Sociétés
@@ -89,31 +102,69 @@ export default function CompaniesPage() {
         </p>
       </div>
 
-      {/* Grid */}
-      {companies.length === 0 ? (
+      {/* PARTENAIRES */}
+      {partners.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Partenaires
+          </h2>
+
+          <div
+            className="
+              grid
+              grid-cols-2
+              md:grid-cols-4
+              lg:grid-cols-5
+              xl:grid-cols-6
+              gap-4
+            "
+          >
+            {partners.map((c) => (
+              <CompanyCard
+                key={c.id_company}
+                id={c.id_company}
+                name={c.name}
+                visualRectId={c.media_logo_rectangle_id}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* AUTRES SOCIÉTÉS */}
+      {others.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Sociétés
+          </h2>
+
+          <div
+            className="
+              grid
+              grid-cols-2
+              md:grid-cols-4
+              lg:grid-cols-5
+              xl:grid-cols-6
+              gap-4
+            "
+          >
+            {others.map((c) => (
+              <CompanyCard
+                key={c.id_company}
+                id={c.id_company}
+                name={c.name}
+                visualRectId={c.media_logo_rectangle_id}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* EMPTY STATE */}
+      {companies.length === 0 && (
         <p className="text-sm text-gray-400">
           Aucune société pour le moment.
         </p>
-      ) : (
-        <div
-          className="
-            grid
-            grid-cols-2
-            md:grid-cols-4
-            lg:grid-cols-5
-            xl:grid-cols-6
-            gap-4
-          "
-        >
-          {companies.map((c) => (
-            <CompanyCard
-              key={c.id_company}
-              id={c.id_company}
-              name={c.name}
-              visualRectId={c.media_logo_rectangle_id}
-            />
-          ))}
-        </div>
       )}
     </div>
   );
