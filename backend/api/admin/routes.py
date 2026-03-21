@@ -213,3 +213,19 @@ def admin_delete_monthly_insight(insight_id: str):
         "status": "ok",
         "deleted": True,
     }
+
+@router.post("/monthly-insight/generate")
+def admin_generate_monthly(payload: dict):
+
+    result = generate_monthly_insight(
+        entity_type=payload.get("entity_type"),
+        entity_id=payload.get("entity_id"),
+        year=payload.get("year"),
+        month=payload.get("month"),
+        force=payload.get("force", False),
+    )
+
+    return {
+        "status": "ok",
+        "result": result,
+    }
