@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { X } from "lucide-react";
+import { useDrawer } from "@/contexts/DrawerContext";
 
 /* ========================================================= */
 
@@ -56,8 +58,30 @@ type Props = {
 /* ========================================================= */
 
 export default function AnalysisDrawer({ id, onClose }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const { rightDrawer, closeRightDrawer } = useDrawer();
+
   const [data, setData] = useState<AnalysisData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+
+  /* =========================================================
+     CLOSE
+  ========================================================= */
+
+  function close() {
+    setIsOpen(false);
+    onClose?.();
+    closeRightDrawer();
+
+    if (
+      rightDrawer.mode === "route" &&
+      pathname.startsWith("/")
+    ) {
+      router.replace(pathname, { scroll: false });
+    }
+  }
 
   /* =========================================================
      LOAD
@@ -74,7 +98,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
 
         setData(payload);
         requestAnimationFrame(() => setIsOpen(true));
-
       } catch (e) {
         console.error("❌ AnalysisDrawer load error", e);
       }
@@ -84,7 +107,7 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
   }, [id]);
 
   /* =========================================================
-     LOADING STATE
+     LOADING
   ========================================================= */
 
   if (!data) {
@@ -122,6 +145,8 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
         return "bg-blue-50 text-blue-600 border border-blue-100";
       case "solution":
         return "bg-purple-50 text-purple-600 border border-purple-100";
+      case "topic":
+        return "bg-gray-100 text-gray-700 border border-gray-200";
       default:
         return "bg-gray-100 text-gray-600";
     }
@@ -133,11 +158,10 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-[100] flex">
-
       {/* OVERLAY */}
       <div
         className="absolute inset-0 bg-black/40"
-        onClick={onClose}
+        onClick={close}
       />
 
       {/* DRAWER */}
@@ -151,13 +175,12 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
       >
         {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 space-y-3">
-
           <div className="flex justify-between items-start">
             <h1 className="text-xl font-semibold text-gray-900 max-w-xl">
               {data.title}
             </h1>
 
-            <button onClick={onClose}>
+            <button onClick={close}>
               <X size={18} />
             </button>
           </div>
@@ -202,28 +225,25 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
             </div>
           )}
 
-          {/* CONCEPTS LLM */}
-            {data.concepts_llm?.length > 0 && (
-              <div>
-                <h3 className="text-xs uppercase text-gray-500 mb-2">
-                  Concepts clés
-                </h3>
+          {/* CONCEPTS */}
+          {data.concepts_llm?.length > 0 && (
+            <div>
+              <h3 className="text-xs uppercase text-gray-500 mb-2">
+                Concepts clés
+              </h3>
 
-                <div className="flex flex-wrap gap-2">
-                  {data.concepts_llm.map((c, i) => (
-                    <span
-                      key={i}
-                      className="
-                        px-2 py-1 text-xs rounded
-                        bg-gray-100 text-gray-700
-                      "
-                    >
-                      {c}
-                    </span>
-                  ))}
-                </div>
+              <div className="flex flex-wrap gap-2">
+                {data.concepts_llm.map((c, i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700"
+                  >
+                    {c}
+                  </span>
+                ))}
               </div>
-            )}
+            </div>
+          )}
 
           {/* MECANIQUE */}
           {data.mecanique_expliquee && (
@@ -317,7 +337,7 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
             </div>
           )}
 
-          {/* FOOTER */}
+          {/* DATE */}
           {data.published_at && (
             <div className="pt-4 border-t text-xs text-gray-400">
               Publié le{" "}
