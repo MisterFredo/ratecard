@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException
+
 from api.topic.models import TopicCreate, TopicUpdate
+
 from core.topic.service import (
     create_topic,
     list_topics,
@@ -8,10 +10,15 @@ from core.topic.service import (
     delete_topic,
 )
 
+# 🔥 CURATOR
+from core.curator.entity_service import get_topic_view
+
 router = APIRouter()
 
 
+# ============================================================
 # CREATE
+# ============================================================
 @router.post("/create")
 def create_route(data: TopicCreate):
     try:
@@ -21,7 +28,9 @@ def create_route(data: TopicCreate):
         raise HTTPException(400, f"Erreur création topic : {e}")
 
 
+# ============================================================
 # LIST
+# ============================================================
 @router.get("/list")
 def list_route():
     try:
@@ -31,16 +40,41 @@ def list_route():
         raise HTTPException(400, f"Erreur liste topics : {e}")
 
 
-# GET ONE
+# ============================================================
+# GET ONE (ADMIN / CRUD)
+# ============================================================
 @router.get("/{id_topic}")
 def get_route(id_topic: str):
     topic = get_topic(id_topic)
+
     if not topic:
         raise HTTPException(404, "Topic introuvable")
+
     return topic
 
 
+# ============================================================
+# GET VIEW (CURATOR)
+# ============================================================
+@router.get("/{id_topic}/view")
+def get_view_route(id_topic: str):
+    try:
+        topic = get_topic_view(id_topic)
+
+        if not topic:
+            raise HTTPException(404, "Topic introuvable")
+
+        return topic
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Erreur récupération topic view : {e}")
+
+
+# ============================================================
 # UPDATE
+# ============================================================
 @router.put("/update/{id_topic}")
 def update_route(id_topic: str, data: TopicUpdate):
     try:
@@ -50,7 +84,9 @@ def update_route(id_topic: str, data: TopicUpdate):
         raise HTTPException(400, f"Erreur mise à jour topic : {e}")
 
 
+# ============================================================
 # DELETE
+# ============================================================
 @router.delete("/{id_topic}")
 def delete_route(id_topic: str):
     try:
