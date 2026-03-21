@@ -40,7 +40,7 @@ def _map_row(r: Dict) -> Dict:
 # CREATE
 # ============================================================
 
-def create_monthly_insight(data: MonthlyInsightInput) -> str:
+def create_monthly_insight(data: dict) -> str:
 
     insight_id = str(uuid.uuid4())
     now = _now()
