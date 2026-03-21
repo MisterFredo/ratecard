@@ -63,11 +63,21 @@ def list_solutions():
             c.NAME AS COMPANY_NAME,
             s.VECTORISE,
             s.CREATED_AT,
-            s.UPDATED_AT
+            s.UPDATED_AT,
+
+            COALESCE(st.total, 0) AS NB_ANALYSES,
+            COALESCE(st.last_30_days, 0) AS DELTA_30D
+
         FROM `{TABLE_SOLUTION}` s
+
         LEFT JOIN `{TABLE_COMPANY}` c
           ON s.ID_COMPANY = c.ID_COMPANY
+
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION` st
+          ON st.id_solution = s.ID_SOLUTION
+
         WHERE s.IS_ACTIVE = TRUE
+
         ORDER BY s.NAME ASC
     """
 
@@ -83,10 +93,13 @@ def list_solutions():
             "vectorise": r["VECTORISE"],
             "created_at": r["CREATED_AT"],
             "updated_at": r["UPDATED_AT"],
+
+            # ✅ NEW (non breaking)
+            "nb_analyses": r["NB_ANALYSES"],
+            "delta_30d": r["DELTA_30D"],
         }
         for r in rows
     ]
-
 
 # ============================================================
 # GET ONE SOLUTION
