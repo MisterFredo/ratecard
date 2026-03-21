@@ -323,7 +323,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
                           <div className="flex flex-wrap gap-2 mt-2">
                             {badges.map((b, i) => (
                               <span
-                                key={`${b.type}-${b.id || b.label}-${i}`}
+                                key={`${b.type}-${"id" in b ? b.id : b.label}-${i}`}
                                 className={`
                                   px-2 py-0.5 text-[10px] rounded-full uppercase tracking-wide
                                   ${getBadgeClass(b.type)}
