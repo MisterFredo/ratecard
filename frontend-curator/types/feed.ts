@@ -16,23 +16,53 @@ export type FeedBadge = {
 
 
 /* =========================================================
-   BADGES STRUCTURÉS (ALIGNÉS BACKEND)
+   ENTITIES (ALIGNÉ BACKEND + EXTENSIBLE)
 ========================================================= */
 
 export type Topic = {
   id_topic: string;
   label: string;
+
+  // structure
   axis?: string;
+
+  // stats
+  nb_analyses?: number;
+  delta_30d?: number;
 };
 
 export type Company = {
   id_company: string;
   name: string;
+
+  // branding
+  media_logo_rectangle_id?: string | null;
+
+  // statut
+  is_partner?: boolean;
+
+  // stats
+  nb_analyses?: number;
+  delta_30d?: number;
 };
 
 export type Solution = {
   id_solution: string;
   name: string;
+
+  // relation
+  id_company?: string;
+  company_name?: string;
+
+  // branding (hérité société)
+  media_logo_rectangle_id?: string | null;
+
+  // statut
+  is_partner?: boolean;
+
+  // stats
+  nb_analyses?: number;
+  delta_30d?: number;
 };
 
 
@@ -50,7 +80,7 @@ export type FeedItem = {
   excerpt?: string | null;
   published_at?: string | null;
 
-  // 🔥 badges structurés
+  // 🔥 entités structurées
   topics?: Topic[];
   companies?: Company[];
   solutions?: Solution[];
