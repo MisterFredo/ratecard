@@ -3,24 +3,23 @@ from typing import List, Dict, Optional
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 
-# 🔗 DATA LAYER (CRUD pur)
+# 🔗 DATA LAYER
 from core.company.service import get_company
 
 # ============================================================
-# VIEWS (alignées avec search)
+# VIEWS
 # ============================================================
 
 VIEW_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED"
 VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 
-# 🔥 STATS VIEWS
 VIEW_STATS_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY"
 VIEW_STATS_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_TOPIC"
 VIEW_STATS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION"
 
 
 # ============================================================
-# INTERNAL — FEED BUILDER (GENERIC)
+# INTERNAL — FEED BUILDER
 # ============================================================
 
 def _get_entity_feed(
@@ -79,11 +78,16 @@ def _get_entity_feed(
 
     return [_map_feed_row(r) for r in rows]
 
+
 # ============================================================
 # COMPANY
 # ============================================================
 
-def get_company_feed(company_id: str, limit: int = 50, offset: int = 0) -> List[Dict]:
+def get_company_feed(
+    company_id: str,
+    limit: int = 50,
+    offset: int = 0
+) -> List[Dict]:
 
     return _get_entity_feed(
         where_clause_news="n.id_company = @company_id",
@@ -95,18 +99,23 @@ def get_company_feed(company_id: str, limit: int = 50, offset: int = 0) -> List[
             )
         """,
         params={"company_id": company_id},
-        limit=limit
+        limit=limit,
+        offset=offset
     )
 
 
-def get_company_view(company_id: str) -> Optional[Dict]:
+def get_company_view(
+    company_id: str,
+    limit: int = 50,
+    offset: int = 0
+) -> Optional[Dict]:
 
     company = get_company(company_id)
 
     if not company:
         return None
 
-    # 🔥 AJOUT STATS (SAFE)
+    # STATS
     stats_rows = query_bq(f"""
         SELECT
             COALESCE(total, 0) AS NB_ANALYSES,
@@ -118,7 +127,7 @@ def get_company_view(company_id: str) -> Optional[Dict]:
 
     stats = stats_rows[0] if stats_rows else {}
 
-    items = get_company_feed(company_id)
+    items = get_company_feed(company_id, limit, offset)
 
     return {
         **company,
@@ -132,7 +141,11 @@ def get_company_view(company_id: str) -> Optional[Dict]:
 # TOPIC
 # ============================================================
 
-def get_topic_feed(topic_id: str, limit: int = 50, offset: int = 0) -> List[Dict]:
+def get_topic_feed(
+    topic_id: str,
+    limit: int = 50,
+    offset: int = 0
+) -> List[Dict]:
 
     return _get_entity_feed(
         where_clause_news="""
@@ -150,13 +163,18 @@ def get_topic_feed(topic_id: str, limit: int = 50, offset: int = 0) -> List[Dict
             )
         """,
         params={"topic_id": topic_id},
-        limit=limit
+        limit=limit,
+        offset=offset
     )
 
 
-def get_topic_view(topic_id: str) -> Dict:
+def get_topic_view(
+    topic_id: str,
+    limit: int = 50,
+    offset: int = 0
+) -> Dict:
 
-    # 🔥 AJOUT STATS
+    # STATS
     stats_rows = query_bq(f"""
         SELECT
             COALESCE(total, 0) AS NB_ANALYSES,
@@ -168,7 +186,7 @@ def get_topic_view(topic_id: str) -> Dict:
 
     stats = stats_rows[0] if stats_rows else {}
 
-    items = get_topic_feed(topic_id)
+    items = get_topic_feed(topic_id, limit, offset)
 
     return {
         "id_topic": topic_id,
@@ -202,9 +220,14 @@ def get_solution_feed(
         offset=offset
     )
 
-def get_solution_view(solution_id: str) -> Dict:
 
-    # 🔥 AJOUT STATS
+def get_solution_view(
+    solution_id: str,
+    limit: int = 50,
+    offset: int = 0
+) -> Dict:
+
+    # STATS
     stats_rows = query_bq(f"""
         SELECT
             COALESCE(total, 0) AS NB_ANALYSES,
@@ -216,7 +239,7 @@ def get_solution_view(solution_id: str) -> Dict:
 
     stats = stats_rows[0] if stats_rows else {}
 
-    items = get_solution_feed(solution_id)
+    items = get_solution_feed(solution_id, limit, offset)
 
     return {
         "id_solution": solution_id,
@@ -227,7 +250,7 @@ def get_solution_view(solution_id: str) -> Dict:
 
 
 # ============================================================
-# MAPPER (strictement aligné avec search)
+# MAPPER
 # ============================================================
 
 def _map_feed_row(r: Dict) -> Dict:
