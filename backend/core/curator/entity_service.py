@@ -4,8 +4,9 @@ from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 
 # 🔗 DATA LAYER (CRUD pur)
+from core.topic.service import get_topic
+from core.solution.service import get_solution
 from core.company.service import get_company
-
 
 # ============================================================
 # VIEWS (alignées avec search)
