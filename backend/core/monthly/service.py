@@ -6,7 +6,7 @@ from openai import OpenAI
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client
 
-from core.monthly.model import (
+from core.monthly.models import (
     MonthlyInsightInput,
 )
 
