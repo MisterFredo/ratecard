@@ -172,7 +172,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
               Actualités
             </h2>
 
-            {data.news.length === 0 ? (
+            {(data.news ?? []).length === 0 ? (
               <p className="text-sm text-gray-400">
                 Aucune actualité disponible pour cette société.
               </p>
@@ -221,7 +221,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
               Analyses
             </h2>
 
-            {data.analyses.length === 0 ? (
+            {(data.analyses ?? []).length === 0 ? (
               <p className="text-sm text-gray-400">
                 Aucune analyse disponible pour cette société.
               </p>
