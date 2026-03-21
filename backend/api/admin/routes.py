@@ -8,7 +8,7 @@ from core.digest.template_service import (
     delete_template,
 )
 
-from core.monthly_insight.service import (
+from core.monthly.service import (
     create_monthly_insight,
     get_monthly_insight,
     list_monthly_insights,
