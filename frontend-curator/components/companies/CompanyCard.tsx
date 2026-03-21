@@ -1,69 +1,81 @@
 "use client";
 
+import { useRouter, usePathname } from "next/navigation";
+import { useDrawer } from "@/contexts/DrawerContext";
+
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
 type Props = {
-  label: string;
-  onClick: () => void;
-
-  // Données pilotées par la page
+  id: string;
+  name: string;
+  visualRectId?: string | null;
   nbAnalyses?: number;
-  delta30d?: number;
-
-  // Variante visuelle
-  variant?: "active" | "default";
 };
 
 export default function CompanyCard({
-  label,
-  onClick,
-  nbAnalyses = 0,
-  delta30d = 0,
-  variant = "default",
+  id,
+  name,
+  visualRectId,
+  nbAnalyses,
 }: Props) {
-  const isActive = variant === "active";
+  const router = useRouter();
+  const pathname = usePathname();
+  const { openLeftDrawer } = useDrawer();
+
+  const visualUrl = visualRectId
+    ? `${GCS_BASE_URL}/companies/${visualRectId}`
+    : null;
+
+  function handleClick() {
+    // 1️⃣ ouverture immédiate du drawer
+    openLeftDrawer("company", id);
+
+    // 2️⃣ synchro URL
+    router.replace(
+      `${pathname}?company_id=${id}`,
+      { scroll: false }
+    );
+  }
 
   return (
     <div
-      onClick={onClick}
-      className={`
-        cursor-pointer
-        rounded-xl
-        border
-        p-5
-        transition
-        ${
-          isActive
-            ? "bg-teal-50 border-teal-200 hover:shadow-md"
-            : "bg-white hover:shadow-sm hover:border-gray-300"
-        }
-      `}
+      onClick={handleClick}
+      className="
+        group cursor-pointer rounded-xl
+        border border-ratecard-border
+        bg-white shadow-card transition
+        hover:shadow-cardHover overflow-hidden
+      "
     >
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="text-lg font-semibold leading-tight">
-          {label}
-        </h3>
-
-        {isActive && (
-          <span className="text-xs px-2 py-0.5 rounded bg-teal-100 text-teal-800 font-medium">
-            En mouvement
-          </span>
+      {/* VISUEL (repris EXACTEMENT même logique que MemberCard) */}
+      <div className="relative h-24 w-full bg-ratecard-light overflow-hidden">
+        {visualUrl ? (
+          <img
+            src={visualUrl}
+            alt={name}
+            className="
+              h-full w-full object-contain
+              p-4 transition-transform duration-300
+              group-hover:scale-[1.02]
+            "
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center text-xs text-gray-400">
+            Aucun logo
+          </div>
         )}
       </div>
 
-      {/* =====================================================
-          METRICS
-      ===================================================== */}
-      <div className="mt-4 text-sm text-gray-600 space-y-1">
-        <div className="font-medium">
-          {nbAnalyses} analyse{nbAnalyses > 1 ? "s" : ""}
-        </div>
+      {/* CONTENU (version compacte) */}
+      <div className="p-3 space-y-1 text-center">
+        <h3 className="text-xs font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:underline">
+          {name}
+        </h3>
 
-        {isActive && (
-          <div className="text-xs text-teal-700">
-            +{delta30d} sur 30j
-          </div>
+        {typeof nbAnalyses === "number" && (
+          <p className="text-[10px] text-gray-400">
+            {nbAnalyses} analyses
+          </p>
         )}
       </div>
     </div>
