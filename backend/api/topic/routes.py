@@ -57,9 +57,17 @@ def get_route(id_topic: str):
 # GET VIEW (CURATOR)
 # ============================================================
 @router.get("/{id_topic}/view")
-def get_view_route(id_topic: str):
+def get_view_route(
+    id_topic: str,
+    limit: int = 20,
+    offset: int = 0
+):
     try:
-        topic = get_topic_view(id_topic)
+        topic = get_topic_view(
+            id_topic,
+            limit=limit,
+            offset=offset
+        )
 
         if not topic:
             raise HTTPException(404, "Topic introuvable")
@@ -69,7 +77,10 @@ def get_view_route(id_topic: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(400, f"Erreur récupération topic view : {e}")
+        raise HTTPException(
+            400,
+            f"Erreur récupération topic view : {e}"
+        )
 
 
 # ============================================================
