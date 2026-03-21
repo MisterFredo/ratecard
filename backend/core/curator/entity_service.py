@@ -185,7 +185,11 @@ def get_topic_view(topic_id: str) -> Dict:
 # SOLUTION
 # ============================================================
 
-def get_solution_feed(solution_id: str, limit: int = 50) -> List[Dict]:
+def get_solution_feed(
+    solution_id: str,
+    limit: int = 50,
+    offset: int = 0
+) -> List[Dict]:
 
     return _get_entity_feed(
         where_clause_news="FALSE",
@@ -197,9 +201,9 @@ def get_solution_feed(solution_id: str, limit: int = 50) -> List[Dict]:
             )
         """,
         params={"solution_id": solution_id},
-        limit=limit
+        limit=limit,
+        offset=offset
     )
-
 
 def get_solution_view(solution_id: str) -> Dict:
 
