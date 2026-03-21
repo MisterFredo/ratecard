@@ -23,14 +23,20 @@ export default function DrawerHost() {
     closeRightDrawer,
   } = useDrawer();
 
+  const leftType = leftDrawer.type;
+  const leftId = leftDrawer.id;
+
+  const rightType = rightDrawer.type;
+  const rightId = rightDrawer.id;
+
   return (
     <>
       {/* =========================================
           LEFT — COMPANY
       ========================================= */}
-      {leftDrawer.type === "company" && leftDrawer.id && (
+      {leftType === "company" && leftId && (
         <CompanyDrawer
-          id={leftDrawer.id}
+          id={leftId}
           onClose={closeLeftDrawer}
         />
       )}
@@ -38,9 +44,9 @@ export default function DrawerHost() {
       {/* =========================================
           LEFT — TOPIC
       ========================================= */}
-      {leftDrawer.type === "topic" && leftDrawer.id && (
+      {leftType === "topic" && leftId && (
         <TopicDrawer
-          id={leftDrawer.id}
+          id={leftId}
           onClose={closeLeftDrawer}
         />
       )}
@@ -48,9 +54,9 @@ export default function DrawerHost() {
       {/* =========================================
           LEFT — SOLUTION
       ========================================= */}
-      {leftDrawer.type === "solution" && leftDrawer.id && (
+      {leftType === "solution" && leftId && (
         <SolutionDrawer
-          id={leftDrawer.id}
+          id={leftId}
           onClose={closeLeftDrawer}
         />
       )}
@@ -58,9 +64,9 @@ export default function DrawerHost() {
       {/* =========================================
           RIGHT — NEWS
       ========================================= */}
-      {rightDrawer.type === "news" && rightDrawer.id && (
+      {rightType === "news" && rightId && (
         <NewsDrawer
-          id={rightDrawer.id}
+          id={rightId}
           onClose={closeRightDrawer}
         />
       )}
@@ -68,9 +74,9 @@ export default function DrawerHost() {
       {/* =========================================
           RIGHT — ANALYSIS
       ========================================= */}
-      {rightDrawer.type === "analysis" && rightDrawer.id && (
+      {rightType === "analysis" && rightId && (
         <AnalysisDrawer
-          contentId={rightDrawer.id}
+          contentId={rightId}
           onClose={closeRightDrawer}
         />
       )}
