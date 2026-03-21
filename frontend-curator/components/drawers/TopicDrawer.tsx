@@ -127,15 +127,14 @@ export default function TopicDrawer({ id, onClose }: Props) {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-xl font-semibold text-gray-900">
-                {data.label || "Topic"}
-              </h1>
+                 {data.label}
+               </h1>
 
-              {/* 🔥 axis */}
-              {data.topic_axis && (
-                <p className="text-xs text-gray-500 uppercase">
-                  {data.topic_axis}
-                </p>
-              )}
+               {data.topic_axis && (
+                 <p className="text-sm text-gray-500">
+                   {data.topic_axis}
+                 </p>
+               )}
             </div>
 
             <button onClick={close}>
