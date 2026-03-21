@@ -45,7 +45,6 @@ def _get_entity_feed(
           STRUCT(n.id_company, n.company_name)
         ] AS companies,
         [] AS solutions
-
     FROM `{VIEW_NEWS}` n
     WHERE {where_clause_news}
 
@@ -62,7 +61,6 @@ def _get_entity_feed(
         c.topics,
         c.companies,
         c.solutions
-
     FROM `{VIEW_CONTENT}` c
     WHERE {where_clause_content}
 
@@ -74,13 +72,12 @@ def _get_entity_feed(
     query_params = {
         **params,
         "limit": limit,
-        "offset": offset
+        "offset": offset,
     }
 
     rows = query_bq(sql, query_params)
 
     return [_map_feed_row(r) for r in rows]
-
 
 # ============================================================
 # COMPANY
