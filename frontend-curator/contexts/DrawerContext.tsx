@@ -11,8 +11,18 @@ import {
    TYPES
 ========================================================= */
 
-type DrawerTypeLeft = "member" | null;
-type DrawerTypeRight = "news" | "analysis" | "newsletter" | null;
+type DrawerTypeLeft =
+  | "member"
+  | "company"
+  | "topic"
+  | "solution"
+  | null;
+
+type DrawerTypeRight =
+  | "news"
+  | "analysis"
+  | "newsletter"
+  | null;
 
 type DrawerMode = "silent" | "route";
 
@@ -27,7 +37,7 @@ type DrawerContextType = {
   rightDrawer: DrawerSlot;
 
   openLeftDrawer: (
-    type: "member",
+    type: "member" | "company" | "topic" | "solution",
     id: string,
     mode?: DrawerMode
   ) => void;
@@ -80,7 +90,7 @@ export function DrawerProvider({
   ----------------------------- */
 
   function openLeftDrawer(
-    type: "member",
+    type: "member" | "company" | "topic" | "solution",
     id: string,
     mode: DrawerMode = "silent"
   ) {
