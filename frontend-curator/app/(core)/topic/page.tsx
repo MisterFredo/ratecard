@@ -7,19 +7,20 @@ import TopicCard from "@/components/topics/TopicCard";
 
 export const dynamic = "force-dynamic";
 
-/* =========================================================
-   TYPES
-========================================================= */
+/* ========================================================= */
 
 type Topic = {
   id_topic: string;
   label: string;
   topic_axis: string;
+
+  nb_analyses: number;
+  delta_30d: number;
 };
 
-/* =========================================================
-   FETCH
-========================================================= */
+type SortMode = "alpha" | "activity" | "growth";
+
+/* ========================================================= */
 
 async function fetchTopics(): Promise<Topic[]> {
   const res = await fetch(
@@ -36,11 +37,38 @@ async function fetchTopics(): Promise<Topic[]> {
   return json.topics || [];
 }
 
-/* =========================================================
-   GROUP BY AXIS
-========================================================= */
+/* ========================================================= */
 
-function groupByAxis(topics: Topic[]) {
+function sortTopics(
+  items: Topic[],
+  mode: SortMode
+) {
+  const copy = [...items];
+
+  switch (mode) {
+    case "activity":
+      return copy.sort(
+        (a, b) => b.nb_analyses - a.nb_analyses
+      );
+
+    case "growth":
+      return copy.sort(
+        (a, b) => b.delta_30d - a.delta_30d
+      );
+
+    default:
+      return copy.sort((a, b) =>
+        a.label.localeCompare(b.label)
+      );
+  }
+}
+
+/* ========================================================= */
+
+function groupByAxis(
+  topics: Topic[],
+  mode: SortMode
+) {
   const map: Record<string, Topic[]> = {};
 
   topics.forEach((t) => {
@@ -50,31 +78,32 @@ function groupByAxis(topics: Topic[]) {
     map[t.topic_axis].push(t);
   });
 
+  // 🔥 tri à l’intérieur de chaque axis
+  Object.keys(map).forEach((axis) => {
+    map[axis] = sortTopics(map[axis], mode);
+  });
+
   return map;
 }
 
-/* =========================================================
-   PAGE
-========================================================= */
+/* ========================================================= */
 
 export default function TopicsPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
+  const [sortMode, setSortMode] =
+    useState<SortMode>("alpha");
+
   const { openLeftDrawer } = useDrawer();
   const searchParams = useSearchParams();
 
   const lastOpenedId = useRef<string | null>(null);
 
-  /* ---------------------------------------------------------
-     Load topics
-  --------------------------------------------------------- */
+  /* LOAD */
   useEffect(() => {
     fetchTopics().then(setTopics);
   }, []);
 
-  /* ---------------------------------------------------------
-     Drawer via URL
-     /topics?topic_id=XXXX
-  --------------------------------------------------------- */
+  /* DRAWER */
   useEffect(() => {
     const topicId = searchParams.get("topic_id");
 
@@ -89,25 +118,51 @@ export default function TopicsPage() {
     openLeftDrawer("topic", topicId);
   }, [searchParams, openLeftDrawer]);
 
-  const grouped = groupByAxis(topics);
+  const grouped = groupByAxis(topics, sortMode);
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
+  /* ========================================================= */
 
   return (
     <div className="space-y-10">
-      {/* Header */}
-      <div>
-        <h1 className="text-lg font-semibold text-gray-900">
-          Topics
-        </h1>
-        <p className="text-sm text-gray-500">
-          Explore les grandes thématiques du marché
-        </p>
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-gray-900">
+            Topics
+          </h1>
+          <p className="text-sm text-gray-500">
+            Explore les grandes thématiques du marché
+          </p>
+        </div>
+
+        {/* SORT */}
+        <div className="flex gap-2 text-xs">
+          {[
+            { key: "alpha", label: "A → Z" },
+            { key: "activity", label: "Activité" },
+            { key: "growth", label: "Croissance" },
+          ].map((s) => (
+            <button
+              key={s.key}
+              onClick={() =>
+                setSortMode(s.key as SortMode)
+              }
+              className={`
+                px-3 py-1 rounded border
+                ${
+                  sortMode === s.key
+                    ? "bg-teal-600 text-white border-teal-600"
+                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                }
+              `}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Sections */}
+      {/* SECTIONS */}
       {Object.keys(grouped).length === 0 ? (
         <p className="text-sm text-gray-400">
           Aucun topic pour le moment.
@@ -119,21 +174,14 @@ export default function TopicsPage() {
               {axis}
             </h2>
 
-            <div
-              className="
-                grid
-                grid-cols-2
-                md:grid-cols-4
-                lg:grid-cols-5
-                xl:grid-cols-6
-                gap-4
-              "
-            >
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {items.map((t) => (
                 <TopicCard
                   key={t.id_topic}
                   id={t.id_topic}
                   label={t.label}
+                  nbAnalyses={t.nb_analyses}
+                  delta30d={t.delta_30d}
                 />
               ))}
             </div>
