@@ -6,7 +6,9 @@ import { api } from "@/lib/api";
 import { X } from "lucide-react";
 import { useDrawer } from "@/contexts/DrawerContext";
 
-const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+const logoUrl = data.media_logo_rectangle_id
+  ? `${GCS_BASE_URL}/companies/${data.media_logo_rectangle_id}`
+  : null;
 
 /* =========================================================
    TYPES (alignés backend VIEW)
