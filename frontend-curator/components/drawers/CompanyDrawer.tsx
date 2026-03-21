@@ -114,7 +114,6 @@ export default function CompanyDrawer({ id, onClose }: Props) {
 
       setItems((prev) => [...prev, ...newItems]);
       setOffset((prev) => prev + 20);
-
     } catch (e) {
       console.error("❌ loadMore error", e);
     }
@@ -127,9 +126,6 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   /* =========================================================
      DERIVED
   ========================================================= */
-
-  const news = items.filter((i) => i.type === "news");
-  const analyses = items.filter((i) => i.type === "analysis");
 
   const logoUrl = data.media_logo_rectangle_id
     ? `${GCS_BASE_URL}/companies/${data.media_logo_rectangle_id}`
@@ -216,42 +212,70 @@ export default function CompanyDrawer({ id, onClose }: Props) {
           )}
 
           {/* =====================================================
-              NEWS
+              CONTENUS UNIFIÉS
           ===================================================== */}
           <section className="space-y-4">
             <h2 className="text-sm font-semibold uppercase text-gray-500">
-              Actualités
+              Contenus liés
             </h2>
 
-            {news.length === 0 ? (
+            {items.length === 0 ? (
               <p className="text-sm text-gray-400">
-                Aucune actualité.
+                Aucun contenu.
               </p>
             ) : (
               <>
                 <ul className="space-y-3">
-                  {news.map((n) => (
+                  {items.map((item) => (
                     <li
-                      key={n.id}
+                      key={item.id}
                       onClick={() =>
-                        openRightDrawer("news", n.id, "silent")
+                        openRightDrawer(
+                          item.type === "news"
+                            ? "news"
+                            : "analysis",
+                          item.id,
+                          "silent"
+                        )
                       }
-                      className="cursor-pointer p-4 rounded-lg border hover:bg-gray-50"
+                      className="
+                        cursor-pointer p-4 rounded-lg
+                        border border-gray-200
+                        hover:bg-gray-50 transition
+                      "
                     >
-                      <h3 className="text-sm font-medium">
-                        {n.title}
-                      </h3>
+                      {/* HEADER */}
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-medium text-gray-900">
+                          {item.title}
+                        </h3>
 
-                      {n.excerpt && (
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {n.excerpt}
+                        <span
+                          className={`
+                            text-[10px] uppercase px-2 py-0.5 rounded-full
+                            ${
+                              item.type === "news"
+                                ? "bg-blue-50 text-blue-600 border border-blue-100"
+                                : "bg-purple-50 text-purple-600 border border-purple-100"
+                            }
+                          `}
+                        >
+                          {item.type}
+                        </span>
+                      </div>
+
+                      {/* EXCERPT */}
+                      {item.excerpt && (
+                        <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                          {item.excerpt}
                         </p>
                       )}
 
-                      {n.published_at && (
-                        <div className="text-xs text-gray-400">
+                      {/* DATE */}
+                      {item.published_at && (
+                        <div className="mt-1 text-xs text-gray-400">
                           {new Date(
-                            n.published_at
+                            item.published_at
                           ).toLocaleDateString("fr-FR")}
                         </div>
                       )}
@@ -259,10 +283,15 @@ export default function CompanyDrawer({ id, onClose }: Props) {
                   ))}
                 </ul>
 
+                {/* LOAD MORE */}
                 <div className="flex justify-center pt-2">
                   <button
                     onClick={loadMore}
-                    className="text-xs px-4 py-2 rounded border border-gray-200 hover:bg-gray-50"
+                    className="
+                      text-xs px-4 py-2 rounded
+                      border border-gray-200
+                      hover:bg-gray-50
+                    "
                   >
                     {loadingMore
                       ? "Chargement..."
@@ -270,51 +299,6 @@ export default function CompanyDrawer({ id, onClose }: Props) {
                   </button>
                 </div>
               </>
-            )}
-          </section>
-
-          {/* =====================================================
-              ANALYSES
-          ===================================================== */}
-          <section className="space-y-4">
-            <h2 className="text-sm font-semibold uppercase text-gray-500">
-              Analyses
-            </h2>
-
-            {analyses.length === 0 ? (
-              <p className="text-sm text-gray-400">
-                Aucune analyse.
-              </p>
-            ) : (
-              <ul className="space-y-3">
-                {analyses.map((a) => (
-                  <li
-                    key={a.id}
-                    onClick={() =>
-                      openRightDrawer("analysis", a.id, "silent")
-                    }
-                    className="cursor-pointer p-4 rounded-lg border hover:bg-gray-50"
-                  >
-                    <h3 className="text-sm font-medium">
-                      {a.title}
-                    </h3>
-
-                    {a.excerpt && (
-                      <p className="text-sm text-gray-600 line-clamp-2">
-                        {a.excerpt}
-                      </p>
-                    )}
-
-                    {a.published_at && (
-                      <div className="text-xs text-gray-400">
-                        {new Date(
-                          a.published_at
-                        ).toLocaleDateString("fr-FR")}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
             )}
           </section>
 
