@@ -110,7 +110,7 @@ export default function CompaniesPage() {
               key={c.id_company}
               id={c.id_company}
               name={c.name}
-              logoId={c.media_logo_rectangle_id}
+              visualRectId={c.media_logo_rectangle_id}
             />
           ))}
         </div>
