@@ -17,6 +17,8 @@ VIEW_STATS_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY"
 VIEW_STATS_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_TOPIC"
 VIEW_STATS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION"
 
+TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
+
 
 # ============================================================
 # INTERNAL — FEED BUILDER
@@ -174,7 +176,26 @@ def get_topic_view(
     offset: int = 0
 ) -> Dict:
 
+    # ============================================================
+    # 🔥 TOPIC INFO (LABEL + AXIS)
+    # ============================================================
+
+    topic_rows = query_bq(f"""
+        SELECT
+            ID_TOPIC,
+            LABEL,
+            TOPIC_AXIS
+        FROM `{TABLE_TOPIC}`
+        WHERE ID_TOPIC = @topic_id
+        LIMIT 1
+    """, {"topic_id": topic_id})
+
+    topic = topic_rows[0] if topic_rows else {}
+
+    # ============================================================
     # STATS
+    # ============================================================
+
     stats_rows = query_bq(f"""
         SELECT
             COALESCE(total, 0) AS NB_ANALYSES,
@@ -186,15 +207,24 @@ def get_topic_view(
 
     stats = stats_rows[0] if stats_rows else {}
 
+    # ============================================================
+    # FEED
+    # ============================================================
+
     items = get_topic_feed(topic_id, limit, offset)
+
+    # ============================================================
+    # RETURN
+    # ============================================================
 
     return {
         "id_topic": topic_id,
+        "label": topic.get("LABEL"),          # 🔥 FIX
+        "topic_axis": topic.get("TOPIC_AXIS"),# 🔥 FIX
         "nb_analyses": stats.get("NB_ANALYSES", 0),
         "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
     }
-
 
 # ============================================================
 # SOLUTION
