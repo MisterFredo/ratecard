@@ -9,14 +9,16 @@ type Props = {
   id: string;
   name: string;
   visualRectId?: string | null;
-  nbAnalyses?: number;
+  totalAnalyses?: number;
+  delta30d?: number;
 };
 
 export default function CompanyCard({
   id,
   name,
   visualRectId,
-  nbAnalyses,
+  totalAnalyses,
+  delta30d,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -27,10 +29,8 @@ export default function CompanyCard({
     : null;
 
   function handleClick() {
-    // 1️⃣ ouverture immédiate du drawer
     openLeftDrawer("company", id);
 
-    // 2️⃣ synchro URL
     router.replace(
       `${pathname}?company_id=${id}`,
       { scroll: false }
@@ -47,7 +47,7 @@ export default function CompanyCard({
         hover:shadow-cardHover overflow-hidden
       "
     >
-      {/* VISUEL (repris EXACTEMENT même logique que MemberCard) */}
+      {/* VISUEL */}
       <div className="relative h-24 w-full bg-ratecard-light overflow-hidden">
         {visualUrl ? (
           <img
@@ -66,16 +66,25 @@ export default function CompanyCard({
         )}
       </div>
 
-      {/* CONTENU (version compacte) */}
+      {/* CONTENU */}
       <div className="p-3 space-y-1 text-center">
         <h3 className="text-xs font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:underline">
           {name}
         </h3>
 
-        {typeof nbAnalyses === "number" && (
-          <p className="text-[10px] text-gray-400">
-            {nbAnalyses} analyses
-          </p>
+        {(typeof totalAnalyses === "number" ||
+          typeof delta30d === "number") && (
+          <div className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
+            {typeof totalAnalyses === "number" && (
+              <span>{totalAnalyses}</span>
+            )}
+
+            {typeof delta30d === "number" && delta30d > 0 && (
+              <span className="text-green-600">
+                +{delta30d}
+              </span>
+            )}
+          </div>
         )}
       </div>
     </div>
