@@ -18,6 +18,12 @@ type FeedItem = {
   title: string;
   excerpt?: string | null;
   published_at?: string;
+
+  // 🔥 NEW → badges
+  topics?: any[];
+  companies?: any[];
+  solutions?: any[];
+  news_type?: string | null;
 };
 
 type CompanyData = {
@@ -132,6 +138,58 @@ export default function CompanyDrawer({ id, onClose }: Props) {
     : null;
 
   /* =========================================================
+     BADGE STYLE (IDENTIQUE FEEDROW)
+  ========================================================= */
+
+  function getBadgeClass(type?: string) {
+    switch (type) {
+      case "news_type":
+        return "bg-black text-white";
+      case "company":
+        return "bg-blue-50 text-blue-600 border border-blue-100";
+      case "solution":
+        return "bg-purple-50 text-purple-600 border border-purple-100";
+      case "topic":
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  }
+
+  /* =========================================================
+     BUILD BADGES (IDENTIQUE FEEDROW)
+  ========================================================= */
+
+  function buildBadges(item: FeedItem) {
+    const topics = Array.isArray(item.topics) ? item.topics : [];
+    const companies = Array.isArray(item.companies) ? item.companies : [];
+    const solutions = Array.isArray(item.solutions) ? item.solutions : [];
+
+    return [
+      ...(item.news_type
+        ? [{ label: item.news_type, type: "news_type" as const }]
+        : []),
+
+      ...companies.map((c: any) => ({
+        id: c.id_company,
+        label: c.name,
+        type: "company" as const,
+      })),
+
+      ...topics.map((t: any) => ({
+        id: t.id_topic,
+        label: t.label,
+        type: "topic" as const,
+      })),
+
+      ...solutions.map((s: any) => ({
+        id: s.id_solution,
+        label: s.name,
+        type: "solution" as const,
+      })),
+    ];
+  }
+
+  /* =========================================================
      RENDER
   ========================================================= */
 
@@ -167,7 +225,6 @@ export default function CompanyDrawer({ id, onClose }: Props) {
             </button>
           </div>
 
-          {/* STATS */}
           <div className="flex gap-4 text-xs text-gray-500">
             {typeof data.nb_analyses === "number" && (
               <span>{data.nb_analyses} analyses</span>
@@ -181,9 +238,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
           </div>
         </div>
 
-        {/* =====================================================
-            LOGO
-        ===================================================== */}
+        {/* LOGO */}
         {logoUrl && (
           <div className="w-full bg-white border-b border-gray-200 flex items-center justify-center">
             <div className="w-full max-w-[680px] h-[260px] flex items-center justify-center">
@@ -196,9 +251,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
           </div>
         )}
 
-        {/* =====================================================
-            CONTENT
-        ===================================================== */}
+        {/* CONTENT */}
         <div className="px-6 py-8 space-y-12">
 
           {/* DESCRIPTION */}
@@ -211,9 +264,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
             />
           )}
 
-          {/* =====================================================
-              CONTENUS UNIFIÉS
-          ===================================================== */}
+          {/* CONTENUS */}
           <section className="space-y-4">
             <h2 className="text-sm font-semibold uppercase text-gray-500">
               Contenus liés
@@ -226,61 +277,82 @@ export default function CompanyDrawer({ id, onClose }: Props) {
             ) : (
               <>
                 <ul className="space-y-3">
-                  {items.map((item) => (
-                    <li
-                      key={item.id}
-                      onClick={() =>
-                        openRightDrawer(
-                          item.type === "news"
-                            ? "news"
-                            : "analysis",
-                          item.id,
-                          "silent"
-                        )
-                      }
-                      className="
-                        cursor-pointer p-4 rounded-lg
-                        border border-gray-200
-                        hover:bg-gray-50 transition
-                      "
-                    >
-                      {/* HEADER */}
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-sm font-medium text-gray-900">
-                          {item.title}
-                        </h3>
+                  {items.map((item) => {
+                    const badges = buildBadges(item);
 
-                        <span
-                          className={`
-                            text-[10px] uppercase px-2 py-0.5 rounded-full
-                            ${
-                              item.type === "news"
-                                ? "bg-blue-50 text-blue-600 border border-blue-100"
-                                : "bg-purple-50 text-purple-600 border border-purple-100"
-                            }
-                          `}
-                        >
-                          {item.type}
-                        </span>
-                      </div>
+                    return (
+                      <li
+                        key={item.id}
+                        onClick={() =>
+                          openRightDrawer(
+                            item.type === "news"
+                              ? "news"
+                              : "analysis",
+                            item.id,
+                            "silent"
+                          )
+                        }
+                        className="
+                          cursor-pointer p-4 rounded-lg
+                          border border-gray-200
+                          hover:bg-gray-50 transition
+                        "
+                      >
+                        {/* HEADER */}
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-sm font-medium text-gray-900">
+                            {item.title}
+                          </h3>
 
-                      {/* EXCERPT */}
-                      {item.excerpt && (
-                        <p className="mt-1 text-sm text-gray-600 line-clamp-2">
-                          {item.excerpt}
-                        </p>
-                      )}
-
-                      {/* DATE */}
-                      {item.published_at && (
-                        <div className="mt-1 text-xs text-gray-400">
-                          {new Date(
-                            item.published_at
-                          ).toLocaleDateString("fr-FR")}
+                          <span
+                            className={`
+                              text-[10px] uppercase px-2 py-0.5 rounded-full
+                              ${
+                                item.type === "news"
+                                  ? "bg-blue-50 text-blue-600 border border-blue-100"
+                                  : "bg-purple-50 text-purple-600 border border-purple-100"
+                              }
+                            `}
+                          >
+                            {item.type}
+                          </span>
                         </div>
-                      )}
-                    </li>
-                  ))}
+
+                        {/* BADGES */}
+                        {badges.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {badges.map((b, i) => (
+                              <span
+                                key={`${b.type}-${b.id || b.label}-${i}`}
+                                className={`
+                                  px-2 py-0.5 text-[10px] rounded-full uppercase tracking-wide
+                                  ${getBadgeClass(b.type)}
+                                `}
+                              >
+                                {b.label}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* EXCERPT */}
+                        {item.excerpt && (
+                          <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                            {item.excerpt}
+                          </p>
+                        )}
+
+                        {/* DATE */}
+                        {item.published_at && (
+                          <div className="mt-1 text-xs text-gray-400">
+                            {new Date(
+                              item.published_at
+                            ).toLocaleDateString("fr-FR")}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 {/* LOAD MORE */}
