@@ -273,7 +273,7 @@ def _get_monthly_content(
             n.excerpt,
             n.topics,
             n.company_name
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED` n
+        FROM `{VIEW_NEWS}` n
         WHERE {where_news}
         AND EXTRACT(YEAR FROM n.published_at) = @year
         AND EXTRACT(MONTH FROM n.published_at) = @month
@@ -286,7 +286,7 @@ def _get_monthly_content(
             c.excerpt,
             c.topics,
             NULL as company_name
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED` c
+        FROM`{VIEW_CONTENT}` c
         WHERE {where_content}
         AND EXTRACT(YEAR FROM c.published_at) = @year
         AND EXTRACT(MONTH FROM c.published_at) = @month
