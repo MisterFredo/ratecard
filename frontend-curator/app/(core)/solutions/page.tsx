@@ -5,21 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { useDrawer } from "@/contexts/DrawerContext";
 import SolutionCard from "@/components/solutions/SolutionCard";
 
+// ✅ IMPORT TYPE GLOBAL
+import { Solution } from "@/types/feed";
+
 export const dynamic = "force-dynamic";
-
-/* ========================================================= */
-
-type Solution = {
-  id_solution: string;
-  name: string;
-
-  id_company?: string;
-  company_name?: string;
-  company_logo?: string;
-
-  nb_analyses: number;
-  delta_30d: number;
-};
 
 /* ========================================================= */
 
@@ -34,12 +23,14 @@ function sortSolutions(
   switch (mode) {
     case "activity":
       return copy.sort(
-        (a, b) => b.nb_analyses - a.nb_analyses
+        (a, b) =>
+          (b.nb_analyses || 0) - (a.nb_analyses || 0)
       );
 
     case "growth":
       return copy.sort(
-        (a, b) => b.delta_30d - a.delta_30d
+        (a, b) =>
+          (b.delta_30d || 0) - (a.delta_30d || 0)
       );
 
     default:
