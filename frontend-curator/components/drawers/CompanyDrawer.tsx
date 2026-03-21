@@ -9,7 +9,7 @@ import { useDrawer } from "@/contexts/DrawerContext";
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 /* =========================================================
-   TYPES (aligné backend entity_service)
+   TYPES (alignés VIEW backend)
 ========================================================= */
 
 type FeedItem = {
@@ -26,11 +26,11 @@ type CompanyData = {
   description?: string | null;
   media_logo_rectangle_id?: string | null;
 
-  // 🔥 stats
+  // stats
   nb_analyses?: number;
   delta_30d?: number;
 
-  // 🔥 nouveau modèle
+  // contenu unifié
   items?: FeedItem[];
 };
 
@@ -80,11 +80,12 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get(`/company/${id}`);
+        // ✅ FIX CRITIQUE
+        const res = await api.get(`/company/${id}/view`);
         setData(res);
         requestAnimationFrame(() => setIsOpen(true));
       } catch (e) {
-        console.error(e);
+        console.error("❌ CompanyDrawer load error", e);
       }
     }
 
@@ -94,7 +95,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   if (!data) return null;
 
   /* =========================================================
-     DERIVED DATA
+     DERIVED
   ========================================================= */
 
   const items = data.items ?? [];
@@ -142,12 +143,10 @@ export default function CompanyDrawer({ id, onClose }: Props) {
             </button>
           </div>
 
-          {/* 🔥 STATS */}
+          {/* ✅ STATS */}
           <div className="flex gap-4 text-xs text-gray-500">
             {typeof data.nb_analyses === "number" && (
-              <span>
-                {data.nb_analyses} analyses
-              </span>
+              <span>{data.nb_analyses} analyses</span>
             )}
 
             {typeof data.delta_30d === "number" && (
