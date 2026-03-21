@@ -67,9 +67,17 @@ def get_route(id_solution: str):
 # GET VIEW (CURATOR)
 # ============================================================
 @router.get("/{id_solution}/view")
-def get_view_route(id_solution: str):
+def get_view_route(
+    id_solution: str,
+    limit: int = 20,
+    offset: int = 0
+):
     try:
-        solution = get_solution_view(id_solution)
+        solution = get_solution_view(
+            id_solution,
+            limit=limit,
+            offset=offset
+        )
 
         if not solution:
             raise HTTPException(404, "Solution introuvable")
@@ -79,7 +87,10 @@ def get_view_route(id_solution: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(400, f"Erreur récupération solution view : {e}")
+        raise HTTPException(
+            400,
+            f"Erreur récupération solution view : {e}"
+        )
 
 
 # ============================================================
