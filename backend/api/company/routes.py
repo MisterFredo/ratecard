@@ -57,14 +57,30 @@ def get_route(id_company: str):
     return company
 
 @router.get("/{id_company}/view")
-def get_company_view_route(id_company: str):
+def get_view_route(
+    id_company: str,
+    limit: int = 20,
+    offset: int = 0
+):
+    try:
+        company = get_company_view(
+            id_company,
+            limit=limit,
+            offset=offset
+        )
 
-    company = get_company_view(id_company)
+        if not company:
+            raise HTTPException(404, "Company introuvable")
 
-    if not company:
-        raise HTTPException(404, "Société introuvable")
+        return company
 
-    return company
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur récupération company view : {e}"
+        )
 
 
 # UPDATE
