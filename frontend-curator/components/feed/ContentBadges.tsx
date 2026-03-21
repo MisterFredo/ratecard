@@ -1,70 +1,99 @@
 "use client";
 
+import type { FeedBadge } from "@/types/feed";
+
+/* ========================================================= */
+
 type Props = {
-  topics?: string[];
-  companies?: string[];
-  solutions?: string[];
+  topics?: any[];
+  companies?: any[];
+  solutions?: any[];
+  news_type?: string | null;
+
   className?: string;
 };
 
+/* ========================================================= */
+
 export default function ContentBadges({
-  topics = [],
-  companies = [],
-  solutions = [],
+  topics,
+  companies,
+  solutions,
+  news_type,
   className = "",
 }: Props) {
-  // 👉 sécurité : éviter doublons / valeurs vides
-  const clean = (arr: string[]) =>
-    Array.from(new Set(arr.filter((v) => v && v.trim() !== "")));
 
-  const cleanTopics = clean(topics);
-  const cleanCompanies = clean(companies);
-  const cleanSolutions = clean(solutions);
+  /* =========================================================
+     SAFE ARRAYS (IDENTIQUE FEEDROW)
+  ========================================================= */
 
-  // 👉 rien à afficher
-  if (
-    cleanTopics.length === 0 &&
-    cleanCompanies.length === 0 &&
-    cleanSolutions.length === 0
-  ) {
-    return null;
+  const safeTopics = Array.isArray(topics) ? topics : [];
+  const safeCompanies = Array.isArray(companies) ? companies : [];
+  const safeSolutions = Array.isArray(solutions) ? solutions : [];
+
+  /* =========================================================
+     BADGES (STRICTEMENT IDENTIQUE FEEDROW)
+  ========================================================= */
+
+  const badges: FeedBadge[] = [
+    ...(news_type
+      ? [{ label: news_type, type: "news_type" as const }]
+      : []),
+
+    ...safeCompanies.map((c: any) => ({
+      id: c.id_company,
+      label: c.name,
+      type: "company" as const,
+    })),
+
+    ...safeTopics.map((t: any) => ({
+      id: t.id_topic,
+      label: t.label,
+      type: "topic" as const,
+    })),
+
+    ...safeSolutions.map((s: any) => ({
+      id: s.id_solution,
+      label: s.name,
+      type: "solution" as const,
+    })),
+  ];
+
+  if (badges.length === 0) return null;
+
+  /* =========================================================
+     STYLE (IDENTIQUE FEEDROW)
+  ========================================================= */
+
+  function getBadgeClass(type?: string) {
+    switch (type) {
+      case "news_type":
+        return "bg-black text-white";
+      case "company":
+        return "bg-blue-50 text-blue-600 border border-blue-100";
+      case "solution":
+        return "bg-purple-50 text-purple-600 border border-purple-100";
+      case "topic":
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
   }
 
+  /* =========================================================
+     RENDER (NON CLIQUABLE)
+  ========================================================= */
+
   return (
-    <div className={`flex flex-wrap gap-2 mt-3 ${className}`}>
-      {/* =========================
-          TOPICS
-      ========================= */}
-      {cleanTopics.map((t) => (
+    <div className={`flex flex-wrap gap-2 ${className}`}>
+      {badges.map((b, i) => (
         <span
-          key={`topic-${t}`}
-          className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700"
+          key={`${b.type}-${b.id || b.label}-${i}`}
+          className={`
+            px-2 py-0.5 text-[10px] rounded-full uppercase tracking-wide
+            ${getBadgeClass(b.type)}
+          `}
         >
-          {t}
-        </span>
-      ))}
-
-      {/* =========================
-          COMPANIES
-      ========================= */}
-      {cleanCompanies.map((c) => (
-        <span
-          key={`company-${c}`}
-          className="text-xs px-2 py-1 rounded-full bg-green-50 text-green-700"
-        >
-          {c}
-        </span>
-      ))}
-
-      {/* =========================
-          SOLUTIONS
-      ========================= */}
-      {cleanSolutions.map((s) => (
-        <span
-          key={`solution-${s}`}
-          className="text-xs px-2 py-1 rounded-full bg-purple-50 text-purple-700"
-        >
-          {s}
+          {b.label}
         </span>
       ))}
     </div>
