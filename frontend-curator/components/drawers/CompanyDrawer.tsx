@@ -232,7 +232,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
                     key={a.id_content}
                     onClick={() =>
                       openRightDrawer(
-                        "content",
+                        "analysis",
                         a.id_content,
                         "silent"
                       )
