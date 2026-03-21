@@ -62,22 +62,29 @@ def list_companies():
             c.TYPE,
             CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
             c.MEDIA_LOGO_RECTANGLE_ID,
-            COALESCE(m.NB_ANALYSES, 0) AS NB_ANALYSES,
-            COALESCE(m.LAST_30_DAYS, 0) AS DELTA_30D,
+
+            COALESCE(m.total, 0) AS NB_ANALYSES,
+            COALESCE(m.last_30_days, 0) AS DELTA_30D,
+
             CASE
                 WHEN c.DESCRIPTION IS NOT NULL
                      AND TRIM(c.DESCRIPTION) != ""
                 THEN TRUE ELSE FALSE
             END AS HAS_DESCRIPTION,
+
             CASE
                 WHEN c.WIKI_CONTENT IS NOT NULL
                      AND TRIM(c.WIKI_CONTENT) != ""
                 THEN TRUE ELSE FALSE
             END AS HAS_WIKI
+
         FROM `{TABLE_COMPANY}` c
-        LEFT JOIN `{TABLE_COMPANY_METRICS}` m
-          ON m.ID_COMPANY = c.ID_COMPANY
+
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY` m
+          ON m.id_company = c.ID_COMPANY
+
         WHERE c.IS_ACTIVE = TRUE
+
         ORDER BY NB_ANALYSES DESC, c.NAME ASC
     """
 
@@ -97,7 +104,6 @@ def list_companies():
         }
         for r in rows
     ]
-
 
 def list_company_types():
 
