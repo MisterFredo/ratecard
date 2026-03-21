@@ -8,6 +8,14 @@ from core.digest.template_service import (
     delete_template,
 )
 
+from core.monthly_insight.service import (
+    create_monthly_insight,
+    get_monthly_insight,
+    list_monthly_insights,
+    update_monthly_insight,
+    delete_monthly_insight,
+)
+
 router = APIRouter()
 
 ADMIN_EMAIL = "mister.fredo@gmail.com"
@@ -123,6 +131,83 @@ def admin_update_template(template_id: str, payload: dict):
 @router.delete("/digest/template/{template_id}")
 def admin_delete_template(template_id: str):
     delete_template(template_id)
+
+    return {
+        "status": "ok",
+        "deleted": True,
+    }
+
+# ============================================================
+# MONTHLY INSIGHTS
+# ============================================================
+
+@router.post("/monthly-insight")
+def admin_create_monthly_insight(payload: dict):
+
+    insight_id = create_monthly_insight(payload)
+
+    return {
+        "status": "ok",
+        "id_insight": insight_id,
+    }
+
+
+@router.get("/monthly-insight")
+def admin_get_monthly_insight(
+    entity_type: str,
+    entity_id: str,
+    year: int,
+    month: int,
+):
+
+    insight = get_monthly_insight(
+        entity_type,
+        entity_id,
+        year,
+        month,
+    )
+
+    if not insight:
+        raise HTTPException(404, "Insight introuvable")
+
+    return {
+        "status": "ok",
+        "insight": insight,
+    }
+
+
+@router.get("/monthly-insight/list")
+def admin_list_monthly_insights(
+    entity_type: str,
+    entity_id: str,
+):
+
+    insights = list_monthly_insights(
+        entity_type,
+        entity_id,
+    )
+
+    return {
+        "status": "ok",
+        "insights": insights,
+    }
+
+
+@router.put("/monthly-insight/{insight_id}")
+def admin_update_monthly_insight(insight_id: str, payload: dict):
+
+    update_monthly_insight(insight_id, payload)
+
+    return {
+        "status": "ok",
+        "updated": True,
+    }
+
+
+@router.delete("/monthly-insight/{insight_id}")
+def admin_delete_monthly_insight(insight_id: str):
+
+    delete_monthly_insight(insight_id)
 
     return {
         "status": "ok",
