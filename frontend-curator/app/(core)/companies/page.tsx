@@ -121,11 +121,13 @@ export default function CompaniesPage() {
           >
             {partners.map((c) => (
               <CompanyCard
-                key={c.id_company}
-                id={c.id_company}
-                name={c.name}
-                visualRectId={c.media_logo_rectangle_id}
-              />
+                 key={c.id_company}
+                 id={c.id_company}
+                 name={c.name}
+                 visualRectId={c.media_logo_rectangle_id}
+                 totalAnalyses={c.nb_analyses}
+                 delta30d={c.delta_30d}
+               />
             ))}
           </div>
         </section>
