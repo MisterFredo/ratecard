@@ -18,6 +18,7 @@ VIEW_STATS_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_TOPIC"
 VIEW_STATS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION"
 
 TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
+TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
 
 
 # ============================================================
@@ -257,7 +258,29 @@ def get_solution_view(
     offset: int = 0
 ) -> Dict:
 
+    # ============================================================
+    # 🔥 SOLUTION INFO (NAME + COMPANY + LOGO)
+    # ============================================================
+
+    solution_rows = query_bq(f"""
+        SELECT
+            s.ID_SOLUTION,
+            s.NAME,
+            c.NAME AS COMPANY_NAME,
+            c.MEDIA_LOGO_RECTANGLE_ID
+        FROM `{TABLE_SOLUTION}` s
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+            ON c.ID_COMPANY = s.ID_COMPANY
+        WHERE s.ID_SOLUTION = @solution_id
+        LIMIT 1
+    """, {"solution_id": solution_id})
+
+    solution = solution_rows[0] if solution_rows else {}
+
+    # ============================================================
     # STATS
+    # ============================================================
+
     stats_rows = query_bq(f"""
         SELECT
             COALESCE(total, 0) AS NB_ANALYSES,
@@ -269,15 +292,25 @@ def get_solution_view(
 
     stats = stats_rows[0] if stats_rows else {}
 
+    # ============================================================
+    # FEED
+    # ============================================================
+
     items = get_solution_feed(solution_id, limit, offset)
+
+    # ============================================================
+    # RETURN
+    # ============================================================
 
     return {
         "id_solution": solution_id,
+        "name": solution.get("NAME"),                         # 🔥 FIX
+        "company_name": solution.get("COMPANY_NAME"),         # 🔥 FIX
+        "media_logo_rectangle_id": solution.get("MEDIA_LOGO_RECTANGLE_ID"),  # 🔥 FIX
         "nb_analyses": stats.get("NB_ANALYSES", 0),
         "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
     }
-
 
 # ============================================================
 # MAPPER
