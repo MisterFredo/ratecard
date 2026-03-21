@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from core.monthly.service import (
     get_monthly_insight,
     list_monthly_insights,
@@ -26,6 +26,9 @@ def get_one(
         month,
     )
 
+    if not insight:
+        raise HTTPException(404, "Insight introuvable")
+
     return {
         "status": "ok",
         "insight": insight,
@@ -49,5 +52,5 @@ def list_all(
 
     return {
         "status": "ok",
-        "insights": insights,
+        "insights": insights or [],
     }
