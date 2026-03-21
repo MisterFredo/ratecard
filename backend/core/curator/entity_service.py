@@ -27,7 +27,8 @@ def _get_entity_feed(
     where_clause_news: str,
     where_clause_content: str,
     params: Dict,
-    limit: int = 50
+    limit: int = 50,
+    offset: int = 0
 ) -> List[Dict]:
 
     sql = f"""
@@ -67,9 +68,14 @@ def _get_entity_feed(
 
     ORDER BY published_at DESC
     LIMIT @limit
+    OFFSET @offset
     """
 
-    query_params = {**params, "limit": limit}
+    query_params = {
+        **params,
+        "limit": limit,
+        "offset": offset
+    }
 
     rows = query_bq(sql, query_params)
 
