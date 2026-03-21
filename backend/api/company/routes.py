@@ -10,6 +10,8 @@ from core.company.service import (
     list_company_types,
 )
 
+from core.curator.entity_service import get_company_view
+
 router = APIRouter()
 
 
@@ -48,6 +50,16 @@ def list_types_route():
 def get_route(id_company: str):
 
     company = get_company(id_company)
+
+    if not company:
+        raise HTTPException(404, "Société introuvable")
+
+    return company
+
+@router.get("/{id_company}/view")
+def get_company_view_route(id_company: str):
+
+    company = get_company_view(id_company)
 
     if not company:
         raise HTTPException(404, "Société introuvable")
