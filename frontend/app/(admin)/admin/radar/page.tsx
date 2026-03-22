@@ -47,7 +47,11 @@ export default function RadarPage() {
 
     try {
 
-      const query = new URLSearchParams(filters as any).toString();
+      const query = new URLSearchParams({
+        entity_type: filters.entity_type,
+        frequency: filters.frequency,
+        year: String(filters.year),
+      }).toString();
 
       const res = await api.get(`/radar/status?${query}`);
 
@@ -129,7 +133,10 @@ export default function RadarPage() {
 
     await Promise.all(
       selected.map((item) =>
-        api.put("/radar/validate", item)
+        api.put("/radar/update", {
+          ...item,
+          status: "VALIDATED",
+        })
       )
     );
 
@@ -142,7 +149,10 @@ export default function RadarPage() {
 
     await Promise.all(
       selected.map((item) =>
-        api.put("/radar/publish", item)
+        api.put("/radar/update", {
+          ...item,
+          status: "PUBLISHED",
+        })
       )
     );
 
@@ -157,9 +167,15 @@ export default function RadarPage() {
 
     try {
 
-      const res = await api.get("/radar/get", {
-        params: item,
-      });
+      const query = new URLSearchParams({
+        entity_type: item.entity_type,
+        entity_id: item.entity_id,
+        year: String(item.year),
+        period: String(item.period),
+        frequency: item.frequency,
+      }).toString();
+
+      const res = await api.get(`/radar?${query}`);
 
       setDrawerData(res.insight || null);
       setDrawerOpen(true);
