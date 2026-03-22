@@ -66,7 +66,7 @@ export default function RadarDrawer({ id, onClose }: Props) {
   const [radars, setRadars] = useState<Radar[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const refs = useRef<Record<string, HTMLDivElement | null>>({});
+  const refs = useRef<Record<string, HTMLElement | null>>({});
 
   /* =========================================================
      LOAD
@@ -79,7 +79,12 @@ export default function RadarDrawer({ id, onClose }: Props) {
 
         // 1. radar courant
         const currentRes = await api.get(`/radar/${id}`);
-        const current = currentRes?.insight;
+        const current = currentRes?.insight ?? currentRes;
+
+        if (!current) {
+          setRadars([]);
+          return;
+        }
 
         // 2. timeline complète
         const listRes = await api.get(
@@ -89,22 +94,21 @@ export default function RadarDrawer({ id, onClose }: Props) {
         const all = listRes?.insights ?? [];
         setRadars(all);
 
-        // 3. scroll vers le radar actif
+        // 3. scroll vers le radar actif (offset léger)
         setTimeout(() => {
           const el = refs.current[id];
           if (el) {
-            el.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-            });
+            const y = el.getBoundingClientRect().top + window.scrollY - 80;
+            window.scrollTo({ top: y, behavior: "smooth" });
           }
-        }, 100);
+        }, 120);
 
       } catch (e) {
         console.error("❌ Radar list error", e);
+        setRadars([]);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     }
 
     load();
@@ -143,7 +147,9 @@ export default function RadarDrawer({ id, onClose }: Props) {
             return (
               <section
                 key={radar.id_insight}
-                ref={(el) => (refs.current[radar.id_insight] = el)}
+                ref={(el) => {
+                  refs.current[radar.id_insight] = el;
+                }}
                 className={`
                   space-y-4
                   ${isActive ? "bg-gray-50 p-4 rounded" : ""}
