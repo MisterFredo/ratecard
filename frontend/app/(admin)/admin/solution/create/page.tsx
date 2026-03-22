@@ -15,10 +15,16 @@ export default function CreateSolution() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
+
   const [status, setStatus] =
     useState<"DRAFT" | "PUBLISHED">("DRAFT");
+
   const [idCompany, setIdCompany] =
     useState<string | null>(null);
+
+  // 🔥 NEW
+  const [insightFrequency, setInsightFrequency] =
+    useState("QUARTERLY");
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
@@ -27,6 +33,7 @@ export default function CreateSolution() {
      LOAD COMPANIES
   --------------------------------------------------------- */
   useEffect(() => {
+
     async function loadCompanies() {
       try {
         const res = await api.get("/company/list");
@@ -38,6 +45,7 @@ export default function CreateSolution() {
     }
 
     loadCompanies();
+
   }, []);
 
   /* ---------------------------------------------------------
@@ -45,7 +53,10 @@ export default function CreateSolution() {
   --------------------------------------------------------- */
   async function save() {
 
-    if (!name.trim()) return alert("Nom requis");
+    if (!name.trim()) {
+      alert("Nom requis");
+      return;
+    }
 
     try {
 
@@ -57,21 +68,24 @@ export default function CreateSolution() {
         content: content || null,
         status,
         id_company: idCompany || null,
+
+        // 🔥 NEW
+        insight_frequency: insightFrequency,
       });
 
-      const newId = res.id_solution;
+      if (!res.id_solution) {
+        throw new Error("ID solution manquant");
+      }
 
       alert("Solution créée");
 
-      // reset
+      // reset clean
       setName("");
       setDescription("");
       setContent("");
       setStatus("DRAFT");
       setIdCompany(null);
-
-      // optionnel futur :
-      // router.push(`/admin/solution/edit/${newId}`);
+      setInsightFrequency("QUARTERLY");
 
     } catch (e) {
 
@@ -95,11 +109,13 @@ export default function CreateSolution() {
         <h1 className="text-2xl font-semibold">
           Ajouter une solution
         </h1>
+
         <Link href="/admin/solution" className="underline">
           ← Retour
         </Link>
       </div>
 
+      {/* NAME */}
       <input
         className="border p-2 w-full rounded"
         placeholder="Nom de la solution"
@@ -107,6 +123,7 @@ export default function CreateSolution() {
         onChange={(e) => setName(e.target.value)}
       />
 
+      {/* COMPANY */}
       <select
         className="border p-2 rounded w-full"
         value={idCompany || ""}
@@ -125,6 +142,7 @@ export default function CreateSolution() {
         ))}
       </select>
 
+      {/* DESCRIPTION */}
       <textarea
         className="border p-2 w-full rounded h-24"
         placeholder="Description courte"
@@ -134,8 +152,34 @@ export default function CreateSolution() {
         }
       />
 
-      <HtmlEditor value={content} onChange={setContent} />
+      {/* CONTENT */}
+      <HtmlEditor
+        value={content}
+        onChange={setContent}
+      />
 
+      {/* 🔥 FREQUENCY */}
+      <div className="space-y-2">
+        <label className="block font-medium">
+          Fréquence des insights
+        </label>
+
+        <select
+          value={insightFrequency}
+          onChange={(e) => setInsightFrequency(e.target.value)}
+          className="border px-3 py-2 rounded w-full max-w-xs"
+        >
+          <option value="WEEKLY">Weekly</option>
+          <option value="MONTHLY">Monthly</option>
+          <option value="QUARTERLY">Quarterly</option>
+        </select>
+
+        <p className="text-xs text-gray-500">
+          Par défaut quarterly — override possible si besoin spécifique
+        </p>
+      </div>
+
+      {/* STATUS */}
       <select
         className="border p-2 rounded w-full max-w-xs"
         value={status}
@@ -149,6 +193,7 @@ export default function CreateSolution() {
         <option value="PUBLISHED">PUBLISHED</option>
       </select>
 
+      {/* CTA */}
       <button
         onClick={save}
         disabled={loading}
