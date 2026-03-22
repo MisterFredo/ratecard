@@ -52,7 +52,7 @@ type Props = {
 };
 
 /* =========================================================
-   HELPERS (CLEAN)
+   HELPERS
 ========================================================= */
 
 function formatRadarLabel(r: Radar) {
@@ -135,7 +135,7 @@ export default function TopicDrawer({ id, onClose }: Props) {
   }, [id]);
 
   /* =========================================================
-     LOAD LAST RADAR (UPDATED)
+     LOAD LAST RADAR
   ========================================================= */
 
   useEffect(() => {
@@ -207,7 +207,7 @@ export default function TopicDrawer({ id, onClose }: Props) {
         {lastRadar && (
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase text-gray-500">
-              Synthèse
+              Veille
             </h2>
 
             <button
@@ -220,16 +220,18 @@ export default function TopicDrawer({ id, onClose }: Props) {
                 hover:bg-gray-50 transition
               "
             >
-              <div className="text-xs text-gray-500 mb-1">
+              <div className="text-xs text-gray-500 mb-2">
                 {formatRadarLabel(lastRadar)}
               </div>
 
-              <div className="text-sm font-medium text-gray-900 line-clamp-2">
-                {lastRadar.key_points?.[0]}
+              <div className="text-sm font-medium text-gray-900 space-y-1">
+                {lastRadar.key_points?.slice(0, 2).map((p, i) => (
+                  <div key={i}>• {p}</div>
+                ))}
               </div>
 
-              <div className="text-xs text-gray-400 mt-2">
-                Voir la synthèse complète →
+              <div className="text-xs text-gray-400 mt-3">
+                Voir la veille complète →
               </div>
             </button>
           </section>
