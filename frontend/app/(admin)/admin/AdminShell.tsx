@@ -16,7 +16,7 @@ import {
   Search,
   Link2,
   Database,
-  Calendar, // ✅ ajout Monthly
+  Calendar,
 } from "lucide-react";
 
 export default function AdminShell({
@@ -55,10 +55,9 @@ export default function AdminShell({
       icon: Mail,
     },
 
-    // ✅ NEW — Monthly Insights
     {
-      href: "/admin/monthly",
-      label: "Monthly",
+      href: "/admin/radar",
+      label: "Radar",
       icon: Calendar,
     },
 
