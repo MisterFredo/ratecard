@@ -17,6 +17,7 @@ class SolutionCreate(BaseModel):
 
     id_company: Optional[str] = None
     description: Optional[str] = None
+    insight_frequency: Optional[str] = "QUARTERLY"
 
     content: Optional[str] = Field(None)
 
@@ -40,6 +41,7 @@ class SolutionUpdate(BaseModel):
     name: Optional[str] = None
     id_company: Optional[str] = None
     description: Optional[str] = None
+    insight_frequency: Optional[str] = None
     content: Optional[str] = None
 
     status: Optional[str] = None
@@ -60,6 +62,7 @@ class SolutionOut(BaseModel):
 
     id_company: Optional[str] = None
     description: Optional[str] = None
+    insight_frequency: Optional[str] = None
     content: Optional[str] = None
 
     status: str
