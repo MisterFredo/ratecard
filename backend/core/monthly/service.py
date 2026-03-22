@@ -434,6 +434,8 @@ def generate_monthly_insight(
         return {"status": "error", "raw": raw}
 
     # 🔥 6. SAVE (FIX PRINCIPAL ICI)
+   from api.monthly.models import MonthlyInsightInput
+
     insight_id = create_monthly_insight(
         MonthlyInsightInput(
             entity_type=entity_type,
@@ -444,7 +446,6 @@ def generate_monthly_insight(
             status="GENERATED",
         )
     )
-
     return {
         "status": "ok",
         "id_insight": insight_id,
