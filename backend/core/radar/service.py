@@ -223,12 +223,25 @@ def _get_monthly_content(entity_type, entity_id, year, month):
 # PROMPT
 # ============================================================
 
-def _build_prompt(contents):
+def _build_prompt(contents, frequency, year, period):
 
     content_str = "\n".join([
         f"- {c.get('title')} | {c.get('excerpt')}"
         for c in contents
     ])
+
+    # ---------------------------------------------------------
+    # CONTEXTE PÉRIODE (LÉGER ADAPTATIF)
+    # ---------------------------------------------------------
+    if frequency == "WEEKLY":
+        period_label = f"Semaine {period} - {year}"
+        focus = "les signaux émergents, accélérations récentes et mouvements rapides"
+    elif frequency == "QUARTERLY":
+        period_label = f"Trimestre {period} - {year}"
+        focus = "les transformations structurelles, consolidations et dynamiques de fond"
+    else:
+        period_label = f"Mois {period} - {year}"
+        focus = "les évolutions de marché significatives et dynamiques en cours"
 
     return f"""
 Tu es un analyste senior spécialisé en médias, marketing et adtech.
@@ -237,14 +250,21 @@ Ton rôle n’est PAS de résumer les contenus.
 Ton rôle est d’identifier les évolutions de marché à partir de plusieurs signaux.
 
 =====================
-CONTENUS DU MOIS
+PÉRIODE ANALYSÉE
+=====================
+{period_label}
+
+Focus attendu : {focus}
+
+=====================
+CONTENUS
 =====================
 {content_str}
 
 =====================
 MISSION
 =====================
-À partir de ces contenus, identifie les 5 évolutions les plus importantes du marché ce mois-ci.
+À partir de ces contenus, identifie les 5 évolutions les plus importantes sur cette période.
 
 =====================
 RÈGLES STRICTES
