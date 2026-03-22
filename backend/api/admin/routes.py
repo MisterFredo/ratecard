@@ -12,9 +12,9 @@ from core.radar.service import (
     create_radar_insight,
     get_radar,
     list_radar_insights,
-    update_radar_insight,
+    update_radar,
     delete_radar_insight,
-    generate_radar_insight,
+    generate_radar,
 )
 
 router = APIRouter()
