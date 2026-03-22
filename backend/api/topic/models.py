@@ -25,6 +25,7 @@ class TopicCreate(BaseModel):
     topic_axis: TopicAxis
 
     description: Optional[str] = None
+    insight_frequency: Optional[str] = "QUARTERLY"
 
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
@@ -46,6 +47,7 @@ class TopicUpdate(BaseModel):
     topic_axis: Optional[TopicAxis] = None
 
     description: Optional[str] = None
+    insight_frequency: Optional[str] = None
 
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
@@ -72,6 +74,7 @@ class TopicOut(BaseModel):
     topic_axis: Optional[TopicAxis] = None
 
     description: Optional[str] = None
+    insight_frequency: Optional[str] = None
 
     media_square_id: Optional[str] = None
     media_rectangle_id: Optional[str] = None
