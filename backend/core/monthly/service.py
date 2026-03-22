@@ -234,7 +234,7 @@ def _build_prompt(contents):
 Tu es un analyste senior spécialisé en médias, marketing et adtech.
 
 Ton rôle n’est PAS de résumer les contenus.
-Ton rôle est d’identifier les signaux clés, les évolutions importantes et les tendances structurantes.
+Ton rôle est d’identifier les évolutions de marché à partir de plusieurs signaux.
 
 =====================
 CONTENUS DU MOIS
@@ -244,32 +244,40 @@ CONTENUS DU MOIS
 =====================
 MISSION
 =====================
-À partir de ces contenus, identifie les 5 éléments les plus importants à retenir ce mois-ci.
+À partir de ces contenus, identifie les 5 évolutions les plus importantes du marché ce mois-ci.
 
 =====================
 RÈGLES STRICTES
 =====================
 - Maximum 5 points
 - Chaque point = 1 phrase claire, concise et actionnable
-- Pas de résumé d’article
-- Pas de paraphrase
-- Pas de généralités vagues
-- Mets en avant :
-  • les évolutions de marché  
-  • les signaux faibles  
-  • les mouvements stratégiques  
-  • les ruptures ou accélérations  
 
-- Si plusieurs contenus parlent du même sujet → synthétise en un seul insight
-- Priorise ce qui a un impact business ou stratégique
+- Interdit :
+  • de résumer un article
+  • de paraphraser un contenu
+  • de décrire un cas isolé
+
+- Obligatoire :
+  • chaque point doit regrouper plusieurs contenus
+  • chaque point doit refléter une évolution de marché
+  • chaque point doit avoir un impact stratégique ou business
+
+- Ne commence PAS un point par un nom d’entreprise
+- Ne te focalise PAS sur un acteur unique
+
+- Mets en avant :
+  • évolutions de marché  
+  • signaux faibles  
+  • mouvements stratégiques  
+  • ruptures ou accélérations  
 
 =====================
 STYLE
 =====================
 - Ton analytique
 - Direct
-- Sans jargon inutile
-- Niveau senior (pas pédagogique)
+- Niveau senior
+- Zéro jargon inutile
 
 =====================
 FORMAT DE SORTIE (JSON STRICT)
