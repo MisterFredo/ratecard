@@ -385,9 +385,11 @@ def delete_radar_insight(insight_id: str):
 
 def list_radar_status(entity_type, frequency, year):
 
+    table = f"{BQ_PROJECT}.{BQ_DATASET}.V_RADAR_STATUS"
+
     rows = query_bq(f"""
         SELECT *
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_RADAR_STATUS}`
+        FROM `{table}`
         WHERE entity_type = @entity_type
         AND frequency = @frequency
         AND year = @year
