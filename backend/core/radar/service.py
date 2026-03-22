@@ -15,6 +15,13 @@ TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_RADAR"
 VIEW_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED"
 VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 
+    create_radar_insight,
+    get_radar,
+    list_radar_insights,
+    update_radar_insight,
+    delete_radar_insight,
+    generate_radar_insight,
+
 
 # ============================================================
 # HELPERS
