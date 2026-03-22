@@ -176,3 +176,33 @@ def delete_route(id_insight: str):
             400,
             f"Erreur suppression radar : {e}"
         )
+
+# ============================================================
+# LATEST (KEY ROUTE FRONT)
+# ============================================================
+
+@router.get("/latest")
+def latest_radar_route(
+    entity_type: str,
+    entity_id: str,
+):
+
+    try:
+
+        from core.radar.service import get_latest_radar
+
+        radar = get_latest_radar(
+            entity_type=entity_type,
+            entity_id=entity_id,
+        )
+
+        return {
+            "status": "ok",
+            "insight": radar,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur latest radar : {e}"
+        )
