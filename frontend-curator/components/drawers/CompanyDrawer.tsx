@@ -30,6 +30,14 @@ type FeedItem = {
   news_type?: string | null;
 };
 
+type Radar = {
+  id_insight: string;
+  year: number;
+  period: number;
+  frequency: "WEEKLY" | "MONTHLY" | "QUARTERLY";
+  key_points: string[];
+};
+
 type CompanyData = {
   id_company: string;
   name: string;
@@ -46,6 +54,30 @@ type Props = {
   id: string;
   onClose?: () => void;
 };
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function formatRadarLabel(r: Radar) {
+  if (r.frequency === "MONTHLY") {
+    const date = new Date(r.year, r.period - 1);
+    return new Intl.DateTimeFormat("fr-FR", {
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  }
+
+  if (r.frequency === "QUARTERLY") {
+    return `T${r.period} ${r.year}`;
+  }
+
+  if (r.frequency === "WEEKLY") {
+    return `Semaine ${r.period} ${r.year}`;
+  }
+
+  return "";
+}
 
 /* =========================================================
    COMPONENT
@@ -66,8 +98,10 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   const [offset, setOffset] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  const [lastRadar, setLastRadar] = useState<Radar | null>(null);
+
   /* =========================================================
-     CLOSE (STRICTEMENT IDENTIQUE)
+     CLOSE
   ========================================================= */
 
   function close() {
@@ -83,7 +117,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   }
 
   /* =========================================================
-     LOAD INITIAL (STRICTEMENT IDENTIQUE)
+     LOAD DATA
   ========================================================= */
 
   useEffect(() => {
@@ -105,7 +139,27 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   }, [id]);
 
   /* =========================================================
-     LOAD MORE (STRICTEMENT IDENTIQUE)
+     LOAD RADAR
+  ========================================================= */
+
+  useEffect(() => {
+    async function loadRadar() {
+      try {
+        const res = await api.get(
+          `/radar/latest?entity_type=company&entity_id=${id}`
+        );
+
+        setLastRadar(res?.insight ?? null);
+      } catch (e) {
+        console.error("❌ Radar load error", e);
+      }
+    }
+
+    loadRadar();
+  }, [id]);
+
+  /* =========================================================
+     LOAD MORE
   ========================================================= */
 
   async function loadMore() {
@@ -130,7 +184,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   if (!data) return null;
 
   /* =========================================================
-     DERIVED (STRICTEMENT IDENTIQUE)
+     DERIVED
   ========================================================= */
 
   const logoUrl = data.media_logo_rectangle_id
@@ -152,7 +206,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
         onClose={close}
       />
 
-      {/* LOGO (STRICTEMENT CONSERVÉ) */}
+      {/* LOGO */}
       {logoUrl && (
         <div className="w-full bg-white border-b border-gray-200 flex items-center justify-center">
           <div className="w-full max-w-[680px] h-[260px] flex items-center justify-center">
@@ -178,6 +232,42 @@ export default function CompanyDrawer({ id, onClose }: Props) {
           />
         )}
 
+        {/* =====================================================
+            RADAR
+        ===================================================== */}
+        {lastRadar && (
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold uppercase text-gray-500">
+              Veille
+            </h2>
+
+            <button
+              onClick={() =>
+                openRightDrawer("radar", lastRadar.id_insight)
+              }
+              className="
+                w-full text-left
+                p-4 rounded border border-gray-200
+                hover:bg-gray-50 transition
+              "
+            >
+              <div className="text-xs text-gray-500 mb-2">
+                {formatRadarLabel(lastRadar)}
+              </div>
+
+              <div className="text-sm font-medium text-gray-900 space-y-1">
+                {lastRadar.key_points?.slice(0, 2).map((p, i) => (
+                  <div key={i}>• {p}</div>
+                ))}
+              </div>
+
+              <div className="text-xs text-gray-400 mt-3">
+                Voir la veille complète →
+              </div>
+            </button>
+          </section>
+        )}
+
         {/* CONTENUS */}
         <section className="space-y-4">
           <h2 className="text-sm font-semibold uppercase text-gray-500">
@@ -190,7 +280,6 @@ export default function CompanyDrawer({ id, onClose }: Props) {
             </p>
           ) : (
             <>
-              {/* 🔥 NOUVEAU → GROUPING PAR MOIS */}
               <FeedGroupedByMonth
                 items={items}
                 onClickItem={(item) =>
@@ -204,7 +293,6 @@ export default function CompanyDrawer({ id, onClose }: Props) {
                 }
               />
 
-              {/* LOAD MORE (STRICTEMENT IDENTIQUE) */}
               <div className="flex justify-center pt-2">
                 <button
                   onClick={loadMore}
