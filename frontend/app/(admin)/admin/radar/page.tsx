@@ -47,9 +47,9 @@ export default function RadarPage() {
 
     try {
 
-      const res = await api.get("/radar/status", {
-        params: filters,
-      });
+      const query = new URLSearchParams(filters as any).toString();
+
+      const res = await api.get(`/radar/status?${query}`);
 
       setItems(res.items || []);
       setSelected([]);
