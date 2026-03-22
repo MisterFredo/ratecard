@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 
 import EntityDrawerLayout from "@/components/drawers/EntityDrawerLayout";
@@ -66,8 +66,10 @@ export default function RadarDrawer({ id, onClose }: Props) {
   const [radars, setRadars] = useState<Radar[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const refs = useRef<Record<string, HTMLDivElement | null>>({});
+
   /* =========================================================
-     LOAD (LIST)
+     LOAD
   ========================================================= */
 
   useEffect(() => {
@@ -75,15 +77,28 @@ export default function RadarDrawer({ id, onClose }: Props) {
       try {
         setLoading(true);
 
-        // 1️⃣ récupérer le radar actuel
-        const current = await api.get(`/radar/${id}`);
+        // 1. radar courant
+        const currentRes = await api.get(`/radar/${id}`);
+        const current = currentRes?.insight;
 
-        // 2️⃣ récupérer toute la timeline
-        const res = await api.get(
+        // 2. timeline complète
+        const listRes = await api.get(
           `/radar/list?entity_type=${current.entity_type}&entity_id=${current.entity_id}`
         );
 
-        setRadars(res?.insights ?? []);
+        const all = listRes?.insights ?? [];
+        setRadars(all);
+
+        // 3. scroll vers le radar actif
+        setTimeout(() => {
+          const el = refs.current[id];
+          if (el) {
+            el.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }
+        }, 100);
 
       } catch (e) {
         console.error("❌ Radar list error", e);
@@ -104,14 +119,14 @@ export default function RadarDrawer({ id, onClose }: Props) {
 
       {/* HEADER */}
       <DrawerHeader
-        title="Synthèses"
+        title="Veille"
         subtitle=""
         variant="topic"
         onClose={onClose}
       />
 
       {/* CONTENT */}
-      <div className="px-6 py-8 space-y-10">
+      <div className="px-6 py-8 space-y-12">
 
         {loading ? (
           <p className="text-sm text-gray-400">
@@ -119,32 +134,45 @@ export default function RadarDrawer({ id, onClose }: Props) {
           </p>
         ) : radars.length === 0 ? (
           <p className="text-sm text-gray-400">
-            Aucune synthèse disponible.
+            Aucune veille disponible.
           </p>
         ) : (
-          radars.map((radar) => (
-            <section
-              key={radar.id_insight}
-              className="space-y-4"
-            >
-              {/* HEADER PERIOD */}
-              <h2 className="text-sm font-semibold text-gray-900">
-                {formatRadarLabel(radar)}
-              </h2>
+          radars.map((radar) => {
+            const isActive = radar.id_insight === id;
 
-              {/* KEY POINTS */}
-              <ul className="space-y-2">
-                {radar.key_points?.map((point, i) => (
-                  <li
-                    key={i}
-                    className="text-sm text-gray-800 leading-relaxed"
-                  >
-                    {point}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))
+            return (
+              <section
+                key={radar.id_insight}
+                ref={(el) => (refs.current[radar.id_insight] = el)}
+                className={`
+                  space-y-4
+                  ${isActive ? "bg-gray-50 p-4 rounded" : ""}
+                `}
+              >
+                {/* HEADER PERIOD */}
+                <h2
+                  className={`
+                    text-sm font-semibold
+                    ${isActive ? "text-black" : "text-gray-900"}
+                  `}
+                >
+                  {formatRadarLabel(radar)}
+                </h2>
+
+                {/* KEY POINTS */}
+                <ul className="space-y-2">
+                  {radar.key_points?.map((point, i) => (
+                    <li
+                      key={i}
+                      className="text-sm text-gray-800 leading-relaxed"
+                    >
+                      • {point}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })
         )}
 
       </div>
