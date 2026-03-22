@@ -73,6 +73,33 @@ def get_one_route(
         "insight": insight,
     }
 
+# ============================================================
+# GET BY ID (FRONT SIMPLE)
+# ============================================================
+
+@router.get("/{id_insight}")
+def get_by_id_route(id_insight: str):
+
+    try:
+
+        from core.radar.service import get_radar_by_id
+
+        radar = get_radar_by_id(id_insight)
+
+        if not radar:
+            raise HTTPException(404, "Insight introuvable")
+
+        return {
+            "status": "ok",
+            "insight": radar,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur get radar : {e}"
+        )
+
 
 # ============================================================
 # LIST (TIMELINE)
