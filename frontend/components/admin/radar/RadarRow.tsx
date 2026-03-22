@@ -31,7 +31,7 @@ export default function RadarRow({
 
       <div>{item.entity_id}</div>
 
-      <div>{item.period}</div>
+      <div>{item.entity_name || item.entity_id}</div>
 
       <div>{item.nb_contents}</div>
 
