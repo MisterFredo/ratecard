@@ -10,6 +10,7 @@ import SolutionDrawer from "@/components/drawers/SolutionDrawer";
 // RIGHT DRAWERS
 import NewsDrawer from "@/components/drawers/NewsDrawer";
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
+import RadarDrawer from "@/components/drawers/RadarDrawer"; // ✅ NEW
 
 /* =========================================================
    HOST — CURATOR
@@ -76,6 +77,16 @@ export default function DrawerHost() {
       ========================================= */}
       {rightType === "analysis" && rightId && (
         <AnalysisDrawer
+          id={rightId}
+          onClose={closeRightDrawer}
+        />
+      )}
+
+      {/* =========================================
+          RIGHT — RADAR
+      ========================================= */}
+      {rightType === "radar" && rightId && (
+        <RadarDrawer
           id={rightId}
           onClose={closeRightDrawer}
         />
