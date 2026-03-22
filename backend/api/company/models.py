@@ -13,6 +13,7 @@ class CompanyCreate(BaseModel):
 
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
+    insight_frequency: Optional[str] = "QUARTERLY"
 
     is_partner: bool = False
 
@@ -30,6 +31,7 @@ class CompanyUpdate(BaseModel):
 
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
+    insight_frequency: Optional[str] = None
 
     is_partner: Optional[bool] = None
 
@@ -58,6 +60,7 @@ class CompanyOut(BaseModel):
 
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
+    insight_frequency: Optional[str] = None
 
     is_partner: bool = False
     is_active: bool = True
