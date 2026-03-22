@@ -7,18 +7,8 @@ import RadarFilters from "@/components/admin/radar/RadarFilters";
 import RadarTable from "@/components/admin/radar/RadarTable";
 import RadarActions from "@/components/admin/radar/RadarActions";
 import RadarDrawer from "@/components/admin/radar/RadarDrawer";
+import { RadarItem } from "@/types/radar";
 
-/* ========================================================= */
-
-export type RadarItem = {
-  entity_type: string;
-  entity_id: string;
-  year: number;
-  period: number;
-  frequency: "WEEKLY" | "MONTHLY" | "QUARTERLY";
-  nb_contents: number;
-  radar_status: "MISSING" | "EXISTS";
-};
 
 /* ========================================================= */
 
