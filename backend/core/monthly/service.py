@@ -45,6 +45,7 @@ def _map_row(r: Dict) -> Dict:
 def create_monthly_insight(data: dict) -> str:
 
     insight_id = str(uuid.uuid4())
+    now = _now()
 
     row = [{
         "ID_INSIGHT": insight_id,
@@ -53,13 +54,23 @@ def create_monthly_insight(data: dict) -> str:
         "YEAR": data.get("year"),
         "MONTH": data.get("month"),
         "TITLE": data.get("title"),
-        "KEY_POINTS": data.get("key_points", []),
+        "KEY_POINTS": data.get("key_points") or [],
         "STATUS": data.get("status", "DRAFT"),
-        "CREATED_AT": _now(),
-        "UPDATED_AT": _now(),
+        "CREATED_AT": now,
+        "UPDATED_AT": now,
     }]
 
-    insert_bq(TABLE, row)
+    client = get_bigquery_client()
+
+    job = client.load_table_from_json(
+        row,
+        TABLE,
+        job_config={
+            "write_disposition": "WRITE_APPEND"
+        },
+    )
+
+    job.result()
 
     return insight_id
 
