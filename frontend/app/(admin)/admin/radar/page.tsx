@@ -165,7 +165,7 @@ export default function RadarPage() {
         frequency: item.frequency,
       }).toString();
 
-      const res = await api.get(`/radar/get?${query}`);
+      const res = await api.get(`/radar/?${query}`);
 
       setDrawerData(res.insight || null);
       setDrawerOpen(true);
