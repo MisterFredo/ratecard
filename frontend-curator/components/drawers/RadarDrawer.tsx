@@ -38,16 +38,23 @@ type Props = {
    HELPERS
 ========================================================= */
 
-function getPeriodLabel(r: Radar) {
+function formatRadarLabel(r: Radar) {
   if (r.frequency === "MONTHLY") {
-    return `Mois ${r.period} · ${r.year}`;
+    const date = new Date(r.year, r.period - 1);
+    return new Intl.DateTimeFormat("fr-FR", {
+      month: "long",
+      year: "numeric",
+    }).format(date);
   }
+
   if (r.frequency === "QUARTERLY") {
-    return `Trimestre ${r.period} · ${r.year}`;
+    return `T${r.period} ${r.year}`;
   }
+
   if (r.frequency === "WEEKLY") {
-    return `Semaine ${r.period} · ${r.year}`;
+    return `Semaine ${r.period} ${r.year}`;
   }
+
   return "";
 }
 
@@ -56,11 +63,11 @@ function getPeriodLabel(r: Radar) {
 ========================================================= */
 
 export default function RadarDrawer({ id, onClose }: Props) {
-  const [radar, setRadar] = useState<Radar | null>(null);
+  const [radars, setRadars] = useState<Radar[]>([]);
   const [loading, setLoading] = useState(true);
 
   /* =========================================================
-     LOAD
+     LOAD (LIST)
   ========================================================= */
 
   useEffect(() => {
@@ -68,12 +75,18 @@ export default function RadarDrawer({ id, onClose }: Props) {
       try {
         setLoading(true);
 
-        const res = await api.get(`/radar/${id}`);
+        // 1️⃣ récupérer le radar actuel
+        const current = await api.get(`/radar/${id}`);
 
-        setRadar(res);
+        // 2️⃣ récupérer toute la timeline
+        const res = await api.get(
+          `/radar/list?entity_type=${current.entity_type}&entity_id=${current.entity_id}`
+        );
+
+        setRadars(res?.insights ?? []);
 
       } catch (e) {
-        console.error("❌ Radar load error", e);
+        console.error("❌ Radar list error", e);
       }
 
       setLoading(false);
@@ -91,33 +104,36 @@ export default function RadarDrawer({ id, onClose }: Props) {
 
       {/* HEADER */}
       <DrawerHeader
-        title="Synthèse"
-        subtitle={radar ? getPeriodLabel(radar) : ""}
+        title="Synthèses"
+        subtitle=""
         variant="topic"
         onClose={onClose}
       />
 
       {/* CONTENT */}
-      <div className="px-6 py-8">
+      <div className="px-6 py-8 space-y-10">
 
         {loading ? (
           <p className="text-sm text-gray-400">
             Chargement...
           </p>
-        ) : !radar ? (
+        ) : radars.length === 0 ? (
           <p className="text-sm text-gray-400">
             Aucune synthèse disponible.
           </p>
         ) : (
-          <div className="space-y-6">
-
-            {/* KEY POINTS */}
-            <section className="space-y-4">
-              <h2 className="text-sm font-semibold uppercase text-gray-500">
-                Points clés
+          radars.map((radar) => (
+            <section
+              key={radar.id_insight}
+              className="space-y-4"
+            >
+              {/* HEADER PERIOD */}
+              <h2 className="text-sm font-semibold text-gray-900">
+                {formatRadarLabel(radar)}
               </h2>
 
-              <ul className="space-y-3">
+              {/* KEY POINTS */}
+              <ul className="space-y-2">
                 {radar.key_points?.map((point, i) => (
                   <li
                     key={i}
@@ -128,8 +144,7 @@ export default function RadarDrawer({ id, onClose }: Props) {
                 ))}
               </ul>
             </section>
-
-          </div>
+          ))
         )}
 
       </div>
