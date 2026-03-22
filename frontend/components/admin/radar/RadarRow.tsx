@@ -1,6 +1,6 @@
 "use client";
 
-import { RadarItem } from "@/app/admin/radar/page";
+import { RadarItem } from "@/types/radar";
 
 export default function RadarRow({
   item,
