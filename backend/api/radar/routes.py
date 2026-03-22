@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException
-from core.monthly.service import (
-    get_monthly_insight,
-    list_monthly_insights,
-    generate_monthly_insight,
-    update_monthly_insight,
-    delete_monthly_insight,
+from core.radar.service import (
+    get_radar_insight,
+    list_radar_insights,
+    generate_radar_insight,
+    update_radar_insight,
+    delete_radar_insight,
 )
 
 router = APIRouter()
@@ -19,14 +19,16 @@ def get_one(
     entity_type: str,
     entity_id: str,
     year: int,
-    month: int,
+    period: int,
+    frequency: str,
 ):
 
-    insight = get_monthly_insight(
+    insight = get_radar_insight(
         entity_type,
         entity_id,
         year,
-        month,
+        period,
+        frequency,
     )
 
     if not insight:
@@ -48,7 +50,7 @@ def list_all(
     entity_id: str,
 ):
 
-    insights = list_monthly_insights(
+    insights = list_radar_insights(
         entity_type,
         entity_id,
     )
@@ -67,11 +69,12 @@ def list_all(
 def generate_route(payload: dict):
 
     try:
-        result = generate_monthly_insight(
+        result = generate_radar_insight(
             entity_type=payload.get("entity_type"),
             entity_id=payload.get("entity_id"),
             year=payload.get("year"),
-            month=payload.get("month"),
+            period=payload.get("period"),
+            frequency=payload.get("frequency"),
             force=payload.get("force", False),
         )
 
@@ -83,7 +86,7 @@ def generate_route(payload: dict):
     except Exception as e:
         raise HTTPException(
             400,
-            f"Erreur génération monthly insight : {e}"
+            f"Erreur génération radar insight : {e}"
         )
 
 
@@ -95,7 +98,7 @@ def generate_route(payload: dict):
 def update_route(id_insight: str, payload: dict):
 
     try:
-        update_monthly_insight(id_insight, payload)
+        update_radar_insight(id_insight, payload)
 
         return {
             "status": "ok",
@@ -105,7 +108,7 @@ def update_route(id_insight: str, payload: dict):
     except Exception as e:
         raise HTTPException(
             400,
-            f"Erreur update monthly insight : {e}"
+            f"Erreur update radar insight : {e}"
         )
 
 
@@ -117,7 +120,7 @@ def update_route(id_insight: str, payload: dict):
 def delete_route(id_insight: str):
 
     try:
-        delete_monthly_insight(id_insight)
+        delete_radar_insight(id_insight)
 
         return {
             "status": "ok",
@@ -127,5 +130,5 @@ def delete_route(id_insight: str):
     except Exception as e:
         raise HTTPException(
             400,
-            f"Erreur suppression monthly insight : {e}"
+            f"Erreur suppression radar insight : {e}"
         )
