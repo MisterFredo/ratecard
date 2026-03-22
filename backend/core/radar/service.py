@@ -427,6 +427,19 @@ def list_radar_status(entity_type, frequency, year):
         for r in rows
     ]
 
+def get_radar_by_id(insight_id: str):
+
+    rows = query_bq(f"""
+        SELECT *
+        FROM `{TABLE}`
+        WHERE ID_INSIGHT = @insight_id
+        LIMIT 1
+    """, {
+        "insight_id": insight_id
+    })
+
+    return _map_row(rows[0]) if rows else None
+
 def get_latest_radar(entity_type, entity_id):
 
     rows = query_bq(f"""
