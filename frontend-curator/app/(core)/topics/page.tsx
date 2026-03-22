@@ -39,22 +39,15 @@ async function fetchTopics(): Promise<Topic[]> {
 
 /* ========================================================= */
 
-function sortTopics(
-  items: Topic[],
-  mode: SortMode
-) {
+function sortTopics(items: Topic[], mode: SortMode) {
   const copy = [...items];
 
   switch (mode) {
     case "activity":
-      return copy.sort(
-        (a, b) => b.nb_analyses - a.nb_analyses
-      );
+      return copy.sort((a, b) => b.nb_analyses - a.nb_analyses);
 
     case "growth":
-      return copy.sort(
-        (a, b) => b.delta_30d - a.delta_30d
-      );
+      return copy.sort((a, b) => b.delta_30d - a.delta_30d);
 
     default:
       return copy.sort((a, b) =>
@@ -65,10 +58,7 @@ function sortTopics(
 
 /* ========================================================= */
 
-function groupByAxis(
-  topics: Topic[],
-  mode: SortMode
-) {
+function groupByAxis(topics: Topic[], mode: SortMode) {
   const map: Record<string, Topic[]> = {};
 
   topics.forEach((t) => {
@@ -78,7 +68,6 @@ function groupByAxis(
     map[t.topic_axis].push(t);
   });
 
-  // 🔥 tri à l’intérieur de chaque axis
   Object.keys(map).forEach((axis) => {
     map[axis] = sortTopics(map[axis], mode);
   });
@@ -91,7 +80,7 @@ function groupByAxis(
 export default function TopicsPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [sortMode, setSortMode] =
-    useState<SortMode>("alpha");
+    useState<SortMode>("activity");
 
   const { openLeftDrawer } = useDrawer();
   const searchParams = useSearchParams();
@@ -120,27 +109,44 @@ export default function TopicsPage() {
 
   const grouped = groupByAxis(topics, sortMode);
 
+  const totalTopics = topics.length;
+  const totalAnalyses = topics.reduce(
+    (sum, t) => sum + (t.nb_analyses || 0),
+    0
+  );
+
   /* ========================================================= */
 
   return (
-    <div className="space-y-10">
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900">
+    <div className="space-y-12">
+
+      {/* =====================================================
+          HEADER PREMIUM
+      ===================================================== */}
+      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+
+        <div className="space-y-2">
+          <h1 className="text-xl font-semibold text-gray-900">
             Topics
           </h1>
-          <p className="text-sm text-gray-500">
-            Explore les grandes thématiques du marché
+
+          <p className="text-sm text-gray-500 max-w-md">
+            Cartographie des dynamiques du marché à travers
+            nos analyses et signaux clés.
           </p>
+
+          <div className="flex gap-4 text-xs text-gray-400 pt-1">
+            <span>{totalTopics} thèmes</span>
+            <span>{totalAnalyses} analyses</span>
+          </div>
         </div>
 
         {/* SORT */}
         <div className="flex gap-2 text-xs">
           {[
-            { key: "alpha", label: "A → Z" },
             { key: "activity", label: "Activité" },
             { key: "growth", label: "Croissance" },
+            { key: "alpha", label: "A → Z" },
           ].map((s) => (
             <button
               key={s.key}
@@ -148,10 +154,10 @@ export default function TopicsPage() {
                 setSortMode(s.key as SortMode)
               }
               className={`
-                px-3 py-1 rounded border
+                px-3 py-1.5 rounded-md border transition
                 ${
                   sortMode === s.key
-                    ? "bg-teal-600 text-white border-teal-600"
+                    ? "bg-gray-900 text-white border-gray-900"
                     : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
                 }
               `}
@@ -162,29 +168,48 @@ export default function TopicsPage() {
         </div>
       </div>
 
-      {/* SECTIONS */}
+      {/* =====================================================
+          SECTIONS
+      ===================================================== */}
       {Object.keys(grouped).length === 0 ? (
         <p className="text-sm text-gray-400">
           Aucun topic pour le moment.
         </p>
       ) : (
         Object.entries(grouped).map(([axis, items]) => (
-          <section key={axis} className="space-y-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-              {axis}
-            </h2>
+          <section key={axis} className="space-y-6">
 
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {/* AXIS HEADER */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                {axis}
+              </h2>
+
+              <span className="text-xs text-gray-300">
+                {items.length} topics
+              </span>
+            </div>
+
+            {/* GRID */}
+            <div className="
+              grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6
+              gap-5
+            ">
               {items.map((t) => (
-                <TopicCard
+                <div
                   key={t.id_topic}
-                  id={t.id_topic}
-                  label={t.label}
-                  nbAnalyses={t.nb_analyses}
-                  delta30d={t.delta_30d}
-                />
+                  className="transition-transform hover:-translate-y-0.5"
+                >
+                  <TopicCard
+                    id={t.id_topic}
+                    label={t.label}
+                    nbAnalyses={t.nb_analyses}
+                    delta30d={t.delta_30d}
+                  />
+                </div>
               ))}
             </div>
+
           </section>
         ))
       )}
