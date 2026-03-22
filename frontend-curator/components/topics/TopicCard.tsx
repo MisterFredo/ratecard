@@ -30,57 +30,87 @@ export default function TopicCard({
     );
   }
 
-  const isTrending = typeof delta30d === "number" && delta30d > 0;
+  const isTrending =
+    typeof delta30d === "number" && delta30d > 0;
+
+  const intensity =
+    typeof nbAnalyses === "number"
+      ? Math.min(nbAnalyses * 2, 100)
+      : 0;
 
   return (
     <div
       onClick={handleClick}
       className="
-        group cursor-pointer rounded-xl
-        border border-gray-200
-        bg-white p-4
-        transition hover:shadow-sm hover:border-gray-300
-        relative
+        group cursor-pointer relative
+        rounded-2xl border border-gray-200 bg-white
+        p-4
+        transition-all duration-200
+        hover:shadow-md hover:border-gray-300 hover:-translate-y-[2px]
       "
     >
       {/* =====================================================
-          BADGE TREND
+          TOP ROW (SIGNALS)
       ===================================================== */}
-      {isTrending && (
-        <div className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded bg-orange-100 text-orange-600">
-          +{delta30d}
-        </div>
-      )}
+      <div className="flex items-center justify-between mb-2">
+
+        {/* ACTIVITY */}
+        {typeof nbAnalyses === "number" && (
+          <span className="text-[11px] text-gray-400">
+            {nbAnalyses} analyses
+          </span>
+        )}
+
+        {/* TREND */}
+        {isTrending && (
+          <span className="
+            text-[10px] px-2 py-0.5 rounded-full
+            bg-orange-100 text-orange-600
+            font-medium
+          ">
+            +{delta30d}
+          </span>
+        )}
+      </div>
 
       {/* =====================================================
           LABEL
       ===================================================== */}
-      <h3 className="text-sm font-semibold text-gray-900 leading-snug group-hover:underline">
+      <h3 className="
+        text-sm font-semibold text-gray-900 leading-snug
+        group-hover:text-black
+      ">
         {label}
       </h3>
 
       {/* =====================================================
-          STATS
+          VISUAL BAR
       ===================================================== */}
       {typeof nbAnalyses === "number" && (
-        <p className="mt-1 text-[11px] text-gray-400">
-          {nbAnalyses} analyses
-        </p>
-      )}
-
-      {/* =====================================================
-          VISUAL SIGNAL (BAR)
-      ===================================================== */}
-      {typeof nbAnalyses === "number" && (
-        <div className="mt-3 h-1 w-full bg-gray-100 rounded overflow-hidden">
+        <div className="mt-4 h-[3px] w-full bg-gray-100 rounded overflow-hidden">
           <div
-            className="h-full bg-teal-500 transition-all"
+            className="
+              h-full bg-gray-900
+              transition-all duration-300
+              group-hover:bg-teal-600
+            "
             style={{
-              width: `${Math.min(nbAnalyses * 2, 100)}%`,
+              width: `${intensity}%`,
             }}
           />
         </div>
       )}
+
+      {/* =====================================================
+          HOVER OVERLAY (SUBTLE)
+      ===================================================== */}
+      <div className="
+        absolute inset-0 rounded-2xl
+        bg-gradient-to-t from-black/0 to-black/0
+        group-hover:from-black/[0.02]
+        pointer-events-none
+        transition
+      " />
     </div>
   );
 }
