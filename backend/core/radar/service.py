@@ -11,7 +11,7 @@ from utils.bigquery_utils import query_bq, insert_bq, get_bigquery_client
 
 client = OpenAI()
 
-TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_MONTHLY"
+TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_RADAR"
 VIEW_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED"
 VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 
@@ -30,7 +30,8 @@ def _map_row(r: Dict) -> Dict:
         "entity_type": r["ENTITY_TYPE"],
         "entity_id": r["ENTITY_ID"],
         "year": r["YEAR"],
-        "month": r["MONTH"],
+        "period": r["PERIOD"],
+        "frequency": r["FREQUENCY"],
         "title": r.get("TITLE"),
         "key_points": r.get("KEY_POINTS") or [],
         "status": r["STATUS"],
