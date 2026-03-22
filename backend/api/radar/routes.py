@@ -42,12 +42,14 @@ def status(
         raise HTTPException(400, f"Erreur status radar : {e}")
 
 
+
+
 # ============================================================
-# GET ONE
+# GET ONE (COMPAT FRONT)
 # ============================================================
 
-@router.get("/")
-def get_one(
+@router.get("/get")
+def get_one_route(
     entity_type: str,
     entity_id: str,
     year: int,
