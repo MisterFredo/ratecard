@@ -31,35 +31,30 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   const [wikiContent, setWikiContent] = useState("");
   const [logoFilename, setLogoFilename] = useState<string | null>(null);
 
+  // 🔥 NEW
+  const [insightFrequency, setInsightFrequency] = useState("QUARTERLY");
+
   const [types, setTypes] = useState<CompanyType[]>([]);
 
   /* ---------------------------------------------------------
      LOAD TYPES
   --------------------------------------------------------- */
   useEffect(() => {
-
     async function loadTypes() {
-
       try {
-
         const res = await api.get("/company/types");
         setTypes(res.types || []);
-
       } catch (e) {
-
         console.error(e);
         alert("❌ Erreur chargement types");
-
       }
-
     }
 
     loadTypes();
-
   }, []);
 
   /* ---------------------------------------------------------
-     LOAD
+     LOAD COMPANY
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
@@ -76,8 +71,12 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         setIsPartner(Boolean(c.is_partner));
 
         setWikiContent(c.wiki_content || "");
-
         setLogoFilename(c.media_logo_rectangle_id || null);
+
+        // 🔥 NEW
+        setInsightFrequency(
+          c.insight_frequency || "QUARTERLY"
+        );
 
       } catch (e) {
         console.error(e);
@@ -105,19 +104,18 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         website_url: websiteUrl || null,
         is_partner: isPartner,
         wiki_content: wikiContent || null,
+
+        // 🔥 NEW
+        insight_frequency: insightFrequency,
       });
 
       alert("Société modifiée");
 
     } catch (e) {
-
       console.error(e);
       alert("❌ Erreur mise à jour");
-
     } finally {
-
       setSaving(false);
-
     }
   }
 
@@ -158,10 +156,9 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         }}
       />
 
+      {/* TYPE */}
       <div className="space-y-2">
-        <label className="block font-medium">
-          Type
-        </label>
+        <label className="block font-medium">Type</label>
 
         <select
           value={type}
@@ -177,9 +174,30 @@ export default function EditCompany({ params }: { params: { id: string } }) {
           ))}
 
         </select>
-
       </div>
 
+      {/* 🔥 NEW : FREQUENCY */}
+      <div className="space-y-2">
+        <label className="block font-medium">
+          Fréquence des insights
+        </label>
+
+        <select
+          value={insightFrequency}
+          onChange={(e) => setInsightFrequency(e.target.value)}
+          className="border px-3 py-2 rounded w-full max-w-md"
+        >
+          <option value="WEEKLY">Weekly</option>
+          <option value="MONTHLY">Monthly</option>
+          <option value="QUARTERLY">Quarterly</option>
+        </select>
+
+        <p className="text-xs text-gray-500">
+          Définit la granularité des synthèses générées
+        </p>
+      </div>
+
+      {/* DESCRIPTION */}
       <div className="space-y-2">
         <label className="block font-medium">
           Description (commerciale)
@@ -190,6 +208,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         />
       </div>
 
+      {/* WIKI */}
       <div className="border-t pt-6 space-y-2">
         <h2 className="text-lg font-semibold">
           Wiki (connaissance interne / éditoriale)
@@ -201,6 +220,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         />
       </div>
 
+      {/* PARTNER */}
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
@@ -212,6 +232,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         </label>
       </div>
 
+      {/* SAVE */}
       <button
         className="bg-ratecard-blue px-4 py-2 text-white rounded"
         onClick={save}
@@ -220,6 +241,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
 
+      {/* VISUAL */}
       <VisualSection
         entityId={id}
         rectUrl={rectUrl}
