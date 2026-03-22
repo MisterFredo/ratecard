@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-import RadarFilters from "@/components/radar/RadarFilters";
-import RadarTable from "@/components/radar/RadarTable";
-import RadarActions from "@/components/radar/RadarActions";
+import RadarFilters from "@/components/admin/radar/RadarFilters";
+import RadarTable from "@/components/admin/radar/RadarTable";
+import RadarActions from "@/components/admin/radar/RadarActions";
+import RadarDrawer from "@/components/admin/radar/RadarDrawer";
 
 /* ========================================================= */
 
@@ -33,6 +34,9 @@ export default function RadarPage() {
     year: new Date().getFullYear(),
   });
 
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerData, setDrawerData] = useState<any>(null);
+
   /* =========================================================
      LOAD VIEW
   ========================================================= */
@@ -48,6 +52,7 @@ export default function RadarPage() {
       });
 
       setItems(res.items || []);
+      setSelected([]);
 
     } catch (e) {
 
@@ -66,29 +71,32 @@ export default function RadarPage() {
      SELECT
   ========================================================= */
 
+  function isSame(a: RadarItem, b: RadarItem) {
+    return (
+      a.entity_id === b.entity_id &&
+      a.period === b.period &&
+      a.frequency === b.frequency &&
+      a.year === b.year
+    );
+  }
+
   function toggle(item: RadarItem) {
 
-    const exists = selected.find(
-      (s) =>
-        s.entity_id === item.entity_id &&
-        s.period === item.period &&
-        s.frequency === item.frequency
-    );
+    const exists = selected.find((s) => isSame(s, item));
 
     if (exists) {
-      setSelected((prev) =>
-        prev.filter(
-          (s) =>
-            !(
-              s.entity_id === item.entity_id &&
-              s.period === item.period &&
-              s.frequency === item.frequency
-            )
-        )
-      );
+      setSelected((prev) => prev.filter((s) => !isSame(s, item)));
     } else {
       setSelected((prev) => [...prev, item]);
     }
+  }
+
+  function selectAll() {
+    setSelected(items);
+  }
+
+  function unselectAll() {
+    setSelected([]);
   }
 
   /* =========================================================
@@ -97,6 +105,7 @@ export default function RadarPage() {
 
   async function generateSelected() {
 
+    if (selected.length === 0) return;
     if (!confirm("Générer les radars sélectionnés ?")) return;
 
     try {
@@ -116,6 +125,8 @@ export default function RadarPage() {
 
   async function validateSelected() {
 
+    if (selected.length === 0) return;
+
     await Promise.all(
       selected.map((item) =>
         api.put("/radar/validate", item)
@@ -127,6 +138,8 @@ export default function RadarPage() {
 
   async function publishSelected() {
 
+    if (selected.length === 0) return;
+
     await Promise.all(
       selected.map((item) =>
         api.put("/radar/publish", item)
@@ -134,6 +147,30 @@ export default function RadarPage() {
     );
 
     load();
+  }
+
+  /* =========================================================
+     PREVIEW
+  ========================================================= */
+
+  async function handlePreview(item: RadarItem) {
+
+    try {
+
+      const res = await api.get("/radar/get", {
+        params: item,
+      });
+
+      setDrawerData(res.insight || null);
+      setDrawerOpen(true);
+
+    } catch (e) {
+
+      console.error(e);
+      setDrawerData(null);
+      setDrawerOpen(true);
+
+    }
   }
 
   /* =========================================================
@@ -149,6 +186,18 @@ export default function RadarPage() {
 
       <RadarFilters filters={filters} setFilters={setFilters} />
 
+      <div className="flex gap-4 text-xs">
+        <button onClick={selectAll} className="underline">
+          Tout sélectionner
+        </button>
+        <button onClick={unselectAll} className="underline">
+          Tout désélectionner
+        </button>
+        <span className="text-gray-400 ml-auto">
+          {selected.length} sélectionnés
+        </span>
+      </div>
+
       <RadarActions
         selectedCount={selected.length}
         onGenerate={generateSelected}
@@ -160,7 +209,14 @@ export default function RadarPage() {
         items={items}
         selected={selected}
         onToggle={toggle}
+        onPreview={handlePreview}
         loading={loading}
+      />
+
+      <RadarDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        data={drawerData}
       />
 
     </div>
