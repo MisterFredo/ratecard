@@ -1,13 +1,42 @@
 from fastapi import APIRouter, HTTPException
 from core.radar.service import (
-    get_radar_insight,
+    get_radar,
     list_radar_insights,
-    generate_radar_insight,
-    update_radar_insight,
+    list_radar_status,
+    generate_radar,
+    update_radar,
     delete_radar_insight,
 )
 
 router = APIRouter()
+
+
+# ============================================================
+# STATUS (TABLE PRINCIPALE)
+# ============================================================
+
+@router.get("/status")
+def status(
+    entity_type: str,
+    frequency: str,
+    year: int,
+):
+
+    try:
+
+        items = list_radar_status(
+            entity_type=entity_type,
+            frequency=frequency,
+            year=year,
+        )
+
+        return {
+            "status": "ok",
+            "items": items,
+        }
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur status radar : {e}")
 
 
 # ============================================================
@@ -23,7 +52,7 @@ def get_one(
     frequency: str,
 ):
 
-    insight = get_radar_insight(
+    insight = get_radar(
         entity_type,
         entity_id,
         year,
@@ -69,7 +98,8 @@ def list_all(
 def generate_route(payload: dict):
 
     try:
-        result = generate_radar_insight(
+
+        result = generate_radar(
             entity_type=payload.get("entity_type"),
             entity_id=payload.get("entity_id"),
             year=payload.get("year"),
@@ -86,19 +116,27 @@ def generate_route(payload: dict):
     except Exception as e:
         raise HTTPException(
             400,
-            f"Erreur génération radar insight : {e}"
+            f"Erreur génération radar : {e}"
         )
 
 
 # ============================================================
-# UPDATE
+# UPDATE (VALIDATE / PUBLISH)
 # ============================================================
 
-@router.put("/{id_insight}")
-def update_route(id_insight: str, payload: dict):
+@router.put("/update")
+def update_route(payload: dict):
 
     try:
-        update_radar_insight(id_insight, payload)
+
+        update_radar(
+            entity_type=payload.get("entity_type"),
+            entity_id=payload.get("entity_id"),
+            year=payload.get("year"),
+            period=payload.get("period"),
+            frequency=payload.get("frequency"),
+            status=payload.get("status"),
+        )
 
         return {
             "status": "ok",
@@ -108,7 +146,7 @@ def update_route(id_insight: str, payload: dict):
     except Exception as e:
         raise HTTPException(
             400,
-            f"Erreur update radar insight : {e}"
+            f"Erreur update radar : {e}"
         )
 
 
@@ -120,6 +158,7 @@ def update_route(id_insight: str, payload: dict):
 def delete_route(id_insight: str):
 
     try:
+
         delete_radar_insight(id_insight)
 
         return {
@@ -130,5 +169,5 @@ def delete_route(id_insight: str):
     except Exception as e:
         raise HTTPException(
             400,
-            f"Erreur suppression radar insight : {e}"
+            f"Erreur suppression radar : {e}"
         )
