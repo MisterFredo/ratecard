@@ -44,7 +44,7 @@ def _map_row(r: Dict) -> Dict:
 # CREATE
 # ============================================================
 
-def create_monthly_insight(data: dict) -> str:
+def create_radar_insight(data: dict) -> str:
 
     insight_id = str(uuid.uuid4())
     now = _now()
@@ -54,7 +54,8 @@ def create_monthly_insight(data: dict) -> str:
         "ENTITY_TYPE": data.get("entity_type"),
         "ENTITY_ID": data.get("entity_id"),
         "YEAR": data.get("year"),
-        "MONTH": data.get("month"),
+        "PERIOD": data.get("period"),
+        "FREQUENCY": data.get("frequency"),
         "TITLE": data.get("title"),
         "KEY_POINTS": data.get("key_points") or [],
         "STATUS": data.get("status", "DRAFT"),
