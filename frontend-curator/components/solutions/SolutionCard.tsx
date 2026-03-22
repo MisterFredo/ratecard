@@ -7,10 +7,15 @@ type Props = {
   id: string;
   name: string;
 
-  visualRectId?: string | null; // logo société
+  visualRectId?: string | null;
   nbAnalyses?: number;
   delta30d?: number;
   isPartner?: boolean;
+
+  lastRadar?: {
+    id_insight: string;
+    key_points: string[];
+  };
 };
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
@@ -22,10 +27,11 @@ export default function SolutionCard({
   nbAnalyses,
   delta30d,
   isPartner,
+  lastRadar,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const { openLeftDrawer } = useDrawer();
+  const { openLeftDrawer, openRightDrawer } = useDrawer();
 
   const visualUrl = visualRectId
     ? `${GCS_BASE_URL}/companies/${visualRectId}`
@@ -40,6 +46,11 @@ export default function SolutionCard({
     );
   }
 
+  function handleRadarClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    openRightDrawer("radar", lastRadar!.id_insight);
+  }
+
   return (
     <div
       onClick={handleClick}
@@ -52,7 +63,7 @@ export default function SolutionCard({
       "
     >
       {/* =====================================================
-          BADGES (TOP RIGHT)
+          BADGES
       ===================================================== */}
       <div className="absolute top-2 right-2 flex gap-1 z-10">
         {isPartner && (
@@ -87,6 +98,28 @@ export default function SolutionCard({
             {name}
           </div>
         )}
+
+        {/* =====================================================
+            RADAR OVERLAY (🔥 KEY)
+        ===================================================== */}
+        {lastRadar?.key_points?.[0] && (
+          <div
+            onClick={handleRadarClick}
+            className="
+              absolute inset-0
+              bg-black/0 group-hover:bg-black/60
+              transition duration-200
+              flex items-end p-3
+              opacity-0 group-hover:opacity-100
+            "
+          >
+            <p className="
+              text-[11px] text-white leading-snug line-clamp-3
+            ">
+              {lastRadar.key_points[0]}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* =====================================================
@@ -101,6 +134,20 @@ export default function SolutionCard({
           <p className="text-[10px] text-gray-400">
             {nbAnalyses} analyses
           </p>
+        )}
+
+        {/* CTA subtle */}
+        {lastRadar && (
+          <div
+            onClick={handleRadarClick}
+            className="
+              text-[10px] text-gray-400
+              opacity-0 group-hover:opacity-100
+              transition
+            "
+          >
+            Voir la veille →
+          </div>
         )}
       </div>
     </div>
