@@ -38,10 +38,35 @@ type TopicData = {
   items?: FeedItem[];
 };
 
+type Radar = {
+  id_insight: string;
+  year: number;
+  period: number;
+  frequency: "WEEKLY" | "MONTHLY" | "QUARTERLY";
+  key_points: string[];
+};
+
 type Props = {
   id: string;
   onClose?: () => void;
 };
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function getRadarLabel(r: Radar) {
+  if (r.frequency === "MONTHLY") {
+    return `Mois ${r.period} · ${r.year}`;
+  }
+  if (r.frequency === "QUARTERLY") {
+    return `Trimestre ${r.period} · ${r.year}`;
+  }
+  if (r.frequency === "WEEKLY") {
+    return `Semaine ${r.period} · ${r.year}`;
+  }
+  return "";
+}
 
 /* =========================================================
    COMPONENT
@@ -62,8 +87,10 @@ export default function TopicDrawer({ id, onClose }: Props) {
   const [offset, setOffset] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  const [lastRadar, setLastRadar] = useState<Radar | null>(null);
+
   /* =========================================================
-     CLOSE (IDENTIQUE)
+     CLOSE
   ========================================================= */
 
   function close() {
@@ -79,7 +106,7 @@ export default function TopicDrawer({ id, onClose }: Props) {
   }
 
   /* =========================================================
-     LOAD INITIAL (IDENTIQUE)
+     LOAD DATA
   ========================================================= */
 
   useEffect(() => {
@@ -101,7 +128,29 @@ export default function TopicDrawer({ id, onClose }: Props) {
   }, [id]);
 
   /* =========================================================
-     LOAD MORE (IDENTIQUE)
+     LOAD LAST RADAR
+  ========================================================= */
+
+  useEffect(() => {
+    async function loadRadar() {
+      try {
+        const res = await api.get(
+          `/radar/list?entity_type=topic&entity_id=${id}`
+        );
+
+        if (res && res.length > 0) {
+          setLastRadar(res[0]); // 👉 le plus récent (déjà trié backend)
+        }
+      } catch (e) {
+        console.error("❌ Radar load error", e);
+      }
+    }
+
+    loadRadar();
+  }, [id]);
+
+  /* =========================================================
+     LOAD MORE
   ========================================================= */
 
   async function loadMore() {
@@ -146,6 +195,43 @@ export default function TopicDrawer({ id, onClose }: Props) {
       {/* CONTENT */}
       <div className="px-6 py-8 space-y-10">
 
+        {/* =====================================================
+            RADAR (NOUVEAU)
+        ===================================================== */}
+        {lastRadar && (
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold uppercase text-gray-500">
+              Synthèse
+            </h2>
+
+            <button
+              onClick={() =>
+                openRightDrawer("radar", lastRadar.id_insight)
+              }
+              className="
+                w-full text-left
+                p-4 rounded border border-gray-200
+                hover:bg-gray-50 transition
+              "
+            >
+              <div className="text-xs text-gray-500 mb-1">
+                {getRadarLabel(lastRadar)}
+              </div>
+
+              <div className="text-sm font-medium text-gray-900 line-clamp-2">
+                {lastRadar.key_points?.[0]}
+              </div>
+
+              <div className="text-xs text-gray-400 mt-2">
+                Voir la synthèse complète →
+              </div>
+            </button>
+          </section>
+        )}
+
+        {/* =====================================================
+            FEED (INCHANGÉ)
+        ===================================================== */}
         <section className="space-y-4">
           <h2 className="text-sm font-semibold uppercase text-gray-500">
             Contenus liés
@@ -157,7 +243,6 @@ export default function TopicDrawer({ id, onClose }: Props) {
             </p>
           ) : (
             <>
-              {/* 🔥 GROUPING PAR MOIS */}
               <FeedGroupedByMonth
                 items={items}
                 onClickItem={(item) =>
@@ -171,7 +256,6 @@ export default function TopicDrawer({ id, onClose }: Props) {
                 }
               />
 
-              {/* LOAD MORE (IDENTIQUE) */}
               <div className="flex justify-center pt-4">
                 <button
                   onClick={loadMore}
