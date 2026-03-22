@@ -2,6 +2,9 @@ from fastapi import APIRouter, HTTPException
 from core.monthly.service import (
     get_monthly_insight,
     list_monthly_insights,
+    generate_monthly_insight,
+    update_monthly_insight,
+    delete_monthly_insight,
 )
 
 router = APIRouter()
