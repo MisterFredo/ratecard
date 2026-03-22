@@ -22,9 +22,9 @@ export default function EditTopic({ params }: { params: { id: string } }) {
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
 
-  /* ---------------------------------------------------------
-     LOAD
-  --------------------------------------------------------- */
+  const [insightFrequency, setInsightFrequency] =
+    useState("QUARTERLY");
+
   useEffect(() => {
 
     async function load() {
@@ -35,7 +35,6 @@ export default function EditTopic({ params }: { params: { id: string } }) {
 
         setLabel(t.label || "");
 
-        // fallback pour anciens axes BUSINESS / FIELD
         const axis: TopicAxis =
           t.topic_axis === "RETAIL" ||
           t.topic_axis === "FOUNDATIONS"
@@ -47,6 +46,8 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         setDescription(t.description || "");
         setSeoTitle(t.seo_title || "");
         setSeoDescription(t.seo_description || "");
+
+        setInsightFrequency(t.insight_frequency || "QUARTERLY");
 
       } catch (e) {
 
@@ -65,9 +66,6 @@ export default function EditTopic({ params }: { params: { id: string } }) {
 
   }, [id]);
 
-  /* ---------------------------------------------------------
-     SAVE
-  --------------------------------------------------------- */
   async function save() {
 
     if (!label.trim()) {
@@ -85,6 +83,7 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         description: description || null,
         seo_title: seoTitle || null,
         seo_description: seoDescription || null,
+        insight_frequency: insightFrequency,
       });
 
       alert("Topic modifié");
@@ -104,13 +103,9 @@ export default function EditTopic({ params }: { params: { id: string } }) {
 
   if (loading) return <p>Chargement…</p>;
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
     <div className="space-y-10">
 
-      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold">
           Modifier le topic
@@ -121,7 +116,6 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         </Link>
       </div>
 
-      {/* LABEL */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium">
           Label
@@ -134,7 +128,6 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         />
       </div>
 
-      {/* AXIS */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium">
           Axe du topic
@@ -161,7 +154,6 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         </select>
       </div>
 
-      {/* DESCRIPTION */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium">
           Description éditoriale
@@ -173,7 +165,22 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         />
       </div>
 
-      {/* SEO */}
+      <div className="space-y-2 max-w-2xl">
+        <label className="block text-sm font-medium">
+          Fréquence des insights
+        </label>
+
+        <select
+          value={insightFrequency}
+          onChange={(e) => setInsightFrequency(e.target.value)}
+          className="border px-3 py-2 rounded w-full max-w-xs"
+        >
+          <option value="WEEKLY">Weekly</option>
+          <option value="MONTHLY">Monthly</option>
+          <option value="QUARTERLY">Quarterly</option>
+        </select>
+      </div>
+
       <div className="space-y-4 max-w-2xl">
 
         <div>
@@ -204,7 +211,6 @@ export default function EditTopic({ params }: { params: { id: string } }) {
 
       </div>
 
-      {/* ACTION */}
       <button
         onClick={save}
         disabled={saving}
