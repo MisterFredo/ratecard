@@ -357,6 +357,8 @@ FORMAT DE SORTIE (JSON STRICT)
 # ============================================================
 # GENERATE
 # ============================================================
+import json
+import re  # ✅ OBLIGATOIRE
 
 def generate_numbers(entity_type, entity_id, year, period, frequency, force=False):
 
@@ -408,12 +410,10 @@ def generate_numbers(entity_type, entity_id, year, period, frequency, force=Fals
     try:
         clean = raw.strip()
 
-        # enlever ```json ... ```
         clean = re.sub(r"```json", "", clean)
         clean = re.sub(r"```", "", clean)
         clean = clean.strip()
 
-        # extraire JSON même si bruit
         match = re.search(r"\{.*\}", clean, re.DOTALL)
 
         if match:
@@ -421,9 +421,9 @@ def generate_numbers(entity_type, entity_id, year, period, frequency, force=Fals
 
         metrics = json.loads(clean).get("metrics", [])
 
-    except Exception:
+    except Exception as e:
         print("❌ RAW LLM:", raw)
-        print("❌ CLEANED:", clean)
+        print("❌ ERROR:", str(e))
         return {"status": "parse_error", "raw": raw}
 
     # ============================================================
