@@ -308,6 +308,47 @@ def delete_numbers_insight(insight_id: str):
         "insight_id": insight_id
     })
 
+def list_numbers_status(entity_type, frequency, year):
+
+    table = f"{BQ_PROJECT}.{BQ_DATASET}.V_NUMBERS_STATUS"
+
+    rows = query_bq(f"""
+        SELECT
+            entity_type,
+            entity_id,
+            entity_name,
+            year,
+            period,
+            frequency,
+            nb_numbers,
+            numbers_status
+        FROM `{table}`
+        WHERE entity_type = @entity_type
+        AND frequency = @frequency
+        AND year = @year
+        ORDER BY
+            CASE WHEN numbers_status = "MISSING" THEN 0 ELSE 1 END,
+            nb_numbers DESC
+    """, {
+        "entity_type": entity_type,
+        "frequency": frequency,
+        "year": year,
+    })
+
+    return [
+        {
+            "entity_type": r["entity_type"],
+            "entity_id": r["entity_id"],
+            "entity_name": r.get("entity_name"),
+            "year": r["year"],
+            "period": r["period"],
+            "frequency": r["frequency"],
+            "nb_numbers": r["nb_numbers"],
+            "numbers_status": r["numbers_status"],
+        }
+        for r in rows
+    ]
+
 
 # ============================================================
 # GET BY ID
