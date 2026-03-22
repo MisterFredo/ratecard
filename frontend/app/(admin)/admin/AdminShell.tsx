@@ -17,6 +17,7 @@ import {
   Link2,
   Database,
   Calendar,
+  BarChart3, // ✅ NEW
 } from "lucide-react";
 
 export default function AdminShell({
@@ -40,8 +41,27 @@ export default function AdminShell({
 
     { href: "/admin/search", label: "Search", icon: Search },
 
-    // ✅ Vectorisation
+    // =====================================================
+    // DATA LAYER
+    // =====================================================
+
     { href: "/admin/vector", label: "Vectorisation", icon: Database },
+
+    {
+      href: "/admin/radar",
+      label: "Radar",
+      icon: Calendar,
+    },
+
+    {
+      href: "/admin/numbers", // ✅ NEW
+      label: "Numbers",
+      icon: BarChart3,
+    },
+
+    // =====================================================
+    // DISTRIBUTION
+    // =====================================================
 
     {
       href: "/admin/linkedin/compose",
@@ -55,11 +75,9 @@ export default function AdminShell({
       icon: Mail,
     },
 
-    {
-      href: "/admin/radar",
-      label: "Radar",
-      icon: Calendar,
-    },
+    // =====================================================
+    // ENTITIES
+    // =====================================================
 
     { href: "/admin/company", label: "Sociétés", icon: Building2 },
 
