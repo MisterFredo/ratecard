@@ -173,21 +173,40 @@ def numbers_exists(entity_type, entity_id, year, period, frequency):
 # ============================================================
 # FETCH CHIFFRES (🔥 KEY)
 # ============================================================
-
 def _get_numbers_data(entity_type, entity_id, year, period, frequency):
 
     TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
+    VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 
     where_content = "FALSE"
 
     if entity_type == "topic":
-        where_content = "EXISTS (SELECT 1 FROM UNNEST(c.topics) t WHERE t.id_topic = @entity_id)"
+        where_content = """
+        EXISTS (
+            SELECT 1 FROM UNNEST(c.topics) t
+            WHERE t.id_topic = @entity_id
+        )
+        """
 
     elif entity_type == "company":
-        where_content = "EXISTS (SELECT 1 FROM UNNEST(c.companies) comp WHERE comp.id_company = @entity_id)"
+        where_content = """
+        EXISTS (
+            SELECT 1 FROM UNNEST(c.companies) comp
+            WHERE comp.id_company = @entity_id
+        )
+        """
 
     elif entity_type == "solution":
-        where_content = "EXISTS (SELECT 1 FROM UNNEST(c.solutions) s WHERE s.id_solution = @entity_id)"
+        where_content = """
+        EXISTS (
+            SELECT 1 FROM UNNEST(c.solutions) s
+            WHERE s.id_solution = @entity_id
+        )
+        """
+
+    # ============================================================
+    # DATE FILTER
+    # ============================================================
 
     if frequency == "WEEKLY":
         date_filter = "EXTRACT(ISOWEEK FROM c.published_at) = @period"
@@ -196,10 +215,16 @@ def _get_numbers_data(entity_type, entity_id, year, period, frequency):
     else:
         date_filter = "EXTRACT(MONTH FROM c.published_at) = @period"
 
+    # ============================================================
+    # QUERY (JOIN VIEW + TABLE)
+    # ============================================================
+
     rows = query_bq(f"""
         SELECT chiffre
-        FROM `{TABLE_CONTENT}` c,
-        UNNEST(c.CHIFFRES) AS chiffre
+        FROM `{VIEW_CONTENT}` c
+        JOIN `{TABLE_CONTENT}` raw
+          ON c.ID_CONTENT = raw.ID_CONTENT,
+        UNNEST(raw.CHIFFRES) AS chiffre
         WHERE {where_content}
         AND EXTRACT(YEAR FROM c.published_at) = @year
         AND {date_filter}
@@ -209,8 +234,29 @@ def _get_numbers_data(entity_type, entity_id, year, period, frequency):
         "period": period,
     })
 
-    return [r["chiffre"] for r in rows if r.get("chiffre")]
+    # ============================================================
+    # CLEAN / SAFE OUTPUT
+    # ============================================================
 
+    chiffres = []
+
+    for r in rows:
+        val = r.get("chiffre")
+
+        if not val:
+            continue
+
+        # sécurité type
+        if not isinstance(val, str):
+            val = str(val)
+
+        # nettoyage léger
+        val = val.strip()
+
+        if len(val) > 3:  # évite bruit type "10"
+            chiffres.append(val)
+
+    return chiffres
 
 # ============================================================
 # PROMPT (CONSOLIDATION)
@@ -321,20 +367,31 @@ def generate_numbers(entity_type, entity_id, year, period, frequency, force=Fals
     if not chiffres:
         return {"status": "no_content"}
 
+    # limite pour éviter explosion prompt
+    chiffres = chiffres[:200]
+
     prompt = _build_prompt(chiffres, year, period, frequency)
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.1,
-    )
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+        )
 
-    raw = response.choices[0].message.content
+        raw = response.choices[0].message.content
+
+    except Exception as e:
+        return {"status": "llm_error", "error": str(e)}
 
     try:
         metrics = json.loads(raw).get("metrics", [])
     except Exception:
-        return {"status": "error", "raw": raw}
+        print("❌ RAW LLM:", raw)
+        return {"status": "parse_error", "raw": raw}
+
+    if not metrics:
+        return {"status": "empty_metrics"}
 
     insight_id = create_numbers_insight({
         "entity_type": entity_type,
@@ -351,7 +408,6 @@ def generate_numbers(entity_type, entity_id, year, period, frequency, force=Fals
         "id_insight": insight_id,
         "metrics": metrics,
     }
-
 
 # ============================================================
 # DELETE
