@@ -216,21 +216,81 @@ def _get_numbers_data(entity_type, entity_id, year, period, frequency):
 
 def _build_prompt(chiffres, year, period, frequency):
 
-    chiffres_str = "\n".join([f"- {c}" for c in chiffres[:200]])
+    chiffres_str = "\n".join([f"- {c}" for c in chiffres[:300]])
+
+    if frequency == "WEEKLY":
+        period_label = f"Semaine {period} - {year}"
+    elif frequency == "QUARTERLY":
+        period_label = f"Trimestre {period} - {year}"
+    else:
+        period_label = f"Mois {period} - {year}"
 
     return f"""
-Tu es un analyste data spécialisé en marketing et médias.
+Tu es un analyste data senior spécialisé en marketing, retail media et adtech.
 
-Tu dois consolider des chiffres issus de plusieurs sources.
+Ton rôle est de transformer une liste brute de chiffres en indicateurs fiables et exploitables.
 
-RÈGLES :
-- regrouper les chiffres similaires
-- ignorer les chiffres isolés non significatifs
-- détecter les divergences
-- produire des valeurs représentatives
-- maximum 5 metrics
+=====================
+PÉRIODE ANALYSÉE
+=====================
+{period_label}
 
-FORMAT STRICT JSON :
+=====================
+CHIFFRES BRUTS
+=====================
+{chiffres_str}
+
+=====================
+MISSION
+=====================
+À partir de ces chiffres :
+
+1. Regroupe les chiffres similaires (même métrique, même logique)
+2. Ignore les valeurs isolées ou non représentatives
+3. Identifie les fourchettes réalistes quand il y a divergence
+4. Déduis une valeur centrale (médiane ou consensus)
+5. Évalue la robustesse du signal
+
+=====================
+RÈGLES STRICTES
+=====================
+
+- Maximum 5 metrics
+- Chaque metric doit représenter une réalité marché (pas un cas isolé)
+
+- Regroupement obligatoire :
+  → CPM, budgets, croissance, part de marché, etc.
+
+- Si plusieurs valeurs proches :
+  → calcule une fourchette + valeur centrale
+
+- Si valeurs contradictoires :
+  → indique une range large + confidence faible
+
+- Ignore :
+  → chiffres uniques non corroborés
+  → chiffres trop spécifiques (ex: un seul acteur)
+
+- Chaque metric doit contenir :
+
+  • label → nom clair (ex: "CPM retail media")
+  • value → valeur représentative (ex: "25€")
+  • range → fourchette (ex: "20€ - 30€")
+  • confidence → HIGH / MEDIUM / LOW
+  • sources → nombre de chiffres utilisés
+
+=====================
+STYLE
+=====================
+
+- factuel
+- synthétique
+- orienté décision
+- aucune paraphrase
+
+=====================
+FORMAT DE SORTIE (JSON STRICT)
+=====================
 
 {{
   "metrics": [
@@ -243,11 +303,7 @@ FORMAT STRICT JSON :
     }}
   ]
 }}
-
-CHIFFRES :
-{chiffres_str}
 """
-
 
 # ============================================================
 # GENERATE
