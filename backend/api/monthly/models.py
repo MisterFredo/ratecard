@@ -1,20 +1,19 @@
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List, Dict
-from datetime import datetime, date
+from typing import Optional, List
 
 
 # ============================================================
 # CORE OBJECT
 # ============================================================
 
-class MonthlyInsight:
+class RadarInsight:
     def __init__(
         self,
         id_insight: str,
         entity_type: str,
         entity_id: str,
         year: int,
-        month: int,
+        period: int,
+        frequency: str,  # WEEKLY / MONTHLY / QUARTERLY
         key_points: List[str],
         status: str,
         created_at: str,
@@ -25,7 +24,8 @@ class MonthlyInsight:
         self.entity_type = entity_type
         self.entity_id = entity_id
         self.year = year
-        self.month = month
+        self.period = period
+        self.frequency = frequency
         self.title = title
         self.key_points = key_points
         self.status = status
@@ -37,13 +37,14 @@ class MonthlyInsight:
 # INPUT (CREATE / UPDATE)
 # ============================================================
 
-class MonthlyInsightInput:
+class RadarInsightInput:
     def __init__(
         self,
         entity_type: str,
         entity_id: str,
         year: int,
-        month: int,
+        period: int,
+        frequency: str,
         key_points: Optional[List[str]] = None,
         title: Optional[str] = None,
         status: Optional[str] = "DRAFT",
@@ -51,7 +52,8 @@ class MonthlyInsightInput:
         self.entity_type = entity_type
         self.entity_id = entity_id
         self.year = year
-        self.month = month
+        self.period = period
+        self.frequency = frequency
         self.key_points = key_points or []
         self.title = title
         self.status = status
@@ -61,19 +63,21 @@ class MonthlyInsightInput:
 # GENERATION INPUT (LLM)
 # ============================================================
 
-class MonthlyInsightGenerationInput:
+class RadarInsightGenerationInput:
     def __init__(
         self,
         entity_type: str,
         entity_id: str,
         year: int,
-        month: int,
+        period: int,
+        frequency: str,
         force: bool = False,
     ):
         self.entity_type = entity_type
         self.entity_id = entity_id
         self.year = year
-        self.month = month
+        self.period = period
+        self.frequency = frequency
         self.force = force
 
 
@@ -81,7 +85,7 @@ class MonthlyInsightGenerationInput:
 # OUTPUT (STRUCTURÉ LLM)
 # ============================================================
 
-class MonthlyInsightOutput:
+class RadarInsightOutput:
     def __init__(
         self,
         key_points: List[str],
