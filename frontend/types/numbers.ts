@@ -7,6 +7,8 @@ export type NumbersItem = {
   period: number;
   frequency: string;
 
-  nb_contents: number;
+  nb_numbers: number;         // ✅ volume brut
+  nb_unique_numbers: number;  // ✅ diversité
+
   numbers_status: string;
 };
