@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from typing import List, Dict, Optional
 from core.radar.service import (
     get_radar,
     list_radar_insights,
