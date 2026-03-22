@@ -52,19 +52,26 @@ type Props = {
 };
 
 /* =========================================================
-   HELPERS
+   HELPERS (CLEAN)
 ========================================================= */
 
-function getRadarLabel(r: Radar) {
+function formatRadarLabel(r: Radar) {
   if (r.frequency === "MONTHLY") {
-    return `Mois ${r.period} · ${r.year}`;
+    const date = new Date(r.year, r.period - 1);
+    return new Intl.DateTimeFormat("fr-FR", {
+      month: "long",
+      year: "numeric",
+    }).format(date);
   }
+
   if (r.frequency === "QUARTERLY") {
-    return `Trimestre ${r.period} · ${r.year}`;
+    return `T${r.period} ${r.year}`;
   }
+
   if (r.frequency === "WEEKLY") {
-    return `Semaine ${r.period} · ${r.year}`;
+    return `Semaine ${r.period} ${r.year}`;
   }
+
   return "";
 }
 
@@ -128,19 +135,18 @@ export default function TopicDrawer({ id, onClose }: Props) {
   }, [id]);
 
   /* =========================================================
-     LOAD LAST RADAR
+     LOAD LAST RADAR (UPDATED)
   ========================================================= */
 
   useEffect(() => {
     async function loadRadar() {
       try {
         const res = await api.get(
-          `/radar/list?entity_type=topic&entity_id=${id}`
+          `/radar/latest?entity_type=topic&entity_id=${id}`
         );
 
-        if (res && res.length > 0) {
-          setLastRadar(res[0]); // 👉 le plus récent (déjà trié backend)
-        }
+        setLastRadar(res?.insight ?? null);
+
       } catch (e) {
         console.error("❌ Radar load error", e);
       }
@@ -196,7 +202,7 @@ export default function TopicDrawer({ id, onClose }: Props) {
       <div className="px-6 py-8 space-y-10">
 
         {/* =====================================================
-            RADAR (NOUVEAU)
+            RADAR
         ===================================================== */}
         {lastRadar && (
           <section className="space-y-3">
@@ -215,7 +221,7 @@ export default function TopicDrawer({ id, onClose }: Props) {
               "
             >
               <div className="text-xs text-gray-500 mb-1">
-                {getRadarLabel(lastRadar)}
+                {formatRadarLabel(lastRadar)}
               </div>
 
               <div className="text-sm font-medium text-gray-900 line-clamp-2">
@@ -230,7 +236,7 @@ export default function TopicDrawer({ id, onClose }: Props) {
         )}
 
         {/* =====================================================
-            FEED (INCHANGÉ)
+            FEED
         ===================================================== */}
         <section className="space-y-4">
           <h2 className="text-sm font-semibold uppercase text-gray-500">
