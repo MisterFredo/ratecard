@@ -7,11 +7,13 @@ export default function RadarTable({
   items,
   selected,
   onToggle,
+  onPreview,
   loading,
 }: {
   items: RadarItem[];
   selected: RadarItem[];
   onToggle: (item: RadarItem) => void;
+  onPreview: (item: RadarItem) => void;
   loading: boolean;
 }) {
 
@@ -20,7 +22,8 @@ export default function RadarTable({
       (s) =>
         s.entity_id === item.entity_id &&
         s.period === item.period &&
-        s.frequency === item.frequency
+        s.frequency === item.frequency &&
+        s.year === item.year
     );
   }
 
@@ -46,9 +49,7 @@ export default function RadarTable({
           item={item}
           selected={isSelected(item)}
           onToggle={() => onToggle(item)}
-          onPreview={() => {
-            console.log("preview", item);
-          }}
+          onPreview={() => onPreview(item)}
         />
       ))}
 
