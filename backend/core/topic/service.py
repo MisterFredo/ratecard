@@ -79,14 +79,33 @@ def list_topics():
             t.ID_TOPIC,
             t.LABEL,
             t.TOPIC_AXIS,
-            t.INSIGHT_FREQUENCY,  -- 🔥 NEW
+            t.INSIGHT_FREQUENCY,
 
             COALESCE(m.total, 0) AS NB_ANALYSES,
-            COALESCE(m.last_30_days, 0) AS DELTA_30D
+            COALESCE(m.last_30_days, 0) AS DELTA_30D,
+
+            -- 🔥 RADAR
+            r.ID_INSIGHT,
+            r.KEY_POINTS
 
         FROM {TABLE_TOPIC} t
+
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_TOPIC` m
           ON m.id_topic = t.ID_TOPIC
+
+        -- 🔥 LATEST RADAR PER TOPIC
+        LEFT JOIN (
+            SELECT *
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_RADAR`
+            WHERE STATUS = "GENERATED"
+
+            QUALIFY ROW_NUMBER() OVER (
+                PARTITION BY ENTITY_ID
+                ORDER BY YEAR DESC, PERIOD DESC
+            ) = 1
+        ) r
+          ON r.ENTITY_ID = t.ID_TOPIC
+          AND r.ENTITY_TYPE = "topic"
 
         WHERE COALESCE(t.IS_ACTIVE, TRUE) = TRUE
 
@@ -100,9 +119,15 @@ def list_topics():
             "id_topic": r["ID_TOPIC"],
             "label": r["LABEL"],
             "topic_axis": r.get("TOPIC_AXIS"),
-            "insight_frequency": r.get("INSIGHT_FREQUENCY"),  # 🔥 NEW
+            "insight_frequency": r.get("INSIGHT_FREQUENCY"),
             "nb_analyses": r["NB_ANALYSES"],
             "delta_30d": r["DELTA_30D"],
+
+            # 🔥 NEW
+            "last_radar": {
+                "id_insight": r["ID_INSIGHT"],
+                "key_points": r["KEY_POINTS"],
+            } if r.get("ID_INSIGHT") else None,
         }
         for r in rows
     ]
