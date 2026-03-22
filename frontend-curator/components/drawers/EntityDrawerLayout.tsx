@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 type Props = {
   children: React.ReactNode;
   onClose: () => void;
+  side?: "left" | "right"; // ✅ NEW
 };
 
 /* ========================================================= */
@@ -14,6 +15,7 @@ type Props = {
 export default function EntityDrawerLayout({
   children,
   onClose,
+  side = "left", // ✅ default
 }: Props) {
 
   const [isOpen, setIsOpen] = useState(false);
@@ -33,11 +35,26 @@ export default function EntityDrawerLayout({
   function handleClose() {
     setIsOpen(false);
 
-    // délai pour animation
     setTimeout(() => {
       onClose();
     }, 250);
   }
+
+  /* =========================================================
+     DYNAMIC CLASSES
+  ========================================================= */
+
+  const positionClass =
+    side === "left" ? "mr-auto" : "ml-auto";
+
+  const translateClass =
+    side === "left"
+      ? isOpen
+        ? "translate-x-0"
+        : "-translate-x-full"
+      : isOpen
+        ? "translate-x-0"
+        : "translate-x-full";
 
   /* =========================================================
      RENDER
@@ -46,23 +63,20 @@ export default function EntityDrawerLayout({
   return (
     <div className="fixed inset-0 z-[90] flex">
 
-      {/* =====================================================
-          OVERLAY
-      ===================================================== */}
+      {/* OVERLAY */}
       <div
         className="absolute inset-0 bg-black/30"
         onClick={handleClose}
       />
 
-      {/* =====================================================
-          DRAWER
-      ===================================================== */}
+      {/* DRAWER */}
       <aside
         className={`
-          relative mr-auto w-full md:w-[760px]
+          relative ${positionClass}
+          w-full md:w-[760px]
           bg-white shadow-xl overflow-y-auto
           transform transition-transform duration-300 ease-out
-          ${isOpen ? "translate-x-0" : "-translate-x-full"}
+          ${translateClass}
         `}
       >
         {children}
