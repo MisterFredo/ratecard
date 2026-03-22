@@ -1,6 +1,5 @@
 import uuid
 import json
-import re
 
 from datetime import datetime, timezone
 from typing import List, Dict
@@ -357,39 +356,21 @@ FORMAT DE SORTIE (JSON STRICT)
 # ============================================================
 # GENERATE
 # ============================================================
-import json
-import re  # ✅ OBLIGATOIRE
 
 def generate_numbers(entity_type, entity_id, year, period, frequency, force=False):
 
-    # ============================================================
-    # EXISTING CHECK
-    # ============================================================
-
     if not force and numbers_exists(entity_type, entity_id, year, period, frequency):
         return {"status": "exists"}
-
-    # ============================================================
-    # FETCH DATA
-    # ============================================================
 
     chiffres = _get_numbers_data(entity_type, entity_id, year, period, frequency)
 
     if not chiffres:
         return {"status": "no_content"}
 
-    # limiter taille prompt
+    # limite pour éviter explosion prompt
     chiffres = chiffres[:200]
 
-    # ============================================================
-    # PROMPT
-    # ============================================================
-
     prompt = _build_prompt(chiffres, year, period, frequency)
-
-    # ============================================================
-    # LLM CALL
-    # ============================================================
 
     try:
         response = client.chat.completions.create(
@@ -403,39 +384,14 @@ def generate_numbers(entity_type, entity_id, year, period, frequency, force=Fals
     except Exception as e:
         return {"status": "llm_error", "error": str(e)}
 
-    # ============================================================
-    # 🔥 CLEAN + PARSE JSON (FIX PRINCIPAL)
-    # ============================================================
-
     try:
-        clean = raw.strip()
-
-        clean = re.sub(r"```json", "", clean)
-        clean = re.sub(r"```", "", clean)
-        clean = clean.strip()
-
-        match = re.search(r"\{.*\}", clean, re.DOTALL)
-
-        if match:
-            clean = match.group(0)
-
-        metrics = json.loads(clean).get("metrics", [])
-
-    except Exception as e:
+        metrics = json.loads(raw).get("metrics", [])
+    except Exception:
         print("❌ RAW LLM:", raw)
-        print("❌ ERROR:", str(e))
         return {"status": "parse_error", "raw": raw}
-
-    # ============================================================
-    # VALIDATION
-    # ============================================================
 
     if not metrics:
         return {"status": "empty_metrics"}
-
-    # ============================================================
-    # INSERT
-    # ============================================================
 
     insight_id = create_numbers_insight({
         "entity_type": entity_type,
