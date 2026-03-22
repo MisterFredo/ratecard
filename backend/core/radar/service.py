@@ -388,16 +388,38 @@ def list_radar_status(entity_type, frequency, year):
     table = f"{BQ_PROJECT}.{BQ_DATASET}.V_RADAR_STATUS"
 
     rows = query_bq(f"""
-        SELECT *
+        SELECT
+            entity_type,
+            entity_id,
+            entity_name,
+            year,
+            period,
+            frequency,
+            nb_contents,
+            radar_status
         FROM `{table}`
         WHERE entity_type = @entity_type
         AND frequency = @frequency
         AND year = @year
-        ORDER BY nb_contents DESC
+        ORDER BY
+            CASE WHEN radar_status = "MISSING" THEN 0 ELSE 1 END,
+            nb_contents DESC
     """, {
         "entity_type": entity_type,
         "frequency": frequency,
         "year": year,
     })
 
-    return rows
+    return [
+        {
+            "entity_type": r["entity_type"],
+            "entity_id": r["entity_id"],
+            "entity_name": r.get("entity_name"),
+            "year": r["year"],
+            "period": r["period"],
+            "frequency": r["frequency"],
+            "nb_contents": r["nb_contents"],
+            "radar_status": r["radar_status"],
+        }
+        for r in rows
+    ]
