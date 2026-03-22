@@ -19,10 +19,11 @@ TABLE_TOPIC_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC_METRICS"
 # ============================================================
 
 ALLOWED_AXES = {"MEDIA", "RETAIL", "FOUNDATIONS"}
+ALLOWED_FREQUENCIES = {"WEEKLY", "MONTHLY", "QUARTERLY"}
 
 
 # ============================================================
-# CREATE TOPIC — DATA ONLY (LOAD JOB, NO STREAMING)
+# CREATE TOPIC
 # ============================================================
 def create_topic(data: TopicCreate) -> str:
 
@@ -31,6 +32,11 @@ def create_topic(data: TopicCreate) -> str:
 
     topic_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
+
+    insight_frequency = data.insight_frequency or "QUARTERLY"
+
+    if insight_frequency not in ALLOWED_FREQUENCIES:
+        raise ValueError("Invalid insight_frequency")
 
     row = [{
         "ID_TOPIC": topic_id,
@@ -43,6 +49,8 @@ def create_topic(data: TopicCreate) -> str:
 
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
+
+        "INSIGHT_FREQUENCY": insight_frequency,  # 🔥 NEW
 
         "CREATED_AT": now,
         "UPDATED_AT": now,
@@ -71,6 +79,7 @@ def list_topics():
             t.ID_TOPIC,
             t.LABEL,
             t.TOPIC_AXIS,
+            t.INSIGHT_FREQUENCY,  -- 🔥 NEW
 
             COALESCE(m.total, 0) AS NB_ANALYSES,
             COALESCE(m.last_30_days, 0) AS DELTA_30D
@@ -91,11 +100,13 @@ def list_topics():
             "id_topic": r["ID_TOPIC"],
             "label": r["LABEL"],
             "topic_axis": r.get("TOPIC_AXIS"),
+            "insight_frequency": r.get("INSIGHT_FREQUENCY"),  # 🔥 NEW
             "nb_analyses": r["NB_ANALYSES"],
             "delta_30d": r["DELTA_30D"],
         }
         for r in rows
     ]
+
 
 # ============================================================
 # GET ONE TOPIC
@@ -123,6 +134,7 @@ def get_topic(topic_id: str):
         "description": r.get("DESCRIPTION"),
         "seo_title": r.get("SEO_TITLE"),
         "seo_description": r.get("SEO_DESCRIPTION"),
+        "insight_frequency": r.get("INSIGHT_FREQUENCY"),  # 🔥 NEW
         "is_active": r.get("IS_ACTIVE", True),
         "created_at": r.get("CREATED_AT"),
         "updated_at": r.get("UPDATED_AT"),
@@ -130,7 +142,7 @@ def get_topic(topic_id: str):
 
 
 # ============================================================
-# UPDATE TOPIC — DATA + MEDIA (POST-CREATION)
+# UPDATE TOPIC
 # ============================================================
 def update_topic(id_topic: str, data: TopicUpdate) -> bool:
 
@@ -139,10 +151,15 @@ def update_topic(id_topic: str, data: TopicUpdate) -> bool:
     if not values:
         return False
 
-    # 🔒 validation forte axis
+    # 🔒 validation axis
     if "topic_axis" in values:
         if values["topic_axis"] not in ALLOWED_AXES:
             raise ValueError(f"Invalid topic_axis: {values['topic_axis']}")
+
+    # 🔒 validation frequency
+    if "insight_frequency" in values:
+        if values["insight_frequency"] not in ALLOWED_FREQUENCIES:
+            raise ValueError("Invalid insight_frequency")
 
     now = datetime.utcnow().isoformat()
 
@@ -155,6 +172,7 @@ def update_topic(id_topic: str, data: TopicUpdate) -> bool:
         "media_square_id": "MEDIA_SQUARE_ID",
         "media_rectangle_id": "MEDIA_RECTANGLE_ID",
         "is_active": "IS_ACTIVE",
+        "insight_frequency": "INSIGHT_FREQUENCY",  # 🔥 NEW
     }
 
     bq_values = {
