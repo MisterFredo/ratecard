@@ -22,6 +22,7 @@ type DrawerTypeRight =
   | "news"
   | "analysis"
   | "newsletter"
+  | "radar" // ✅ NEW
   | null;
 
 type DrawerMode = "silent" | "route";
@@ -43,7 +44,7 @@ type DrawerContextType = {
   ) => void;
 
   openRightDrawer: (
-    type: "news" | "analysis",
+    type: "news" | "analysis" | "radar", // ✅ updated
     id: string,
     mode?: DrawerMode
   ) => void;
@@ -106,7 +107,7 @@ export function DrawerProvider({
   ----------------------------- */
 
   function openRightDrawer(
-    type: "news" | "analysis",
+    type: "news" | "analysis" | "radar", // ✅ updated
     id: string,
     mode: DrawerMode = "silent"
   ) {
