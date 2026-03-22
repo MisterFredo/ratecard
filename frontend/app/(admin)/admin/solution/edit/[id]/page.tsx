@@ -22,21 +22,21 @@ export default function EditSolution({ params }: { params: { id: string } }) {
   const [content, setContent] = useState("");
   const [status, setStatus] =
     useState<"DRAFT" | "PUBLISHED">("DRAFT");
+
   const [idCompany, setIdCompany] =
     useState<string | null>(null);
 
+  const [insightFrequency, setInsightFrequency] =
+    useState("QUARTERLY");
+
   const [companies, setCompanies] = useState<Company[]>([]);
 
-  /* ---------------------------------------------------------
-     LOAD
-  --------------------------------------------------------- */
   useEffect(() => {
 
     async function load() {
 
       try {
 
-        // ✅ aligné avec router { status, solution }
         const res = await api.get(`/solution/${id}`);
         const sol = res.solution;
 
@@ -45,6 +45,7 @@ export default function EditSolution({ params }: { params: { id: string } }) {
         setContent(sol?.content || "");
         setStatus(sol?.status || "DRAFT");
         setIdCompany(sol?.id_company || null);
+        setInsightFrequency(sol?.insight_frequency || "QUARTERLY");
 
         const compRes = await api.get("/company/list");
         setCompanies(compRes.companies || []);
@@ -66,9 +67,6 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
   }, [id]);
 
-  /* ---------------------------------------------------------
-     SAVE
-  --------------------------------------------------------- */
   async function save() {
 
     try {
@@ -81,6 +79,7 @@ export default function EditSolution({ params }: { params: { id: string } }) {
         content: content || null,
         status,
         id_company: idCompany || null,
+        insight_frequency: insightFrequency,
       });
 
       alert("Solution mise à jour");
@@ -100,9 +99,6 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
   if (loading) return <p>Chargement…</p>;
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
     <div className="space-y-8">
 
@@ -147,6 +143,22 @@ export default function EditSolution({ params }: { params: { id: string } }) {
       />
 
       <HtmlEditor value={content} onChange={setContent} />
+
+      <div className="space-y-2">
+        <label className="block font-medium">
+          Fréquence des insights
+        </label>
+
+        <select
+          value={insightFrequency}
+          onChange={(e) => setInsightFrequency(e.target.value)}
+          className="border px-3 py-2 rounded w-full max-w-xs"
+        >
+          <option value="WEEKLY">Weekly</option>
+          <option value="MONTHLY">Monthly</option>
+          <option value="QUARTERLY">Quarterly</option>
+        </select>
+      </div>
 
       <select
         className="border p-2 rounded"
