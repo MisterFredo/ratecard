@@ -37,6 +37,9 @@ def _map_row(r: Dict) -> Dict:
         "status": r["STATUS"],
         "created_at": r["CREATED_AT"],
         "updated_at": r["UPDATED_AT"],
+
+        # ✅ STRUCTURÉ (pas formaté)
+        "date_key": f"{r['YEAR']}-{r['PERIOD']}",
     }
 
 
