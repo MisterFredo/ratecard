@@ -1,8 +1,9 @@
 import uuid
 import json
+
 from datetime import datetime, timezone
 from typing import List, Dict, Optional
-
+from google.cloud import bigquery
 from openai import OpenAI
 
 from config import BQ_PROJECT, BQ_DATASET
@@ -65,9 +66,9 @@ def create_monthly_insight(data: dict) -> str:
     job = client.load_table_from_json(
         row,
         TABLE,
-        job_config={
-            "write_disposition": "WRITE_APPEND"
-        },
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
     )
 
     job.result()
