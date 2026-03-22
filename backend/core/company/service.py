@@ -71,7 +71,7 @@ def list_companies():
             c.TYPE,
             CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
             c.MEDIA_LOGO_RECTANGLE_ID,
-            c.INSIGHT_FREQUENCY,  -- 🔥 NEW
+            c.INSIGHT_FREQUENCY,
 
             COALESCE(m.total, 0) AS NB_ANALYSES,
             COALESCE(m.last_30_days, 0) AS DELTA_30D,
@@ -86,12 +86,30 @@ def list_companies():
                 WHEN c.WIKI_CONTENT IS NOT NULL
                      AND TRIM(c.WIKI_CONTENT) != ""
                 THEN TRUE ELSE FALSE
-            END AS HAS_WIKI
+            END AS HAS_WIKI,
+
+            -- 🔥 RADAR
+            r.ID_INSIGHT,
+            r.KEY_POINTS
 
         FROM `{TABLE_COMPANY}` c
 
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY` m
           ON m.id_company = c.ID_COMPANY
+
+        -- 🔥 LATEST RADAR
+        LEFT JOIN (
+            SELECT *
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_RADAR`
+            WHERE STATUS = "GENERATED"
+
+            QUALIFY ROW_NUMBER() OVER (
+                PARTITION BY ENTITY_ID
+                ORDER BY YEAR DESC, PERIOD DESC
+            ) = 1
+        ) r
+          ON r.ENTITY_ID = c.ID_COMPANY
+          AND r.ENTITY_TYPE = "company"
 
         WHERE c.IS_ACTIVE = TRUE
 
@@ -107,15 +125,20 @@ def list_companies():
             "type": r.get("TYPE"),
             "is_partner": r["IS_PARTNER"],
             "media_logo_rectangle_id": r["MEDIA_LOGO_RECTANGLE_ID"],
-            "insight_frequency": r.get("INSIGHT_FREQUENCY"),  # 🔥 NEW
+            "insight_frequency": r.get("INSIGHT_FREQUENCY"),
             "nb_analyses": r["NB_ANALYSES"],
             "delta_30d": r["DELTA_30D"],
             "has_description": r["HAS_DESCRIPTION"],
             "has_wiki": r["HAS_WIKI"],
+
+            # 🔥 NEW
+            "last_radar": {
+                "id_insight": r["ID_INSIGHT"],
+                "key_points": r["KEY_POINTS"],
+            } if r.get("ID_INSIGHT") else None,
         }
         for r in rows
     ]
-
 
 def list_company_types():
 
