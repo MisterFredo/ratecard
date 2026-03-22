@@ -10,7 +10,7 @@ from core.digest.template_service import (
 
 from core.radar.service import (
     create_radar_insight,
-    get_radar_insight,
+    get_radar,
     list_radar_insights,
     update_radar_insight,
     delete_radar_insight,
