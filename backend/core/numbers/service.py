@@ -176,6 +176,8 @@ def numbers_exists(entity_type, entity_id, year, period, frequency):
 
 def _get_numbers_data(entity_type, entity_id, year, period, frequency):
 
+    TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
+
     where_content = "FALSE"
 
     if entity_type == "topic":
@@ -196,8 +198,8 @@ def _get_numbers_data(entity_type, entity_id, year, period, frequency):
 
     rows = query_bq(f"""
         SELECT chiffre
-        FROM `{VIEW_CONTENT}` c,
-        UNNEST(c.chiffres) AS chiffre
+        FROM `{TABLE_CONTENT}` c,
+        UNNEST(c.CHIFFRES) AS chiffre
         WHERE {where_content}
         AND EXTRACT(YEAR FROM c.published_at) = @year
         AND {date_filter}
