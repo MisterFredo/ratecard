@@ -30,6 +30,14 @@ type FeedItem = {
   news_type?: string | null;
 };
 
+type Radar = {
+  id_insight: string;
+  year: number;
+  period: number;
+  frequency: "WEEKLY" | "MONTHLY" | "QUARTERLY";
+  key_points: string[];
+};
+
 type SolutionData = {
   id_solution: string;
   name: string;
@@ -50,6 +58,30 @@ type Props = {
 };
 
 /* =========================================================
+   HELPERS
+========================================================= */
+
+function formatRadarLabel(r: Radar) {
+  if (r.frequency === "MONTHLY") {
+    const date = new Date(r.year, r.period - 1);
+    return new Intl.DateTimeFormat("fr-FR", {
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  }
+
+  if (r.frequency === "QUARTERLY") {
+    return `T${r.period} ${r.year}`;
+  }
+
+  if (r.frequency === "WEEKLY") {
+    return `Semaine ${r.period} ${r.year}`;
+  }
+
+  return "";
+}
+
+/* =========================================================
    COMPONENT
 ========================================================= */
 
@@ -68,8 +100,10 @@ export default function SolutionDrawer({ id, onClose }: Props) {
   const [offset, setOffset] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  const [lastRadar, setLastRadar] = useState<Radar | null>(null);
+
   /* =========================================================
-     CLOSE (IDENTIQUE)
+     CLOSE
   ========================================================= */
 
   function close() {
@@ -85,7 +119,7 @@ export default function SolutionDrawer({ id, onClose }: Props) {
   }
 
   /* =========================================================
-     LOAD INITIAL (IDENTIQUE)
+     LOAD DATA
   ========================================================= */
 
   useEffect(() => {
@@ -107,7 +141,27 @@ export default function SolutionDrawer({ id, onClose }: Props) {
   }, [id]);
 
   /* =========================================================
-     LOAD MORE (IDENTIQUE)
+     LOAD RADAR
+  ========================================================= */
+
+  useEffect(() => {
+    async function loadRadar() {
+      try {
+        const res = await api.get(
+          `/radar/latest?entity_type=solution&entity_id=${id}`
+        );
+
+        setLastRadar(res?.insight ?? null);
+      } catch (e) {
+        console.error("❌ Radar load error", e);
+      }
+    }
+
+    loadRadar();
+  }, [id]);
+
+  /* =========================================================
+     LOAD MORE
   ========================================================= */
 
   async function loadMore() {
@@ -133,14 +187,6 @@ export default function SolutionDrawer({ id, onClose }: Props) {
   if (!data) return null;
 
   /* =========================================================
-     DERIVED (IDENTIQUE)
-  ========================================================= */
-
-  const logoUrl = data.media_logo_rectangle_id
-    ? `${GCS_BASE_URL}/companies/${data.media_logo_rectangle_id}`
-    : null;
-
-  /* =========================================================
      RENDER
   ========================================================= */
 
@@ -161,6 +207,45 @@ export default function SolutionDrawer({ id, onClose }: Props) {
       {/* CONTENT */}
       <div className="px-6 py-8 space-y-10">
 
+        {/* =====================================================
+            RADAR
+        ===================================================== */}
+        {lastRadar && (
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold uppercase text-gray-500">
+              Veille
+            </h2>
+
+            <button
+              onClick={() =>
+                openRightDrawer("radar", lastRadar.id_insight)
+              }
+              className="
+                w-full text-left
+                p-4 rounded border border-gray-200
+                hover:bg-gray-50 transition
+              "
+            >
+              <div className="text-xs text-gray-500 mb-2">
+                {formatRadarLabel(lastRadar)}
+              </div>
+
+              <div className="text-sm font-medium text-gray-900 space-y-1">
+                {lastRadar.key_points?.slice(0, 2).map((p, i) => (
+                  <div key={i}>• {p}</div>
+                ))}
+              </div>
+
+              <div className="text-xs text-gray-400 mt-3">
+                Voir la veille complète →
+              </div>
+            </button>
+          </section>
+        )}
+
+        {/* =====================================================
+            FEED
+        ===================================================== */}
         <section className="space-y-4">
           <h2 className="text-sm font-semibold uppercase text-gray-500">
             Contenus liés
@@ -172,7 +257,6 @@ export default function SolutionDrawer({ id, onClose }: Props) {
             </p>
           ) : (
             <>
-              {/* 🔥 GROUPING PAR MOIS */}
               <FeedGroupedByMonth
                 items={items}
                 onClickItem={(item) =>
@@ -186,7 +270,6 @@ export default function SolutionDrawer({ id, onClose }: Props) {
                 }
               />
 
-              {/* LOAD MORE (IDENTIQUE) */}
               <div className="flex justify-center pt-4">
                 <button
                   onClick={loadMore}
