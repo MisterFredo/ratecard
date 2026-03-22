@@ -29,9 +29,14 @@ export default function RadarRow({
         onChange={onToggle}
       />
 
-      <div>{item.entity_id}</div>
+      <div className="flex flex-col">
+        <span>{item.entity_name || item.entity_id}</span>
+        <span className="text-xs text-gray-400">
+          {item.entity_type}
+        </span>
+      </div>
 
-      <div>{item.entity_name || item.entity_id}</div>
+      <div>{item.period}</div>
 
       <div>{item.nb_contents}</div>
 
