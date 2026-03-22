@@ -17,12 +17,20 @@ TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_COMPANY_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_METRICS"
 
 
+ALLOWED_FREQUENCIES = ["WEEKLY", "MONTHLY", "QUARTERLY"]
+
+
 # ============================================================
 # CREATE COMPANY
 # ============================================================
 def create_company(data: CompanyCreate) -> str:
     company_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
+
+    insight_frequency = data.insight_frequency or "QUARTERLY"
+
+    if insight_frequency not in ALLOWED_FREQUENCIES:
+        raise ValueError("Invalid insight_frequency")
 
     row = [{
         "ID_COMPANY": company_id,
@@ -33,6 +41,7 @@ def create_company(data: CompanyCreate) -> str:
         "LINKEDIN_URL": data.linkedin_url or None,
         "WEBSITE_URL": data.website_url or None,
         "IS_PARTNER": bool(data.is_partner),
+        "INSIGHT_FREQUENCY": insight_frequency,  # 🔥 NEW
         "CREATED_AT": now,
         "UPDATED_AT": now,
         "IS_ACTIVE": True,
@@ -62,6 +71,7 @@ def list_companies():
             c.TYPE,
             CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
             c.MEDIA_LOGO_RECTANGLE_ID,
+            c.INSIGHT_FREQUENCY,  -- 🔥 NEW
 
             COALESCE(m.total, 0) AS NB_ANALYSES,
             COALESCE(m.last_30_days, 0) AS DELTA_30D,
@@ -97,6 +107,7 @@ def list_companies():
             "type": r.get("TYPE"),
             "is_partner": r["IS_PARTNER"],
             "media_logo_rectangle_id": r["MEDIA_LOGO_RECTANGLE_ID"],
+            "insight_frequency": r.get("INSIGHT_FREQUENCY"),  # 🔥 NEW
             "nb_analyses": r["NB_ANALYSES"],
             "delta_30d": r["DELTA_30D"],
             "has_description": r["HAS_DESCRIPTION"],
@@ -104,6 +115,7 @@ def list_companies():
         }
         for r in rows
     ]
+
 
 def list_company_types():
 
@@ -159,7 +171,7 @@ def get_company(company_id: str):
         "wiki_updated_at": r.get("WIKI_UPDATED_AT"),
         "wiki_vectorised": r.get("WIKI_VECTORISED", False),
 
-        # Media (intact)
+        # Media
         "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID"),
 
         # Liens
@@ -169,6 +181,9 @@ def get_company(company_id: str):
         # Statut
         "is_partner": r.get("IS_PARTNER", False),
         "is_active": r.get("IS_ACTIVE", True),
+
+        # 🔥 NEW
+        "insight_frequency": r.get("INSIGHT_FREQUENCY"),
 
         # Dates
         "created_at": r.get("CREATED_AT"),
@@ -193,6 +208,7 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
         "website_url": "WEBSITE_URL",
         "is_partner": "IS_PARTNER",
         "wiki_content": "WIKI_CONTENT",
+        "insight_frequency": "INSIGHT_FREQUENCY",  # 🔥 NEW
     }
 
     bq_values = {
@@ -200,6 +216,11 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
         for k, v in values.items()
         if k in mapping
     }
+
+    # 🔥 validation
+    if "INSIGHT_FREQUENCY" in bq_values:
+        if bq_values["INSIGHT_FREQUENCY"] not in ALLOWED_FREQUENCIES:
+            raise ValueError("Invalid insight_frequency")
 
     if "WIKI_CONTENT" in bq_values:
         bq_values["WIKI_UPDATED_AT"] = datetime.utcnow().isoformat()
