@@ -15,12 +15,12 @@ export default function CreateTopic() {
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
 
+  const [insightFrequency, setInsightFrequency] =
+    useState("QUARTERLY");
+
   const [loading, setLoading] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
 
-  /* ---------------------------------------------------------
-     CREATE
-  --------------------------------------------------------- */
   async function save() {
 
     if (!label.trim()) {
@@ -38,6 +38,7 @@ export default function CreateTopic() {
         description: description || null,
         seo_title: seoTitle || null,
         seo_description: seoDescription || null,
+        insight_frequency: insightFrequency,
       });
 
       if (!res.id_topic) {
@@ -49,12 +50,12 @@ export default function CreateTopic() {
 
       alert("Topic créé avec succès");
 
-      // reset formulaire
       setLabel("");
       setTopicAxis("MEDIA");
       setDescription("");
       setSeoTitle("");
       setSeoDescription("");
+      setInsightFrequency("QUARTERLY");
 
     } catch (e) {
 
@@ -69,13 +70,9 @@ export default function CreateTopic() {
 
   }
 
-  /* ---------------------------------------------------------
-     UI
-  --------------------------------------------------------- */
   return (
     <div className="space-y-10">
 
-      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">
           Ajouter un topic
@@ -86,7 +83,6 @@ export default function CreateTopic() {
         </Link>
       </div>
 
-      {/* LABEL */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium">
           Label
@@ -99,7 +95,6 @@ export default function CreateTopic() {
         />
       </div>
 
-      {/* AXIS */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium">
           Axe du topic
@@ -128,7 +123,6 @@ export default function CreateTopic() {
         </select>
       </div>
 
-      {/* DESCRIPTION HTML */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium">
           Description éditoriale
@@ -140,7 +134,22 @@ export default function CreateTopic() {
         />
       </div>
 
-      {/* SEO */}
+      <div className="space-y-2 max-w-2xl">
+        <label className="block text-sm font-medium">
+          Fréquence des insights
+        </label>
+
+        <select
+          value={insightFrequency}
+          onChange={(e) => setInsightFrequency(e.target.value)}
+          className="border px-3 py-2 rounded w-full max-w-xs"
+        >
+          <option value="WEEKLY">Weekly</option>
+          <option value="MONTHLY">Monthly</option>
+          <option value="QUARTERLY">Quarterly</option>
+        </select>
+      </div>
+
       <div className="space-y-4 max-w-2xl">
 
         <div>
@@ -173,7 +182,6 @@ export default function CreateTopic() {
 
       </div>
 
-      {/* ACTION */}
       <button
         onClick={save}
         disabled={loading}
