@@ -68,12 +68,16 @@ def list_solutions():
             c.MEDIA_LOGO_RECTANGLE_ID,
             CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
             s.VECTORISE,
-            s.INSIGHT_FREQUENCY,  -- 🔥 NEW
+            s.INSIGHT_FREQUENCY,
             s.CREATED_AT,
             s.UPDATED_AT,
 
             COALESCE(st.total, 0) AS NB_ANALYSES,
-            COALESCE(st.last_30_days, 0) AS DELTA_30D
+            COALESCE(st.last_30_days, 0) AS DELTA_30D,
+
+            -- 🔥 RADAR
+            r.ID_INSIGHT,
+            r.KEY_POINTS
 
         FROM `{TABLE_SOLUTION}` s
 
@@ -82,6 +86,20 @@ def list_solutions():
 
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION` st
           ON st.id_solution = s.ID_SOLUTION
+
+        -- 🔥 LATEST RADAR
+        LEFT JOIN (
+            SELECT *
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_RADAR`
+            WHERE STATUS = "GENERATED"
+
+            QUALIFY ROW_NUMBER() OVER (
+                PARTITION BY ENTITY_TYPE, ENTITY_ID
+                ORDER BY YEAR DESC, PERIOD DESC
+            ) = 1
+        ) r
+          ON r.ENTITY_ID = s.ID_SOLUTION
+          AND r.ENTITY_TYPE = "solution"
 
         WHERE s.IS_ACTIVE = TRUE
 
@@ -100,15 +118,20 @@ def list_solutions():
             "media_logo_rectangle_id": r["MEDIA_LOGO_RECTANGLE_ID"],
             "is_partner": r["IS_PARTNER"],
             "vectorise": r["VECTORISE"],
-            "insight_frequency": r.get("INSIGHT_FREQUENCY"),  # 🔥 NEW
+            "insight_frequency": r.get("INSIGHT_FREQUENCY"),
             "created_at": r["CREATED_AT"],
             "updated_at": r["UPDATED_AT"],
             "nb_analyses": r["NB_ANALYSES"],
             "delta_30d": r["DELTA_30D"],
+
+            # 🔥 NEW
+            "last_radar": {
+                "id_insight": r["ID_INSIGHT"],
+                "key_points": r["KEY_POINTS"],
+            } if r.get("ID_INSIGHT") else None,
         }
         for r in rows
     ]
-
 
 # ============================================================
 # GET ONE SOLUTION
