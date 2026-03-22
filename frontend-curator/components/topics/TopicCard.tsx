@@ -9,6 +9,11 @@ type Props = {
 
   nbAnalyses?: number;
   delta30d?: number;
+
+  lastRadar?: {
+    id_insight: string;
+    key_points: string[];
+  };
 };
 
 export default function TopicCard({
@@ -16,10 +21,11 @@ export default function TopicCard({
   label,
   nbAnalyses,
   delta30d,
+  lastRadar,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const { openLeftDrawer } = useDrawer();
+  const { openLeftDrawer, openRightDrawer } = useDrawer();
 
   function handleClick() {
     openLeftDrawer("topic", id);
@@ -28,6 +34,11 @@ export default function TopicCard({
       `${pathname}?topic_id=${id}`,
       { scroll: false }
     );
+  }
+
+  function handleRadarClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    openRightDrawer("radar", lastRadar!.id_insight);
   }
 
   const isTrending =
@@ -50,23 +61,19 @@ export default function TopicCard({
       "
     >
       {/* =====================================================
-          TOP ROW (SIGNALS)
+          HEADER
       ===================================================== */}
       <div className="flex items-center justify-between mb-2">
-
-        {/* ACTIVITY */}
         {typeof nbAnalyses === "number" && (
           <span className="text-[11px] text-gray-400">
             {nbAnalyses} analyses
           </span>
         )}
 
-        {/* TREND */}
         {isTrending && (
           <span className="
             text-[10px] px-2 py-0.5 rounded-full
-            bg-orange-100 text-orange-600
-            font-medium
+            bg-orange-100 text-orange-600 font-medium
           ">
             +{delta30d}
           </span>
@@ -84,7 +91,40 @@ export default function TopicCard({
       </h3>
 
       {/* =====================================================
-          VISUAL BAR
+          RADAR PREVIEW (🔥 KEY FEATURE)
+      ===================================================== */}
+      {lastRadar?.key_points?.[0] && (
+        <div
+          onClick={handleRadarClick}
+          className="
+            mt-3 text-[12px] text-gray-600
+            line-clamp-2
+            group-hover:text-gray-800
+            transition
+          "
+        >
+          {lastRadar.key_points[0]}
+        </div>
+      )}
+
+      {/* =====================================================
+          CTA RADAR
+      ===================================================== */}
+      {lastRadar && (
+        <div
+          onClick={handleRadarClick}
+          className="
+            mt-2 text-[11px] text-gray-400
+            opacity-0 group-hover:opacity-100
+            transition
+          "
+        >
+          Voir la veille →
+        </div>
+      )}
+
+      {/* =====================================================
+          BAR
       ===================================================== */}
       {typeof nbAnalyses === "number" && (
         <div className="mt-4 h-[3px] w-full bg-gray-100 rounded overflow-hidden">
@@ -102,7 +142,7 @@ export default function TopicCard({
       )}
 
       {/* =====================================================
-          HOVER OVERLAY (SUBTLE)
+          HOVER EFFECT
       ===================================================== */}
       <div className="
         absolute inset-0 rounded-2xl
