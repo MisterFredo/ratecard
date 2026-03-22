@@ -15,6 +15,9 @@ TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 
 
+DEFAULT_FREQUENCY = "QUARTERLY"
+
+
 # ============================================================
 # CREATE SOLUTION
 # ============================================================
@@ -31,6 +34,7 @@ def create_solution(data: SolutionCreate) -> str:
         "CONTENT": data.content or None,
         "STATUS": data.status or "DRAFT",
         "VECTORISE": bool(data.vectorise),
+        "INSIGHT_FREQUENCY": DEFAULT_FREQUENCY,  # 🔥 NEW (LOCKED)
         "CREATED_AT": now,
         "UPDATED_AT": now,
         "IS_ACTIVE": True,
@@ -61,9 +65,10 @@ def list_solutions():
             s.STATUS,
             s.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
-            c.MEDIA_LOGO_RECTANGLE_ID AS MEDIA_LOGO_RECTANGLE_ID,  -- ✅ ALIGNÉ
-            CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER, 
+            c.MEDIA_LOGO_RECTANGLE_ID,
+            CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
             s.VECTORISE,
+            s.INSIGHT_FREQUENCY,  -- 🔥 NEW
             s.CREATED_AT,
             s.UPDATED_AT,
 
@@ -92,18 +97,18 @@ def list_solutions():
             "status": r["STATUS"],
             "id_company": r["ID_COMPANY"],
             "company_name": r["COMPANY_NAME"],
-            "media_logo_rectangle_id": r["MEDIA_LOGO_RECTANGLE_ID"],  # ✅ FIX
-            "is_partner": r["IS_PARTNER"], 
+            "media_logo_rectangle_id": r["MEDIA_LOGO_RECTANGLE_ID"],
+            "is_partner": r["IS_PARTNER"],
             "vectorise": r["VECTORISE"],
+            "insight_frequency": r.get("INSIGHT_FREQUENCY"),  # 🔥 NEW
             "created_at": r["CREATED_AT"],
             "updated_at": r["UPDATED_AT"],
-
-            # ✅ NEW (non breaking)
             "nb_analyses": r["NB_ANALYSES"],
             "delta_30d": r["DELTA_30D"],
         }
         for r in rows
     ]
+
 
 # ============================================================
 # GET ONE SOLUTION
@@ -119,6 +124,7 @@ def get_solution(id_solution: str):
             s.CONTENT,
             s.STATUS,
             s.VECTORISE,
+            s.INSIGHT_FREQUENCY,  -- 🔥 NEW
             s.CREATED_AT,
             s.UPDATED_AT,
             c.NAME AS COMPANY_NAME
@@ -145,6 +151,7 @@ def get_solution(id_solution: str):
         "content": r["CONTENT"],
         "status": r["STATUS"],
         "vectorise": r["VECTORISE"],
+        "insight_frequency": r.get("INSIGHT_FREQUENCY"),  # 🔥 NEW
         "created_at": r["CREATED_AT"],
         "updated_at": r["UPDATED_AT"],
     }
@@ -167,6 +174,7 @@ def update_solution(id_solution: str, data: SolutionUpdate) -> bool:
         "content": "CONTENT",
         "status": "STATUS",
         "vectorise": "VECTORISE",
+        # 🚫 PAS DE insight_frequency volontairement
     }
 
     mapped = {
