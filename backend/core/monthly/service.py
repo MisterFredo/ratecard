@@ -265,6 +265,10 @@ RÈGLES STRICTES
 - Ne commence PAS un point par un nom d’entreprise
 - Ne te focalise PAS sur un acteur unique
 
+- Chaque point doit exprimer un changement clair du marché
+- Évite les formulations vagues (ex : "tendance", "évolution", "croissance")
+- Privilégie des formulations affirmées et structurantes
+
 - Mets en avant :
   • évolutions de marché  
   • signaux faibles  
@@ -292,6 +296,7 @@ FORMAT DE SORTIE (JSON STRICT)
   ]
 }}
 """
+
 # ============================================================
 # GENERATE
 # ============================================================
