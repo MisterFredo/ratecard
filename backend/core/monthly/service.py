@@ -315,3 +315,16 @@ def generate_monthly_insight(entity_type, entity_id, year, month, force=False):
         "id_insight": insight_id,
         "key_points": key_points,
     }
+
+# ============================================================
+# DELETE
+# ============================================================
+
+def delete_monthly_insight(insight_id: str):
+
+    query_bq(f"""
+        DELETE FROM `{TABLE}`
+        WHERE ID_INSIGHT = @insight_id
+    """, {
+        "insight_id": insight_id
+    })
