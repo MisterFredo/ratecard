@@ -82,7 +82,7 @@ def create_radar_insight(data: dict) -> str:
 # GET / LIST
 # ============================================================
 
-def get_monthly_insight(entity_type, entity_id, year, month):
+def get_radar(entity_type, entity_id, year, period, frequency):
 
     rows = query_bq(f"""
         SELECT *
@@ -90,26 +90,28 @@ def get_monthly_insight(entity_type, entity_id, year, month):
         WHERE ENTITY_TYPE = @entity_type
         AND ENTITY_ID = @entity_id
         AND YEAR = @year
-        AND MONTH = @month
+        AND PERIOD = @period
+        AND FREQUENCY = @frequency
         LIMIT 1
     """, {
         "entity_type": entity_type,
         "entity_id": entity_id,
         "year": year,
-        "month": month,
+        "period": period,
+        "frequency": frequency,
     })
 
     return _map_row(rows[0]) if rows else None
 
 
-def list_monthly_insights(entity_type, entity_id):
+def list_radar_insights(entity_type, entity_id):
 
     rows = query_bq(f"""
         SELECT *
         FROM `{TABLE}`
         WHERE ENTITY_TYPE = @entity_type
         AND ENTITY_ID = @entity_id
-        ORDER BY YEAR DESC, MONTH DESC
+        ORDER BY YEAR DESC, PERIOD DESC
     """, {
         "entity_type": entity_type,
         "entity_id": entity_id,
@@ -122,43 +124,33 @@ def list_monthly_insights(entity_type, entity_id):
 # UPDATE
 # ============================================================
 
-def update_monthly_insight(insight_id: str, data: dict):
+def update_radar(entity_type, entity_id, year, period, frequency, status):
 
-    client = get_bigquery_client()
-
-    query = f"""
+    query_bq(f"""
         UPDATE `{TABLE}`
         SET
-            TITLE = @title,
-            KEY_POINTS = @key_points,
             STATUS = @status,
             UPDATED_AT = CURRENT_TIMESTAMP()
-        WHERE ID_INSIGHT = @insight_id
-    """
-
-    job_config = {
-        "query_parameters": [
-            {"name": "insight_id", "parameterType": {"type": "STRING"}, "parameterValue": {"value": insight_id}},
-            {"name": "title", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.get("title")}},
-            {
-                "name": "key_points",
-                "parameterType": {"type": "ARRAY", "arrayType": {"type": "STRING"}},
-                "parameterValue": {
-                    "arrayValues": [{"value": v} for v in data.get("key_points", [])]
-                },
-            },
-            {"name": "status", "parameterType": {"type": "STRING"}, "parameterValue": {"value": data.get("status", "DRAFT")}},
-        ]
-    }
-
-    client.query(query, job_config=job_config).result()
+        WHERE ENTITY_TYPE = @entity_type
+        AND ENTITY_ID = @entity_id
+        AND YEAR = @year
+        AND PERIOD = @period
+        AND FREQUENCY = @frequency
+    """, {
+        "entity_type": entity_type,
+        "entity_id": entity_id,
+        "year": year,
+        "period": period,
+        "frequency": frequency,
+        "status": status,
+    })
 
 
 # ============================================================
 # CHECK EXISTING
 # ============================================================
 
-def monthly_insight_exists(entity_type, entity_id, year, month):
+def radar_exists(entity_type, entity_id, year, period, frequency):
 
     rows = query_bq(f"""
         SELECT 1
@@ -166,13 +158,15 @@ def monthly_insight_exists(entity_type, entity_id, year, month):
         WHERE ENTITY_TYPE = @entity_type
         AND ENTITY_ID = @entity_id
         AND YEAR = @year
-        AND MONTH = @month
+        AND PERIOD = @period
+        AND FREQUENCY = @frequency
         LIMIT 1
     """, {
         "entity_type": entity_type,
         "entity_id": entity_id,
         "year": year,
-        "month": month,
+        "period": period,
+        "frequency": frequency,
     })
 
     return len(rows) > 0
@@ -182,7 +176,7 @@ def monthly_insight_exists(entity_type, entity_id, year, month):
 # FETCH CONTENT
 # ============================================================
 
-def _get_monthly_content(entity_type, entity_id, year, month):
+def _get_radar_content(entity_type, entity_id, year, period, frequency):
 
     where_news = "FALSE"
     where_content = "FALSE"
@@ -198,12 +192,24 @@ def _get_monthly_content(entity_type, entity_id, year, month):
     elif entity_type == "solution":
         where_content = "EXISTS (SELECT 1 FROM UNNEST(c.solutions) s WHERE s.id_solution = @entity_id)"
 
+    if frequency == "WEEKLY":
+        date_filter_news = "EXTRACT(ISOWEEK FROM n.published_at) = @period"
+        date_filter_content = "EXTRACT(ISOWEEK FROM c.published_at) = @period"
+
+    elif frequency == "QUARTERLY":
+        date_filter_news = "EXTRACT(QUARTER FROM n.published_at) = @period"
+        date_filter_content = "EXTRACT(QUARTER FROM c.published_at) = @period"
+
+    else:
+        date_filter_news = "EXTRACT(MONTH FROM n.published_at) = @period"
+        date_filter_content = "EXTRACT(MONTH FROM c.published_at) = @period"
+
     rows = query_bq(f"""
         SELECT title, excerpt
         FROM `{VIEW_NEWS}` n
         WHERE {where_news}
         AND EXTRACT(YEAR FROM n.published_at) = @year
-        AND EXTRACT(MONTH FROM n.published_at) = @month
+        AND {date_filter_news}
 
         UNION ALL
 
@@ -211,11 +217,11 @@ def _get_monthly_content(entity_type, entity_id, year, month):
         FROM `{VIEW_CONTENT}` c
         WHERE {where_content}
         AND EXTRACT(YEAR FROM c.published_at) = @year
-        AND EXTRACT(MONTH FROM c.published_at) = @month
+        AND {date_filter_content}
     """, {
         "entity_id": entity_id,
         "year": year,
-        "month": month,
+        "period": period,
     })
 
     return rows
@@ -323,17 +329,17 @@ FORMAT DE SORTIE (JSON STRICT)
 # GENERATE
 # ============================================================
 
-def generate_monthly_insight(entity_type, entity_id, year, month, force=False):
+def generate_radar(entity_type, entity_id, year, period, frequency, force=False):
 
-    if not force and monthly_insight_exists(entity_type, entity_id, year, month):
+    if not force and radar_exists(entity_type, entity_id, year, period, frequency):
         return {"status": "exists"}
 
-    contents = _get_monthly_content(entity_type, entity_id, year, month)
+    contents = _get_radar_content(entity_type, entity_id, year, period, frequency)
 
     if not contents:
         return {"status": "no_content"}
 
-    prompt = _build_prompt(contents)
+    prompt = _build_prompt(contents, frequency, year, period)
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -348,11 +354,12 @@ def generate_monthly_insight(entity_type, entity_id, year, month, force=False):
     except Exception:
         return {"status": "error", "raw": raw}
 
-    insight_id = create_monthly_insight({
+    insight_id = create_radar_insight({
         "entity_type": entity_type,
         "entity_id": entity_id,
         "year": year,
-        "month": month,
+        "period": period,
+        "frequency": frequency,
         "key_points": key_points,
         "status": "GENERATED",
     })
@@ -367,7 +374,7 @@ def generate_monthly_insight(entity_type, entity_id, year, month, force=False):
 # DELETE
 # ============================================================
 
-def delete_monthly_insight(insight_id: str):
+def delete_radar_insight(insight_id: str):
 
     query_bq(f"""
         DELETE FROM `{TABLE}`
@@ -375,3 +382,20 @@ def delete_monthly_insight(insight_id: str):
     """, {
         "insight_id": insight_id
     })
+
+def list_radar_status(entity_type, frequency, year):
+
+    rows = query_bq(f"""
+        SELECT *
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_RADAR_STATUS}`
+        WHERE entity_type = @entity_type
+        AND frequency = @frequency
+        AND year = @year
+        ORDER BY nb_contents DESC
+    """, {
+        "entity_type": entity_type,
+        "frequency": frequency,
+        "year": year,
+    })
+
+    return rows
