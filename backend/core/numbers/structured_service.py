@@ -64,16 +64,18 @@ def create_structured_number(
     value: str,
     unit: str,
     context: str,
-    topic_ids: List[str] = [],
+    topic_labels: List[str] = [],  # 🔥 labels venant du front
 ):
     import uuid
 
     id_number = str(uuid.uuid4())
-    now = _now()
 
-    # ============================
-    # INSERT NUMBER
-    # ============================
+    VIEW = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
+    TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBER_TOPIC"
+
+    # ============================================================
+    # 1. INSERT NUMBER
+    # ============================================================
 
     query_bq(f"""
         INSERT INTO `{TABLE}`
@@ -84,36 +86,65 @@ def create_structured_number(
         "id_number": id_number,
         "id_content": id_content,
         "label": label,
-        "value": float(value) if value not in (None, "", "null") else None,  # 🔥 FIX
+        "value": float(value) if value not in (None, "", "null") else None,  # 🔥 SAFE
         "unit": unit,
         "context": context,
     })
 
-    # ============================
-    # INSERT TOPICS (🔥 NEW)
-    # ============================
+    # ============================================================
+    # 2. GET TOPICS FROM VIEW
+    # ============================================================
 
-    if topic_ids:
+    rows = query_bq(f"""
+        SELECT topics
+        FROM `{VIEW}`
+        WHERE id_content = @id_content
+        LIMIT 1
+    """, {
+        "id_content": id_content
+    })
 
-        rows = [
+    if not rows:
+        return
+
+    topics = rows[0].get("topics") or []
+
+    # ============================================================
+    # 3. FILTER TOPICS (🔥 clé)
+    # ============================================================
+
+    # si aucun filtre → tous les topics
+    if topic_labels:
+        topics = [
+            t for t in topics
+            if t["label"] in topic_labels
+        ]
+
+    # ============================================================
+    # 4. INSERT MAPPING NUMBER → TOPIC
+    # ============================================================
+
+    if topics:
+
+        rows_to_insert = [
             {
                 "ID_NUMBER": id_number,
-                "ID_TOPIC": tid,
-                "CREATED_AT": now,
+                "ID_TOPIC": t["id_topic"],
+                "CREATED_AT": datetime.now(timezone.utc).isoformat(),
             }
-            for tid in set(topic_ids)
-            if tid
+            for t in topics
         ]
 
         client = get_bigquery_client()
 
         client.load_table_from_json(
-            rows,
-            f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBER_TOPIC",
+            rows_to_insert,
+            TABLE_TOPIC,
             job_config=bigquery.LoadJobConfig(
                 write_disposition="WRITE_APPEND"
             ),
         ).result()
+
 
 def get_topics_by_content(id_content: str):
 
