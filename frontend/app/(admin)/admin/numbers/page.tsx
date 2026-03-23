@@ -308,8 +308,10 @@ export default function NumbersPage() {
       ========================================================= */}
 
       {tab === "raw" && (
-        <NumbersManualCreate />
-        <NumbersRawPanel />
+        <>
+          <NumbersManualCreate />
+          <NumbersRawPanel />
+        </>
       )}
 
     </div>
