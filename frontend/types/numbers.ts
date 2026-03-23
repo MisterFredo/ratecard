@@ -12,3 +12,18 @@ export type NumbersItem = {
 
   numbers_status: string;
 };
+
+
+type NumberItem = {
+  id_content: string;
+  label: string;
+  value: string;
+  unit: string;
+  context: string;
+
+  topics?: {
+    id: string;
+    label: string;
+    checked: boolean;
+  }[];
+};
