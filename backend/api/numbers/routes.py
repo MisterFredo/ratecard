@@ -11,7 +11,7 @@ from core.numbers.service import (
     delete_numbers_insight,
 )
 
-from core.numbers_structured.service import (
+from core.numbers.structured_service import (
     list_pending_numbers,
     update_structured_number,
     bulk_validate_numbers,
