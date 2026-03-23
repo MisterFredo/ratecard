@@ -27,6 +27,14 @@ type Props = {
   onChange: (item: RawNumberItem) => void; // 🔥 important
 };
 
+function updateLocal(updated: NumberItem) {
+  setItems((prev) =>
+    prev.map((i) =>
+      getId(i) === getId(updated) ? updated : i
+    )
+  );
+}
+
 /* ========================================================= */
 
 export default function NumbersRawTable({
