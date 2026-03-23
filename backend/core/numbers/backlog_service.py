@@ -136,3 +136,6 @@ Topics : {row["topics"]}
 Companies : {row["companies"]}
 Solutions : {row["solutions"]}
 """
+
+Retourne STRICTEMENT un JSON valide.
+Aucun texte avant ou après.
