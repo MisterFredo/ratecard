@@ -3,7 +3,6 @@ from typing import List, Dict
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 
-
 def get_numbers_backlog(limit: int = 100) -> List[Dict]:
 
     TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
