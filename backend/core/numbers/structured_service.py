@@ -61,34 +61,71 @@ def list_numbers_by_status(status: str, limit: int = 200) -> List[Dict]:
 def create_structured_number(
     id_content: str,
     label: str,
-    value: Optional[float],
-    unit: Optional[str],
-    context: Optional[str],
+    value: str,
+    unit: str,
+    context: str,
+    topic_ids: List[str] = [],
 ):
+    import uuid
 
-    client = get_bigquery_client()
+    id_number = str(uuid.uuid4())
+    now = _now()
 
-    row = [{
-        "ID_NUMBER": str(uuid.uuid4()),
-        "ID_CONTENT": id_content,
-        "LABEL": label,
-        "VALUE": value,
-        "UNIT": unit,
-        "CONTEXT": context,
-        "STATUS": "VALIDATED",  # 🔥 direct validé (logique futur)
-        "CREATED_AT": _now(),
-        "UPDATED_AT": _now(),
-    }]
+    # ============================
+    # INSERT NUMBER
+    # ============================
 
-    job = client.load_table_from_json(
-        row,
-        TABLE,
-        job_config=bigquery.LoadJobConfig(
-            write_disposition="WRITE_APPEND"
-        ),
-    )
+    query_bq(f"""
+        INSERT INTO `{TABLE}`
+        (ID_NUMBER, ID_CONTENT, LABEL, VALUE, UNIT, CONTEXT, STATUS, CREATED_AT, UPDATED_AT)
+        VALUES
+        (@id_number, @id_content, @label, @value, @unit, @context, 'VALIDATED', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP())
+    """, {
+        "id_number": id_number,
+        "id_content": id_content,
+        "label": label,
+        "value": value,
+        "unit": unit,
+        "context": context,
+    })
 
-    job.result()
+    # ============================
+    # INSERT TOPICS (🔥 NEW)
+    # ============================
+
+    if topic_ids:
+
+        rows = [
+            {
+                "ID_NUMBER": id_number,
+                "ID_TOPIC": tid,
+                "CREATED_AT": now,
+            }
+            for tid in set(topic_ids)
+            if tid
+        ]
+
+        client = get_bigquery_client()
+
+        client.load_table_from_json(
+            rows,
+            f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBER_TOPIC",
+            job_config=bigquery.LoadJobConfig(
+                write_disposition="WRITE_APPEND"
+            ),
+        ).result()
+
+def get_topics_by_content(id_content: str):
+
+    rows = query_bq(f"""
+        SELECT ID_TOPIC
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC`
+        WHERE ID_CONTENT = @id_content
+    """, {
+        "id_content": id_content
+    })
+
+    return [r["ID_TOPIC"] for r in rows]
 
 
 # ============================================================
