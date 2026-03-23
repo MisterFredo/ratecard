@@ -207,6 +207,7 @@ export default function NumbersRawPanel() {
         getId={getId}
         onToggle={toggle}
         onSave={save}
+        onChange={updateLocal} // 🔥 AJOUT ICI
       />
 
     </div>
