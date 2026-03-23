@@ -29,6 +29,11 @@ export default function NumbersManualCreate() {
 
   const [loading, setLoading] = useState(false);
 
+  // 🔥 NEW — toggle sections
+  const [openTopics, setOpenTopics] = useState(false);
+  const [openCompanies, setOpenCompanies] = useState(false);
+  const [openSolutions, setOpenSolutions] = useState(false);
+
   /* =========================================================
      LOAD OPTIONS
   ========================================================= */
@@ -185,7 +190,6 @@ export default function NumbersManualCreate() {
           className="border p-2"
         >
           <option value="">Source (optionnel)</option>
-
           {sources.map((s) => (
             <option key={s.id} value={s.id}>
               {s.label}
@@ -198,67 +202,85 @@ export default function NumbersManualCreate() {
       {/* ================== TOPICS ================== */}
 
       <div>
-        <p className="text-xs text-gray-500 mb-1">Topics</p>
-        <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setOpenTopics(!openTopics)}
+          className="text-xs text-gray-500"
+        >
+          {openTopics ? "▼ Topics" : "▶ Topics"}
+        </button>
 
-          {topics.map((t) => (
-            <label key={t.id} className="text-xs flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={selectedTopics.includes(t.id)}
-                onChange={() =>
-                  toggle(selectedTopics, setSelectedTopics, t.id)
-                }
-              />
-              {t.label}
-            </label>
-          ))}
-
-        </div>
+        {openTopics && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {topics.map((t) => (
+              <label key={t.id} className="text-xs flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  checked={selectedTopics.includes(t.id)}
+                  onChange={() =>
+                    toggle(selectedTopics, setSelectedTopics, t.id)
+                  }
+                />
+                {t.label}
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ================== COMPANIES ================== */}
 
       <div>
-        <p className="text-xs text-gray-500 mb-1">Companies</p>
-        <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setOpenCompanies(!openCompanies)}
+          className="text-xs text-gray-500"
+        >
+          {openCompanies ? "▼ Companies" : "▶ Companies"}
+        </button>
 
-          {companies.map((c) => (
-            <label key={c.id} className="text-xs flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={selectedCompanies.includes(c.id)}
-                onChange={() =>
-                  toggle(selectedCompanies, setSelectedCompanies, c.id)
-                }
-              />
-              {c.label}
-            </label>
-          ))}
-
-        </div>
+        {openCompanies && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {companies.map((c) => (
+              <label key={c.id} className="text-xs flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  checked={selectedCompanies.includes(c.id)}
+                  onChange={() =>
+                    toggle(selectedCompanies, setSelectedCompanies, c.id)
+                  }
+                />
+                {c.label}
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ================== SOLUTIONS ================== */}
 
       <div>
-        <p className="text-xs text-gray-500 mb-1">Solutions</p>
-        <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setOpenSolutions(!openSolutions)}
+          className="text-xs text-gray-500"
+        >
+          {openSolutions ? "▼ Solutions" : "▶ Solutions"}
+        </button>
 
-          {solutions.map((s) => (
-            <label key={s.id} className="text-xs flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={selectedSolutions.includes(s.id)}
-                onChange={() =>
-                  toggle(selectedSolutions, setSelectedSolutions, s.id)
-                }
-              />
-              {s.label}
-            </label>
-          ))}
-
-        </div>
+        {openSolutions && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {solutions.map((s) => (
+              <label key={s.id} className="text-xs flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  checked={selectedSolutions.includes(s.id)}
+                  onChange={() =>
+                    toggle(selectedSolutions, setSelectedSolutions, s.id)
+                  }
+                />
+                {s.label}
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ================== ACTION ================== */}
