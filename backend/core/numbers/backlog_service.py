@@ -12,42 +12,56 @@ def get_numbers_backlog(limit: int = 100) -> List[Dict]:
     TABLE_COMPANY_REF = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
     TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_SOLUTION"
     TABLE_SOLUTION_REF = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
+    TABLE_BACKLOG = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_BACKLOG"
 
     rows = query_bq(f"""
-        SELECT
-            c.ID_CONTENT AS id_content,
-            c.SOURCE_DATE AS source_date,
-            chiffre,
+        WITH base AS (
 
-            IFNULL(STRING_AGG(DISTINCT t.LABEL), "Non précisé") AS topics,
-            IFNULL(STRING_AGG(DISTINCT comp.NAME), "Non précisé") AS companies,
-            IFNULL(STRING_AGG(DISTINCT sol.NAME), "Non précisé") AS solutions
+            SELECT
+                c.ID_CONTENT AS id_content,
+                c.SOURCE_DATE AS source_date,
+                chiffre,
 
-        FROM `{TABLE_CONTENT}` c
+                IFNULL(STRING_AGG(DISTINCT t.LABEL), "Non précisé") AS topics,
+                IFNULL(STRING_AGG(DISTINCT comp.NAME), "Non précisé") AS companies,
+                IFNULL(STRING_AGG(DISTINCT sol.NAME), "Non précisé") AS solutions
 
-        LEFT JOIN UNNEST(c.CHIFFRES) AS chiffre
+            FROM `{TABLE_CONTENT}` c
 
-        LEFT JOIN `{TABLE_TOPIC}` ct
-          ON c.ID_CONTENT = ct.ID_CONTENT
-        LEFT JOIN `{TABLE_TOPIC_REF}` t
-          ON ct.ID_TOPIC = t.ID_TOPIC
+            LEFT JOIN UNNEST(c.CHIFFRES) AS chiffre
 
-        LEFT JOIN `{TABLE_COMPANY}` cc
-          ON c.ID_CONTENT = cc.ID_CONTENT
-        LEFT JOIN `{TABLE_COMPANY_REF}` comp
-          ON cc.ID_COMPANY = comp.ID_COMPANY
+            LEFT JOIN `{TABLE_TOPIC}` ct
+              ON c.ID_CONTENT = ct.ID_CONTENT
+            LEFT JOIN `{TABLE_TOPIC_REF}` t
+              ON ct.ID_TOPIC = t.ID_TOPIC
 
-        LEFT JOIN `{TABLE_SOLUTION}` cs
-          ON c.ID_CONTENT = cs.ID_CONTENT
-        LEFT JOIN `{TABLE_SOLUTION_REF}` sol
-          ON cs.ID_SOLUTION = sol.ID_SOLUTION
+            LEFT JOIN `{TABLE_COMPANY}` cc
+              ON c.ID_CONTENT = cc.ID_CONTENT
+            LEFT JOIN `{TABLE_COMPANY_REF}` comp
+              ON cc.ID_COMPANY = comp.ID_COMPANY
 
-        WHERE chiffre IS NOT NULL
+            LEFT JOIN `{TABLE_SOLUTION}` cs
+              ON c.ID_CONTENT = cs.ID_CONTENT
+            LEFT JOIN `{TABLE_SOLUTION_REF}` sol
+              ON cs.ID_SOLUTION = sol.ID_SOLUTION
 
-        GROUP BY
-            id_content,
-            source_date,
-            chiffre
+            WHERE chiffre IS NOT NULL
+
+            GROUP BY
+                id_content,
+                source_date,
+                chiffre
+        )
+
+        SELECT *
+        FROM base b
+
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM `{TABLE_BACKLOG}` bl
+            WHERE bl.RAW_LINE = b.chiffre
+              AND bl.ID_CONTENT = b.id_content
+        )
 
         LIMIT @limit
     """, {
@@ -61,14 +75,13 @@ def get_numbers_backlog(limit: int = 100) -> List[Dict]:
         results.append({
             "id_content": r["id_content"],
             "chiffre": r["chiffre"],
-            "date": str(r["source_date"]),
+            "date": str(r["source_date"]) if r.get("source_date") else None,
             "topics": r["topics"],
             "companies": r["companies"],
             "solutions": r["solutions"],
         })
 
     return results
-
 def build_prompt(row: dict) -> str:
 
     return f"""
