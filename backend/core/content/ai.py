@@ -97,25 +97,55 @@ CITATIONS
 CHIFFRES
 (Extraire uniquement les chiffres structurés présents dans la source.
 
+FORMAT OBLIGATOIRE :
+Chaque chiffre doit être sur UNE LIGNE DISTINCTE, sans exception.
 Chaque ligne doit respecter STRICTEMENT ce format :
-- label | valeur | unité | contexte
 
-Règles :
-- Une ligne = un chiffre
-- Ne jamais fusionner plusieurs chiffres dans une même ligne
-- Le label doit être court et explicite (ex: "croissance retail media", "part de marché", "ROAS")
-- La valeur doit être uniquement le nombre (sans symbole)
-- L’unité doit être parmi : %, $, €, millions, milliards, x, utilisateurs, autres
+label | valeur | unité | contexte
+
+RÈGLES STRICTES :
+
+- Une ligne = un seul chiffre
+- Ne JAMAIS écrire plusieurs chiffres sur une même ligne
+- Ne JAMAIS concaténer plusieurs lignes
+- Ne JAMAIS ajouter de texte avant ou après les lignes
+
+- Le séparateur doit être exactement : " | " (espace + pipe + espace)
+
+- Le label doit être court, explicite et métier
+  (ex : "croissance retail media", "part de marché", "ROAS")
+
+- La valeur doit être uniquement un nombre
+  (sans %, $, €, texte ou espace)
+  (ex : 75, 5.56, 1000)
+
+- L’unité doit être EXACTEMENT parmi :
+  %, $, €, millions, milliards, x, utilisateurs, autres
+
 - Le contexte doit préciser l’acteur, le marché ou la période si mentionné
-- Si le contexte n’est pas clair, écrire "Non précisé"
+  Sinon écrire EXACTEMENT : Non précisé
+
 - Ne rien inventer
+- Ne reformuler aucun chiffre
+- Ne compléter aucune information absente
 
-Exemple attendu :
-- part de marché retail media | 75 | % | Amazon US
-- taille du marché e-commerce | 1000 | milliards | US
-- ROAS moyen | 5.56 | $ | Instacart
+EXEMPLES VALABLES :
 
-Si aucun chiffre structurable : écrire "Aucun")
+part de marché retail media | 75 | % | Amazon US
+taille du marché e-commerce | 1000 | milliards | US
+ROAS moyen | 5.56 | $ | Instacart
+utilisateurs mensuels | 35 | millions | Walgreens
+
+EXEMPLES INTERDITS :
+
+❌ plusieurs chiffres sur une ligne
+❌ texte libre
+❌ valeur avec symbole (75%)
+❌ séparateur incorrect
+❌ ligne sans 4 champs
+
+SI AUCUN CHIFFRE STRUCTURABLE :
+écrire EXACTEMENT : Aucun)
 
 ACTEURS
 (Liste des entreprises citées ou "Aucun")
