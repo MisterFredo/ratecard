@@ -113,7 +113,7 @@ RÈGLES STRICTES
 
 5. FORMAT
 
-Retourne UNIQUEMENT un JSON :
+Retourne UNIQUEMENT un JSON valide, pas de texte avant ou après :
 
 {{
   "decision": "...",
@@ -137,5 +137,4 @@ Companies : {row["companies"]}
 Solutions : {row["solutions"]}
 """
 
-Retourne STRICTEMENT un JSON valide.
-Aucun texte avant ou après.
+
