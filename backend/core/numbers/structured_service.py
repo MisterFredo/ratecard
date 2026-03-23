@@ -54,6 +54,42 @@ def list_numbers_by_status(status: str, limit: int = 200) -> List[Dict]:
 
     return rows
 
+# ============================================================
+# CREATE STRUCTURED NUMBER
+# ============================================================
+
+def create_structured_number(
+    id_content: str,
+    label: str,
+    value: Optional[float],
+    unit: Optional[str],
+    context: Optional[str],
+):
+
+    client = get_bigquery_client()
+
+    row = [{
+        "ID_NUMBER": str(uuid.uuid4()),
+        "ID_CONTENT": id_content,
+        "LABEL": label,
+        "VALUE": value,
+        "UNIT": unit,
+        "CONTEXT": context,
+        "STATUS": "VALIDATED",  # 🔥 direct validé (logique futur)
+        "CREATED_AT": _now(),
+        "UPDATED_AT": _now(),
+    }]
+
+    job = client.load_table_from_json(
+        row,
+        TABLE,
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
+    )
+
+    job.result()
+
 
 # ============================================================
 # UPDATE ONE (EDIT / VALIDATE / REJECT)
