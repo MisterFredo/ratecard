@@ -212,34 +212,6 @@ def latest_numbers_route(
             f"Erreur latest numbers : {e}"
         )
 
-
-# ============================================================
-# GET BY ID
-# ============================================================
-
-@router.get("/{id_insight}")
-def get_by_id_route(id_insight: str):
-
-    try:
-
-        from core.numbers.service import get_numbers_by_id
-
-        numbers = get_numbers_by_id(id_insight)
-
-        if not numbers:
-            raise HTTPException(404, "Numbers introuvables")
-
-        return {
-            "status": "ok",
-            "insight": numbers,
-        }
-
-    except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur get numbers : {e}"
-        )
-
 # ============================================================
 # STRUCTURED — LIST PENDING
 # ============================================================
@@ -367,4 +339,31 @@ def bulk_reject_route(ids: List[str]):
         raise HTTPException(
             400,
             f"Erreur bulk reject numbers : {e}"
+        )
+
+# ============================================================
+# GET BY ID
+# ============================================================
+
+@router.get("/{id_insight}")
+def get_by_id_route(id_insight: str):
+
+    try:
+
+        from core.numbers.service import get_numbers_by_id
+
+        numbers = get_numbers_by_id(id_insight)
+
+        if not numbers:
+            raise HTTPException(404, "Numbers introuvables")
+
+        return {
+            "status": "ok",
+            "insight": numbers,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur get numbers : {e}"
         )
