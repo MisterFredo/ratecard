@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
+import NumbersRawTable from "./NumbersRawTable";
+
 type NumberItem = {
   ID_NUMBER: string;
   LABEL: string;
   VALUE: number | null;
   UNIT: string;
   CONTEXT: string;
-  STATUS: string;
 };
 
 export default function NumbersRawPanel() {
@@ -18,11 +19,10 @@ export default function NumbersRawPanel() {
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  /* =========================================================
-     LOAD
-  ========================================================= */
+  /* ========================================================= */
 
   async function load() {
+
     setLoading(true);
 
     try {
@@ -40,9 +40,7 @@ export default function NumbersRawPanel() {
     load();
   }, []);
 
-  /* =========================================================
-     SELECT
-  ========================================================= */
+  /* ========================================================= */
 
   function toggle(id: string) {
     setSelected((prev) =>
@@ -60,28 +58,27 @@ export default function NumbersRawPanel() {
     setSelected([]);
   }
 
-  /* =========================================================
-     ACTIONS
-  ========================================================= */
+  function updateLocal(item: NumberItem) {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.ID_NUMBER === item.ID_NUMBER ? item : i
+      )
+    );
+  }
+
+  /* ========================================================= */
 
   async function validateBulk() {
-
-    if (selected.length === 0) return;
-
     await api.post("/numbers/structured/bulk-validate", selected);
     load();
   }
 
   async function rejectBulk() {
-
-    if (selected.length === 0) return;
-
     await api.post("/numbers/structured/bulk-reject", selected);
     load();
   }
 
-  async function updateItem(item: NumberItem) {
-
+  async function save(item: NumberItem) {
     await api.put("/numbers/structured/update", {
       id_number: item.ID_NUMBER,
       label: item.LABEL,
@@ -94,9 +91,7 @@ export default function NumbersRawPanel() {
     load();
   }
 
-  /* =========================================================
-     UI
-  ========================================================= */
+  /* ========================================================= */
 
   if (loading) return <p>Chargement…</p>;
 
@@ -104,7 +99,7 @@ export default function NumbersRawPanel() {
 
     <div className="space-y-6">
 
-      {/* HEADER ACTIONS */}
+      {/* ACTIONS */}
       <div className="flex gap-4 text-sm">
 
         <button onClick={selectAll} className="underline">
@@ -140,136 +135,15 @@ export default function NumbersRawPanel() {
       </div>
 
       {/* TABLE */}
-      <div className="border rounded overflow-hidden">
-
-        <table className="w-full text-sm">
-
-          <thead className="bg-gray-100 text-left">
-            <tr>
-              <th className="p-3 w-10"></th>
-              <th className="p-3">Label</th>
-              <th className="p-3 w-24">Value</th>
-              <th className="p-3 w-24">Unit</th>
-              <th className="p-3">Context</th>
-              <th className="p-3 w-32 text-right">Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-
-            {items.map((item) => (
-
-              <tr key={item.ID_NUMBER} className="border-t">
-
-                {/* CHECKBOX */}
-                <td className="p-3">
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(item.ID_NUMBER)}
-                    onChange={() => toggle(item.ID_NUMBER)}
-                  />
-                </td>
-
-                {/* LABEL */}
-                <td className="p-3">
-                  <input
-                    className="border p-1 w-full"
-                    value={item.LABEL || ""}
-                    onChange={(e) =>
-                      setItems((prev) =>
-                        prev.map((i) =>
-                          i.ID_NUMBER === item.ID_NUMBER
-                            ? { ...i, LABEL: e.target.value }
-                            : i
-                        )
-                      )
-                    }
-                  />
-                </td>
-
-                {/* VALUE */}
-                <td className="p-3">
-                  <input
-                    className="border p-1 w-full"
-                    value={item.VALUE ?? ""}
-                    onChange={(e) =>
-                      setItems((prev) =>
-                        prev.map((i) =>
-                          i.ID_NUMBER === item.ID_NUMBER
-                            ? { ...i, VALUE: Number(e.target.value) }
-                            : i
-                        )
-                      )
-                    }
-                  />
-                </td>
-
-                {/* UNIT */}
-                <td className="p-3">
-                  <input
-                    className="border p-1 w-full"
-                    value={item.UNIT || ""}
-                    onChange={(e) =>
-                      setItems((prev) =>
-                        prev.map((i) =>
-                          i.ID_NUMBER === item.ID_NUMBER
-                            ? { ...i, UNIT: e.target.value }
-                            : i
-                        )
-                      )
-                    }
-                  />
-                </td>
-
-                {/* CONTEXT */}
-                <td className="p-3">
-                  <input
-                    className="border p-1 w-full"
-                    value={item.CONTEXT || ""}
-                    onChange={(e) =>
-                      setItems((prev) =>
-                        prev.map((i) =>
-                          i.ID_NUMBER === item.ID_NUMBER
-                            ? { ...i, CONTEXT: e.target.value }
-                            : i
-                        )
-                      )
-                    }
-                  />
-                </td>
-
-                {/* ACTION */}
-                <td className="p-3 text-right">
-
-                  <button
-                    onClick={() => updateItem(item)}
-                    className="bg-blue-600 text-white px-3 py-1 rounded"
-                  >
-                    SAVE
-                  </button>
-
-                </td>
-
-              </tr>
-
-            ))}
-
-            {items.length === 0 && (
-              <tr>
-                <td colSpan={6} className="p-6 text-center text-gray-400">
-                  Aucun chiffre à valider
-                </td>
-              </tr>
-            )}
-
-          </tbody>
-
-        </table>
-
-      </div>
+      <NumbersRawTable
+        items={items}
+        selected={selected}
+        onToggle={toggle}
+        onChange={updateLocal}
+        onSave={save}
+      />
 
     </div>
 
   );
-
 }
