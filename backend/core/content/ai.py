@@ -95,15 +95,12 @@ CITATIONS
 (Liste exacte ou "Aucun")
 
 CHIFFRES
-(Extraire uniquement les chiffres structurés présents dans la source.
+Extraire uniquement les chiffres structurés présents dans la source.
 
-FORMAT OBLIGATOIRE :
-Chaque chiffre doit être sur UNE LIGNE DISTINCTE, sans exception.
 Chaque ligne doit respecter STRICTEMENT ce format :
+label | valeur | unité | acteur | marché | période
 
-label | valeur | unité | contexte
-
-RÈGLES STRICTES :
+Règles :
 
 - Une ligne = un seul chiffre
 - Ne JAMAIS écrire plusieurs chiffres sur une même ligne
@@ -112,40 +109,30 @@ RÈGLES STRICTES :
 
 - Le séparateur doit être exactement : " | " (espace + pipe + espace)
 
-- Le label doit être court, explicite et métier
-  (ex : "croissance retail media", "part de marché", "ROAS")
+LABEL
+- Court, explicite et métier
+- Ne doit PAS contenir acteur, marché ou période
 
-- La valeur doit être uniquement un nombre
-  (sans %, $, €, texte ou espace)
-  (ex : 75, 5.56, 1000)
+VALEUR
+- Uniquement un nombre
+- Utiliser un point pour les décimales (ex: 5.6)
+- Aucun symbole ou texte
 
-- L’unité doit être EXACTEMENT parmi :
+UNITÉ
+- Doit être EXACTEMENT parmi :
   %, $, €, millions, milliards, x, utilisateurs, autres
 
-- Le contexte doit préciser l’acteur, le marché ou la période si mentionné
-  Sinon écrire EXACTEMENT : Non précisé
+ACTEUR
+- Nom de l’entreprise, plateforme ou organisation si mentionnée
+- Sinon : "Non précisé"
 
-- Ne rien inventer
-- Ne reformuler aucun chiffre
-- Ne compléter aucune information absente
+MARCHÉ
+- Pays, région ou scope (ex: US, Europe, Global)
+- Sinon : "Non précisé"
 
-EXEMPLES VALABLES :
-
-part de marché retail media | 75 | % | Amazon US
-taille du marché e-commerce | 1000 | milliards | US
-ROAS moyen | 5.56 | $ | Instacart
-utilisateurs mensuels | 35 | millions | Walgreens
-
-EXEMPLES INTERDITS :
-
-❌ plusieurs chiffres sur une ligne
-❌ texte libre
-❌ valeur avec symbole (75%)
-❌ séparateur incorrect
-❌ ligne sans 4 champs
-
-SI AUCUN CHIFFRE STRUCTURABLE :
-écrire EXACTEMENT : Aucun)
+PÉRIODE
+- Année ou période (ex: 2024, Q1 2025)
+- Sinon : "Non précisé"
 
 ACTEURS
 (Liste des entreprises citées ou "Aucun")
