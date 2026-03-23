@@ -7,8 +7,8 @@ export type NumbersItem = {
   period: number;
   frequency: string;
 
-  nb_numbers: number;         // ✅ volume brut
-  nb_unique_numbers: number;  // ✅ diversité
+  nb_numbers: number;
+  nb_unique_numbers: number;
 
   numbers_status: string;
 };
@@ -19,7 +19,11 @@ type NumberItem = {
   label: string;
   value: string;
   unit: string;
-  context: string;
+
+  // 🔥 6 colonnes
+  actor: string;
+  market: string;
+  period: string;
 
   topics?: {
     id: string;
