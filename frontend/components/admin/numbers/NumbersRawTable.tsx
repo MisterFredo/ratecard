@@ -1,28 +1,46 @@
 "use client";
 
-type NumberItem = {
-  ID_NUMBER: string;
-  LABEL: string;
-  VALUE: number | null;
-  UNIT: string;
-  CONTEXT: string;
+type RawNumberItem = {
+  id_content: string;
+  chiffre: string;
+};
+
+type ParsedItem = {
+  label: string;
+  value: string;
+  unit: string;
+  context: string;
 };
 
 type Props = {
-  items: NumberItem[];
+  items: RawNumberItem[];
   selected: string[];
-  onToggle: (id: string) => void;
-  onChange: (item: NumberItem) => void;
-  onSave: (item: NumberItem) => void;
+  getId: (item: RawNumberItem) => string;
+  onToggle: (item: RawNumberItem) => void;
+  onSave: (item: RawNumberItem, parsed: ParsedItem) => void;
 };
 
 export default function NumbersRawTable({
   items,
   selected,
+  getId,
   onToggle,
-  onChange,
   onSave,
 }: Props) {
+
+  /* =========================================================
+     LOCAL STATE (PARSED VALUES)
+  ========================================================= */
+
+  const parse = (text: string): ParsedItem => {
+    // 🔥 parsing simple (fallback safe)
+    return {
+      label: text,
+      value: "",
+      unit: "",
+      context: "",
+    };
+  };
 
   return (
 
@@ -33,6 +51,7 @@ export default function NumbersRawTable({
         <thead className="bg-gray-100 text-left">
           <tr>
             <th className="p-3 w-10"></th>
+            <th className="p-3">Raw</th>
             <th className="p-3">Label</th>
             <th className="p-3 w-24">Value</th>
             <th className="p-3 w-24">Unit</th>
@@ -43,84 +62,85 @@ export default function NumbersRawTable({
 
         <tbody>
 
-          {items.map((item) => (
+          {items.map((item) => {
 
-            <tr key={item.ID_NUMBER} className="border-t">
+            const id = getId(item);
+            const parsed = parse(item.chiffre);
 
-              {/* CHECK */}
-              <td className="p-3">
-                <input
-                  type="checkbox"
-                  checked={selected.includes(item.ID_NUMBER)}
-                  onChange={() => onToggle(item.ID_NUMBER)}
-                />
-              </td>
+            return (
 
-              {/* LABEL */}
-              <td className="p-3">
-                <input
-                  className="border p-1 w-full"
-                  value={item.LABEL || ""}
-                  onChange={(e) =>
-                    onChange({ ...item, LABEL: e.target.value })
-                  }
-                />
-              </td>
+              <tr key={id} className="border-t">
 
-              {/* VALUE */}
-              <td className="p-3">
-                <input
-                  className="border p-1 w-full"
-                  value={item.VALUE ?? ""}
-                  onChange={(e) =>
-                    onChange({
-                      ...item,
-                      VALUE: Number(e.target.value),
-                    })
-                  }
-                />
-              </td>
+                {/* CHECK */}
+                <td className="p-3">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(id)}
+                    onChange={() => onToggle(item)}
+                  />
+                </td>
 
-              {/* UNIT */}
-              <td className="p-3">
-                <input
-                  className="border p-1 w-full"
-                  value={item.UNIT || ""}
-                  onChange={(e) =>
-                    onChange({ ...item, UNIT: e.target.value })
-                  }
-                />
-              </td>
+                {/* RAW */}
+                <td className="p-3 text-gray-600">
+                  {item.chiffre}
+                </td>
 
-              {/* CONTEXT */}
-              <td className="p-3">
-                <input
-                  className="border p-1 w-full"
-                  value={item.CONTEXT || ""}
-                  onChange={(e) =>
-                    onChange({ ...item, CONTEXT: e.target.value })
-                  }
-                />
-              </td>
+                {/* LABEL */}
+                <td className="p-3">
+                  <input
+                    className="border p-1 w-full"
+                    defaultValue={parsed.label}
+                    onChange={(e) => parsed.label = e.target.value}
+                  />
+                </td>
 
-              {/* ACTION */}
-              <td className="p-3 text-right">
-                <button
-                  onClick={() => onSave(item)}
-                  className="bg-blue-600 text-white px-3 py-1 rounded"
-                >
-                  SAVE
-                </button>
-              </td>
+                {/* VALUE */}
+                <td className="p-3">
+                  <input
+                    className="border p-1 w-full"
+                    defaultValue={parsed.value}
+                    onChange={(e) => parsed.value = e.target.value}
+                  />
+                </td>
 
-            </tr>
+                {/* UNIT */}
+                <td className="p-3">
+                  <input
+                    className="border p-1 w-full"
+                    defaultValue={parsed.unit}
+                    onChange={(e) => parsed.unit = e.target.value}
+                  />
+                </td>
 
-          ))}
+                {/* CONTEXT */}
+                <td className="p-3">
+                  <input
+                    className="border p-1 w-full"
+                    defaultValue={parsed.context}
+                    onChange={(e) => parsed.context = e.target.value}
+                  />
+                </td>
+
+                {/* ACTION */}
+                <td className="p-3 text-right">
+                  <button
+                    onClick={() => onSave(item, parsed)}
+                    className="bg-blue-600 text-white px-3 py-1 rounded"
+                  >
+                    VALIDATE
+                  </button>
+                </td>
+
+              </tr>
+
+            );
+
+          })}
 
           {items.length === 0 && (
             <tr>
-              <td colSpan={6} className="p-6 text-center text-gray-400">
-                Aucun chiffre à valider
+              <td colSpan={7} className="p-6 text-center text-gray-400">
+                Aucun chiffre à traiter
               </td>
             </tr>
           )}
