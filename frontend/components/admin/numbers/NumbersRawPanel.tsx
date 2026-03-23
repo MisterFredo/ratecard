@@ -19,8 +19,13 @@ type NumberItem = {
   label: string;
   value: string;
   unit: string;
-  context: string;
-  topics?: TopicItem[]; // 🔥 FIX CRITIQUE
+
+  // 🔥 6 colonnes
+  actor: string;
+  market: string;
+  period: string;
+
+  topics?: TopicItem[];
 };
 
 /* ========================================================= */
@@ -82,7 +87,7 @@ export default function NumbersRawPanel() {
   }
 
   /* =========================================================
-     LOCAL UPDATE (🔥 IMPORTANT)
+     LOCAL UPDATE
   ========================================================= */
 
   function updateLocal(updated: NumberItem) {
@@ -114,15 +119,19 @@ export default function NumbersRawPanel() {
             label: item.label,
             value: item.value,
             unit: item.unit,
-            context: item.context,
+
+            // 🔥 6 colonnes
+            actor: item.actor,
+            market: item.market,
+            period: item.period,
+
             topic_labels: item.topics
               ?.filter(t => t.checked)
-              .map(t => t.label) || [], // 🔥 FIX BULK
+              .map(t => t.label) || [],
           })
         )
       );
 
-      // 🔥 suppression immédiate (UX propre)
       setItems((prev) =>
         prev.filter((i) => !selected.includes(getId(i)))
       );
@@ -163,13 +172,17 @@ export default function NumbersRawPanel() {
         label: item.label,
         value: item.value,
         unit: item.unit,
-        context: item.context,
+
+        // 🔥 6 colonnes
+        actor: item.actor,
+        market: item.market,
+        period: item.period,
+
         topic_labels: item.topics
           ?.filter(t => t.checked)
           .map(t => t.label) || [],
       });
 
-      // 🔥 suppression immédiate
       setItems((prev) =>
         prev.filter((i) => getId(i) !== getId(item))
       );
@@ -189,7 +202,6 @@ export default function NumbersRawPanel() {
 
     <div className="space-y-6">
 
-      {/* ACTIONS */}
       <div className="flex gap-4 text-sm">
 
         <button onClick={selectAll} className="underline">
@@ -224,7 +236,6 @@ export default function NumbersRawPanel() {
 
       </div>
 
-      {/* TABLE */}
       <NumbersRawTable
         items={items}
         selected={selected}
