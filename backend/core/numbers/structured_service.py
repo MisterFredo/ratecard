@@ -184,17 +184,21 @@ def get_raw_numbers(limit: int = 500):
 
     TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
 
-    rows = query_bq(f"""
+    client = get_bigquery_client()
+
+    query = f"""
         SELECT
             ID_CONTENT,
-            CHIFFRES as chiffre
+            CHIFFRES
         FROM `{TABLE_CONTENT}`
         WHERE CHIFFRES IS NOT NULL
         LIMIT {limit}
-    """)
+    """
 
-    return [dict(r) for r in rows]
+    job = client.query(query)
+    rows = job.result()
 
+    return [dict(row) for row in rows]
 
 # ============================================================
 # FETCH VALIDATED (POUR INSIGHTS)
