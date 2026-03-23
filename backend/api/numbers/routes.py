@@ -210,9 +210,7 @@ def get_backlog_route(limit: int = 100):
 # ============================================================
 
 @router.post("/backlog/process")
-def process_backlog_route(payload: dict):
-
-    limit = payload.get("limit", 100)
+def process_backlog_route(limit: int = 50, max_batches: int = 1):
 
     try:
 
@@ -220,23 +218,29 @@ def process_backlog_route(payload: dict):
         from core.numbers.backlog_llm import process_backlog_row
         from core.numbers.backlog_insert_service import insert_backlog_result
 
-        rows = get_numbers_backlog(limit=limit)
+        all_results = []
 
-        results = []
+        for batch in range(max_batches):
 
-        for r in rows:
+            rows = get_numbers_backlog(limit=limit)
 
-            result = process_backlog_row(r)
+            # 🔥 stop automatique si plus rien
+            if not rows:
+                break
 
-            results.append(result)
+            for r in rows:
 
-            # 🔥 INSERT EN BQ (BACKLOG)
-            if result.get("status") == "ok":
-                insert_backlog_result(result)
+                result = process_backlog_row(r)
+
+                all_results.append(result)
+
+                if result.get("status") == "ok":
+                    insert_backlog_result(result)
 
         return {
             "status": "ok",
-            "items": results,
+            "items": all_results,
+            "batches": max_batches,
         }
 
     except Exception as e:
