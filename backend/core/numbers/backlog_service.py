@@ -82,6 +82,8 @@ def get_numbers_backlog(limit: int = 100) -> List[Dict]:
         })
 
     return results
+
+
 def build_prompt(row: dict) -> str:
 
     return f"""
@@ -111,7 +113,9 @@ Le chiffre doit :
 ✔ être un KPI business clair (revenus, part de marché, croissance, CPM, CPC, CPA, volume utilisateurs…)
 ✔ être comparable (entre acteurs, périodes ou marchés)
 ✔ être compréhensible seul (sans contexte externe)
-✔ contenir au moins un élément de contexte (acteur OU marché OU période)
+✔ contenir au moins un élément de contexte exploitable (acteur OU marché OU période)
+
+✔ les estimations de marché global sont autorisées (taille de marché, projections, croissance secteur)
 
 --------------------------------------------------
 
@@ -124,16 +128,18 @@ Le chiffre doit :
    - "plus susceptibles"
    - "plus de chances"
 
-❌ formulation vague :
+❌ formulation vague ou non standardisable :
    - "augmentation"
    - "baisse"
    - "réduction"
-   sans précision claire
+   sans précision KPI claire
 
 ❌ événement ponctuel :
    - acquisition
    - levée de fonds
-   - annonce
+   - annonce isolée
+
+❌ plusieurs valeurs dans une même ligne non séparables clairement
 
 ❌ range :
    - "10-15%"
@@ -141,15 +147,17 @@ Le chiffre doit :
 
 ❌ absence de contexte exploitable
 
-❌ chiffre non standardisable ou non comparable
+❌ chiffre trop ancien ou non pertinent aujourd’hui (ex: data > 5-10 ans sans valeur benchmark claire)
+
+❌ KPI non standardisable ou non comparable dans un dashboard
 
 --------------------------------------------------
 
 4. STRUCTURE SI KEEP
 
 - decision
-- label → KPI métier clair et standardisé
-- value → nombre uniquement (pas de %, $, texte)
+- label → KPI métier clair, court, standardisé (ex: "part de marché retail media", "revenus annuels", "CPM moyen")
+- value → nombre uniquement (pas de %, $, texte, espace)
 - unit → EXACTEMENT parmi :
   %, $, €, millions, milliards, x, utilisateurs, autres
 - actor → sinon "Non précisé"
@@ -163,13 +171,14 @@ Le chiffre doit :
 
 - Si doute → REJECT
 - Priorité à la qualité, pas au volume
-- Vise environ 30% de KEEP maximum
+- Objectif : environ 20-30% de KEEP maximum
+- Le KPI doit être directement exploitable dans un dashboard sans transformation
 
 --------------------------------------------------
 
 6. FORMAT
 
-Retourne UNIQUEMENT un JSON valide, sans texte :
+Retourne UNIQUEMENT un JSON valide, sans texte avant ou après :
 
 {{
   "decision": "...",
@@ -192,5 +201,3 @@ Topics : {row["topics"]}
 Companies : {row["companies"]}
 Solutions : {row["solutions"]}
 """
-
-
