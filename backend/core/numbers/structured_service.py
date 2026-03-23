@@ -192,28 +192,29 @@ def parse_chiffres(row):
     if not raw:
         return []
 
-    # 🔥 sécurisation type
     if isinstance(raw, list):
-        raw = " ".join(raw)
+        raw = "\n".join(raw)
 
-    if not isinstance(raw, str):
-        return []
-
-    parts = [p.strip() for p in raw.split("|") if p.strip()]
+    lines = [l.strip() for l in raw.split("\n") if l.strip()]
 
     results = []
 
-    for i in range(0, len(parts), 4):
+    for line in lines:
 
-        if len(parts) < i + 4:
+        if "|" not in line:
+            continue
+
+        parts = [p.strip() for p in line.split("|")]
+
+        if len(parts) != 4:
             continue
 
         results.append({
             "id_content": row["ID_CONTENT"],
-            "label": parts[i],
-            "value": parts[i + 1],
-            "unit": parts[i + 2],
-            "context": parts[i + 3],
+            "label": parts[0],
+            "value": parts[1],
+            "unit": parts[2],
+            "context": parts[3],
         })
 
     return results
