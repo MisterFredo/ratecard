@@ -5,25 +5,62 @@ import { api } from "@/lib/api";
 
 import NumbersRawTable from "./NumbersRawTable";
 
-/* =========================================================
-   RAW TYPE (FROM CONTENT)
-========================================================= */
+/* ========================================================= */
 
 type RawNumberItem = {
   id_content: string;
-  chiffre: string;
+  raw: string;
+};
+
+type ParsedNumberItem = {
+  id_content: string;
+  label: string;
+  value: string;
+  unit: string;
+  context: string;
 };
 
 /* ========================================================= */
 
 export default function NumbersRawPanel() {
 
-  const [items, setItems] = useState<RawNumberItem[]>([]);
+  const [items, setItems] = useState<ParsedNumberItem[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   /* =========================================================
-     LOAD RAW (🔥 IMPORTANT)
+     PARSER (🔥 FUTUR ONLY)
+  ========================================================= */
+
+  function parseRow(row: RawNumberItem): ParsedNumberItem[] {
+
+    if (!row.raw) return [];
+
+    const parts = row.raw
+      .split("|")
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    const results: ParsedNumberItem[] = [];
+
+    for (let i = 0; i < parts.length; i += 4) {
+
+      if (parts.length < i + 4) continue;
+
+      results.push({
+        id_content: row.id_content,
+        label: parts[i],
+        value: parts[i + 1],
+        unit: parts[i + 2],
+        context: parts[i + 3],
+      });
+    }
+
+    return results;
+  }
+
+  /* =========================================================
+     LOAD
   ========================================================= */
 
   async function load() {
@@ -34,7 +71,14 @@ export default function NumbersRawPanel() {
 
       const res = await api.get("/numbers/raw?limit=500");
 
-      setItems(res.items || []);
+      const parsed = (res.items || []).flatMap((row: any) =>
+        parseRow({
+          id_content: row.id_content,
+          raw: row.chiffre,
+        })
+      );
+
+      setItems(parsed);
       setSelected([]);
 
     } catch (e) {
@@ -52,11 +96,11 @@ export default function NumbersRawPanel() {
      SELECT
   ========================================================= */
 
-  function getId(item: RawNumberItem) {
-    return `${item.id_content}__${item.chiffre}`;
+  function getId(item: ParsedNumberItem) {
+    return `${item.id_content}_${item.label}_${item.value}`;
   }
 
-  function toggle(item: RawNumberItem) {
+  function toggle(item: ParsedNumberItem) {
 
     const id = getId(item);
 
@@ -91,7 +135,10 @@ export default function NumbersRawPanel() {
           .map((item) =>
             api.post("/numbers/structured/create", {
               id_content: item.id_content,
-              raw_value: item.chiffre,
+              label: item.label,
+              value: item.value,
+              unit: item.unit,
+              context: item.context,
             })
           )
       );
@@ -105,10 +152,6 @@ export default function NumbersRawPanel() {
 
   async function rejectBulk() {
 
-    // 👉 pour le moment :
-    // on ne fait rien côté BQ (pas de trace)
-    // on retire juste du front
-
     const newItems = items.filter(
       (i) => !selected.includes(getId(i))
     );
@@ -117,20 +160,16 @@ export default function NumbersRawPanel() {
     setSelected([]);
   }
 
-  /* =========================================================
-     SINGLE SAVE (EDIT + VALIDATE)
-  ========================================================= */
-
-  async function save(item: RawNumberItem, parsed: any) {
+  async function save(item: ParsedNumberItem) {
 
     try {
 
       await api.post("/numbers/structured/create", {
         id_content: item.id_content,
-        label: parsed.label,
-        value: parsed.value,
-        unit: parsed.unit,
-        context: parsed.context,
+        label: item.label,
+        value: item.value,
+        unit: item.unit,
+        context: item.context,
       });
 
       load();
