@@ -249,7 +249,11 @@ def pending_route(limit: int = 200):
 
     try:
 
+        print("CALL PENDING")
+
         items = list_pending_numbers(limit=limit)
+
+        print("SUCCESS")
 
         return {
             "status": "ok",
@@ -257,10 +261,8 @@ def pending_route(limit: int = 200):
         }
 
     except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur pending numbers : {e}"
-        )
+        print("ERROR:", str(e))
+        raise HTTPException(400, f"Erreur pending numbers : {e}")
 
 
 # ============================================================
