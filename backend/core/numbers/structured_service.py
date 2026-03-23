@@ -2,10 +2,7 @@ from typing import List, Dict, Optional
 from datetime import datetime, timezone
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq, get_bigquery_client
-
-from google.cloud import bigquery
-
+from utils.bigquery_utils import query_bq
 
 TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_STRUCTURED"
 
@@ -29,10 +26,8 @@ def list_pending_numbers(limit: int = 200) -> List[Dict]:
         FROM `{TABLE}`
         WHERE STATUS = 'PENDING'
         ORDER BY CREATED_AT DESC
-        LIMIT @limit
-    """, {
-        "limit": limit
-    })
+        LIMIT {limit}
+    """)
 
     return rows
 
@@ -48,10 +43,9 @@ def list_numbers_by_status(status: str, limit: int = 200) -> List[Dict]:
         FROM `{TABLE}`
         WHERE STATUS = @status
         ORDER BY CREATED_AT DESC
-        LIMIT @limit
+        LIMIT {limit}
     """, {
         "status": status,
-        "limit": limit
     })
 
     return rows
