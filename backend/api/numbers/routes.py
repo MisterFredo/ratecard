@@ -305,7 +305,11 @@ def raw_numbers(limit: int = 500):
 
         from core.numbers.structured_service import get_raw_numbers
 
+        print("➡️ CALL /numbers/raw")
+
         items = get_raw_numbers(limit=limit)
+
+        print("✅ SUCCESS RAW:", len(items))
 
         return {
             "status": "ok",
@@ -313,6 +317,7 @@ def raw_numbers(limit: int = 500):
         }
 
     except Exception as e:
+        print("❌ ERROR RAW:", str(e))
         raise HTTPException(
             400,
             f"Erreur raw numbers : {e}"
