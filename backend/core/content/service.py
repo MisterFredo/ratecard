@@ -157,6 +157,30 @@ def create_content(data: ContentCreate) -> str:
     print("✔ INSERT DONE FOR:", content_id)
 
     # ===========================
+    # NUMBERS STRUCTURED INSERT
+    # ===========================
+
+    try:
+
+        from core.numbers.insert_service import insert_structured_numbers
+
+        chiffres = normalize_array(data.chiffres)
+
+        if chiffres:
+            insert_structured_numbers(
+                content_id=content_id,
+                chiffres=chiffres,
+            )
+
+            print("✔ NUMBERS STRUCTURED INSERTED:", content_id)
+
+        else:
+            print("ℹ️ NO CHIFFRES TO INSERT:", content_id)
+
+    except Exception as e:
+        print("❌ ERROR INSERT NUMBERS STRUCTURED:", str(e))
+
+    # ===========================
     # RELATIONS
     # ===========================
 
