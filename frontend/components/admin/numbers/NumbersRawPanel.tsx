@@ -5,32 +5,40 @@ import { api } from "@/lib/api";
 
 import NumbersRawTable from "./NumbersRawTable";
 
-type NumberItem = {
-  ID_NUMBER: string;
-  LABEL: string;
-  VALUE: number | null;
-  UNIT: string;
-  CONTEXT: string;
+/* =========================================================
+   RAW TYPE (FROM CONTENT)
+========================================================= */
+
+type RawNumberItem = {
+  id_content: string;
+  chiffre: string;
 };
+
+/* ========================================================= */
 
 export default function NumbersRawPanel() {
 
-  const [items, setItems] = useState<NumberItem[]>([]);
+  const [items, setItems] = useState<RawNumberItem[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  /* ========================================================= */
+  /* =========================================================
+     LOAD RAW (🔥 IMPORTANT)
+  ========================================================= */
 
   async function load() {
 
     setLoading(true);
 
     try {
-      const res = await api.get("/numbers/pending");
+
+      const res = await api.get("/numbers/raw?limit=500");
+
       setItems(res.items || []);
       setSelected([]);
+
     } catch (e) {
-      console.error(e);
+      console.error("Erreur load RAW numbers", e);
     }
 
     setLoading(false);
@@ -40,9 +48,18 @@ export default function NumbersRawPanel() {
     load();
   }, []);
 
-  /* ========================================================= */
+  /* =========================================================
+     SELECT
+  ========================================================= */
 
-  function toggle(id: string) {
+  function getId(item: RawNumberItem) {
+    return `${item.id_content}__${item.chiffre}`;
+  }
+
+  function toggle(item: RawNumberItem) {
+
+    const id = getId(item);
+
     setSelected((prev) =>
       prev.includes(id)
         ? prev.filter((i) => i !== id)
@@ -51,44 +68,76 @@ export default function NumbersRawPanel() {
   }
 
   function selectAll() {
-    setSelected(items.map((i) => i.ID_NUMBER));
+    setSelected(items.map(getId));
   }
 
   function unselectAll() {
     setSelected([]);
   }
 
-  function updateLocal(item: NumberItem) {
-    setItems((prev) =>
-      prev.map((i) =>
-        i.ID_NUMBER === item.ID_NUMBER ? item : i
-      )
-    );
-  }
-
-  /* ========================================================= */
+  /* =========================================================
+     ACTIONS
+  ========================================================= */
 
   async function validateBulk() {
-    await api.post("/numbers/structured/bulk-validate", selected);
-    load();
+
+    if (selected.length === 0) return;
+
+    try {
+
+      await Promise.all(
+        items
+          .filter((i) => selected.includes(getId(i)))
+          .map((item) =>
+            api.post("/numbers/structured/create", {
+              id_content: item.id_content,
+              raw_value: item.chiffre,
+            })
+          )
+      );
+
+      load();
+
+    } catch (e) {
+      console.error("Erreur validate bulk", e);
+    }
   }
 
   async function rejectBulk() {
-    await api.post("/numbers/structured/bulk-reject", selected);
-    load();
+
+    // 👉 pour le moment :
+    // on ne fait rien côté BQ (pas de trace)
+    // on retire juste du front
+
+    const newItems = items.filter(
+      (i) => !selected.includes(getId(i))
+    );
+
+    setItems(newItems);
+    setSelected([]);
   }
 
-  async function save(item: NumberItem) {
-    await api.put("/numbers/structured/update", {
-      id_number: item.ID_NUMBER,
-      label: item.LABEL,
-      value: item.VALUE,
-      unit: item.UNIT,
-      context: item.CONTEXT,
-      status: "EDITED",
-    });
+  /* =========================================================
+     SINGLE SAVE (EDIT + VALIDATE)
+  ========================================================= */
 
-    load();
+  async function save(item: RawNumberItem, parsed: any) {
+
+    try {
+
+      await api.post("/numbers/structured/create", {
+        id_content: item.id_content,
+        label: parsed.label,
+        value: parsed.value,
+        unit: parsed.unit,
+        context: parsed.context,
+      });
+
+      load();
+
+    } catch (e) {
+      console.error("Erreur save", e);
+    }
   }
 
   /* ========================================================= */
@@ -129,7 +178,7 @@ export default function NumbersRawPanel() {
           onClick={rejectBulk}
           className="bg-red-600 text-white px-4 py-2 rounded"
         >
-          REJECT
+          IGNORE
         </button>
 
       </div>
@@ -138,8 +187,8 @@ export default function NumbersRawPanel() {
       <NumbersRawTable
         items={items}
         selected={selected}
+        getId={getId}
         onToggle={toggle}
-        onChange={updateLocal}
         onSave={save}
       />
 
