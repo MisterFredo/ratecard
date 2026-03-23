@@ -176,6 +176,29 @@ def get_numbers_stats() -> List[Dict]:
 
     return rows
 
+# ============================================================
+# RAW NUMBERS FROM CONTENT
+# ============================================================
+
+def get_raw_numbers(limit: int = 500) -> List[Dict]:
+
+    TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
+
+    rows = query_bq(f"""
+        SELECT
+            ID_CONTENT,
+            chiffre
+        FROM `{TABLE_CONTENT}`,
+        UNNEST(CHIFFRES) AS chiffre
+        WHERE chiffre IS NOT NULL
+        AND chiffre != ""
+        ORDER BY CREATED_AT DESC
+        LIMIT {limit}
+    """)
+
+    # 🔥 IMPORTANT : serialization clean
+    return [dict(r) for r in rows]
+
 
 # ============================================================
 # FETCH VALIDATED (POUR INSIGHTS)
