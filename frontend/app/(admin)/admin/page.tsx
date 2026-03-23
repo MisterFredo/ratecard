@@ -96,7 +96,10 @@ export default function AdminHome() {
 
       setProcessing(true);
 
-      const res = await api.post("/numbers/backlog/process?limit=50");
+      const res = await api.post(
+        "/numbers/backlog/process?limit=50",
+        {}
+      );
 
       setBacklogItems(res.items || []);
 
