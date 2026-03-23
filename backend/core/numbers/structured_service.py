@@ -332,18 +332,64 @@ def parse_chiffres(row):
 def get_raw_numbers(limit: int = 500):
 
     TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
+    TABLE_STRUCTURED = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_STRUCTURED"
     VIEW = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 
     rows = query_bq(f"""
-        SELECT
-            c.ID_CONTENT AS id_content,
-            chiffre,
-            v.topics
-        FROM `{TABLE_CONTENT}` c
-        JOIN `{VIEW}` v
-          ON c.ID_CONTENT = v.id_content,
-        UNNEST(c.CHIFFRES) AS chiffre
-        WHERE chiffre IS NOT NULL
+        WITH raw AS (
+
+            SELECT
+                c.ID_CONTENT AS id_content,
+                chiffre,
+                v.topics
+            FROM `{TABLE_CONTENT}` c
+            JOIN `{VIEW}` v
+              ON c.ID_CONTENT = v.id_content,
+            UNNEST(c.CHIFFRES) AS chiffre
+            WHERE chiffre IS NOT NULL
+
+        ),
+
+        parsed AS (
+
+            SELECT
+                id_content,
+                chiffre,
+                SPLIT(chiffre, '|') AS parts,
+                topics
+            FROM raw
+            WHERE ARRAY_LENGTH(SPLIT(chiffre, '|')) = 4
+
+        ),
+
+        cleaned AS (
+
+            SELECT
+                id_content,
+                TRIM(parts[OFFSET(0)]) AS label,
+                TRIM(parts[OFFSET(1)]) AS value,
+                TRIM(parts[OFFSET(2)]) AS unit,
+                TRIM(parts[OFFSET(3)]) AS context,
+                topics
+            FROM parsed
+
+        )
+
+        SELECT *
+        FROM cleaned c
+
+        WHERE NOT EXISTS (
+
+            SELECT 1
+            FROM `{TABLE_STRUCTURED}` s
+            WHERE s.ID_CONTENT = c.id_content
+              AND s.LABEL = c.label
+              AND CAST(s.VALUE AS STRING) = c.value
+              AND s.UNIT = c.unit
+              AND s.CONTEXT = c.context
+
+        )
+
         LIMIT @limit
     """, {
         "limit": limit
@@ -352,18 +398,6 @@ def get_raw_numbers(limit: int = 500):
     results = []
 
     for r in rows:
-
-        raw = r.get("chiffre")
-
-        if not raw or "|" not in raw:
-            continue  # 🔥 futur uniquement
-
-        parts = [p.strip() for p in raw.split("|")]
-
-        if len(parts) != 4:
-            continue
-
-        label, value, unit, context = parts
 
         topics = [
             {
@@ -375,10 +409,10 @@ def get_raw_numbers(limit: int = 500):
 
         results.append({
             "id_content": r["id_content"],
-            "label": label,
-            "value": value,
-            "unit": unit,
-            "context": context,
+            "label": r["label"],
+            "value": r["value"],
+            "unit": r["unit"],
+            "context": r["context"],
             "topics": topics,
         })
 
