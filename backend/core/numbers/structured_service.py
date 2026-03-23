@@ -64,7 +64,8 @@ def create_structured_number(
     value: str,
     unit: str,
     context: str,
-    topic_labels: List[str] = [],  # 🔥 labels venant du front
+    topic_labels: List[str] = None,
+    topic_ids: List[str] = None,  # 🔥 fallback safe
 ):
     import uuid
 
