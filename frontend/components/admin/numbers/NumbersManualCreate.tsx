@@ -37,10 +37,10 @@ export default function NumbersManualCreate() {
     try {
 
       const [t, c, s, src] = await Promise.all([
-        api.get("/topic"),
-        api.get("/company"),
-        api.get("/solution"),
-        api.get("/source"),
+        api.get("/topic/list"),
+        api.get("/company/list"),
+        api.get("/solution/list"),
+        api.get("/source/list"),
       ]);
 
       setTopics(
