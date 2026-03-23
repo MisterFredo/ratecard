@@ -294,6 +294,30 @@ def update_structured_route(payload: dict):
             f"Erreur update structured numbers : {e}"
         )
 
+# ============================================================
+# RAW NUMBERS (FROM CONTENT)
+# ============================================================
+
+@router.get("/raw")
+def raw_numbers(limit: int = 500):
+
+    try:
+
+        from core.numbers.structured_service import get_raw_numbers
+
+        items = get_raw_numbers(limit=limit)
+
+        return {
+            "status": "ok",
+            "items": items,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur raw numbers : {e}"
+        )
+
 
 # ============================================================
 # STRUCTURED — BULK VALIDATE
