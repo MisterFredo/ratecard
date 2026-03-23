@@ -72,48 +72,91 @@ def get_numbers_backlog(limit: int = 100) -> List[Dict]:
 def build_prompt(row: dict) -> str:
 
     return f"""
-Tu es un expert data marketing.
+Tu es un expert data marketing senior.
 
-Ta mission est de transformer un chiffre brut en donnée exploitable.
+Ta mission est de décider si un chiffre peut être intégré dans un dashboard professionnel.
 
 --------------------------------------------------
 
-RÈGLES STRICTES
+OBJECTIF
+
+Ne garder QUE des KPI solides, comparables et réellement exploitables business.
+
+--------------------------------------------------
 
 1. DECISION
 
-- KEEP → si exploitable
+- KEEP → uniquement si le chiffre peut être utilisé directement dans un dashboard
 - REJECT → sinon
 
-2. CRITÈRES KEEP
+--------------------------------------------------
 
-✔ KPI clair (CPC, CPM, croissance, part de marché, revenus…)
-✔ comparable
-✔ compréhensible seul
-✔ contexte suffisant
+2. CRITÈRES KEEP (OBLIGATOIRES)
 
-3. REJECT SI
+Le chiffre doit :
 
-❌ vague
-❌ non comparable
-❌ événement ponctuel
-❌ range
-❌ contexte insuffisant
+✔ être un KPI business clair (revenus, part de marché, croissance, CPM, CPC, CPA, volume utilisateurs…)
+✔ être comparable (entre acteurs, périodes ou marchés)
+✔ être compréhensible seul (sans contexte externe)
+✔ contenir au moins un élément de contexte (acteur OU marché OU période)
+
+--------------------------------------------------
+
+3. REJECT SI (STRICT)
+
+❌ métrique marketing "soft" :
+   - affinité
+   - considération
+   - engagement relatif
+   - "plus susceptibles"
+   - "plus de chances"
+
+❌ formulation vague :
+   - "augmentation"
+   - "baisse"
+   - "réduction"
+   sans précision claire
+
+❌ événement ponctuel :
+   - acquisition
+   - levée de fonds
+   - annonce
+
+❌ range :
+   - "10-15%"
+   - "2 à 3 fois"
+
+❌ absence de contexte exploitable
+
+❌ chiffre non standardisable ou non comparable
+
+--------------------------------------------------
 
 4. STRUCTURE SI KEEP
 
 - decision
-- label (court, métier, précis)
-- value (nombre uniquement)
-- unit (%, $, €, millions, milliards, x, utilisateurs, autres)
-- actor (sinon "Non précisé")
-- market (sinon "Non précisé")
-- period (sinon "Non précisé")
-- confidence (HIGH ou MEDIUM)
+- label → KPI métier clair et standardisé
+- value → nombre uniquement (pas de %, $, texte)
+- unit → EXACTEMENT parmi :
+  %, $, €, millions, milliards, x, utilisateurs, autres
+- actor → sinon "Non précisé"
+- market → sinon "Non précisé"
+- period → sinon "Non précisé"
+- confidence → HIGH si très fiable, sinon MEDIUM
 
-5. FORMAT
+--------------------------------------------------
 
-Retourne UNIQUEMENT un JSON valide, pas de texte avant ou après :
+5. IMPORTANT
+
+- Si doute → REJECT
+- Priorité à la qualité, pas au volume
+- Vise environ 30% de KEEP maximum
+
+--------------------------------------------------
+
+6. FORMAT
+
+Retourne UNIQUEMENT un JSON valide, sans texte :
 
 {{
   "decision": "...",
