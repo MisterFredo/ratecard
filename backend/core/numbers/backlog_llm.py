@@ -3,7 +3,7 @@ import re
 from typing import Dict, Any
 
 from utils.llm import run_llm
-from core.numbers.backlog_prompt import build_prompt
+from core.numbers.backlog_service import build_prompt
 
 
 def safe_parse_json(text: str):
