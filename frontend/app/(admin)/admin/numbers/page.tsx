@@ -7,12 +7,15 @@ import NumbersFilters from "@/components/admin/numbers/NumbersFilters";
 import NumbersTable from "@/components/admin/numbers/NumbersTable";
 import NumbersActions from "@/components/admin/numbers/NumbersActions";
 import NumbersDrawer from "@/components/admin/numbers/NumbersDrawer";
+import NumbersRawPanel from "@/components/admin/numbers/NumbersRawPanel";
 
 import { NumbersItem } from "@/types/numbers";
 
 /* ========================================================= */
 
 export default function NumbersPage() {
+
+  const [tab, setTab] = useState<"insights" | "raw">("insights");
 
   const [items, setItems] = useState<NumbersItem[]>([]);
   const [selected, setSelected] = useState<NumbersItem[]>([]);
@@ -56,8 +59,10 @@ export default function NumbersPage() {
   }
 
   useEffect(() => {
-    load();
-  }, [filters]);
+    if (tab === "insights") {
+      load();
+    }
+  }, [filters, tab]);
 
   /* =========================================================
      SELECT
@@ -168,47 +173,94 @@ export default function NumbersPage() {
   /* ========================================================= */
 
   return (
+
     <div className="space-y-6">
 
       <h1 className="text-2xl font-semibold text-ratecard-blue">
         Numbers Control Panel
       </h1>
 
-      <NumbersFilters filters={filters} setFilters={setFilters} />
+      {/* 🔥 TABS */}
+      <div className="flex gap-4">
 
-      <div className="flex gap-4 text-xs">
-        <button onClick={selectAll} className="underline">
-          Tout sélectionner
+        <button
+          onClick={() => setTab("insights")}
+          className={`px-3 py-1 rounded ${
+            tab === "insights"
+              ? "bg-ratecard-blue text-white"
+              : "bg-gray-200"
+          }`}
+        >
+          Insights
         </button>
-        <button onClick={unselectAll} className="underline">
-          Tout désélectionner
+
+        <button
+          onClick={() => setTab("raw")}
+          className={`px-3 py-1 rounded ${
+            tab === "raw"
+              ? "bg-ratecard-blue text-white"
+              : "bg-gray-200"
+          }`}
+        >
+          Raw Numbers
         </button>
-        <span className="text-gray-400 ml-auto">
-          {selected.length} sélectionnés
-        </span>
+
       </div>
 
-      <NumbersActions
-        selectedCount={selected.length}
-        onGenerate={generateSelected}
-        onValidate={validateSelected}
-        onPublish={publishSelected}
-      />
+      {/* =========================================================
+         INSIGHTS (inchangé)
+      ========================================================= */}
 
-      <NumbersTable
-        items={items}
-        selected={selected}
-        onToggle={toggle}
-        onPreview={handlePreview}
-        loading={loading}
-      />
+      {tab === "insights" && (
+        <>
 
-      <NumbersDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        data={drawerData}
-      />
+          <NumbersFilters filters={filters} setFilters={setFilters} />
+
+          <div className="flex gap-4 text-xs">
+            <button onClick={selectAll} className="underline">
+              Tout sélectionner
+            </button>
+            <button onClick={unselectAll} className="underline">
+              Tout désélectionner
+            </button>
+            <span className="text-gray-400 ml-auto">
+              {selected.length} sélectionnés
+            </span>
+          </div>
+
+          <NumbersActions
+            selectedCount={selected.length}
+            onGenerate={generateSelected}
+            onValidate={validateSelected}
+            onPublish={publishSelected}
+          />
+
+          <NumbersTable
+            items={items}
+            selected={selected}
+            onToggle={toggle}
+            onPreview={handlePreview}
+            loading={loading}
+          />
+
+          <NumbersDrawer
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            data={drawerData}
+          />
+
+        </>
+      )}
+
+      {/* =========================================================
+         RAW NUMBERS
+      ========================================================= */}
+
+      {tab === "raw" && (
+        <NumbersRawPanel />
+      )}
 
     </div>
+
   );
 }
