@@ -216,14 +216,21 @@ def process_backlog_route(limit: int = 100):
 
         from core.numbers.backlog_service import get_numbers_backlog
         from core.numbers.backlog_llm import process_backlog_row
+        from core.numbers.backlog_insert_service import insert_backlog_result
 
         rows = get_numbers_backlog(limit=limit)
 
         results = []
 
         for r in rows:
+
             result = process_backlog_row(r)
+
             results.append(result)
+
+            # 🔥 INSERT EN BQ (BACKLOG)
+            if result.get("status") == "ok":
+                insert_backlog_result(result)
 
         return {
             "status": "ok",
