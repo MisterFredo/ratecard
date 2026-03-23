@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import NumbersRawTable from "./NumbersRawTable";
 
 /* =========================================================
-   TYPE STRUCTURÉ (🔥 IMPORTANT)
+   TYPE STRUCTURÉ
 ========================================================= */
 
 type NumberItem = {
@@ -34,12 +34,9 @@ export default function NumbersRawPanel() {
     setLoading(true);
 
     try {
-
       const res = await api.get("/numbers/raw?limit=500");
-
       setItems(res.items || []);
       setSelected([]);
-
     } catch (e) {
       console.error("Erreur load RAW numbers", e);
     }
@@ -79,7 +76,7 @@ export default function NumbersRawPanel() {
   }
 
   /* =========================================================
-     ACTIONS
+     ACTIONS — BULK VALIDATE
   ========================================================= */
 
   async function validateBulk() {
@@ -88,26 +85,39 @@ export default function NumbersRawPanel() {
 
     try {
 
-      await Promise.all(
-        items
-          .filter((i) => selected.includes(getId(i)))
-          .map((item) =>
-            api.post("/numbers/structured/create", {
-              id_content: item.id_content,
-              label: item.label,
-              value: item.value,
-              unit: item.unit,
-              context: item.context,
-            })
-          )
+      const toValidate = items.filter((i) =>
+        selected.includes(getId(i))
       );
 
-      load();
+      await Promise.all(
+        toValidate.map((item) =>
+          api.post("/numbers/structured/create", {
+            id_content: item.id_content,
+            label: item.label,
+            value: item.value,
+            unit: item.unit,
+            context: item.context,
+          })
+        )
+      );
+
+      // 🔥 suppression immédiate
+      setItems((prev) =>
+        prev.filter((i) => !selected.includes(getId(i)))
+      );
+
+      setSelected([]);
+
+      console.log("✔ Bulk validated");
 
     } catch (e) {
       console.error("Erreur validate bulk", e);
     }
   }
+
+  /* =========================================================
+     ACTIONS — BULK IGNORE
+  ========================================================= */
 
   async function rejectBulk() {
 
@@ -135,7 +145,12 @@ export default function NumbersRawPanel() {
         context: item.context,
       });
 
-      load();
+      // 🔥 suppression immédiate
+      setItems((prev) =>
+        prev.filter((i) => getId(i) !== getId(item))
+      );
+
+      console.log("✔ Item validated");
 
     } catch (e) {
       console.error("Erreur save", e);
