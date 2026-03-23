@@ -95,7 +95,27 @@ CITATIONS
 (Liste exacte ou "Aucun")
 
 CHIFFRES
-(Liste exacte ou "Aucun")
+(Extraire uniquement les chiffres structurés présents dans la source.
+
+Chaque ligne doit respecter STRICTEMENT ce format :
+- label | valeur | unité | contexte
+
+Règles :
+- Une ligne = un chiffre
+- Ne jamais fusionner plusieurs chiffres dans une même ligne
+- Le label doit être court et explicite (ex: "croissance retail media", "part de marché", "ROAS")
+- La valeur doit être uniquement le nombre (sans symbole)
+- L’unité doit être parmi : %, $, €, millions, milliards, x, utilisateurs, autres
+- Le contexte doit préciser l’acteur, le marché ou la période si mentionné
+- Si le contexte n’est pas clair, écrire "Non précisé"
+- Ne rien inventer
+
+Exemple attendu :
+- part de marché retail media | 75 | % | Amazon US
+- taille du marché e-commerce | 1000 | milliards | US
+- ROAS moyen | 5.56 | $ | Instacart
+
+Si aucun chiffre structurable : écrire "Aucun")
 
 ACTEURS
 (Liste des entreprises citées ou "Aucun")
