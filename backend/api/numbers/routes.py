@@ -210,7 +210,9 @@ def get_backlog_route(limit: int = 100):
 # ============================================================
 
 @router.post("/backlog/process")
-def process_backlog_route(limit: int = 100):
+def process_backlog_route(payload: dict):
+
+    limit = payload.get("limit", 100)
 
     try:
 
