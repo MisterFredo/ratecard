@@ -48,6 +48,10 @@ export default function AdminHome() {
 
   const [loading, setLoading] = useState(true);
 
+  // 🔥 BACKLOG
+  const [backlogItems, setBacklogItems] = useState<any[]>([]);
+  const [processing, setProcessing] = useState(false);
+
   useEffect(() => {
     async function loadStats() {
       try {
@@ -84,132 +88,180 @@ export default function AdminHome() {
     loadStats();
   }, []);
 
+  /* ================= BACKLOG ================= */
+
+  async function runBacklog() {
+
+    try {
+
+      setProcessing(true);
+
+      const res = await api.post("/numbers/backlog/process?limit=50");
+
+      setBacklogItems(res.items || []);
+
+    } catch (e) {
+      console.error("Erreur backlog", e);
+    }
+
+    setProcessing(false);
+  }
+
   if (loading) return <div>Chargement dashboard…</div>;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
 
       <h1 className="text-3xl font-semibold text-ratecard-blue">
         Dashboard Admin
       </h1>
 
-      {/* ================= RAW ================= */}
+      {/* ================= KPI GLOBAL ================= */}
 
-      {rawStats && (
-        <Section title="RAW Pipeline">
-          <StatGrid>
-            <StatCard label="Total RAW" value={rawStats.total} />
-            <StatCard label="En stock" value={rawStats.total_stored} yellow />
-            <StatCard label="En cours" value={rawStats.total_processing} />
-            <StatCard label="Erreurs" value={rawStats.total_error} red />
-          </StatGrid>
-        </Section>
-      )}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 
-      {/* ================= CONTENT ================= */}
+        <KpiCard label="RAW" value={rawStats?.total} />
+        <KpiCard label="Content" value={contentStats?.total} />
+        <KpiCard label="News" value={newsAdminStats?.total} />
+        <KpiCard label="Publié (30j)" value={brevesStats?.last_30_days} />
 
-      {contentStats && (
-        <Section title="Content (Analyses)">
-          <StatGrid>
-            <StatCard label="Total" value={contentStats.total} />
-            <StatCard label="Draft" value={contentStats.total_draft} yellow />
-            <StatCard label="Ready" value={contentStats.total_ready} />
-            <StatCard label="Published" value={contentStats.total_published} green />
-            <StatCard label="Scheduled" value={contentStats.total_scheduled} />
-            <StatCard label="Publié cette année" value={contentStats.total_published_this_year} />
-            <StatCard label="Publié ce mois" value={contentStats.total_published_this_month} />
-          </StatGrid>
-        </Section>
-      )}
+      </div>
 
-      {/* ================= NEWS ADMIN ================= */}
+      {/* ================= DETAIL ================= */}
 
-      {newsAdminStats && (
-        <Section title="News & Brèves (Admin)">
-          <StatGrid>
-            <StatCard label="Total" value={newsAdminStats.total} />
-            <StatCard label="Published" value={newsAdminStats.total_published} green />
-            <StatCard label="Draft" value={newsAdminStats.total_draft} yellow />
-            <StatCard label="News" value={newsAdminStats.total_news} />
-            <StatCard label="Brèves" value={newsAdminStats.total_briefs} />
-            <StatCard label="Publié cette année" value={newsAdminStats.total_published_this_year} />
-          </StatGrid>
-        </Section>
-      )}
+      <Section title="Pipeline">
 
-      {/* ================= NEWS ACTIVITY ================= */}
+        <CompactRow
+          label="RAW"
+          items={[
+            ["Stock", rawStats?.total_stored],
+            ["Processing", rawStats?.total_processing],
+            ["Error", rawStats?.total_error],
+          ]}
+        />
 
-      {brevesStats && (
-        <Section title="Activité News (Public)">
-          <StatGrid>
-            <StatCard label="Total publié" value={brevesStats.total_count} />
-            <StatCard label="7 derniers jours" value={brevesStats.last_7_days} />
-            <StatCard label="30 derniers jours" value={brevesStats.last_30_days} />
-          </StatGrid>
-        </Section>
-      )}
+        <CompactRow
+          label="Content"
+          items={[
+            ["Draft", contentStats?.total_draft],
+            ["Ready", contentStats?.total_ready],
+            ["Published", contentStats?.total_published],
+          ]}
+        />
+
+        <CompactRow
+          label="News"
+          items={[
+            ["Published", newsAdminStats?.total_published],
+            ["Draft", newsAdminStats?.total_draft],
+            ["Brèves", newsAdminStats?.total_briefs],
+          ]}
+        />
+
+      </Section>
+
+      {/* ================= BACKLOG (🔥 NOUVEAU) ================= */}
+
+      <Section title="Numbers Backlog (LLM)">
+
+        <div className="flex items-center gap-4">
+
+          <button
+            onClick={runBacklog}
+            disabled={processing}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            {processing ? "Processing..." : "Process 50"}
+          </button>
+
+          <span className="text-sm text-gray-400">
+            {backlogItems.length} lignes
+          </span>
+
+        </div>
+
+        <div className="border rounded mt-4 max-h-[400px] overflow-y-auto">
+
+          {backlogItems.map((item, i) => {
+
+            const out = item.output || {};
+
+            return (
+              <div key={i} className="p-3 border-b text-sm">
+
+                <div className="text-gray-500">
+                  {item.input?.chiffre}
+                </div>
+
+                {item.status === "error" && (
+                  <div className="text-red-500 text-xs">
+                    ERROR
+                  </div>
+                )}
+
+                {item.status === "ok" && (
+                  <div
+                    className={
+                      out.decision === "KEEP"
+                        ? "text-green-600 text-xs"
+                        : "text-gray-400 text-xs"
+                    }
+                  >
+                    {out.decision} — {out.label}
+                  </div>
+                )}
+
+              </div>
+            );
+          })}
+
+        </div>
+
+      </Section>
 
     </div>
   );
 }
 
-/* ================= UI HELPERS ================= */
+/* ================= UI ================= */
 
 function Section({ title, children }: any) {
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">{title}</h2>
+      <h2 className="text-lg font-semibold">{title}</h2>
       {children}
     </div>
   );
 }
 
-function StatGrid({ children }: any) {
+function KpiCard({ label, value }: any) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-      {children}
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  yellow,
-  red,
-  green,
-}: {
-  label: string;
-  value: number;
-  yellow?: boolean;
-  red?: boolean;
-  green?: boolean;
-}) {
-
-  let bg = "bg-white";
-  let text = "text-gray-800";
-
-  if (yellow) {
-    bg = "bg-yellow-50";
-    text = "text-yellow-700";
-  }
-
-  if (red) {
-    bg = "bg-red-50";
-    text = "text-red-700";
-  }
-
-  if (green) {
-    bg = "bg-green-50";
-    text = "text-green-700";
-  }
-
-  return (
-    <div className={`${bg} rounded-lg p-4 border`}>
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className={`text-2xl font-semibold ${text}`}>
+    <div className="border rounded-lg p-4">
+      <div className="text-xs text-gray-400">{label}</div>
+      <div className="text-2xl font-semibold">
         {value ?? 0}
       </div>
+    </div>
+  );
+}
+
+function CompactRow({ label, items }: any) {
+  return (
+    <div className="flex items-center justify-between border rounded p-3 text-sm">
+
+      <div className="font-medium w-24">
+        {label}
+      </div>
+
+      <div className="flex gap-6">
+        {items.map(([k, v]: any, i: number) => (
+          <div key={i}>
+            <span className="text-gray-400">{k}</span>{" "}
+            <span className="font-medium">{v ?? 0}</span>
+          </div>
+        ))}
+      </div>
+
     </div>
   );
 }
