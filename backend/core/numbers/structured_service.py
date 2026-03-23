@@ -330,23 +330,59 @@ def parse_chiffres(row):
 
 def get_raw_numbers(limit: int = 500):
 
+    VIEW = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
+
     rows = query_bq(f"""
         SELECT
-            c.ID_CONTENT,
-            t.ID_TOPIC,
-            t.LABEL AS TOPIC_LABEL,
-            n.chiffre
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT` c
-        JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC` ct
-          ON c.ID_CONTENT = ct.ID_CONTENT
-        JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC` t
-          ON ct.ID_TOPIC = t.ID_TOPIC,
-        UNNEST(c.CHIFFRES) AS n
-        WHERE n IS NOT NULL
+            c.id_content,
+            chiffre,
+            c.topics
+        FROM `{VIEW}` c,
+        UNNEST(c.CHIFFRES) AS chiffre
+        WHERE chiffre IS NOT NULL
         LIMIT @limit
     """, {
         "limit": limit
     })
+
+    # ============================================================
+    # PARSE + FORMAT POUR LE FRONT
+    # ============================================================
+
+    results = []
+
+    for r in rows:
+
+        raw = r.get("chiffre")
+
+        if not raw or "|" not in raw:
+            continue  # 🔥 on ne garde que le futur propre
+
+        parts = [p.strip() for p in raw.split("|")]
+
+        if len(parts) != 4:
+            continue
+
+        label, value, unit, context = parts
+
+        topics = [
+            {
+                "label": t["label"],
+                "checked": True,
+            }
+            for t in (r.get("topics") or [])
+        ]
+
+        results.append({
+            "id_content": r["id_content"],
+            "label": label,
+            "value": value,
+            "unit": unit,
+            "context": context,
+            "topics": topics,
+        })
+
+    return results
 
     # ============================================================
     # GROUP BY CONTENT + CHIFFRE
