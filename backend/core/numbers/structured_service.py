@@ -398,6 +398,7 @@ def parse_chiffres(row):
     if not raw:
         return []
 
+    # 🔥 support array
     if isinstance(raw, list):
         raw = "\n".join(raw)
 
@@ -410,22 +411,28 @@ def parse_chiffres(row):
 
     for line in lines:
 
-        # 🔥 split robuste
         parts = [p.strip() for p in line.split("|")]
 
-        # 🔥 sécurité
-        if len(parts) < 4:
+        # 🔥 STRICT 6 colonnes
+        if len(parts) != 6:
             continue
 
-        # 🔥 prendre les 4 premiers seulement
-        label, value, unit, context = parts[:4]
+        label, value, unit, actor, market, period = parts
+
+        # 🔥 sécurisation value
+        try:
+            value_clean = float(value)
+        except:
+            continue  # on skip si non exploitable
 
         results.append({
             "id_content": row["ID_CONTENT"],
             "label": label,
-            "value": value,
+            "value": value_clean,
             "unit": unit,
-            "context": context,
+            "actor": actor or "Non précisé",
+            "market": market or "Non précisé",
+            "period": period or "Non précisé",
         })
 
     return results
@@ -459,7 +466,7 @@ def get_raw_numbers(limit: int = 500):
                 SPLIT(chiffre, '|') AS parts,
                 topics
             FROM raw
-            WHERE ARRAY_LENGTH(SPLIT(chiffre, '|')) = 4
+            WHERE ARRAY_LENGTH(SPLIT(chiffre, '|')) = 6
 
         ),
 
@@ -470,7 +477,9 @@ def get_raw_numbers(limit: int = 500):
                 TRIM(parts[OFFSET(0)]) AS label,
                 TRIM(parts[OFFSET(1)]) AS value,
                 TRIM(parts[OFFSET(2)]) AS unit,
-                TRIM(parts[OFFSET(3)]) AS context,
+                TRIM(parts[OFFSET(3)]) AS actor,
+                TRIM(parts[OFFSET(4)]) AS market,
+                TRIM(parts[OFFSET(5)]) AS period,
                 topics
             FROM parsed
 
@@ -487,7 +496,9 @@ def get_raw_numbers(limit: int = 500):
               AND s.LABEL = c.label
               AND CAST(s.VALUE AS STRING) = c.value
               AND s.UNIT = c.unit
-              AND s.CONTEXT = c.context
+              AND s.ACTOR = c.actor
+              AND s.MARKET = c.market
+              AND s.PERIOD = c.period
 
         )
 
@@ -513,7 +524,9 @@ def get_raw_numbers(limit: int = 500):
             "label": r["label"],
             "value": r["value"],
             "unit": r["unit"],
-            "context": r["context"],
+            "actor": r["actor"],
+            "market": r["market"],
+            "period": r["period"],
             "topics": topics,
         })
 
@@ -580,7 +593,9 @@ def get_validated_numbers(
             n.LABEL,
             n.VALUE,
             n.UNIT,
-            n.CONTEXT
+            n.ACTOR,
+            n.MARKET,
+            n.PERIOD
         FROM `{TABLE}` n
         JOIN `{VIEW_CONTENT}` c
           ON n.ID_CONTENT = c.ID_CONTENT
