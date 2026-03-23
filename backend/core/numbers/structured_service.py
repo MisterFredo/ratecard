@@ -299,27 +299,51 @@ def parse_chiffres(row):
 
 def get_raw_numbers(limit: int = 500):
 
-    TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
-
-    client = get_bigquery_client()
-
-    query = f"""
+    rows = query_bq(f"""
         SELECT
-            ID_CONTENT,
-            CHIFFRES
-        FROM `{TABLE_CONTENT}`
-        WHERE CHIFFRES IS NOT NULL
-        LIMIT {limit}
-    """
+            c.ID_CONTENT,
+            t.ID_TOPIC,
+            t.LABEL AS TOPIC_LABEL,
+            n.chiffre
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT` c
+        JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC` ct
+          ON c.ID_CONTENT = ct.ID_CONTENT
+        JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC` t
+          ON ct.ID_TOPIC = t.ID_TOPIC,
+        UNNEST(c.CHIFFRES) AS n
+        WHERE n IS NOT NULL
+        LIMIT @limit
+    """, {
+        "limit": limit
+    })
 
-    rows = client.query(query).result()
+    # ============================================================
+    # GROUP BY CONTENT + CHIFFRE
+    # ============================================================
 
-    results = []
+    grouped = {}
 
-    for row in rows:
-        results.extend(parse_chiffres(dict(row)))
+    for r in rows:
 
-    return results
+        key = f"{r['ID_CONTENT']}__{r['chiffre']}"
+
+        if key not in grouped:
+            grouped[key] = {
+                "id_content": r["ID_CONTENT"],
+                "label": "",
+                "value": "",
+                "unit": "",
+                "context": "",
+                "topics": [],
+            }
+
+        if r["TOPIC_LABEL"]:
+            grouped[key]["topics"].append({
+                "label": r["TOPIC_LABEL"],
+                "checked": True,  # 🔥 auto-check
+            })
+
+    return list(grouped.values())
 
 # ============================================================
 # FETCH VALIDATED (POUR INSIGHTS)
