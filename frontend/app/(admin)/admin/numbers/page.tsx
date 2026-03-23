@@ -204,7 +204,13 @@ export default function NumbersPage() {
 
       const res = await api.get(`/numbers/get?${query}`);
 
-      setDrawerData(res.insight || null);
+      // 🔥 ADAPTATION 6 COLONNES
+      const insight = (res.insight || []).map((n: any) => ({
+        ...n,
+        context: `${n.actor || "Non précisé"} | ${n.market || "Non précisé"} | ${n.period || "Non précisé"}`
+      }));
+
+      setDrawerData(insight);
       setDrawerOpen(true);
 
     } catch (e) {
@@ -213,7 +219,6 @@ export default function NumbersPage() {
       setDrawerOpen(true);
     }
   }
-
   /* ========================================================= */
 
   return (
