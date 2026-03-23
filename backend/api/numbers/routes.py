@@ -212,6 +212,37 @@ def latest_numbers_route(
             f"Erreur latest numbers : {e}"
         )
 
+
+# ============================================================
+# STRUCTURED — CREATE
+# ============================================================
+
+@router.post("/structured/create")
+def create_structured_route(payload: dict):
+
+    try:
+
+        from core.numbers.structured_service import create_structured_number
+
+        create_structured_number(
+            id_content=payload.get("id_content"),
+            label=payload.get("label"),
+            value=payload.get("value"),
+            unit=payload.get("unit"),
+            context=payload.get("context"),
+        )
+
+        return {
+            "status": "ok",
+            "created": True,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur create structured numbers : {e}"
+        )
+
 # ============================================================
 # STRUCTURED — LIST PENDING
 # ============================================================
