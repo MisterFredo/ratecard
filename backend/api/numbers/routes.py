@@ -240,43 +240,100 @@ def get_by_id_route(id_insight: str):
             f"Erreur get numbers : {e}"
         )
 
+# ============================================================
+# STRUCTURED — LIST PENDING
+# ============================================================
+
 @router.get("/pending")
-def list_pending(limit: int = 200):
+def pending_route(limit: int = 200):
 
-    rows = query_bq(f"""
-        SELECT *
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_STRUCTURED`
-        WHERE STATUS = 'PENDING'
-        ORDER BY CREATED_AT DESC
-        LIMIT @limit
-    """, {"limit": limit})
+    try:
 
-    return {"status": "ok", "items": rows}
+        items = list_pending_numbers(limit=limit)
+
+        return {
+            "status": "ok",
+            "items": items,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur pending numbers : {e}"
+        )
+
+
+# ============================================================
+# STRUCTURED — UPDATE
+# ============================================================
 
 @router.put("/structured/update")
-def update_structured(payload: dict):
+def update_structured_route(payload: dict):
 
-    query_bq(f"""
-        UPDATE `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_STRUCTURED`
-        SET
-            LABEL = @label,
-            UNIT = @unit,
-            CONTEXT = @context,
-            STATUS = @status,
-            UPDATED_AT = CURRENT_TIMESTAMP()
-        WHERE ID_NUMBER = @id_number
-    """, payload)
+    try:
 
-    return {"status": "ok"}
+        update_structured_number(
+            id_number=payload.get("id_number"),
+            label=payload.get("label"),
+            value=payload.get("value"),
+            unit=payload.get("unit"),
+            context=payload.get("context"),
+            status=payload.get("status"),
+        )
+
+        return {
+            "status": "ok",
+            "updated": True,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur update structured numbers : {e}"
+        )
+
+
+# ============================================================
+# STRUCTURED — BULK VALIDATE
+# ============================================================
 
 @router.post("/structured/bulk-validate")
-def bulk_validate(ids: List[str]):
+def bulk_validate_route(ids: List[str]):
 
-    query_bq(f"""
-        UPDATE `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_STRUCTURED`
-        SET STATUS = 'VALIDATED',
-            UPDATED_AT = CURRENT_TIMESTAMP()
-        WHERE ID_NUMBER IN UNNEST(@ids)
-    """, {"ids": ids})
+    try:
 
-    return {"status": "ok"}
+        bulk_validate_numbers(ids)
+
+        return {
+            "status": "ok",
+            "updated": True,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur bulk validate numbers : {e}"
+        )
+
+
+# ============================================================
+# STRUCTURED — BULK REJECT
+# ============================================================
+
+@router.post("/structured/bulk-reject")
+def bulk_reject_route(ids: List[str]):
+
+    try:
+
+        bulk_reject_numbers(ids)
+
+        return {
+            "status": "ok",
+            "updated": True,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur bulk reject numbers : {e}"
+        )
