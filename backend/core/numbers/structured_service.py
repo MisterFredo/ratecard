@@ -59,20 +59,36 @@ def list_numbers_by_status(status: str, limit: int = 200) -> List[Dict]:
 # ============================================================
 
 def create_structured_number(
-    id_content: str,
-    label: str,
-    value: str,
-    unit: str,
-    context: str,
+    id_content: str = None,
+    source_id: str = None,
+
+    label: str = None,
+    value: str = None,
+    unit: str = None,
+    context: str = None,
+
     topic_labels: List[str] = None,
-    topic_ids: List[str] = None,  # 🔥 fallback safe
+    topic_ids: List[str] = None,
+
+    company_ids: List[str] = None,
+    solution_ids: List[str] = None,
 ):
     import uuid
 
     id_number = str(uuid.uuid4())
 
     VIEW = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
+
     TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBER_TOPIC"
+    TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBER_COMPANY"
+    TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBER_SOLUTION"
+
+    # ============================================================
+    # 0. VALIDATION MINIMALE
+    # ============================================================
+
+    if not id_content and not source_id:
+        raise ValueError("id_content ou source_id obligatoire")
 
     # ============================================================
     # 1. INSERT NUMBER
@@ -80,49 +96,73 @@ def create_structured_number(
 
     query_bq(f"""
         INSERT INTO `{TABLE}`
-        (ID_NUMBER, ID_CONTENT, LABEL, VALUE, UNIT, CONTEXT, STATUS, CREATED_AT, UPDATED_AT)
+        (
+            ID_NUMBER,
+            ID_CONTENT,
+            SOURCE_ID,
+            LABEL,
+            VALUE,
+            UNIT,
+            CONTEXT,
+            STATUS,
+            CREATED_AT,
+            UPDATED_AT
+        )
         VALUES
-        (@id_number, @id_content, @label, @value, @unit, @context, 'VALIDATED', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP())
+        (
+            @id_number,
+            @id_content,
+            @source_id,
+            @label,
+            @value,
+            @unit,
+            @context,
+            'VALIDATED',
+            CURRENT_TIMESTAMP(),
+            CURRENT_TIMESTAMP()
+        )
     """, {
         "id_number": id_number,
         "id_content": id_content,
+        "source_id": source_id,
         "label": label,
-        "value": float(value) if value not in (None, "", "null") else None,  # 🔥 SAFE
+        "value": float(value) if value not in (None, "", "null") else None,
         "unit": unit,
         "context": context,
     })
 
     # ============================================================
-    # 2. GET TOPICS FROM VIEW
+    # 2. TOPICS (LOGIQUE EXISTANTE + SAFE)
     # ============================================================
 
-    rows = query_bq(f"""
-        SELECT topics
-        FROM `{VIEW}`
-        WHERE id_content = @id_content
-        LIMIT 1
-    """, {
-        "id_content": id_content
-    })
+    topics = []
 
-    if not rows:
-        return
+    if id_content:
 
-    topics = rows[0].get("topics") or []
+        rows = query_bq(f"""
+            SELECT topics
+            FROM `{VIEW}`
+            WHERE id_content = @id_content
+            LIMIT 1
+        """, {
+            "id_content": id_content
+        })
 
-    # ============================================================
-    # 3. FILTER TOPICS (🔥 clé)
-    # ============================================================
+        if rows:
+            topics = rows[0].get("topics") or []
 
-    # si aucun filtre → tous les topics
-    if topic_labels:
+    # 🔥 priorité explicite
+    if topic_ids:
+        topics = [{"id_topic": tid} for tid in topic_ids]
+
+    elif topic_labels:
         topics = [
             t for t in topics
             if t["label"] in topic_labels
         ]
 
     # ============================================================
-    # 4. INSERT MAPPING NUMBER → TOPIC
+    # 3. INSERT NUMBER → TOPIC
     # ============================================================
 
     if topics:
@@ -134,30 +174,74 @@ def create_structured_number(
                 "CREATED_AT": datetime.now(timezone.utc).isoformat(),
             }
             for t in topics
+            if t.get("id_topic")
+        ]
+
+        if rows_to_insert:
+
+            client = get_bigquery_client()
+
+            client.load_table_from_json(
+                rows_to_insert,
+                TABLE_TOPIC,
+                job_config=bigquery.LoadJobConfig(
+                    write_disposition="WRITE_APPEND"
+                ),
+            ).result()
+
+    # ============================================================
+    # 4. INSERT NUMBER → COMPANY
+    # ============================================================
+
+    if company_ids:
+
+        rows_to_insert = [
+            {
+                "ID_NUMBER": id_number,
+                "ID_COMPANY": cid,
+                "CREATED_AT": datetime.now(timezone.utc).isoformat(),
+            }
+            for cid in company_ids
         ]
 
         client = get_bigquery_client()
 
         client.load_table_from_json(
             rows_to_insert,
-            TABLE_TOPIC,
+            TABLE_COMPANY,
             job_config=bigquery.LoadJobConfig(
                 write_disposition="WRITE_APPEND"
             ),
         ).result()
 
+    # ============================================================
+    # 5. INSERT NUMBER → SOLUTION
+    # ============================================================
 
-def get_topics_by_content(id_content: str):
+    if solution_ids:
 
-    rows = query_bq(f"""
-        SELECT ID_TOPIC
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC`
-        WHERE ID_CONTENT = @id_content
-    """, {
-        "id_content": id_content
-    })
+        rows_to_insert = [
+            {
+                "ID_NUMBER": id_number,
+                "ID_SOLUTION": sid,
+                "CREATED_AT": datetime.now(timezone.utc).isoformat(),
+            }
+            for sid in solution_ids
+        ]
 
-    return [r["ID_TOPIC"] for r in rows]
+        client = get_bigquery_client()
+
+        client.load_table_from_json(
+            rows_to_insert,
+            TABLE_SOLUTION,
+            job_config=bigquery.LoadJobConfig(
+                write_disposition="WRITE_APPEND"
+            ),
+        ).result()
+
+    # ============================================================
+
+    return id_number
 
 
 # ============================================================
