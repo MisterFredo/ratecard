@@ -15,7 +15,12 @@ export default function NumbersManualCreate() {
   const [label, setLabel] = useState("");
   const [value, setValue] = useState("");
   const [unit, setUnit] = useState("");
-  const [context, setContext] = useState("");
+
+  // 🔥 6 colonnes
+  const [actor, setActor] = useState("");
+  const [market, setMarket] = useState("");
+  const [period, setPeriod] = useState("");
+
   const [sourceId, setSourceId] = useState("");
 
   const [topics, setTopics] = useState<Option[]>([]);
@@ -29,14 +34,11 @@ export default function NumbersManualCreate() {
 
   const [loading, setLoading] = useState(false);
 
-  // 🔥 NEW — toggle sections
   const [openTopics, setOpenTopics] = useState(false);
   const [openCompanies, setOpenCompanies] = useState(false);
   const [openSolutions, setOpenSolutions] = useState(false);
 
-  /* =========================================================
-     LOAD OPTIONS
-  ========================================================= */
+  /* ========================================================= */
 
   async function loadOptions() {
     try {
@@ -85,9 +87,7 @@ export default function NumbersManualCreate() {
     loadOptions();
   }, []);
 
-  /* =========================================================
-     HELPERS
-  ========================================================= */
+  /* ========================================================= */
 
   function toggle(list: string[], setList: any, id: string) {
     setList(
@@ -97,9 +97,7 @@ export default function NumbersManualCreate() {
     );
   }
 
-  /* =========================================================
-     CREATE
-  ========================================================= */
+  /* ========================================================= */
 
   async function handleCreate() {
 
@@ -117,18 +115,27 @@ export default function NumbersManualCreate() {
         label,
         value,
         unit,
-        context,
+
+        // 🔥 6 colonnes
+        actor,
+        market,
+        period,
+
         topic_ids: selectedTopics,
         company_ids: selectedCompanies,
         solution_ids: selectedSolutions,
       });
 
-      // reset
       setLabel("");
       setValue("");
       setUnit("");
-      setContext("");
+
+      setActor("");
+      setMarket("");
+      setPeriod("");
+
       setSourceId("");
+
       setSelectedTopics([]);
       setSelectedCompanies([]);
       setSelectedSolutions([]);
@@ -154,7 +161,7 @@ export default function NumbersManualCreate() {
 
       {/* ================== CORE FIELDS ================== */}
 
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-7 gap-2">
 
         <input
           placeholder="Label"
@@ -177,10 +184,25 @@ export default function NumbersManualCreate() {
           className="border p-2"
         />
 
+        {/* 🔥 NEW */}
         <input
-          placeholder="Context"
-          value={context}
-          onChange={(e) => setContext(e.target.value)}
+          placeholder="Actor"
+          value={actor}
+          onChange={(e) => setActor(e.target.value)}
+          className="border p-2"
+        />
+
+        <input
+          placeholder="Market"
+          value={market}
+          onChange={(e) => setMarket(e.target.value)}
+          className="border p-2"
+        />
+
+        <input
+          placeholder="Period"
+          value={period}
+          onChange={(e) => setPeriod(e.target.value)}
           className="border p-2"
         />
 
