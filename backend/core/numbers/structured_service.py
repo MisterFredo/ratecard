@@ -59,8 +59,8 @@ def list_numbers_by_status(status: str, limit: int = 200) -> List[Dict]:
 # ============================================================
 
 def create_structured_number(
-    id_content: Optional[str] = None
-    source_id: Optional[str] = None
+    id_content: Optional[str] = None,
+    source_id: Optional[str] = None,
 
     label: str = None,
     value: str = None,
