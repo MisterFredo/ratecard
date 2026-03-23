@@ -2,7 +2,7 @@ import json
 from typing import Dict, Any
 
 from utils.llm import run_llm
-from core.numbers.backlog_prompt import build_prompt
+from core.numbers.backlog_service import build_prompt
 
 
 def process_backlog_row(row: Dict[str, Any]) -> Dict[str, Any]:
