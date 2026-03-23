@@ -21,15 +21,20 @@ def _now():
 
 def list_pending_numbers(limit: int = 200) -> List[Dict]:
 
-    rows = query_bq(f"""
+    client = get_bigquery_client()
+
+    query = f"""
         SELECT *
         FROM `{TABLE}`
         WHERE STATUS = 'PENDING'
         ORDER BY CREATED_AT DESC
         LIMIT {limit}
-    """)
+    """
 
-    return rows
+    job = client.query(query)
+    rows = job.result()
+
+    return [dict(row) for row in rows]
 
 
 # ============================================================
