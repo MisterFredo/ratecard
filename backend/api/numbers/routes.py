@@ -218,6 +218,10 @@ def latest_numbers_route(
 # ============================================================
 
 
+# ============================================================
+# STRUCTURED — CREATE
+# ============================================================
+
 @router.post("/structured/create")
 def create_structured_route(payload: dict):
 
@@ -225,18 +229,23 @@ def create_structured_route(payload: dict):
 
         from core.numbers.structured_service import create_structured_number
 
-        create_structured_number(
+        result = create_structured_number(
             id_content=payload.get("id_content"),
+            source_id=payload.get("source_id"),
+
             label=payload.get("label"),
             value=payload.get("value"),
             unit=payload.get("unit"),
             context=payload.get("context"),
-            topic_ids=payload.get("topic_ids", []),  # 🔥 NEW
+
+            topic_ids=payload.get("topic_ids", []),
+            company_ids=payload.get("company_ids", []),
+            solution_ids=payload.get("solution_ids", []),
         )
 
         return {
             "status": "ok",
-            "created": True,
+            "id_number": result,
         }
 
     except Exception as e:
