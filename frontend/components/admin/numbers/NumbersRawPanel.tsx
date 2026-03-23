@@ -17,6 +17,7 @@ type NumberItem = {
   context: string;
 };
 
+
 /* ========================================================= */
 
 export default function NumbersRawPanel() {
@@ -74,6 +75,14 @@ export default function NumbersRawPanel() {
   function unselectAll() {
     setSelected([]);
   }
+
+   function updateLocal(updated: NumberItem) {
+     setItems((prev) =>
+       prev.map((i) =>
+         getId(i) === getId(updated) ? updated : i
+       )
+     );
+   }
 
   /* =========================================================
      ACTIONS — BULK VALIDATE
