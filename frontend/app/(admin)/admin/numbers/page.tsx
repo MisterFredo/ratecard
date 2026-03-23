@@ -31,10 +31,10 @@ export default function NumbersPage() {
   const [drawerData, setDrawerData] = useState<any>(null);
 
   /* =========================================================
-     LOAD
+     LOAD INSIGHTS
   ========================================================= */
 
-  async function load() {
+  async function loadInsights() {
 
     setLoading(true);
 
@@ -52,15 +52,19 @@ export default function NumbersPage() {
       setSelected([]);
 
     } catch (e) {
-      console.error(e);
+      console.error("Erreur load insights", e);
     }
 
     setLoading(false);
   }
 
+  /* =========================================================
+     EFFECTS
+  ========================================================= */
+
   useEffect(() => {
     if (tab === "insights") {
-      load();
+      loadInsights();
     }
   }, [filters, tab]);
 
@@ -105,41 +109,71 @@ export default function NumbersPage() {
     if (selected.length === 0) return;
     if (!confirm("Générer les chiffres consolidés ?")) return;
 
-    await Promise.all(
-      selected.map((item) =>
-        api.post("/numbers/generate", item)
-      )
-    );
+    try {
 
-    load();
+      setLoading(true);
+
+      await Promise.all(
+        selected.map((item) =>
+          api.post("/numbers/generate", item)
+        )
+      );
+
+      await loadInsights();
+
+    } catch (e) {
+      console.error("Erreur generate", e);
+    }
+
+    setLoading(false);
   }
 
   async function validateSelected() {
 
-    await Promise.all(
-      selected.map((item) =>
-        api.put("/numbers/update", {
-          ...item,
-          status: "VALIDATED",
-        })
-      )
-    );
+    try {
 
-    load();
+      setLoading(true);
+
+      await Promise.all(
+        selected.map((item) =>
+          api.put("/numbers/update", {
+            ...item,
+            status: "VALIDATED",
+          })
+        )
+      );
+
+      await loadInsights();
+
+    } catch (e) {
+      console.error("Erreur validate", e);
+    }
+
+    setLoading(false);
   }
 
   async function publishSelected() {
 
-    await Promise.all(
-      selected.map((item) =>
-        api.put("/numbers/update", {
-          ...item,
-          status: "PUBLISHED",
-        })
-      )
-    );
+    try {
 
-    load();
+      setLoading(true);
+
+      await Promise.all(
+        selected.map((item) =>
+          api.put("/numbers/update", {
+            ...item,
+            status: "PUBLISHED",
+          })
+        )
+      );
+
+      await loadInsights();
+
+    } catch (e) {
+      console.error("Erreur publish", e);
+    }
+
+    setLoading(false);
   }
 
   /* =========================================================
@@ -164,7 +198,7 @@ export default function NumbersPage() {
       setDrawerOpen(true);
 
     } catch (e) {
-      console.error(e);
+      console.error("Erreur preview", e);
       setDrawerData(null);
       setDrawerOpen(true);
     }
@@ -180,7 +214,10 @@ export default function NumbersPage() {
         Numbers Control Panel
       </h1>
 
-      {/* 🔥 TABS */}
+      {/* =========================================================
+         TABS
+      ========================================================= */}
+
       <div className="flex gap-4">
 
         <button
@@ -208,7 +245,7 @@ export default function NumbersPage() {
       </div>
 
       {/* =========================================================
-         INSIGHTS (inchangé)
+         INSIGHTS
       ========================================================= */}
 
       {tab === "insights" && (
@@ -253,7 +290,7 @@ export default function NumbersPage() {
       )}
 
       {/* =========================================================
-         RAW NUMBERS
+         RAW NUMBERS (🔥 IMPORTANT)
       ========================================================= */}
 
       {tab === "raw" && (
