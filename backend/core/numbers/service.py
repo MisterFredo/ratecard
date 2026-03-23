@@ -175,13 +175,13 @@ def numbers_exists(entity_type, entity_id, year, period, frequency):
 # ============================================================
 def _get_numbers_data(entity_type, entity_id, year, period, frequency):
 
-    TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
+    TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_STRUCTURED"
     VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 
-    where_content = "FALSE"
+    where_clause = "FALSE"
 
     if entity_type == "topic":
-        where_content = """
+        where_clause = """
         EXISTS (
             SELECT 1 FROM UNNEST(c.topics) t
             WHERE t.id_topic = @entity_id
@@ -189,7 +189,7 @@ def _get_numbers_data(entity_type, entity_id, year, period, frequency):
         """
 
     elif entity_type == "company":
-        where_content = """
+        where_clause = """
         EXISTS (
             SELECT 1 FROM UNNEST(c.companies) comp
             WHERE comp.id_company = @entity_id
@@ -197,67 +197,26 @@ def _get_numbers_data(entity_type, entity_id, year, period, frequency):
         """
 
     elif entity_type == "solution":
-        where_content = """
+        where_clause = """
         EXISTS (
             SELECT 1 FROM UNNEST(c.solutions) s
             WHERE s.id_solution = @entity_id
         )
         """
 
-    # ============================================================
-    # DATE FILTER
-    # ============================================================
-
-    if frequency == "WEEKLY":
-        date_filter = "EXTRACT(ISOWEEK FROM c.published_at) = @period"
-    elif frequency == "QUARTERLY":
-        date_filter = "EXTRACT(QUARTER FROM c.published_at) = @period"
-    else:
-        date_filter = "EXTRACT(MONTH FROM c.published_at) = @period"
-
-    # ============================================================
-    # QUERY (JOIN VIEW + TABLE)
-    # ============================================================
-
     rows = query_bq(f"""
-        SELECT chiffre
-        FROM `{VIEW_CONTENT}` c
-        JOIN `{TABLE_CONTENT}` raw
-          ON c.ID_CONTENT = raw.ID_CONTENT,
-        UNNEST(raw.CHIFFRES) AS chiffre
-        WHERE {where_content}
+        SELECT n.LABEL, n.VALUE, n.UNIT, n.CONTEXT
+        FROM `{TABLE}` n
+        JOIN `{VIEW_CONTENT}` c
+          ON n.ID_CONTENT = c.ID_CONTENT
+        WHERE {where_clause}
         AND EXTRACT(YEAR FROM c.published_at) = @year
-        AND {date_filter}
     """, {
         "entity_id": entity_id,
         "year": year,
-        "period": period,
     })
 
-    # ============================================================
-    # CLEAN / SAFE OUTPUT
-    # ============================================================
-
-    chiffres = []
-
-    for r in rows:
-        val = r.get("chiffre")
-
-        if not val:
-            continue
-
-        # sécurité type
-        if not isinstance(val, str):
-            val = str(val)
-
-        # nettoyage léger
-        val = val.strip()
-
-        if len(val) > 3:  # évite bruit type "10"
-            chiffres.append(val)
-
-    return chiffres
-
+    return rows
 # ============================================================
 # PROMPT (CONSOLIDATION)
 # ============================================================
