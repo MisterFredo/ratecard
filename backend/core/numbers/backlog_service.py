@@ -69,3 +69,71 @@ def get_numbers_backlog(limit: int = 100) -> List[Dict]:
         })
 
     return results
+
+def build_prompt(row: dict) -> str:
+
+    return f"""
+Tu es un expert data marketing.
+
+Ta mission est de transformer un chiffre brut en donnée exploitable.
+
+--------------------------------------------------
+
+RÈGLES STRICTES
+
+1. DECISION
+
+- KEEP → si exploitable
+- REJECT → sinon
+
+2. CRITÈRES KEEP
+
+✔ KPI clair (CPC, CPM, croissance, part de marché, revenus…)
+✔ comparable
+✔ compréhensible seul
+✔ contexte suffisant
+
+3. REJECT SI
+
+❌ vague
+❌ non comparable
+❌ événement ponctuel
+❌ range
+❌ contexte insuffisant
+
+4. STRUCTURE SI KEEP
+
+- decision
+- label (court, métier, précis)
+- value (nombre uniquement)
+- unit (%, $, €, millions, milliards, x, utilisateurs, autres)
+- actor (sinon "Non précisé")
+- market (sinon "Non précisé")
+- period (sinon "Non précisé")
+- confidence (HIGH ou MEDIUM)
+
+5. FORMAT
+
+Retourne UNIQUEMENT un JSON :
+
+{{
+  "decision": "...",
+  "label": "...",
+  "value": ...,
+  "unit": "...",
+  "actor": "...",
+  "market": "...",
+  "period": "...",
+  "confidence": "..."
+}}
+
+--------------------------------------------------
+
+DONNÉES :
+
+Chiffre : {row["chiffre"]}
+Date : {row["date"]}
+Topics : {row["topics"]}
+Companies : {row["companies"]}
+Solutions : {row["solutions"]}
+"""
