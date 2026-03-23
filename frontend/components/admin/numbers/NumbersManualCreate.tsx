@@ -44,29 +44,29 @@ export default function NumbersManualCreate() {
       ]);
 
       setTopics(
-        (t.entities || []).map((x: any) => ({
+        (t.topics || t.entities || []).map((x: any) => ({
           id: x.id_topic,
           label: x.label,
         }))
       );
 
       setCompanies(
-        (c.entities || []).map((x: any) => ({
+        (c.companies || c.entities || []).map((x: any) => ({
           id: x.id_company,
           label: x.name,
         }))
       );
 
       setSolutions(
-        (s.entities || []).map((x: any) => ({
+        (s.solutions || s.entities || []).map((x: any) => ({
           id: x.id_solution,
           label: x.name,
         }))
       );
 
       setSources(
-        (src.entities || []).map((x: any) => ({
-          id: x.id_source,
+        (src.sources || src.entities || []).map((x: any) => ({
+          id: x.source_id,
           label: x.name,
         }))
       );
