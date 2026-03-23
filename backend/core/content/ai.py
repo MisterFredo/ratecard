@@ -136,6 +136,7 @@ PÉRIODE
 
 ACTEURS
 (Liste des entreprises citées ou "Aucun")
+Chaque société doit être sur une ligne spécifique, il est interdit d'avoir plusieurs sociétés sur la même ligne
 
 CONCEPTS
 (Liste des notions métier identifiées dans la source.
@@ -145,8 +146,8 @@ Le topic doit obligatoirement être choisi parmi la liste autorisée.
 Si aucun concept pertinent, écrire "Aucun")
 
 SOLUTIONS
-(Noms de produits, plateformes ou offres.
-Ou "Aucun")
+(Noms de produits, plateformes ou offres Ou "Aucun")
+Chaque solution doit être sur une ligne spécifique, il est interdit d'avoir plusieurs solutions sur la même ligne
 
 TOPICS
 (Choisir 1 à 3 topics uniquement parmi cette liste.
