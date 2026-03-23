@@ -318,20 +318,80 @@ FORMAT DE SORTIE (JSON STRICT)
 
 def generate_numbers(entity_type, entity_id, year, period, frequency, force=False):
 
+    # ============================================================
+    # CHECK EXISTING
+    # ============================================================
+
     if not force and numbers_exists(entity_type, entity_id, year, period, frequency):
         return {"status": "exists"}
 
-    chiffres = _get_numbers_data(entity_type, entity_id, year, period, frequency)
+    # ============================================================
+    # FETCH VALIDATED STRUCTURED NUMBERS
+    # ============================================================
+
+    from core.numbers.structured_service import get_validated_numbers
+
+    chiffres_structured = get_validated_numbers(
+        entity_type=entity_type,
+        entity_id=entity_id,
+        year=year,
+        period=period,
+        frequency=frequency,
+    )
+
+    if not chiffres_structured:
+        return {"status": "no_content"}
+
+    # ============================================================
+    # FORMAT FOR PROMPT
+    # ============================================================
+
+    chiffres = []
+
+    for c in chiffres_structured:
+
+        label = c.get("LABEL") or ""
+        value = c.get("VALUE")
+        unit = c.get("UNIT") or ""
+        context = c.get("CONTEXT") or ""
+
+        parts = []
+
+        if label:
+            parts.append(label)
+
+        if value is not None:
+            parts.append(str(value))
+
+        if unit:
+            parts.append(unit)
+
+        if context:
+            parts.append(context)
+
+        line = " | ".join(parts)
+
+        if line:
+            chiffres.append(line)
+
+    # sécurité volume
+    chiffres = chiffres[:200]
 
     if not chiffres:
         return {"status": "no_content"}
 
-    # limite pour éviter explosion prompt
-    chiffres = chiffres[:200]
+    # ============================================================
+    # BUILD PROMPT
+    # ============================================================
 
     prompt = _build_prompt(chiffres, year, period, frequency)
 
+    # ============================================================
+    # CALL LLM
+    # ============================================================
+
     try:
+
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
@@ -343,6 +403,10 @@ def generate_numbers(entity_type, entity_id, year, period, frequency, force=Fals
     except Exception as e:
         return {"status": "llm_error", "error": str(e)}
 
+    # ============================================================
+    # PARSE RESPONSE
+    # ============================================================
+
     try:
         metrics = json.loads(raw).get("metrics", [])
     except Exception:
@@ -351,6 +415,10 @@ def generate_numbers(entity_type, entity_id, year, period, frequency, force=Fals
 
     if not metrics:
         return {"status": "empty_metrics"}
+
+    # ============================================================
+    # INSERT INSIGHT
+    # ============================================================
 
     insight_id = create_numbers_insight({
         "entity_type": entity_type,
