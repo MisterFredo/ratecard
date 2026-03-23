@@ -236,7 +236,11 @@ def create_structured_route(payload: dict):
             label=payload.get("label"),
             value=payload.get("value"),
             unit=payload.get("unit"),
-            context=payload.get("context"),
+
+            # 🔥 NEW
+            actor=payload.get("actor"),
+            market=payload.get("market"),
+            period=payload.get("period"),
 
             topic_ids=payload.get("topic_ids", []),
             company_ids=payload.get("company_ids", []),
