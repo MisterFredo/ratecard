@@ -270,7 +270,9 @@ def update_structured_number(
     label: Optional[str] = None,
     value: Optional[float] = None,
     unit: Optional[str] = None,
-    context: Optional[str] = None,
+    actor: Optional[str] = None,
+    market: Optional[str] = None,
+    period: Optional[str] = None,
     status: Optional[str] = None,
 ):
 
@@ -279,37 +281,67 @@ def update_structured_number(
         "id_number": id_number,
     }
 
+    # ============================================================
+    # CORE FIELDS
+    # ============================================================
+
     if label is not None:
         updates.append("LABEL = @label")
         params["label"] = label
 
     if value is not None:
-        updates.append("VALUE = @value")
-        params["value"] = value
+        try:
+            params["value"] = float(value)
+            updates.append("VALUE = @value")
+        except:
+            pass  # ignore si invalide
 
     if unit is not None:
         updates.append("UNIT = @unit")
         params["unit"] = unit
 
-    if context is not None:
-        updates.append("CONTEXT = @context")
-        params["context"] = context
+    # ============================================================
+    # NEW DIMENSIONS
+    # ============================================================
+
+    if actor is not None:
+        updates.append("ACTOR = @actor")
+        params["actor"] = actor or "Non précisé"
+
+    if market is not None:
+        updates.append("MARKET = @market")
+        params["market"] = market or "Non précisé"
+
+    if period is not None:
+        updates.append("PERIOD = @period")
+        params["period"] = period or "Non précisé"
+
+    # ============================================================
+    # STATUS
+    # ============================================================
 
     if status is not None:
         updates.append("STATUS = @status")
         params["status"] = status
+
+    # ============================================================
+    # NOTHING TO UPDATE
+    # ============================================================
 
     if not updates:
         return
 
     updates.append("UPDATED_AT = CURRENT_TIMESTAMP()")
 
+    # ============================================================
+    # EXECUTE
+    # ============================================================
+
     query_bq(f"""
         UPDATE `{TABLE}`
         SET {", ".join(updates)}
         WHERE ID_NUMBER = @id_number
     """, params)
-
 
 # ============================================================
 # BULK VALIDATE
