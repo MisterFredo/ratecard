@@ -30,6 +30,9 @@ export default function NumbersPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerData, setDrawerData] = useState<any>(null);
 
+  // 🔥 NEW — loader global actions
+  const [processing, setProcessing] = useState(false);
+
   /* =========================================================
      LOAD INSIGHTS
   ========================================================= */
@@ -112,6 +115,7 @@ export default function NumbersPage() {
     try {
 
       setLoading(true);
+      setProcessing(true); // 🔥 NEW
 
       await Promise.all(
         selected.map((item) =>
@@ -126,6 +130,7 @@ export default function NumbersPage() {
     }
 
     setLoading(false);
+    setProcessing(false); // 🔥 NEW
   }
 
   async function validateSelected() {
@@ -133,6 +138,7 @@ export default function NumbersPage() {
     try {
 
       setLoading(true);
+      setProcessing(true); // 🔥 NEW
 
       await Promise.all(
         selected.map((item) =>
@@ -150,6 +156,7 @@ export default function NumbersPage() {
     }
 
     setLoading(false);
+    setProcessing(false); // 🔥 NEW
   }
 
   async function publishSelected() {
@@ -157,6 +164,7 @@ export default function NumbersPage() {
     try {
 
       setLoading(true);
+      setProcessing(true); // 🔥 NEW
 
       await Promise.all(
         selected.map((item) =>
@@ -174,6 +182,7 @@ export default function NumbersPage() {
     }
 
     setLoading(false);
+    setProcessing(false); // 🔥 NEW
   }
 
   /* =========================================================
@@ -213,6 +222,13 @@ export default function NumbersPage() {
       <h1 className="text-2xl font-semibold text-ratecard-blue">
         Numbers Control Panel
       </h1>
+
+      {/* 🔥 NEW — GLOBAL PROCESSING INDICATOR */}
+      {processing && (
+        <div className="text-sm text-blue-600">
+          Processing…
+        </div>
+      )}
 
       {/* =========================================================
          TABS
@@ -290,7 +306,7 @@ export default function NumbersPage() {
       )}
 
       {/* =========================================================
-         RAW NUMBERS (🔥 IMPORTANT)
+         RAW NUMBERS
       ========================================================= */}
 
       {tab === "raw" && (
