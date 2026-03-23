@@ -330,24 +330,23 @@ def parse_chiffres(row):
 
 def get_raw_numbers(limit: int = 500):
 
+    TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
     VIEW = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 
     rows = query_bq(f"""
         SELECT
-            c.id_content,
+            c.ID_CONTENT AS id_content,
             chiffre,
-            c.topics
-        FROM `{VIEW}` c,
+            v.topics
+        FROM `{TABLE_CONTENT}` c
+        JOIN `{VIEW}` v
+          ON c.ID_CONTENT = v.id_content,
         UNNEST(c.CHIFFRES) AS chiffre
         WHERE chiffre IS NOT NULL
         LIMIT @limit
     """, {
         "limit": limit
     })
-
-    # ============================================================
-    # PARSE + FORMAT POUR LE FRONT
-    # ============================================================
 
     results = []
 
@@ -356,7 +355,7 @@ def get_raw_numbers(limit: int = 500):
         raw = r.get("chiffre")
 
         if not raw or "|" not in raw:
-            continue  # 🔥 on ne garde que le futur propre
+            continue  # 🔥 futur uniquement
 
         parts = [p.strip() for p in raw.split("|")]
 
@@ -383,35 +382,6 @@ def get_raw_numbers(limit: int = 500):
         })
 
     return results
-
-    # ============================================================
-    # GROUP BY CONTENT + CHIFFRE
-    # ============================================================
-
-    grouped = {}
-
-    for r in rows:
-
-        key = f"{r['ID_CONTENT']}__{r['chiffre']}"
-
-        if key not in grouped:
-            grouped[key] = {
-                "id_content": r["ID_CONTENT"],
-                "label": "",
-                "value": "",
-                "unit": "",
-                "context": "",
-                "topics": [],
-            }
-
-        if r["TOPIC_LABEL"]:
-            grouped[key]["topics"].append({
-                "label": r["TOPIC_LABEL"],
-                "checked": True,  # 🔥 auto-check
-            })
-
-    return list(grouped.values())
-
 # ============================================================
 # FETCH VALIDATED (POUR INSIGHTS)
 # ============================================================
