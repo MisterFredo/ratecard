@@ -219,12 +219,9 @@ export default function NumbersPage() {
   return (
 
     <div className="space-y-6">
-
       <h1 className="text-2xl font-semibold text-ratecard-blue">
         Numbers Control Panel
       </h1>
-
-      {/* 🔥 NEW — GLOBAL PROCESSING INDICATOR */}
       {processing && (
         <div className="text-sm text-blue-600">
           Processing…
