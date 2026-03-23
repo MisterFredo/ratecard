@@ -96,6 +96,39 @@ export default function NumbersRawTable({
                   />
                 </td>
 
+                {/* TOPICS */}
+                <td className="p-3">
+                  <div className="flex flex-wrap gap-2">
+
+                    {(item.topics || []).map((t) => (
+
+                      <label key={t.id} className="flex items-center gap-1 text-xs">
+
+                        <input
+                          type="checkbox"
+                          checked={t.checked}
+                          onChange={(e) => {
+                            const updated = {
+                              ...item,
+                              topics: item.topics?.map((x) =>
+                                x.id === t.id
+                                  ? { ...x, checked: e.target.checked }
+                                  : x
+                              ),
+                            };
+                            onChange(updated); // 🔥 important
+                          }}
+                        />
+
+                        {t.label}
+
+                      </label>
+
+                    ))}
+
+                  </div>
+                </td>
+
                 {/* ACTION */}
                 <td className="p-3 text-right">
                   <button
