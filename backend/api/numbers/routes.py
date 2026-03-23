@@ -205,6 +205,37 @@ def get_backlog_route(limit: int = 100):
             f"Erreur backlog numbers : {e}"
         )
 
+# ============================================================
+# BACKLOG — PROCESS VIA LLM
+# ============================================================
+
+@router.post("/backlog/process")
+def process_backlog_route(limit: int = 100):
+
+    try:
+
+        from core.numbers.backlog_service import get_numbers_backlog
+        from core.numbers.backlog_llm import process_backlog_row
+
+        rows = get_numbers_backlog(limit=limit)
+
+        results = []
+
+        for r in rows:
+            result = process_backlog_row(r)
+            results.append(result)
+
+        return {
+            "status": "ok",
+            "items": results,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur backlog process : {e}"
+        )
+
 
 # ============================================================
 # LATEST (KEY ROUTE FRONT)
