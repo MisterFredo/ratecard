@@ -5,7 +5,7 @@
 ========================================================= */
 
 type TopicItem = {
-  label: string;     // 🔥 uniquement label (pas d’id)
+  label: string;
   checked: boolean;
 };
 
@@ -14,7 +14,12 @@ type RawNumberItem = {
   label: string;
   value: string;
   unit: string;
-  context: string;
+
+  // 🔥 6 colonnes
+  actor: string;
+  market: string;
+  period: string;
+
   topics?: TopicItem[];
 };
 
@@ -24,7 +29,7 @@ type Props = {
   getId: (item: RawNumberItem) => string;
   onToggle: (item: RawNumberItem) => void;
   onSave: (item: RawNumberItem) => void;
-  onChange: (item: RawNumberItem) => void; // 🔥 important
+  onChange: (item: RawNumberItem) => void;
 };
 
 
@@ -51,7 +56,12 @@ export default function NumbersRawTable({
             <th className="p-3">Label</th>
             <th className="p-3 w-24">Value</th>
             <th className="p-3 w-24">Unit</th>
-            <th className="p-3">Context</th>
+
+            {/* 🔥 6 colonnes */}
+            <th className="p-3">Actor</th>
+            <th className="p-3">Market</th>
+            <th className="p-3">Period</th>
+
             <th className="p-3">Topics</th>
             <th className="p-3 w-32 text-right">Action</th>
           </tr>
@@ -109,13 +119,35 @@ export default function NumbersRawTable({
                   />
                 </td>
 
-                {/* CONTEXT */}
+                {/* 🔥 ACTOR */}
                 <td className="p-3">
                   <input
                     className="border p-1 w-full"
-                    value={item.context}
+                    value={item.actor}
                     onChange={(e) =>
-                      onChange({ ...item, context: e.target.value })
+                      onChange({ ...item, actor: e.target.value })
+                    }
+                  />
+                </td>
+
+                {/* 🔥 MARKET */}
+                <td className="p-3">
+                  <input
+                    className="border p-1 w-full"
+                    value={item.market}
+                    onChange={(e) =>
+                      onChange({ ...item, market: e.target.value })
+                    }
+                  />
+                </td>
+
+                {/* 🔥 PERIOD */}
+                <td className="p-3">
+                  <input
+                    className="border p-1 w-full"
+                    value={item.period}
+                    onChange={(e) =>
+                      onChange({ ...item, period: e.target.value })
                     }
                   />
                 </td>
@@ -178,7 +210,7 @@ export default function NumbersRawTable({
 
           {items.length === 0 && (
             <tr>
-              <td colSpan={7} className="p-6 text-center text-gray-400">
+              <td colSpan={9} className="p-6 text-center text-gray-400">
                 Aucun chiffre à traiter
               </td>
             </tr>
