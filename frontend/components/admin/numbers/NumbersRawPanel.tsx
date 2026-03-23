@@ -6,24 +6,27 @@ import { api } from "@/lib/api";
 import NumbersRawTable from "./NumbersRawTable";
 
 /* =========================================================
-   RAW TYPE (FROM CONTENT)
+   TYPE STRUCTURÉ (🔥 IMPORTANT)
 ========================================================= */
 
-type RawNumberItem = {
+type NumberItem = {
   id_content: string;
-  chiffre: string;
+  label: string;
+  value: string;
+  unit: string;
+  context: string;
 };
 
 /* ========================================================= */
 
 export default function NumbersRawPanel() {
 
-  const [items, setItems] = useState<RawNumberItem[]>([]);
+  const [items, setItems] = useState<NumberItem[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   /* =========================================================
-     LOAD RAW (🔥 IMPORTANT)
+     LOAD
   ========================================================= */
 
   async function load() {
@@ -52,11 +55,11 @@ export default function NumbersRawPanel() {
      SELECT
   ========================================================= */
 
-  function getId(item: RawNumberItem) {
-    return `${item.id_content}__${item.chiffre}`;
+  function getId(item: NumberItem) {
+    return `${item.id_content}__${item.label}__${item.value}`;
   }
 
-  function toggle(item: RawNumberItem) {
+  function toggle(item: NumberItem) {
 
     const id = getId(item);
 
@@ -91,7 +94,10 @@ export default function NumbersRawPanel() {
           .map((item) =>
             api.post("/numbers/structured/create", {
               id_content: item.id_content,
-              raw_value: item.chiffre,
+              label: item.label,
+              value: item.value,
+              unit: item.unit,
+              context: item.context,
             })
           )
       );
@@ -105,10 +111,6 @@ export default function NumbersRawPanel() {
 
   async function rejectBulk() {
 
-    // 👉 pour le moment :
-    // on ne fait rien côté BQ (pas de trace)
-    // on retire juste du front
-
     const newItems = items.filter(
       (i) => !selected.includes(getId(i))
     );
@@ -118,19 +120,19 @@ export default function NumbersRawPanel() {
   }
 
   /* =========================================================
-     SINGLE SAVE (EDIT + VALIDATE)
+     SAVE (SINGLE)
   ========================================================= */
 
-  async function save(item: RawNumberItem, parsed: any) {
+  async function save(item: NumberItem) {
 
     try {
 
       await api.post("/numbers/structured/create", {
         id_content: item.id_content,
-        label: parsed.label,
-        value: parsed.value,
-        unit: parsed.unit,
-        context: parsed.context,
+        label: item.label,
+        value: item.value,
+        unit: item.unit,
+        context: item.context,
       });
 
       load();
@@ -193,6 +195,5 @@ export default function NumbersRawPanel() {
       />
 
     </div>
-
   );
 }
