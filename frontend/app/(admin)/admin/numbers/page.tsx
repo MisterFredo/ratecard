@@ -8,6 +8,7 @@ import NumbersTable from "@/components/admin/numbers/NumbersTable";
 import NumbersActions from "@/components/admin/numbers/NumbersActions";
 import NumbersDrawer from "@/components/admin/numbers/NumbersDrawer";
 import NumbersRawPanel from "@/components/admin/numbers/NumbersRawPanel";
+import NumbersManualCreate from "@/components/admin/numbers/NumbersManualCreate";
 
 import { NumbersItem } from "@/types/numbers";
 
