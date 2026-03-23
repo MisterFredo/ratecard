@@ -11,6 +11,12 @@ from core.numbers.service import (
     delete_numbers_insight,
 )
 
+from core.numbers_structured.service import (
+    list_pending_numbers,
+    update_structured_number,
+    bulk_validate_numbers,
+)
+
 router = APIRouter()
 
 
@@ -233,3 +239,44 @@ def get_by_id_route(id_insight: str):
             400,
             f"Erreur get numbers : {e}"
         )
+
+@router.get("/pending")
+def list_pending(limit: int = 200):
+
+    rows = query_bq(f"""
+        SELECT *
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_STRUCTURED`
+        WHERE STATUS = 'PENDING'
+        ORDER BY CREATED_AT DESC
+        LIMIT @limit
+    """, {"limit": limit})
+
+    return {"status": "ok", "items": rows}
+
+@router.put("/structured/update")
+def update_structured(payload: dict):
+
+    query_bq(f"""
+        UPDATE `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_STRUCTURED`
+        SET
+            LABEL = @label,
+            UNIT = @unit,
+            CONTEXT = @context,
+            STATUS = @status,
+            UPDATED_AT = CURRENT_TIMESTAMP()
+        WHERE ID_NUMBER = @id_number
+    """, payload)
+
+    return {"status": "ok"}
+
+@router.post("/structured/bulk-validate")
+def bulk_validate(ids: List[str]):
+
+    query_bq(f"""
+        UPDATE `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_STRUCTURED`
+        SET STATUS = 'VALIDATED',
+            UPDATED_AT = CURRENT_TIMESTAMP()
+        WHERE ID_NUMBER IN UNNEST(@ids)
+    """, {"ids": ids})
+
+    return {"status": "ok"}
