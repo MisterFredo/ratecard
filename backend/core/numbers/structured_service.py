@@ -193,8 +193,8 @@ def get_raw_numbers(limit: int = 500):
 
     query = f"""
         SELECT
-            ID_CONTENT,
-            CHIFFRES
+            ID_CONTENT as id_content,
+            CHIFFRES as chiffre
         FROM `{TABLE_CONTENT}`
         WHERE CHIFFRES IS NOT NULL
         LIMIT {limit}
