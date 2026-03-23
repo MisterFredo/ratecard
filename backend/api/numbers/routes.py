@@ -217,6 +217,7 @@ def latest_numbers_route(
 # STRUCTURED — CREATE
 # ============================================================
 
+
 @router.post("/structured/create")
 def create_structured_route(payload: dict):
 
@@ -230,6 +231,7 @@ def create_structured_route(payload: dict):
             value=payload.get("value"),
             unit=payload.get("unit"),
             context=payload.get("context"),
+            topic_ids=payload.get("topic_ids", []),  # 🔥 NEW
         )
 
         return {
