@@ -65,7 +65,10 @@ def create_structured_number(
     label: str = None,
     value: str = None,
     unit: str = None,
-    context: str = None,
+
+    actor: str = None,
+    market: str = None,
+    period: str = None,
 
     topic_labels: List[str] = None,
     topic_ids: List[str] = None,
@@ -91,7 +94,16 @@ def create_structured_number(
         raise ValueError("id_content ou source_id obligatoire")
 
     # ============================================================
-    # 1. INSERT NUMBER
+    # 1. NORMALISATION VALUE (SAFE)
+    # ============================================================
+
+    try:
+        value_float = float(value) if value not in (None, "", "null") else None
+    except:
+        value_float = None
+
+    # ============================================================
+    # 2. INSERT NUMBER
     # ============================================================
 
     query_bq(f"""
@@ -103,7 +115,9 @@ def create_structured_number(
             LABEL,
             VALUE,
             UNIT,
-            CONTEXT,
+            ACTOR,
+            MARKET,
+            PERIOD,
             STATUS,
             CREATED_AT,
             UPDATED_AT
@@ -116,7 +130,9 @@ def create_structured_number(
             @label,
             @value,
             @unit,
-            @context,
+            @actor,
+            @market,
+            @period,
             'VALIDATED',
             CURRENT_TIMESTAMP(),
             CURRENT_TIMESTAMP()
@@ -126,13 +142,15 @@ def create_structured_number(
         "id_content": id_content,
         "source_id": source_id,
         "label": label,
-        "value": float(value) if value not in (None, "", "null") else None,
+        "value": value_float,
         "unit": unit,
-        "context": context,
+        "actor": actor or "Non précisé",
+        "market": market or "Non précisé",
+        "period": period or "Non précisé",
     })
 
     # ============================================================
-    # 2. TOPICS (LOGIQUE EXISTANTE + SAFE)
+    # 3. TOPICS (LOGIQUE EXISTANTE + SAFE)
     # ============================================================
 
     topics = []
@@ -151,7 +169,7 @@ def create_structured_number(
         if rows:
             topics = rows[0].get("topics") or []
 
-    # 🔥 priorité explicite
+    # priorité explicite
     if topic_ids:
         topics = [{"id_topic": tid} for tid in topic_ids]
 
@@ -162,7 +180,7 @@ def create_structured_number(
         ]
 
     # ============================================================
-    # 3. INSERT NUMBER → TOPIC
+    # 4. INSERT NUMBER → TOPIC
     # ============================================================
 
     if topics:
@@ -190,7 +208,7 @@ def create_structured_number(
             ).result()
 
     # ============================================================
-    # 4. INSERT NUMBER → COMPANY
+    # 5. INSERT NUMBER → COMPANY
     # ============================================================
 
     if company_ids:
@@ -215,7 +233,7 @@ def create_structured_number(
         ).result()
 
     # ============================================================
-    # 5. INSERT NUMBER → SOLUTION
+    # 6. INSERT NUMBER → SOLUTION
     # ============================================================
 
     if solution_ids:
@@ -242,7 +260,6 @@ def create_structured_number(
     # ============================================================
 
     return id_number
-
 
 # ============================================================
 # UPDATE ONE (EDIT / VALIDATE / REJECT)
