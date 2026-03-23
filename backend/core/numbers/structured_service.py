@@ -185,6 +185,39 @@ def get_numbers_stats() -> List[Dict]:
 # RAW NUMBERS FROM CONTENT
 # ============================================================
 
+def parse_chiffres(row):
+
+    raw = row.get("CHIFFRES")
+
+    if not raw:
+        return []
+
+    # 🔥 sécurisation type
+    if isinstance(raw, list):
+        raw = " ".join(raw)
+
+    if not isinstance(raw, str):
+        return []
+
+    parts = [p.strip() for p in raw.split("|") if p.strip()]
+
+    results = []
+
+    for i in range(0, len(parts), 4):
+
+        if len(parts) < i + 4:
+            continue
+
+        results.append({
+            "id_content": row["ID_CONTENT"],
+            "label": parts[i],
+            "value": parts[i + 1],
+            "unit": parts[i + 2],
+            "context": parts[i + 3],
+        })
+
+    return results
+
 def get_raw_numbers(limit: int = 500):
 
     TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
@@ -193,17 +226,21 @@ def get_raw_numbers(limit: int = 500):
 
     query = f"""
         SELECT
-            ID_CONTENT as id_content,
-            CHIFFRES as chiffre
+            ID_CONTENT,
+            CHIFFRES
         FROM `{TABLE_CONTENT}`
         WHERE CHIFFRES IS NOT NULL
         LIMIT {limit}
     """
 
-    job = client.query(query)
-    rows = job.result()
+    rows = client.query(query).result()
 
-    return [dict(row) for row in rows]
+    results = []
+
+    for row in rows:
+        results.extend(parse_chiffres(dict(row)))
+
+    return results
 
 # ============================================================
 # FETCH VALIDATED (POUR INSIGHTS)
