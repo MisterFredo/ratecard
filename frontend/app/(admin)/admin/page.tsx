@@ -110,6 +110,50 @@ export default function AdminHome() {
     setProcessing(false);
   }
 
+  async function runLoop() {
+
+    try {
+
+      setProcessing(true);
+
+      let keepGoing = true;
+      let total = 0;
+
+      while (keepGoing) {
+
+        const res = await api.post(
+          "/numbers/backlog/process",
+          {
+            limit: 50,
+            max_batches: 1,
+          }
+        );
+
+        const items = res.items || [];
+
+        total += items.length;
+
+        // 🔥 update UI en live
+        setBacklogItems((prev) => [...items, ...prev]);
+
+        // 🔥 stop auto
+        if (items.length === 0) {
+          keepGoing = false;
+        }
+
+        // 🔥 pause
+        await new Promise(r => setTimeout(r, 3000));
+      }
+
+      console.log("TOTAL PROCESSED:", total);
+
+    } catch (e) {
+      console.error("Erreur runLoop", e);
+    }
+
+    setProcessing(false);
+  }
+
   if (loading) return <div>Chargement dashboard…</div>;
 
   return (
@@ -180,6 +224,26 @@ export default function AdminHome() {
           <span className="text-sm text-gray-400">
             {backlogItems.length} lignes
           </span>
+
+        </div>
+
+        <div className="flex gap-4">
+
+          <button
+            onClick={runBacklog}
+            disabled={processing}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            50
+          </button>
+
+          <button
+            onClick={runLoop}
+            disabled={processing}
+            className="bg-green-600 text-white px-4 py-2 rounded"
+          >
+            RUN AUTO
+          </button>
 
         </div>
 
