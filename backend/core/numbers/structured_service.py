@@ -84,7 +84,7 @@ def create_structured_number(
         "id_number": id_number,
         "id_content": id_content,
         "label": label,
-        "value": value,
+        "value": float(value) if value not in (None, "", "null") else None,  # 🔥 FIX
         "unit": unit,
         "context": context,
     })
