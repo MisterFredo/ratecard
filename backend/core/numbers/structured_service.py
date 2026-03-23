@@ -195,26 +195,31 @@ def parse_chiffres(row):
     if isinstance(raw, list):
         raw = "\n".join(raw)
 
+    if not isinstance(raw, str):
+        return []
+
     lines = [l.strip() for l in raw.split("\n") if l.strip()]
 
     results = []
 
     for line in lines:
 
-        if "|" not in line:
-            continue
-
+        # 🔥 split robuste
         parts = [p.strip() for p in line.split("|")]
 
-        if len(parts) != 4:
+        # 🔥 sécurité
+        if len(parts) < 4:
             continue
+
+        # 🔥 prendre les 4 premiers seulement
+        label, value, unit, context = parts[:4]
 
         results.append({
             "id_content": row["ID_CONTENT"],
-            "label": parts[0],
-            "value": parts[1],
-            "unit": parts[2],
-            "context": parts[3],
+            "label": label,
+            "value": value,
+            "unit": unit,
+            "context": context,
         })
 
     return results
