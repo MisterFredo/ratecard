@@ -6,8 +6,13 @@ import { api } from "@/lib/api";
 import NumbersRawTable from "./NumbersRawTable";
 
 /* =========================================================
-   TYPE STRUCTURÉ
+   TYPES
 ========================================================= */
+
+type TopicItem = {
+  label: string;
+  checked: boolean;
+};
 
 type NumberItem = {
   id_content: string;
@@ -15,8 +20,8 @@ type NumberItem = {
   value: string;
   unit: string;
   context: string;
+  topics?: TopicItem[]; // 🔥 FIX CRITIQUE
 };
-
 
 /* ========================================================= */
 
@@ -76,16 +81,20 @@ export default function NumbersRawPanel() {
     setSelected([]);
   }
 
-   function updateLocal(updated: NumberItem) {
-     setItems((prev) =>
-       prev.map((i) =>
-         getId(i) === getId(updated) ? updated : i
-       )
-     );
-   }
+  /* =========================================================
+     LOCAL UPDATE (🔥 IMPORTANT)
+  ========================================================= */
+
+  function updateLocal(updated: NumberItem) {
+    setItems((prev) =>
+      prev.map((i) =>
+        getId(i) === getId(updated) ? updated : i
+      )
+    );
+  }
 
   /* =========================================================
-     ACTIONS — BULK VALIDATE
+     BULK VALIDATE
   ========================================================= */
 
   async function validateBulk() {
@@ -106,11 +115,14 @@ export default function NumbersRawPanel() {
             value: item.value,
             unit: item.unit,
             context: item.context,
+            topic_labels: item.topics
+              ?.filter(t => t.checked)
+              .map(t => t.label) || [], // 🔥 FIX BULK
           })
         )
       );
 
-      // 🔥 suppression immédiate
+      // 🔥 suppression immédiate (UX propre)
       setItems((prev) =>
         prev.filter((i) => !selected.includes(getId(i)))
       );
@@ -125,10 +137,10 @@ export default function NumbersRawPanel() {
   }
 
   /* =========================================================
-     ACTIONS — BULK IGNORE
+     BULK IGNORE
   ========================================================= */
 
-  async function rejectBulk() {
+  function rejectBulk() {
 
     const newItems = items.filter(
       (i) => !selected.includes(getId(i))
@@ -144,25 +156,30 @@ export default function NumbersRawPanel() {
 
   async function save(item: NumberItem) {
 
-     try {
+    try {
 
-       await api.post("/numbers/structured/create", {
-         id_content: item.id_content,
-         label: item.label,
-         value: item.value,
-         unit: item.unit,
-         context: item.context,
-         topic_labels: item.topics
-           ?.filter(t => t.checked)
-           .map(t => t.label) || [], // 🔥 FIX
-       });
+      await api.post("/numbers/structured/create", {
+        id_content: item.id_content,
+        label: item.label,
+        value: item.value,
+        unit: item.unit,
+        context: item.context,
+        topic_labels: item.topics
+          ?.filter(t => t.checked)
+          .map(t => t.label) || [],
+      });
 
-       load();
+      // 🔥 suppression immédiate
+      setItems((prev) =>
+        prev.filter((i) => getId(i) !== getId(item))
+      );
 
-     } catch (e) {
-       console.error("Erreur save", e);
-     }
-   }
+      console.log("✔ Item validated");
+
+    } catch (e) {
+      console.error("Erreur save", e);
+    }
+  }
 
   /* ========================================================= */
 
@@ -214,7 +231,7 @@ export default function NumbersRawPanel() {
         getId={getId}
         onToggle={toggle}
         onSave={save}
-        onChange={updateLocal} // 🔥 AJOUT ICI
+        onChange={updateLocal}
       />
 
     </div>
