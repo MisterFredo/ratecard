@@ -1,8 +1,13 @@
-from typing import List, Dict, Optional
+import uuid
+import json
+
 from datetime import datetime, timezone
+from typing import List, Dict, Optional
+from google.cloud import bigquery
+from openai import OpenAI
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq
+from utils.bigquery_utils import query_bq, get_bigquery_client
 
 TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_STRUCTURED"
 
