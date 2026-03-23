@@ -144,27 +144,25 @@ export default function NumbersRawPanel() {
 
   async function save(item: NumberItem) {
 
-    try {
+     try {
 
-      await api.post("/numbers/structured/create", {
-        id_content: item.id_content,
-        label: item.label,
-        value: item.value,
-        unit: item.unit,
-        context: item.context,
-      });
+       await api.post("/numbers/structured/create", {
+         id_content: item.id_content,
+         label: item.label,
+         value: item.value,
+         unit: item.unit,
+         context: item.context,
+         topic_labels: item.topics
+           ?.filter(t => t.checked)
+           .map(t => t.label) || [], // 🔥 FIX
+       });
 
-      // 🔥 suppression immédiate
-      setItems((prev) =>
-        prev.filter((i) => getId(i) !== getId(item))
-      );
+       load();
 
-      console.log("✔ Item validated");
-
-    } catch (e) {
-      console.error("Erreur save", e);
-    }
-  }
+     } catch (e) {
+       console.error("Erreur save", e);
+     }
+   }
 
   /* ========================================================= */
 
