@@ -181,6 +181,30 @@ def delete_route(id_insight: str):
             f"Erreur suppression numbers : {e}"
         )
 
+# ============================================================
+# BACKLOG — GET RAW NUMBERS WITH CONTEXT (GPT READY)
+# ============================================================
+
+@router.get("/backlog")
+def get_backlog_route(limit: int = 100):
+
+    try:
+
+        from core.numbers.backlog_service import get_numbers_backlog
+
+        items = get_numbers_backlog(limit=limit)
+
+        return {
+            "status": "ok",
+            "items": items,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur backlog numbers : {e}"
+        )
+
 
 # ============================================================
 # LATEST (KEY ROUTE FRONT)
