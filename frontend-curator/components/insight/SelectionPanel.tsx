@@ -3,8 +3,8 @@
 import {
   Mail,
   Brain,
+  Loader2,
   Copy,
-  Sparkles,
 } from "lucide-react";
 
 import type { FeedItem } from "@/types/feed";
@@ -16,7 +16,6 @@ type Props = {
   selectedIds: string[];
 
   finalEmail: string;
-  insight?: string;
 
   loading: boolean;
 
@@ -30,7 +29,6 @@ export default function SelectionPanel({
   items,
   selectedIds,
   finalEmail,
-  insight,
   loading,
   onGeneratePreview,
   onGenerateInsight,
@@ -42,58 +40,16 @@ export default function SelectionPanel({
 
   function formatDate(date?: string | null) {
     if (!date) return "";
-    try {
-      return new Date(date).toLocaleDateString("fr-FR");
-    } catch {
-      return "";
-    }
+    return new Date(date).toLocaleDateString("fr-FR");
   }
 
-  /* =========================================================
-     PARSE LLM
-  ========================================================= */
-
-  function parseInsight(text?: string) {
-    if (!text) return [];
-
-    const sections = text.split("\n\n");
-
-    return sections.map((s, i) => (
-      <div key={i} className="space-y-2">
-        {s.split("\n").map((line, j) => {
-          if (line.startsWith("-")) {
-            return (
-              <div key={j} className="flex gap-2 text-sm">
-                <span className="text-gray-400">•</span>
-                <span className="text-gray-700">
-                  {line.replace("- ", "")}
-                </span>
-              </div>
-            );
-          }
-
-          return (
-            <div
-              key={j}
-              className="text-xs font-semibold text-gray-500 uppercase"
-            >
-              {line}
-            </div>
-          );
-        })}
-      </div>
-    ));
-  }
-
-  /* =========================================================
-     RENDER
-  ========================================================= */
+  /* ========================================================= */
 
   return (
-    <div className="sticky top-4 space-y-6 h-[calc(100vh-40px)] overflow-auto pr-2">
+    <div className="sticky top-6 h-[calc(100vh-48px)] overflow-auto pr-2 space-y-6">
 
       {/* HEADER */}
-      <div className="space-y-1">
+      <div>
         <div className="text-sm font-semibold text-gray-900">
           Sélection
         </div>
@@ -104,6 +60,12 @@ export default function SelectionPanel({
 
       {/* LIST */}
       <div className="space-y-2 max-h-[260px] overflow-auto">
+        {selectedItems.length === 0 && (
+          <div className="text-xs text-gray-400">
+            Aucune sélection
+          </div>
+        )}
+
         {selectedItems.map((item) => (
           <div
             key={item.id}
@@ -146,25 +108,31 @@ export default function SelectionPanel({
         <button
           onClick={onGeneratePreview}
           disabled={loading || selectedItems.length === 0}
-          className="flex items-center justify-center gap-2 flex-1 py-2 text-xs rounded-lg bg-gray-100 text-gray-700"
+          className="flex-1 py-2 text-xs rounded-lg bg-gray-100 text-gray-700 disabled:opacity-50"
         >
-          <Mail size={14} />
           Générer
         </button>
 
         <button
           onClick={onGenerateInsight}
           disabled={loading || selectedItems.length === 0}
-          className="flex items-center justify-center gap-2 flex-1 py-2 text-xs rounded-lg bg-black text-white"
+          className="flex-1 py-2 text-xs rounded-lg bg-black text-white disabled:opacity-50"
         >
-          <Sparkles size={14} />
           Insight
         </button>
       </div>
 
+      {/* LOADER */}
+      {loading && (
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <Loader2 className="animate-spin" size={14} />
+          Génération en cours...
+        </div>
+      )}
+
       {/* OUTPUT */}
-      {finalEmail && (
-        <div className="space-y-4 border rounded-lg p-4 bg-white">
+      {finalEmail && !loading && (
+        <div className="border rounded-lg p-4 bg-white space-y-4">
 
           {/* HEADER */}
           <div className="flex justify-between items-center">
@@ -184,24 +152,9 @@ export default function SelectionPanel({
             </button>
           </div>
 
-          {/* EMAIL */}
+          {/* CONTENT */}
           <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
             {finalEmail}
-          </div>
-        </div>
-      )}
-
-      {/* INSIGHT */}
-      {insight && (
-        <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
-
-          <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
-            <Brain size={16} />
-            Insight
-          </div>
-
-          <div className="space-y-4">
-            {parseInsight(insight)}
           </div>
         </div>
       )}
