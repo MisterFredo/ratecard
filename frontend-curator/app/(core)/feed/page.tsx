@@ -40,7 +40,7 @@ export default function FeedPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   /* =========================================================
-     OUTPUT UNIQUE
+     OUTPUT
   ========================================================= */
 
   const [finalEmail, setFinalEmail] = useState("");
@@ -173,6 +173,7 @@ export default function FeedPage() {
   async function generatePreview() {
     if (!selectedIds.length) return;
 
+    setFinalEmail(""); // 🔥 reset UI
     setLoadingInsight(true);
 
     try {
@@ -193,6 +194,7 @@ export default function FeedPage() {
   async function generateInsight() {
     if (!selectedIds.length) return;
 
+    setFinalEmail(""); // 🔥 reset UI
     setLoadingInsight(true);
 
     try {
@@ -201,7 +203,6 @@ export default function FeedPage() {
         mode: "insight",
       });
 
-      // 🔥 on privilégie le rendu enrichi
       setFinalEmail(
         res.final_email || res.email || ""
       );
@@ -246,20 +247,23 @@ export default function FeedPage() {
         />
       </div>
 
-      {/* RIGHT */}
-      <div className="xl:col-span-1 h-[calc(100vh-120px)]">
-        <SelectionPanel
-          items={items}
-          selectedIds={selectedIds}
+      {/* RIGHT → conditionnel + sticky */}
+      {selectedIds.length > 0 && (
+        <div className="xl:col-span-1">
+          <div className="sticky top-24">
+            <SelectionPanel
+              items={items}
+              selectedIds={selectedIds}
 
-          finalEmail={finalEmail}
+              finalEmail={finalEmail}
+              loading={loadingInsight}
 
-          loading={loadingInsight}
-
-          onGeneratePreview={generatePreview}
-          onGenerateInsight={generateInsight}
-        />
-      </div>
+              onGeneratePreview={generatePreview}
+              onGenerateInsight={generateInsight}
+            />
+          </div>
+        </div>
+      )}
 
       {/* DRAWERS */}
       {selectedItem && (
