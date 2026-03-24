@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List
 
-from core.insights.service import get_contents_by_ids, build_insight_payload
+from core.insights.service import get_contents_by_ids, build_insight_payload, generate_insights
 
 router = APIRouter()
 
@@ -12,9 +12,7 @@ class InsightRequest(BaseModel):
 
 
 @router.post("/content")
-def generate_insights(payload: InsightRequest):
-    try:
-        items = get_contents_by_ids(payload.ids)
-        return build_insight_payload(items)
-    except Exception as e:
-        raise HTTPException(400, f"Erreur insights : {e}")
+def generate_insights_route(payload: InsightRequest):
+    items = get_contents_by_ids(payload.ids)
+    result = generate_insights(items)
+    return {"result": result}
