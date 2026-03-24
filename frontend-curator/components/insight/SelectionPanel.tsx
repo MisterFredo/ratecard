@@ -7,8 +7,8 @@ type Props = {
   items: FeedItem[];
   selectedIds: string[];
 
-  finalEmail: string; // fallback
-  html?: string;      // 🔥 NEW
+  finalEmail: string;
+  html?: string;
 
   loading: boolean;
 
@@ -42,17 +42,20 @@ export default function SelectionPanel({
   }
 
   return (
-    <div className="h-full flex flex-col gap-4">
+    <div className="h-full flex flex-col">
 
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
+      {/* =====================================================
+         HEADER (FIXE)
+      ===================================================== */}
+      <div className="flex items-center justify-between pb-3 border-b">
+
         <h2 className="text-sm font-semibold">
           Sélection ({selectedItems.length})
         </h2>
 
         <div className="flex items-center gap-3">
 
-          {/* MODE SWITCH */}
+          {/* MODE */}
           <div className="flex border rounded overflow-hidden text-xs">
             <button
               onClick={() => setMode("preview")}
@@ -77,7 +80,7 @@ export default function SelectionPanel({
             </button>
           </div>
 
-          {/* GENERATE */}
+          {/* ACTION */}
           <button
             onClick={handleGenerate}
             disabled={loading || selectedItems.length === 0}
@@ -88,10 +91,12 @@ export default function SelectionPanel({
         </div>
       </div>
 
-      {/* OUTPUT */}
-      <div className="flex-1 border border-gray-200 rounded-lg overflow-hidden bg-white">
+      {/* =====================================================
+         OUTPUT (ZONE PRINCIPALE)
+      ===================================================== */}
+      <div className="flex-1 flex flex-col overflow-hidden mt-4 border rounded-xl bg-white">
 
-        {/* HEADER */}
+        {/* HEADER OUTPUT */}
         <div className="flex items-center justify-between px-3 py-2 border-b bg-gray-50">
           <span className="text-xs font-medium text-gray-700">
             Résultat
@@ -107,8 +112,8 @@ export default function SelectionPanel({
           )}
         </div>
 
-        {/* CONTENT */}
-        <div className="h-full overflow-auto">
+        {/* CONTENT SCROLL */}
+        <div className="flex-1 overflow-auto">
 
           {loading && (
             <div className="p-4 text-sm text-gray-500 animate-pulse">
@@ -122,17 +127,19 @@ export default function SelectionPanel({
             </div>
           )}
 
-          {/* 🔥 HTML RENDER (clé) */}
+          {/* 🔥 HTML RENDER PREMIUM */}
           {!loading && html && (
-            <div
-              className="p-4"
-              dangerouslySetInnerHTML={{ __html: html }}
-            />
+            <div className="max-w-[680px] mx-auto p-6">
+              <div
+                className="text-sm leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: html }}
+              />
+            </div>
           )}
 
           {/* fallback */}
           {!loading && !html && finalEmail && (
-            <div className="p-4 whitespace-pre-wrap text-sm text-gray-700">
+            <div className="p-6 whitespace-pre-wrap text-sm text-gray-700">
               {finalEmail}
             </div>
           )}
@@ -140,17 +147,28 @@ export default function SelectionPanel({
         </div>
       </div>
 
-      {/* LIST (SECONDARY) */}
-      <div className="max-h-[160px] overflow-auto space-y-2">
-        {selectedItems.map((item) => (
-          <div
-            key={item.id}
-            className="text-xs bg-gray-50 border rounded-lg p-2"
-          >
-            {item.title}
+      {/* =====================================================
+         LIST (SECONDARY - NE CASSE PLUS L'UX)
+      ===================================================== */}
+      {selectedItems.length > 0 && (
+        <div className="mt-4 border rounded-lg p-2 max-h-[140px] overflow-auto bg-gray-50">
+
+          <div className="text-[10px] text-gray-400 mb-2">
+            Contenus sélectionnés
           </div>
-        ))}
-      </div>
+
+          <div className="space-y-1">
+            {selectedItems.map((item) => (
+              <div
+                key={item.id}
+                className="text-xs text-gray-700 truncate"
+              >
+                • {item.title}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
     </div>
   );
