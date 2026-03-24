@@ -7,7 +7,7 @@ TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
 
 def get_contents_by_ids(ids: List[str]) -> List[Dict]:
     """
-    Récupère les contenus enrichis pour génération d'insights.
+    Récupère les contenus pour INSIGHTS.
     """
 
     if not ids:
@@ -32,7 +32,6 @@ def get_contents_by_ids(ids: List[str]) -> List[Dict]:
         {"ids": ids}
     )
 
-    # 🔹 Normalisation
     results = []
 
     for r in rows:
@@ -50,3 +49,11 @@ def get_contents_by_ids(ids: List[str]) -> List[Dict]:
         })
 
     return results
+
+
+def build_insight_payload(items: List[Dict]) -> Dict:
+    return {
+        "type": "insight",
+        "count": len(items),
+        "items": items
+    }
