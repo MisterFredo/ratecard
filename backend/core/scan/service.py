@@ -68,54 +68,38 @@ def get_news_by_ids(ids: List[str]) -> List[Dict]:
 # ============================================================
 
 def format_scan_as_text(items: List[Dict]) -> str:
-    """
-    Transforme les news en format texte prêt à copier
-    (email / slack / doc).
-    """
 
     if not items:
         return "Aucune actualité sélectionnée."
 
-    BASE_URL = "https://ratecard.fr/news"
-
     lines = []
-
-    # 🔹 Header
     lines.append("🗞️ Veille - Sélection personnalisée")
 
-    # 🔹 Séparation NEWS / BRÈVES
     news_items = [i for i in items if i.get("news_kind") == "NEWS"]
     breves_items = [i for i in items if i.get("news_kind") == "BRIEF"]
 
-    def build_block(item: Dict) -> str:
+    def build_block(item):
         title = (item.get("title") or "").strip()
         excerpt = (item.get("excerpt") or "").strip()
         company = item.get("company", {}).get("name")
-        news_id = item.get("id")
 
-        url = f"{BASE_URL}/{news_id}"
-
-        # 🔹 Ligne titre
         line = f"• {title}"
 
         if company:
             line += f" ({company})"
 
-        # 🔹 Bloc
-        block = f"{line}\n{url}"
+        block = line
 
         if excerpt:
             block += f"\n{excerpt}"
 
         return block
 
-    # 🔹 NEWS
     if news_items:
         lines.append("\n📰 News")
         for item in news_items:
             lines.append(build_block(item))
 
-    # 🔹 BRÈVES
     if breves_items:
         lines.append("\n⚡ Brèves")
         for item in breves_items:
