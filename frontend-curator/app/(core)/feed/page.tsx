@@ -14,12 +14,18 @@ import { searchCurator, getLatestCurator } from "@/lib/search";
 import type { FeedItem, FeedBadge } from "@/types/feed";
 import { api } from "@/lib/api";
 
-export default function FeedPage() {
+/* ========================================================= */
 
+export default function FeedPage() {
   const LIMIT = 20;
+
+  /* =========================================================
+     DATA
+  ========================================================= */
 
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
 
   const [query, setQuery] = useState("");
   const [offset, setOffset] = useState(0);
@@ -27,10 +33,22 @@ export default function FeedPage() {
   const [hasMore, setHasMore] = useState(true);
   const [stats, setStats] = useState<any>(null);
 
+  /* =========================================================
+     SELECTION
+  ========================================================= */
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const [insight, setInsight] = useState("");
+  /* =========================================================
+     OUTPUT UNIQUE
+  ========================================================= */
+
+  const [finalEmail, setFinalEmail] = useState("");
   const [loadingInsight, setLoadingInsight] = useState(false);
+
+  /* =========================================================
+     DRAWER
+  ========================================================= */
 
   const [selectedItem, setSelectedItem] =
     useState<FeedItem | null>(null);
@@ -38,20 +56,40 @@ export default function FeedPage() {
   const [loadingItemId, setLoadingItemId] =
     useState<string | null>(null);
 
-  /* LOAD */
+  /* =========================================================
+     LOAD
+  ========================================================= */
 
   async function load(reset = false, q?: string) {
+    const finalQuery = (q ?? query)?.trim();
+
     if (loading) return;
 
     setLoading(true);
 
     try {
-      const res = q
-        ? await searchCurator({ query: q, limit: LIMIT, offset })
-        : await getLatestCurator({ limit: LIMIT, offset });
+      const currentOffset = reset ? 0 : offset;
 
-      setItems(reset ? res.items : [...items, ...res.items]);
-      setOffset(offset + res.items.length);
+      const res = finalQuery
+        ? await searchCurator({
+            query: finalQuery,
+            limit: LIMIT,
+            offset: currentOffset,
+          })
+        : await getLatestCurator({
+            limit: LIMIT,
+            offset: currentOffset,
+          });
+
+      if (reset) {
+        setItems(res.items);
+        setOffset(res.items.length);
+      } else {
+        setItems((prev) => [...prev, ...res.items]);
+        setOffset((prev) => prev + res.items.length);
+      }
+
+      setTotal(res.count ?? 0);
       setHasMore(res.items.length === LIMIT);
 
     } finally {
@@ -59,13 +97,98 @@ export default function FeedPage() {
     }
   }
 
-  useEffect(() => { load(true); }, []);
+  /* =========================================================
+     INIT
+  ========================================================= */
 
   useEffect(() => {
-    getContentStats().then(setStats);
+    load(true);
   }, []);
 
-  /* INSIGHT */
+  /* =========================================================
+     STATS
+  ========================================================= */
+
+  useEffect(() => {
+    async function loadStats() {
+      const s = await getContentStats();
+      setStats(s);
+    }
+
+    loadStats();
+  }, []);
+
+  /* =========================================================
+     BADGES / STATS
+  ========================================================= */
+
+  function handleBadgeClick(badge: FeedBadge) {
+    const value = badge.label;
+    if (!value) return;
+
+    setQuery(value);
+    window.scrollTo({ top: 0 });
+
+    load(true, value);
+  }
+
+  function handleStatClick(value: string) {
+    if (!value) return;
+
+    setQuery(value);
+    window.scrollTo({ top: 0 });
+
+    load(true, value);
+  }
+
+  /* =========================================================
+     DRAWER
+  ========================================================= */
+
+  function handleSelectItem(item: FeedItem) {
+    setLoadingItemId(item.id);
+    setSelectedItem(item);
+
+    setTimeout(() => {
+      setLoadingItemId(null);
+    }, 300);
+  }
+
+  /* =========================================================
+     TOGGLE SELECT
+  ========================================================= */
+
+  function toggleSelect(item: FeedItem) {
+    setSelectedIds((prev) =>
+      prev.includes(item.id)
+        ? prev.filter((i) => i !== item.id)
+        : [...prev, item.id]
+    );
+  }
+
+  /* =========================================================
+     ACTIONS
+  ========================================================= */
+
+  async function generatePreview() {
+    if (!selectedIds.length) return;
+
+    setLoadingInsight(true);
+
+    try {
+      const res: any = await api.post("/insight/", {
+        ids: selectedIds,
+        mode: "preview",
+      });
+
+      setFinalEmail(res.email || "");
+
+    } catch (e) {
+      console.error("❌ generatePreview error", e);
+    } finally {
+      setLoadingInsight(false);
+    }
+  }
 
   async function generateInsight() {
     if (!selectedIds.length) return;
@@ -78,40 +201,24 @@ export default function FeedPage() {
         mode: "insight",
       });
 
-      setInsight(res.insight || "");
+      // 🔥 on privilégie le rendu enrichi
+      setFinalEmail(
+        res.final_email || res.email || ""
+      );
 
+    } catch (e) {
+      console.error("❌ generateInsight error", e);
     } finally {
       setLoadingInsight(false);
     }
   }
 
-  /* HELPERS */
-
-  function toggleSelect(item: FeedItem) {
-    setSelectedIds(prev =>
-      prev.includes(item.id)
-        ? prev.filter(i => i !== item.id)
-        : [...prev, item.id]
-    );
-  }
-
-  function handleSelectItem(item: FeedItem) {
-    setSelectedItem(item);
-  }
-
-  function handleBadgeClick(badge: FeedBadge) {
-    setQuery(badge.label);
-    load(true, badge.label);
-  }
-
-  const selectedItems = items.filter(i =>
-    selectedIds.includes(i.id)
-  );
-
-  /* RENDER */
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
 
       {/* LEFT */}
       <div className="xl:col-span-2">
@@ -119,34 +226,40 @@ export default function FeedPage() {
           query={query}
           setQuery={setQuery}
           onSearch={() => load(true, query)}
+
           stats={stats}
+          onClickStat={handleStatClick}
+
           items={items}
+          total={total}
           loading={loading}
           hasMore={hasMore}
+
           onLoadMore={() => load(false)}
           onSelectItem={handleSelectItem}
           onClickBadge={handleBadgeClick}
+
           loadingItemId={loadingItemId}
+
           selectedIds={selectedIds}
           onToggleSelect={toggleSelect}
         />
       </div>
 
       {/* RIGHT */}
-      {selectedItems.length > 0 && (
-        <div className="xl:col-span-1">
-          <div className="sticky top-24">
+      <div className="xl:col-span-1 h-[calc(100vh-120px)]">
+        <SelectionPanel
+          items={items}
+          selectedIds={selectedIds}
 
-            <SelectionPanel
-              items={selectedItems}
-              insight={insight}
-              loading={loadingInsight}
-              onGenerateInsight={generateInsight}
-            />
+          finalEmail={finalEmail}
 
-          </div>
-        </div>
-      )}
+          loading={loadingInsight}
+
+          onGeneratePreview={generatePreview}
+          onGenerateInsight={generateInsight}
+        />
+      </div>
 
       {/* DRAWERS */}
       {selectedItem && (
