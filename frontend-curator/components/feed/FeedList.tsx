@@ -43,7 +43,6 @@ export default function FeedList({
   selectedIds = [],
   onToggleSelect,
 }: Props) {
-
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   /* =========================================================
@@ -115,7 +114,6 @@ export default function FeedList({
 
   return (
     <div className="space-y-4">
-
       {headerLabel}
 
       {/* EMPTY */}
@@ -139,34 +137,34 @@ export default function FeedList({
       )}
 
       {/* ITEMS */}
-        <div className="divide-y divide-gray-100 rounded-xl bg-white border border-gray-100 overflow-hidden">
-          {safeItems.map((item) => {
-            const isSelected = selectedIds.includes(item.id);
-            const isInsight = item.type === "analysis";
+      <div className="divide-y divide-gray-100 rounded-xl bg-white border border-gray-100 overflow-hidden">
+        {safeItems.map((item) => {
+          const isSelected = selectedIds.includes(item.id);
+          const isInsight = item.type === "analysis";
 
-            return (
-              <div
-                key={`${item.type}-${item.id}`}
-                className={`
-                  relative flex items-start gap-3 px-3 py-2
-                  ${isSelected ? "bg-gray-50" : ""}
-                `}
-              >
-                {/* CHECKBOX */}
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => onToggleSelect?.(item)}
-                  className="mt-2"
-                />
+          return (
+            <div
+              key={`${item.type}-${item.id}`}
+              className={`
+                relative flex items-start gap-3 px-3 py-2
+                ${isSelected ? "bg-gray-50" : ""}
+              `}
+            >
+              {/* CHECKBOX */}
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => onToggleSelect?.(item)}
+                className="mt-2"
+              />
 
-                {/* CONTENT */}
-                <div className="flex-1 space-y-1">
-
-                  {/* 🔥 BADGE INSIGHT */}
-                  {isInsight && (
-                    <div className="flex items-center gap-2">
-                      <span className="
+              {/* CONTENT */}
+              <div className="flex-1 space-y-1">
+                {/* BADGE INSIGHT */}
+                {isInsight && (
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="
                         text-[10px]
                         px-2 py-0.5
                         rounded-full
@@ -174,23 +172,23 @@ export default function FeedList({
                         text-purple-600
                         border border-purple-100
                         font-medium
-                      ">
-                        🧠 Insight
-                      </span>
-                    </div>
-                  )}
+                      "
+                    >
+                      🧠 Insight
+                    </span>
+                  </div>
+                )}
 
-                  <FeedRow
-                    item={item}
-                    onClick={() => onSelectItem(item)}
-                    onClickBadge={onClickBadge}
-                    loading={loadingItemId === item.id}
-                  />
-                </div>
+                <FeedRow
+                  item={item}
+                  onClick={() => onSelectItem(item)}
+                  onClickBadge={onClickBadge}
+                  loading={loadingItemId === item.id}
+                />
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* LOAD MORE */}
