@@ -2,27 +2,25 @@
 
 import { useState, useEffect } from "react";
 
-import FeedHeader from "@/components/feed/FeedHeader";
-import FeedList from "@/components/feed/FeedList";
+import FeedExplorer from "@/components/feed/FeedExplorer";
+import SelectionPanel from "@/components/insight/SelectionPanel";
 
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
 import NewsDrawer from "@/components/drawers/NewsDrawer";
 
 import { getContentStats } from "@/lib/stats";
-import StatsBar from "@/components/feed/StatsBar";
-
 import { searchCurator, getLatestCurator } from "@/lib/search";
 
 import type { FeedItem, FeedBadge } from "@/types/feed";
 
 /* ========================================================= */
 
-type Mode = "browse" | "scan" | "insight";
-
 export default function FeedPage() {
   const LIMIT = 20;
 
-  const [mode, setMode] = useState<Mode>("browse");
+  /* =========================================================
+     DATA
+  ========================================================= */
 
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -31,22 +29,32 @@ export default function FeedPage() {
   const [query, setQuery] = useState("");
   const [offset, setOffset] = useState(0);
 
+  const [hasMore, setHasMore] = useState(true);
+  const [stats, setStats] = useState<any>(null);
+
+  /* =========================================================
+     SELECTION
+  ========================================================= */
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  /* =========================================================
+     INSIGHT
+  ========================================================= */
+
+  const [email, setEmail] = useState("");
+  const [insight, setInsight] = useState("");
+  const [loadingInsight, setLoadingInsight] = useState(false);
+
+  /* =========================================================
+     DRAWER
+  ========================================================= */
+
   const [selectedItem, setSelectedItem] =
     useState<FeedItem | null>(null);
 
   const [loadingItemId, setLoadingItemId] =
     useState<string | null>(null);
-
-  const [hasMore, setHasMore] = useState(true);
-  const [stats, setStats] = useState<any>(null);
-
-  /* =========================================================
-     🔥 SCAN STATE
-  ========================================================= */
-
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [scanText, setScanText] = useState("");
-  const [scanLoading, setScanLoading] = useState(false);
 
   /* =========================================================
      LOAD (SEARCH ou LATEST)
@@ -62,24 +70,15 @@ export default function FeedPage() {
     try {
       const currentOffset = reset ? 0 : offset;
 
-      const typeFilter =
-        mode === "scan"
-          ? "news"
-          : mode === "insight"
-          ? "analysis"
-          : undefined;
-
       const res = finalQuery
         ? await searchCurator({
             query: finalQuery,
             limit: LIMIT,
             offset: currentOffset,
-            type: typeFilter,
           })
         : await getLatestCurator({
             limit: LIMIT,
             offset: currentOffset,
-            type: typeFilter,
           });
 
       if (reset) {
@@ -99,15 +98,15 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     INITIAL LOAD + MODE CHANGE
+     INIT
   ========================================================= */
 
   useEffect(() => {
     load(true);
-  }, [mode]);
+  }, []);
 
   /* =========================================================
-     LOAD STATS
+     STATS
   ========================================================= */
 
   useEffect(() => {
@@ -120,7 +119,7 @@ export default function FeedPage() {
   }, []);
 
   /* =========================================================
-     BADGE CLICK
+     BADGES / STATS
   ========================================================= */
 
   function handleBadgeClick(badge: FeedBadge) {
@@ -133,10 +132,6 @@ export default function FeedPage() {
     load(true, value);
   }
 
-  /* =========================================================
-     STAT CLICK
-  ========================================================= */
-
   function handleStatClick(value: string) {
     if (!value) return;
 
@@ -147,7 +142,7 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     SELECT ITEM (DRAWER)
+     DRAWER
   ========================================================= */
 
   function handleSelectItem(item: FeedItem) {
@@ -160,26 +155,10 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     🔥 MODE SWITCH
-  ========================================================= */
-
-  function changeMode(newMode: Mode) {
-    setMode(newMode);
-
-    // reset clean
-    setSelectedIds([]);
-    setScanText("");
-    setOffset(0);
-  }
-
-  /* =========================================================
-     🔥 TOGGLE SELECT (SCAN)
+     TOGGLE SELECT
   ========================================================= */
 
   function toggleSelect(item: FeedItem) {
-    if (mode !== "scan") return;
-    if (item.type !== "news") return;
-
     setSelectedIds((prev) =>
       prev.includes(item.id)
         ? prev.filter((i) => i !== item.id)
@@ -188,31 +167,62 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     🔥 SCAN ACTION
+     INSIGHT ACTIONS
   ========================================================= */
 
-  async function handleScan() {
+  async function generatePreview() {
     if (!selectedIds.length) return;
 
-    setScanLoading(true);
+    setLoadingInsight(true);
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/scan/news`,
+        `${process.env.NEXT_PUBLIC_API_URL}/insight`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ ids: selectedIds }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ids: selectedIds,
+            mode: "preview",
+          }),
         }
       );
 
       const json = await res.json();
-      setScanText(json.text);
+
+      setEmail(json.email || "");
+      setInsight("");
 
     } finally {
-      setScanLoading(false);
+      setLoadingInsight(false);
+    }
+  }
+
+  async function generateInsight() {
+    if (!selectedIds.length) return;
+
+    setLoadingInsight(true);
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/insight`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ids: selectedIds,
+            mode: "insight",
+          }),
+        }
+      );
+
+      const json = await res.json();
+
+      setEmail(json.email || "");
+      setInsight(json.insight || "");
+
+    } finally {
+      setLoadingInsight(false);
     }
   }
 
@@ -221,110 +231,51 @@ export default function FeedPage() {
   ========================================================= */
 
   return (
-    <div className="space-y-8">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
-      {/* 🔥 MODE SWITCH */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => changeMode("browse")}
-          className={`px-3 py-1 rounded ${
-            mode === "browse" ? "bg-black text-white" : "bg-gray-100"
-          }`}
-        >
-          Explorer
-        </button>
+      {/* LEFT */}
+      <div className="xl:col-span-2">
 
-        <button
-          onClick={() => changeMode("scan")}
-          className={`px-3 py-1 rounded ${
-            mode === "scan" ? "bg-black text-white" : "bg-gray-100"
-          }`}
-        >
-          Scan
-        </button>
+        <FeedExplorer
+          query={query}
+          setQuery={setQuery}
+          onSearch={() => load(true, query)}
 
-        <button
-          onClick={() => changeMode("insight")}
-          className={`px-3 py-1 rounded ${
-            mode === "insight" ? "bg-black text-white" : "bg-gray-100"
-          }`}
-        >
-          Insight
-        </button>
+          stats={stats}
+          onClickStat={handleStatClick}
+
+          items={items}
+          total={total}
+          loading={loading}
+          hasMore={hasMore}
+
+          onLoadMore={() => load(false)}
+          onSelectItem={handleSelectItem}
+          onClickBadge={handleBadgeClick}
+
+          loadingItemId={loadingItemId}
+
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelect}
+        />
+
       </div>
 
-      <FeedHeader
-        query={query}
-        setQuery={setQuery}
-        onSearch={() => load(true, query)}
-      />
+      {/* RIGHT */}
+      <div className="xl:col-span-1">
+        <SelectionPanel
+          items={items}
+          selectedIds={selectedIds}
 
-      <StatsBar
-        stats={stats}
-        onClickStat={handleStatClick}
-      />
+          email={email}
+          insight={insight}
 
-      {/* 🔥 SCAN BAR */}
-      {mode === "scan" && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">
-            {selectedIds.length} sélection(s)
-          </div>
+          loading={loadingInsight}
 
-          <button
-            onClick={handleScan}
-            disabled={selectedIds.length === 0 || scanLoading}
-            className="
-              px-4 py-2 rounded-lg text-sm
-              bg-black text-white
-              disabled:opacity-50
-            "
-          >
-            {scanLoading ? "Scan en cours..." : "Scanner"}
-          </button>
-        </div>
-      )}
-
-      <FeedList
-        title="Results"
-        items={items}
-        total={total}
-        loading={loading}
-        hasMore={hasMore}
-        onLoadMore={() => load(false)}
-        onSelectItem={handleSelectItem}
-        onClickBadge={handleBadgeClick}
-        loadingItemId={loadingItemId}
-
-        selectedIds={selectedIds}
-        onToggleSelect={toggleSelect}
-      />
-
-      {/* 🔥 SCAN RESULT */}
-      {scanText && (
-        <div className="space-y-3 border rounded-lg p-4 bg-gray-50">
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-semibold">
-              Résultat du scan
-            </h3>
-
-            <button
-              onClick={() =>
-                navigator.clipboard.writeText(scanText)
-              }
-              className="text-xs text-blue-600"
-            >
-              Copier
-            </button>
-          </div>
-
-          <textarea
-            value={scanText}
-            readOnly
-            className="w-full min-h-[200px] text-sm p-3 border rounded"
-          />
-        </div>
-      )}
+          onGeneratePreview={generatePreview}
+          onGenerateInsight={generateInsight}
+        />
+      </div>
 
       {/* DRAWERS */}
       {selectedItem && (
