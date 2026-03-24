@@ -44,6 +44,7 @@ def insight_route(payload: InsightRequest):
                 "mode": "preview",
                 "items": result["items"],
                 "email": result["email"],
+                "html": result.get("html"),  # 🔥 ADD
             }
 
         # =====================================================
@@ -58,6 +59,7 @@ def insight_route(payload: InsightRequest):
                 "email": result["email"],
                 "insight": result["insight"],
                 "final_email": result["final_email"],
+                "html": result.get("html"),  # 🔥 ADD
             }
 
         # =====================================================
