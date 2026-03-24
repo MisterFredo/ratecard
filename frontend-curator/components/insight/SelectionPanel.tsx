@@ -123,7 +123,7 @@ export default function SelectionPanel({
             disabled:opacity-50
           "
         >
-          Générer email
+          Générer
         </button>
 
         <button
