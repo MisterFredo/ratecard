@@ -31,10 +31,6 @@ export default function SelectionPanel({
     selectedIds.includes(i.id)
   );
 
-  /* =========================================================
-     FORMAT DATE
-  ========================================================= */
-
   function formatDate(date?: string | null) {
     if (!date) return "";
     try {
@@ -45,16 +41,22 @@ export default function SelectionPanel({
   }
 
   /* =========================================================
+     COPY
+  ========================================================= */
+
+  function copyToClipboard() {
+    navigator.clipboard.writeText(finalEmail);
+  }
+
+  /* =========================================================
      RENDER
   ========================================================= */
 
   return (
-    <div className="sticky top-4 space-y-6">
+    <div className="h-full flex flex-col">
 
-      {/* =====================================================
-         HEADER
-      ===================================================== */}
-      <div className="space-y-1">
+      {/* HEADER */}
+      <div className="mb-4">
         <div className="text-sm font-semibold text-gray-900">
           Sélection
         </div>
@@ -63,10 +65,8 @@ export default function SelectionPanel({
         </div>
       </div>
 
-      {/* =====================================================
-         SELECTED LIST
-      ===================================================== */}
-      <div className="space-y-2 max-h-[260px] overflow-auto pr-1">
+      {/* LIST */}
+      <div className="space-y-2 max-h-[200px] overflow-auto pr-1 mb-4">
         {selectedItems.length === 0 && (
           <div className="text-xs text-gray-400">
             Aucune sélection
@@ -86,7 +86,6 @@ export default function SelectionPanel({
               {item.title}
             </div>
 
-            {/* badges */}
             <div className="flex flex-wrap gap-1">
               {item.companies?.map((c: any) => (
                 <span
@@ -110,10 +109,8 @@ export default function SelectionPanel({
         ))}
       </div>
 
-      {/* =====================================================
-         ACTIONS
-      ===================================================== */}
-      <div className="flex gap-2">
+      {/* ACTIONS */}
+      <div className="flex gap-2 mb-4">
         <button
           onClick={onGeneratePreview}
           disabled={loading || selectedItems.length === 0}
@@ -139,35 +136,43 @@ export default function SelectionPanel({
         </button>
       </div>
 
-      {/* =====================================================
-         OUTPUT UNIQUE (EMAIL + INSIGHT)
-      ===================================================== */}
-      {finalEmail && (
-        <div className="space-y-2 border rounded-lg p-3 bg-gray-50">
+      {/* OUTPUT PREMIUM */}
+      <div className="flex-1 border rounded-xl bg-white flex flex-col overflow-hidden">
 
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-medium text-gray-700">
-              Sortie
-            </span>
+        {/* HEADER */}
+        <div className="flex items-center justify-between px-3 py-2 border-b bg-gray-50">
+          <span className="text-xs font-medium text-gray-700">
+            Sortie
+          </span>
 
+          {finalEmail && (
             <button
-              onClick={() =>
-                navigator.clipboard.writeText(finalEmail)
-              }
+              onClick={copyToClipboard}
               className="text-xs text-blue-600"
             >
               Copier
             </button>
-          </div>
-
-          <textarea
-            value={finalEmail}
-            readOnly
-            className="w-full min-h-[220px] text-xs p-2 border rounded"
-          />
-
+          )}
         </div>
-      )}
+
+        {/* CONTENT */}
+        <div className="flex-1 overflow-auto p-4 text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+          {loading && (
+            <div className="text-xs text-gray-400">
+              Génération en cours...
+            </div>
+          )}
+
+          {!loading && !finalEmail && (
+            <div className="text-xs text-gray-400">
+              Génère une sélection pour voir le rendu.
+            </div>
+          )}
+
+          {!loading && finalEmail && finalEmail}
+        </div>
+      </div>
+
     </div>
   );
 }
