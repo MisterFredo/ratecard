@@ -1,10 +1,14 @@
 "use client";
 
+import { useMemo, useRef, useState } from "react";
+
+import { buildEmail } from "@/components/newsletter/email/buildEmail";
+import { buildEmailGmail } from "@/components/newsletter/email/buildEmailGmail";
+
 import type { FeedItem } from "@/types/feed";
 
 type Props = {
-  html?: string;          // preview auto
-  insightHtml?: string;   // insight injecté
+  items: FeedItem[];
 
   loading: boolean;
 
@@ -12,68 +16,182 @@ type Props = {
 };
 
 export default function SelectionPanel({
-  html,
-  insightHtml,
+  items,
   loading,
   onGenerateInsight,
 }: Props) {
 
+  const [mode, setMode] = useState<"brevo" | "gmail">("brevo");
+
+  const hiddenRef = useRef<HTMLDivElement>(null);
+
+  /* =====================================================
+     MAP DATA → NEWSLETTER FORMAT
+  ===================================================== */
+
+  const news = useMemo(() => {
+    return items
+      .filter((i) => i.type === "news")
+      .map((i) => ({
+        title: i.title,
+        excerpt: i.excerpt,
+        published_at: i.published_at,
+        companies: i.companies,
+        topics: i.topics,
+      }));
+  }, [items]);
+
+  const analyses = useMemo(() => {
+    return items
+      .filter((i) => i.type === "analysis")
+      .map((i) => ({
+        title: i.title,
+        excerpt: i.excerpt,
+        published_at: i.published_at,
+        companies: i.companies,
+        topics: i.topics,
+      }));
+  }, [items]);
+
+  /* =====================================================
+     BUILD HTML (IDENTIQUE ADMIN)
+  ===================================================== */
+
+  const html = useMemo(() => {
+    if (mode === "gmail") {
+      return buildEmailGmail({
+        headerConfig: {
+          title: "Veille personnalisée",
+        },
+        news,
+        breves: [],
+        analyses,
+      });
+    }
+
+    return buildEmail({
+      headerConfig: {
+        title: "Veille personnalisée",
+      },
+      news,
+      breves: [],
+      analyses,
+    });
+  }, [mode, news, analyses]);
+
+  /* =====================================================
+     COPY
+  ===================================================== */
+
+  function copyHtml() {
+    navigator.clipboard.writeText(html);
+  }
+
+  function copyForGmail() {
+    if (!hiddenRef.current) return;
+
+    const container = hiddenRef.current;
+    container.innerHTML = html;
+
+    const range = document.createRange();
+    range.selectNodeContents(container);
+
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    document.execCommand("copy");
+
+    selection?.removeAllRanges();
+    container.innerHTML = "";
+  }
+
+  /* =====================================================
+     RENDER
+  ===================================================== */
+
   return (
-    <div className="h-full flex flex-col gap-4">
+    <section className="space-y-4 h-full flex flex-col">
 
-      {/* =====================================================
-         ACTION BAR (MINIMAL)
-      ===================================================== */}
-      <div className="flex justify-end">
-        <button
-          onClick={onGenerateInsight}
-          className="px-3 py-1.5 rounded bg-black text-white text-xs"
-        >
-          Insight
-        </button>
-      </div>
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
 
-      {/* =====================================================
-         OUTPUT UNIQUE (FULL EDITORIAL)
-      ===================================================== */}
-      <div className="flex-1 border rounded-xl bg-white overflow-hidden flex flex-col">
+        <h2 className="text-sm font-semibold">
+          Preview ({items.length})
+        </h2>
 
-        <div className="flex-1 overflow-auto">
+        <div className="flex items-center gap-3">
 
-          {loading && (
-            <div className="p-6 text-sm text-gray-400">
-              Génération en cours...
-            </div>
+          {/* MODE */}
+          <div className="flex border rounded overflow-hidden text-xs">
+            <button
+              onClick={() => setMode("brevo")}
+              className={`px-3 py-1.5 ${
+                mode === "brevo"
+                  ? "bg-gray-900 text-white"
+                  : "bg-white text-gray-600"
+              }`}
+            >
+              Brevo
+            </button>
+
+            <button
+              onClick={() => setMode("gmail")}
+              className={`px-3 py-1.5 border-l ${
+                mode === "gmail"
+                  ? "bg-gray-900 text-white"
+                  : "bg-white text-gray-600"
+              }`}
+            >
+              Gmail
+            </button>
+          </div>
+
+          {/* ACTIONS */}
+          <button
+            onClick={copyHtml}
+            className="px-3 py-1.5 rounded bg-gray-900 text-white text-xs"
+          >
+            Copier HTML
+          </button>
+
+          {mode === "gmail" && (
+            <button
+              onClick={copyForGmail}
+              className="px-3 py-1.5 rounded bg-white border text-xs"
+            >
+              Copier Gmail
+            </button>
           )}
 
-          {/* INSIGHT (TOP PRIORITY) */}
-          {!loading && insightHtml && (
-            <div className="p-6 border-b bg-gray-50">
-              <div
-                className="max-w-[680px] mx-auto text-sm"
-                dangerouslySetInnerHTML={{ __html: insightHtml }}
-              />
-            </div>
-          )}
+          <button
+            onClick={onGenerateInsight}
+            className="px-3 py-1.5 rounded bg-black text-white text-xs"
+          >
+            Insight
+          </button>
 
-          {/* PREVIEW (BASE) */}
-          {!loading && html && (
-            <div className="p-6">
-              <div
-                className="max-w-[680px] mx-auto text-sm"
-                dangerouslySetInnerHTML={{ __html: html }}
-              />
-            </div>
-          )}
-
-          {!loading && !html && (
-            <div className="p-6 text-sm text-gray-400">
-              Sélectionne des contenus pour voir le rendu.
-            </div>
-          )}
         </div>
       </div>
 
-    </div>
+      {/* IFRAME */}
+      <div className="flex-1 border border-gray-200 rounded-lg overflow-hidden">
+        <iframe
+          title="Preview"
+          srcDoc={html}
+          className="w-full h-full"
+        />
+      </div>
+
+      {/* hidden gmail copy */}
+      <div
+        ref={hiddenRef}
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          top: 0,
+        }}
+      />
+    </section>
   );
 }
