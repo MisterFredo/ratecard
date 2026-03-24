@@ -340,7 +340,7 @@ Tu es un extracteur, pas un analyste.
 
 def generate_insight(payload: Dict) -> str:
     """
-    LLM (future implémentation)
+    Génération insight LLM (extraction stricte)
     """
 
     if payload.get("count", 0) == 0:
@@ -348,8 +348,16 @@ def generate_insight(payload: Dict) -> str:
 
     prompt = build_prompt(payload)
 
-    # TODO → appel OpenAI
-    return "LLM_RESULT_PLACEHOLDER"
+    result = run_llm(
+        prompt=prompt,
+        temperature=0.2,  # 🔥 très important
+    )
+
+    # sécurité fallback
+    if not result:
+        return "Impossible de générer l'insight."
+
+    return result
 
 
 # ============================================================
