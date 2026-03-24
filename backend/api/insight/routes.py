@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List
 
-from core.insights.service import get_contents_by_ids, build_insight_payload, generate_insights
+
 
 router = APIRouter()
 
