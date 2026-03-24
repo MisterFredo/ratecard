@@ -31,6 +31,10 @@ export default function SelectionPanel({
     selectedIds.includes(i.id)
   );
 
+  /* =========================================================
+     HELPERS
+  ========================================================= */
+
   function formatDate(date?: string | null) {
     if (!date) return "";
     try {
@@ -40,12 +44,70 @@ export default function SelectionPanel({
     }
   }
 
-  /* =========================================================
-     COPY
-  ========================================================= */
-
   function copyToClipboard() {
     navigator.clipboard.writeText(finalEmail);
+  }
+
+  /* =========================================================
+     PARSE OUTPUT (ULTRA SIMPLE)
+  ========================================================= */
+
+  function renderOutput(text: string) {
+    const lines = text.split("\n");
+
+    return lines.map((line, i) => {
+      const trimmed = line.trim();
+
+      // TITRES
+      if (trimmed.startsWith("📊") || trimmed.startsWith("📰") || trimmed.startsWith("📈") || trimmed.startsWith("🧠")) {
+        return (
+          <div key={i} className="mt-6 mb-2 text-sm font-semibold text-gray-900">
+            {trimmed}
+          </div>
+        );
+      }
+
+      // BULLET
+      if (trimmed.startsWith("•")) {
+        return (
+          <div key={i} className="pl-3 mb-2 text-sm text-gray-800 leading-relaxed">
+            {trimmed}
+          </div>
+        );
+      }
+
+      // BADGES (ligne entre [])
+      if (trimmed.startsWith("[")) {
+        const tags = trimmed
+          .replace("[", "")
+          .replace("]", "")
+          .split(",");
+
+        return (
+          <div key={i} className="flex flex-wrap gap-1 mb-2">
+            {tags.map((t, idx) => (
+              <span
+                key={idx}
+                className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 rounded"
+              >
+                {t.trim()}
+              </span>
+            ))}
+          </div>
+        );
+      }
+
+      // TEXTE NORMAL
+      if (trimmed.length > 0) {
+        return (
+          <div key={i} className="text-sm text-gray-700 mb-3 leading-relaxed">
+            {trimmed}
+          </div>
+        );
+      }
+
+      return null;
+    });
   }
 
   /* =========================================================
@@ -114,11 +176,7 @@ export default function SelectionPanel({
         <button
           onClick={onGeneratePreview}
           disabled={loading || selectedItems.length === 0}
-          className="
-            flex-1 py-2 text-xs rounded-lg
-            bg-gray-100 text-gray-700
-            disabled:opacity-50
-          "
+          className="flex-1 py-2 text-xs rounded-lg bg-gray-100 text-gray-700 disabled:opacity-50"
         >
           Générer
         </button>
@@ -126,17 +184,13 @@ export default function SelectionPanel({
         <button
           onClick={onGenerateInsight}
           disabled={loading || selectedItems.length === 0}
-          className="
-            flex-1 py-2 text-xs rounded-lg
-            bg-black text-white
-            disabled:opacity-50
-          "
+          className="flex-1 py-2 text-xs rounded-lg bg-black text-white disabled:opacity-50"
         >
           Insight
         </button>
       </div>
 
-      {/* OUTPUT PREMIUM */}
+      {/* OUTPUT */}
       <div className="flex-1 border rounded-xl bg-white flex flex-col overflow-hidden">
 
         {/* HEADER */}
@@ -156,7 +210,7 @@ export default function SelectionPanel({
         </div>
 
         {/* CONTENT */}
-        <div className="flex-1 overflow-auto p-4 text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+        <div className="flex-1 overflow-auto p-4">
           {loading && (
             <div className="text-xs text-gray-400">
               Génération en cours...
@@ -169,7 +223,7 @@ export default function SelectionPanel({
             </div>
           )}
 
-          {!loading && finalEmail && finalEmail}
+          {!loading && finalEmail && renderOutput(finalEmail)}
         </div>
       </div>
 
