@@ -14,14 +14,8 @@ import { searchCurator, getLatestCurator } from "@/lib/search";
 import type { FeedItem, FeedBadge } from "@/types/feed";
 import { api } from "@/lib/api";
 
-/* ========================================================= */
-
 export default function FeedPage() {
   const LIMIT = 20;
-
-  /* =========================================================
-     DATA
-  ========================================================= */
 
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -33,23 +27,12 @@ export default function FeedPage() {
   const [hasMore, setHasMore] = useState(true);
   const [stats, setStats] = useState<any>(null);
 
-  /* =========================================================
-     SELECTION
-  ========================================================= */
-
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  /* =========================================================
-     OUTPUT
-  ========================================================= */
+  const [html, setHtml] = useState<string>("");
+  const [insightHtml, setInsightHtml] = useState<string>("");
 
-  const [finalEmail, setFinalEmail] = useState("");
-  const [html, setHtml] = useState<string>(""); // 🔥 NEW
   const [loadingInsight, setLoadingInsight] = useState(false);
-
-  /* =========================================================
-     DRAWER
-  ========================================================= */
 
   const [selectedItem, setSelectedItem] =
     useState<FeedItem | null>(null);
@@ -57,13 +40,10 @@ export default function FeedPage() {
   const [loadingItemId, setLoadingItemId] =
     useState<string | null>(null);
 
-  /* =========================================================
-     LOAD
-  ========================================================= */
+  /* LOAD */
 
   async function load(reset = false, q?: string) {
     const finalQuery = (q ?? query)?.trim();
-
     if (loading) return;
 
     setLoading(true);
@@ -92,72 +72,61 @@ export default function FeedPage() {
 
       setTotal(res.count ?? 0);
       setHasMore(res.items.length === LIMIT);
-
     } finally {
       setLoading(false);
     }
   }
 
-  /* =========================================================
-     INIT
-  ========================================================= */
-
   useEffect(() => {
     load(true);
   }, []);
-
-  /* =========================================================
-     STATS
-  ========================================================= */
 
   useEffect(() => {
     async function loadStats() {
       const s = await getContentStats();
       setStats(s);
     }
-
     loadStats();
   }, []);
 
-  /* =========================================================
-     BADGES / STATS
-  ========================================================= */
+  /* AUTO PREVIEW (clé UX) */
 
-  function handleBadgeClick(badge: FeedBadge) {
-    const value = badge.label;
-    if (!value) return;
+  useEffect(() => {
+    if (!selectedIds.length) {
+      setHtml("");
+      return;
+    }
 
-    setQuery(value);
-    window.scrollTo({ top: 0 });
+    async function loadPreview() {
+      const res: any = await api.post("/insight/", {
+        ids: selectedIds,
+        mode: "preview",
+      });
 
-    load(true, value);
+      setHtml(res.html || "");
+    }
+
+    loadPreview();
+  }, [selectedIds]);
+
+  /* ACTIONS */
+
+  async function generateInsight() {
+    if (!selectedIds.length) return;
+
+    setLoadingInsight(true);
+
+    try {
+      const res: any = await api.post("/insight/", {
+        ids: selectedIds,
+        mode: "insight",
+      });
+
+      setInsightHtml(res.html || "");
+    } finally {
+      setLoadingInsight(false);
+    }
   }
-
-  function handleStatClick(value: string) {
-    if (!value) return;
-
-    setQuery(value);
-    window.scrollTo({ top: 0 });
-
-    load(true, value);
-  }
-
-  /* =========================================================
-     DRAWER
-  ========================================================= */
-
-  function handleSelectItem(item: FeedItem) {
-    setLoadingItemId(item.id);
-    setSelectedItem(item);
-
-    setTimeout(() => {
-      setLoadingItemId(null);
-    }, 300);
-  }
-
-  /* =========================================================
-     TOGGLE SELECT
-  ========================================================= */
 
   function toggleSelect(item: FeedItem) {
     setSelectedIds((prev) =>
@@ -167,65 +136,32 @@ export default function FeedPage() {
     );
   }
 
-  /* =========================================================
-     ACTIONS
-  ========================================================= */
+  function handleSelectItem(item: FeedItem) {
+    setLoadingItemId(item.id);
+    setSelectedItem(item);
 
-  async function generatePreview() {
-    if (!selectedIds.length) return;
-
-    setFinalEmail("");
-    setHtml(""); // 🔥 reset
-    setLoadingInsight(true);
-
-    try {
-      const res: any = await api.post("/insight/", {
-        ids: selectedIds,
-        mode: "preview",
-      });
-
-      setFinalEmail(res.email || "");
-      setHtml(res.html || "");
-
-    } catch (e) {
-      console.error("❌ generatePreview error", e);
-    } finally {
-      setLoadingInsight(false);
-    }
+    setTimeout(() => setLoadingItemId(null), 300);
   }
 
-  async function generateInsight() {
-    if (!selectedIds.length) return;
+  function handleBadgeClick(badge: FeedBadge) {
+    const value = badge.label;
+    if (!value) return;
 
-    setFinalEmail("");
-    setHtml(""); // 🔥 reset
-    setLoadingInsight(true);
-
-    try {
-      const res: any = await api.post("/insight/", {
-        ids: selectedIds,
-        mode: "insight",
-      });
-
-      setFinalEmail(
-        res.final_email || res.email || ""
-      );
-
-      setHtml(res.html || ""); // 🔥 clé
-
-    } catch (e) {
-      console.error("❌ generateInsight error", e);
-    } finally {
-      setLoadingInsight(false);
-    }
+    setQuery(value);
+    window.scrollTo({ top: 0 });
+    load(true, value);
   }
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
+  function handleStatClick(value: string) {
+    if (!value) return;
+
+    setQuery(value);
+    window.scrollTo({ top: 0 });
+    load(true, value);
+  }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
       {/* LEFT */}
       <div className="xl:col-span-2">
@@ -233,42 +169,31 @@ export default function FeedPage() {
           query={query}
           setQuery={setQuery}
           onSearch={() => load(true, query)}
-
           stats={stats}
           onClickStat={handleStatClick}
-
           items={items}
           total={total}
           loading={loading}
           hasMore={hasMore}
-
           onLoadMore={() => load(false)}
           onSelectItem={handleSelectItem}
           onClickBadge={handleBadgeClick}
-
           loadingItemId={loadingItemId}
-
           selectedIds={selectedIds}
           onToggleSelect={toggleSelect}
         />
       </div>
 
-      {/* RIGHT → FIX COMPLET */}
+      {/* RIGHT (STICKY FIXED) */}
       {selectedIds.length > 0 && (
-        <div className="xl:col-span-1 relative">
+        <div className="xl:col-span-1">
 
-          <div className="sticky top-24 h-[calc(100vh-120px)]">
+          <div className="sticky top-24">
 
             <SelectionPanel
-              items={items}
-              selectedIds={selectedIds}
-
-              finalEmail={finalEmail}
-              html={html} // 🔥 NEW
-
+              html={html}
+              insightHtml={insightHtml}
               loading={loadingInsight}
-
-              onGeneratePreview={generatePreview}
               onGenerateInsight={generateInsight}
             />
 
