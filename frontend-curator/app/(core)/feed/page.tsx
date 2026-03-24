@@ -37,6 +37,14 @@ export default function FeedPage() {
   const [stats, setStats] = useState<any>(null);
 
   /* =========================================================
+     🔥 SCAN STATE
+  ========================================================= */
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [scanText, setScanText] = useState("");
+  const [scanLoading, setScanLoading] = useState(false);
+
+  /* =========================================================
      LOAD (SEARCH ou LATEST)
   ========================================================= */
 
@@ -78,7 +86,7 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     INITIAL LOAD (LATEST)
+     INITIAL LOAD
   ========================================================= */
 
   useEffect(() => {
@@ -126,7 +134,7 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     SELECT ITEM
+     SELECT ITEM (DRAWER)
   ========================================================= */
 
   function handleSelectItem(item: FeedItem) {
@@ -136,6 +144,46 @@ export default function FeedPage() {
     setTimeout(() => {
       setLoadingItemId(null);
     }, 300);
+  }
+
+  /* =========================================================
+     🔥 TOGGLE SELECT (SCAN)
+  ========================================================= */
+
+  function toggleSelect(item: FeedItem) {
+    if (item.type !== "news") return;
+
+    setSelectedIds((prev) =>
+      prev.includes(item.id)
+        ? prev.filter((i) => i !== item.id)
+        : [...prev, item.id]
+    );
+  }
+
+  /* =========================================================
+     🔥 SCAN ACTION
+  ========================================================= */
+
+  async function handleScan() {
+    if (!selectedIds.length) return;
+
+    setScanLoading(true);
+
+    try {
+      const res = await fetch("/api/scan/news", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+
+      const json = await res.json();
+      setScanText(json.text);
+
+    } finally {
+      setScanLoading(false);
+    }
   }
 
   /* =========================================================
@@ -156,6 +204,25 @@ export default function FeedPage() {
         onClickStat={handleStatClick}
       />
 
+      {/* 🔥 SCAN BAR */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-gray-500">
+          {selectedIds.length} sélection(s)
+        </div>
+
+        <button
+          onClick={handleScan}
+          disabled={selectedIds.length === 0 || scanLoading}
+          className="
+            px-4 py-2 rounded-lg text-sm
+            bg-black text-white
+            disabled:opacity-50
+          "
+        >
+          {scanLoading ? "Scan en cours..." : "Scanner"}
+        </button>
+      </div>
+
       <FeedList
         title="Results"
         items={items}
@@ -166,8 +233,39 @@ export default function FeedPage() {
         onSelectItem={handleSelectItem}
         onClickBadge={handleBadgeClick}
         loadingItemId={loadingItemId}
+
+        /* 🔥 SCAN */
+        selectedIds={selectedIds}
+        onToggleSelect={toggleSelect}
       />
 
+      {/* 🔥 SCAN RESULT */}
+      {scanText && (
+        <div className="space-y-3 border rounded-lg p-4 bg-gray-50">
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-semibold">
+              Résultat du scan
+            </h3>
+
+            <button
+              onClick={() =>
+                navigator.clipboard.writeText(scanText)
+              }
+              className="text-xs text-blue-600"
+            >
+              Copier
+            </button>
+          </div>
+
+          <textarea
+            value={scanText}
+            readOnly
+            className="w-full min-h-[200px] text-sm p-3 border rounded"
+          />
+        </div>
+      )}
+
+      {/* DRAWERS */}
       {selectedItem && (
         <>
           {selectedItem.type === "analysis" && (
