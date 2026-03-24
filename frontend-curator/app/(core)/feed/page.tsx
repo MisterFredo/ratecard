@@ -249,8 +249,8 @@ export default function FeedPage() {
 
       {/* RIGHT → conditionnel + sticky */}
       {selectedIds.length > 0 && (
-        <div className="xl:col-span-1">
-          <div className="sticky top-24">
+        <div className="xl:col-span-1 relative">
+          <div className="sticky top-24 h-[calc(100vh-120px)]">
             <SelectionPanel
               items={items}
               selectedIds={selectedIds}
