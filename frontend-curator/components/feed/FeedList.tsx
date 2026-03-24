@@ -20,8 +20,11 @@ type Props = {
 
   onClickBadge?: (badge: FeedBadge) => void;
 
-  // 🔥 NEW → feedback UX
   loadingItemId?: string | null;
+
+  // 🔥 NEW — SCAN
+  selectedIds?: string[];
+  onToggleSelect?: (item: FeedItem) => void;
 };
 
 /* ========================================================= */
@@ -37,6 +40,9 @@ export default function FeedList({
   mode = "filters",
   onClickBadge,
   loadingItemId,
+
+  selectedIds = [],
+  onToggleSelect,
 }: Props) {
 
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -69,7 +75,7 @@ export default function FeedList({
   }
 
   /* =========================================================
-     HEADER LABEL (plus premium)
+     HEADER
   ========================================================= */
 
   const headerLabel = useMemo(() => {
@@ -91,7 +97,7 @@ export default function FeedList({
   }, [title, total]);
 
   /* =========================================================
-     SKELETON (premium loading)
+     SKELETON
   ========================================================= */
 
   function SkeletonRow() {
@@ -111,14 +117,9 @@ export default function FeedList({
   return (
     <div className="space-y-4">
 
-      {/* ============================
-         HEADER
-      ============================ */}
       {headerLabel}
 
-      {/* ============================
-         EMPTY STATE (premium)
-      ============================ */}
+      {/* EMPTY */}
       {!loading && safeItems.length === 0 && (
         <div className="text-center py-16">
           <div className="text-sm text-gray-400">
@@ -129,9 +130,7 @@ export default function FeedList({
         </div>
       )}
 
-      {/* ============================
-         LOADING SKELETON
-      ============================ */}
+      {/* LOADING */}
       {loading && safeItems.length === 0 && (
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
@@ -140,24 +139,45 @@ export default function FeedList({
         </div>
       )}
 
-      {/* ============================
-         ITEMS
-      ============================ */}
+      {/* ITEMS */}
       <div className="divide-y divide-gray-100 rounded-xl bg-white border border-gray-100 overflow-hidden">
-        {safeItems.map((item) => (
-          <FeedRow
-            key={`${item.type}-${item.id}`}
-            item={item}
-            onClick={() => onSelectItem(item)}
-            onClickBadge={onClickBadge}
-            loading={loadingItemId === item.id} // 🔥 NEW
-          />
-        ))}
+        {safeItems.map((item) => {
+          const isSelected = selectedIds.includes(item.id);
+          const isSelectable = item.type === "news";
+
+          return (
+            <div
+              key={`${item.type}-${item.id}`}
+              className={`
+                relative flex items-start gap-3 px-3 py-2
+                ${isSelected ? "bg-gray-50" : ""}
+              `}
+            >
+              {/* 🔥 CHECKBOX */}
+              {isSelectable && (
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => onToggleSelect?.(item)}
+                  className="mt-2"
+                />
+              )}
+
+              {/* 🔹 CONTENT */}
+              <div className="flex-1">
+                <FeedRow
+                  item={item}
+                  onClick={() => onSelectItem(item)}
+                  onClickBadge={onClickBadge}
+                  loading={loadingItemId === item.id}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* ============================
-         LOAD MORE
-      ============================ */}
+      {/* LOAD MORE */}
       {hasMore && !loading && safeItems.length > 0 && (
         <div className="flex justify-center pt-6">
           <button
