@@ -60,7 +60,7 @@ include_router("api.source", "/api/source", "SOURCE")
 include_router("api.search", "/api/search", "SEARCH")
 include_router("api.vector", "/api/vector", "VECTOR")
 include_router("api.insight", "/api/insight", "INSIGHT")
-include_router("api.review", "/api/review", "REVIEW")
+include_router("api.digest", "/api/digest", "DIGEST")
 include_router("api.synthesis", "/api/synthesis", "SYNTHESIS")
 
 # --- FRONT PUBLIC (MEDIA)
