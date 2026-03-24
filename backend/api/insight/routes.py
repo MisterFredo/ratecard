@@ -10,7 +10,7 @@ router = APIRouter()
 # INSIGHT (UNIQUE ENTRY POINT)
 # ============================================================
 
-@router.post("/")
+@router.post("")
 def insight_route(payload: InsightRequest):
     """
     Endpoint unique :
