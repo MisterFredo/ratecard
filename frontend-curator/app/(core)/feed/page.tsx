@@ -44,6 +44,7 @@ export default function FeedPage() {
   ========================================================= */
 
   const [finalEmail, setFinalEmail] = useState("");
+  const [html, setHtml] = useState<string>(""); // 🔥 NEW
   const [loadingInsight, setLoadingInsight] = useState(false);
 
   /* =========================================================
@@ -173,7 +174,8 @@ export default function FeedPage() {
   async function generatePreview() {
     if (!selectedIds.length) return;
 
-    setFinalEmail(""); // 🔥 reset UI
+    setFinalEmail("");
+    setHtml(""); // 🔥 reset
     setLoadingInsight(true);
 
     try {
@@ -183,6 +185,7 @@ export default function FeedPage() {
       });
 
       setFinalEmail(res.email || "");
+      setHtml(res.html || "");
 
     } catch (e) {
       console.error("❌ generatePreview error", e);
@@ -194,7 +197,8 @@ export default function FeedPage() {
   async function generateInsight() {
     if (!selectedIds.length) return;
 
-    setFinalEmail(""); // 🔥 reset UI
+    setFinalEmail("");
+    setHtml(""); // 🔥 reset
     setLoadingInsight(true);
 
     try {
@@ -206,6 +210,8 @@ export default function FeedPage() {
       setFinalEmail(
         res.final_email || res.email || ""
       );
+
+      setHtml(res.html || ""); // 🔥 clé
 
     } catch (e) {
       console.error("❌ generateInsight error", e);
@@ -247,20 +253,25 @@ export default function FeedPage() {
         />
       </div>
 
-      {/* RIGHT → conditionnel + sticky */}
+      {/* RIGHT → FIX COMPLET */}
       {selectedIds.length > 0 && (
         <div className="xl:col-span-1 relative">
+
           <div className="sticky top-24 h-[calc(100vh-120px)]">
+
             <SelectionPanel
               items={items}
               selectedIds={selectedIds}
 
               finalEmail={finalEmail}
+              html={html} // 🔥 NEW
+
               loading={loadingInsight}
 
               onGeneratePreview={generatePreview}
               onGenerateInsight={generateInsight}
             />
+
           </div>
         </div>
       )}
