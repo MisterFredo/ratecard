@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { FeedItem } from "@/types/feed";
 
 /* ========================================================= */
@@ -8,12 +9,12 @@ type Props = {
   items: FeedItem[];
   selectedIds: string[];
 
-  finalEmail: string;
+  analysis: string;
 
   loading: boolean;
 
-  onGeneratePreview: () => void;
   onGenerateInsight: () => void;
+  onClose: () => void;
 };
 
 /* ========================================================= */
@@ -21,11 +22,13 @@ type Props = {
 export default function SelectionPanel({
   items,
   selectedIds,
-  finalEmail,
+  analysis,
   loading,
-  onGeneratePreview,
   onGenerateInsight,
+  onClose,
 }: Props) {
+
+  const [tab, setTab] = useState<"selection" | "analysis">("selection");
 
   const selectedItems = items.filter((i) =>
     selectedIds.includes(i.id)
@@ -44,12 +47,25 @@ export default function SelectionPanel({
     }
   }
 
+  function buildSelectionText() {
+    return selectedItems
+      .map((item) => {
+        return `${item.title}\n${item.excerpt || ""}`;
+      })
+      .join("\n\n");
+  }
+
   function copyToClipboard() {
-    navigator.clipboard.writeText(finalEmail);
+    const text =
+      tab === "selection"
+        ? buildSelectionText()
+        : analysis;
+
+    navigator.clipboard.writeText(text || "");
   }
 
   /* =========================================================
-     PARSE OUTPUT (ULTRA SIMPLE)
+     RENDER ANALYSIS (réutilisé)
   ========================================================= */
 
   function renderOutput(text: string) {
@@ -58,8 +74,12 @@ export default function SelectionPanel({
     return lines.map((line, i) => {
       const trimmed = line.trim();
 
-      // TITRES
-      if (trimmed.startsWith("📊") || trimmed.startsWith("📰") || trimmed.startsWith("📈") || trimmed.startsWith("🧠")) {
+      if (
+        trimmed.startsWith("📊") ||
+        trimmed.startsWith("📰") ||
+        trimmed.startsWith("📈") ||
+        trimmed.startsWith("🧠")
+      ) {
         return (
           <div key={i} className="mt-6 mb-2 text-sm font-semibold text-gray-900">
             {trimmed}
@@ -67,7 +87,6 @@ export default function SelectionPanel({
         );
       }
 
-      // BULLET
       if (trimmed.startsWith("•")) {
         return (
           <div key={i} className="pl-3 mb-2 text-sm text-gray-800 leading-relaxed">
@@ -76,7 +95,6 @@ export default function SelectionPanel({
         );
       }
 
-      // BADGES (ligne entre [])
       if (trimmed.startsWith("[")) {
         const tags = trimmed
           .replace("[", "")
@@ -97,7 +115,6 @@ export default function SelectionPanel({
         );
       }
 
-      // TEXTE NORMAL
       if (trimmed.length > 0) {
         return (
           <div key={i} className="text-sm text-gray-700 mb-3 leading-relaxed">
@@ -115,118 +132,126 @@ export default function SelectionPanel({
   ========================================================= */
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-white border rounded-xl overflow-hidden">
 
       {/* HEADER */}
-      <div className="mb-4">
-        <div className="text-sm font-semibold text-gray-900">
-          Sélection
-        </div>
-        <div className="text-xs text-gray-400">
-          {selectedItems.length} élément(s)
-        </div>
-      </div>
-
-      {/* LIST */}
-      <div className="space-y-2 max-h-[200px] overflow-auto pr-1 mb-4">
-        {selectedItems.length === 0 && (
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
+        <div>
+          <div className="text-sm font-semibold text-gray-900">
+            Sélection
+          </div>
           <div className="text-xs text-gray-400">
-            Aucune sélection
+            {selectedItems.length} élément(s)
           </div>
-        )}
+        </div>
 
-        {selectedItems.map((item) => (
-          <div
-            key={item.id}
-            className="border rounded-lg p-2 bg-white text-xs space-y-1"
-          >
-            <div className="text-[10px] text-gray-400">
-              {formatDate(item.published_at)}
-            </div>
-
-            <div className="font-medium text-gray-800 line-clamp-2">
-              {item.title}
-            </div>
-
-            <div className="flex flex-wrap gap-1">
-              {item.companies?.map((c: any) => (
-                <span
-                  key={c.id_company}
-                  className="text-[9px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded"
-                >
-                  {c.name}
-                </span>
-              ))}
-
-              {item.topics?.map((t: any) => (
-                <span
-                  key={t.id_topic}
-                  className="text-[9px] px-2 py-0.5 bg-gray-100 text-gray-600 rounded"
-                >
-                  {t.label}
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
+        <button
+          onClick={onClose}
+          className="text-xs text-gray-400 hover:text-gray-600"
+        >
+          ✕
+        </button>
       </div>
 
-      {/* ACTIONS */}
-      <div className="flex gap-2 mb-4">
+      {/* TABS */}
+      <div className="flex border-b">
         <button
-          onClick={onGeneratePreview}
-          disabled={loading || selectedItems.length === 0}
-          className="flex-1 py-2 text-xs rounded-lg bg-gray-100 text-gray-700 disabled:opacity-50"
+          onClick={() => setTab("selection")}
+          className={`flex-1 py-2 text-xs font-medium ${
+            tab === "selection"
+              ? "border-b-2 border-black text-black"
+              : "text-gray-400"
+          }`}
         >
-          Générer
+          Sélection
         </button>
 
+        <button
+          onClick={() => setTab("analysis")}
+          className={`flex-1 py-2 text-xs font-medium ${
+            tab === "analysis"
+              ? "border-b-2 border-black text-black"
+              : "text-gray-400"
+          }`}
+        >
+          Analyse
+        </button>
+      </div>
+
+      {/* ACTION */}
+      <div className="p-3 border-b flex gap-2">
         <button
           onClick={onGenerateInsight}
           disabled={loading || selectedItems.length === 0}
           className="flex-1 py-2 text-xs rounded-lg bg-black text-white disabled:opacity-50"
         >
-          Insight
+          Générer analyse
+        </button>
+
+        <button
+          onClick={copyToClipboard}
+          disabled={selectedItems.length === 0}
+          className="px-3 py-2 text-xs rounded-lg bg-gray-100 text-gray-700"
+        >
+          Copier
         </button>
       </div>
 
-      {/* OUTPUT */}
-      <div className="flex-1 border rounded-xl bg-white flex flex-col overflow-hidden">
+      {/* CONTENT */}
+      <div className="flex-1 overflow-auto p-4">
 
-        {/* HEADER */}
-        <div className="flex items-center justify-between px-3 py-2 border-b bg-gray-50">
-          <span className="text-xs font-medium text-gray-700">
-            Sortie
-          </span>
+        {/* EMPTY */}
+        {selectedItems.length === 0 && (
+          <div className="text-xs text-gray-400">
+            Sélectionne des contenus pour construire ton email
+          </div>
+        )}
 
-          {finalEmail && (
-            <button
-              onClick={copyToClipboard}
-              className="text-xs text-blue-600"
-            >
-              Copier
-            </button>
-          )}
-        </div>
+        {/* TAB: SELECTION */}
+        {tab === "selection" && (
+          <div className="space-y-6">
+            {selectedItems.map((item) => (
+              <div key={item.id} className="space-y-2">
 
-        {/* CONTENT */}
-        <div className="flex-1 overflow-auto p-4">
-          {loading && (
-            <div className="text-xs text-gray-400">
-              Génération en cours...
-            </div>
-          )}
+                <div className="text-xs text-gray-400">
+                  {formatDate(item.published_at)}
+                </div>
 
-          {!loading && !finalEmail && (
-            <div className="text-xs text-gray-400">
-              Génère une sélection pour voir le rendu.
-            </div>
-          )}
+                <div className="text-sm font-semibold text-gray-900">
+                  {item.title}
+                </div>
 
-          {!loading && finalEmail && renderOutput(finalEmail)}
-        </div>
+                {item.excerpt && (
+                  <div className="text-sm text-gray-700 leading-relaxed">
+                    {item.excerpt}
+                  </div>
+                )}
+
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* TAB: ANALYSIS */}
+        {tab === "analysis" && (
+          <>
+            {loading && (
+              <div className="text-xs text-gray-400">
+                Génération en cours...
+              </div>
+            )}
+
+            {!loading && !analysis && (
+              <div className="text-xs text-gray-400">
+                Clique sur "Générer analyse"
+              </div>
+            )}
+
+            {!loading && analysis && renderOutput(analysis)}
+          </>
+        )}
+
       </div>
-
     </div>
   );
 }
