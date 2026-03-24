@@ -2,79 +2,187 @@
 
 import type { FeedItem } from "@/types/feed";
 
+/* ========================================================= */
+
 type Props = {
   items: FeedItem[];
   selectedIds: string[];
 
   email: string;
+  insight?: string;
+
   loading: boolean;
 
-  onToggle: (item: FeedItem) => void;
+  onGeneratePreview: () => void;
   onGenerateInsight: () => void;
 };
+
+/* ========================================================= */
 
 export default function SelectionPanel({
   items,
   selectedIds,
   email,
+  insight,
   loading,
-  onToggle,
+  onGeneratePreview,
   onGenerateInsight,
 }: Props) {
+
   const selectedItems = items.filter((i) =>
     selectedIds.includes(i.id)
   );
 
-  return (
-    <div className="sticky top-4 space-y-4">
+  /* =========================================================
+     FORMAT DATE
+  ========================================================= */
 
-      {/* HEADER */}
-      <div className="text-sm font-semibold">
-        Sélection ({selectedItems.length})
+  function formatDate(date?: string | null) {
+    if (!date) return "";
+    try {
+      return new Date(date).toLocaleDateString("fr-FR");
+    } catch {
+      return "";
+    }
+  }
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
+
+  return (
+    <div className="sticky top-4 space-y-6">
+
+      {/* =====================================================
+         HEADER
+      ===================================================== */}
+      <div className="space-y-1">
+        <div className="text-sm font-semibold text-gray-900">
+          Sélection
+        </div>
+        <div className="text-xs text-gray-400">
+          {selectedItems.length} élément(s)
+        </div>
       </div>
 
-      {/* LIST */}
-      <div className="space-y-2 max-h-[300px] overflow-auto">
+      {/* =====================================================
+         SELECTED LIST
+      ===================================================== */}
+      <div className="space-y-2 max-h-[260px] overflow-auto pr-1">
+        {selectedItems.length === 0 && (
+          <div className="text-xs text-gray-400">
+            Aucune sélection
+          </div>
+        )}
+
         {selectedItems.map((item) => (
           <div
             key={item.id}
-            className="text-xs border p-2 rounded"
+            className="border rounded-lg p-2 bg-white text-xs space-y-1"
           >
-            {item.title}
+            <div className="text-[10px] text-gray-400">
+              {formatDate(item.published_at)}
+            </div>
+
+            <div className="font-medium text-gray-800 line-clamp-2">
+              {item.title}
+            </div>
+
+            {/* badges */}
+            <div className="flex flex-wrap gap-1">
+              {item.companies?.map((c: any) => (
+                <span
+                  key={c.id_company}
+                  className="text-[9px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded"
+                >
+                  {c.name}
+                </span>
+              ))}
+
+              {item.topics?.map((t: any) => (
+                <span
+                  key={t.id_topic}
+                  className="text-[9px] px-2 py-0.5 bg-gray-100 text-gray-600 rounded"
+                >
+                  {t.label}
+                </span>
+              ))}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* EMAIL PREVIEW */}
-      <div className="border rounded-lg p-3 bg-gray-50">
-        <div className="flex justify-between mb-2">
-          <span className="text-xs font-medium">Email</span>
+      {/* =====================================================
+         ACTIONS
+      ===================================================== */}
+      <div className="flex gap-2">
+        <button
+          onClick={onGeneratePreview}
+          disabled={loading || selectedItems.length === 0}
+          className="
+            flex-1 py-2 text-xs rounded-lg
+            bg-gray-100 text-gray-700
+            disabled:opacity-50
+          "
+        >
+          Générer email
+        </button>
 
-          <button
-            onClick={() =>
-              navigator.clipboard.writeText(email)
-            }
-            className="text-xs text-blue-600"
-          >
-            Copier
-          </button>
-        </div>
-
-        <textarea
-          value={email}
-          readOnly
-          className="w-full min-h-[200px] text-xs p-2 border rounded"
-        />
+        <button
+          onClick={onGenerateInsight}
+          disabled={loading || selectedItems.length === 0}
+          className="
+            flex-1 py-2 text-xs rounded-lg
+            bg-black text-white
+            disabled:opacity-50
+          "
+        >
+          Insight
+        </button>
       </div>
 
-      {/* ACTION */}
-      <button
-        onClick={onGenerateInsight}
-        disabled={loading || selectedItems.length === 0}
-        className="w-full py-2 text-sm bg-black text-white rounded disabled:opacity-50"
-      >
-        {loading ? "Insight..." : "Générer insight"}
-      </button>
+      {/* =====================================================
+         EMAIL PREVIEW
+      ===================================================== */}
+      {email && (
+        <div className="space-y-2 border rounded-lg p-3 bg-gray-50">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-medium text-gray-700">
+              Email
+            </span>
+
+            <button
+              onClick={() =>
+                navigator.clipboard.writeText(email)
+              }
+              className="text-xs text-blue-600"
+            >
+              Copier
+            </button>
+          </div>
+
+          <textarea
+            value={email}
+            readOnly
+            className="w-full min-h-[180px] text-xs p-2 border rounded"
+          />
+        </div>
+      )}
+
+      {/* =====================================================
+         INSIGHT RESULT
+      ===================================================== */}
+      {insight && (
+        <div className="space-y-2 border rounded-lg p-3 bg-white">
+          <div className="text-xs font-medium text-gray-700">
+            🧠 Insight
+          </div>
+
+          <div className="text-xs text-gray-700 whitespace-pre-wrap">
+            {insight}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
