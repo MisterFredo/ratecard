@@ -216,7 +216,7 @@ def process_backlog_route(limit: int = 50, max_batches: int = 1):
 
         from core.numbers.backlog_service import get_numbers_backlog
         from core.numbers.backlog_llm import process_backlog_row
-        from core.numbers.backlog_insert_service import insert_backlog_result
+        from core.numbers.backlog_insert_service import insert_backlog_batch
 
         all_results = []
 
@@ -235,7 +235,7 @@ def process_backlog_route(limit: int = 50, max_batches: int = 1):
                 all_results.append(result)
 
                 if result.get("status") == "ok":
-                    insert_backlog_result(result)
+                    insert_backlog_batch(result)
 
         return {
             "status": "ok",
