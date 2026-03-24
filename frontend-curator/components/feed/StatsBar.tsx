@@ -77,7 +77,7 @@ export default function StatsBar({ stats, onClickStat }: Props) {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {stats.top_solutions.slice(0, 20).map((s: any) => (
+            {stats.top_solutions.slice(0, 10).map((s: any) => (
               <button
                 key={s.id_solution}
                 onClick={() => onClickStat?.(s.name)}
