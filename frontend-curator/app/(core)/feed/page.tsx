@@ -40,7 +40,7 @@ export default function FeedPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   /* =========================================================
-     OUTPUT (UNIQUE)
+     OUTPUT UNIQUE
   ========================================================= */
 
   const [finalEmail, setFinalEmail] = useState("");
@@ -57,7 +57,7 @@ export default function FeedPage() {
     useState<string | null>(null);
 
   /* =========================================================
-     LOAD (SEARCH ou LATEST)
+     LOAD
   ========================================================= */
 
   async function load(reset = false, q?: string) {
@@ -176,13 +176,12 @@ export default function FeedPage() {
     setLoadingInsight(true);
 
     try {
-      const res = await api.post("/insight", {
+      const res: any = await api.post("/insight", {
         ids: selectedIds,
         mode: "preview",
       });
 
-      setEmail(res.email || "");
-      setInsight("");
+      setFinalEmail(res.email || "");
 
     } catch (e) {
       console.error("❌ generatePreview error", e);
@@ -197,13 +196,15 @@ export default function FeedPage() {
     setLoadingInsight(true);
 
     try {
-      const res = await api.post("/insight", {
+      const res: any = await api.post("/insight", {
         ids: selectedIds,
         mode: "insight",
       });
 
-      setEmail(res.email || "");
-      setInsight(res.insight || "");
+      // 🔥 on privilégie le rendu enrichi
+      setFinalEmail(
+        res.final_email || res.email || ""
+      );
 
     } catch (e) {
       console.error("❌ generateInsight error", e);
