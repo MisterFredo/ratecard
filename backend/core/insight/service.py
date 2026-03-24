@@ -2,6 +2,7 @@ from typing import List, Dict
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
+from utils.llm import run_llm
 
 
 # ============================================================
