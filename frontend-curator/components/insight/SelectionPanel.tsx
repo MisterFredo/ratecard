@@ -4,107 +4,73 @@ import { useMemo, useRef } from "react";
 import type { FeedItem } from "@/types/feed";
 
 /* =========================================================
-   HTML BUILDER (PREVIEW)
+   SIMPLE BUILDER (FIABLE)
 ========================================================= */
 
-function buildEmailCurator(items: FeedItem[]) {
-  const news = items.filter((i) => i.type === "news");
-  const analyses = items.filter((i) => i.type === "analysis");
+function buildEmailCurator(items: FeedItem[], insight?: string) {
+
+  const news = items.filter(i => i.type === "news");
+  const analyses = items.filter(i => i.type === "analysis");
 
   function renderBadges(item: FeedItem) {
-    const badges: string[] = [];
-
-    item.companies?.forEach((c: any) => {
-      if (c?.name) {
-        badges.push(`
+    return `
+      <div style="margin:6px 0;">
+        ${(item.companies || []).map((c:any)=>`
           <span style="background:#eef2ff;color:#3730a3;padding:2px 6px;border-radius:6px;font-size:11px;margin-right:4px;">
             ${c.name}
           </span>
-        `);
-      }
-    });
+        `).join("")}
 
-    item.topics?.forEach((t: any) => {
-      if (t?.label) {
-        badges.push(`
+        ${(item.topics || []).map((t:any)=>`
           <span style="background:#f3f4f6;color:#374151;padding:2px 6px;border-radius:6px;font-size:11px;margin-right:4px;">
             ${t.label}
           </span>
-        `);
-      }
-    });
+        `).join("")}
+      </div>
+    `;
+  }
 
-    return badges.join("");
+  function renderItem(item: FeedItem) {
+    return `
+      <div style="padding:12px 0;border-bottom:1px solid #eee;">
+        <div style="font-weight:600;">${item.title}</div>
+        ${renderBadges(item)}
+        <div style="color:#555;">${item.excerpt || ""}</div>
+      </div>
+    `;
   }
 
   let html = `
-    <div style="font-family:Arial, sans-serif;max-width:680px;margin:auto;line-height:1.5;">
-      <h2 style="font-size:18px;margin-bottom:20px;">
-        📊 Veille personnalisée
-      </h2>
+    <div style="font-family:Arial;max-width:680px;margin:auto;padding:20px;">
+      <h2 style="margin-bottom:20px;">Veille personnalisée</h2>
   `;
 
-  if (news.length > 0) {
-    html += `<h3>📰 News</h3>`;
+  /* INSIGHT */
 
-    news.forEach((n) => {
-      html += `
-        <div style="margin-bottom:16px;">
-          <div style="font-weight:600;">${n.title}</div>
-          <div style="margin:6px 0;">${renderBadges(n)}</div>
-          <div style="color:#555;">${n.excerpt || ""}</div>
-        </div>
-      `;
-    });
+  if (insight) {
+    html += `
+      <div style="background:#f9fafb;padding:12px;margin-bottom:20px;">
+        <div style="font-weight:600;margin-bottom:8px;">Points clés</div>
+        ${insight.split("\n").map(l => l.trim() ? `<div>• ${l}</div>` : "").join("")}
+      </div>
+    `;
   }
 
-  if (analyses.length > 0) {
-    html += `<h3 style="margin-top:20px;">📈 Analyses</h3>`;
+  /* NEWS */
 
-    analyses.forEach((a) => {
-      html += `
-        <div style="margin-bottom:16px;">
-          <div style="font-weight:600;">${a.title}</div>
-          <div style="margin:6px 0;">${renderBadges(a)}</div>
-          <div style="color:#555;">${a.excerpt || ""}</div>
-        </div>
-      `;
-    });
+  if (news.length) {
+    html += `<h3>News</h3>`;
+    html += news.map(renderItem).join("");
+  }
+
+  /* ANALYSES */
+
+  if (analyses.length) {
+    html += `<h3 style="margin-top:20px;">Analyses</h3>`;
+    html += analyses.map(renderItem).join("");
   }
 
   html += `</div>`;
-
-  return html;
-}
-
-/* =========================================================
-   INSIGHT BUILDER (LLM)
-========================================================= */
-
-function buildInsightBlock(insight: string) {
-  if (!insight) return "";
-
-  let html = `
-    <div style="background:#f9fafb;padding:16px;border-bottom:1px solid #e5e7eb;">
-      <div style="max-width:680px;margin:auto;">
-        <h3 style="margin-bottom:10px;">🧠 Points clés</h3>
-  `;
-
-  insight.split("\n").forEach((line) => {
-    const t = line.trim();
-
-    if (!t) return;
-
-    if (t.startsWith("-")) {
-      html += `
-        <div style="margin-bottom:6px;">
-          • ${t.replace("-", "").trim()}
-        </div>
-      `;
-    }
-  });
-
-  html += `</div></div>`;
 
   return html;
 }
@@ -113,12 +79,10 @@ function buildInsightBlock(insight: string) {
 
 type Props = {
   items: FeedItem[];
-  insight?: string; // 🔥 IMPORTANT
+  insight?: string;
   loading: boolean;
   onGenerateInsight: () => void;
 };
-
-/* ========================================================= */
 
 export default function SelectionPanel({
   items,
@@ -129,40 +93,20 @@ export default function SelectionPanel({
 
   const hiddenRef = useRef<HTMLDivElement>(null);
 
-  /* =====================================================
-     PREVIEW
-  ===================================================== */
-
-  const previewHtml = useMemo(() => {
+  const html = useMemo(() => {
     if (!items.length) return "";
-    return buildEmailCurator(items);
-  }, [items]);
-
-  /* =====================================================
-     FINAL HTML = INSIGHT + PREVIEW
-  ===================================================== */
-
-  const finalHtml = useMemo(() => {
-    if (!previewHtml) return "";
-
-    const insightBlock = buildInsightBlock(insight || "");
-
-    return insightBlock + previewHtml;
-  }, [previewHtml, insight]);
-
-  /* =====================================================
-     COPY
-  ===================================================== */
+    return buildEmailCurator(items, insight);
+  }, [items, insight]);
 
   function copyHtml() {
-    navigator.clipboard.writeText(finalHtml);
+    navigator.clipboard.writeText(html);
   }
 
   function copyForGmail() {
     if (!hiddenRef.current) return;
 
     const container = hiddenRef.current;
-    container.innerHTML = finalHtml;
+    container.innerHTML = html;
 
     const range = document.createRange();
     range.selectNodeContents(container);
@@ -177,10 +121,6 @@ export default function SelectionPanel({
     container.innerHTML = "";
   }
 
-  /* =====================================================
-     RENDER
-  ===================================================== */
-
   return (
     <section className="space-y-4 h-full flex flex-col">
 
@@ -190,25 +130,25 @@ export default function SelectionPanel({
           Preview ({items.length})
         </h2>
 
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
 
           <button
             onClick={copyHtml}
-            className="px-3 py-1.5 rounded bg-gray-900 text-white text-xs"
+            className="px-3 py-1.5 bg-gray-900 text-white text-xs rounded"
           >
-            Copier HTML
+            Copier
           </button>
 
           <button
             onClick={copyForGmail}
-            className="px-3 py-1.5 rounded bg-white border text-xs"
+            className="px-3 py-1.5 border text-xs rounded"
           >
-            Copier Gmail
+            Gmail
           </button>
 
           <button
             onClick={onGenerateInsight}
-            className="px-3 py-1.5 rounded bg-black text-white text-xs"
+            className="px-3 py-1.5 bg-black text-white text-xs rounded"
           >
             Insight
           </button>
@@ -217,38 +157,33 @@ export default function SelectionPanel({
       </div>
 
       {/* OUTPUT */}
-      <div className="flex-1 border border-gray-200 rounded-lg overflow-hidden bg-white">
+      <div className="flex-1 border rounded-lg overflow-hidden bg-white">
 
         {loading && (
-          <div className="p-6 text-sm text-gray-400">
-            Génération en cours...
+          <div className="p-6 text-gray-400">
+            Génération...
           </div>
         )}
 
-        {!loading && !finalHtml && (
-          <div className="p-6 text-sm text-gray-400">
-            Sélectionne des contenus pour voir le rendu.
-          </div>
-        )}
-
-        {!loading && finalHtml && (
+        {!loading && html && (
           <iframe
             title="Preview"
-            srcDoc={finalHtml}
+            srcDoc={html}
             className="w-full h-full"
           />
         )}
 
+        {!loading && !html && (
+          <div className="p-6 text-gray-400">
+            Sélectionne du contenu
+          </div>
+        )}
+
       </div>
 
-      {/* hidden gmail copy */}
       <div
         ref={hiddenRef}
-        style={{
-          position: "absolute",
-          left: "-9999px",
-          top: 0,
-        }}
+        style={{ position: "absolute", left: "-9999px" }}
       />
     </section>
   );
