@@ -1,25 +1,9 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import List, Optional
 
-from core.insight.service import (
-    get_items_by_ids,
-    build_insight_payload,
-    generate_insight,
-)
+from api.insight.models import InsightRequest
+from core.insight.service import run_insight_pipeline
 
 router = APIRouter()
-
-
-# ============================================================
-# MODELS (inline pour l'instant)
-# ============================================================
-
-class InsightRequest(BaseModel):
-    ids: List[str]
-
-    # 🔥 permet d’activer / non le LLM
-    mode: Optional[str] = "preview"  # "preview" | "insight"
 
 
 # ============================================================
@@ -29,58 +13,55 @@ class InsightRequest(BaseModel):
 @router.post("/")
 def insight_route(payload: InsightRequest):
     """
-    Endpoint unique pour :
-    - preview (données structurées)
-    - insight (LLM plus tard)
+    Endpoint unique :
 
-    ⚠️ Le front gère le rendu (scan / email / etc.)
+    - preview → items + email
+    - insight → items + email + insight + final_email
     """
 
     try:
         # =====================================================
-        # 1. RÉCUPÉRATION
+        # PIPELINE
         # =====================================================
 
-        items = get_items_by_ids(payload.ids)
+        result = run_insight_pipeline(payload.ids)
 
-        if not items:
+        if result["status"] == "empty":
             return {
                 "status": "empty",
+                "mode": payload.mode,
                 "items": [],
+                "email": "",
             }
 
         # =====================================================
-        # 2. BUILD PAYLOAD
-        # =====================================================
-
-        insight_payload = build_insight_payload(items)
-
-        # =====================================================
-        # 3. MODE PREVIEW (DEFAULT)
+        # PREVIEW
         # =====================================================
 
         if payload.mode == "preview":
             return {
                 "status": "ok",
                 "mode": "preview",
-                "items": insight_payload,
+                "items": result["items"],
+                "email": result["email"],
             }
 
         # =====================================================
-        # 4. MODE INSIGHT (LLM)
+        # INSIGHT
         # =====================================================
 
         if payload.mode == "insight":
-            result = generate_insight(insight_payload)
-
             return {
                 "status": "ok",
                 "mode": "insight",
-                "result": result,
+                "items": result["items"],
+                "email": result["email"],
+                "insight": result["insight"],
+                "final_email": result["final_email"],
             }
 
         # =====================================================
-        # 5. FALLBACK
+        # FALLBACK
         # =====================================================
 
         return {
