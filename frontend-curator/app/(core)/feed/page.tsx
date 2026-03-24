@@ -47,7 +47,7 @@ export default function FeedPage() {
   const [loadingInsight, setLoadingInsight] = useState(false);
 
   /* =========================================================
-     PANEL STATE (NEW)
+     PANEL STATE
   ========================================================= */
 
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -171,8 +171,11 @@ export default function FeedPage() {
         : [...prev, item.id]
     );
 
-    // 🔥 ouvre automatiquement le panel si on sélectionne
+    // ouverture panel
     setIsPanelOpen(true);
+
+    // reset analyse
+    setAnalysis("");
   }
 
   /* =========================================================
@@ -187,10 +190,9 @@ export default function FeedPage() {
     try {
       const res: any = await api.post("/insight/", {
         ids: selectedIds,
-        mode: "insight",
       });
 
-      setAnalysis(res.final_email || res.email || "");
+      setAnalysis(res.insight || "");
 
     } catch (e) {
       console.error("❌ generateInsight error", e);
@@ -234,7 +236,10 @@ export default function FeedPage() {
 
       {/* RIGHT */}
       {isPanelOpen && (
-        <div className="xl:col-span-1 sticky top-6 h-[calc(100vh-120px)]">
+        <div
+          id="selection-panel"
+          className="xl:col-span-1 sticky top-6 h-[calc(100vh-120px)]"
+        >
           <SelectionPanel
             items={items}
             selectedIds={selectedIds}
