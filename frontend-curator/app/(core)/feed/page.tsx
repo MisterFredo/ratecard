@@ -176,7 +176,7 @@ export default function FeedPage() {
 
     try {
       const res = await fetch(
-        apiUrl("/api/insight"),
+        `${process.env.NEXT_PUBLIC_API_URL}/api/insight`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -203,7 +203,7 @@ export default function FeedPage() {
 
     try {
       const res = await fetch(
-        apiUrl("/api/insight"),
+        `${process.env.NEXT_PUBLIC_API_URL}/api/insight`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
