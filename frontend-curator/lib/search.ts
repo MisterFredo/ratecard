@@ -7,6 +7,9 @@ type Params = {
   query?: string;
   limit?: number;
   offset?: number;
+
+  // 🔥 NEW
+  type?: "news" | "analysis";
 };
 
 /* ========================================================= */
@@ -45,6 +48,11 @@ export async function searchCurator(
     query.append("limit", String(params.limit ?? 20));
     query.append("offset", String(params.offset ?? 0));
 
+    // 🔥 NEW
+    if (params.type) {
+      query.append("type", params.type);
+    }
+
     const res = await api.get(`/curator/search?${query.toString()}`);
     const data = res?.data ?? res;
 
@@ -75,6 +83,11 @@ export async function getLatestCurator(
 
     query.append("limit", String(params?.limit ?? 20));
     query.append("offset", String(params?.offset ?? 0));
+
+    // 🔥 NEW (important pour cohérence UX)
+    if (params?.type) {
+      query.append("type", params.type);
+    }
 
     const res = await api.get(`/curator/latest?${query.toString()}`);
     const data = res?.data ?? res;
