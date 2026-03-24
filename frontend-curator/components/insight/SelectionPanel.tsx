@@ -95,47 +95,76 @@ export default function SelectionPanel({
   ========================================================= */
 
   function renderAnalysis(text: string) {
-    const cleaned = cleanAnalysis(text);
-    const sections = cleaned.split("\n\n");
+    const lines = text.split("\n").map((l) => l.trim());
 
-    return sections.map((block, i) => {
-      const lines = block.split("\n").map((l) => l.trim());
+    let currentSection = "";
+    const blocks: any[] = [];
 
-      // TITLE
-      if (
-        lines[0]?.toUpperCase().includes("POINT") ||
-        lines[0]?.toUpperCase().includes("ANALYSE")
-      ) {
-        return (
-          <div key={i} className="mb-5">
-            <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">
-              {lines[0]}
+    lines.forEach((line, i) => {
+      if (!line) return;
+
+      // SECTION TITLE
+      if (line === "TOP 5" || line === "À NOTER") {
+        currentSection = line;
+
+        blocks.push(
+          <div key={i} className="mt-6 mb-3">
+            <div className="text-xs uppercase tracking-wide text-gray-400">
+              {line}
             </div>
           </div>
         );
+        return;
       }
 
-      // BULLETS
-      if (lines.every((l) => l.startsWith("-") || l.startsWith("•"))) {
-        return (
-          <div key={i} className="space-y-2 mb-6">
-            {lines.map((l, idx) => (
-              <div key={idx} className="flex gap-2 text-sm text-gray-800">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-black" />
-                <span>{l.replace(/^[-•]\s*/, "")}</span>
-              </div>
-            ))}
+      // MAIN TITLE
+      if (line.includes("POINTS CLÉS")) {
+        blocks.push(
+          <div key={i} className="mb-4">
+            <div className="text-sm font-semibold text-gray-900">
+              Points clés
+            </div>
           </div>
         );
+        return;
       }
 
-      // PARAGRAPH
-      return (
-        <div key={i} className="text-sm text-gray-700 leading-relaxed mb-4">
-          {block}
+      // BULLET → transform en card
+      if (line.startsWith("-") || line.startsWith("•")) {
+        const clean = line.replace(/^[-•]\s*/, "");
+
+        const [concept, rest] = clean.split("→");
+
+        blocks.push(
+          <div
+            key={i}
+            className="mb-3 p-3 rounded-lg border bg-gray-50"
+          >
+            {concept && (
+              <div className="text-xs font-semibold text-gray-900 mb-1">
+                {concept.trim()}
+              </div>
+            )}
+
+            {rest && (
+              <div className="text-sm text-gray-700 leading-relaxed">
+                {rest.trim()}
+              </div>
+            )}
+          </div>
+        );
+        return;
+      }
+
+      // fallback (rare)
+      blocks.push(
+        <div key={i} className="text-sm text-gray-700 mb-2">
+          {line}
         </div>
       );
     });
+
+    return <div>{blocks}</div>;
   }
 
   /* =========================================================
