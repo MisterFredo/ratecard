@@ -13,15 +13,18 @@ router = APIRouter()
 @router.post("/")
 def insight_route(payload: InsightRequest):
     """
-    Endpoint unique :
+    Génération d'insight LLM uniquement.
 
-    - preview → items + email
-    - insight → items + email + insight + final_email
+    Input :
+    - ids : List[str]
+
+    Output :
+    - insight : str
     """
 
     try:
         # =====================================================
-        # PIPELINE
+        # PIPELINE (LLM ONLY)
         # =====================================================
 
         result = run_insight_pipeline(payload.ids)
@@ -29,46 +32,16 @@ def insight_route(payload: InsightRequest):
         if result["status"] == "empty":
             return {
                 "status": "empty",
-                "mode": payload.mode,
-                "items": [],
-                "email": "",
+                "insight": "",
             }
 
         # =====================================================
-        # PREVIEW
-        # =====================================================
-
-        if payload.mode == "preview":
-            return {
-                "status": "ok",
-                "mode": "preview",
-                "items": result["items"],
-                "email": result["email"],
-                "html": result.get("html"),  # 🔥 ADD
-            }
-
-        # =====================================================
-        # INSIGHT
-        # =====================================================
-
-        if payload.mode == "insight":
-            return {
-                "status": "ok",
-                "mode": "insight",
-                "items": result["items"],
-                "email": result["email"],
-                "insight": result["insight"],
-                "final_email": result["final_email"],
-                "html": result.get("html"),  # 🔥 ADD
-            }
-
-        # =====================================================
-        # FALLBACK
+        # SUCCESS
         # =====================================================
 
         return {
-            "status": "error",
-            "message": "Invalid mode",
+            "status": "ok",
+            "insight": result["insight"],
         }
 
     except Exception as e:
