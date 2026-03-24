@@ -8,8 +8,7 @@ type Props = {
   items: FeedItem[];
   selectedIds: string[];
 
-  email: string;
-  insight?: string;
+  finalEmail: string;
 
   loading: boolean;
 
@@ -22,8 +21,7 @@ type Props = {
 export default function SelectionPanel({
   items,
   selectedIds,
-  email,
-  insight,
+  finalEmail,
   loading,
   onGeneratePreview,
   onGenerateInsight,
@@ -142,18 +140,19 @@ export default function SelectionPanel({
       </div>
 
       {/* =====================================================
-         EMAIL PREVIEW
+         OUTPUT UNIQUE (EMAIL + INSIGHT)
       ===================================================== */}
-      {email && (
+      {finalEmail && (
         <div className="space-y-2 border rounded-lg p-3 bg-gray-50">
+
           <div className="flex justify-between items-center">
             <span className="text-xs font-medium text-gray-700">
-              Email
+              Sortie
             </span>
 
             <button
               onClick={() =>
-                navigator.clipboard.writeText(email)
+                navigator.clipboard.writeText(finalEmail)
               }
               className="text-xs text-blue-600"
             >
@@ -162,25 +161,11 @@ export default function SelectionPanel({
           </div>
 
           <textarea
-            value={email}
+            value={finalEmail}
             readOnly
-            className="w-full min-h-[180px] text-xs p-2 border rounded"
+            className="w-full min-h-[220px] text-xs p-2 border rounded"
           />
-        </div>
-      )}
 
-      {/* =====================================================
-         INSIGHT RESULT
-      ===================================================== */}
-      {insight && (
-        <div className="space-y-2 border rounded-lg p-3 bg-white">
-          <div className="text-xs font-medium text-gray-700">
-            🧠 Insight
-          </div>
-
-          <div className="text-xs text-gray-700 whitespace-pre-wrap">
-            {insight}
-          </div>
         </div>
       )}
     </div>
