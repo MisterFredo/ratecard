@@ -19,6 +19,9 @@ TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
 # ============================================================
 
 def get_items_by_ids(ids: List[str]) -> List[Dict]:
+    """
+    Récupère NEWS + ANALYSES (version UI)
+    """
 
     if not ids:
         return []
@@ -37,7 +40,6 @@ def get_items_by_ids(ids: List[str]) -> List[Dict]:
           STRUCT(n.id_company, n.company_name)
         ] AS companies,
         [] AS solutions
-
     FROM `{VIEW_NEWS}` n
     WHERE n.id_news IN UNNEST(@ids)
 
@@ -54,7 +56,6 @@ def get_items_by_ids(ids: List[str]) -> List[Dict]:
         c.topics,
         c.companies,
         c.solutions
-
     FROM `{VIEW_CONTENT}` c
     WHERE c.id_content IN UNNEST(@ids)
 
@@ -67,7 +68,7 @@ def get_items_by_ids(ids: List[str]) -> List[Dict]:
 
 
 # ============================================================
-# FETCH ANALYSES (RICH → LLM)
+# FETCH ANALYSES (LLM ONLY)
 # ============================================================
 
 def get_analysis_details_by_ids(ids: List[str]) -> List[Dict]:
@@ -115,110 +116,12 @@ def get_analysis_details_by_ids(ids: List[str]) -> List[Dict]:
 
 
 # ============================================================
-# FORMAT EMAIL (MATIÈRE)
+# EMAIL (PRODUIT CORE)
 # ============================================================
 
-def format_items_as_email(items: List[Dict]) -> str:
-
-    if not items:
-        return "Aucun contenu sélectionné."
-
-    lines = []
-    lines.append("🗞️ Veille - Sélection personnalisée")
-
-    def format_date(dt):
-        return str(dt)[:10] if dt else ""
-
-    def build_block(item):
-
-        date = format_date(item.get("published_at"))
-        title = (item.get("title") or "").strip()
-        excerpt = (item.get("excerpt") or "").strip()
-
-        companies = [c.get("name") for c in item.get("companies", [])]
-        topics = [t.get("label") for t in item.get("topics", [])]
-
-        badges = " | ".join(filter(None, companies + topics))
-
-        header = f"[{date}]"
-        if badges:
-            header += f" {badges}"
-
-        block = f"{header}\n{title}"
-
-        if excerpt:
-            block += f"\n{excerpt}"
-
-        return block
-
-    for item in items:
-        lines.append(build_block(item))
-
-    return "\n\n".join(lines)
-
-
-# ============================================================
-# BUILD INSIGHT PAYLOAD
-# ============================================================
-
-def build_insight_payload(items: List[Dict]) -> Dict:
+def format_email(items: List[Dict]) -> str:
     """
-    Payload enrichi pour LLM (analyses uniquement)
-    """
-
-    analysis_ids = [
-        i["id"] for i in items if i.get("type") == "analysis"
-    ]
-
-    analyses = get_analysis_details_by_ids(analysis_ids)
-
-    return {
-        "type": "insight",
-        "count": len(analyses),
-        "analyses": analyses
-    }
-
-
-# ============================================================
-# LLM (PLACEHOLDER)
-# ============================================================
-
-def build_prompt(payload: Dict) -> str:
-    return "PROMPT_PLACEHOLDER"
-
-
-def generate_insight(payload: Dict) -> str:
-
-    if payload.get("count", 0) == 0:
-        return "Aucune analyse disponible."
-
-    prompt = build_prompt(payload)
-
-    return "LLM_RESULT_PLACEHOLDER"
-
-
-# ============================================================
-# FINAL EMAIL
-# ============================================================
-
-def format_email_with_insight(base_email: str, insight: str) -> str:
-
-    if not insight:
-        return base_email
-
-    return f"""
-{base_email}
-
----
-
-🧠 Analyse
-
-{insight}
-""".strip()
-
-def format_email_premium(items: List[Dict]) -> str:
-    """
-    Génère un email structuré, lisible et directement utilisable.
+    Email premium (unique version)
     """
 
     if not items:
@@ -226,20 +129,15 @@ def format_email_premium(items: List[Dict]) -> str:
 
     lines = []
 
-    # ======================================================
-    # HEADER
-    # ======================================================
-
     lines.append("📊 Veille personnalisée")
     lines.append("")
 
-    # séparation types
     news = [i for i in items if i.get("type") == "news"]
     analyses = [i for i in items if i.get("type") == "analysis"]
 
-    # ======================================================
+    # --------------------------------------------------------
     # HELPERS
-    # ======================================================
+    # --------------------------------------------------------
 
     def format_date(dt):
         if not dt:
@@ -263,8 +161,8 @@ def format_email_premium(items: List[Dict]) -> str:
         return ", ".join(badges)
 
     def build_block(item):
-        title = item.get("title", "").strip()
-        excerpt = item.get("excerpt", "").strip()
+        title = (item.get("title") or "").strip()
+        excerpt = (item.get("excerpt") or "").strip()
         date = format_date(item.get("published_at"))
         badges = format_badges(item)
 
@@ -281,9 +179,9 @@ def format_email_premium(items: List[Dict]) -> str:
 
         return block
 
-    # ======================================================
+    # --------------------------------------------------------
     # NEWS
-    # ======================================================
+    # --------------------------------------------------------
 
     if news:
         lines.append("📰 News")
@@ -293,9 +191,9 @@ def format_email_premium(items: List[Dict]) -> str:
             lines.append(build_block(item))
             lines.append("")
 
-    # ======================================================
+    # --------------------------------------------------------
     # ANALYSES
-    # ======================================================
+    # --------------------------------------------------------
 
     if analyses:
         lines.append("📈 Analyses")
@@ -309,10 +207,80 @@ def format_email_premium(items: List[Dict]) -> str:
 
 
 # ============================================================
+# INSIGHT PAYLOAD (LLM)
+# ============================================================
+
+def build_insight_payload(items: List[Dict]) -> Dict:
+    """
+    Payload pour le LLM (analyses uniquement)
+    """
+
+    analysis_ids = [
+        i["id"] for i in items if i.get("type") == "analysis"
+    ]
+
+    analyses = get_analysis_details_by_ids(analysis_ids)
+
+    return {
+        "type": "insight",
+        "count": len(analyses),
+        "analyses": analyses,
+    }
+
+
+# ============================================================
+# LLM (PLACEHOLDER)
+# ============================================================
+
+def build_prompt(payload: Dict) -> str:
+    """
+    À implémenter plus tard (très important)
+    """
+    return "PROMPT_PLACEHOLDER"
+
+
+def generate_insight(payload: Dict) -> str:
+    """
+    LLM (future implémentation)
+    """
+
+    if payload.get("count", 0) == 0:
+        return "Aucune analyse disponible."
+
+    prompt = build_prompt(payload)
+
+    # TODO → appel OpenAI
+    return "LLM_RESULT_PLACEHOLDER"
+
+
+# ============================================================
+# EMAIL FINAL (EMAIL + INSIGHT)
+# ============================================================
+
+def format_email_with_insight(base_email: str, insight: str) -> str:
+
+    if not insight:
+        return base_email
+
+    return f"""
+{base_email}
+
+---
+
+🧠 Analyse
+
+{insight}
+""".strip()
+
+
+# ============================================================
 # PIPELINE
 # ============================================================
 
 def run_insight_pipeline(ids: List[str]) -> Dict:
+    """
+    Pipeline complet utilisé par l'API
+    """
 
     items = get_items_by_ids(ids)
 
@@ -325,12 +293,16 @@ def run_insight_pipeline(ids: List[str]) -> Dict:
             "final_email": "",
         }
 
-    email = format_items_as_email(items)
+    # 1. EMAIL (matière)
+    email = format_email(items)
 
+    # 2. PAYLOAD LLM
     payload = build_insight_payload(items)
 
+    # 3. INSIGHT
     insight = generate_insight(payload)
 
+    # 4. EMAIL FINAL
     final_email = format_email_with_insight(email, insight)
 
     return {
