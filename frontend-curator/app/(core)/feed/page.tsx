@@ -175,22 +175,16 @@ export default function FeedPage() {
     setLoadingInsight(true);
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/insight`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ids: selectedIds,
-            mode: "preview",
-          }),
-        }
-      );
+      const res = await api.post("/insight", {
+        ids: selectedIds,
+        mode: "preview",
+      });
 
-      const json = await res.json();
+      setEmail(res.email || "");
+      setInsight("");
 
-      setFinalEmail(json.email || "");
-
+    } catch (e) {
+      console.error("❌ generatePreview error", e);
     } finally {
       setLoadingInsight(false);
     }
@@ -202,22 +196,16 @@ export default function FeedPage() {
     setLoadingInsight(true);
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/insight`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ids: selectedIds,
-            mode: "insight",
-          }),
-        }
-      );
+      const res = await api.post("/insight", {
+        ids: selectedIds,
+        mode: "insight",
+      });
 
-      const json = await res.json();
+      setEmail(res.email || "");
+      setInsight(res.insight || "");
 
-      setFinalEmail(json.final_email || json.email || "");
-
+    } catch (e) {
+      console.error("❌ generateInsight error", e);
     } finally {
       setLoadingInsight(false);
     }
