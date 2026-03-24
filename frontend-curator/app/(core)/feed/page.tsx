@@ -17,6 +17,8 @@ import { api } from "@/lib/api";
 export default function FeedPage() {
   const LIMIT = 20;
 
+  /* ================= DATA ================= */
+
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -27,12 +29,16 @@ export default function FeedPage() {
   const [hasMore, setHasMore] = useState(true);
   const [stats, setStats] = useState<any>(null);
 
+  /* ================= SELECTION ================= */
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const [html, setHtml] = useState<string>("");
-  const [insightHtml, setInsightHtml] = useState<string>("");
+  /* ================= INSIGHT ================= */
 
+  const [insight, setInsight] = useState<string>(""); // 🔥 IMPORTANT
   const [loadingInsight, setLoadingInsight] = useState(false);
+
+  /* ================= DRAWER ================= */
 
   const [selectedItem, setSelectedItem] =
     useState<FeedItem | null>(null);
@@ -40,7 +46,7 @@ export default function FeedPage() {
   const [loadingItemId, setLoadingItemId] =
     useState<string | null>(null);
 
-  /* LOAD */
+  /* ================= LOAD ================= */
 
   async function load(reset = false, q?: string) {
     const finalQuery = (q ?? query)?.trim();
@@ -89,27 +95,7 @@ export default function FeedPage() {
     loadStats();
   }, []);
 
-  /* AUTO PREVIEW (clé UX) */
-
-  useEffect(() => {
-    if (!selectedIds.length) {
-      setHtml("");
-      return;
-    }
-
-    async function loadPreview() {
-      const res: any = await api.post("/insight/", {
-        ids: selectedIds,
-        mode: "preview",
-      });
-
-      setHtml(res.html || "");
-    }
-
-    loadPreview();
-  }, [selectedIds]);
-
-  /* ACTIONS */
+  /* ================= ACTIONS ================= */
 
   async function generateInsight() {
     if (!selectedIds.length) return;
@@ -122,11 +108,13 @@ export default function FeedPage() {
         mode: "insight",
       });
 
-      setInsightHtml(res.html || "");
+      setInsight(res.insight || ""); // 🔥 IMPORTANT
     } finally {
       setLoadingInsight(false);
     }
   }
+
+  /* ================= HELPERS ================= */
 
   function toggleSelect(item: FeedItem) {
     setSelectedIds((prev) =>
@@ -160,6 +148,14 @@ export default function FeedPage() {
     load(true, value);
   }
 
+  /* ================= DERIVED ================= */
+
+  const selectedItems = items.filter((i) =>
+    selectedIds.includes(i.id)
+  );
+
+  /* ================= RENDER ================= */
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
@@ -184,15 +180,14 @@ export default function FeedPage() {
         />
       </div>
 
-      {/* RIGHT (STICKY FIXED) */}
-      {selectedIds.length > 0 && (
+      {/* RIGHT */}
+      {selectedItems.length > 0 && (
         <div className="xl:col-span-1">
-
           <div className="sticky top-24">
 
             <SelectionPanel
-              html={html}
-              insightHtml={insightHtml}
+              items={selectedItems}   // 🔥 IMPORTANT
+              insight={insight}       // 🔥 IMPORTANT
               loading={loadingInsight}
               onGenerateInsight={generateInsight}
             />
