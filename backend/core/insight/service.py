@@ -228,6 +228,83 @@ def build_insight_payload(items: List[Dict]) -> Dict:
         "analyses": analyses,
     }
 
+def build_insight_html(items, insight_text):
+
+    def format_date(dt):
+        return dt[:10] if dt else ""
+
+    def render_badges(item):
+        badges = []
+
+        for c in item.get("companies", []):
+            if c.get("name"):
+                badges.append(
+                    f"<span style='background:#eef2ff;color:#3730a3;padding:2px 6px;border-radius:6px;font-size:11px;margin-right:4px'>{c['name']}</span>"
+                )
+
+        for t in item.get("topics", []):
+            if t.get("label"):
+                badges.append(
+                    f"<span style='background:#f3f4f6;color:#374151;padding:2px 6px;border-radius:6px;font-size:11px;margin-right:4px'>{t['label']}</span>"
+                )
+
+        return "".join(badges)
+
+    html = "<div style='font-family:Arial, sans-serif;'>"
+
+    # =====================================================
+    # NEWS
+    # =====================================================
+    news = [i for i in items if i["type"] == "news"]
+
+    if news:
+        html += "<h2 style='margin-top:10px;'>📰 News</h2>"
+
+        for n in news:
+            html += f"""
+            <div style="margin-bottom:18px;">
+                <div style="font-weight:600;">
+                    {n['title']} ({format_date(n.get('published_at'))})
+                </div>
+
+                <div style="margin:6px 0;">
+                    {render_badges(n)}
+                </div>
+
+                <div style="color:#374151;">
+                    {n.get("excerpt") or ""}
+                </div>
+            </div>
+            """
+
+    # =====================================================
+    # ANALYSE LLM (🔥 EN PREMIER VISUELLEMENT)
+    # =====================================================
+
+    if insight_text:
+        html += "<h2 style='margin-top:20px;'>🧠 Analyse</h2>"
+
+        for line in insight_text.split("\n"):
+            line = line.strip()
+
+            if line.startswith("-"):
+                html += f"""
+                <div style="margin-bottom:6px;">
+                    • {line.replace('-', '').strip()}
+                </div>
+                """
+
+            elif line.upper() == line and len(line) < 40:
+                html += f"""
+                <div style="margin-top:12px;font-weight:600;">
+                    {line}
+                </div>
+                """
+
+    html += "</div>"
+
+    return html
+
 
 # ============================================================
 # LLM (PLACEHOLDER)
