@@ -344,59 +344,89 @@ MECANIQUE:
     context = "\n\n====================\n\n".join(context_blocks)
 
     prompt = f"""
-Tu es un assistant de filtrage pour un expert.
+Tu es un assistant de SYNTHÈSE FACTUELLE pour un expert métier.
 
-OBJECTIF :
-Identifier les points clés à retenir à partir de signaux déjà structurés.
-
-IMPORTANT :
-- Tu dois PRIORISER les concepts récurrents
-- Tu dois UTILISER les chiffres comme preuve
-- Tu ne dois PAS reformuler les contenus
-- Tu ne dois PAS faire 1 point par analyse
+Tu travailles sur des signaux déjà structurés.
+Tu ne dois PAS interpréter, tu dois STRUCTURER.
 
 --------------------------------------------------
+OBJECTIF
 
-CONTEXTE :
+Faire gagner du temps à un professionnel :
+→ Il ne veut PAS lire les analyses
+→ Il veut les faits importants, organisés
+
+--------------------------------------------------
+MÉTHODE (OBLIGATOIRE)
+
+1. IDENTIFIER les CONCEPTS qui reviennent le plus souvent
+2. REGROUPER les analyses par CONCEPT commun
+3. EXTRAIRE :
+   - les faits concrets (signal / mécanique)
+   - les CHIFFRES associés (si présents)
+4. PRIORISER :
+   - importance (fréquence + impact business)
+   - pas l’ordre du texte
+
+--------------------------------------------------
+CONTEXTE
 {context}
 
 --------------------------------------------------
+TÂCHE
 
-TÂCHE :
-
-Identifier les 5 points clés à retenir.
+Produire EXACTEMENT 5 points clés.
 
 Chaque point doit :
-- reposer sur plusieurs analyses
-- s’appuyer sur des CONCEPTS récurrents
-- intégrer si possible un CHIFFRE clé
-- refléter une logique réelle (pas une banalité)
+- correspondre à un CONCEPT RÉCURRENT
+- agréger plusieurs analyses
+- contenir :
+    • un fait concret (signal ou mécanique)
+    • au moins 1 chiffre SI disponible
+- être immédiatement exploitable
 
 --------------------------------------------------
-
-FORMAT :
+FORMAT STRICT (OBLIGATOIRE)
 
 POINTS CLÉS
 
-- [Concept principal] → description courte + chiffre si pertinent
+- [CONCEPT] → fait synthétique + chiffre
 
 - ...
 
 --------------------------------------------------
+EXEMPLES DE BON OUTPUT
 
-RÈGLES :
+- [Retail media domination] → Amazon capte 75% du marché US, confirmant une concentration extrême des budgets.
+
+- [Shift vers le conversational commerce] → Lemrock lève 6M€ pour connecter marques et agents IA, dans un contexte de baisse du trafic e-commerce.
+
+--------------------------------------------------
+RÈGLES STRICTES
 
 - MAX 5 points
-- phrases courtes
-- pas de généralité
-- pas d’analyse
-- pas de projection
+- PAS de phrase longue
+- PAS de résumé d’article
+- PAS de storytelling
+- PAS de généralité ("le marché évolue")
+- PAS de contenu isolé
+- PAS d’invention
 
-Tu dois organiser l'information, pas la recréer.
+INTERDIT :
+❌ "plusieurs analyses montrent que..."
+❌ "une tendance semble émerger"
+❌ "cela pourrait"
+
+AUTORISÉ :
+✅ faits
+✅ chiffres
+✅ regroupement
+
+--------------------------------------------------
+
+Tu dois AGIR comme un filtre, pas comme un analyste.
 """
     return prompt.strip()
-
-
 
 
 def generate_insight(payload: Dict) -> str:
