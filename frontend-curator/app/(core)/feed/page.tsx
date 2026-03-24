@@ -12,6 +12,7 @@ import { getContentStats } from "@/lib/stats";
 import { searchCurator, getLatestCurator } from "@/lib/search";
 
 import type { FeedItem, FeedBadge } from "@/types/feed";
+import { api } from "@/lib/api";
 
 /* ========================================================= */
 
