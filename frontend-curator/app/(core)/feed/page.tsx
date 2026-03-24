@@ -39,11 +39,10 @@ export default function FeedPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   /* =========================================================
-     INSIGHT
+     OUTPUT (UNIQUE)
   ========================================================= */
 
-  const [email, setEmail] = useState("");
-  const [insight, setInsight] = useState("");
+  const [finalEmail, setFinalEmail] = useState("");
   const [loadingInsight, setLoadingInsight] = useState(false);
 
   /* =========================================================
@@ -167,7 +166,7 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     INSIGHT ACTIONS
+     ACTIONS
   ========================================================= */
 
   async function generatePreview() {
@@ -190,8 +189,7 @@ export default function FeedPage() {
 
       const json = await res.json();
 
-      setEmail(json.email || "");
-      setInsight("");
+      setFinalEmail(json.email || "");
 
     } finally {
       setLoadingInsight(false);
@@ -218,8 +216,7 @@ export default function FeedPage() {
 
       const json = await res.json();
 
-      setEmail(json.email || "");
-      setInsight(json.insight || "");
+      setFinalEmail(json.final_email || json.email || "");
 
     } finally {
       setLoadingInsight(false);
@@ -235,7 +232,6 @@ export default function FeedPage() {
 
       {/* LEFT */}
       <div className="xl:col-span-2">
-
         <FeedExplorer
           query={query}
           setQuery={setQuery}
@@ -258,7 +254,6 @@ export default function FeedPage() {
           selectedIds={selectedIds}
           onToggleSelect={toggleSelect}
         />
-
       </div>
 
       {/* RIGHT */}
@@ -267,8 +262,7 @@ export default function FeedPage() {
           items={items}
           selectedIds={selectedIds}
 
-          email={email}
-          insight={insight}
+          finalEmail={finalEmail}
 
           loading={loadingInsight}
 
