@@ -228,14 +228,31 @@ def process_backlog_route(limit: int = 50, max_batches: int = 1):
             if not rows:
                 break
 
+            to_insert = []
+
             for r in rows:
 
                 result = process_backlog_row(r)
 
+                # 🔥 sécurité critique
+                if not isinstance(result, dict):
+                    continue
+
                 all_results.append(result)
 
-                if result.get("status") == "ok":
-                    insert_backlog_batch(result)
+                if result.get("status") != "ok":
+                    continue
+
+                output = result.get("output")
+
+                if not isinstance(output, dict):
+                    continue
+
+                to_insert.append(result)
+
+            # 🔥 INSERT BATCH (1 seul load job)
+            if to_insert:
+                insert_backlog_batch(to_insert)
 
         return {
             "status": "ok",
@@ -248,8 +265,6 @@ def process_backlog_route(limit: int = 50, max_batches: int = 1):
             400,
             f"Erreur backlog process : {e}"
         )
-
-
 # ============================================================
 # LATEST (KEY ROUTE FRONT)
 # ============================================================
