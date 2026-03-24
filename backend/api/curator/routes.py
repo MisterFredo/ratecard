@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
+from typing import Optional
 
 from core.curator.service import (
     search,
@@ -19,10 +20,16 @@ router = APIRouter()
 def search_route(
     q: str = Query(...),
     limit: int = Query(20),
-    offset: int = Query(0)
+    offset: int = Query(0),
+    type: Optional[str] = Query(None),  # 🔥 NEW
 ):
     try:
-        items = search(q=q, limit=limit, offset=offset)
+        items = search(
+            q=q,
+            limit=limit,
+            offset=offset,
+            type=type,  # 🔥 NEW
+        )
         return {"items": items, "count": len(items)}
     except Exception as e:
         raise HTTPException(400, f"Search error: {e}")
@@ -35,10 +42,15 @@ def search_route(
 @router.get("/latest")
 def latest_route(
     limit: int = Query(20),
-    offset: int = Query(0)
+    offset: int = Query(0),
+    type: Optional[str] = Query(None),  # 🔥 NEW
 ):
     try:
-        items = latest(limit=limit, offset=offset)
+        items = latest(
+            limit=limit,
+            offset=offset,
+            type=type,  # 🔥 NEW
+        )
         return {"items": items, "count": len(items)}
     except Exception as e:
         raise HTTPException(400, f"Latest error: {e}")
