@@ -247,7 +247,7 @@ export default function FeedPage() {
       </div>
 
       {/* RIGHT */}
-      <div className="xl:col-span-1">
+      <div className="xl:col-span-1 h-[calc(100vh-120px)]">
         <SelectionPanel
           items={items}
           selectedIds={selectedIds}
