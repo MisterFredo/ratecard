@@ -1,190 +1,175 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useState } from "react";
 import type { FeedItem } from "@/types/feed";
-
-/* =========================================================
-   SIMPLE BUILDER (FIABLE)
-========================================================= */
-
-function buildEmailCurator(items: FeedItem[], insight?: string) {
-
-  const news = items.filter(i => i.type === "news");
-  const analyses = items.filter(i => i.type === "analysis");
-
-  function renderBadges(item: FeedItem) {
-    return `
-      <div style="margin:6px 0;">
-        ${(item.companies || []).map((c:any)=>`
-          <span style="background:#eef2ff;color:#3730a3;padding:2px 6px;border-radius:6px;font-size:11px;margin-right:4px;">
-            ${c.name}
-          </span>
-        `).join("")}
-
-        ${(item.topics || []).map((t:any)=>`
-          <span style="background:#f3f4f6;color:#374151;padding:2px 6px;border-radius:6px;font-size:11px;margin-right:4px;">
-            ${t.label}
-          </span>
-        `).join("")}
-      </div>
-    `;
-  }
-
-  function renderItem(item: FeedItem) {
-    return `
-      <div style="padding:12px 0;border-bottom:1px solid #eee;">
-        <div style="font-weight:600;">${item.title}</div>
-        ${renderBadges(item)}
-        <div style="color:#555;">${item.excerpt || ""}</div>
-      </div>
-    `;
-  }
-
-  let html = `
-    <div style="font-family:Arial;max-width:680px;margin:auto;padding:20px;">
-      <h2 style="margin-bottom:20px;">Veille personnalisée</h2>
-  `;
-
-  /* INSIGHT */
-
-  if (insight) {
-    html += `
-      <div style="background:#f9fafb;padding:12px;margin-bottom:20px;">
-        <div style="font-weight:600;margin-bottom:8px;">Points clés</div>
-        ${insight.split("\n").map(l => l.trim() ? `<div>• ${l}</div>` : "").join("")}
-      </div>
-    `;
-  }
-
-  /* NEWS */
-
-  if (news.length) {
-    html += `<h3>News</h3>`;
-    html += news.map(renderItem).join("");
-  }
-
-  /* ANALYSES */
-
-  if (analyses.length) {
-    html += `<h3 style="margin-top:20px;">Analyses</h3>`;
-    html += analyses.map(renderItem).join("");
-  }
-
-  html += `</div>`;
-
-  return html;
-}
-
-/* ========================================================= */
 
 type Props = {
   items: FeedItem[];
-  insight?: string;
+  selectedIds: string[];
+
+  finalEmail: string;
+  html?: string;
+
   loading: boolean;
+
+  onGeneratePreview: () => void;
   onGenerateInsight: () => void;
 };
 
 export default function SelectionPanel({
   items,
-  insight,
+  selectedIds,
+  finalEmail,
+  html,
   loading,
+  onGeneratePreview,
   onGenerateInsight,
 }: Props) {
 
-  const hiddenRef = useRef<HTMLDivElement>(null);
+  const selectedItems = items.filter((i) =>
+    selectedIds.includes(i.id)
+  );
 
-  const html = useMemo(() => {
-    if (!items.length) return "";
-    return buildEmailCurator(items, insight);
-  }, [items, insight]);
+  const [mode, setMode] = useState<"preview" | "insight">("preview");
 
-  function copyHtml() {
-    navigator.clipboard.writeText(html);
+  function handleGenerate() {
+    if (mode === "preview") onGeneratePreview();
+    else onGenerateInsight();
   }
 
-  function copyForGmail() {
-    if (!hiddenRef.current) return;
-
-    const container = hiddenRef.current;
-    container.innerHTML = html;
-
-    const range = document.createRange();
-    range.selectNodeContents(container);
-
-    const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-
-    document.execCommand("copy");
-
-    selection?.removeAllRanges();
-    container.innerHTML = "";
+  function copyToClipboard() {
+    navigator.clipboard.writeText(html || finalEmail);
   }
 
   return (
-    <section className="space-y-4 h-full flex flex-col">
+    <div className="h-full flex flex-col">
 
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
+      {/* =====================================================
+         HEADER (FIXE)
+      ===================================================== */}
+      <div className="flex items-center justify-between pb-3 border-b">
+
         <h2 className="text-sm font-semibold">
-          Preview ({items.length})
+          Sélection ({selectedItems.length})
         </h2>
 
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
 
-          <button
-            onClick={copyHtml}
-            className="px-3 py-1.5 bg-gray-900 text-white text-xs rounded"
-          >
-            Copier
-          </button>
+          {/* MODE */}
+          <div className="flex border rounded overflow-hidden text-xs">
+            <button
+              onClick={() => setMode("preview")}
+              className={`px-3 py-1.5 ${
+                mode === "preview"
+                  ? "bg-gray-900 text-white"
+                  : "bg-white text-gray-600"
+              }`}
+            >
+              Preview
+            </button>
 
-          <button
-            onClick={copyForGmail}
-            className="px-3 py-1.5 border text-xs rounded"
-          >
-            Gmail
-          </button>
+            <button
+              onClick={() => setMode("insight")}
+              className={`px-3 py-1.5 border-l ${
+                mode === "insight"
+                  ? "bg-gray-900 text-white"
+                  : "bg-white text-gray-600"
+              }`}
+            >
+              Insight
+            </button>
+          </div>
 
+          {/* ACTION */}
           <button
-            onClick={onGenerateInsight}
-            className="px-3 py-1.5 bg-black text-white text-xs rounded"
+            onClick={handleGenerate}
+            disabled={loading || selectedItems.length === 0}
+            className="px-3 py-1.5 rounded bg-black text-white text-xs disabled:opacity-50"
           >
-            Insight
+            Générer
           </button>
+        </div>
+      </div>
+
+      {/* =====================================================
+         OUTPUT (ZONE PRINCIPALE)
+      ===================================================== */}
+      <div className="flex-1 flex flex-col overflow-hidden mt-4 border rounded-xl bg-white">
+
+        {/* HEADER OUTPUT */}
+        <div className="flex items-center justify-between px-3 py-2 border-b bg-gray-50">
+          <span className="text-xs font-medium text-gray-700">
+            Résultat
+          </span>
+
+          {(html || finalEmail) && (
+            <button
+              onClick={copyToClipboard}
+              className="text-xs text-blue-600"
+            >
+              Copier
+            </button>
+          )}
+        </div>
+
+        {/* CONTENT SCROLL */}
+        <div className="flex-1 overflow-auto">
+
+          {loading && (
+            <div className="p-4 text-sm text-gray-500 animate-pulse">
+              Génération en cours...
+            </div>
+          )}
+
+          {!loading && !html && !finalEmail && (
+            <div className="p-4 text-sm text-gray-400">
+              Génère une sélection pour voir le rendu.
+            </div>
+          )}
+
+          {/* 🔥 HTML RENDER PREMIUM */}
+          {!loading && html && (
+            <div className="max-w-[680px] mx-auto p-6">
+              <div
+                className="text-sm leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: html }}
+              />
+            </div>
+          )}
+
+          {/* fallback */}
+          {!loading && !html && finalEmail && (
+            <div className="p-6 whitespace-pre-wrap text-sm text-gray-700">
+              {finalEmail}
+            </div>
+          )}
 
         </div>
       </div>
 
-      {/* OUTPUT */}
-      <div className="flex-1 border rounded-lg overflow-hidden bg-white">
+      {/* =====================================================
+         LIST (SECONDARY - NE CASSE PLUS L'UX)
+      ===================================================== */}
+      {selectedItems.length > 0 && (
+        <div className="mt-4 border rounded-lg p-2 max-h-[140px] overflow-auto bg-gray-50">
 
-        {loading && (
-          <div className="p-6 text-gray-400">
-            Génération...
+          <div className="text-[10px] text-gray-400 mb-2">
+            Contenus sélectionnés
           </div>
-        )}
 
-        {!loading && html && (
-          <iframe
-            title="Preview"
-            srcDoc={html}
-            className="w-full h-full"
-          />
-        )}
-
-        {!loading && !html && (
-          <div className="p-6 text-gray-400">
-            Sélectionne du contenu
+          <div className="space-y-1">
+            {selectedItems.map((item) => (
+              <div
+                key={item.id}
+                className="text-xs text-gray-700 truncate"
+              >
+                • {item.title}
+              </div>
+            ))}
           </div>
-        )}
+        </div>
+      )}
 
-      </div>
-
-      <div
-        ref={hiddenRef}
-        style={{ position: "absolute", left: "-9999px" }}
-      />
-    </section>
+    </div>
   );
 }
