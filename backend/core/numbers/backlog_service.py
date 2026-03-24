@@ -140,6 +140,7 @@ Le chiffre doit :
    - annonce isolée
 
 ❌ plusieurs valeurs dans une même ligne non séparables clairement
+❌ KPI reformulé ou interprété (ex: "croissance", "priorité", "augmentation") sans métrique directement exploitable
 
 ❌ range :
    - "10-15%"
@@ -157,6 +158,8 @@ Le chiffre doit :
 
 - decision
 - label → KPI métier clair, court, standardisé (ex: "part de marché retail media", "revenus annuels", "CPM moyen")
+- le label doit correspondre à un KPI standardisé directement utilisable dans un dashboard
+(ex: revenus, part de marché, volume, coût, performance)
 - value → nombre uniquement (pas de %, $, texte, espace)
 - unit → EXACTEMENT parmi :
   %, $, €, millions, milliards, x, utilisateurs, autres
