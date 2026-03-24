@@ -15,13 +15,11 @@ import type { FeedItem, FeedBadge } from "@/types/feed";
 import { api } from "@/lib/api";
 
 export default function FeedPage() {
-  const LIMIT = 20;
 
-  /* ================= DATA ================= */
+  const LIMIT = 20;
 
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [total, setTotal] = useState(0);
 
   const [query, setQuery] = useState("");
   const [offset, setOffset] = useState(0);
@@ -29,16 +27,10 @@ export default function FeedPage() {
   const [hasMore, setHasMore] = useState(true);
   const [stats, setStats] = useState<any>(null);
 
-  /* ================= SELECTION ================= */
-
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  /* ================= INSIGHT ================= */
-
-  const [insight, setInsight] = useState<string>(""); // 🔥 IMPORTANT
+  const [insight, setInsight] = useState("");
   const [loadingInsight, setLoadingInsight] = useState(false);
-
-  /* ================= DRAWER ================= */
 
   const [selectedItem, setSelectedItem] =
     useState<FeedItem | null>(null);
@@ -46,56 +38,34 @@ export default function FeedPage() {
   const [loadingItemId, setLoadingItemId] =
     useState<string | null>(null);
 
-  /* ================= LOAD ================= */
+  /* LOAD */
 
   async function load(reset = false, q?: string) {
-    const finalQuery = (q ?? query)?.trim();
     if (loading) return;
 
     setLoading(true);
 
     try {
-      const currentOffset = reset ? 0 : offset;
+      const res = q
+        ? await searchCurator({ query: q, limit: LIMIT, offset })
+        : await getLatestCurator({ limit: LIMIT, offset });
 
-      const res = finalQuery
-        ? await searchCurator({
-            query: finalQuery,
-            limit: LIMIT,
-            offset: currentOffset,
-          })
-        : await getLatestCurator({
-            limit: LIMIT,
-            offset: currentOffset,
-          });
-
-      if (reset) {
-        setItems(res.items);
-        setOffset(res.items.length);
-      } else {
-        setItems((prev) => [...prev, ...res.items]);
-        setOffset((prev) => prev + res.items.length);
-      }
-
-      setTotal(res.count ?? 0);
+      setItems(reset ? res.items : [...items, ...res.items]);
+      setOffset(offset + res.items.length);
       setHasMore(res.items.length === LIMIT);
+
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => {
-    load(true);
-  }, []);
+  useEffect(() => { load(true); }, []);
 
   useEffect(() => {
-    async function loadStats() {
-      const s = await getContentStats();
-      setStats(s);
-    }
-    loadStats();
+    getContentStats().then(setStats);
   }, []);
 
-  /* ================= ACTIONS ================= */
+  /* INSIGHT */
 
   async function generateInsight() {
     if (!selectedIds.length) return;
@@ -108,53 +78,37 @@ export default function FeedPage() {
         mode: "insight",
       });
 
-      setInsight(res.insight || ""); // 🔥 IMPORTANT
+      setInsight(res.insight || "");
+
     } finally {
       setLoadingInsight(false);
     }
   }
 
-  /* ================= HELPERS ================= */
+  /* HELPERS */
 
   function toggleSelect(item: FeedItem) {
-    setSelectedIds((prev) =>
+    setSelectedIds(prev =>
       prev.includes(item.id)
-        ? prev.filter((i) => i !== item.id)
+        ? prev.filter(i => i !== item.id)
         : [...prev, item.id]
     );
   }
 
   function handleSelectItem(item: FeedItem) {
-    setLoadingItemId(item.id);
     setSelectedItem(item);
-
-    setTimeout(() => setLoadingItemId(null), 300);
   }
 
   function handleBadgeClick(badge: FeedBadge) {
-    const value = badge.label;
-    if (!value) return;
-
-    setQuery(value);
-    window.scrollTo({ top: 0 });
-    load(true, value);
+    setQuery(badge.label);
+    load(true, badge.label);
   }
 
-  function handleStatClick(value: string) {
-    if (!value) return;
-
-    setQuery(value);
-    window.scrollTo({ top: 0 });
-    load(true, value);
-  }
-
-  /* ================= DERIVED ================= */
-
-  const selectedItems = items.filter((i) =>
+  const selectedItems = items.filter(i =>
     selectedIds.includes(i.id)
   );
 
-  /* ================= RENDER ================= */
+  /* RENDER */
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -166,9 +120,7 @@ export default function FeedPage() {
           setQuery={setQuery}
           onSearch={() => load(true, query)}
           stats={stats}
-          onClickStat={handleStatClick}
           items={items}
-          total={total}
           loading={loading}
           hasMore={hasMore}
           onLoadMore={() => load(false)}
@@ -186,8 +138,8 @@ export default function FeedPage() {
           <div className="sticky top-24">
 
             <SelectionPanel
-              items={selectedItems}   // 🔥 IMPORTANT
-              insight={insight}       // 🔥 IMPORTANT
+              items={selectedItems}
+              insight={insight}
               loading={loadingInsight}
               onGenerateInsight={generateInsight}
             />
