@@ -234,18 +234,11 @@ def build_insight_payload(items: List[Dict]) -> Dict:
 # ============================================================
 
 def build_prompt(payload: Dict) -> str:
-    """
-    Prompt LLM — extraction structurée enrichie (NO PROJECTION)
-    """
 
     analyses = payload.get("analyses", [])
 
     if not analyses:
         return "Aucune donnée."
-
-    # --------------------------------------------------------
-    # CONTEXT BUILD (RICH)
-    # --------------------------------------------------------
 
     context_blocks = []
 
@@ -254,106 +247,79 @@ def build_prompt(payload: Dict) -> str:
 TITRE:
 {a.get("title")}
 
-EXCERPT:
-{a.get("excerpt")}
-
 CONTENU:
 {a.get("content_body")}
 
-MECANIQUE:
-{a.get("mecanique")}
-
-ENJEU:
-{a.get("enjeu")}
-
-FRICTION:
-{a.get("friction")}
-
-SIGNAL:
-{a.get("signal")}
+CONCEPTS:
+{a.get("concepts_llm")}
 
 CHIFFRES:
 {a.get("chiffres")}
 
-CITATIONS:
-{a.get("citations")}
+SIGNAL:
+{a.get("signal")}
+
+MECANIQUE:
+{a.get("mecanique")}
 """
         context_blocks.append(block.strip())
 
     context = "\n\n====================\n\n".join(context_blocks)
 
-    # --------------------------------------------------------
-    # PROMPT
-    # --------------------------------------------------------
-
     prompt = f"""
-Tu es un assistant spécialisé dans l'extraction et la structuration d'information.
+Tu es un assistant de filtrage pour un expert.
 
 OBJECTIF :
-Faire ressortir rapidement ce qui est structurant dans un corpus.
+Identifier les points clés à retenir à partir de signaux déjà structurés.
 
 IMPORTANT :
-- Tu ne dois PAS interpréter
-- Tu ne dois PAS faire de projection
-- Tu ne dois PAS donner d'opinion
-- Tu dois rester STRICTEMENT fidèle aux contenus
-- Tu dois regrouper les éléments similaires (pas de duplication inutile)
+- Tu dois PRIORISER les concepts récurrents
+- Tu dois UTILISER les chiffres comme preuve
+- Tu ne dois PAS reformuler les contenus
+- Tu ne dois PAS faire 1 point par analyse
+
+--------------------------------------------------
 
 CONTEXTE :
 {context}
 
+--------------------------------------------------
+
 TÂCHE :
 
-1. Identifier les THÈMES dominants
-→ regrouper les sujets similaires
-→ ne pas répéter la même idée plusieurs fois
-→ mentionner si un thème revient plusieurs fois (ex : "présent dans plusieurs contenus")
+Identifier les 5 points clés à retenir.
 
-2. Identifier les MÉCANIQUES observées
-→ modèles, approches, stratégies concrètes
-→ regrouper les mécaniques proches
+Chaque point doit :
+- reposer sur plusieurs analyses
+- s’appuyer sur des CONCEPTS récurrents
+- intégrer si possible un CHIFFRE clé
+- refléter une logique réelle (pas une banalité)
 
-3. Identifier les SIGNAUX récurrents
-→ éléments marquants ou nouveaux présents dans les contenus
-→ uniquement s’ils apparaissent réellement dans le corpus
+--------------------------------------------------
 
-4. Identifier les POINTS DE FRICTION
-→ limites, contraintes, tensions mentionnées
+FORMAT :
 
-FORMAT STRICT :
+POINTS CLÉS
 
-THÈMES
+- [Concept principal] → description courte + chiffre si pertinent
+
 - ...
 
-MÉCANIQUES
-- ...
+--------------------------------------------------
 
-SIGNAUX
-- ...
+RÈGLES :
 
-FRICTIONS
-- ...
+- MAX 5 points
+- phrases courtes
+- pas de généralité
+- pas d’analyse
+- pas de projection
 
-RÈGLES STRICTES :
-- Bullet points uniquement
-- Maximum 6 bullets par section
-- Pas de phrases longues (1 ligne par bullet)
-- Pas de duplication d’idée
-- Pas de conclusion
-- Pas de résumé global
-- Pas de "cela montre que"
-- Pas de "tendance"
-- Pas de généralités vagues
-
-IMPORTANT :
-- Regrouper = priorité
-- Répéter = interdit
-- Simplifier = obligatoire
-
-Tu es un extracteur structurant, pas un analyste.
+Tu dois organiser l'information, pas la recréer.
 """
-
     return prompt.strip()
+
+
 
 
 def generate_insight(payload: Dict) -> str:
