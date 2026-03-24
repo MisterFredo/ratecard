@@ -16,7 +16,20 @@ VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 # SEARCH (avec pagination)
 # ============================================================
 
-def search(q: str, limit: int = 20, offset: int = 0) -> List[Dict]:
+def search(
+    q: str,
+    limit: int = 20,
+    offset: int = 0,
+    type: Optional[str] = None,  # 🔥 NEW
+) -> List[Dict]:
+
+    news_filter = ""
+    content_filter = ""
+
+    if type == "news":
+        content_filter = "AND FALSE"
+    elif type == "analysis":
+        news_filter = "AND FALSE"
 
     sql = f"""
     -- NEWS
@@ -35,8 +48,11 @@ def search(q: str, limit: int = 20, offset: int = 0) -> List[Dict]:
 
     FROM `{VIEW_NEWS}` n
     WHERE
-        LOWER(n.title) LIKE LOWER(CONCAT('%', @query, '%'))
-        OR LOWER(n.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
+        (
+          LOWER(n.title) LIKE LOWER(CONCAT('%', @query, '%'))
+          OR LOWER(n.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
+        )
+        {news_filter}
 
     UNION ALL
 
@@ -54,8 +70,11 @@ def search(q: str, limit: int = 20, offset: int = 0) -> List[Dict]:
 
     FROM `{VIEW_CONTENT}` c
     WHERE
-        LOWER(c.title) LIKE LOWER(CONCAT('%', @query, '%'))
-        OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
+        (
+          LOWER(c.title) LIKE LOWER(CONCAT('%', @query, '%'))
+          OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
+        )
+        {content_filter}
 
     ORDER BY published_at DESC
     LIMIT @limit
@@ -70,26 +89,60 @@ def search(q: str, limit: int = 20, offset: int = 0) -> List[Dict]:
 
     return [_map_feed_row(r) for r in rows]
 
-
 # ============================================================
 # LATEST (landing page)
 # ============================================================
 
-def latest(limit: int = 20, offset: int = 0) -> List[Dict]:
+def latest(
+    limit: int = 20,
+    offset: int = 0,
+    type: Optional[str] = None,  # 🔥 NEW
+) -> List[Dict]:
+
+    news_filter = ""
+    content_filter = ""
+
+    if type == "news":
+        content_filter = "AND FALSE"
+    elif type == "analysis":
+        news_filter = "AND FALSE"
 
     sql = f"""
+    -- NEWS
     SELECT
-        id_content AS id,
-        'analysis' AS type,
-        title,
-        excerpt,
-        published_at,
-        NULL AS news_type,
-        topics,
-        companies,
-        solutions
+        n.id_news AS id,
+        'news' AS type,
+        n.title,
+        n.excerpt,
+        n.published_at,
+        n.news_type,
+        n.topics,
+        ARRAY<STRUCT<id_company STRING, name STRING>>[
+          STRUCT(n.id_company, n.company_name)
+        ] AS companies,
+        [] AS solutions
 
-    FROM `{VIEW_CONTENT}`
+    FROM `{VIEW_NEWS}` n
+    WHERE n.published_at IS NOT NULL
+    {news_filter}
+
+    UNION ALL
+
+    -- CONTENT
+    SELECT
+        c.id_content AS id,
+        'analysis' AS type,
+        c.title,
+        c.excerpt,
+        c.published_at,
+        NULL AS news_type,
+        c.topics,
+        c.companies,
+        c.solutions
+
+    FROM `{VIEW_CONTENT}` c
+    WHERE c.published_at IS NOT NULL
+    {content_filter}
 
     ORDER BY published_at DESC
     LIMIT @limit
@@ -102,8 +155,6 @@ def latest(limit: int = 20, offset: int = 0) -> List[Dict]:
     })
 
     return [_map_feed_row(r) for r in rows]
-
-
 # ============================================================
 # ITEM (light)
 # ============================================================
