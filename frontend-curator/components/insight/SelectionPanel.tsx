@@ -47,83 +47,62 @@ export default function SelectionPanel({
     }
   }
 
-  function buildSelectionText() {
-    return selectedItems
-      .map((item) => {
-        return `${item.title}\n${item.excerpt || ""}`;
-      })
-      .join("\n\n");
-  }
+  function selectContent() {
+    const el = document.getElementById("selection-content");
+    if (!el) return;
 
-  function copyToClipboard() {
-    const text =
-      tab === "selection"
-        ? buildSelectionText()
-        : analysis;
+    const range = document.createRange();
+    range.selectNodeContents(el);
 
-    navigator.clipboard.writeText(text || "");
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
   }
 
   /* =========================================================
-     RENDER ANALYSIS (réutilisé)
+     RENDER ANALYSIS (CLEAN)
   ========================================================= */
 
-  function renderOutput(text: string) {
-    const lines = text.split("\n");
+  function renderAnalysis(text: string) {
+    const sections = text.split("\n\n");
 
-    return lines.map((line, i) => {
-      const trimmed = line.trim();
+    return sections.map((block, i) => {
+      const lines = block.split("\n").map((l) => l.trim());
 
+      // SECTION TITLE
       if (
-        trimmed.startsWith("📊") ||
-        trimmed.startsWith("📰") ||
-        trimmed.startsWith("📈") ||
-        trimmed.startsWith("🧠")
+        lines[0]?.toUpperCase().includes("POINT") ||
+        lines[0]?.toUpperCase().includes("ANALYSE")
       ) {
         return (
-          <div key={i} className="mt-6 mb-2 text-sm font-semibold text-gray-900">
-            {trimmed}
+          <div key={i} className="mb-4">
+            <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">
+              {lines[0]}
+            </div>
           </div>
         );
       }
 
-      if (trimmed.startsWith("•")) {
+      // BULLETS
+      if (lines.every((l) => l.startsWith("-") || l.startsWith("•"))) {
         return (
-          <div key={i} className="pl-3 mb-2 text-sm text-gray-800 leading-relaxed">
-            {trimmed}
-          </div>
-        );
-      }
-
-      if (trimmed.startsWith("[")) {
-        const tags = trimmed
-          .replace("[", "")
-          .replace("]", "")
-          .split(",");
-
-        return (
-          <div key={i} className="flex flex-wrap gap-1 mb-2">
-            {tags.map((t, idx) => (
-              <span
-                key={idx}
-                className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 rounded"
-              >
-                {t.trim()}
-              </span>
+          <div key={i} className="space-y-2 mb-5">
+            {lines.map((l, idx) => (
+              <div key={idx} className="flex gap-2 text-sm text-gray-800">
+                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-black" />
+                <span>{l.replace(/^[-•]\s*/, "")}</span>
+              </div>
             ))}
           </div>
         );
       }
 
-      if (trimmed.length > 0) {
-        return (
-          <div key={i} className="text-sm text-gray-700 mb-3 leading-relaxed">
-            {trimmed}
-          </div>
-        );
-      }
-
-      return null;
+      // PARAGRAPH
+      return (
+        <div key={i} className="text-sm text-gray-700 leading-relaxed mb-4">
+          {block}
+        </div>
+      );
     });
   }
 
@@ -178,7 +157,7 @@ export default function SelectionPanel({
         </button>
       </div>
 
-      {/* ACTION */}
+      {/* ACTIONS */}
       <div className="p-3 border-b flex gap-2">
         <button
           onClick={onGenerateInsight}
@@ -189,11 +168,11 @@ export default function SelectionPanel({
         </button>
 
         <button
-          onClick={copyToClipboard}
+          onClick={selectContent}
           disabled={selectedItems.length === 0}
           className="px-3 py-2 text-xs rounded-lg bg-gray-100 text-gray-700"
         >
-          Copier
+          Sélectionner
         </button>
       </div>
 
@@ -207,32 +186,76 @@ export default function SelectionPanel({
           </div>
         )}
 
-        {/* TAB: SELECTION */}
+        {/* =========================
+            SELECTION
+        ========================= */}
         {tab === "selection" && (
-          <div className="space-y-6">
-            {selectedItems.map((item) => (
-              <div key={item.id} className="space-y-2">
+          <div id="selection-content" className="space-y-8">
 
+            {selectedItems.map((item, index) => (
+              <div key={item.id} className="space-y-3">
+
+                {/* DATE */}
                 <div className="text-xs text-gray-400">
                   {formatDate(item.published_at)}
                 </div>
 
+                {/* TITLE */}
                 <div className="text-sm font-semibold text-gray-900">
                   {item.title}
                 </div>
 
+                {/* BADGES */}
+                <div className="flex flex-wrap gap-1">
+                  {item.companies?.map((c: any) => (
+                    <span
+                      key={c.id_company}
+                      className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded"
+                    >
+                      {c.name}
+                    </span>
+                  ))}
+
+                  {item.solutions?.map((s: any) => (
+                    <span
+                      key={s.id_solution}
+                      className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded"
+                    >
+                      {s.name}
+                    </span>
+                  ))}
+
+                  {item.topics?.map((t: any) => (
+                    <span
+                      key={t.id_topic}
+                      className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 rounded"
+                    >
+                      {t.label}
+                    </span>
+                  ))}
+                </div>
+
+                {/* EXCERPT */}
                 {item.excerpt && (
                   <div className="text-sm text-gray-700 leading-relaxed">
                     {item.excerpt}
                   </div>
                 )}
 
+                {/* SEPARATOR */}
+                {index !== selectedItems.length - 1 && (
+                  <div className="border-t pt-4" />
+                )}
+
               </div>
             ))}
+
           </div>
         )}
 
-        {/* TAB: ANALYSIS */}
+        {/* =========================
+            ANALYSIS
+        ========================= */}
         {tab === "analysis" && (
           <>
             {loading && (
@@ -247,7 +270,7 @@ export default function SelectionPanel({
               </div>
             )}
 
-            {!loading && analysis && renderOutput(analysis)}
+            {!loading && analysis && renderAnalysis(analysis)}
           </>
         )}
 
