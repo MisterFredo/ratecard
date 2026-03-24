@@ -40,11 +40,17 @@ export default function FeedPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   /* =========================================================
-     OUTPUT UNIQUE
+     ANALYSIS
   ========================================================= */
 
-  const [finalEmail, setFinalEmail] = useState("");
+  const [analysis, setAnalysis] = useState("");
   const [loadingInsight, setLoadingInsight] = useState(false);
+
+  /* =========================================================
+     PANEL STATE (NEW)
+  ========================================================= */
+
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   /* =========================================================
      DRAWER
@@ -164,31 +170,14 @@ export default function FeedPage() {
         ? prev.filter((i) => i !== item.id)
         : [...prev, item.id]
     );
+
+    // 🔥 ouvre automatiquement le panel si on sélectionne
+    setIsPanelOpen(true);
   }
 
   /* =========================================================
-     ACTIONS
+     ANALYSIS
   ========================================================= */
-
-  async function generatePreview() {
-    if (!selectedIds.length) return;
-
-    setLoadingInsight(true);
-
-    try {
-      const res: any = await api.post("/insight/", {
-        ids: selectedIds,
-        mode: "preview",
-      });
-
-      setFinalEmail(res.email || "");
-
-    } catch (e) {
-      console.error("❌ generatePreview error", e);
-    } finally {
-      setLoadingInsight(false);
-    }
-  }
 
   async function generateInsight() {
     if (!selectedIds.length) return;
@@ -201,10 +190,7 @@ export default function FeedPage() {
         mode: "insight",
       });
 
-      // 🔥 on privilégie le rendu enrichi
-      setFinalEmail(
-        res.final_email || res.email || ""
-      );
+      setAnalysis(res.final_email || res.email || "");
 
     } catch (e) {
       console.error("❌ generateInsight error", e);
@@ -247,19 +233,20 @@ export default function FeedPage() {
       </div>
 
       {/* RIGHT */}
-      <div className="xl:col-span-1 h-[calc(100vh-120px)]">
-        <SelectionPanel
-          items={items}
-          selectedIds={selectedIds}
+      {isPanelOpen && (
+        <div className="xl:col-span-1 sticky top-6 h-[calc(100vh-120px)]">
+          <SelectionPanel
+            items={items}
+            selectedIds={selectedIds}
 
-          finalEmail={finalEmail}
+            analysis={analysis}
+            loading={loadingInsight}
 
-          loading={loadingInsight}
-
-          onGeneratePreview={generatePreview}
-          onGenerateInsight={generateInsight}
-        />
-      </div>
+            onGenerateInsight={generateInsight}
+            onClose={() => setIsPanelOpen(false)}
+          />
+        </div>
+      )}
 
       {/* DRAWERS */}
       {selectedItem && (
