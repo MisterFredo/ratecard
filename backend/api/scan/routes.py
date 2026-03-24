@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from core.scan.models import ScanRequest
+from api.scan.models import ScanRequest
 from core.scan.service import get_news_by_ids, format_scan_as_text
 
 router = APIRouter()
