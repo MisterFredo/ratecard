@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  Mail,
+  Brain,
+  Copy,
+  Sparkles,
+} from "lucide-react";
+
 import type { FeedItem } from "@/types/feed";
 
 /* ========================================================= */
@@ -9,6 +16,7 @@ type Props = {
   selectedIds: string[];
 
   finalEmail: string;
+  insight?: string;
 
   loading: boolean;
 
@@ -22,6 +30,7 @@ export default function SelectionPanel({
   items,
   selectedIds,
   finalEmail,
+  insight,
   loading,
   onGeneratePreview,
   onGenerateInsight,
@@ -30,10 +39,6 @@ export default function SelectionPanel({
   const selectedItems = items.filter((i) =>
     selectedIds.includes(i.id)
   );
-
-  /* =========================================================
-     HELPERS
-  ========================================================= */
 
   function formatDate(date?: string | null) {
     if (!date) return "";
@@ -44,70 +49,40 @@ export default function SelectionPanel({
     }
   }
 
-  function copyToClipboard() {
-    navigator.clipboard.writeText(finalEmail);
-  }
-
   /* =========================================================
-     PARSE OUTPUT (ULTRA SIMPLE)
+     PARSE LLM
   ========================================================= */
 
-  function renderOutput(text: string) {
-    const lines = text.split("\n");
+  function parseInsight(text?: string) {
+    if (!text) return [];
 
-    return lines.map((line, i) => {
-      const trimmed = line.trim();
+    const sections = text.split("\n\n");
 
-      // TITRES
-      if (trimmed.startsWith("📊") || trimmed.startsWith("📰") || trimmed.startsWith("📈") || trimmed.startsWith("🧠")) {
-        return (
-          <div key={i} className="mt-6 mb-2 text-sm font-semibold text-gray-900">
-            {trimmed}
-          </div>
-        );
-      }
+    return sections.map((s, i) => (
+      <div key={i} className="space-y-2">
+        {s.split("\n").map((line, j) => {
+          if (line.startsWith("-")) {
+            return (
+              <div key={j} className="flex gap-2 text-sm">
+                <span className="text-gray-400">•</span>
+                <span className="text-gray-700">
+                  {line.replace("- ", "")}
+                </span>
+              </div>
+            );
+          }
 
-      // BULLET
-      if (trimmed.startsWith("•")) {
-        return (
-          <div key={i} className="pl-3 mb-2 text-sm text-gray-800 leading-relaxed">
-            {trimmed}
-          </div>
-        );
-      }
-
-      // BADGES (ligne entre [])
-      if (trimmed.startsWith("[")) {
-        const tags = trimmed
-          .replace("[", "")
-          .replace("]", "")
-          .split(",");
-
-        return (
-          <div key={i} className="flex flex-wrap gap-1 mb-2">
-            {tags.map((t, idx) => (
-              <span
-                key={idx}
-                className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 rounded"
-              >
-                {t.trim()}
-              </span>
-            ))}
-          </div>
-        );
-      }
-
-      // TEXTE NORMAL
-      if (trimmed.length > 0) {
-        return (
-          <div key={i} className="text-sm text-gray-700 mb-3 leading-relaxed">
-            {trimmed}
-          </div>
-        );
-      }
-
-      return null;
-    });
+          return (
+            <div
+              key={j}
+              className="text-xs font-semibold text-gray-500 uppercase"
+            >
+              {line}
+            </div>
+          );
+        })}
+      </div>
+    ));
   }
 
   /* =========================================================
@@ -115,10 +90,10 @@ export default function SelectionPanel({
   ========================================================= */
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="sticky top-4 space-y-6 h-[calc(100vh-40px)] overflow-auto pr-2">
 
       {/* HEADER */}
-      <div className="mb-4">
+      <div className="space-y-1">
         <div className="text-sm font-semibold text-gray-900">
           Sélection
         </div>
@@ -128,13 +103,7 @@ export default function SelectionPanel({
       </div>
 
       {/* LIST */}
-      <div className="space-y-2 max-h-[200px] overflow-auto pr-1 mb-4">
-        {selectedItems.length === 0 && (
-          <div className="text-xs text-gray-400">
-            Aucune sélection
-          </div>
-        )}
-
+      <div className="space-y-2 max-h-[260px] overflow-auto">
         {selectedItems.map((item) => (
           <div
             key={item.id}
@@ -148,6 +117,7 @@ export default function SelectionPanel({
               {item.title}
             </div>
 
+            {/* BADGES */}
             <div className="flex flex-wrap gap-1">
               {item.companies?.map((c: any) => (
                 <span
@@ -172,61 +142,69 @@ export default function SelectionPanel({
       </div>
 
       {/* ACTIONS */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2">
         <button
           onClick={onGeneratePreview}
           disabled={loading || selectedItems.length === 0}
-          className="flex-1 py-2 text-xs rounded-lg bg-gray-100 text-gray-700 disabled:opacity-50"
+          className="flex items-center justify-center gap-2 flex-1 py-2 text-xs rounded-lg bg-gray-100 text-gray-700"
         >
+          <Mail size={14} />
           Générer
         </button>
 
         <button
           onClick={onGenerateInsight}
           disabled={loading || selectedItems.length === 0}
-          className="flex-1 py-2 text-xs rounded-lg bg-black text-white disabled:opacity-50"
+          className="flex items-center justify-center gap-2 flex-1 py-2 text-xs rounded-lg bg-black text-white"
         >
+          <Sparkles size={14} />
           Insight
         </button>
       </div>
 
       {/* OUTPUT */}
-      <div className="flex-1 border rounded-xl bg-white flex flex-col overflow-hidden">
+      {finalEmail && (
+        <div className="space-y-4 border rounded-lg p-4 bg-white">
 
-        {/* HEADER */}
-        <div className="flex items-center justify-between px-3 py-2 border-b bg-gray-50">
-          <span className="text-xs font-medium text-gray-700">
-            Sortie
-          </span>
+          {/* HEADER */}
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+              <Mail size={16} />
+              Veille
+            </div>
 
-          {finalEmail && (
             <button
-              onClick={copyToClipboard}
-              className="text-xs text-blue-600"
+              onClick={() =>
+                navigator.clipboard.writeText(finalEmail)
+              }
+              className="flex items-center gap-1 text-xs text-blue-600"
             >
+              <Copy size={14} />
               Copier
             </button>
-          )}
+          </div>
+
+          {/* EMAIL */}
+          <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+            {finalEmail}
+          </div>
         </div>
+      )}
 
-        {/* CONTENT */}
-        <div className="flex-1 overflow-auto p-4">
-          {loading && (
-            <div className="text-xs text-gray-400">
-              Génération en cours...
-            </div>
-          )}
+      {/* INSIGHT */}
+      {insight && (
+        <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
 
-          {!loading && !finalEmail && (
-            <div className="text-xs text-gray-400">
-              Génère une sélection pour voir le rendu.
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+            <Brain size={16} />
+            Insight
+          </div>
 
-          {!loading && finalEmail && renderOutput(finalEmail)}
+          <div className="space-y-4">
+            {parseInsight(insight)}
+          </div>
         </div>
-      </div>
-
+      )}
     </div>
   );
 }
