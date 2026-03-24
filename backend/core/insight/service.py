@@ -216,6 +216,97 @@ def format_email_with_insight(base_email: str, insight: str) -> str:
 {insight}
 """.strip()
 
+def format_email_premium(items: List[Dict]) -> str:
+    """
+    Génère un email structuré, lisible et directement utilisable.
+    """
+
+    if not items:
+        return "Aucune sélection."
+
+    lines = []
+
+    # ======================================================
+    # HEADER
+    # ======================================================
+
+    lines.append("📊 Veille personnalisée")
+    lines.append("")
+
+    # séparation types
+    news = [i for i in items if i.get("type") == "news"]
+    analyses = [i for i in items if i.get("type") == "analysis"]
+
+    # ======================================================
+    # HELPERS
+    # ======================================================
+
+    def format_date(dt):
+        if not dt:
+            return ""
+        try:
+            return dt[:10]
+        except:
+            return ""
+
+    def format_badges(item):
+        badges = []
+
+        for c in item.get("companies", []):
+            if c.get("name"):
+                badges.append(c["name"])
+
+        for t in item.get("topics", []):
+            if t.get("label"):
+                badges.append(t["label"])
+
+        return ", ".join(badges)
+
+    def build_block(item):
+        title = item.get("title", "").strip()
+        excerpt = item.get("excerpt", "").strip()
+        date = format_date(item.get("published_at"))
+        badges = format_badges(item)
+
+        block = f"• {title}"
+
+        if date:
+            block += f" ({date})"
+
+        if badges:
+            block += f"\n[{badges}]"
+
+        if excerpt:
+            block += f"\n{excerpt}"
+
+        return block
+
+    # ======================================================
+    # NEWS
+    # ======================================================
+
+    if news:
+        lines.append("📰 News")
+        lines.append("")
+
+        for item in news:
+            lines.append(build_block(item))
+            lines.append("")
+
+    # ======================================================
+    # ANALYSES
+    # ======================================================
+
+    if analyses:
+        lines.append("📈 Analyses")
+        lines.append("")
+
+        for item in analyses:
+            lines.append(build_block(item))
+            lines.append("")
+
+    return "\n".join(lines).strip()
+
 
 # ============================================================
 # PIPELINE
