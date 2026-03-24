@@ -1,22 +1,36 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import List
 
-from core.scan.service import get_news_by_ids, build_scan_payload, generate_scan
+from core.scan.models import ScanRequest
+from core.scan.service import get_news_by_ids, format_scan_as_text
 
 router = APIRouter()
 
 
-class ScanRequest(BaseModel):
-    ids: List[str]
-
-
 @router.post("/news")
 def scan_news(payload: ScanRequest):
-    items = get_news_by_ids(payload.ids)
-    result = generate_scan(items)
-    return {"result": result}
+    """
+    Génère un SCAN (lecture rapide) à partir des news sélectionnées.
+    Output = texte prêt à copier (email / slack / doc).
+    """
 
+    try:
+        # 🔹 1. récupération des news
+        items = get_news_by_ids(payload.ids)
 
+        # 🔹 2. sécurité (vide)
+        if not items:
+            return {
+                "text": "Aucune actualité sélectionnée."
+            }
 
+        # 🔹 3. formatage texte (core produit)
+        text = format_scan_as_text(items)
 
+        # 🔹 4. retour
+        return {
+            "text": text,
+            "count": len(items)
+        }
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur scan : {e}")
