@@ -1,12 +1,5 @@
 "use client";
 
-import {
-  Mail,
-  Brain,
-  Loader2,
-  Copy,
-} from "lucide-react";
-
 import type { FeedItem } from "@/types/feed";
 
 /* ========================================================= */
@@ -38,18 +31,94 @@ export default function SelectionPanel({
     selectedIds.includes(i.id)
   );
 
+  /* =========================================================
+     HELPERS
+  ========================================================= */
+
   function formatDate(date?: string | null) {
     if (!date) return "";
-    return new Date(date).toLocaleDateString("fr-FR");
+    try {
+      return new Date(date).toLocaleDateString("fr-FR");
+    } catch {
+      return "";
+    }
   }
 
-  /* ========================================================= */
+  function copyToClipboard() {
+    navigator.clipboard.writeText(finalEmail);
+  }
+
+  /* =========================================================
+     PARSE OUTPUT (ULTRA SIMPLE)
+  ========================================================= */
+
+  function renderOutput(text: string) {
+    const lines = text.split("\n");
+
+    return lines.map((line, i) => {
+      const trimmed = line.trim();
+
+      // TITRES
+      if (trimmed.startsWith("📊") || trimmed.startsWith("📰") || trimmed.startsWith("📈") || trimmed.startsWith("🧠")) {
+        return (
+          <div key={i} className="mt-6 mb-2 text-sm font-semibold text-gray-900">
+            {trimmed}
+          </div>
+        );
+      }
+
+      // BULLET
+      if (trimmed.startsWith("•")) {
+        return (
+          <div key={i} className="pl-3 mb-2 text-sm text-gray-800 leading-relaxed">
+            {trimmed}
+          </div>
+        );
+      }
+
+      // BADGES (ligne entre [])
+      if (trimmed.startsWith("[")) {
+        const tags = trimmed
+          .replace("[", "")
+          .replace("]", "")
+          .split(",");
+
+        return (
+          <div key={i} className="flex flex-wrap gap-1 mb-2">
+            {tags.map((t, idx) => (
+              <span
+                key={idx}
+                className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 rounded"
+              >
+                {t.trim()}
+              </span>
+            ))}
+          </div>
+        );
+      }
+
+      // TEXTE NORMAL
+      if (trimmed.length > 0) {
+        return (
+          <div key={i} className="text-sm text-gray-700 mb-3 leading-relaxed">
+            {trimmed}
+          </div>
+        );
+      }
+
+      return null;
+    });
+  }
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
-    <div className="sticky top-6 h-[calc(100vh-48px)] overflow-auto pr-2 space-y-6">
+    <div className="h-full flex flex-col">
 
       {/* HEADER */}
-      <div>
+      <div className="mb-4">
         <div className="text-sm font-semibold text-gray-900">
           Sélection
         </div>
@@ -59,7 +128,7 @@ export default function SelectionPanel({
       </div>
 
       {/* LIST */}
-      <div className="space-y-2 max-h-[260px] overflow-auto">
+      <div className="space-y-2 max-h-[200px] overflow-auto pr-1 mb-4">
         {selectedItems.length === 0 && (
           <div className="text-xs text-gray-400">
             Aucune sélection
@@ -79,7 +148,6 @@ export default function SelectionPanel({
               {item.title}
             </div>
 
-            {/* BADGES */}
             <div className="flex flex-wrap gap-1">
               {item.companies?.map((c: any) => (
                 <span
@@ -104,7 +172,7 @@ export default function SelectionPanel({
       </div>
 
       {/* ACTIONS */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 mb-4">
         <button
           onClick={onGeneratePreview}
           disabled={loading || selectedItems.length === 0}
@@ -122,42 +190,43 @@ export default function SelectionPanel({
         </button>
       </div>
 
-      {/* LOADER */}
-      {loading && (
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <Loader2 className="animate-spin" size={14} />
-          Génération en cours...
-        </div>
-      )}
-
       {/* OUTPUT */}
-      {finalEmail && !loading && (
-        <div className="border rounded-lg p-4 bg-white space-y-4">
+      <div className="flex-1 border rounded-xl bg-white flex flex-col overflow-hidden">
 
-          {/* HEADER */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
-              <Mail size={16} />
-              Veille
-            </div>
+        {/* HEADER */}
+        <div className="flex items-center justify-between px-3 py-2 border-b bg-gray-50">
+          <span className="text-xs font-medium text-gray-700">
+            Sortie
+          </span>
 
+          {finalEmail && (
             <button
-              onClick={() =>
-                navigator.clipboard.writeText(finalEmail)
-              }
-              className="flex items-center gap-1 text-xs text-blue-600"
+              onClick={copyToClipboard}
+              className="text-xs text-blue-600"
             >
-              <Copy size={14} />
               Copier
             </button>
-          </div>
-
-          {/* CONTENT */}
-          <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-            {finalEmail}
-          </div>
+          )}
         </div>
-      )}
+
+        {/* CONTENT */}
+        <div className="flex-1 overflow-auto p-4">
+          {loading && (
+            <div className="text-xs text-gray-400">
+              Génération en cours...
+            </div>
+          )}
+
+          {!loading && !finalEmail && (
+            <div className="text-xs text-gray-400">
+              Génère une sélection pour voir le rendu.
+            </div>
+          )}
+
+          {!loading && finalEmail && renderOutput(finalEmail)}
+        </div>
+      </div>
+
     </div>
   );
 }
