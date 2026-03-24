@@ -176,7 +176,7 @@ export default function FeedPage() {
     setLoadingInsight(true);
 
     try {
-      const res: any = await api.post("/insight", {
+      const res: any = await api.post("/insight/", {
         ids: selectedIds,
         mode: "preview",
       });
@@ -196,7 +196,7 @@ export default function FeedPage() {
     setLoadingInsight(true);
 
     try {
-      const res: any = await api.post("/insight", {
+      const res: any = await api.post("/insight/", {
         ids: selectedIds,
         mode: "insight",
       });
