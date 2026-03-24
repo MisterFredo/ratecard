@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Dict, Any
 
 
 # ============================================================
@@ -9,22 +9,32 @@ from typing import List, Optional, Literal
 class InsightRequest(BaseModel):
     ids: List[str]
 
-    # 🔥 mode d’utilisation
-    mode: Optional[Literal["preview", "insight"]] = "preview"
+    # 🔥 plus propre → pas besoin de Optional
+    mode: Literal["preview", "insight"] = "preview"
 
 
 # ============================================================
-# RESPONSE (optionnel mais propre)
+# RESPONSE — PREVIEW
 # ============================================================
 
 class InsightPreviewResponse(BaseModel):
     status: str
-    mode: str
-    items: List[dict]
-    email: Optional[str] = None
+    mode: Literal["preview"]
+
+    items: List[Dict[str, Any]]
+    email: str
 
 
-class InsightLLMResponse(BaseModel):
+# ============================================================
+# RESPONSE — INSIGHT
+# ============================================================
+
+class InsightResponse(BaseModel):
     status: str
-    mode: str
-    result: str
+    mode: Literal["insight"]
+
+    items: List[Dict[str, Any]]
+    email: str
+
+    insight: str
+    final_email: str
