@@ -48,11 +48,16 @@ export default function SelectionPanel({
   }
 
   /* =========================================================
-     SELECT + COPY (FIX)
+     SELECT + COPY (UNIVERSAL)
   ========================================================= */
 
   function selectAndCopy() {
-    const el = document.getElementById("selection-content");
+    const id =
+      tab === "selection"
+        ? "selection-content"
+        : "analysis-content";
+
+    const el = document.getElementById(id);
     if (!el) return;
 
     const range = document.createRange();
@@ -62,7 +67,6 @@ export default function SelectionPanel({
     selection?.removeAllRanges();
     selection?.addRange(range);
 
-    // 🔥 copie auto
     try {
       navigator.clipboard.writeText(el.innerText);
     } catch (e) {
@@ -71,7 +75,7 @@ export default function SelectionPanel({
   }
 
   /* =========================================================
-     CLEAN ANALYSIS (REMOVE RAW CONTENT)
+     CLEAN ANALYSIS
   ========================================================= */
 
   function cleanAnalysis(text: string) {
@@ -79,10 +83,8 @@ export default function SelectionPanel({
 
     const lines = text.split("\n");
 
-    // 🔥 on coupe dès qu'on détecte du contenu brut (fallback simple mais efficace)
     const startIndex = lines.findIndex((l) =>
-      l.toUpperCase().includes("POINT") ||
-      l.toUpperCase().includes("ANALYSE")
+      l.toUpperCase().includes("POINT")
     );
 
     if (startIndex === -1) return text;
@@ -91,33 +93,19 @@ export default function SelectionPanel({
   }
 
   /* =========================================================
-     RENDER ANALYSIS (PREMIUM)
+     RENDER ANALYSIS (FINAL)
   ========================================================= */
 
   function renderAnalysis(text: string) {
-    const lines = text.split("\n").map((l) => l.trim());
+    const cleaned = cleanAnalysis(text);
+    const lines = cleaned.split("\n").map((l) => l.trim());
 
-    let currentSection = "";
     const blocks: any[] = [];
 
     lines.forEach((line, i) => {
       if (!line) return;
 
-      // SECTION TITLE
-      if (line === "TOP 5" || line === "À NOTER") {
-        currentSection = line;
-
-        blocks.push(
-          <div key={i} className="mt-6 mb-3">
-            <div className="text-xs uppercase tracking-wide text-gray-400">
-              {line}
-            </div>
-          </div>
-        );
-        return;
-      }
-
-      // MAIN TITLE
+      // TITLE
       if (line.includes("POINTS CLÉS")) {
         blocks.push(
           <div key={i} className="mb-4">
@@ -129,11 +117,28 @@ export default function SelectionPanel({
         return;
       }
 
-      // BULLET → transform en card
+      // SECTION
+      if (line === "TOP 5" || line === "À NOTER") {
+        blocks.push(
+          <div key={i} className="mt-6 mb-3">
+            <div className="text-xs uppercase tracking-wide text-gray-400">
+              {line}
+            </div>
+          </div>
+        );
+        return;
+      }
+
+      // BULLET
       if (line.startsWith("-") || line.startsWith("•")) {
         const clean = line.replace(/^[-•]\s*/, "");
 
-        const [concept, rest] = clean.split("→");
+        const [rawConcept, rest] = clean.split("→");
+
+        const concept = rawConcept
+          ?.replace(/^\[/, "")
+          ?.replace(/\]$/, "")
+          ?.trim();
 
         blocks.push(
           <div
@@ -141,8 +146,8 @@ export default function SelectionPanel({
             className="mb-3 p-3 rounded-lg border bg-gray-50"
           >
             {concept && (
-              <div className="text-xs font-semibold text-gray-900 mb-1">
-                {concept.trim()}
+              <div className="text-xs font-semibold text-gray-900 mb-1 uppercase tracking-wide">
+                {concept}
               </div>
             )}
 
@@ -156,7 +161,7 @@ export default function SelectionPanel({
         return;
       }
 
-      // fallback (rare)
+      // fallback
       blocks.push(
         <div key={i} className="text-sm text-gray-700 mb-2">
           {line}
@@ -168,11 +173,11 @@ export default function SelectionPanel({
   }
 
   /* =========================================================
-     HANDLE ANALYSIS CLICK (UX FIX)
+     ACTION
   ========================================================= */
 
   function handleGenerate() {
-    setTab("analysis"); // 🔥 switch immédiat
+    setTab("analysis");
     onGenerateInsight();
   }
 
@@ -249,16 +254,13 @@ export default function SelectionPanel({
       {/* CONTENT */}
       <div className="flex-1 overflow-auto p-4">
 
-        {/* EMPTY */}
         {selectedItems.length === 0 && (
           <div className="text-xs text-gray-400">
             Sélectionne des contenus pour construire ton email
           </div>
         )}
 
-        {/* =========================
-            SELECTION
-        ========================= */}
+        {/* SELECTION */}
         {tab === "selection" && (
           <div id="selection-content" className="space-y-8">
 
@@ -273,7 +275,6 @@ export default function SelectionPanel({
                   {item.title}
                 </div>
 
-                {/* BADGES */}
                 <div className="flex flex-wrap gap-1">
                   {item.companies?.map((c: any) => (
                     <span
@@ -319,11 +320,9 @@ export default function SelectionPanel({
           </div>
         )}
 
-        {/* =========================
-            ANALYSIS
-        ========================= */}
+        {/* ANALYSIS */}
         {tab === "analysis" && (
-          <>
+          <div id="analysis-content">
             {loading && (
               <div className="text-xs text-gray-400">
                 Génération en cours...
@@ -337,7 +336,7 @@ export default function SelectionPanel({
             )}
 
             {!loading && analysis && renderAnalysis(analysis)}
-          </>
+          </div>
         )}
 
       </div>
