@@ -17,8 +17,12 @@ import type { FeedItem, FeedBadge } from "@/types/feed";
 
 /* ========================================================= */
 
+type Mode = "browse" | "scan" | "insight";
+
 export default function FeedPage() {
   const LIMIT = 20;
+
+  const [mode, setMode] = useState<Mode>("browse");
 
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -58,15 +62,24 @@ export default function FeedPage() {
     try {
       const currentOffset = reset ? 0 : offset;
 
+      const typeFilter =
+        mode === "scan"
+          ? "news"
+          : mode === "insight"
+          ? "analysis"
+          : undefined;
+
       const res = finalQuery
         ? await searchCurator({
             query: finalQuery,
             limit: LIMIT,
             offset: currentOffset,
+            type: typeFilter,
           })
         : await getLatestCurator({
             limit: LIMIT,
             offset: currentOffset,
+            type: typeFilter,
           });
 
       if (reset) {
@@ -86,12 +99,12 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     INITIAL LOAD
+     INITIAL LOAD + MODE CHANGE
   ========================================================= */
 
   useEffect(() => {
     load(true);
-  }, []);
+  }, [mode]);
 
   /* =========================================================
      LOAD STATS
@@ -147,10 +160,24 @@ export default function FeedPage() {
   }
 
   /* =========================================================
+     🔥 MODE SWITCH
+  ========================================================= */
+
+  function changeMode(newMode: Mode) {
+    setMode(newMode);
+
+    // reset clean
+    setSelectedIds([]);
+    setScanText("");
+    setOffset(0);
+  }
+
+  /* =========================================================
      🔥 TOGGLE SELECT (SCAN)
   ========================================================= */
 
   function toggleSelect(item: FeedItem) {
+    if (mode !== "scan") return;
     if (item.type !== "news") return;
 
     setSelectedIds((prev) =>
@@ -170,13 +197,16 @@ export default function FeedPage() {
     setScanLoading(true);
 
     try {
-      const res = await fetch("/api/scan/news", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ids: selectedIds }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/scan/news`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ ids: selectedIds }),
+        }
+      );
 
       const json = await res.json();
       setScanText(json.text);
@@ -193,6 +223,36 @@ export default function FeedPage() {
   return (
     <div className="space-y-8">
 
+      {/* 🔥 MODE SWITCH */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => changeMode("browse")}
+          className={`px-3 py-1 rounded ${
+            mode === "browse" ? "bg-black text-white" : "bg-gray-100"
+          }`}
+        >
+          Explorer
+        </button>
+
+        <button
+          onClick={() => changeMode("scan")}
+          className={`px-3 py-1 rounded ${
+            mode === "scan" ? "bg-black text-white" : "bg-gray-100"
+          }`}
+        >
+          Scan
+        </button>
+
+        <button
+          onClick={() => changeMode("insight")}
+          className={`px-3 py-1 rounded ${
+            mode === "insight" ? "bg-black text-white" : "bg-gray-100"
+          }`}
+        >
+          Insight
+        </button>
+      </div>
+
       <FeedHeader
         query={query}
         setQuery={setQuery}
@@ -205,23 +265,25 @@ export default function FeedPage() {
       />
 
       {/* 🔥 SCAN BAR */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-500">
-          {selectedIds.length} sélection(s)
-        </div>
+      {mode === "scan" && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-500">
+            {selectedIds.length} sélection(s)
+          </div>
 
-        <button
-          onClick={handleScan}
-          disabled={selectedIds.length === 0 || scanLoading}
-          className="
-            px-4 py-2 rounded-lg text-sm
-            bg-black text-white
-            disabled:opacity-50
-          "
-        >
-          {scanLoading ? "Scan en cours..." : "Scanner"}
-        </button>
-      </div>
+          <button
+            onClick={handleScan}
+            disabled={selectedIds.length === 0 || scanLoading}
+            className="
+              px-4 py-2 rounded-lg text-sm
+              bg-black text-white
+              disabled:opacity-50
+            "
+          >
+            {scanLoading ? "Scan en cours..." : "Scanner"}
+          </button>
+        </div>
+      )}
 
       <FeedList
         title="Results"
@@ -234,7 +296,6 @@ export default function FeedPage() {
         onClickBadge={handleBadgeClick}
         loadingItemId={loadingItemId}
 
-        /* 🔥 SCAN */
         selectedIds={selectedIds}
         onToggleSelect={toggleSelect}
       />
