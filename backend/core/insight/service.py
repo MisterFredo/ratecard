@@ -235,7 +235,7 @@ def build_insight_payload(items: List[Dict]) -> Dict:
 
 def build_prompt(payload: Dict) -> str:
     """
-    Prompt LLM — extraction structurée stricte (NO ANALYSIS)
+    Prompt LLM — extraction structurée enrichie (NO PROJECTION)
     """
 
     analyses = payload.get("analyses", [])
@@ -287,17 +287,17 @@ CITATIONS:
     # --------------------------------------------------------
 
     prompt = f"""
-Tu es un assistant spécialisé dans l'extraction d'information.
+Tu es un assistant spécialisé dans l'extraction et la structuration d'information.
 
 OBJECTIF :
-Identifier les éléments structurants présents dans les contenus.
+Faire ressortir rapidement ce qui est structurant dans un corpus.
 
 IMPORTANT :
 - Tu ne dois PAS interpréter
 - Tu ne dois PAS faire de projection
 - Tu ne dois PAS donner d'opinion
-- Tu ne dois PAS reformuler de manière créative
 - Tu dois rester STRICTEMENT fidèle aux contenus
+- Tu dois regrouper les éléments similaires (pas de duplication inutile)
 
 CONTEXTE :
 {context}
@@ -305,11 +305,22 @@ CONTEXTE :
 TÂCHE :
 
 1. Identifier les THÈMES dominants
-2. Identifier les MÉCANIQUES observées
-3. Identifier les SIGNAUX récurrents
-4. Identifier les POINTS DE FRICTION
+→ regrouper les sujets similaires
+→ ne pas répéter la même idée plusieurs fois
+→ mentionner si un thème revient plusieurs fois (ex : "présent dans plusieurs contenus")
 
-FORMAT :
+2. Identifier les MÉCANIQUES observées
+→ modèles, approches, stratégies concrètes
+→ regrouper les mécaniques proches
+
+3. Identifier les SIGNAUX récurrents
+→ éléments marquants ou nouveaux présents dans les contenus
+→ uniquement s’ils apparaissent réellement dans le corpus
+
+4. Identifier les POINTS DE FRICTION
+→ limites, contraintes, tensions mentionnées
+
+FORMAT STRICT :
 
 THÈMES
 - ...
@@ -325,14 +336,21 @@ FRICTIONS
 
 RÈGLES STRICTES :
 - Bullet points uniquement
-- Pas de phrases longues
+- Maximum 6 bullets par section
+- Pas de phrases longues (1 ligne par bullet)
+- Pas de duplication d’idée
 - Pas de conclusion
 - Pas de résumé global
-- Pas d’interprétation
 - Pas de "cela montre que"
 - Pas de "tendance"
+- Pas de généralités vagues
 
-Tu es un extracteur, pas un analyste.
+IMPORTANT :
+- Regrouper = priorité
+- Répéter = interdit
+- Simplifier = obligatoire
+
+Tu es un extracteur structurant, pas un analyste.
 """
 
     return prompt.strip()
