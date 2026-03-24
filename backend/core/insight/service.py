@@ -235,9 +235,107 @@ def build_insight_payload(items: List[Dict]) -> Dict:
 
 def build_prompt(payload: Dict) -> str:
     """
-    À implémenter plus tard (très important)
+    Prompt LLM — extraction structurée stricte (NO ANALYSIS)
     """
-    return "PROMPT_PLACEHOLDER"
+
+    analyses = payload.get("analyses", [])
+
+    if not analyses:
+        return "Aucune donnée."
+
+    # --------------------------------------------------------
+    # CONTEXT BUILD (RICH)
+    # --------------------------------------------------------
+
+    context_blocks = []
+
+    for a in analyses:
+        block = f"""
+TITRE:
+{a.get("title")}
+
+EXCERPT:
+{a.get("excerpt")}
+
+CONTENU:
+{a.get("content_body")}
+
+MECANIQUE:
+{a.get("mecanique")}
+
+ENJEU:
+{a.get("enjeu")}
+
+FRICTION:
+{a.get("friction")}
+
+SIGNAL:
+{a.get("signal")}
+
+CHIFFRES:
+{a.get("chiffres")}
+
+CITATIONS:
+{a.get("citations")}
+"""
+        context_blocks.append(block.strip())
+
+    context = "\n\n====================\n\n".join(context_blocks)
+
+    # --------------------------------------------------------
+    # PROMPT
+    # --------------------------------------------------------
+
+    prompt = f"""
+Tu es un assistant spécialisé dans l'extraction d'information.
+
+OBJECTIF :
+Identifier les éléments structurants présents dans les contenus.
+
+IMPORTANT :
+- Tu ne dois PAS interpréter
+- Tu ne dois PAS faire de projection
+- Tu ne dois PAS donner d'opinion
+- Tu ne dois PAS reformuler de manière créative
+- Tu dois rester STRICTEMENT fidèle aux contenus
+
+CONTEXTE :
+{context}
+
+TÂCHE :
+
+1. Identifier les THÈMES dominants
+2. Identifier les MÉCANIQUES observées
+3. Identifier les SIGNAUX récurrents
+4. Identifier les POINTS DE FRICTION
+
+FORMAT :
+
+THÈMES
+- ...
+
+MÉCANIQUES
+- ...
+
+SIGNAUX
+- ...
+
+FRICTIONS
+- ...
+
+RÈGLES STRICTES :
+- Bullet points uniquement
+- Pas de phrases longues
+- Pas de conclusion
+- Pas de résumé global
+- Pas d’interprétation
+- Pas de "cela montre que"
+- Pas de "tendance"
+
+Tu es un extracteur, pas un analyste.
+"""
+
+    return prompt.strip()
 
 
 def generate_insight(payload: Dict) -> str:
