@@ -47,7 +47,11 @@ export default function SelectionPanel({
     }
   }
 
-  function selectContent() {
+  /* =========================================================
+     SELECT + COPY (FIX)
+  ========================================================= */
+
+  function selectAndCopy() {
     const el = document.getElementById("selection-content");
     if (!el) return;
 
@@ -57,25 +61,53 @@ export default function SelectionPanel({
     const selection = window.getSelection();
     selection?.removeAllRanges();
     selection?.addRange(range);
+
+    // 🔥 copie auto
+    try {
+      navigator.clipboard.writeText(el.innerText);
+    } catch (e) {
+      console.warn("copy failed");
+    }
   }
 
   /* =========================================================
-     RENDER ANALYSIS (CLEAN)
+     CLEAN ANALYSIS (REMOVE RAW CONTENT)
+  ========================================================= */
+
+  function cleanAnalysis(text: string) {
+    if (!text) return "";
+
+    const lines = text.split("\n");
+
+    // 🔥 on coupe dès qu'on détecte du contenu brut (fallback simple mais efficace)
+    const startIndex = lines.findIndex((l) =>
+      l.toUpperCase().includes("POINT") ||
+      l.toUpperCase().includes("ANALYSE")
+    );
+
+    if (startIndex === -1) return text;
+
+    return lines.slice(startIndex).join("\n");
+  }
+
+  /* =========================================================
+     RENDER ANALYSIS (PREMIUM)
   ========================================================= */
 
   function renderAnalysis(text: string) {
-    const sections = text.split("\n\n");
+    const cleaned = cleanAnalysis(text);
+    const sections = cleaned.split("\n\n");
 
     return sections.map((block, i) => {
       const lines = block.split("\n").map((l) => l.trim());
 
-      // SECTION TITLE
+      // TITLE
       if (
         lines[0]?.toUpperCase().includes("POINT") ||
         lines[0]?.toUpperCase().includes("ANALYSE")
       ) {
         return (
-          <div key={i} className="mb-4">
+          <div key={i} className="mb-5">
             <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">
               {lines[0]}
             </div>
@@ -86,7 +118,7 @@ export default function SelectionPanel({
       // BULLETS
       if (lines.every((l) => l.startsWith("-") || l.startsWith("•"))) {
         return (
-          <div key={i} className="space-y-2 mb-5">
+          <div key={i} className="space-y-2 mb-6">
             {lines.map((l, idx) => (
               <div key={idx} className="flex gap-2 text-sm text-gray-800">
                 <span className="mt-1 h-1.5 w-1.5 rounded-full bg-black" />
@@ -104,6 +136,15 @@ export default function SelectionPanel({
         </div>
       );
     });
+  }
+
+  /* =========================================================
+     HANDLE ANALYSIS CLICK (UX FIX)
+  ========================================================= */
+
+  function handleGenerate() {
+    setTab("analysis"); // 🔥 switch immédiat
+    onGenerateInsight();
   }
 
   /* =========================================================
@@ -160,7 +201,7 @@ export default function SelectionPanel({
       {/* ACTIONS */}
       <div className="p-3 border-b flex gap-2">
         <button
-          onClick={onGenerateInsight}
+          onClick={handleGenerate}
           disabled={loading || selectedItems.length === 0}
           className="flex-1 py-2 text-xs rounded-lg bg-black text-white disabled:opacity-50"
         >
@@ -168,7 +209,7 @@ export default function SelectionPanel({
         </button>
 
         <button
-          onClick={selectContent}
+          onClick={selectAndCopy}
           disabled={selectedItems.length === 0}
           className="px-3 py-2 text-xs rounded-lg bg-gray-100 text-gray-700"
         >
@@ -195,12 +236,10 @@ export default function SelectionPanel({
             {selectedItems.map((item, index) => (
               <div key={item.id} className="space-y-3">
 
-                {/* DATE */}
                 <div className="text-xs text-gray-400">
                   {formatDate(item.published_at)}
                 </div>
 
-                {/* TITLE */}
                 <div className="text-sm font-semibold text-gray-900">
                   {item.title}
                 </div>
@@ -235,14 +274,12 @@ export default function SelectionPanel({
                   ))}
                 </div>
 
-                {/* EXCERPT */}
                 {item.excerpt && (
                   <div className="text-sm text-gray-700 leading-relaxed">
                     {item.excerpt}
                   </div>
                 )}
 
-                {/* SEPARATOR */}
                 {index !== selectedItems.length - 1 && (
                   <div className="border-t pt-4" />
                 )}
