@@ -87,19 +87,14 @@ export default function HomeClient({
      FLUX GLOBAL CHRONO
   --------------------------------------------------------- */
   const unifiedItems: UnifiedItem[] = [
-    ...news
-      .filter((n) => !topNewsIds.has(n.id))
-      .map((n) => ({
-        type: n.news_kind,
-        published_at: n.published_at,
-        item: n,
-      })),
-    ...analyses.map((a) => ({
-      type: "ANALYSIS" as const,
-      published_at: a.published_at,
-      item: a,
-    })),
-  ]
+     ...news
+       .filter((n) => !topNewsIds.has(n.id))
+       .map((n) => ({
+         type: n.news_kind,
+         published_at: n.published_at,
+         item: n,
+       })),
+   ]
     .sort(
       (a, b) =>
         new Date(b.published_at).getTime() -
