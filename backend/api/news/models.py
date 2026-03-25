@@ -118,9 +118,13 @@ class BreveCompanyStat(BaseModel):
     id_company: str
     name: str
     is_partner: bool
-    total: int
-    last_7_days: int
-    last_30_days: int
+
+    total_news: int = 0
+    total_analyses: int = 0
+
+    total: int = 0
+    last_7_days: int = 0
+    last_30_days: int = 0
 
 
 class BreveTopicStat(BaseModel):
