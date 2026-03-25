@@ -76,6 +76,7 @@ def list_unmatched_companies() -> List[Dict]:
     company_query = f"""
     SELECT NAME
     FROM `{TABLE_COMPANY}`
+    ORDER BY UPPER(NAME) ASC
     """
 
     company_rows = client.query(company_query).result()
