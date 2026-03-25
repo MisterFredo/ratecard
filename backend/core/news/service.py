@@ -935,27 +935,78 @@ def get_breves_stats_public():
     ]
 
     # =====================================================
-    # COMPANIES
+    # COMPANIES (NEWS + CONTENT MERGE)
     # =====================================================
 
-    company_rows = query_bq(f"""
+    # --- NEWS ---
+    news_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_STATS_COMPANY`
-        ORDER BY TOTAL DESC
     """)
 
-    top_companies = [
-        {
-            "id_company": r.get("ID_COMPANY"),
-            "name": r.get("NAME"),
-            "is_partner": bool(r.get("IS_PARTNER")),
-            "total": r.get("TOTAL", 0) or 0,
-            "last_7_days": r.get("LAST_7_DAYS", 0) or 0,
-            "last_30_days": r.get("LAST_30_DAYS", 0) or 0,
-        }
-        for r in company_rows
-        if r.get("ID_COMPANY") and r.get("NAME")
-    ]
+    # --- CONTENT (analyses) ---
+    content_rows = query_bq(f"""
+        SELECT *
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY`
+    """)
+
+    # --- index ---
+    news_map = {
+        r.get("ID_COMPANY"): r
+        for r in news_rows
+        if r.get("ID_COMPANY")
+    }
+
+    content_map = {
+        r.get("ID_COMPANY"): r
+        for r in content_rows
+        if r.get("ID_COMPANY")
+    }
+
+    # --- union des companies ---
+    all_company_ids = set(news_map.keys()) | set(content_map.keys())
+
+    top_companies = []
+
+    for company_id in all_company_ids:
+
+        news = news_map.get(company_id, {})
+        content = content_map.get(company_id, {})
+
+        name = news.get("NAME") or content.get("NAME")
+
+        if not name:
+            continue
+
+        total_news = news.get("TOTAL", 0) or 0
+        total_content = content.get("TOTAL", 0) or 0
+
+        last7_news = news.get("LAST_7_DAYS", 0) or 0
+        last7_content = content.get("LAST_7_DAYS", 0) or 0
+
+        last30_news = news.get("LAST_30_DAYS", 0) or 0
+        last30_content = content.get("LAST_30_DAYS", 0) or 0
+
+        top_companies.append({
+            "id_company": company_id,
+            "name": name,
+            "is_partner": bool(news.get("IS_PARTNER")),
+
+            # 🔹 SPLIT (pour ton front)
+            "total_news": total_news,
+            "total_analyses": total_content,
+
+            # 🔹 AGRÉGÉ
+            "total": total_news + total_content,
+            "last_7_days": last7_news + last7_content,
+            "last_30_days": last30_news + last30_content,
+        })
+
+    # --- tri final ---
+    top_companies.sort(
+        key=lambda x: x["total"],
+        reverse=True
+    )
 
     # =====================================================
     # RETURN
