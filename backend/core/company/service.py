@@ -113,7 +113,7 @@ def list_companies():
 
         WHERE c.IS_ACTIVE = TRUE
 
-        ORDER BY NB_ANALYSES DESC, c.NAME ASC
+        ORDER BY UPPER(c.NAME) ASC
     """
 
     rows = query_bq(sql)
