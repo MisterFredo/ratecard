@@ -48,7 +48,7 @@ def list_unmatched_companies() -> List[Dict]:
     WHERE company IS NOT NULL
     AND TRIM(company) != ""
     GROUP BY company
-    ORDER BY count DESC
+    ORDER BY company ASC
     """
 
     rows = query_bq(sql)
