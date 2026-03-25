@@ -39,6 +39,10 @@ def normalize(text: str) -> str:
 
 def list_unmatched_companies() -> List[Dict]:
 
+    # =====================================================
+    # FETCH RAW COMPANIES (UNNEST)
+    # =====================================================
+
     sql = f"""
     SELECT
         company,
@@ -48,14 +52,15 @@ def list_unmatched_companies() -> List[Dict]:
     WHERE company IS NOT NULL
     AND TRIM(company) != ""
     GROUP BY company
-    ORDER BY company ASC
     """
 
     rows = query_bq(sql)
 
     client = get_bigquery_client()
 
-    # récupérer alias déjà traités
+    # =====================================================
+    # ALIAS DÉJÀ TRAITÉS
+    # =====================================================
 
     alias_query = f"""
     SELECT ALIAS
@@ -71,12 +76,13 @@ def list_unmatched_companies() -> List[Dict]:
         if row["ALIAS"]
     }
 
-    # récupérer sociétés existantes
+    # =====================================================
+    # SOCIÉTÉS EXISTANTES
+    # =====================================================
 
     company_query = f"""
     SELECT NAME
     FROM `{TABLE_COMPANY}`
-    ORDER BY UPPER(NAME) ASC
     """
 
     company_rows = client.query(company_query).result()
@@ -86,6 +92,10 @@ def list_unmatched_companies() -> List[Dict]:
         for row in company_rows
         if row["NAME"]
     }
+
+    # =====================================================
+    # BUILD RESULTS
+    # =====================================================
 
     results = []
 
@@ -110,6 +120,14 @@ def list_unmatched_companies() -> List[Dict]:
             "value": raw,
             "count": r["count"],
         })
+
+    # =====================================================
+    # TRI FINAL (ALPHA ROBUSTE)
+    # =====================================================
+
+    results.sort(
+        key=lambda x: (x["value"] or "").upper()
+    )
 
     return results
 
