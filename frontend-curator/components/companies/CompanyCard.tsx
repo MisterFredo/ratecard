@@ -9,7 +9,10 @@ type Props = {
   id: string;
   name: string;
   visualRectId?: string | null;
+
   totalAnalyses?: number;
+  totalNews?: number; // ✅ NEW
+
   delta30d?: number;
 
   lastRadar?: {
@@ -23,6 +26,7 @@ export default function CompanyCard({
   name,
   visualRectId,
   totalAnalyses,
+  totalNews,
   delta30d,
   lastRadar,
 }: Props) {
@@ -33,6 +37,10 @@ export default function CompanyCard({
   const visualUrl = visualRectId
     ? `${GCS_BASE_URL}/companies/${visualRectId}`
     : null;
+
+  // ✅ total contenu (analyses + news)
+  const totalContent =
+    (totalAnalyses ?? 0) + (totalNews ?? 0);
 
   function handleClick() {
     openLeftDrawer("company", id);
@@ -89,7 +97,7 @@ export default function CompanyCard({
         )}
 
         {/* =====================================================
-            RADAR OVERLAY (subtle premium)
+            RADAR OVERLAY
         ===================================================== */}
         {lastRadar?.key_points?.[0] && (
           <div
@@ -102,9 +110,7 @@ export default function CompanyCard({
               opacity-0 group-hover:opacity-100
             "
           >
-            <p className="
-              text-[11px] text-white leading-snug line-clamp-3
-            ">
+            <p className="text-[11px] text-white leading-snug line-clamp-3">
               {lastRadar.key_points[0]}
             </p>
           </div>
@@ -120,21 +126,26 @@ export default function CompanyCard({
         </h3>
 
         {(typeof totalAnalyses === "number" ||
+          typeof totalNews === "number" ||
           typeof delta30d === "number") && (
           <div className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
-            {typeof totalAnalyses === "number" && (
-              <span>{totalAnalyses}</span>
+            {/* ✅ TOTAL CONTENT */}
+            {(typeof totalAnalyses === "number" ||
+              typeof totalNews === "number") && (
+              <span>{totalContent}</span>
             )}
 
-            {typeof delta30d === "number" && delta30d > 0 && (
-              <span className="text-green-600">
-                +{delta30d}
-              </span>
-            )}
+            {/* ✅ DELTA */}
+            {typeof delta30d === "number" &&
+              delta30d > 0 && (
+                <span className="text-green-600">
+                  +{delta30d}
+                </span>
+              )}
           </div>
         )}
 
-        {/* CTA radar (subtle) */}
+        {/* CTA radar */}
         {lastRadar && (
           <div
             onClick={handleRadarClick}
