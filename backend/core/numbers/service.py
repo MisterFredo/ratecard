@@ -477,7 +477,6 @@ def get_number_types():
         for r in rows
     ]
 
-
 def search_numbers_service(
     id_number_type: Optional[str] = None,
     topic_id: Optional[str] = None,
@@ -490,10 +489,12 @@ def search_numbers_service(
     conditions = []
     params = {"limit": limit}
 
+    # ================= TYPE FILTER =================
     if id_number_type:
         conditions.append("n.ID_NUMBER_TYPE = @id_number_type")
         params["id_number_type"] = id_number_type
 
+    # ================= COMPANY FILTER =================
     if company_id:
         joins.append(f"""
             JOIN `{TABLE_NUMBERS_COMPANY}` nc_filter
@@ -502,6 +503,7 @@ def search_numbers_service(
         conditions.append("nc_filter.ID_COMPANY = @company_id")
         params["company_id"] = company_id
 
+    # ================= TOPIC FILTER =================
     if topic_id:
         joins.append(f"""
             JOIN `{TABLE_NUMBERS_TOPIC}` nt_filter
@@ -510,6 +512,7 @@ def search_numbers_service(
         conditions.append("nt_filter.ID_TOPIC = @topic_id")
         params["topic_id"] = topic_id
 
+    # ================= SOLUTION FILTER =================
     if solution_id:
         joins.append(f"""
             JOIN `{TABLE_NUMBERS_SOLUTION}` ns_filter
@@ -534,12 +537,10 @@ def search_numbers_service(
             n.PERIOD,
             n.CREATED_AT,
 
+            -- 🔥 AGGREGATIONS PROPRES
             ARRAY_AGG(DISTINCT t.LABEL IGNORE NULLS) AS TOPICS,
             ARRAY_AGG(DISTINCT c.NAME IGNORE NULLS) AS COMPANIES,
-            ARRAY_AGG(DISTINCT s.NAME IGNORE NULLS) AS SOLUTIONS,
-
-            MIN(n.VALUE) OVER(PARTITION BY n.ID_NUMBER_TYPE, n.ZONE, n.PERIOD) AS MIN_VAL,
-            MAX(n.VALUE) OVER(PARTITION BY n.ID_NUMBER_TYPE, n.ZONE, n.PERIOD) AS MAX_VAL
+            ARRAY_AGG(DISTINCT s.NAME IGNORE NULLS) AS SOLUTIONS
 
         FROM `{TABLE_NUMBERS}` n
 
@@ -580,24 +581,4 @@ def search_numbers_service(
         LIMIT @limit
     """
 
-    rows = query_bq(query, params)
-
-    # 🔥 COHERENCE DIRECT
-    for r in rows:
-        min_v = r.get("MIN_VAL")
-        max_v = r.get("MAX_VAL")
-
-        if not min_v or min_v == 0:
-            r["COHERENCE"] = "NA"
-            continue
-
-        ratio = max_v / min_v
-
-        if ratio > 2:
-            r["COHERENCE"] = "HIGH"
-        elif ratio > 1.3:
-            r["COHERENCE"] = "MEDIUM"
-        else:
-            r["COHERENCE"] = "OK"
-
-    return rows
+    return query_bq(query, params)
