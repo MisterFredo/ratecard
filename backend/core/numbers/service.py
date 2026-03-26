@@ -255,7 +255,11 @@ def check_number_coherence(
 # CREATE NUMBER
 # ============================================================
 
-def create_number(data: Dict) -> Dict:
+def create_number(data) -> Dict:
+
+    # 🔥 support Pydantic model + dict
+    if hasattr(data, "dict"):
+        data = data.dict()
 
     payload = normalize_number_payload(data)
 
@@ -271,17 +275,18 @@ def create_number(data: Dict) -> Dict:
 
     row = [{
         "ID_NUMBER": id_number,
-        "LABEL": payload["label"],
-        "VALUE": payload["value"],
-        "UNIT": payload["unit"],
-        "SCALE": payload["scale"],
-        "ID_NUMBER_TYPE": payload["id_number_type"],
-        "ZONE": payload["zone"],
-        "PERIOD": payload["period"],
-        "ID_SOURCE": payload["source_id"],
-        "CONFIDENCE": payload["confidence"],
-        "NOTES": payload["notes"],
+        "LABEL": payload.get("label"),
+        "VALUE": payload.get("value"),
+        "UNIT": payload.get("unit"),
+        "SCALE": payload.get("scale"),
+        "ID_NUMBER_TYPE": payload.get("id_number_type"),
+        "ZONE": payload.get("zone"),
+        "PERIOD": payload.get("period"),
+        "ID_SOURCE": payload.get("source_id"),
+        "CONFIDENCE": payload.get("confidence"),
+        "NOTES": payload.get("notes"),
         "CREATED_AT": _now(),
+        "UPDATED_AT": _now(),
     }]
 
     client = get_bigquery_client()
@@ -296,9 +301,9 @@ def create_number(data: Dict) -> Dict:
 
     _insert_relations(
         id_number,
-        payload["company_ids"],
-        payload["topic_ids"],
-        payload["solution_ids"]
+        payload.get("company_ids"),
+        payload.get("topic_ids"),
+        payload.get("solution_ids")
     )
 
     return {
