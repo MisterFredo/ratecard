@@ -10,84 +10,126 @@ import { api } from "@/lib/api";
 /* ========================================================= */
 
 export default function NumbersPage() {
-  const LIMIT = 20;
+  const LIMIT = 50;
 
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [query, setQuery] = useState("");
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-
   const [selectedItem, setSelectedItem] =
     useState<any | null>(null);
 
   /* ========================================================= */
 
-  async function load(reset = false, q?: string) {
+  async function load(q?: string) {
     const finalQuery = (q ?? query)?.trim();
 
-    if (loading) return;
     setLoading(true);
 
     try {
-      const currentOffset = reset ? 0 : offset;
-
-      // ✅ FIX : query params corrects
       const res = await api.get(
-        `/numbers/feed?limit=${LIMIT}&offset=${currentOffset}${
+        `/numbers/feed?limit=${LIMIT}${
           finalQuery ? `&query=${encodeURIComponent(finalQuery)}` : ""
         }`
       );
 
-      const data = res ?? [];
-
-      if (reset) {
-        setItems(data);
-        setOffset(data.length);
-      } else {
-        setItems((prev) => [...prev, ...data]);
-        setOffset((prev) => prev + data.length);
-      }
-
-      setHasMore(data.length === LIMIT);
+      setItems(res ?? []);
 
     } finally {
       setLoading(false);
     }
   }
 
-  /* ========================================================= */
-
   useEffect(() => {
-    load(true);
+    load();
   }, []);
 
   /* ========================================================= */
 
+  // 👉 group by TYPE
+  const grouped: Record<string, any[]> = {};
+
+  items.forEach((item) => {
+    const key = item.type || "Autres";
+
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(item);
+  });
+
+  /* ========================================================= */
+
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+    <div className="space-y-12">
 
-      {/* FEED */}
-      <div>
-        <NumbersExplorer
-          query={query}
-          setQuery={setQuery}
-          onSearch={() => load(true, query)}
+      {/* HEADER */}
+      <div className="space-y-2">
+        <h1 className="text-xl font-semibold text-gray-900">
+          Numbers
+        </h1>
 
-          items={items}
-          loading={loading}
-          hasMore={hasMore}
+        <p className="text-sm text-gray-500 max-w-md">
+          Accédez aux indicateurs clés du marché pour analyser,
+          comparer et explorer les dynamiques en cours.
+        </p>
 
-          onLoadMore={() => load(false)}
-          onSelectItem={setSelectedItem}
-        />
+        <div className="text-xs text-gray-400 pt-1">
+          {items.length} chiffres
+        </div>
       </div>
+
+      {/* SEARCH */}
+      <div className="flex gap-2">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Rechercher un chiffre..."
+          className="w-full px-3 py-2 border rounded text-sm"
+        />
+        <button
+          onClick={() => load(query)}
+          className="px-4 py-2 border rounded text-sm"
+        >
+          Rechercher
+        </button>
+      </div>
+
+      {/* CONTENT */}
+      {loading ? (
+        <p className="text-sm text-gray-400">Chargement...</p>
+      ) : (
+        Object.entries(grouped).map(([type, items]) => (
+          <section key={type} className="space-y-4">
+
+            {/* TYPE HEADER */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-xs font-semibold uppercase text-gray-400">
+                {type}
+              </h2>
+              <span className="text-xs text-gray-300">
+                {items.length}
+              </span>
+            </div>
+
+            {/* LIST */}
+            <div className="divide-y">
+              {items.map((item: any) => (
+                <div
+                  key={item.id_number}
+                  onClick={() => setSelectedItem(item)}
+                >
+                  <NumbersExplorer.NumberCard item={item} />
+                </div>
+              ))}
+            </div>
+
+          </section>
+        ))
+      )}
 
       {/* DRAWER */}
       {selectedItem && (
         <NumberDrawer
-          id={selectedItem.id_number}       // ✅ FIX important
+          id={selectedItem.id_number}
           entityType={selectedItem.entity_type}
           onClose={() => setSelectedItem(null)}
         />
