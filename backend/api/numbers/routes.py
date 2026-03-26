@@ -139,18 +139,24 @@ def check_coherence_route(payload: dict):
         )
 
 @router.get("/types")
-def types_route():
+def get_types():
 
     try:
-        types = get_number_types()
+
+        from core.numbers.service import get_number_types
+
+        items = get_number_types()
 
         return {
             "status": "ok",
-            "types": types,
+            "types": items,
         }
 
     except Exception as e:
-        raise HTTPException(400, f"Erreur types : {e}")
+        raise HTTPException(
+            400,
+            f"Erreur types numbers : {e}"
+        )
 
 @router.get("/raw")
 def raw_numbers(limit: int = 500):
