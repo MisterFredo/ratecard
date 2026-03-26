@@ -11,23 +11,12 @@ import FeedGroupedByMonth from "@/components/feed/FeedGroupedByMonth";
 
 /* ========================================================= */
 
-const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
-
-/* =========================================================
-   TYPES
-========================================================= */
-
 type FeedItem = {
   id: string;
   type: "news" | "analysis";
   title: string;
   excerpt?: string | null;
   published_at?: string;
-
-  topics?: any[];
-  companies?: any[];
-  solutions?: any[];
-  news_type?: string | null;
 };
 
 type Radar = {
@@ -99,7 +88,7 @@ function formatRadarLabel(r: Radar) {
   return "";
 }
 
-function formatNumber(n: NumberItem) {
+function formatValue(n: NumberItem) {
   if (!n.value) return "";
 
   const scaleMap: any = {
@@ -111,10 +100,7 @@ function formatNumber(n: NumberItem) {
   const scale = scaleMap[n.scale || ""] || "";
   const unit = n.unit || "";
 
-  const main = `${n.value}${scale}${unit}`;
-  const context = [n.zone, n.period].filter(Boolean).join(" — ");
-
-  return context ? `${main} — ${context}` : main;
+  return `${n.value}${scale}${unit}`;
 }
 
 /* =========================================================
@@ -154,17 +140,13 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   /* LOAD DATA */
   useEffect(() => {
     async function load() {
-      try {
-        const res = await api.get(
-          `/company/${id}/view?limit=20&offset=0`
-        );
+      const res = await api.get(
+        `/company/${id}/view?limit=20&offset=0`
+      );
 
-        setData(res);
-        setItems(res.items ?? []);
-        setOffset(20);
-      } catch (e) {
-        console.error("❌ CompanyDrawer load error", e);
-      }
+      setData(res);
+      setItems(res.items ?? []);
+      setOffset(20);
     }
 
     load();
@@ -173,15 +155,11 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   /* LOAD RADAR */
   useEffect(() => {
     async function loadRadar() {
-      try {
-        const res = await api.get(
-          `/radar/latest?entity_type=company&entity_id=${id}`
-        );
+      const res = await api.get(
+        `/radar/latest?entity_type=company&entity_id=${id}`
+      );
 
-        setLastRadar(res?.insight ?? null);
-      } catch (e) {
-        console.error("❌ Radar load error", e);
-      }
+      setLastRadar(res?.insight ?? null);
     }
 
     loadRadar();
@@ -190,45 +168,30 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   /* LOAD NUMBERS */
   useEffect(() => {
     async function loadNumbers() {
-      try {
-        const res = await api.get(
-          `/numbers/entity?entity_type=company&entity_id=${id}&limit=3`
-        );
+      const res = await api.get(
+        `/numbers/entity?entity_type=company&entity_id=${id}&limit=4`
+      );
 
-        setNumbers(res.items ?? []);
-      } catch (e) {
-        console.error("❌ Numbers load error", e);
-      }
+      setNumbers(res.items ?? []);
     }
 
     loadNumbers();
   }, [id]);
 
-  /* LOAD MORE */
   async function loadMore() {
     setLoadingMore(true);
 
-    try {
-      const res = await api.get(
-        `/company/${id}/view?limit=20&offset=${offset}`
-      );
+    const res = await api.get(
+      `/company/${id}/view?limit=20&offset=${offset}`
+    );
 
-      const newItems = res.items ?? [];
-
-      setItems((prev) => [...prev, ...newItems]);
-      setOffset((prev) => prev + 20);
-    } catch (e) {
-      console.error("❌ loadMore error", e);
-    }
+    setItems((prev) => [...prev, ...(res.items ?? [])]);
+    setOffset((prev) => prev + 20);
 
     setLoadingMore(false);
   }
 
   if (!data) return null;
-
-  const logoUrl = data.media_logo_rectangle_id
-    ? `${GCS_BASE_URL}/companies/${data.media_logo_rectangle_id}`
-    : null;
 
   return (
     <EntityDrawerLayout onClose={close}>
@@ -236,51 +199,52 @@ export default function CompanyDrawer({ id, onClose }: Props) {
       {/* HEADER */}
       <DrawerHeader
         title={data.name}
+        logoId={data.media_logo_rectangle_id}
+        variant="company"
         nbAnalyses={data.nb_analyses}
         delta30d={data.delta_30d}
         onClose={close}
       />
 
-      {/* LOGO (réduit uniquement) */}
-      {logoUrl && (
-        <div className="w-full border-b border-gray-200 flex justify-center py-4">
-          <img
-            src={logoUrl}
-            alt={data.name}
-            className="h-16 object-contain"
-          />
-        </div>
-      )}
-
-      <div className="px-6 py-6 space-y-10">
+      <div className="px-6 py-6 space-y-8">
 
         {/* DESCRIPTION */}
         {data.description && (
           <div
             className="prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{
-              __html: data.description,
-            }}
+            dangerouslySetInnerHTML={{ __html: data.description }}
           />
         )}
 
-        {/* NUMBERS (identique mais plus léger visuellement) */}
+        {/* NUMBERS */}
         {numbers.length > 0 && (
-          <section className="space-y-2">
+          <section className="space-y-3">
             <h2 className="text-xs font-semibold uppercase text-gray-400">
               Chiffres clés
             </h2>
 
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
               {numbers.map((cat) =>
                 cat.types.map((t) =>
                   t.numbers.map((n) => (
-                    <div key={n.id_number}>
-                      <div className="text-sm font-medium text-gray-900">
-                        {formatNumber(n)}
+                    <div
+                      key={n.id_number}
+                      className="p-3 border rounded"
+                    >
+                      {(n.zone || n.period) && (
+                        <div className="text-[10px] text-gray-400 mb-1">
+                          {[n.zone, n.period]
+                            .filter(Boolean)
+                            .join(" — ")}
+                        </div>
+                      )}
+
+                      <div className="text-sm font-semibold text-gray-900">
+                        {formatValue(n)}
                       </div>
+
                       {n.label && (
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 mt-1">
                           {n.label}
                         </div>
                       )}
@@ -296,7 +260,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
                   entityType: "company",
                 })
               }
-              className="text-xs text-gray-400 hover:text-black transition"
+              className="text-xs text-gray-400 hover:text-black"
             >
               Voir tous les chiffres →
             </button>
@@ -314,11 +278,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
               onClick={() =>
                 openRightDrawer("radar", lastRadar.id_insight)
               }
-              className="
-                w-full text-left
-                p-4 rounded border border-gray-200
-                hover:bg-gray-50 transition
-              "
+              className="w-full text-left p-4 rounded border border-gray-200 hover:bg-gray-50 transition"
             >
               <div className="text-xs text-gray-500 mb-2">
                 {formatRadarLabel(lastRadar)}
@@ -329,11 +289,26 @@ export default function CompanyDrawer({ id, onClose }: Props) {
                   <div key={i}>• {p}</div>
                 ))}
               </div>
+
+              <div className="text-xs text-gray-400 mt-3">
+                Voir la veille complète →
+              </div>
+            </button>
+
+            <button
+              onClick={() =>
+                openRightDrawer("radar_list", id, "silent", {
+                  entityType: "company",
+                })
+              }
+              className="text-xs text-gray-400 hover:text-black"
+            >
+              Voir toutes les veilles →
             </button>
           </section>
         )}
 
-        {/* CONTENUS */}
+        {/* FEED */}
         <section className="space-y-4">
           <h2 className="text-xs font-semibold uppercase text-gray-400">
             Contenus liés
@@ -361,11 +336,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
               <div className="flex justify-center pt-2">
                 <button
                   onClick={loadMore}
-                  className="
-                    text-xs px-4 py-2 rounded
-                    border border-gray-200
-                    hover:bg-gray-50
-                  "
+                  className="text-xs px-4 py-2 rounded border border-gray-200 hover:bg-gray-50"
                 >
                   {loadingMore
                     ? "Chargement..."
