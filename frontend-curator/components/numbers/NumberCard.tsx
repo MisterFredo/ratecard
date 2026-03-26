@@ -8,7 +8,7 @@ type Props = {
 /* ========================================================= */
 
 function formatValue(item: any) {
-  if (item.value === undefined || item.value === null) return "";
+  if (item.VALUE === undefined || item.VALUE === null) return "";
 
   const scaleMap: any = {
     millions: "M",
@@ -16,14 +16,14 @@ function formatValue(item: any) {
     billions: "Md",
   };
 
-  const scale = scaleMap[item.scale || ""] || "";
-  const unit = item.unit || "";
+  const scale = scaleMap[item.SCALE || ""] || "";
+  const unit = item.UNIT || "";
 
-  return `${item.value}${scale}${unit}`;
+  return `${item.VALUE}${scale}${unit}`;
 }
 
 function formatMeta(item: any) {
-  return [item.zone, item.period].filter(Boolean).join(" — ");
+  return [item.ZONE, item.PERIOD].filter(Boolean).join(" — ");
 }
 
 /* ========================================================= */
@@ -35,10 +35,10 @@ export default function NumberCard({ item, onClick }: Props) {
       className="
         group
         flex items-start justify-between
-        py-4
+        py-4 px-2
         cursor-pointer
         transition
-        hover:bg-gray-50
+        hover:bg-gray-50 rounded
       "
     >
       {/* LEFT */}
@@ -54,7 +54,7 @@ export default function NumberCard({ item, onClick }: Props) {
           text-sm text-gray-800 leading-snug
           group-hover:text-black
         ">
-          {item.label}
+          {item.LABEL}
         </div>
 
         {/* META */}
@@ -64,24 +64,24 @@ export default function NumberCard({ item, onClick }: Props) {
           </div>
         )}
 
-        {/* ENTITY */}
-        <div className="text-xs text-gray-400">
-          {item.entity_type === "company" && item.entity_id && (
-            <span>{item.entity_id}</span>
-          )}
-          {item.entity_type === "topic" && item.entity_id && (
-            <span>{item.entity_id}</span>
-          )}
-          {item.entity_type === "solution" && item.entity_id && (
-            <span>{item.entity_id}</span>
-          )}
-        </div>
+        {/* ENTITY (FIX MAJEUR UX) */}
+        {item.ENTITY_LABEL && (
+          <div className="
+            text-xs text-gray-500 mt-1
+            group-hover:text-gray-700
+          ">
+            {item.ENTITY_LABEL}
+          </div>
+        )}
 
       </div>
 
       {/* RIGHT */}
-      <div className="ml-4 text-xs text-gray-400 whitespace-nowrap">
-        {item.type}
+      <div className="
+        ml-4 text-[10px] uppercase tracking-wide
+        text-gray-400 whitespace-nowrap
+      ">
+        {item.TYPE}
       </div>
     </div>
   );
