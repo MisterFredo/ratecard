@@ -341,3 +341,51 @@ def delete_number(id_number: str):
         DELETE FROM `{TABLE_NUMBERS}`
         WHERE ID_NUMBER = @id_number
     """, {"id_number": id_number})
+
+def get_raw_numbers(limit: int = 200):
+
+    TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
+
+    rows = query_bq(f"""
+        SELECT ID_CONTENT, CHIFFRES
+        FROM `{TABLE_CONTENT}`
+        WHERE CHIFFRES IS NOT NULL
+        LIMIT @limit
+    """, {
+        "limit": limit
+    })
+
+    results = []
+
+    for r in rows:
+
+        chiffres = r.get("CHIFFRES") or []
+
+        if isinstance(chiffres, str):
+            chiffres = chiffres.split("\n")
+
+        for line in chiffres:
+
+            parts = [p.strip() for p in line.split("|")]
+
+            if len(parts) != 6:
+                continue
+
+            label, value, unit, actor, market, period = parts
+
+            try:
+                value = float(value)
+            except:
+                continue
+
+            results.append({
+                "id_content": r["ID_CONTENT"],
+                "label": label,
+                "value": value,
+                "unit": unit,
+                "actor": actor,
+                "market": market,
+                "period": period,
+            })
+
+    return results
