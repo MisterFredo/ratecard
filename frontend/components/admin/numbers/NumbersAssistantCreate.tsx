@@ -41,7 +41,7 @@ export default function NumbersAssistantCreate() {
   async function loadTypes() {
     try {
       const res = await api.get("/numbers/types");
-      setTypes(res.types || []);
+      setTypes(res || []);
     } catch (e) {
       console.error(e);
     }
