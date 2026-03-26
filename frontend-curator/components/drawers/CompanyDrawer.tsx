@@ -39,23 +39,12 @@ type Radar = {
 };
 
 type NumberItem = {
-  id_number: string;
-  label?: string;
   value?: number;
   unit?: string;
   scale?: string;
   zone?: string;
   period?: string;
-};
-
-type NumberType = {
-  type: string;
-  numbers: NumberItem[];
-};
-
-type NumberCategory = {
-  category: string;
-  types: NumberType[];
+  label?: string;
 };
 
 type CompanyData = {
@@ -67,6 +56,7 @@ type CompanyData = {
   nb_analyses?: number;
   delta_30d?: number;
 
+  numbers_preview?: NumberItem[]; // 👈 important
   items?: FeedItem[];
 };
 
@@ -111,9 +101,7 @@ function formatNumber(n: NumberItem) {
   const scale = scaleMap[n.scale || ""] || "";
   const unit = n.unit || "";
 
-  const value = n.value;
-
-  const main = `${value}${scale}${unit}`;
+  const main = `${n.value}${scale}${unit}`;
   const context = [n.zone, n.period].filter(Boolean).join(" — ");
 
   return context ? `${main} — ${context}` : main;
@@ -139,8 +127,6 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [lastRadar, setLastRadar] = useState<Radar | null>(null);
-
-  const [numbers, setNumbers] = useState<NumberCategory[]>([]);
 
   /* =========================================================
      CLOSE
@@ -201,26 +187,6 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   }, [id]);
 
   /* =========================================================
-     LOAD NUMBERS (PREVIEW)
-  ========================================================= */
-
-  useEffect(() => {
-    async function loadNumbers() {
-      try {
-        const res = await api.get(
-          `/numbers/entity?entity_type=company&entity_id=${id}&limit=3`
-        );
-
-        setNumbers(res.items ?? []);
-      } catch (e) {
-        console.error("❌ Numbers load error", e);
-      }
-    }
-
-    loadNumbers();
-  }, [id]);
-
-  /* =========================================================
      LOAD MORE
   ========================================================= */
 
@@ -260,6 +226,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   return (
     <EntityDrawerLayout onClose={close}>
 
+      {/* HEADER */}
       <DrawerHeader
         title={data.name}
         nbAnalyses={data.nb_analyses}
@@ -267,19 +234,19 @@ export default function CompanyDrawer({ id, onClose }: Props) {
         onClose={close}
       />
 
+      {/* LOGO (compact) */}
       {logoUrl && (
-        <div className="w-full bg-white border-b border-gray-200 flex items-center justify-center">
-          <div className="w-full max-w-[680px] h-[260px] flex items-center justify-center">
-            <img
-              src={logoUrl}
-              alt={data.name}
-              className="max-h-[85%] max-w-[85%] object-contain"
-            />
-          </div>
+        <div className="flex justify-center py-4 border-b border-gray-200">
+          <img
+            src={logoUrl}
+            alt={data.name}
+            className="h-16 object-contain"
+          />
         </div>
       )}
 
-      <div className="px-6 py-8 space-y-12">
+      {/* CONTENT */}
+      <div className="px-6 py-6 space-y-10">
 
         {/* DESCRIPTION */}
         {data.description && (
@@ -291,32 +258,19 @@ export default function CompanyDrawer({ id, onClose }: Props) {
           />
         )}
 
-        {/* =====================================================
-            NUMBERS
-        ===================================================== */}
-        {numbers.length > 0 && (
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase text-gray-500">
+        {/* CHIFFRES (light preview) */}
+        {data.numbers_preview?.length ? (
+          <section className="space-y-2">
+            <h2 className="text-xs font-semibold uppercase text-gray-400">
               Chiffres clés
             </h2>
 
-            <div className="space-y-4">
-              {numbers.map((cat) =>
-                cat.types.map((t) =>
-                  t.numbers.map((n) => (
-                    <div key={n.id_number}>
-                      <div className="text-sm font-semibold text-gray-900">
-                        {formatNumber(n)}
-                      </div>
-                      {n.label && (
-                        <div className="text-xs text-gray-500">
-                          {n.label}
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )
-              )}
+            <div className="space-y-1">
+              {data.numbers_preview.slice(0, 3).map((n, i) => (
+                <div key={i} className="text-sm text-gray-800">
+                  {formatNumber(n)}
+                </div>
+              ))}
             </div>
 
             <button
@@ -325,16 +279,17 @@ export default function CompanyDrawer({ id, onClose }: Props) {
                   entityType: "company",
                 })
               }
+              className="text-sm text-gray-500 hover:text-black transition"
             >
               Voir tous les chiffres →
             </button>
           </section>
-        )}
+        ) : null}
 
         {/* RADAR */}
         {lastRadar && (
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase text-gray-500">
+            <h2 className="text-xs font-semibold uppercase text-gray-400">
               Veille
             </h2>
 
@@ -352,14 +307,10 @@ export default function CompanyDrawer({ id, onClose }: Props) {
                 {formatRadarLabel(lastRadar)}
               </div>
 
-              <div className="text-sm font-medium text-gray-900 space-y-1">
+              <div className="text-sm text-gray-900 space-y-1">
                 {lastRadar.key_points?.slice(0, 2).map((p, i) => (
                   <div key={i}>• {p}</div>
                 ))}
-              </div>
-
-              <div className="text-xs text-gray-400 mt-3">
-                Voir la veille complète →
               </div>
             </button>
           </section>
@@ -367,7 +318,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
 
         {/* CONTENUS */}
         <section className="space-y-4">
-          <h2 className="text-sm font-semibold uppercase text-gray-500">
+          <h2 className="text-xs font-semibold uppercase text-gray-400">
             Contenus liés
           </h2>
 
