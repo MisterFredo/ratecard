@@ -15,6 +15,7 @@ from core.numbers.service import (
     get_numbers_feed_service,
     get_numbers_for_entity,
 )
+from core.numbers.insight_service import run_numbers_pipeline
 
 
 router = APIRouter()
