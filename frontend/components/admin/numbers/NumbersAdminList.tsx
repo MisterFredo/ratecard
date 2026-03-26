@@ -132,8 +132,8 @@ export default function NumbersAdminList() {
         <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_auto] text-xs bg-gray-100 p-2 font-semibold">
           <div>Label</div>
           <div>Value</div>
-          <div>Unit</div>
           <div>Scale</div>
+          <div>Unit</div>
           <div>Type</div>
           <div>Zone</div>
           <div>Period</div>
@@ -149,8 +149,8 @@ export default function NumbersAdminList() {
 
             <div>{n.label || "-"}</div>
             <div>{n.value}</div>
-            <div>{n.unit}</div>
             <div>{n.scale}</div>
+            <div>{n.unit}</div>
             <div>{n.type}</div>
             <div>{n.zone}</div>
             <div>{n.period}</div>
