@@ -7,7 +7,10 @@ from core.numbers.service import (
     delete_number,
     get_numbers_from_content,
     check_number_coherence,
+    get_number_types,
+    get_raw_numbers,
 )
+
 
 router = APIRouter()
 
@@ -134,3 +137,33 @@ def check_coherence_route(payload: dict):
             400,
             f"Erreur coherence check : {e}"
         )
+
+@router.get("/types")
+def types_route():
+
+    try:
+        types = get_number_types()
+
+        return {
+            "status": "ok",
+            "types": types,
+        }
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur types : {e}")
+
+@router.get("/raw")
+def raw_route(limit: int = 200):
+
+    try:
+        items = get_raw_numbers(limit=limit)
+
+        return {
+            "status": "ok",
+            "items": items,
+        }
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur raw : {e}")
+
+
