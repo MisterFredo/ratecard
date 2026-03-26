@@ -69,8 +69,8 @@ export default function NumbersManualCreate() {
         label: x.name,
       })));
 
-      setTypes((typesRes.types || []).map((x: any) => ({
-        id: x.id_number_type,
+      setTypes((typesRes || []).map((x: any) => ({
+        id: x.id,
         label: x.label,
       })));
 
