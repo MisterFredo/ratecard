@@ -11,6 +11,12 @@ import FeedGroupedByMonth from "@/components/feed/FeedGroupedByMonth";
 
 /* ========================================================= */
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
+/* =========================================================
+   TYPES
+========================================================= */
+
 type FeedItem = {
   id: string;
   type: "news" | "analysis";
@@ -169,7 +175,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   useEffect(() => {
     async function loadNumbers() {
       const res = await api.get(
-        `/numbers/entity?entity_type=company&entity_id=${id}&limit=4`
+        `/numbers/entity?entity_type=company&entity_id=${id}&limit=3`
       );
 
       setNumbers(res.items ?? []);
@@ -193,18 +199,31 @@ export default function CompanyDrawer({ id, onClose }: Props) {
 
   if (!data) return null;
 
+  const logoUrl = data.media_logo_rectangle_id
+    ? `${GCS_BASE_URL}/companies/${data.media_logo_rectangle_id}`
+    : null;
+
   return (
     <EntityDrawerLayout onClose={close}>
 
       {/* HEADER */}
       <DrawerHeader
         title={data.name}
-        logoId={data.media_logo_rectangle_id}
-        variant="company"
         nbAnalyses={data.nb_analyses}
         delta30d={data.delta_30d}
         onClose={close}
       />
+
+      {/* LOGO */}
+      {logoUrl && (
+        <div className="w-full border-b border-gray-200 flex justify-center py-4">
+          <img
+            src={logoUrl}
+            alt={data.name}
+            className="h-16 object-contain"
+          />
+        </div>
+      )}
 
       <div className="px-6 py-6 space-y-8">
 
@@ -293,17 +312,6 @@ export default function CompanyDrawer({ id, onClose }: Props) {
               <div className="text-xs text-gray-400 mt-3">
                 Voir la veille complète →
               </div>
-            </button>
-
-            <button
-              onClick={() =>
-                openRightDrawer("radar_list", id, "silent", {
-                  entityType: "company",
-                })
-              }
-              className="text-xs text-gray-400 hover:text-black"
-            >
-              Voir toutes les veilles →
             </button>
           </section>
         )}
