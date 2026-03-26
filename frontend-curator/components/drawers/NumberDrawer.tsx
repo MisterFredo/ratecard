@@ -36,7 +36,7 @@ type NumberCategory = {
 
 type Props = {
   id: string;
-  entityType: "company" | "topic" | "solution";
+  entityType?: "company" | "topic" | "solution"; // ✅ safe
   onClose: () => void;
 };
 
@@ -45,7 +45,7 @@ type Props = {
 ========================================================= */
 
 function formatNumber(n: NumberItem) {
-  if (!n.value) return "";
+  if (n.value === undefined || n.value === null) return "";
 
   const scaleMap: any = {
     millions: "M",
@@ -83,11 +83,22 @@ export default function NumberDrawer({
   useEffect(() => {
     async function load() {
       try {
+        // 🔴 sécurité clé
+        if (!entityType) {
+          console.warn("❌ NumberDrawer: entityType missing");
+          setData([]);
+          setLoading(false);
+          return;
+        }
+
         setLoading(true);
 
-        const res = await api.get(
-          `/numbers/entity?entity_type=${entityType}&entity_id=${id}`
-        );
+        const url = `/numbers/entity?entity_type=${entityType}&entity_id=${id}`;
+
+        // 🔍 DEBUG (tu peux enlever après)
+        console.log("➡️ Numbers API:", url);
+
+        const res = await api.get(url);
 
         setData(res.items ?? []);
       } catch (e) {
@@ -122,6 +133,10 @@ export default function NumberDrawer({
         {loading ? (
           <p className="text-sm text-gray-400">
             Chargement...
+          </p>
+        ) : !entityType ? (
+          <p className="text-sm text-red-400">
+            Erreur: entityType manquant
           </p>
         ) : data.length === 0 ? (
           <p className="text-sm text-gray-400">
