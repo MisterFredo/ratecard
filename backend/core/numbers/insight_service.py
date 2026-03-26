@@ -91,37 +91,64 @@ ENTITY: {n.get("entity_label")}
     return f"""
 Tu es un assistant DATA pour un expert métier.
 
-OBJECTIF
-Structurer une sélection de chiffres pour une présentation.
+Tu travailles sur des chiffres déjà sélectionnés.
+Tu ne dois PAS inventer.
+Tu dois STRUCTURER.
 
+--------------------------------------------------
+OBJECTIF
+
+Transformer une liste de chiffres en :
+
+1. une STRUCTURE logique
+2. un ORDRE de présentation
+3. une LECTURE business claire
+
+--------------------------------------------------
 CONTEXTE
 {context}
 
+--------------------------------------------------
 TÂCHE
 
-1. Regrouper les chiffres par logique
-2. Organiser du plus structurant au plus opérationnel
+1. REGROUPER les chiffres par logique (ex: marché, performance, adoption…)
+2. IDENTIFIER les niveaux :
+   - taille
+   - croissance
+   - performance
+3. ORGANISER :
+   - du plus structurant au plus opérationnel
 
+--------------------------------------------------
 OUTPUT
 
 STRUCTURE
 
-- Bloc 1 → thème
+- Bloc 1 → thème + logique
   - chiffre
   - chiffre
 
-- Bloc 2 → thème
+- Bloc 2 → thème + logique
+
+--------------------------------------------------
 
 LECTURE
 
 - ce que ces chiffres racontent
+- sans interprétation libre
+- sans storytelling
+
+--------------------------------------------------
 
 RÈGLES
 
+- pas de résumé
 - pas d’invention
-- pas de storytelling
-- uniquement structuration
-"""
+- pas de blabla
+- uniquement structuration + logique
+
+Tu es un outil d’organisation, pas un analyste.
+""".strip()
 
 
 # ============================================================
