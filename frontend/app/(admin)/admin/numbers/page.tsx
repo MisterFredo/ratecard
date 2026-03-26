@@ -3,13 +3,13 @@
 import { useState } from "react";
 
 import NumbersManualCreate from "@/components/admin/numbers/NumbersManualCreate";
-import NumbersRawPanel from "@/components/admin/numbers/NumbersRawPanel";
+import NumbersAssistantCreate from "@/components/admin/numbers/NumbersAssistantCreate";
 
 /* ========================================================= */
 
 export default function NumbersPage() {
 
-  const [tab, setTab] = useState<"manual" | "content">("manual");
+  const [tab, setTab] = useState<"manual" | "assistant">("manual");
 
   /* ========================================================= */
 
@@ -43,20 +43,20 @@ export default function NumbersPage() {
         </button>
 
         <button
-          onClick={() => setTab("content")}
+          onClick={() => setTab("assistant")}
           className={`px-3 py-1 rounded ${
-            tab === "content"
+            tab === "assistant"
               ? "bg-ratecard-blue text-white"
               : "bg-gray-200"
           }`}
         >
-          From Content
+          Assistant
         </button>
 
       </div>
 
       {/* =========================================================
-         MANUAL CREATE
+         MANUAL
       ========================================================= */}
 
       {tab === "manual" && (
@@ -64,11 +64,11 @@ export default function NumbersPage() {
       )}
 
       {/* =========================================================
-         GUIDED (FROM CONTENT)
+         ASSISTANT (FROM CONTENT)
       ========================================================= */}
 
-      {tab === "content" && (
-        <NumbersRawPanel />
+      {tab === "assistant" && (
+        <NumbersAssistantCreate />
       )}
 
     </div>
