@@ -235,7 +235,7 @@ def numbers_by_entity(
         )
 
 
-@router.get("/numbers/feed")
+@router.get("/feed")
 def get_numbers_feed(limit: int = 50):
     query = """
         SELECT *
