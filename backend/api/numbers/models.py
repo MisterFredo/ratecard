@@ -2,114 +2,124 @@ from typing import Optional, List
 
 
 # ============================================================
-# METRIC OBJECT (CORE)
+# NUMBER (CORE OBJECT)
 # ============================================================
 
-class Metric:
+class Number:
+    def __init__(
+        self,
+        id_number: str,
+        value: float,
+        unit: str,
+        id_number_type: str,
+        zone: str,
+        period: str,
+        source_id: str,
+        type_news: str,
+        created_at: str,
+    ):
+        self.id_number = id_number
+        self.value = value
+        self.unit = unit
+        self.id_number_type = id_number_type
+        self.zone = zone
+        self.period = period
+        self.source_id = source_id
+        self.type_news = type_news
+        self.created_at = created_at
+
+
+# ============================================================
+# INPUT (CREATE MANUEL / GUIDÉ)
+# ============================================================
+
+class NumberInput:
+    def __init__(
+        self,
+        value: float,
+        unit: str,
+        id_number_type: str,
+        zone: str,
+        period: str,
+        source_id: str,
+        type_news: str,
+
+        company_ids: Optional[List[str]] = None,
+        topic_ids: Optional[List[str]] = None,
+        solution_ids: Optional[List[str]] = None,
+    ):
+        self.value = value
+        self.unit = unit
+        self.id_number_type = id_number_type
+        self.zone = zone
+        self.period = period
+        self.source_id = source_id
+        self.type_news = type_news
+
+        self.company_ids = company_ids or []
+        self.topic_ids = topic_ids or []
+        self.solution_ids = solution_ids or []
+
+
+# ============================================================
+# OUTPUT (CREATE RESPONSE)
+# ============================================================
+
+class NumberCreateResponse:
+    def __init__(
+        self,
+        id_number: str,
+        quality_status: str,
+        quality_reason: Optional[str] = None,
+    ):
+        self.id_number = id_number
+        self.quality_status = quality_status  # ok / duplicate / warning / invalid
+        self.quality_reason = quality_reason
+
+
+# ============================================================
+# PARSED NUMBER (FROM CONTENT)
+# ============================================================
+
+class ParsedNumber:
     def __init__(
         self,
         label: str,
-        value: str,
-        range: Optional[str] = None,
-        confidence: Optional[str] = None,  # high / medium / low
-        sources: Optional[int] = None,
-        trend: Optional[str] = None,  # up / down / stable
+        value: float,
+        unit: str,
+        actor: str,
+        zone: str,
+        period: str,
     ):
         self.label = label
         self.value = value
-        self.range = range
-        self.confidence = confidence
-        self.sources = sources
-        self.trend = trend
+        self.unit = unit
+        self.actor = actor  # UI only
+        self.zone = zone
+        self.period = period
 
 
 # ============================================================
-# CORE OBJECT
+# LIST RESPONSE
 # ============================================================
 
-class NumbersInsight:
+class NumberListItem:
     def __init__(
         self,
-        id_insight: str,
-        entity_type: str,
-        entity_id: str,
-        year: int,
-        period: int,
-        frequency: str,
-        metrics: List[Metric],
-        status: str,
+        id_number: str,
+        value: float,
+        unit: str,
+        id_number_type: str,
+        zone: str,
+        period: str,
+        type_news: str,
         created_at: str,
-        updated_at: str,
-        title: Optional[str] = None,
     ):
-        self.id_insight = id_insight
-        self.entity_type = entity_type
-        self.entity_id = entity_id
-        self.year = year
+        self.id_number = id_number
+        self.value = value
+        self.unit = unit
+        self.id_number_type = id_number_type
+        self.zone = zone
         self.period = period
-        self.frequency = frequency
-        self.title = title
-        self.metrics = metrics
-        self.status = status
+        self.type_news = type_news
         self.created_at = created_at
-        self.updated_at = updated_at
-
-
-# ============================================================
-# INPUT (CREATE / UPDATE)
-# ============================================================
-
-class NumbersInsightInput:
-    def __init__(
-        self,
-        entity_type: str,
-        entity_id: str,
-        year: int,
-        period: int,
-        frequency: str,
-        metrics: Optional[List[Metric]] = None,
-        title: Optional[str] = None,
-        status: Optional[str] = "DRAFT",
-    ):
-        self.entity_type = entity_type
-        self.entity_id = entity_id
-        self.year = year
-        self.period = period
-        self.frequency = frequency
-        self.metrics = metrics or []
-        self.title = title
-        self.status = status
-
-
-# ============================================================
-# GENERATION INPUT (LLM)
-# ============================================================
-
-class NumbersInsightGenerationInput:
-    def __init__(
-        self,
-        entity_type: str,
-        entity_id: str,
-        year: int,
-        period: int,
-        frequency: str,
-        force: bool = False,
-    ):
-        self.entity_type = entity_type
-        self.entity_id = entity_id
-        self.year = year
-        self.period = period
-        self.frequency = frequency
-        self.force = force
-
-
-# ============================================================
-# OUTPUT (STRUCTURÉ LLM)
-# ============================================================
-
-class NumbersInsightOutput:
-    def __init__(
-        self,
-        metrics: List[Metric],
-    ):
-        self.metrics = metrics
