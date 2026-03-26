@@ -178,3 +178,33 @@ def raw_numbers(limit: int = 500):
             400,
             f"Erreur raw numbers : {e}"
         )
+
+@router.get("/search")
+def search_numbers(
+    id_number_type: Optional[str] = None,
+    topic_id: Optional[str] = None,
+    company_id: Optional[str] = None,
+    solution_id: Optional[str] = None,
+    limit: int = 200,
+):
+
+    try:
+
+        items = search_numbers_service(
+            id_number_type=id_number_type,
+            topic_id=topic_id,
+            company_id=company_id,
+            solution_id=solution_id,
+            limit=limit,
+        )
+
+        return {
+            "status": "ok",
+            "items": items,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur search numbers : {e}"
+        )
