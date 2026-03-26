@@ -1,3 +1,5 @@
+# backend/core/solution/service.py
+
 import uuid
 from datetime import datetime
 from google.cloud import bigquery
@@ -13,6 +15,7 @@ from api.solution.models import SolutionCreate, SolutionUpdate
 
 TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
+TABLE_NUMBERS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_SOLUTION"
 
 
 DEFAULT_FREQUENCY = "QUARTERLY"
@@ -34,7 +37,7 @@ def create_solution(data: SolutionCreate) -> str:
         "CONTENT": data.content or None,
         "STATUS": data.status or "DRAFT",
         "VECTORISE": bool(data.vectorise),
-        "INSIGHT_FREQUENCY": DEFAULT_FREQUENCY,  # 🔥 NEW (LOCKED)
+        "INSIGHT_FREQUENCY": DEFAULT_FREQUENCY,
         "CREATED_AT": now,
         "UPDATED_AT": now,
         "IS_ACTIVE": True,
@@ -75,6 +78,9 @@ def list_solutions():
             COALESCE(st.total, 0) AS NB_ANALYSES,
             COALESCE(st.last_30_days, 0) AS DELTA_30D,
 
+            -- ✅ HAS NUMBERS
+            ns.ID_SOLUTION IS NOT NULL AS HAS_NUMBERS,
+
             -- 🔥 RADAR
             r.ID_INSIGHT,
             r.KEY_POINTS
@@ -86,6 +92,13 @@ def list_solutions():
 
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION` st
           ON st.id_solution = s.ID_SOLUTION
+
+        -- ✅ NUMBERS JOIN (OPTIMIZED)
+        LEFT JOIN (
+            SELECT DISTINCT ID_SOLUTION
+            FROM `{TABLE_NUMBERS_SOLUTION}`
+        ) ns
+          ON ns.ID_SOLUTION = s.ID_SOLUTION
 
         -- 🔥 LATEST RADAR
         LEFT JOIN (
@@ -124,7 +137,10 @@ def list_solutions():
             "nb_analyses": r["NB_ANALYSES"],
             "delta_30d": r["DELTA_30D"],
 
-            # 🔥 NEW
+            # ✅ NEW
+            "has_numbers": r.get("HAS_NUMBERS", False),
+
+            # 🔥 RADAR
             "last_radar": {
                 "id_insight": r["ID_INSIGHT"],
                 "key_points": r["KEY_POINTS"],
@@ -132,6 +148,7 @@ def list_solutions():
         }
         for r in rows
     ]
+
 
 # ============================================================
 # GET ONE SOLUTION
@@ -147,13 +164,25 @@ def get_solution(id_solution: str):
             s.CONTENT,
             s.STATUS,
             s.VECTORISE,
-            s.INSIGHT_FREQUENCY,  -- 🔥 NEW
+            s.INSIGHT_FREQUENCY,
             s.CREATED_AT,
             s.UPDATED_AT,
-            c.NAME AS COMPANY_NAME
+            c.NAME AS COMPANY_NAME,
+
+            -- ✅ HAS NUMBERS
+            ns.ID_SOLUTION IS NOT NULL AS HAS_NUMBERS
+
         FROM `{TABLE_SOLUTION}` s
+
         LEFT JOIN `{TABLE_COMPANY}` c
           ON s.ID_COMPANY = c.ID_COMPANY
+
+        LEFT JOIN (
+            SELECT DISTINCT ID_SOLUTION
+            FROM `{TABLE_NUMBERS_SOLUTION}`
+        ) ns
+          ON ns.ID_SOLUTION = s.ID_SOLUTION
+
         WHERE s.ID_SOLUTION = @id
         LIMIT 1
     """
@@ -174,9 +203,12 @@ def get_solution(id_solution: str):
         "content": r["CONTENT"],
         "status": r["STATUS"],
         "vectorise": r["VECTORISE"],
-        "insight_frequency": r.get("INSIGHT_FREQUENCY"),  # 🔥 NEW
+        "insight_frequency": r.get("INSIGHT_FREQUENCY"),
         "created_at": r["CREATED_AT"],
         "updated_at": r["UPDATED_AT"],
+
+        # ✅ NEW
+        "has_numbers": r.get("HAS_NUMBERS", False),
     }
 
 
@@ -197,7 +229,6 @@ def update_solution(id_solution: str, data: SolutionUpdate) -> bool:
         "content": "CONTENT",
         "status": "STATUS",
         "vectorise": "VECTORISE",
-        # 🚫 PAS DE insight_frequency volontairement
     }
 
     mapped = {
