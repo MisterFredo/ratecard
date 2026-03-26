@@ -49,27 +49,34 @@ export default function NumbersManualCreate() {
         api.get("/numbers/types"),
       ]);
 
-      setTopics((t.topics || []).map((x: any) => ({
-        id: x.id_topic,
+      // 🔥 NORMALISATION UNIVERSELLE
+      const topicsData = t.topics || t.entities || t.items || t || [];
+      const companiesData = c.companies || c.entities || c.items || c || [];
+      const solutionsData = s.solutions || s.entities || s.items || s || [];
+      const sourcesData = src.sources || src.entities || src.items || src || [];
+      const typesData = typesRes || [];
+
+      setTopics(topicsData.map((x: any) => ({
+        id: x.id_topic || x.id,
         label: x.label,
       })));
 
-      setCompanies((c.companies || []).map((x: any) => ({
-        id: x.id_company,
-        label: x.name,
+      setCompanies(companiesData.map((x: any) => ({
+        id: x.id_company || x.id,
+        label: x.name || x.label,
       })));
 
-      setSolutions((s.solutions || []).map((x: any) => ({
-        id: x.id_solution,
-        label: x.name,
+      setSolutions(solutionsData.map((x: any) => ({
+        id: x.id_solution || x.id,
+        label: x.name || x.label,
       })));
 
-      setSources((src.sources || []).map((x: any) => ({
-        id: x.source_id,
-        label: x.name,
+      setSources(sourcesData.map((x: any) => ({
+        id: x.source_id || x.id,
+        label: x.name || x.label,
       })));
 
-      setTypes((typesRes || []).map((x: any) => ({
+      setTypes(typesData.map((x: any) => ({
         id: x.id,
         label: x.label,
       })));
