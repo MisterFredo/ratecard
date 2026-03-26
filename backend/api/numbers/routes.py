@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
 
+from api.numbers.models import NumberInput
 from core.numbers.service import (
     create_number,
     list_numbers,
@@ -20,7 +21,7 @@ router = APIRouter()
 # ============================================================
 
 @router.post("/")
-def create_route(payload: dict):
+def create_route(payload: NumberInput):
 
     try:
 
@@ -138,6 +139,7 @@ def check_coherence_route(payload: dict):
             f"Erreur coherence check : {e}"
         )
 
+
 @router.get("/types")
 def get_types():
 
@@ -145,13 +147,14 @@ def get_types():
 
         items = get_number_types()
 
-        return items  # 🔥 PAS de wrapper
+        return items
 
     except Exception as e:
         raise HTTPException(
             400,
             f"Erreur types numbers : {e}"
         )
+
 
 @router.get("/raw")
 def raw_numbers(limit: int = 500):
