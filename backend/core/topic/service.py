@@ -1,3 +1,5 @@
+# backend/core/topic/service.py
+
 import uuid
 from datetime import datetime
 from google.cloud import bigquery
@@ -12,6 +14,7 @@ from api.topic.models import TopicCreate, TopicUpdate
 
 TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
 TABLE_TOPIC_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC_METRICS"
+TABLE_NUMBERS_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_TOPIC"
 
 
 # ============================================================
@@ -50,7 +53,7 @@ def create_topic(data: TopicCreate) -> str:
         "SEO_TITLE": data.seo_title,
         "SEO_DESCRIPTION": data.seo_description,
 
-        "INSIGHT_FREQUENCY": insight_frequency,  # 🔥 NEW
+        "INSIGHT_FREQUENCY": insight_frequency,
 
         "CREATED_AT": now,
         "UPDATED_AT": now,
@@ -84,6 +87,9 @@ def list_topics():
             COALESCE(m.total, 0) AS NB_ANALYSES,
             COALESCE(m.last_30_days, 0) AS DELTA_30D,
 
+            -- ✅ HAS NUMBERS
+            nt.ID_TOPIC IS NOT NULL AS HAS_NUMBERS,
+
             -- 🔥 RADAR
             r.ID_INSIGHT,
             r.KEY_POINTS
@@ -92,6 +98,13 @@ def list_topics():
 
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_TOPIC` m
           ON m.id_topic = t.ID_TOPIC
+
+        -- ✅ NUMBERS JOIN
+        LEFT JOIN (
+            SELECT DISTINCT ID_TOPIC
+            FROM `{TABLE_NUMBERS_TOPIC}`
+        ) nt
+          ON nt.ID_TOPIC = t.ID_TOPIC
 
         -- 🔥 LATEST RADAR PER TOPIC
         LEFT JOIN (
@@ -123,7 +136,10 @@ def list_topics():
             "nb_analyses": r["NB_ANALYSES"],
             "delta_30d": r["DELTA_30D"],
 
-            # 🔥 NEW
+            # ✅ NEW
+            "has_numbers": r.get("HAS_NUMBERS", False),
+
+            # 🔥 RADAR
             "last_radar": {
                 "id_insight": r["ID_INSIGHT"],
                 "key_points": r["KEY_POINTS"],
@@ -139,9 +155,16 @@ def list_topics():
 def get_topic(topic_id: str):
 
     sql = f"""
-        SELECT *
-        FROM `{TABLE_TOPIC}`
-        WHERE ID_TOPIC = @id
+        SELECT
+            t.*,
+            nt.ID_TOPIC IS NOT NULL AS HAS_NUMBERS
+        FROM `{TABLE_TOPIC}` t
+        LEFT JOIN (
+            SELECT DISTINCT ID_TOPIC
+            FROM `{TABLE_NUMBERS_TOPIC}`
+        ) nt
+          ON nt.ID_TOPIC = t.ID_TOPIC
+        WHERE t.ID_TOPIC = @id
         LIMIT 1
     """
 
@@ -159,8 +182,12 @@ def get_topic(topic_id: str):
         "description": r.get("DESCRIPTION"),
         "seo_title": r.get("SEO_TITLE"),
         "seo_description": r.get("SEO_DESCRIPTION"),
-        "insight_frequency": r.get("INSIGHT_FREQUENCY"),  # 🔥 NEW
+        "insight_frequency": r.get("INSIGHT_FREQUENCY"),
         "is_active": r.get("IS_ACTIVE", True),
+
+        # ✅ NEW
+        "has_numbers": r.get("HAS_NUMBERS", False),
+
         "created_at": r.get("CREATED_AT"),
         "updated_at": r.get("UPDATED_AT"),
     }
@@ -176,12 +203,10 @@ def update_topic(id_topic: str, data: TopicUpdate) -> bool:
     if not values:
         return False
 
-    # 🔒 validation axis
     if "topic_axis" in values:
         if values["topic_axis"] not in ALLOWED_AXES:
             raise ValueError(f"Invalid topic_axis: {values['topic_axis']}")
 
-    # 🔒 validation frequency
     if "insight_frequency" in values:
         if values["insight_frequency"] not in ALLOWED_FREQUENCIES:
             raise ValueError("Invalid insight_frequency")
@@ -197,7 +222,7 @@ def update_topic(id_topic: str, data: TopicUpdate) -> bool:
         "media_square_id": "MEDIA_SQUARE_ID",
         "media_rectangle_id": "MEDIA_RECTANGLE_ID",
         "is_active": "IS_ACTIVE",
-        "insight_frequency": "INSIGHT_FREQUENCY",  # 🔥 NEW
+        "insight_frequency": "INSIGHT_FREQUENCY",
     }
 
     bq_values = {
