@@ -4,12 +4,13 @@ import { useState } from "react";
 
 import NumbersManualCreate from "@/components/admin/numbers/NumbersManualCreate";
 import NumbersAssistantCreate from "@/components/admin/numbers/NumbersAssistantCreate";
+import NumbersAdminList from "@/components/admin/numbers/NumbersAdminList";
 
 /* ========================================================= */
 
 export default function NumbersPage() {
 
-  const [tab, setTab] = useState<"manual" | "assistant">("manual");
+  const [tab, setTab] = useState<"manual" | "assistant" | "admin">("manual");
 
   /* ========================================================= */
 
@@ -17,18 +18,12 @@ export default function NumbersPage() {
 
     <div className="space-y-6">
 
-      {/* =========================================================
-         HEADER
-      ========================================================= */}
-
+      {/* HEADER */}
       <h1 className="text-2xl font-semibold text-ratecard-blue">
         Numbers
       </h1>
 
-      {/* =========================================================
-         TABS
-      ========================================================= */}
-
+      {/* TABS */}
       <div className="flex gap-4">
 
         <button
@@ -53,23 +48,26 @@ export default function NumbersPage() {
           Assistant
         </button>
 
+        <button
+          onClick={() => setTab("admin")}
+          className={`px-3 py-1 rounded ${
+            tab === "admin"
+              ? "bg-ratecard-blue text-white"
+              : "bg-gray-200"
+          }`}
+        >
+          Admin
+        </button>
+
       </div>
 
-      {/* =========================================================
-         MANUAL
-      ========================================================= */}
+      {/* CONTENT */}
 
-      {tab === "manual" && (
-        <NumbersManualCreate />
-      )}
+      {tab === "manual" && <NumbersManualCreate />}
 
-      {/* =========================================================
-         ASSISTANT (FROM CONTENT)
-      ========================================================= */}
+      {tab === "assistant" && <NumbersAssistantCreate />}
 
-      {tab === "assistant" && (
-        <NumbersAssistantCreate />
-      )}
+      {tab === "admin" && <NumbersAdminList />}
 
     </div>
   );
