@@ -13,6 +13,7 @@ import {
   Building2,
   Tag,
   Box,
+  Hash, // ✅ ajout icône
 } from "lucide-react";
 
 export default function WorkspaceShell({
@@ -29,7 +30,6 @@ export default function WorkspaceShell({
     return clean === path || clean.startsWith(path + "/");
   }
 
-  // 🔵 Nouveau menu structuré
   const navMain = [
     { href: "/", label: "Search", icon: Home },
   ];
@@ -38,6 +38,7 @@ export default function WorkspaceShell({
     { href: "/companies", label: "Sociétés", icon: Building2 },
     { href: "/topics", label: "Topics", icon: Tag },
     { href: "/solutions", label: "Solutions", icon: Box },
+    { href: "/numbers", label: "Numbers", icon: Hash }, // ✅ AJOUT
   ];
 
   const navOther = [
@@ -73,7 +74,6 @@ export default function WorkspaceShell({
 
   const Sidebar = (
     <>
-      {/* Logo */}
       <Link
         href="/"
         onClick={() => setMobileOpen(false)}
@@ -109,7 +109,6 @@ export default function WorkspaceShell({
         </nav>
       </div>
 
-      {/* Footer */}
       <div className="text-xs text-gray-400 mt-10">
         © {new Date().getFullYear()} Curator
       </div>
