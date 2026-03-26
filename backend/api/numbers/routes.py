@@ -12,6 +12,7 @@ from core.numbers.service import (
     get_raw_numbers,
     search_numbers_service,
     delete_number_relations,
+    get_numbers_for_entity,
 )
 
 
