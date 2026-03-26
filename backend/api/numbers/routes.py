@@ -153,10 +153,17 @@ def types_route():
         raise HTTPException(400, f"Erreur types : {e}")
 
 @router.get("/raw")
-def raw_route(limit: int = 200):
+def raw_numbers(limit: int = 500):
 
     try:
+
+        from core.numbers.structured_service import get_raw_numbers
+
+        print("➡️ CALL /numbers/raw")
+
         items = get_raw_numbers(limit=limit)
+
+        print("✅ SUCCESS RAW:", len(items))
 
         return {
             "status": "ok",
@@ -164,6 +171,8 @@ def raw_route(limit: int = 200):
         }
 
     except Exception as e:
-        raise HTTPException(400, f"Erreur raw : {e}")
-
-
+        print("❌ ERROR RAW:", str(e))
+        raise HTTPException(
+            400,
+            f"Erreur raw numbers : {e}"
+        )
