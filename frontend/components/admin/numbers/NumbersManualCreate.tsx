@@ -125,6 +125,7 @@ export default function NumbersManualCreate() {
       setQuality(null);
 
       const res = await api.post("/numbers/", {
+        label,
         value: parseFloat(value),
         unit,
         scale: scale || null,
