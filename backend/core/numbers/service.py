@@ -374,6 +374,24 @@ def list_numbers(limit: int = 100):
 # DELETE
 # ============================================================
 
+def delete_number_relations(id_number: str):
+
+    query_bq(f"""
+        DELETE FROM `{TABLE_NUMBERS_COMPANY}`
+        WHERE ID_NUMBER = @id_number
+    """, {"id_number": id_number})
+
+    query_bq(f"""
+        DELETE FROM `{TABLE_NUMBERS_TOPIC}`
+        WHERE ID_NUMBER = @id_number
+    """, {"id_number": id_number})
+
+    query_bq(f"""
+        DELETE FROM `{TABLE_NUMBERS_SOLUTION}`
+        WHERE ID_NUMBER = @id_number
+    """, {"id_number": id_number})
+
+
 def delete_number(id_number: str):
 
     query_bq(f"""
