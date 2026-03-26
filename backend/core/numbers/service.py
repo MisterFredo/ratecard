@@ -401,7 +401,7 @@ def get_number_types():
 
     return [
         {
-            "id": r["ID_NUMBER_TYPE"],   # 🔥 IMPORTANT
+            "id": r["ID_NUMBER_TYPE"],   # 🔥 FIX
             "label": r["LABEL"],
         }
         for r in rows
