@@ -15,6 +15,10 @@ import { useDrawer } from "@/contexts/DrawerContext";
 
 /* ========================================================= */
 
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+
+/* ========================================================= */
+
 type FeedItem = {
   id: string;
   type: "news" | "analysis";
@@ -91,6 +95,10 @@ export default function CompanyDrawer({ id, onClose }: any) {
 
   if (!data) return null;
 
+  const logoUrl = data.media_logo_rectangle_id
+    ? `${GCS_BASE_URL}/companies/${data.media_logo_rectangle_id}`
+    : null;
+
   return (
     <EntityDrawer
       onClose={close}
@@ -103,6 +111,18 @@ export default function CompanyDrawer({ id, onClose }: any) {
         />
       }
     >
+      {/* LOGO */}
+      {logoUrl && (
+        <div className="w-full border-b border-gray-200 flex justify-center py-4">
+          <img
+            src={logoUrl}
+            alt={data.name}
+            className="h-16 object-contain"
+          />
+        </div>
+      )}
+
+      {/* DESCRIPTION */}
       {data.description && (
         <div
           className="prose prose-sm max-w-none"
