@@ -143,19 +143,15 @@ def get_types():
 
     try:
 
-        from core.numbers.service import get_number_types
-
         items = get_number_types()
 
-        return {
-            "status": "ok",
-            "types": items,
-        }
+        return items  # 🔥 PAS de wrapper
 
     except Exception as e:
         raise HTTPException(
             400,
             f"Erreur types numbers : {e}"
+        )
         )
 
 @router.get("/raw")
