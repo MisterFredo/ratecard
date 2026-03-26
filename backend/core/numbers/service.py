@@ -458,3 +458,87 @@ def get_number_types():
         }
         for r in rows
     ]
+
+def search_numbers_service(
+    id_number_type: Optional[str] = None,
+    topic_id: Optional[str] = None,
+    company_id: Optional[str] = None,
+    solution_id: Optional[str] = None,
+    limit: int = 200,
+):
+
+    joins = []
+    conditions = []
+    params = {"limit": limit}
+
+    # =========================================================
+    # TYPE
+    # =========================================================
+
+    if id_number_type:
+        conditions.append("n.ID_NUMBER_TYPE = @id_number_type")
+        params["id_number_type"] = id_number_type
+
+    # =========================================================
+    # COMPANY
+    # =========================================================
+
+    if company_id:
+        joins.append(f"""
+            JOIN `{TABLE_NUMBERS_COMPANY}` nc
+            ON n.ID_NUMBER = nc.ID_NUMBER
+        """)
+        conditions.append("nc.ID_COMPANY = @company_id")
+        params["company_id"] = company_id
+
+    # =========================================================
+    # TOPIC
+    # =========================================================
+
+    if topic_id:
+        joins.append(f"""
+            JOIN `{TABLE_NUMBERS_TOPIC}` nt
+            ON n.ID_NUMBER = nt.ID_NUMBER
+        """)
+        conditions.append("nt.ID_TOPIC = @topic_id")
+        params["topic_id"] = topic_id
+
+    # =========================================================
+    # SOLUTION
+    # =========================================================
+
+    if solution_id:
+        joins.append(f"""
+            JOIN `{TABLE_NUMBERS_SOLUTION}` ns
+            ON n.ID_NUMBER = ns.ID_NUMBER
+        """)
+        conditions.append("ns.ID_SOLUTION = @solution_id")
+        params["solution_id"] = solution_id
+
+    # =========================================================
+    # QUERY BUILD
+    # =========================================================
+
+    where_clause = ""
+    if conditions:
+        where_clause = "WHERE " + " AND ".join(conditions)
+
+    query = f"""
+        SELECT
+            n.ID_NUMBER,
+            n.LABEL,
+            n.VALUE,
+            n.UNIT,
+            n.SCALE,
+            n.ID_NUMBER_TYPE,
+            n.ZONE,
+            n.PERIOD,
+            n.CREATED_AT
+        FROM `{TABLE_NUMBERS}` n
+        {" ".join(joins)}
+        {where_clause}
+        ORDER BY n.CREATED_AT DESC
+        LIMIT @limit
+    """
+
+    return query_bq(query, params)
