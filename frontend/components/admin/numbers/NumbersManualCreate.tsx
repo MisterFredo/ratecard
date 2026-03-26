@@ -14,6 +14,7 @@ export default function NumbersManualCreate() {
 
   const [value, setValue] = useState("");
   const [unit, setUnit] = useState("");
+  const [scale, setScale] = useState("");
   const [zone, setZone] = useState("");
   const [period, setPeriod] = useState("");
   const [numberType, setNumberType] = useState("");
@@ -49,7 +50,6 @@ export default function NumbersManualCreate() {
         api.get("/numbers/types"),
       ]);
 
-      // 🔥 NORMALISATION UNIVERSELLE
       const topicsData = t.topics || t.entities || t.items || t || [];
       const companiesData = c.companies || c.entities || c.items || c || [];
       const solutionsData = s.solutions || s.entities || s.items || s || [];
@@ -126,6 +126,7 @@ export default function NumbersManualCreate() {
       const res = await api.post("/numbers/", {
         value: parseFloat(value),
         unit,
+        scale: scale || null,
         id_number_type: numberType,
         zone,
         period,
@@ -138,9 +139,9 @@ export default function NumbersManualCreate() {
 
       setQuality(res.quality);
 
-      // reset partiel
       setValue("");
       setUnit("");
+      setScale("");
       setZone("");
       setPeriod("");
       setSelectedTopics([]);
@@ -166,7 +167,7 @@ export default function NumbersManualCreate() {
 
       {/* ================== CORE ================== */}
 
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-6 gap-2">
 
         <input
           placeholder="Value"
@@ -176,9 +177,16 @@ export default function NumbersManualCreate() {
         />
 
         <input
-          placeholder="Unit"
+          placeholder="Unit (EUR, PERCENT...)"
           value={unit}
           onChange={(e) => setUnit(e.target.value)}
+          className="border p-2"
+        />
+
+        <input
+          placeholder="Scale (million, billion...)"
+          value={scale}
+          onChange={(e) => setScale(e.target.value)}
           className="border p-2"
         />
 
