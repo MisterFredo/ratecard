@@ -204,4 +204,33 @@ def search_numbers(
         "items": items,
     }
 
+# ============================================================
+# NUMBERS BY ENTITY (DRAWER)
+# ============================================================
+
+@router.get("/entity")
+def numbers_by_entity(
+    entity_type: str,
+    entity_id: str,
+    limit: Optional[int] = None,
+):
+
+    try:
+
+        items = get_numbers_for_entity(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            limit=limit,
+        )
+
+        return {
+            "status": "ok",
+            "items": items,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur numbers entity : {e}"
+        )
 
