@@ -170,6 +170,13 @@ export default function NumbersManualCreate() {
       <div className="grid grid-cols-6 gap-2">
 
         <input
+          placeholder="Label (ex: Marché publicité digitale Europe croissance)"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          className="border p-2 col-span-2"
+        />
+        
+        <input
           placeholder="Value"
           value={value}
           onChange={(e) => setValue(e.target.value)}
