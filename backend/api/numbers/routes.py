@@ -234,3 +234,14 @@ def numbers_by_entity(
             f"Erreur numbers entity : {e}"
         )
 
+
+@router.get("/numbers/feed")
+def get_numbers_feed(limit: int = 50):
+    query = """
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED`
+        ORDER BY CREATED_AT DESC
+        LIMIT @limit
+    """
+    return query_bq(query, {"limit": limit})
+
