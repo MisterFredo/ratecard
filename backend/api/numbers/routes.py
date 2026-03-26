@@ -12,6 +12,7 @@ from core.numbers.service import (
     get_raw_numbers,
     search_numbers_service,
     delete_number_relations,
+    get_numbers_feed_service,
     get_numbers_for_entity,
 )
 
@@ -236,12 +237,15 @@ def numbers_by_entity(
 
 
 @router.get("/feed")
-def get_numbers_feed(limit: int = 50):
-    query = """
-        SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED`
-        ORDER BY CREATED_AT DESC
-        LIMIT @limit
-    """
-    return query_bq(query, {"limit": limit})
+def get_numbers_feed(limit: int = 50, query: Optional[str] = None):
+
+    items = get_numbers_feed_service(
+        limit=limit,
+        query=query,
+    )
+
+    return {
+        "status": "ok",
+        "items": items,
+    }
 
