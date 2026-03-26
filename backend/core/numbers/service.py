@@ -489,12 +489,12 @@ def search_numbers_service(
     conditions = []
     params = {"limit": limit}
 
-    # ================= TYPE FILTER =================
+    # ================= FILTERS =================
+
     if id_number_type:
         conditions.append("n.ID_NUMBER_TYPE = @id_number_type")
         params["id_number_type"] = id_number_type
 
-    # ================= COMPANY FILTER =================
     if company_id:
         joins.append(f"""
             JOIN `{TABLE_NUMBERS_COMPANY}` nc_filter
@@ -503,7 +503,6 @@ def search_numbers_service(
         conditions.append("nc_filter.ID_COMPANY = @company_id")
         params["company_id"] = company_id
 
-    # ================= TOPIC FILTER =================
     if topic_id:
         joins.append(f"""
             JOIN `{TABLE_NUMBERS_TOPIC}` nt_filter
@@ -512,7 +511,6 @@ def search_numbers_service(
         conditions.append("nt_filter.ID_TOPIC = @topic_id")
         params["topic_id"] = topic_id
 
-    # ================= SOLUTION FILTER =================
     if solution_id:
         joins.append(f"""
             JOIN `{TABLE_NUMBERS_SOLUTION}` ns_filter
@@ -525,22 +523,23 @@ def search_numbers_service(
     if conditions:
         where_clause = "WHERE " + " AND ".join(conditions)
 
+    # ================= QUERY =================
+
     query = f"""
         SELECT
-            n.ID_NUMBER,
-            n.LABEL,
-            n.VALUE,
-            n.UNIT,
-            n.SCALE,
-            nt.TYPE AS TYPE_LABEL,
-            n.ZONE,
-            n.PERIOD,
-            n.CREATED_AT,
+            n.ID_NUMBER AS id,
+            n.LABEL AS label,
+            n.VALUE AS value,
+            n.UNIT AS unit,
+            n.SCALE AS scale,
+            nt.TYPE AS type,
+            n.ZONE AS zone,
+            n.PERIOD AS period,
+            n.CREATED_AT AS created_at,
 
-            -- 🔥 AGGREGATIONS PROPRES
-            ARRAY_AGG(DISTINCT t.LABEL IGNORE NULLS) AS TOPICS,
-            ARRAY_AGG(DISTINCT c.NAME IGNORE NULLS) AS COMPANIES,
-            ARRAY_AGG(DISTINCT s.NAME IGNORE NULLS) AS SOLUTIONS
+            ARRAY_AGG(DISTINCT t.LABEL IGNORE NULLS) AS topics,
+            ARRAY_AGG(DISTINCT c.NAME IGNORE NULLS) AS companies,
+            ARRAY_AGG(DISTINCT s.NAME IGNORE NULLS) AS solutions
 
         FROM `{TABLE_NUMBERS}` n
 
