@@ -14,6 +14,21 @@ TABLE_NUMBERS_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_COMPANY"
 TABLE_NUMBERS_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_TOPIC"
 TABLE_NUMBERS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_SOLUTION"
 TABLE_NUMBERS_TYPES = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_TYPE"
+VIEW_NUMBERS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NUMBERS_ENRICHED"
+
+# ============================================================
+# ORDER (UX métier)
+# ============================================================
+
+CATEGORY_ORDER = [
+    "VALUE",
+    "PERFORMANCE",
+    "AUDIENCE",
+    "POSITION",
+    "DYNAMICS",
+    "STRUCTURE",
+    "MONETIZATION",
+]
 
 
 # ============================================================
