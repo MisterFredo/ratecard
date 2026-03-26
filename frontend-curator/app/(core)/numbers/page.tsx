@@ -34,7 +34,10 @@ export default function NumbersPage() {
         }`
       );
 
-      setItems(res ?? []);
+      // ✅ FIX : on récupère items
+      const data = res?.items ?? [];
+
+      setItems(data);
 
     } finally {
       setLoading(false);
