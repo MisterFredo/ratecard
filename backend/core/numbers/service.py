@@ -200,6 +200,13 @@ def check_number_coherence(
     solution_id: Optional[str] = None,
 ):
 
+    SCALE_FACTORS = {
+        None: 1,
+        "thousand": 1_000,
+        "million": 1_000_000,
+        "billion": 1_000_000_000,
+    }
+
     if not (company_id or topic_id or solution_id):
         return {"status": "no_entity"}
 
@@ -216,7 +223,7 @@ def check_number_coherence(
         condition = "rel.ID_SOLUTION = @entity_id"
 
     rows = query_bq(f"""
-        SELECT n.VALUE
+        SELECT n.VALUE, n.SCALE
         FROM `{TABLE_NUMBERS}` n
         {join}
         WHERE {condition}
@@ -230,7 +237,11 @@ def check_number_coherence(
         "period": period,
     })
 
-    values = [r["VALUE"] for r in rows if r.get("VALUE") is not None]
+    values = [
+        r["VALUE"] * SCALE_FACTORS.get(r.get("SCALE"), 1)
+        for r in rows
+        if r.get("VALUE") is not None
+    ]
 
     if len(values) < 2:
         return {"status": "no_baseline"}
