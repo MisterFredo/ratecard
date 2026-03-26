@@ -13,6 +13,7 @@ TABLE_NUMBERS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS"
 TABLE_NUMBERS_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_COMPANY"
 TABLE_NUMBERS_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_TOPIC"
 TABLE_NUMBERS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_SOLUTION"
+TABLE_NUMBERS_TYPES = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_TYPES"
 
 
 # ============================================================
@@ -389,3 +390,21 @@ def get_raw_numbers(limit: int = 200):
             })
 
     return results
+
+def get_number_types():
+
+    TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_TYPES"
+
+    rows = query_bq(f"""
+        SELECT ID_NUMBER_TYPE, LABEL
+        FROM `{TABLE}`
+        ORDER BY LABEL
+    """)
+
+    return [
+        {
+            "id_number_type": r["ID_NUMBER_TYPE"],
+            "label": r["LABEL"],
+        }
+        for r in rows
+    ]
