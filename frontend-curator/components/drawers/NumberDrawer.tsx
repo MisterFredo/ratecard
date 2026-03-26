@@ -30,9 +30,7 @@ type NumberCategory = {
   types: NumberType[];
 };
 
-/* =========================================================
-   PROPS
-========================================================= */
+/* ========================================================= */
 
 type Props = {
   id: string;
@@ -40,11 +38,9 @@ type Props = {
   onClose: () => void;
 };
 
-/* =========================================================
-   HELPERS
-========================================================= */
+/* ========================================================= */
 
-function formatNumber(n: NumberItem) {
+function formatValue(n: NumberItem) {
   if (n.value === undefined || n.value === null) return "";
 
   const scaleMap: any = {
@@ -59,13 +55,7 @@ function formatNumber(n: NumberItem) {
   return `${n.value}${scale}${unit}`;
 }
 
-function formatMeta(n: NumberItem) {
-  return [n.zone, n.period].filter(Boolean).join(" — ");
-}
-
-/* =========================================================
-   COMPONENT
-========================================================= */
+/* ========================================================= */
 
 export default function NumberDrawer({
   id,
@@ -79,7 +69,6 @@ export default function NumberDrawer({
     async function load() {
       try {
         if (!entityType) {
-          console.warn("❌ NumberDrawer: entityType missing");
           setData([]);
           setLoading(false);
           return;
@@ -109,13 +98,12 @@ export default function NumberDrawer({
       {/* HEADER */}
       <DrawerHeader
         title="Chiffres"
-        subtitle=""
         variant="topic"
         onClose={onClose}
       />
 
       {/* CONTENT */}
-      <div className="px-6 py-8 space-y-12">
+      <div className="px-6 py-6 space-y-10">
 
         {loading ? (
           <p className="text-sm text-gray-400">
@@ -127,66 +115,54 @@ export default function NumberDrawer({
           </p>
         ) : (
           data.map((category) => (
-            <section key={category.category} className="space-y-6">
+            <section key={category.category} className="space-y-4">
 
               {/* CATEGORY */}
-              <h2 className="
-                text-xs font-semibold uppercase tracking-wide
-                text-gray-400
-              ">
+              <h2 className="text-xs font-semibold uppercase text-gray-400">
                 {category.category}
               </h2>
 
-              {/* TYPES */}
-              <div className="space-y-8">
-                {category.types.map((type) => (
-                  <div key={type.type} className="space-y-4">
+              {category.types.map((type) => (
+                <div key={type.type} className="space-y-3">
 
-                    {/* TYPE */}
-                    <div className="text-sm font-medium text-gray-900">
-                      {type.type}
-                    </div>
-
-                    {/* NUMBERS */}
-                    <div className="space-y-4">
-                      {type.numbers.map((n) => (
-                        <div
-                          key={n.id_number}
-                          className="
-                            p-4 rounded-lg border border-gray-200
-                            hover:bg-gray-50 transition
-                          "
-                        >
-                          {/* VALUE */}
-                          <div className="
-                            text-xl font-semibold text-gray-900
-                          ">
-                            {formatNumber(n)}
-                          </div>
-
-                          {/* META */}
-                          <div className="
-                            text-xs text-gray-400 mt-1
-                          ">
-                            {formatMeta(n)}
-                          </div>
-
-                          {/* LABEL */}
-                          {n.label && (
-                            <div className="
-                              text-sm text-gray-600 mt-2
-                            ">
-                              {n.label}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
+                  {/* TYPE */}
+                  <div className="text-xs text-gray-500">
+                    {type.type}
                   </div>
-                ))}
-              </div>
 
+                  {/* GRID NUMBERS */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {type.numbers.map((n) => (
+                      <div
+                        key={n.id_number}
+                        className="p-3 border rounded"
+                      >
+                        {/* CONTEXTE */}
+                        {(n.zone || n.period) && (
+                          <div className="text-[10px] text-gray-400 mb-1">
+                            {[n.zone, n.period]
+                              .filter(Boolean)
+                              .join(" — ")}
+                          </div>
+                        )}
+
+                        {/* VALUE */}
+                        <div className="text-sm font-semibold text-gray-900">
+                          {formatValue(n)}
+                        </div>
+
+                        {/* LABEL */}
+                        {n.label && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {n.label}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+              ))}
             </section>
           ))
         )}
