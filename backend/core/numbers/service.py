@@ -394,15 +394,16 @@ def get_raw_numbers(limit: int = 200):
 def get_number_types():
 
     rows = query_bq(f"""
-        SELECT ID_NUMBER_TYPE, LABEL
+        SELECT ID_TYPE, TYPE
         FROM `{TABLE_NUMBERS_TYPES}`
-        ORDER BY LABEL
+        WHERE IS_ACTIVE IS TRUE OR IS_ACTIVE IS NULL
+        ORDER BY TYPE
     """)
 
     return [
         {
-            "id": r["ID_NUMBER_TYPE"],
-            "label": r["LABEL"],
+            "id": r["ID_TYPE"],
+            "label": r["TYPE"],
         }
         for r in rows
     ]
