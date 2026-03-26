@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 
-import NumbersExplorer from "@/components/numbers/NumbersExplorer";
 import NumberDrawer from "@/components/drawers/NumberDrawer";
 import NumberCard from "@/components/numbers/NumberCard";
 
@@ -20,7 +19,9 @@ export default function NumbersPage() {
   const [selectedItem, setSelectedItem] =
     useState<any | null>(null);
 
-  /* ========================================================= */
+  /* =========================================================
+     LOAD
+  ========================================================= */
 
   async function load(q?: string) {
     const finalQuery = (q ?? query)?.trim();
@@ -34,11 +35,14 @@ export default function NumbersPage() {
         }`
       );
 
-      // ✅ FIX : on récupère items
-      const data = res?.items ?? [];
+      // ✅ SAFE PARSING
+      const data = Array.isArray(res?.items) ? res.items : [];
 
       setItems(data);
 
+    } catch (e) {
+      console.error("❌ Numbers load error", e);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -48,19 +52,22 @@ export default function NumbersPage() {
     load();
   }, []);
 
-  /* ========================================================= */
+  /* =========================================================
+     GROUP BY TYPE (aligné backend)
+  ========================================================= */
 
-  // 👉 group by TYPE
   const grouped: Record<string, any[]> = {};
 
   items.forEach((item) => {
-    const key = item.type || "Autres";
+    const key = item.TYPE || "Autres";
 
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(item);
   });
 
-  /* ========================================================= */
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <div className="space-y-12">
@@ -100,8 +107,12 @@ export default function NumbersPage() {
       {/* CONTENT */}
       {loading ? (
         <p className="text-sm text-gray-400">Chargement...</p>
+      ) : items.length === 0 ? (
+        <p className="text-sm text-gray-400">
+          Aucun chiffre disponible.
+        </p>
       ) : (
-        Object.entries(grouped).map(([type, items]) => (
+        Object.entries(grouped).map(([type, groupItems]) => (
           <section key={type} className="space-y-4">
 
             {/* TYPE HEADER */}
@@ -110,22 +121,18 @@ export default function NumbersPage() {
                 {type}
               </h2>
               <span className="text-xs text-gray-300">
-                {items.length}
+                {groupItems.length}
               </span>
             </div>
 
             {/* LIST */}
             <div className="divide-y">
-              {items.map((item: any) => (
-                <div className="divide-y">
-                  {items.map((item: any) => (
-                    <NumberCard
-                      key={item.id_number}
-                      item={item}
-                      onClick={() => setSelectedItem(item)}
-                    />
-                  ))}
-                </div>
+              {groupItems.map((item: any) => (
+                <NumberCard
+                  key={item.ID_NUMBER}
+                  item={item}
+                  onClick={() => setSelectedItem(item)}
+                />
               ))}
             </div>
 
@@ -136,11 +143,12 @@ export default function NumbersPage() {
       {/* DRAWER */}
       {selectedItem && (
         <NumberDrawer
-          id={selectedItem.id_number}
-          entityType={selectedItem.entity_type}
+          id={selectedItem.ID_NUMBER}
+          entityType={selectedItem.ENTITY_TYPE}
           onClose={() => setSelectedItem(null)}
         />
       )}
+
     </div>
   );
 }
