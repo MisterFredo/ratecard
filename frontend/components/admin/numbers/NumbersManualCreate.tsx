@@ -12,27 +12,25 @@ type Option = {
 
 export default function NumbersManualCreate() {
 
-  const [label, setLabel] = useState("");
   const [value, setValue] = useState("");
   const [unit, setUnit] = useState("");
-
-  // 🔥 6 colonnes
-  const [actor, setActor] = useState("");
-  const [market, setMarket] = useState("");
+  const [zone, setZone] = useState("");
   const [period, setPeriod] = useState("");
-
+  const [numberType, setNumberType] = useState("");
   const [sourceId, setSourceId] = useState("");
 
   const [topics, setTopics] = useState<Option[]>([]);
   const [companies, setCompanies] = useState<Option[]>([]);
   const [solutions, setSolutions] = useState<Option[]>([]);
   const [sources, setSources] = useState<Option[]>([]);
+  const [types, setTypes] = useState<Option[]>([]);
 
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
   const [selectedSolutions, setSelectedSolutions] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(false);
+  const [quality, setQuality] = useState<any>(null);
 
   const [openTopics, setOpenTopics] = useState(false);
   const [openCompanies, setOpenCompanies] = useState(false);
@@ -43,40 +41,38 @@ export default function NumbersManualCreate() {
   async function loadOptions() {
     try {
 
-      const [t, c, s, src] = await Promise.all([
+      const [t, c, s, src, typesRes] = await Promise.all([
         api.get("/topic/list"),
         api.get("/company/list"),
         api.get("/solution/list"),
         api.get("/source/list"),
+        api.get("/numbers/types"),
       ]);
 
-      setTopics(
-        (t.topics || t.entities || []).map((x: any) => ({
-          id: x.id_topic,
-          label: x.label,
-        }))
-      );
+      setTopics((t.topics || []).map((x: any) => ({
+        id: x.id_topic,
+        label: x.label,
+      })));
 
-      setCompanies(
-        (c.companies || c.entities || []).map((x: any) => ({
-          id: x.id_company,
-          label: x.name,
-        }))
-      );
+      setCompanies((c.companies || []).map((x: any) => ({
+        id: x.id_company,
+        label: x.name,
+      })));
 
-      setSolutions(
-        (s.solutions || s.entities || []).map((x: any) => ({
-          id: x.id_solution,
-          label: x.name,
-        }))
-      );
+      setSolutions((s.solutions || []).map((x: any) => ({
+        id: x.id_solution,
+        label: x.name,
+      })));
 
-      setSources(
-        (src.sources || src.entities || []).map((x: any) => ({
-          id: x.source_id,
-          label: x.name,
-        }))
-      );
+      setSources((src.sources || []).map((x: any) => ({
+        id: x.source_id,
+        label: x.name,
+      })));
+
+      setTypes((typesRes.types || []).map((x: any) => ({
+        id: x.id_number_type,
+        label: x.label,
+      })));
 
     } catch (e) {
       console.error("Erreur load options", e);
@@ -101,49 +97,51 @@ export default function NumbersManualCreate() {
 
   async function handleCreate() {
 
-    if (!label || !value) {
-      alert("Label + Value requis");
+    if (!value || !numberType) {
+      alert("Value + Number Type requis");
+      return;
+    }
+
+    if (
+      selectedCompanies.length === 0 &&
+      selectedTopics.length === 0 &&
+      selectedSolutions.length === 0
+    ) {
+      alert("Au moins une entité requise");
       return;
     }
 
     try {
 
       setLoading(true);
+      setQuality(null);
 
-      await api.post("/numbers/structured/create", {
-        source_id: sourceId || null,
-        label,
-        value,
+      const res = await api.post("/numbers", {
+        value: parseFloat(value),
         unit,
-
-        // 🔥 6 colonnes
-        actor,
-        market,
+        id_number_type: numberType,
+        zone,
         period,
+        source_id: sourceId || null,
 
-        topic_ids: selectedTopics,
         company_ids: selectedCompanies,
+        topic_ids: selectedTopics,
         solution_ids: selectedSolutions,
       });
 
-      setLabel("");
+      setQuality(res.quality);
+
+      // reset partiel
       setValue("");
       setUnit("");
-
-      setActor("");
-      setMarket("");
+      setZone("");
       setPeriod("");
-
-      setSourceId("");
-
       setSelectedTopics([]);
       setSelectedCompanies([]);
       setSelectedSolutions([]);
 
-      alert("✔ Chiffre créé");
-
     } catch (e) {
-      console.error("Erreur create manual number", e);
+      console.error("Erreur create number", e);
     }
 
     setLoading(false);
@@ -156,19 +154,12 @@ export default function NumbersManualCreate() {
     <div className="border rounded p-4 space-y-4">
 
       <h2 className="font-semibold">
-        Ajouter un chiffre manuel
+        Create Number
       </h2>
 
-      {/* ================== CORE FIELDS ================== */}
+      {/* ================== CORE ================== */}
 
-      <div className="grid grid-cols-7 gap-2">
-
-        <input
-          placeholder="Label"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          className="border p-2"
-        />
+      <div className="grid grid-cols-5 gap-2">
 
         <input
           placeholder="Value"
@@ -184,57 +175,66 @@ export default function NumbersManualCreate() {
           className="border p-2"
         />
 
-        {/* 🔥 NEW */}
         <input
-          placeholder="Actor"
-          value={actor}
-          onChange={(e) => setActor(e.target.value)}
+          placeholder="Zone (US, FR...)"
+          value={zone}
+          onChange={(e) => setZone(e.target.value)}
           className="border p-2"
         />
 
         <input
-          placeholder="Market"
-          value={market}
-          onChange={(e) => setMarket(e.target.value)}
-          className="border p-2"
-        />
-
-        <input
-          placeholder="Period"
+          placeholder="Period (2025, Q1...)"
           value={period}
           onChange={(e) => setPeriod(e.target.value)}
           className="border p-2"
         />
 
         <select
-          value={sourceId}
-          onChange={(e) => setSourceId(e.target.value)}
+          value={numberType}
+          onChange={(e) => setNumberType(e.target.value)}
           className="border p-2"
         >
-          <option value="">Source (optionnel)</option>
-          {sources.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.label}
+          <option value="">Number Type *</option>
+          {types.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.label}
             </option>
           ))}
         </select>
 
       </div>
 
-      {/* ================== TOPICS ================== */}
+      {/* ================== SOURCE ================== */}
 
+      <select
+        value={sourceId}
+        onChange={(e) => setSourceId(e.target.value)}
+        className="border p-2"
+      >
+        <option value="">Source (optionnel)</option>
+        {sources.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.label}
+          </option>
+        ))}
+      </select>
+
+      {/* ================== ENTITIES ================== */}
+
+      <div className="text-xs text-gray-500">
+        Au moins une entité requise
+      </div>
+
+      {/* TOPICS */}
       <div>
-        <button
-          onClick={() => setOpenTopics(!openTopics)}
-          className="text-xs text-gray-500"
-        >
+        <button onClick={() => setOpenTopics(!openTopics)} className="text-xs">
           {openTopics ? "▼ Topics" : "▶ Topics"}
         </button>
 
         {openTopics && (
           <div className="flex flex-wrap gap-2 mt-2">
             {topics.map((t) => (
-              <label key={t.id} className="text-xs flex items-center gap-1">
+              <label key={t.id} className="text-xs">
                 <input
                   type="checkbox"
                   checked={selectedTopics.includes(t.id)}
@@ -249,20 +249,16 @@ export default function NumbersManualCreate() {
         )}
       </div>
 
-      {/* ================== COMPANIES ================== */}
-
+      {/* COMPANIES */}
       <div>
-        <button
-          onClick={() => setOpenCompanies(!openCompanies)}
-          className="text-xs text-gray-500"
-        >
+        <button onClick={() => setOpenCompanies(!openCompanies)} className="text-xs">
           {openCompanies ? "▼ Companies" : "▶ Companies"}
         </button>
 
         {openCompanies && (
           <div className="flex flex-wrap gap-2 mt-2">
             {companies.map((c) => (
-              <label key={c.id} className="text-xs flex items-center gap-1">
+              <label key={c.id} className="text-xs">
                 <input
                   type="checkbox"
                   checked={selectedCompanies.includes(c.id)}
@@ -277,20 +273,16 @@ export default function NumbersManualCreate() {
         )}
       </div>
 
-      {/* ================== SOLUTIONS ================== */}
-
+      {/* SOLUTIONS */}
       <div>
-        <button
-          onClick={() => setOpenSolutions(!openSolutions)}
-          className="text-xs text-gray-500"
-        >
+        <button onClick={() => setOpenSolutions(!openSolutions)} className="text-xs">
           {openSolutions ? "▼ Solutions" : "▶ Solutions"}
         </button>
 
         {openSolutions && (
           <div className="flex flex-wrap gap-2 mt-2">
             {solutions.map((s) => (
-              <label key={s.id} className="text-xs flex items-center gap-1">
+              <label key={s.id} className="text-xs">
                 <input
                   type="checkbox"
                   checked={selectedSolutions.includes(s.id)}
@@ -305,6 +297,32 @@ export default function NumbersManualCreate() {
         )}
       </div>
 
+      {/* ================== QUALITY ================== */}
+
+      {quality && (
+        <div className="text-sm border p-2 rounded bg-gray-50">
+
+          {quality.status === "duplicate" && (
+            <div className="text-orange-600">
+              ⚠️ Duplicate probable — vérifie les données existantes
+            </div>
+          )}
+
+          {quality.status === "warning" && (
+            <div className="text-yellow-600">
+              ⚠️ Valeur atypique (hors range habituel)
+            </div>
+          )}
+
+          {quality.status === "ok" && (
+            <div className="text-green-600">
+              ✔ Donnée cohérente
+            </div>
+          )}
+
+        </div>
+      )}
+
       {/* ================== ACTION ================== */}
 
       <button
@@ -312,7 +330,7 @@ export default function NumbersManualCreate() {
         disabled={loading}
         className="bg-blue-600 text-white px-4 py-2 rounded"
       >
-        {loading ? "Création..." : "Créer"}
+        {loading ? "Creating..." : "Create"}
       </button>
 
     </div>
