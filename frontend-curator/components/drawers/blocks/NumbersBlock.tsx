@@ -27,7 +27,7 @@ type NumberCategory = {
 type Props = {
   numbers: NumberCategory[];
   entityId: string;
-  entityType: "company" | "solution";
+  entityType: "company" | "solution" | "topic";
 };
 
 /* ========================================================= */
