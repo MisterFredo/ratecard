@@ -123,7 +123,7 @@ export default function NumbersManualCreate() {
       setLoading(true);
       setQuality(null);
 
-      const res = await api.post("/numbers", {
+      const res = await api.post("/numbers/", {
         value: parseFloat(value),
         unit,
         id_number_type: numberType,
