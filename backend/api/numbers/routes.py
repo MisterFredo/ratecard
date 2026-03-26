@@ -152,7 +152,6 @@ def get_types():
             400,
             f"Erreur types numbers : {e}"
         )
-        )
 
 @router.get("/raw")
 def raw_numbers(limit: int = 500):
