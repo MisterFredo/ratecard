@@ -492,6 +492,102 @@ def get_number_types():
         for r in rows
     ]
 
+def get_numbers_for_entity(
+    entity_type: str,
+    entity_id: str,
+    limit: Optional[int] = None
+) -> List[Dict]:
+
+    sql = f"""
+        SELECT
+            ID_NUMBER,
+            LABEL,
+            VALUE,
+            UNIT,
+            SCALE,
+            TYPE,
+            CATEGORY,
+            ZONE,
+            PERIOD,
+            CREATED_AT
+        FROM `{VIEW_NUMBERS}`
+        WHERE ENTITY_TYPE = @entity_type
+          AND ENTITY_ID = @entity_id
+        ORDER BY
+            CATEGORY,
+            TYPE,
+            PERIOD DESC
+    """
+
+    rows = query_bq(sql, {
+        "entity_type": entity_type,
+        "entity_id": entity_id
+    })
+
+    # ============================================================
+    # LIMIT (preview)
+    # ============================================================
+
+    if limit is not None:
+        rows = rows[:limit]
+
+    # ============================================================
+    # GROUPING
+    # ============================================================
+
+    grouped = {}
+
+    for r in rows:
+        category = r.get("CATEGORY") or "OTHER"
+        type_ = r.get("TYPE") or "UNKNOWN"
+
+        if category not in grouped:
+            grouped[category] = {}
+
+        if type_ not in grouped[category]:
+            grouped[category][type_] = []
+
+        grouped[category][type_].append({
+            "id_number": r.get("ID_NUMBER"),
+            "label": r.get("LABEL"),
+            "value": r.get("VALUE"),
+            "unit": r.get("UNIT"),
+            "scale": r.get("SCALE"),
+            "zone": r.get("ZONE"),
+            "period": r.get("PERIOD"),
+        })
+
+    # ============================================================
+    # FORMAT FINAL
+    # ============================================================
+
+    result = []
+
+    # tri des catégories
+    sorted_categories = sorted(
+        grouped.keys(),
+        key=lambda c: CATEGORY_ORDER.index(c)
+        if c in CATEGORY_ORDER else 999
+    )
+
+    for category in sorted_categories:
+        types = grouped[category]
+
+        type_list = []
+
+        for type_ in sorted(types.keys()):
+            type_list.append({
+                "type": type_,
+                "numbers": types[type_]
+            })
+
+        result.append({
+            "category": category,
+            "types": type_list
+        })
+
+    return result
+
 def search_numbers_service(
     id_number_type: Optional[str] = None,
     topic_id: Optional[str] = None,
