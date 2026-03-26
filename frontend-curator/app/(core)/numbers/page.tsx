@@ -33,21 +33,24 @@ export default function NumbersPage() {
     try {
       const currentOffset = reset ? 0 : offset;
 
-      const res = await api.get("/numbers/feed", {
-        query: finalQuery,
-        limit: LIMIT,
-        offset: currentOffset,
-      });
+      // ✅ FIX : query params corrects
+      const res = await api.get(
+        `/numbers/feed?limit=${LIMIT}&offset=${currentOffset}${
+          finalQuery ? `&query=${encodeURIComponent(finalQuery)}` : ""
+        }`
+      );
+
+      const data = res ?? [];
 
       if (reset) {
-        setItems(res);
-        setOffset(res.length);
+        setItems(data);
+        setOffset(data.length);
       } else {
-        setItems((prev) => [...prev, ...res]);
-        setOffset((prev) => prev + res.length);
+        setItems((prev) => [...prev, ...data]);
+        setOffset((prev) => prev + data.length);
       }
 
-      setHasMore(res.length === LIMIT);
+      setHasMore(data.length === LIMIT);
 
     } finally {
       setLoading(false);
@@ -84,7 +87,7 @@ export default function NumbersPage() {
       {/* DRAWER */}
       {selectedItem && (
         <NumberDrawer
-          id={selectedItem.id}
+          id={selectedItem.id_number}       // ✅ FIX important
           entityType={selectedItem.entity_type}
           onClose={() => setSelectedItem(null)}
         />
