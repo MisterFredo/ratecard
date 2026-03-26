@@ -6,6 +6,8 @@ type Props = {
   selected?: boolean;
 };
 
+/* ========================================================= */
+
 function formatValue(item: any) {
   if (!item.VALUE) return "";
 
@@ -21,6 +23,8 @@ function formatValue(item: any) {
   return `${item.VALUE}${scale}${unit}`;
 }
 
+/* ========================================================= */
+
 export default function NumberCard({ item, onClick, selected }: Props) {
   return (
     <div
@@ -34,6 +38,29 @@ export default function NumberCard({ item, onClick, selected }: Props) {
         }
       `}
     >
+      {/* BADGES */}
+      <div className="flex flex-wrap gap-1 mb-2">
+
+        {item.TYPE && (
+          <span className="
+            text-[9px] px-2 py-[2px] rounded-full
+            bg-gray-100 text-gray-600 uppercase
+          ">
+            {item.TYPE}
+          </span>
+        )}
+
+        {item.CATEGORY && (
+          <span className="
+            text-[9px] px-2 py-[2px] rounded-full
+            bg-gray-50 text-gray-400 uppercase
+          ">
+            {item.CATEGORY}
+          </span>
+        )}
+
+      </div>
+
       {/* VALUE */}
       <div className="text-sm font-semibold text-gray-900">
         {formatValue(item)}
@@ -44,10 +71,21 @@ export default function NumberCard({ item, onClick, selected }: Props) {
         {item.LABEL}
       </div>
 
+      {/* META */}
+      {(item.ZONE || item.PERIOD) && (
+        <div className="text-[10px] text-gray-400 mt-1">
+          {[item.ZONE, item.PERIOD].filter(Boolean).join(" — ")}
+        </div>
+      )}
+
       {/* ENTITY */}
-      <div className="text-[10px] text-gray-400 mt-2 uppercase">
-        {item.ENTITY_LABEL}
-      </div>
+      {item.ENTITY_LABEL && (
+        <div className="
+          text-[10px] text-gray-500 mt-2 uppercase
+        ">
+          {item.ENTITY_LABEL}
+        </div>
+      )}
     </div>
   );
 }
