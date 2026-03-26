@@ -204,22 +204,3 @@ def search_numbers(
     }
 
 
-@router.delete("/{id_number}")
-def delete_route(id_number: str):
-
-    try:
-
-        delete_number(id_number)
-
-        delete_number_relations(id_number)
-
-        return {
-            "status": "ok",
-            "deleted": True,
-        }
-
-    except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur suppression number : {e}"
-        )
