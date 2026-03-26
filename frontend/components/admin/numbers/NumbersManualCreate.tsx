@@ -12,6 +12,7 @@ type Option = {
 
 export default function NumbersManualCreate() {
 
+  const [label, setLabel] = useState("");
   const [value, setValue] = useState("");
   const [unit, setUnit] = useState("");
   const [scale, setScale] = useState("");
