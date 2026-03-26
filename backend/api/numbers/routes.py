@@ -158,8 +158,6 @@ def raw_numbers(limit: int = 500):
 
     try:
 
-        from core.numbers.structured_service import get_raw_numbers
-
         print("➡️ CALL /numbers/raw")
 
         items = get_raw_numbers(limit=limit)
