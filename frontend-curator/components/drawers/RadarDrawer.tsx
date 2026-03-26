@@ -6,13 +6,10 @@ import { api } from "@/lib/api";
 import EntityDrawerLayout from "@/components/drawers/EntityDrawerLayout";
 import DrawerHeader from "@/components/drawers/DrawerHeader";
 
-/* =========================================================
-   TYPES
-========================================================= */
+/* ========================================================= */
 
 type Radar = {
   id_insight: string;
-
   entity_type: string;
   entity_id: string;
 
@@ -21,22 +18,15 @@ type Radar = {
   frequency: "WEEKLY" | "MONTHLY" | "QUARTERLY";
 
   key_points: string[];
-
   created_at: string;
 };
-
-/* =========================================================
-   PROPS
-========================================================= */
 
 type Props = {
   id: string;
   onClose: () => void;
 };
 
-/* =========================================================
-   HELPERS
-========================================================= */
+/* ========================================================= */
 
 function formatRadarLabel(r: Radar) {
   if (r.frequency === "MONTHLY") {
@@ -58,9 +48,7 @@ function formatRadarLabel(r: Radar) {
   return "";
 }
 
-/* =========================================================
-   COMPONENT
-========================================================= */
+/* ========================================================= */
 
 export default function RadarDrawer({ id, onClose }: Props) {
   const [radars, setRadars] = useState<Radar[]>([]);
@@ -68,16 +56,11 @@ export default function RadarDrawer({ id, onClose }: Props) {
 
   const refs = useRef<Record<string, HTMLElement | null>>({});
 
-  /* =========================================================
-     LOAD
-  ========================================================= */
-
   useEffect(() => {
     async function load() {
       try {
         setLoading(true);
 
-        // 1. radar courant
         const currentRes = await api.get(`/radar/${id}`);
         const current = currentRes?.insight ?? currentRes;
 
@@ -86,7 +69,6 @@ export default function RadarDrawer({ id, onClose }: Props) {
           return;
         }
 
-        // 2. timeline complète
         const listRes = await api.get(
           `/radar/list?entity_type=${current.entity_type}&entity_id=${current.entity_id}`
         );
@@ -94,7 +76,6 @@ export default function RadarDrawer({ id, onClose }: Props) {
         const all = listRes?.insights ?? [];
         setRadars(all);
 
-        // 3. scroll vers le radar actif (offset léger)
         setTimeout(() => {
           const el = refs.current[id];
           if (el) {
@@ -114,71 +95,93 @@ export default function RadarDrawer({ id, onClose }: Props) {
     load();
   }, [id]);
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
-
   return (
     <EntityDrawerLayout onClose={onClose}>
 
       {/* HEADER */}
       <DrawerHeader
         title="Veille"
-        subtitle=""
         variant="topic"
         onClose={onClose}
       />
 
       {/* CONTENT */}
-      <div className="px-6 py-8 space-y-12">
+      <div className="px-6 py-6 space-y-10">
 
         {loading ? (
-          <p className="text-sm text-gray-400">
-            Chargement...
-          </p>
+          <p className="text-sm text-gray-400">Chargement...</p>
         ) : radars.length === 0 ? (
           <p className="text-sm text-gray-400">
             Aucune veille disponible.
           </p>
         ) : (
-          radars.map((radar) => {
-            const isActive = radar.id_insight === id;
+          <div className="relative space-y-8">
 
-            return (
-              <section
-                key={radar.id_insight}
-                ref={(el) => {
-                  refs.current[radar.id_insight] = el;
-                }}
-                className={`
-                  space-y-4
-                  ${isActive ? "bg-gray-50 p-4 rounded" : ""}
-                `}
-              >
-                {/* HEADER PERIOD */}
-                <h2
-                  className={`
-                    text-sm font-semibold
-                    ${isActive ? "text-black" : "text-gray-900"}
-                  `}
+            {/* TIMELINE LINE */}
+            <div className="absolute left-2 top-0 bottom-0 w-px bg-gray-200" />
+
+            {radars.map((radar) => {
+              const isActive = radar.id_insight === id;
+
+              return (
+                <section
+                  key={radar.id_insight}
+                  ref={(el) => {
+                    refs.current[radar.id_insight] = el;
+                  }}
+                  className="relative pl-6"
                 >
-                  {formatRadarLabel(radar)}
-                </h2>
+                  {/* DOT */}
+                  <div
+                    className={`
+                      absolute left-0 top-2 w-2 h-2 rounded-full
+                      ${isActive ? "bg-black" : "bg-gray-300"}
+                    `}
+                  />
 
-                {/* KEY POINTS */}
-                <ul className="space-y-2">
-                  {radar.key_points?.map((point, i) => (
-                    <li
-                      key={i}
-                      className="text-sm text-gray-800 leading-relaxed"
+                  {/* CARD */}
+                  <div
+                    className={`
+                      transition
+                      ${isActive
+                        ? "p-4 rounded-lg border border-gray-300 bg-gray-50"
+                        : "p-3 rounded hover:bg-gray-50"
+                      }
+                    `}
+                  >
+                    {/* DATE */}
+                    <div
+                      className={`
+                        text-xs mb-2
+                        ${isActive ? "text-gray-700" : "text-gray-400"}
+                      `}
                     >
-                      • {point}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            );
-          })
+                      {formatRadarLabel(radar)}
+                    </div>
+
+                    {/* POINTS */}
+                    <ul className="space-y-2">
+                      {radar.key_points?.map((point, i) => (
+                        <li
+                          key={i}
+                          className={`
+                            text-sm leading-relaxed
+                            ${isActive
+                              ? "text-gray-900"
+                              : "text-gray-700"}
+                          `}
+                        >
+                          <span className="text-gray-400 mr-2">•</span>
+                          {point}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                </section>
+              );
+            })}
+          </div>
         )}
 
       </div>
