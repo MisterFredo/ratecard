@@ -22,7 +22,8 @@ type DrawerTypeRight =
   | "news"
   | "analysis"
   | "newsletter"
-  | "radar" // ✅ NEW
+  | "radar"
+  | "numbers" // ✅ NEW
   | null;
 
 type DrawerMode = "silent" | "route";
@@ -107,7 +108,7 @@ export function DrawerProvider({
   ----------------------------- */
 
   function openRightDrawer(
-    type: "news" | "analysis" | "radar", // ✅ updated
+    type: "news" | "analysis" | "radar" | "numbers" |,
     id: string,
     mode: DrawerMode = "silent"
   ) {
