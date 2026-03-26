@@ -39,12 +39,23 @@ type Radar = {
 };
 
 type NumberItem = {
+  id_number: string;
+  label?: string;
   value?: number;
   unit?: string;
   scale?: string;
   zone?: string;
   period?: string;
-  label?: string;
+};
+
+type NumberType = {
+  type: string;
+  numbers: NumberItem[];
+};
+
+type NumberCategory = {
+  category: string;
+  types: NumberType[];
 };
 
 type CompanyData = {
@@ -56,7 +67,6 @@ type CompanyData = {
   nb_analyses?: number;
   delta_30d?: number;
 
-  numbers_preview?: NumberItem[]; // 👈 important
   items?: FeedItem[];
 };
 
@@ -127,10 +137,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [lastRadar, setLastRadar] = useState<Radar | null>(null);
-
-  /* =========================================================
-     CLOSE
-  ========================================================= */
+  const [numbers, setNumbers] = useState<NumberCategory[]>([]);
 
   function close() {
     onClose?.();
@@ -144,10 +151,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
     }
   }
 
-  /* =========================================================
-     LOAD DATA
-  ========================================================= */
-
+  /* LOAD DATA */
   useEffect(() => {
     async function load() {
       try {
@@ -166,10 +170,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
     load();
   }, [id]);
 
-  /* =========================================================
-     LOAD RADAR
-  ========================================================= */
-
+  /* LOAD RADAR */
   useEffect(() => {
     async function loadRadar() {
       try {
@@ -186,10 +187,24 @@ export default function CompanyDrawer({ id, onClose }: Props) {
     loadRadar();
   }, [id]);
 
-  /* =========================================================
-     LOAD MORE
-  ========================================================= */
+  /* LOAD NUMBERS */
+  useEffect(() => {
+    async function loadNumbers() {
+      try {
+        const res = await api.get(
+          `/numbers/entity?entity_type=company&entity_id=${id}&limit=3`
+        );
 
+        setNumbers(res.items ?? []);
+      } catch (e) {
+        console.error("❌ Numbers load error", e);
+      }
+    }
+
+    loadNumbers();
+  }, [id]);
+
+  /* LOAD MORE */
   async function loadMore() {
     setLoadingMore(true);
 
@@ -211,17 +226,9 @@ export default function CompanyDrawer({ id, onClose }: Props) {
 
   if (!data) return null;
 
-  /* =========================================================
-     DERIVED
-  ========================================================= */
-
   const logoUrl = data.media_logo_rectangle_id
     ? `${GCS_BASE_URL}/companies/${data.media_logo_rectangle_id}`
     : null;
-
-  /* =========================================================
-     RENDER
-  ========================================================= */
 
   return (
     <EntityDrawerLayout onClose={close}>
@@ -234,9 +241,9 @@ export default function CompanyDrawer({ id, onClose }: Props) {
         onClose={close}
       />
 
-      {/* LOGO (compact) */}
+      {/* LOGO (réduit uniquement) */}
       {logoUrl && (
-        <div className="flex justify-center py-4 border-b border-gray-200">
+        <div className="w-full border-b border-gray-200 flex justify-center py-4">
           <img
             src={logoUrl}
             alt={data.name}
@@ -245,7 +252,6 @@ export default function CompanyDrawer({ id, onClose }: Props) {
         </div>
       )}
 
-      {/* CONTENT */}
       <div className="px-6 py-6 space-y-10">
 
         {/* DESCRIPTION */}
@@ -258,19 +264,30 @@ export default function CompanyDrawer({ id, onClose }: Props) {
           />
         )}
 
-        {/* CHIFFRES (light preview) */}
-        {data.numbers_preview?.length ? (
+        {/* NUMBERS (identique mais plus léger visuellement) */}
+        {numbers.length > 0 && (
           <section className="space-y-2">
             <h2 className="text-xs font-semibold uppercase text-gray-400">
               Chiffres clés
             </h2>
 
-            <div className="space-y-1">
-              {data.numbers_preview.slice(0, 3).map((n, i) => (
-                <div key={i} className="text-sm text-gray-800">
-                  {formatNumber(n)}
-                </div>
-              ))}
+            <div className="space-y-2">
+              {numbers.map((cat) =>
+                cat.types.map((t) =>
+                  t.numbers.map((n) => (
+                    <div key={n.id_number}>
+                      <div className="text-sm font-medium text-gray-900">
+                        {formatNumber(n)}
+                      </div>
+                      {n.label && (
+                        <div className="text-xs text-gray-500">
+                          {n.label}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )
+              )}
             </div>
 
             <button
@@ -279,12 +296,12 @@ export default function CompanyDrawer({ id, onClose }: Props) {
                   entityType: "company",
                 })
               }
-              className="text-sm text-gray-500 hover:text-black transition"
+              className="text-xs text-gray-400 hover:text-black transition"
             >
               Voir tous les chiffres →
             </button>
           </section>
-        ) : null}
+        )}
 
         {/* RADAR */}
         {lastRadar && (
