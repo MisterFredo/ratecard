@@ -14,8 +14,8 @@ export default function NumbersManualCreate() {
 
   const [label, setLabel] = useState("");
   const [value, setValue] = useState("");
-  const [unit, setUnit] = useState("");
   const [scale, setScale] = useState("");
+  const [unit, setUnit] = useState("");
   const [zone, setZone] = useState("");
   const [period, setPeriod] = useState("");
   const [numberType, setNumberType] = useState("");
@@ -127,8 +127,8 @@ export default function NumbersManualCreate() {
       const res = await api.post("/numbers/", {
         label,
         value: parseFloat(value),
-        unit,
         scale: scale || null,
+        unit,
         id_number_type: numberType,
         zone,
         period,
@@ -186,16 +186,16 @@ export default function NumbersManualCreate() {
         />
 
         <input
-          placeholder="Unit (EUR, PERCENT...)"
-          value={unit}
-          onChange={(e) => setUnit(e.target.value)}
+          placeholder="Scale (million, billion...)"
+          value={scale}
+          onChange={(e) => setScale(e.target.value)}
           className="border p-2"
         />
 
         <input
-          placeholder="Scale (million, billion...)"
-          value={scale}
-          onChange={(e) => setScale(e.target.value)}
+          placeholder="Unit (EUR, PERCENT...)"
+          value={unit}
+          onChange={(e) => setUnit(e.target.value)}
           className="border p-2"
         />
 
