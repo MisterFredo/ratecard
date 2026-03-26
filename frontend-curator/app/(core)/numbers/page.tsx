@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 
 import NumberCard from "@/components/numbers/NumberCard";
 import NumbersSelectionPanel from "@/components/numbers/NumbersSelectionPanel";
+import NumbersHeader from "@/components/numbers/NumbersHeader";
 
 /* ========================================================= */
 
@@ -65,68 +66,87 @@ export default function NumbersPage() {
     setIsPanelOpen(true);
   }
 
+  /* =========================================================
+     GROUP BY TYPE
+  ========================================================= */
+
+  const grouped: Record<string, any[]> = {};
+
+  items.forEach((item) => {
+    const key = item.TYPE || "Autres";
+
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(item);
+  });
+
   /* ========================================================= */
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
       {/* LEFT */}
-      <div className="xl:col-span-2 space-y-6">
+      <div className="xl:col-span-2 space-y-10">
 
         {/* HEADER */}
-        <div className="space-y-2">
-          <h1 className="text-xl font-semibold text-gray-900">
-            Numbers
-          </h1>
+        <NumbersHeader
+          query={query}
+          setQuery={setQuery}
+          onSearch={() => load(query)}
+        />
 
-          <p className="text-sm text-gray-500">
-            Explorez rapidement les indicateurs clés du marché.
-          </p>
-
-          <div className="text-xs text-gray-400">
-            {items.length} chiffres
-          </div>
+        {/* COUNT */}
+        <div className="text-xs text-gray-400">
+          {items.length} chiffres
         </div>
 
-        {/* SEARCH */}
-        <div className="flex gap-2">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher un chiffre..."
-            className="w-full px-3 py-2 border rounded text-sm"
-          />
-          <button
-            onClick={() => load(query)}
-            className="px-4 py-2 border rounded text-sm"
-          >
-            Rechercher
-          </button>
-        </div>
-
-        {/* GRID */}
+        {/* CONTENT */}
         {loading ? (
           <p className="text-sm text-gray-400">Chargement...</p>
         ) : (
-          <div className="
-            grid
-            grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
-            gap-3
-          ">
-            {items.map((item) => {
-              const selected = selectedIds.includes(item.ID_NUMBER);
+          Object.entries(grouped).map(([type, items]) => (
 
-              return (
-                <NumberCard
-                  key={item.ID_NUMBER}
-                  item={item}
-                  selected={selected}
-                  onClick={() => toggleSelect(item)}
-                />
-              );
-            })}
-          </div>
+            <section key={type} className="space-y-4">
+
+              {/* TYPE HEADER */}
+              <div className="flex items-center justify-between">
+
+                <h2 className="
+                  text-xs font-semibold uppercase tracking-wide text-gray-400
+                ">
+                  {type}
+                </h2>
+
+                <span className="text-xs text-gray-300">
+                  {items.length}
+                </span>
+
+              </div>
+
+              {/* GRID */}
+              <div className="
+                grid
+                grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
+                gap-3
+              ">
+                {items.map((item: any) => {
+                  const selected = selectedIds.includes(item.ID_NUMBER);
+
+                  return (
+                    <NumberCard
+                      key={item.ID_NUMBER}
+                      item={item}
+                      selected={selected}
+                      onClick={() => toggleSelect(item)}
+                    />
+                  );
+                })}
+              </div>
+
+            </section>
+
+          ))
         )}
+
       </div>
 
       {/* RIGHT PANEL */}
