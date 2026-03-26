@@ -3,12 +3,11 @@
 type Props = {
   item: any;
   onClick: () => void;
+  selected?: boolean;
 };
 
-/* ========================================================= */
-
 function formatValue(item: any) {
-  if (item.VALUE === undefined || item.VALUE === null) return "";
+  if (!item.VALUE) return "";
 
   const scaleMap: any = {
     millions: "M",
@@ -22,66 +21,32 @@ function formatValue(item: any) {
   return `${item.VALUE}${scale}${unit}`;
 }
 
-function formatMeta(item: any) {
-  return [item.ZONE, item.PERIOD].filter(Boolean).join(" — ");
-}
-
-/* ========================================================= */
-
-export default function NumberCard({ item, onClick }: Props) {
+export default function NumberCard({ item, onClick, selected }: Props) {
   return (
     <div
       onClick={onClick}
-      className="
-        group
-        flex items-start justify-between
-        py-4 px-2
-        cursor-pointer
-        transition
-        hover:bg-gray-50 rounded
-      "
+      className={`
+        p-3 rounded border cursor-pointer transition
+        ${
+          selected
+            ? "border-teal-500 bg-teal-50"
+            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+        }
+      `}
     >
-      {/* LEFT */}
-      <div className="flex-1 min-w-0 space-y-1">
-
-        {/* VALUE */}
-        <div className="text-base font-semibold text-gray-900">
-          {formatValue(item)}
-        </div>
-
-        {/* LABEL */}
-        <div className="
-          text-sm text-gray-800 leading-snug
-          group-hover:text-black
-        ">
-          {item.LABEL}
-        </div>
-
-        {/* META */}
-        {formatMeta(item) && (
-          <div className="text-xs text-gray-400">
-            {formatMeta(item)}
-          </div>
-        )}
-
-        {/* ENTITY (FIX MAJEUR UX) */}
-        {item.ENTITY_LABEL && (
-          <div className="
-            text-xs text-gray-500 mt-1
-            group-hover:text-gray-700
-          ">
-            {item.ENTITY_LABEL}
-          </div>
-        )}
-
+      {/* VALUE */}
+      <div className="text-sm font-semibold text-gray-900">
+        {formatValue(item)}
       </div>
 
-      {/* RIGHT */}
-      <div className="
-        ml-4 text-[10px] uppercase tracking-wide
-        text-gray-400 whitespace-nowrap
-      ">
-        {item.TYPE}
+      {/* LABEL */}
+      <div className="text-xs text-gray-700 mt-1 line-clamp-2">
+        {item.LABEL}
+      </div>
+
+      {/* ENTITY */}
+      <div className="text-[10px] text-gray-400 mt-2 uppercase">
+        {item.ENTITY_LABEL}
       </div>
     </div>
   );
