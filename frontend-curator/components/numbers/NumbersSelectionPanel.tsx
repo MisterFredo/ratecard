@@ -12,7 +12,7 @@ type Props = {
 /* ========================================================= */
 
 function formatValue(item: any) {
-  if (item.value === undefined || item.value === null) return "";
+  if (item.VALUE === undefined || item.VALUE === null) return "";
 
   const scaleMap: any = {
     millions: "M",
@@ -20,10 +20,10 @@ function formatValue(item: any) {
     billions: "Md",
   };
 
-  const scale = scaleMap[item.scale || ""] || "";
-  const unit = item.unit || "";
+  const scale = scaleMap[item.SCALE || ""] || "";
+  const unit = item.UNIT || "";
 
-  return `${item.value}${scale}${unit}`;
+  return `${item.VALUE}${scale}${unit}`;
 }
 
 /* ========================================================= */
@@ -37,8 +37,9 @@ export default function NumbersSelectionPanel({
   const [analysis, setAnalysis] = useState("");
   const [loading, setLoading] = useState(false);
 
+  /* ✅ FIX ICI */
   const selectedItems = items.filter((i) =>
-    selectedIds.includes(i.id_number)
+    selectedIds.includes(i.ID_NUMBER)
   );
 
   /* ========================================================= */
@@ -50,7 +51,7 @@ export default function NumbersSelectionPanel({
 
     try {
       const res: any = await api.post("/numbers/insight", {
-        ids: selectedItems.map((i) => i.id_number),
+        ids: selectedItems.map((i) => i.ID_NUMBER),
       });
 
       setAnalysis(res.insight || "");
@@ -66,7 +67,6 @@ export default function NumbersSelectionPanel({
 
   function copy() {
     if (!analysis) return;
-
     navigator.clipboard.writeText(analysis);
   }
 
@@ -120,7 +120,7 @@ export default function NumbersSelectionPanel({
         <div className="space-y-3">
           {selectedItems.map((item) => (
             <div
-              key={item.id_number}
+              key={item.ID_NUMBER}
               className="text-xs border-b pb-2"
             >
               <div className="font-semibold text-gray-900">
@@ -128,11 +128,11 @@ export default function NumbersSelectionPanel({
               </div>
 
               <div className="text-gray-700">
-                {item.label}
+                {item.LABEL}
               </div>
 
               <div className="text-gray-400">
-                {item.type} — {item.category}
+                {item.TYPE} — {item.CATEGORY}
               </div>
             </div>
           ))}
@@ -162,6 +162,7 @@ export default function NumbersSelectionPanel({
         </div>
 
       </div>
+
     </div>
   );
 }
