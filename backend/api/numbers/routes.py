@@ -10,6 +10,7 @@ from core.numbers.service import (
     check_number_coherence,
     get_number_types,
     get_raw_numbers,
+    search_numbers_service,
 )
 
 
