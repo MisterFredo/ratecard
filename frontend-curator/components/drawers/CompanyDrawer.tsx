@@ -38,6 +38,26 @@ type Radar = {
   key_points: string[];
 };
 
+type NumberItem = {
+  id_number: string;
+  label?: string;
+  value?: number;
+  unit?: string;
+  scale?: string;
+  zone?: string;
+  period?: string;
+};
+
+type NumberType = {
+  type: string;
+  numbers: NumberItem[];
+};
+
+type NumberCategory = {
+  category: string;
+  types: NumberType[];
+};
+
 type CompanyData = {
   id_company: string;
   name: string;
@@ -79,6 +99,26 @@ function formatRadarLabel(r: Radar) {
   return "";
 }
 
+function formatNumber(n: NumberItem) {
+  if (!n.value) return "";
+
+  const scaleMap: any = {
+    millions: "M",
+    billion: "Md",
+    billions: "Md",
+  };
+
+  const scale = scaleMap[n.scale || ""] || "";
+  const unit = n.unit || "";
+
+  const value = n.value;
+
+  const main = `${value}${scale}${unit}`;
+  const context = [n.zone, n.period].filter(Boolean).join(" — ");
+
+  return context ? `${main} — ${context}` : main;
+}
+
 /* =========================================================
    COMPONENT
 ========================================================= */
@@ -99,6 +139,8 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [lastRadar, setLastRadar] = useState<Radar | null>(null);
+
+  const [numbers, setNumbers] = useState<NumberCategory[]>([]);
 
   /* =========================================================
      CLOSE
@@ -159,6 +201,26 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   }, [id]);
 
   /* =========================================================
+     LOAD NUMBERS (PREVIEW)
+  ========================================================= */
+
+  useEffect(() => {
+    async function loadNumbers() {
+      try {
+        const res = await api.get(
+          `/numbers/entity?entity_type=company&entity_id=${id}&limit=3`
+        );
+
+        setNumbers(res.items ?? []);
+      } catch (e) {
+        console.error("❌ Numbers load error", e);
+      }
+    }
+
+    loadNumbers();
+  }, [id]);
+
+  /* =========================================================
      LOAD MORE
   ========================================================= */
 
@@ -198,7 +260,6 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   return (
     <EntityDrawerLayout onClose={close}>
 
-      {/* HEADER */}
       <DrawerHeader
         title={data.name}
         nbAnalyses={data.nb_analyses}
@@ -206,7 +267,6 @@ export default function CompanyDrawer({ id, onClose }: Props) {
         onClose={close}
       />
 
-      {/* LOGO */}
       {logoUrl && (
         <div className="w-full bg-white border-b border-gray-200 flex items-center justify-center">
           <div className="w-full max-w-[680px] h-[260px] flex items-center justify-center">
@@ -219,7 +279,6 @@ export default function CompanyDrawer({ id, onClose }: Props) {
         </div>
       )}
 
-      {/* CONTENT */}
       <div className="px-6 py-8 space-y-12">
 
         {/* DESCRIPTION */}
@@ -233,8 +292,45 @@ export default function CompanyDrawer({ id, onClose }: Props) {
         )}
 
         {/* =====================================================
-            RADAR
+            NUMBERS
         ===================================================== */}
+        {numbers.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold uppercase text-gray-500">
+              Chiffres clés
+            </h2>
+
+            <div className="space-y-4">
+              {numbers.map((cat) =>
+                cat.types.map((t) =>
+                  t.numbers.map((n) => (
+                    <div key={n.id_number}>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {formatNumber(n)}
+                      </div>
+                      {n.label && (
+                        <div className="text-xs text-gray-500">
+                          {n.label}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )
+              )}
+            </div>
+
+            <button
+              onClick={() =>
+                openRightDrawer("numbers", id)
+              }
+              className="text-xs text-gray-400 mt-2"
+            >
+              Voir tous les chiffres →
+            </button>
+          </section>
+        )}
+
+        {/* RADAR */}
         {lastRadar && (
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase text-gray-500">
