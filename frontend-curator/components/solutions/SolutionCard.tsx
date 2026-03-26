@@ -12,6 +12,8 @@ type Props = {
   delta30d?: number;
   isPartner?: boolean;
 
+  hasNumbers?: boolean; // ✅ NEW
+
   lastRadar?: {
     id_insight: string;
     key_points: string[];
@@ -27,6 +29,7 @@ export default function SolutionCard({
   nbAnalyses,
   delta30d,
   isPartner,
+  hasNumbers, // ✅ NEW
   lastRadar,
 }: Props) {
   const router = useRouter();
@@ -62,6 +65,20 @@ export default function SolutionCard({
         relative
       "
     >
+      {/* =====================================================
+          BADGE NUMBERS
+      ===================================================== */}
+      {hasNumbers && (
+        <div className="
+          absolute top-2 left-2 z-10
+          text-[10px] px-2 py-0.5 rounded
+          bg-blue-50 text-blue-600
+          border border-blue-100
+        ">
+          #
+        </div>
+      )}
+
       {/* =====================================================
           BADGES
       ===================================================== */}
@@ -100,7 +117,7 @@ export default function SolutionCard({
         )}
 
         {/* =====================================================
-            RADAR OVERLAY (🔥 KEY)
+            RADAR OVERLAY
         ===================================================== */}
         {lastRadar?.key_points?.[0] && (
           <div
@@ -136,7 +153,7 @@ export default function SolutionCard({
           </p>
         )}
 
-        {/* CTA subtle */}
+        {/* CTA radar */}
         {lastRadar && (
           <div
             onClick={handleRadarClick}
