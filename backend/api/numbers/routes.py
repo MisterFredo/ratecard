@@ -16,6 +16,7 @@ from core.numbers.service import (
     get_numbers_for_entity,
 )
 from core.numbers.insight_service import generate_numbers_insight
+from core.numbers.insight_service import get_numbers_by_ids
 
 
 router = APIRouter()
