@@ -70,6 +70,7 @@ class SolutionOut(BaseModel):
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    has_numbers: Optional[bool] = False
 
     class Config:
         extra = "forbid"
