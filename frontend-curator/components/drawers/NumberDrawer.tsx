@@ -36,7 +36,7 @@ type NumberCategory = {
 
 type Props = {
   id: string;
-  entityType?: "company" | "topic" | "solution"; // ✅ safe
+  entityType?: "company" | "topic" | "solution";
   onClose: () => void;
 };
 
@@ -56,12 +56,11 @@ function formatNumber(n: NumberItem) {
   const scale = scaleMap[n.scale || ""] || "";
   const unit = n.unit || "";
 
-  const value = n.value;
+  return `${n.value}${scale}${unit}`;
+}
 
-  const main = `${value}${scale}${unit}`;
-  const context = [n.zone, n.period].filter(Boolean).join(" — ");
-
-  return context ? `${main} — ${context}` : main;
+function formatMeta(n: NumberItem) {
+  return [n.zone, n.period].filter(Boolean).join(" — ");
 }
 
 /* =========================================================
@@ -76,14 +75,9 @@ export default function NumberDrawer({
   const [data, setData] = useState<NumberCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* =========================================================
-     LOAD
-  ========================================================= */
-
   useEffect(() => {
     async function load() {
       try {
-        // 🔴 sécurité clé
         if (!entityType) {
           console.warn("❌ NumberDrawer: entityType missing");
           setData([]);
@@ -93,12 +87,9 @@ export default function NumberDrawer({
 
         setLoading(true);
 
-        const url = `/numbers/entity?entity_type=${entityType}&entity_id=${id}`;
-
-        // 🔍 DEBUG (tu peux enlever après)
-        console.log("➡️ Numbers API:", url);
-
-        const res = await api.get(url);
+        const res = await api.get(
+          `/numbers/entity?entity_type=${entityType}&entity_id=${id}`
+        );
 
         setData(res.items ?? []);
       } catch (e) {
@@ -112,10 +103,6 @@ export default function NumberDrawer({
     load();
   }, [id, entityType]);
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
-
   return (
     <EntityDrawerLayout onClose={onClose}>
 
@@ -128,15 +115,11 @@ export default function NumberDrawer({
       />
 
       {/* CONTENT */}
-      <div className="px-6 py-8 space-y-10">
+      <div className="px-6 py-8 space-y-12">
 
         {loading ? (
           <p className="text-sm text-gray-400">
             Chargement...
-          </p>
-        ) : !entityType ? (
-          <p className="text-sm text-red-400">
-            Erreur: entityType manquant
           </p>
         ) : data.length === 0 ? (
           <p className="text-sm text-gray-400">
@@ -147,30 +130,52 @@ export default function NumberDrawer({
             <section key={category.category} className="space-y-6">
 
               {/* CATEGORY */}
-              <h2 className="text-sm font-semibold uppercase text-gray-500">
+              <h2 className="
+                text-xs font-semibold uppercase tracking-wide
+                text-gray-400
+              ">
                 {category.category}
               </h2>
 
               {/* TYPES */}
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {category.types.map((type) => (
-                  <div key={type.type} className="space-y-2">
+                  <div key={type.type} className="space-y-4">
 
                     {/* TYPE */}
-                    <h3 className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-gray-900">
                       {type.type}
-                    </h3>
+                    </div>
 
                     {/* NUMBERS */}
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {type.numbers.map((n) => (
-                        <div key={n.id_number}>
-                          <div className="text-sm font-semibold text-gray-900">
+                        <div
+                          key={n.id_number}
+                          className="
+                            p-4 rounded-lg border border-gray-200
+                            hover:bg-gray-50 transition
+                          "
+                        >
+                          {/* VALUE */}
+                          <div className="
+                            text-xl font-semibold text-gray-900
+                          ">
                             {formatNumber(n)}
                           </div>
 
+                          {/* META */}
+                          <div className="
+                            text-xs text-gray-400 mt-1
+                          ">
+                            {formatMeta(n)}
+                          </div>
+
+                          {/* LABEL */}
                           {n.label && (
-                            <div className="text-xs text-gray-500">
+                            <div className="
+                              text-sm text-gray-600 mt-2
+                            ">
                               {n.label}
                             </div>
                           )}
