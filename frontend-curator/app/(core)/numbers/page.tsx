@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+
 import NumberCard from "@/components/numbers/NumberCard";
-import SelectionPanel from "@/components/insight/SelectionPanel";
+import NumbersSelectionPanel from "@/components/numbers/NumbersSelectionPanel";
 
 /* ========================================================= */
 
@@ -18,10 +19,6 @@ export default function NumbersPage() {
   /* SELECTION */
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-
-  /* ANALYSIS */
-  const [analysis, setAnalysis] = useState("");
-  const [loadingInsight, setLoadingInsight] = useState(false);
 
   /* ========================================================= */
 
@@ -57,37 +54,15 @@ export default function NumbersPage() {
   ========================================================= */
 
   function toggleSelect(item: any) {
+    const id = item.ID_NUMBER;
+
     setSelectedIds((prev) =>
-      prev.includes(item.ID_NUMBER)
-        ? prev.filter((i) => i !== item.ID_NUMBER)
-        : [...prev, item.ID_NUMBER]
+      prev.includes(id)
+        ? prev.filter((i) => i !== id)
+        : [...prev, id]
     );
 
     setIsPanelOpen(true);
-    setAnalysis("");
-  }
-
-  /* =========================================================
-     ANALYSIS
-  ========================================================= */
-
-  async function generateInsight() {
-    if (!selectedIds.length) return;
-
-    setLoadingInsight(true);
-
-    try {
-      const res: any = await api.post("/insight/", {
-        ids: selectedIds,
-      });
-
-      setAnalysis(res.insight || "");
-
-    } catch (e) {
-      console.error("❌ generateInsight error", e);
-    } finally {
-      setLoadingInsight(false);
-    }
   }
 
   /* ========================================================= */
@@ -95,7 +70,7 @@ export default function NumbersPage() {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
-      {/* LEFT → GRID */}
+      {/* LEFT */}
       <div className="xl:col-span-2 space-y-6">
 
         {/* HEADER */}
@@ -145,8 +120,8 @@ export default function NumbersPage() {
                 <NumberCard
                   key={item.ID_NUMBER}
                   item={item}
-                  onClick={() => toggleSelect(item)}
                   selected={selected}
+                  onClick={() => toggleSelect(item)}
                 />
               );
             })}
@@ -156,17 +131,16 @@ export default function NumbersPage() {
 
       {/* RIGHT PANEL */}
       {isPanelOpen && (
-        <div className="
-          xl:col-span-1
-          sticky top-6
-          h-[calc(100vh-120px)]
-        ">
-          <SelectionPanel
+        <div
+          className="
+            xl:col-span-1
+            sticky top-6
+            h-[calc(100vh-120px)]
+          "
+        >
+          <NumbersSelectionPanel
             items={items}
             selectedIds={selectedIds}
-            analysis={analysis}
-            loading={loadingInsight}
-            onGenerateInsight={generateInsight}
             onClose={() => setIsPanelOpen(false)}
           />
         </div>
