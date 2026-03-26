@@ -180,7 +180,7 @@ export default function NumbersAssistantCreate() {
           >
             <option value="">Number Type *</option>
             {types.map((t) => (
-              <option key={t.id_number_type} value={t.id_number_type}>
+              <option key={t.id} value={t.id}>
                 {t.label}
               </option>
             ))}
