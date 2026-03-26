@@ -175,7 +175,7 @@ export default function CompanyDrawer({ id, onClose }: Props) {
   useEffect(() => {
     async function loadNumbers() {
       const res = await api.get(
-        `/numbers/entity?entity_type=company&entity_id=${id}&limit=3`
+        `/numbers/entity?entity_type=company&entity_id=${id}&limit=4`
       );
 
       setNumbers(res.items ?? []);
