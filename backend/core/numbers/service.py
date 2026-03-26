@@ -254,7 +254,6 @@ def create_number(data: Dict) -> Dict:
         "ZONE": payload["zone"],
         "PERIOD": payload["period"],
         "SOURCE_ID": payload["source_id"],
-        "TYPE_NEWS": payload["type_news"],
         "CREATED_AT": _now(),
     }]
 
