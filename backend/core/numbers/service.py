@@ -489,53 +489,37 @@ def search_numbers_service(
     conditions = []
     params = {"limit": limit}
 
-    # =========================================================
-    # TYPE
-    # =========================================================
-
+    # ================= TYPE FILTER =================
     if id_number_type:
         conditions.append("n.ID_NUMBER_TYPE = @id_number_type")
         params["id_number_type"] = id_number_type
 
-    # =========================================================
-    # COMPANY
-    # =========================================================
-
+    # ================= COMPANY FILTER =================
     if company_id:
         joins.append(f"""
-            JOIN `{TABLE_NUMBERS_COMPANY}` nc
-            ON n.ID_NUMBER = nc.ID_NUMBER
+            JOIN `{TABLE_NUMBERS_COMPANY}` nc_filter
+            ON n.ID_NUMBER = nc_filter.ID_NUMBER
         """)
-        conditions.append("nc.ID_COMPANY = @company_id")
+        conditions.append("nc_filter.ID_COMPANY = @company_id")
         params["company_id"] = company_id
 
-    # =========================================================
-    # TOPIC
-    # =========================================================
-
+    # ================= TOPIC FILTER =================
     if topic_id:
         joins.append(f"""
-            JOIN `{TABLE_NUMBERS_TOPIC}` nt
-            ON n.ID_NUMBER = nt.ID_NUMBER
+            JOIN `{TABLE_NUMBERS_TOPIC}` nt_filter
+            ON n.ID_NUMBER = nt_filter.ID_NUMBER
         """)
-        conditions.append("nt.ID_TOPIC = @topic_id")
+        conditions.append("nt_filter.ID_TOPIC = @topic_id")
         params["topic_id"] = topic_id
 
-    # =========================================================
-    # SOLUTION
-    # =========================================================
-
+    # ================= SOLUTION FILTER =================
     if solution_id:
         joins.append(f"""
-            JOIN `{TABLE_NUMBERS_SOLUTION}` ns
-            ON n.ID_NUMBER = ns.ID_NUMBER
+            JOIN `{TABLE_NUMBERS_SOLUTION}` ns_filter
+            ON n.ID_NUMBER = ns_filter.ID_NUMBER
         """)
-        conditions.append("ns.ID_SOLUTION = @solution_id")
+        conditions.append("ns_filter.ID_SOLUTION = @solution_id")
         params["solution_id"] = solution_id
-
-    # =========================================================
-    # QUERY BUILD
-    # =========================================================
 
     where_clause = ""
     if conditions:
@@ -548,15 +532,55 @@ def search_numbers_service(
             n.VALUE,
             n.UNIT,
             n.SCALE,
-            n.ID_NUMBER_TYPE,
+            nt.TYPE AS TYPE_LABEL,
+            n.ZONE,
+            n.PERIOD,
+            n.CREATED_AT,
+
+            -- 🔥 AGGREGATIONS PROPRES
+            ARRAY_AGG(DISTINCT t.LABEL IGNORE NULLS) AS TOPICS,
+            ARRAY_AGG(DISTINCT c.NAME IGNORE NULLS) AS COMPANIES,
+            ARRAY_AGG(DISTINCT s.NAME IGNORE NULLS) AS SOLUTIONS
+
+        FROM `{TABLE_NUMBERS}` n
+
+        LEFT JOIN `{TABLE_NUMBERS_TYPES}` nt
+            ON n.ID_NUMBER_TYPE = nt.ID_TYPE
+
+        LEFT JOIN `{TABLE_NUMBERS_TOPIC}` nt_rel
+            ON n.ID_NUMBER = nt_rel.ID_NUMBER
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC` t
+            ON nt_rel.ID_TOPIC = t.ID_TOPIC
+
+        LEFT JOIN `{TABLE_NUMBERS_COMPANY}` nc_rel
+            ON n.ID_NUMBER = nc_rel.ID_NUMBER
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+            ON nc_rel.ID_COMPANY = c.ID_COMPANY
+
+        LEFT JOIN `{TABLE_NUMBERS_SOLUTION}` ns_rel
+            ON n.ID_NUMBER = ns_rel.ID_NUMBER
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` s
+            ON ns_rel.ID_SOLUTION = s.ID_SOLUTION
+
+        {" ".join(joins)}
+
+        {where_clause}
+
+        GROUP BY
+            n.ID_NUMBER,
+            n.LABEL,
+            n.VALUE,
+            n.UNIT,
+            n.SCALE,
+            nt.TYPE,
             n.ZONE,
             n.PERIOD,
             n.CREATED_AT
-        FROM `{TABLE_NUMBERS}` n
-        {" ".join(joins)}
-        {where_clause}
+
         ORDER BY n.CREATED_AT DESC
         LIMIT @limit
     """
+
+    return query_bq(query, params)
 
     return query_bq(query, params)
