@@ -32,6 +32,7 @@ type DrawerSlot = {
   type: DrawerTypeLeft | DrawerTypeRight;
   id: string | null;
   mode: DrawerMode | null;
+  payload?: any; // ✅ NEW
 };
 
 type DrawerContextType = {
@@ -45,9 +46,10 @@ type DrawerContextType = {
   ) => void;
 
   openRightDrawer: (
-    type: "news" | "analysis" | "radar", // ✅ updated
+    type: "news" | "analysis" | "radar" | "numbers",
     id: string,
-    mode?: DrawerMode
+    mode?: DrawerMode,
+    payload?: any // ✅ NEW
   ) => void;
 
   openNewsletterDrawer: (
@@ -79,12 +81,14 @@ export function DrawerProvider({
     type: null,
     id: null,
     mode: null,
+    payload: undefined,
   });
 
   const [rightDrawer, setRightDrawer] = useState<DrawerSlot>({
     type: null,
     id: null,
     mode: null,
+    payload: undefined,
   });
 
   /* -----------------------------
@@ -96,11 +100,21 @@ export function DrawerProvider({
     id: string,
     mode: DrawerMode = "silent"
   ) {
-    setLeftDrawer({ type, id, mode });
+    setLeftDrawer({
+      type,
+      id,
+      mode,
+      payload: undefined,
+    });
   }
 
   function closeLeftDrawer() {
-    setLeftDrawer({ type: null, id: null, mode: null });
+    setLeftDrawer({
+      type: null,
+      id: null,
+      mode: null,
+      payload: undefined,
+    });
   }
 
   /* -----------------------------
@@ -108,11 +122,17 @@ export function DrawerProvider({
   ----------------------------- */
 
   function openRightDrawer(
-    type: "news" | "analysis" | "radar" | "numbers" |,
+    type: "news" | "analysis" | "radar" | "numbers",
     id: string,
-    mode: DrawerMode = "silent"
+    mode: DrawerMode = "silent",
+    payload?: any
   ) {
-    setRightDrawer({ type, id, mode });
+    setRightDrawer({
+      type,
+      id,
+      mode,
+      payload,
+    });
   }
 
   function openNewsletterDrawer(
@@ -122,11 +142,17 @@ export function DrawerProvider({
       type: "newsletter",
       id: null,
       mode,
+      payload: undefined,
     });
   }
 
   function closeRightDrawer() {
-    setRightDrawer({ type: null, id: null, mode: null });
+    setRightDrawer({
+      type: null,
+      id: null,
+      mode: null,
+      payload: undefined,
+    });
   }
 
   return (
@@ -152,10 +178,12 @@ export function DrawerProvider({
 
 export function useDrawer() {
   const ctx = useContext(DrawerContext);
+
   if (!ctx) {
     throw new Error(
       "useDrawer must be used within DrawerProvider"
     );
   }
+
   return ctx;
 }
