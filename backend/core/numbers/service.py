@@ -211,6 +211,26 @@ def delete_number(id_number: str):
         "id_number": id_number
     })
 
+def get_numbers_from_content(id_content: str):
+
+    TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
+
+    rows = query_bq(f"""
+        SELECT CHIFFRES
+        FROM `{TABLE_CONTENT}`
+        WHERE ID_CONTENT = @id_content
+        LIMIT 1
+    """, {
+        "id_content": id_content
+    })
+
+    if not rows:
+        return []
+
+    chiffres = rows[0].get("CHIFFRES") or []
+
+    return parse_chiffres(chiffres)
+
 # ============================================================
 # COHERENCE CHECK
 # ============================================================
