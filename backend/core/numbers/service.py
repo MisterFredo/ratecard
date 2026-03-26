@@ -1,18 +1,20 @@
-import uuid
-import json
+# backend/core/numbers/service.py
 
+import uuid
 from datetime import datetime, timezone
-from typing import List, Dict
+from typing import List, Dict, Optional
+
 from google.cloud import bigquery
-from openai import OpenAI
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq, get_bigquery_client
 
-client = OpenAI()
 
-TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS"
-VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
+TABLE_NUMBERS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS"
+
+TABLE_NUMBERS_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_COMPANY"
+TABLE_NUMBERS_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_TOPIC"
+TABLE_NUMBERS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_SOLUTION"
 
 
 # ============================================================
@@ -23,508 +25,188 @@ def _now():
     return datetime.now(timezone.utc).isoformat()
 
 
-def _map_row(r: Dict) -> Dict:
-    return {
-        "id_insight": r["ID_INSIGHT"],
-        "entity_type": r["ENTITY_TYPE"],
-        "entity_id": r["ENTITY_ID"],
-        "year": r["YEAR"],
-        "period": r["PERIOD"],
-        "frequency": r["FREQUENCY"],
-        "metrics": r.get("METRICS") or [],
-        "status": r["STATUS"],
-        "created_at": r["CREATED_AT"],
-        "updated_at": r["UPDATED_AT"],
-        "date_key": f"{r['YEAR']}-{r['PERIOD']}",
-    }
+# ============================================================
+# PARSE CHIFFRES (FROM CONTENT)
+# ============================================================
+
+def parse_chiffres(chiffres: List[str]) -> List[Dict]:
+
+    results = []
+
+    for line in chiffres:
+
+        if not line or "|" not in line:
+            continue
+
+        parts = [p.strip() for p in line.split("|")]
+
+        if len(parts) != 6:
+            continue
+
+        label, value, unit, actor, market, period = parts
+
+        try:
+            value = float(value)
+        except:
+            continue
+
+        results.append({
+            "label": label,
+            "value": value,
+            "unit": unit,
+            "actor": actor,
+            "zone": market,
+            "period": period,
+        })
+
+    return results
 
 
 # ============================================================
-# CREATE
+# CREATE NUMBER
 # ============================================================
 
-def create_numbers_insight(data: dict) -> str:
+def create_number(
+    value: float,
+    unit: str,
+    id_number_type: str,
+    zone: str,
+    period: str,
+    source_id: str,
+    type_news: str,
 
-    insight_id = str(uuid.uuid4())
-    now = _now()
+    company_ids: Optional[List[str]] = None,
+    topic_ids: Optional[List[str]] = None,
+    solution_ids: Optional[List[str]] = None,
+) -> str:
+
+    id_number = str(uuid.uuid4())
 
     row = [{
-        "ID_INSIGHT": insight_id,
-        "ENTITY_TYPE": data.get("entity_type"),
-        "ENTITY_ID": data.get("entity_id"),
-        "YEAR": data.get("year"),
-        "PERIOD": data.get("period"),
-        "FREQUENCY": data.get("frequency"),
-        "METRICS": data.get("metrics") or [],
-        "STATUS": data.get("status", "DRAFT"),
-        "CREATED_AT": now,
-        "UPDATED_AT": now,
+        "ID_NUMBER": id_number,
+        "VALUE": value,
+        "UNIT": unit,
+        "ID_NUMBER_TYPE": id_number_type,
+        "ZONE": zone,
+        "PERIOD": period,
+        "SOURCE_ID": source_id,
+        "TYPE_NEWS": type_news,
+        "CREATED_AT": _now(),
     }]
 
     client = get_bigquery_client()
 
-    job = client.load_table_from_json(
+    client.load_table_from_json(
         row,
-        TABLE,
+        TABLE_NUMBERS,
         job_config=bigquery.LoadJobConfig(
             write_disposition="WRITE_APPEND"
         ),
+    ).result()
+
+    # ============================================================
+    # RELATIONS
+    # ============================================================
+
+    _insert_relations(
+        id_number,
+        company_ids=company_ids,
+        topic_ids=topic_ids,
+        solution_ids=solution_ids
     )
 
-    job.result()
-
-    return insight_id
+    return id_number
 
 
 # ============================================================
-# GET / LIST
+# RELATIONS
 # ============================================================
 
-def get_numbers(entity_type, entity_id, year, period, frequency):
+def _insert_relations(
+    id_number: str,
+    company_ids: Optional[List[str]],
+    topic_ids: Optional[List[str]],
+    solution_ids: Optional[List[str]],
+):
+
+    client = get_bigquery_client()
+
+    # ---------------- COMPANY ----------------
+    if company_ids:
+        rows = [{
+            "ID_NUMBER": id_number,
+            "ID_COMPANY": cid,
+            "CREATED_AT": _now(),
+        } for cid in company_ids]
+
+        client.load_table_from_json(
+            rows,
+            TABLE_NUMBERS_COMPANY,
+            job_config=bigquery.LoadJobConfig(
+                write_disposition="WRITE_APPEND"
+            ),
+        ).result()
+
+    # ---------------- TOPIC ----------------
+    if topic_ids:
+        rows = [{
+            "ID_NUMBER": id_number,
+            "ID_TOPIC": tid,
+            "CREATED_AT": _now(),
+        } for tid in topic_ids]
+
+        client.load_table_from_json(
+            rows,
+            TABLE_NUMBERS_TOPIC,
+            job_config=bigquery.LoadJobConfig(
+                write_disposition="WRITE_APPEND"
+            ),
+        ).result()
+
+    # ---------------- SOLUTION ----------------
+    if solution_ids:
+        rows = [{
+            "ID_NUMBER": id_number,
+            "ID_SOLUTION": sid,
+            "CREATED_AT": _now(),
+        } for sid in solution_ids]
+
+        client.load_table_from_json(
+            rows,
+            TABLE_NUMBERS_SOLUTION,
+            job_config=bigquery.LoadJobConfig(
+                write_disposition="WRITE_APPEND"
+            ),
+        ).result()
+
+
+# ============================================================
+# LIST
+# ============================================================
+
+def list_numbers(limit: int = 100):
 
     rows = query_bq(f"""
         SELECT *
-        FROM `{TABLE}`
-        WHERE ENTITY_TYPE = @entity_type
-        AND ENTITY_ID = @entity_id
-        AND YEAR = @year
-        AND PERIOD = @period
-        AND FREQUENCY = @frequency
-        LIMIT 1
+        FROM `{TABLE_NUMBERS}`
+        ORDER BY CREATED_AT DESC
+        LIMIT @limit
     """, {
-        "entity_type": entity_type,
-        "entity_id": entity_id,
-        "year": year,
-        "period": period,
-        "frequency": frequency,
-    })
-
-    return _map_row(rows[0]) if rows else None
-
-
-def list_numbers_insights(entity_type, entity_id):
-
-    rows = query_bq(f"""
-        SELECT *
-        FROM `{TABLE}`
-        WHERE ENTITY_TYPE = @entity_type
-        AND ENTITY_ID = @entity_id
-        ORDER BY YEAR DESC, PERIOD DESC
-    """, {
-        "entity_type": entity_type,
-        "entity_id": entity_id,
-    })
-
-    return [_map_row(r) for r in rows]
-
-
-# ============================================================
-# UPDATE
-# ============================================================
-
-def update_numbers(entity_type, entity_id, year, period, frequency, status):
-
-    query_bq(f"""
-        UPDATE `{TABLE}`
-        SET
-            STATUS = @status,
-            UPDATED_AT = CURRENT_TIMESTAMP()
-        WHERE ENTITY_TYPE = @entity_type
-        AND ENTITY_ID = @entity_id
-        AND YEAR = @year
-        AND PERIOD = @period
-        AND FREQUENCY = @frequency
-    """, {
-        "entity_type": entity_type,
-        "entity_id": entity_id,
-        "year": year,
-        "period": period,
-        "frequency": frequency,
-        "status": status,
-    })
-
-
-# ============================================================
-# CHECK EXISTING
-# ============================================================
-
-def numbers_exists(entity_type, entity_id, year, period, frequency):
-
-    rows = query_bq(f"""
-        SELECT 1
-        FROM `{TABLE}`
-        WHERE ENTITY_TYPE = @entity_type
-        AND ENTITY_ID = @entity_id
-        AND YEAR = @year
-        AND PERIOD = @period
-        AND FREQUENCY = @frequency
-        LIMIT 1
-    """, {
-        "entity_type": entity_type,
-        "entity_id": entity_id,
-        "year": year,
-        "period": period,
-        "frequency": frequency,
-    })
-
-    return len(rows) > 0
-
-
-# ============================================================
-# FETCH CHIFFRES (🔥 KEY)
-# ============================================================
-def _get_numbers_data(entity_type, entity_id, year, period, frequency):
-
-    TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_STRUCTURED"
-    VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
-
-    where_clause = "FALSE"
-
-    if entity_type == "topic":
-        where_clause = """
-        EXISTS (
-            SELECT 1 FROM UNNEST(c.topics) t
-            WHERE t.id_topic = @entity_id
-        )
-        """
-
-    elif entity_type == "company":
-        where_clause = """
-        EXISTS (
-            SELECT 1 FROM UNNEST(c.companies) comp
-            WHERE comp.id_company = @entity_id
-        )
-        """
-
-    elif entity_type == "solution":
-        where_clause = """
-        EXISTS (
-            SELECT 1 FROM UNNEST(c.solutions) s
-            WHERE s.id_solution = @entity_id
-        )
-        """
-
-    rows = query_bq(f"""
-        SELECT n.LABEL, n.VALUE, n.UNIT, n.CONTEXT
-        FROM `{TABLE}` n
-        JOIN `{VIEW_CONTENT}` c
-          ON n.ID_CONTENT = c.ID_CONTENT
-        WHERE {where_clause}
-        AND EXTRACT(YEAR FROM c.published_at) = @year
-    """, {
-        "entity_id": entity_id,
-        "year": year,
+        "limit": limit
     })
 
     return rows
-# ============================================================
-# PROMPT (CONSOLIDATION)
-# ============================================================
 
-def _build_prompt(chiffres, year, period, frequency):
-
-    chiffres_str = "\n".join([f"- {c}" for c in chiffres[:300]])
-
-    if frequency == "WEEKLY":
-        period_label = f"Semaine {period} - {year}"
-    elif frequency == "QUARTERLY":
-        period_label = f"Trimestre {period} - {year}"
-    else:
-        period_label = f"Mois {period} - {year}"
-
-    return f"""
-Tu es un analyste data senior spécialisé en marketing, retail media et adtech.
-
-Ton rôle est de transformer une liste brute de chiffres en indicateurs fiables et exploitables.
-
-=====================
-PÉRIODE ANALYSÉE
-=====================
-{period_label}
-
-=====================
-CHIFFRES BRUTS
-=====================
-{chiffres_str}
-
-=====================
-MISSION
-=====================
-À partir de ces chiffres :
-
-1. Regroupe les chiffres similaires (même métrique, même logique)
-2. Ignore les valeurs isolées ou non représentatives
-3. Identifie les fourchettes réalistes quand il y a divergence
-4. Déduis une valeur centrale (médiane ou consensus)
-5. Évalue la robustesse du signal
-
-=====================
-RÈGLES STRICTES
-=====================
-
-- Maximum 5 metrics
-- Chaque metric doit représenter une réalité marché (pas un cas isolé)
-
-- Regroupement obligatoire :
-  → CPM, budgets, croissance, part de marché, etc.
-
-- Si plusieurs valeurs proches :
-  → calcule une fourchette + valeur centrale
-
-- Si valeurs contradictoires :
-  → indique une range large + confidence faible
-
-- Ignore :
-  → chiffres uniques non corroborés
-  → chiffres trop spécifiques (ex: un seul acteur)
-
-- Chaque metric doit contenir :
-
-  • label → nom clair (ex: "CPM retail media")
-  • value → valeur représentative (ex: "25€")
-  • range → fourchette (ex: "20€ - 30€")
-  • confidence → HIGH / MEDIUM / LOW
-  • sources → nombre de chiffres utilisés
-
-=====================
-STYLE
-=====================
-
-- factuel
-- synthétique
-- orienté décision
-- aucune paraphrase
-
-=====================
-FORMAT DE SORTIE (JSON STRICT)
-=====================
-
-{{
-  "metrics": [
-    {{
-      "label": "...",
-      "value": "...",
-      "range": "...",
-      "confidence": "...",
-      "sources": 0
-    }}
-  ]
-}}
-"""
-
-# ============================================================
-# GENERATE
-# ============================================================
-
-def generate_numbers(entity_type, entity_id, year, period, frequency, force=False):
-
-    # ============================================================
-    # CHECK EXISTING
-    # ============================================================
-
-    if not force and numbers_exists(entity_type, entity_id, year, period, frequency):
-        return {"status": "exists"}
-
-    # ============================================================
-    # FETCH VALIDATED STRUCTURED NUMBERS
-    # ============================================================
-
-    from core.numbers.structured_service import get_validated_numbers
-
-    chiffres_structured = get_validated_numbers(
-        entity_type=entity_type,
-        entity_id=entity_id,
-        year=year,
-        period=period,
-        frequency=frequency,
-    )
-
-    if not chiffres_structured:
-        return {"status": "no_content"}
-
-    # ============================================================
-    # FORMAT FOR PROMPT
-    # ============================================================
-
-    chiffres = []
-
-    for c in chiffres_structured:
-
-        label = c.get("LABEL") or ""
-        value = c.get("VALUE")
-        unit = c.get("UNIT") or ""
-        context = c.get("CONTEXT") or ""
-
-        parts = []
-
-        if label:
-            parts.append(label)
-
-        if value is not None:
-            parts.append(str(value))
-
-        if unit:
-            parts.append(unit)
-
-        if context:
-            parts.append(context)
-
-        line = " | ".join(parts)
-
-        if line:
-            chiffres.append(line)
-
-    # sécurité volume
-    chiffres = chiffres[:200]
-
-    if not chiffres:
-        return {"status": "no_content"}
-
-    # ============================================================
-    # BUILD PROMPT
-    # ============================================================
-
-    prompt = _build_prompt(chiffres, year, period, frequency)
-
-    # ============================================================
-    # CALL LLM
-    # ============================================================
-
-    try:
-
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-        )
-
-        raw = response.choices[0].message.content
-
-    except Exception as e:
-        return {"status": "llm_error", "error": str(e)}
-
-    # ============================================================
-    # PARSE RESPONSE
-    # ============================================================
-
-    try:
-        metrics = json.loads(raw).get("metrics", [])
-    except Exception:
-        print("❌ RAW LLM:", raw)
-        return {"status": "parse_error", "raw": raw}
-
-    if not metrics:
-        return {"status": "empty_metrics"}
-
-    # ============================================================
-    # INSERT INSIGHT
-    # ============================================================
-
-    insight_id = create_numbers_insight({
-        "entity_type": entity_type,
-        "entity_id": entity_id,
-        "year": year,
-        "period": period,
-        "frequency": frequency,
-        "metrics": metrics,
-        "status": "GENERATED",
-    })
-
-    return {
-        "status": "ok",
-        "id_insight": insight_id,
-        "metrics": metrics,
-    }
 
 # ============================================================
 # DELETE
 # ============================================================
 
-def delete_numbers_insight(insight_id: str):
+def delete_number(id_number: str):
 
     query_bq(f"""
-        DELETE FROM `{TABLE}`
-        WHERE ID_INSIGHT = @insight_id
+        DELETE FROM `{TABLE_NUMBERS}`
+        WHERE ID_NUMBER = @id_number
     """, {
-        "insight_id": insight_id
+        "id_number": id_number
     })
-
-def list_numbers_status(entity_type, frequency, year):
-
-    table = f"{BQ_PROJECT}.{BQ_DATASET}.V_NUMBERS_STATUS"
-
-    rows = query_bq(f"""
-        SELECT
-            entity_type,
-            entity_id,
-            entity_name,
-            year,
-            period,
-            frequency,
-            nb_numbers,
-            numbers_status
-        FROM `{table}`
-        WHERE entity_type = @entity_type
-        AND frequency = @frequency
-        AND year = @year
-        ORDER BY
-            CASE WHEN numbers_status = "MISSING" THEN 0 ELSE 1 END,
-            nb_numbers DESC
-    """, {
-        "entity_type": entity_type,
-        "frequency": frequency,
-        "year": year,
-    })
-
-    return [
-        {
-            "entity_type": r["entity_type"],
-            "entity_id": r["entity_id"],
-            "entity_name": r.get("entity_name"),
-            "year": r["year"],
-            "period": r["period"],
-            "frequency": r["frequency"],
-            "nb_numbers": r["nb_numbers"],
-            "numbers_status": r["numbers_status"],
-        }
-        for r in rows
-    ]
-
-
-# ============================================================
-# GET BY ID
-# ============================================================
-
-def get_numbers_by_id(insight_id: str):
-
-    rows = query_bq(f"""
-        SELECT *
-        FROM `{TABLE}`
-        WHERE ID_INSIGHT = @insight_id
-        LIMIT 1
-    """, {
-        "insight_id": insight_id
-    })
-
-    return _map_row(rows[0]) if rows else None
-
-
-# ============================================================
-# LATEST
-# ============================================================
-
-def get_latest_numbers(entity_type, entity_id):
-
-    rows = query_bq(f"""
-        SELECT *
-        FROM `{TABLE}`
-        WHERE ENTITY_TYPE = @entity_type
-        AND ENTITY_ID = @entity_id
-        ORDER BY YEAR DESC, PERIOD DESC
-        LIMIT 1
-    """, {
-        "entity_type": entity_type,
-        "entity_id": entity_id,
-    })
-
-    return _map_row(rows[0]) if rows else None
