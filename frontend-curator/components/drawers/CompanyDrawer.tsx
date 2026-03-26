@@ -321,9 +321,10 @@ export default function CompanyDrawer({ id, onClose }: Props) {
 
             <button
               onClick={() =>
-                openRightDrawer("numbers", id)
+                openRightDrawer("numbers", id, "silent", {
+                  entityType: "company",
+                })
               }
-              className="text-xs text-gray-400 mt-2"
             >
               Voir tous les chiffres →
             </button>
