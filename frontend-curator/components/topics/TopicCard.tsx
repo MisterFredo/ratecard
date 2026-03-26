@@ -10,6 +10,8 @@ type Props = {
   nbAnalyses?: number;
   delta30d?: number;
 
+  hasNumbers?: boolean; // ✅ NEW
+
   lastRadar?: {
     id_insight: string;
     key_points: string[];
@@ -21,6 +23,7 @@ export default function TopicCard({
   label,
   nbAnalyses,
   delta30d,
+  hasNumbers, // ✅ NEW
   lastRadar,
 }: Props) {
   const router = useRouter();
@@ -61,6 +64,20 @@ export default function TopicCard({
       "
     >
       {/* =====================================================
+          BADGE NUMBERS
+      ===================================================== */}
+      {hasNumbers && (
+        <div className="
+          absolute top-2 left-2 z-10
+          text-[10px] px-2 py-0.5 rounded
+          bg-blue-50 text-blue-600
+          border border-blue-100
+        ">
+          #
+        </div>
+      )}
+
+      {/* =====================================================
           HEADER
       ===================================================== */}
       <div className="flex items-center justify-between mb-2">
@@ -91,7 +108,7 @@ export default function TopicCard({
       </h3>
 
       {/* =====================================================
-          RADAR PREVIEW (🔥 KEY FEATURE)
+          RADAR PREVIEW
       ===================================================== */}
       {lastRadar?.key_points?.[0] && (
         <div
