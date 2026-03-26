@@ -19,6 +19,8 @@ export default function NumbersAdminList() {
   const [companyId, setCompanyId] = useState("");
   const [solutionId, setSolutionId] = useState("");
 
+  const [loading, setLoading] = useState(false);
+
   /* ========================================================= */
 
   async function loadFilters() {
@@ -38,39 +40,46 @@ export default function NumbersAdminList() {
 
   async function search() {
 
-    const params = new URLSearchParams();
+    try {
 
-    if (typeId) params.append("id_number_type", typeId);
-    if (topicId) params.append("topic_id", topicId);
-    if (companyId) params.append("company_id", companyId);
-    if (solutionId) params.append("solution_id", solutionId);
+      setLoading(true);
 
-    const res = await api.get(`/numbers/search?${params}`);
+      const params = new URLSearchParams();
 
-    setItems(res.items || []);
+      if (typeId) params.append("id_number_type", typeId);
+      if (topicId) params.append("topic_id", topicId);
+      if (companyId) params.append("company_id", companyId);
+      if (solutionId) params.append("solution_id", solutionId);
+
+      const res = await api.get(`/numbers/search?${params}`);
+
+      setItems(res.items || []);
+
+    } catch (e) {
+      console.error(e);
+    }
+
+    setLoading(false);
   }
 
   async function handleDelete(id: string) {
 
-    if (!confirm("Delete ?")) return;
+    if (!confirm("Delete this number ?")) return;
 
-    await api.delete(`/numbers/${id}`);
+    try {
 
-    setItems(prev => prev.filter(i => i.ID_NUMBER !== id));
+      await api.delete(`/numbers/${id}`);
+
+      setItems(prev => prev.filter(i => i.id !== id));
+
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   useEffect(() => {
     loadFilters();
   }, []);
-
-  /* ========================================================= */
-
-  function coherenceColor(c: string) {
-    if (c === "HIGH") return "text-red-600";
-    if (c === "MEDIUM") return "text-yellow-600";
-    if (c === "OK") return "text-green-600";
-    return "text-gray-400";
-  }
 
   /* ========================================================= */
 
@@ -85,7 +94,7 @@ export default function NumbersAdminList() {
 
         <select onChange={(e) => setTypeId(e.target.value)} className="border p-2">
           <option value="">Type</option>
-          {types.map((t: any) => (
+          {types.map((t) => (
             <option key={t.id} value={t.id}>{t.label}</option>
           ))}
         </select>
@@ -111,7 +120,7 @@ export default function NumbersAdminList() {
           ))}
         </select>
 
-        <button onClick={search} className="bg-blue-600 text-white rounded">
+        <button onClick={search} className="bg-blue-600 text-white rounded px-3">
           Search
         </button>
 
@@ -120,7 +129,7 @@ export default function NumbersAdminList() {
       {/* TABLE */}
       <div className="border rounded">
 
-        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_auto] text-xs bg-gray-100 p-2 font-semibold">
+        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_auto] text-xs bg-gray-100 p-2 font-semibold">
           <div>Label</div>
           <div>Value</div>
           <div>Unit</div>
@@ -128,42 +137,51 @@ export default function NumbersAdminList() {
           <div>Type</div>
           <div>Zone</div>
           <div>Period</div>
-          <div>Coherence</div>
           <div></div>
         </div>
 
         {items.map((n) => (
 
-          <div key={n.ID_NUMBER}
-            className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_auto] text-sm p-2 border-t">
+          <div
+            key={n.id}
+            className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_auto] text-sm p-2 border-t"
+          >
 
-            <div>{n.LABEL || "-"}</div>
-            <div>{n.VALUE}</div>
-            <div>{n.UNIT}</div>
-            <div>{n.SCALE}</div>
-            <div>{n.TYPE_LABEL}</div>
-            <div>{n.ZONE}</div>
-            <div>{n.PERIOD}</div>
-
-            <div className={coherenceColor(n.COHERENCE)}>
-              {n.COHERENCE}
-            </div>
+            <div>{n.label || "-"}</div>
+            <div>{n.value}</div>
+            <div>{n.unit}</div>
+            <div>{n.scale}</div>
+            <div>{n.type}</div>
+            <div>{n.zone}</div>
+            <div>{n.period}</div>
 
             <button
-              onClick={() => handleDelete(n.ID_NUMBER)}
+              onClick={() => handleDelete(n.id)}
               className="text-red-600"
             >
               Delete
             </button>
 
             {/* ENTITIES */}
-            <div className="col-span-9 text-xs text-gray-500 mt-1">
-              {(n.TOPICS || []).join(", ")} | {(n.COMPANIES || []).join(", ")} | {(n.SOLUTIONS || []).join(", ")}
+            <div className="col-span-8 text-xs text-gray-500 mt-1">
+              {(n.topics || []).join(", ")} | {(n.companies || []).join(", ")} | {(n.solutions || []).join(", ")}
             </div>
 
           </div>
 
         ))}
+
+        {!loading && items.length === 0 && (
+          <div className="p-4 text-sm text-gray-500">
+            No results
+          </div>
+        )}
+
+        {loading && (
+          <div className="p-4 text-sm text-gray-500">
+            Loading...
+          </div>
+        )}
 
       </div>
 
