@@ -68,5 +68,8 @@ class CompanyOut(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
+    # ✅ NEW
+    has_numbers: Optional[bool] = False
+
     class Config:
         extra = "forbid"
