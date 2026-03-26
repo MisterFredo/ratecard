@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 
 import NumbersExplorer from "@/components/numbers/NumbersExplorer";
 import NumberDrawer from "@/components/drawers/NumberDrawer";
+import NumberCard from "@/components/numbers/NumberCard";
 
 import { api } from "@/lib/api";
 
@@ -113,11 +114,14 @@ export default function NumbersPage() {
             {/* LIST */}
             <div className="divide-y">
               {items.map((item: any) => (
-                <div
-                  key={item.id_number}
-                  onClick={() => setSelectedItem(item)}
-                >
-                  <NumbersExplorer.NumberCard item={item} />
+                <div className="divide-y">
+                  {items.map((item: any) => (
+                    <NumberCard
+                      key={item.id_number}
+                      item={item}
+                      onClick={() => setSelectedItem(item)}
+                    />
+                  ))}
                 </div>
               ))}
             </div>
