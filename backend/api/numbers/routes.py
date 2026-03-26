@@ -11,6 +11,8 @@ from core.numbers.service import (
     get_number_types,
     get_raw_numbers,
     search_numbers_service,
+    delete_number,
+    delete_number_relations,
 )
 
 
