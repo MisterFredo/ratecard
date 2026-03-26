@@ -3,8 +3,6 @@ from typing import List, Dict
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 from utils.llm import run_llm
-from core.numbers.insight_service import get_numbers_by_ids
-
 
 TABLE_NUMBERS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NUMBERS_ENRICHED"
 
