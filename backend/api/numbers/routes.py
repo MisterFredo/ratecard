@@ -15,7 +15,7 @@ from core.numbers.service import (
     get_numbers_feed_service,
     get_numbers_for_entity,
 )
-from core.numbers.insight_service import run_numbers_pipeline
+from core.numbers.insight_service import generate_numbers_insight
 
 
 router = APIRouter()
@@ -249,4 +249,31 @@ def get_numbers_feed(limit: int = 50, query: Optional[str] = None):
         "status": "ok",
         "items": items,
     }
+
+from core.numbers.insight_service import generate_numbers_insight
+
+
+# ============================================================
+# NUMBERS INSIGHT
+# ============================================================
+
+@router.post("/insight")
+def numbers_insight(payload: dict):
+
+    try:
+
+        ids = payload.get("ids", [])
+
+        insight = generate_numbers_insight(ids)
+
+        return {
+            "status": "ok",
+            "insight": insight,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur numbers insight : {e}"
+        )
 
