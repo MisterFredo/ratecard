@@ -10,6 +10,7 @@ type RawNumber = {
   label: string;
   value: number;
   unit: string;
+  scale?: string | null;
   actor: string;
   market: string;
   period: string;
@@ -65,21 +66,21 @@ export default function NumbersAssistantCreate() {
 
       setLoading(true);
 
-      await api.post("/numbers", {
+      await api.post("/numbers/", {
+        label: selected.label,
         value: selected.value,
         unit: selected.unit,
+        scale: selected.scale || null,
         id_number_type: numberType,
         zone: selected.market,
         period: selected.period,
-        source_id: null, // optionnel
+        source_id: null,
 
-        // 👉 volontairement vide pour forcer choix humain
         company_ids: [],
         topic_ids: [],
         solution_ids: [],
       });
 
-      // remove item
       setItems((prev) =>
         prev.filter((i) => i !== selected)
       );
@@ -121,7 +122,8 @@ export default function NumbersAssistantCreate() {
             </div>
 
             <div className="text-xs text-gray-500">
-              {item.value} {item.unit} | {item.market} | {item.period}
+              {item.value} {item.unit}
+              {item.scale ? ` (${item.scale})` : ""} | {item.market} | {item.period}
             </div>
 
             <div className="text-xs text-gray-400">
@@ -143,7 +145,7 @@ export default function NumbersAssistantCreate() {
             Validation
           </div>
 
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-5 gap-2">
 
             <input
               value={selected.value}
@@ -153,6 +155,12 @@ export default function NumbersAssistantCreate() {
 
             <input
               value={selected.unit}
+              readOnly
+              className="border p-2"
+            />
+
+            <input
+              value={selected.scale || ""}
               readOnly
               className="border p-2"
             />
