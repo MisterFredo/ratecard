@@ -28,10 +28,26 @@ def _now():
 # NORMALIZATION
 # ============================================================
 
+def _extract_unit_scale(unit_raw: str):
+    u = (unit_raw or "").lower()
+
+    if "%" in u:
+        return "PERCENT", None
+    if "€" in u or "eur" in u:
+        if "billion" in u or "milliard" in u:
+            return "EUR", "billion"
+        if "million" in u:
+            return "EUR", "million"
+        if "thousand" in u or "k" in u:
+            return "EUR", "thousand"
+        return "EUR", None
+
+    return unit_raw.upper() if unit_raw else None, None
+
+
 def normalize_number_payload(data: Dict) -> Dict:
 
     value = data.get("value")
-    unit = (data.get("unit") or "").strip()
     zone = (data.get("zone") or "").strip().upper()
     period = (data.get("period") or "").strip()
 
@@ -40,13 +56,20 @@ def normalize_number_payload(data: Dict) -> Dict:
     except:
         value = None
 
+    unit_raw = data.get("unit")
+    unit, scale = _extract_unit_scale(unit_raw)
+
     return {
+        "label": data.get("label"),
         "value": value,
         "unit": unit,
+        "scale": data.get("scale") or scale,
         "id_number_type": data.get("id_number_type"),
         "zone": zone,
         "period": period,
         "source_id": data.get("source_id"),
+        "confidence": data.get("confidence"),
+        "notes": data.get("notes"),
         "company_ids": data.get("company_ids") or [],
         "topic_ids": data.get("topic_ids") or [],
         "solution_ids": data.get("solution_ids") or [],
@@ -71,18 +94,21 @@ def parse_chiffres(chiffres: List[str]) -> List[Dict]:
         if len(parts) != 6:
             continue
 
-        label, value, unit, actor, market, period = parts
+        label, value, unit_raw, actor, market, period = parts
 
         try:
             value = float(value)
         except:
             continue
 
+        unit, scale = _extract_unit_scale(unit_raw)
+
         results.append({
             "label": label,
             "value": value,
             "unit": unit,
-            "actor": actor,   # UI only
+            "scale": scale,
+            "actor": actor,
             "zone": market,
             "period": period,
         })
@@ -91,7 +117,7 @@ def parse_chiffres(chiffres: List[str]) -> List[Dict]:
 
 
 # ============================================================
-# GET NUMBERS FROM CONTENT (FLOW GUIDÉ)
+# GET NUMBERS FROM CONTENT
 # ============================================================
 
 def get_numbers_from_content(id_content: str):
@@ -116,7 +142,7 @@ def get_numbers_from_content(id_content: str):
 
 
 # ============================================================
-# BASIC QUALITY CHECK (NON BLOQUANT)
+# BASIC QUALITY CHECK
 # ============================================================
 
 def check_basic_quality(
@@ -133,7 +159,6 @@ def check_basic_quality(
     if value <= 0:
         return {"status": "warning", "reason": "value <= 0"}
 
-    # --- duplicate simple ---
     if company_ids:
 
         rows = query_bq(f"""
@@ -162,7 +187,7 @@ def check_basic_quality(
 
 
 # ============================================================
-# COHERENCE CHECK (LIGHT)
+# COHERENCE CHECK
 # ============================================================
 
 def check_number_coherence(
@@ -220,7 +245,6 @@ def check_number_coherence(
 
     if ratio > 2:
         return {"status": "high_inconsistency", "ratio": ratio}
-
     elif ratio > 1.3:
         return {"status": "medium_inconsistency", "ratio": ratio}
 
@@ -228,14 +252,13 @@ def check_number_coherence(
 
 
 # ============================================================
-# CREATE NUMBER (MANUEL + GUIDÉ)
+# CREATE NUMBER
 # ============================================================
 
 def create_number(data: Dict) -> Dict:
 
     payload = normalize_number_payload(data)
 
-    # --- quality check ---
     quality = check_basic_quality(
         value=payload["value"],
         id_number_type=payload["id_number_type"],
@@ -244,17 +267,20 @@ def create_number(data: Dict) -> Dict:
         company_ids=payload["company_ids"],
     )
 
-    # --- insert ---
     id_number = str(uuid.uuid4())
 
     row = [{
         "ID_NUMBER": id_number,
+        "LABEL": payload["label"],
         "VALUE": payload["value"],
         "UNIT": payload["unit"],
+        "SCALE": payload["scale"],
         "ID_NUMBER_TYPE": payload["id_number_type"],
         "ZONE": payload["zone"],
         "PERIOD": payload["period"],
-        "SOURCE_ID": payload["source_id"],
+        "ID_SOURCE": payload["source_id"],
+        "CONFIDENCE": payload["confidence"],
+        "NOTES": payload["notes"],
         "CREATED_AT": _now(),
     }]
 
@@ -268,7 +294,6 @@ def create_number(data: Dict) -> Dict:
         ),
     ).result()
 
-    # --- relations ---
     _insert_relations(
         id_number,
         payload["company_ids"],
@@ -296,7 +321,6 @@ def _insert_relations(id_number, company_ids, topic_ids, solution_ids):
             "ID_COMPANY": cid,
             "CREATED_AT": _now(),
         } for cid in company_ids]
-
         client.load_table_from_json(rows, TABLE_NUMBERS_COMPANY).result()
 
     if topic_ids:
@@ -305,7 +329,6 @@ def _insert_relations(id_number, company_ids, topic_ids, solution_ids):
             "ID_TOPIC": tid,
             "CREATED_AT": _now(),
         } for tid in topic_ids]
-
         client.load_table_from_json(rows, TABLE_NUMBERS_TOPIC).result()
 
     if solution_ids:
@@ -314,7 +337,6 @@ def _insert_relations(id_number, company_ids, topic_ids, solution_ids):
             "ID_SOLUTION": sid,
             "CREATED_AT": _now(),
         } for sid in solution_ids]
-
         client.load_table_from_json(rows, TABLE_NUMBERS_SOLUTION).result()
 
 
@@ -342,6 +364,11 @@ def delete_number(id_number: str):
         DELETE FROM `{TABLE_NUMBERS}`
         WHERE ID_NUMBER = @id_number
     """, {"id_number": id_number})
+
+
+# ============================================================
+# RAW NUMBERS
+# ============================================================
 
 def get_raw_numbers(limit: int = 200):
 
@@ -372,24 +399,32 @@ def get_raw_numbers(limit: int = 200):
             if len(parts) != 6:
                 continue
 
-            label, value, unit, actor, market, period = parts
+            label, value, unit_raw, actor, market, period = parts
 
             try:
                 value = float(value)
             except:
                 continue
 
+            unit, scale = _extract_unit_scale(unit_raw)
+
             results.append({
                 "id_content": r["ID_CONTENT"],
                 "label": label,
                 "value": value,
                 "unit": unit,
+                "scale": scale,
                 "actor": actor,
                 "market": market,
                 "period": period,
             })
 
     return results
+
+
+# ============================================================
+# TYPES
+# ============================================================
 
 def get_number_types():
 
