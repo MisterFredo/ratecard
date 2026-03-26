@@ -3,17 +3,14 @@ from typing import List, Dict
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 from utils.llm import run_llm
+from core.numbers.insight_service import get_numbers_by_ids
+
+
+TABLE_NUMBERS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NUMBERS_ENRICHED"
 
 
 # ============================================================
-# TABLE
-# ============================================================
-
-TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.V_NUMBERS_ENRICHED"
-
-
-# ============================================================
-# FETCH NUMBERS
+# FETCH NUMBERS BY IDS
 # ============================================================
 
 def get_numbers_by_ids(ids: List[str]) -> List[Dict]:
@@ -23,130 +20,129 @@ def get_numbers_by_ids(ids: List[str]) -> List[Dict]:
 
     rows = query_bq(
         f"""
-        SELECT *
-        FROM `{TABLE}`
+        SELECT
+            ID_NUMBER,
+            ENTITY_TYPE,
+            ENTITY_ID,
+            ENTITY_LABEL,
+
+            LABEL,
+            VALUE,
+            UNIT,
+            SCALE,
+
+            TYPE,
+            CATEGORY,
+
+            ZONE,
+            PERIOD,
+            CREATED_AT
+
+        FROM `{TABLE_NUMBERS}`
         WHERE ID_NUMBER IN UNNEST(@ids)
         """,
         {"ids": ids}
     )
 
-    return rows
+    # 👉 on normalise pour le LLM
+    return [
+        {
+            "id": r.get("ID_NUMBER"),
+            "label": r.get("LABEL"),
+            "value": r.get("VALUE"),
+            "unit": r.get("UNIT"),
+            "scale": r.get("SCALE"),
 
+            "type": r.get("TYPE"),
+            "category": r.get("CATEGORY"),
+
+            "zone": r.get("ZONE"),
+            "period": r.get("PERIOD"),
+
+            "entity_type": r.get("ENTITY_TYPE"),
+            "entity_id": r.get("ENTITY_ID"),
+            "entity_label": r.get("ENTITY_LABEL"),
+        }
+        for r in rows
+    ]
 
 # ============================================================
-# PROMPT
+# BUILD PROMPT
 # ============================================================
 
-def build_prompt(numbers: List[Dict]):
+def build_numbers_prompt(numbers: List[Dict]) -> str:
 
     blocks = []
 
     for n in numbers:
         block = f"""
-LABEL: {n.get("LABEL")}
-VALUE: {n.get("VALUE")} {n.get("UNIT")}
-TYPE: {n.get("TYPE")}
-CATEGORY: {n.get("CATEGORY")}
-ZONE: {n.get("ZONE")}
-PERIOD: {n.get("PERIOD")}
-ENTITY: {n.get("ENTITY_LABEL")}
+LABEL: {n.get("label")}
+VALUE: {n.get("value")} {n.get("unit")} {n.get("scale")}
+TYPE: {n.get("type")}
+CATEGORY: {n.get("category")}
+ZONE: {n.get("zone")}
+PERIOD: {n.get("period")}
+ENTITY: {n.get("entity_label")}
 """
         blocks.append(block.strip())
 
-    context = "\n\n---\n\n".join(blocks)
+    context = "\n\n-----------------\n\n".join(blocks)
 
-    prompt = f"""
-Tu es un assistant expert en structuration de données pour présentation.
+    return f"""
+Tu es un assistant DATA pour un expert métier.
 
---------------------------------------------------
 OBJECTIF
+Structurer une sélection de chiffres pour une présentation.
 
-L'utilisateur a sélectionné plusieurs chiffres.
-
-Il veut :
-→ organiser les données
-→ construire une logique claire
-→ structurer une présentation
-
---------------------------------------------------
 CONTEXTE
 {context}
 
---------------------------------------------------
 TÂCHE
 
-1. ORGANISER les chiffres dans un ordre logique
-2. PROPOSER une structure de présentation
-3. ASSOCIER les chiffres aux sections
-4. EXPLIQUER la logique
+1. Regrouper les chiffres par logique
+2. Organiser du plus structurant au plus opérationnel
 
---------------------------------------------------
-FORMAT
+OUTPUT
 
 STRUCTURE
 
-1. [Titre]
-→ logique
+- Bloc 1 → thème
+  - chiffre
+  - chiffre
 
-CHIFFRES
+- Bloc 2 → thème
 
-- [LABEL] → valeur → rôle
+LECTURE
 
----
+- ce que ces chiffres racontent
 
-2. [Titre]
-...
-
---------------------------------------------------
 RÈGLES
 
-- PAS d’invention
-- PAS de chiffres ajoutés
-- PAS de résumé
-- PAS de storytelling
-
-Tu aides à structurer une présentation.
+- pas d’invention
+- pas de storytelling
+- uniquement structuration
 """
 
-    return prompt.strip()
-
 
 # ============================================================
-# LLM
+# MAIN PIPELINE
 # ============================================================
 
-def generate_numbers_structure(numbers: List[Dict]) -> str:
+def generate_numbers_insight(ids: List[str]) -> str:
+
+    if not ids:
+        return ""
+
+    numbers = get_numbers_by_ids(ids)
 
     if not numbers:
-        return "Aucune donnée."
+        return ""
 
-    prompt = build_prompt(numbers)
+    prompt = build_numbers_prompt(numbers)
 
     result = run_llm(
         prompt=prompt,
         temperature=0.2,
     )
 
-    return result or "Impossible de générer."
-
-
-# ============================================================
-# PIPELINE
-# ============================================================
-
-def run_numbers_pipeline(ids: List[str]):
-
-    if not ids:
-        return {
-            "status": "empty",
-            "insight": "",
-        }
-
-    numbers = get_numbers_by_ids(ids)
-
-    insight = generate_numbers_structure(numbers)
-
-    return {
-        "status": "ok",
-        "insight": insight,
-    }
+    return result or ""
