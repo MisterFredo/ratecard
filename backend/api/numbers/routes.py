@@ -190,26 +190,19 @@ def search_numbers(
     limit: int = 200,
 ):
 
-    try:
+    items = search_numbers_service(
+        id_number_type=id_number_type,
+        topic_id=topic_id,
+        company_id=company_id,
+        solution_id=solution_id,
+        limit=limit,
+    )
 
-        items = search_numbers_service(
-            id_number_type=id_number_type,
-            topic_id=topic_id,
-            company_id=company_id,
-            solution_id=solution_id,
-            limit=limit,
-        )
+    return {
+        "status": "ok",
+        "items": items,
+    }
 
-        return {
-            "status": "ok",
-            "items": items,
-        }
-
-    except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur search numbers : {e}"
-        )
 
 @router.delete("/{id_number}")
 def delete_route(id_number: str):
