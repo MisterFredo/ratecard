@@ -588,6 +588,29 @@ def get_numbers_for_entity(
 
     return result
 
+def get_numbers_feed_service(limit: int = 50, query: Optional[str] = None):
+
+    base_query = """
+        SELECT *
+        FROM `adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED`
+    """
+
+    if query:
+        base_query += """
+        WHERE LOWER(LABEL) LIKE LOWER(@query)
+        """
+
+    base_query += """
+        ORDER BY CREATED_AT DESC
+        LIMIT @limit
+    """
+
+    return query_bq(base_query, {
+        "limit": limit,
+        "query": f"%{query}%" if query else None,
+    })
+
+
 def search_numbers_service(
     id_number_type: Optional[str] = None,
     topic_id: Optional[str] = None,
