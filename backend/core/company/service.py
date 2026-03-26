@@ -15,6 +15,7 @@ from api.company.models import CompanyCreate, CompanyUpdate
 
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_COMPANY_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_METRICS"
+TABLE_NUMBERS_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_COMPANY"
 
 
 ALLOWED_FREQUENCIES = ["WEEKLY", "MONTHLY", "QUARTERLY"]
@@ -41,7 +42,7 @@ def create_company(data: CompanyCreate) -> str:
         "LINKEDIN_URL": data.linkedin_url or None,
         "WEBSITE_URL": data.website_url or None,
         "IS_PARTNER": bool(data.is_partner),
-        "INSIGHT_FREQUENCY": insight_frequency,  # 🔥 NEW
+        "INSIGHT_FREQUENCY": insight_frequency,
         "CREATED_AT": now,
         "UPDATED_AT": now,
         "IS_ACTIVE": True,
@@ -88,6 +89,9 @@ def list_companies():
                 THEN TRUE ELSE FALSE
             END AS HAS_WIKI,
 
+            -- ✅ HAS NUMBERS
+            nc.ID_COMPANY IS NOT NULL AS HAS_NUMBERS,
+
             -- 🔥 RADAR
             r.ID_INSIGHT,
             r.KEY_POINTS
@@ -96,6 +100,13 @@ def list_companies():
 
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY` m
           ON m.id_company = c.ID_COMPANY
+
+        -- ✅ NUMBERS JOIN (OPTIMIZED)
+        LEFT JOIN (
+            SELECT DISTINCT ID_COMPANY
+            FROM `{TABLE_NUMBERS_COMPANY}`
+        ) nc
+          ON nc.ID_COMPANY = c.ID_COMPANY
 
         -- 🔥 LATEST RADAR
         LEFT JOIN (
@@ -131,7 +142,10 @@ def list_companies():
             "has_description": r["HAS_DESCRIPTION"],
             "has_wiki": r["HAS_WIKI"],
 
-            # 🔥 NEW
+            # ✅ NEW
+            "has_numbers": r.get("HAS_NUMBERS", False),
+
+            # 🔥 RADAR
             "last_radar": {
                 "id_insight": r["ID_INSIGHT"],
                 "key_points": r["KEY_POINTS"],
@@ -139,6 +153,7 @@ def list_companies():
         }
         for r in rows
     ]
+
 
 def list_company_types():
 
@@ -169,9 +184,16 @@ def list_company_types():
 def get_company(company_id: str):
 
     sql = f"""
-        SELECT *
-        FROM `{TABLE_COMPANY}`
-        WHERE ID_COMPANY = @id
+        SELECT
+            c.*,
+            nc.ID_COMPANY IS NOT NULL AS HAS_NUMBERS
+        FROM `{TABLE_COMPANY}` c
+        LEFT JOIN (
+            SELECT DISTINCT ID_COMPANY
+            FROM `{TABLE_NUMBERS_COMPANY}`
+        ) nc
+        ON nc.ID_COMPANY = c.ID_COMPANY
+        WHERE c.ID_COMPANY = @id
         LIMIT 1
     """
 
@@ -208,6 +230,9 @@ def get_company(company_id: str):
         # 🔥 NEW
         "insight_frequency": r.get("INSIGHT_FREQUENCY"),
 
+        # ✅ NEW
+        "has_numbers": r.get("HAS_NUMBERS", False),
+
         # Dates
         "created_at": r.get("CREATED_AT"),
         "updated_at": r.get("UPDATED_AT"),
@@ -231,7 +256,7 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
         "website_url": "WEBSITE_URL",
         "is_partner": "IS_PARTNER",
         "wiki_content": "WIKI_CONTENT",
-        "insight_frequency": "INSIGHT_FREQUENCY",  # 🔥 NEW
+        "insight_frequency": "INSIGHT_FREQUENCY",
     }
 
     bq_values = {
@@ -240,7 +265,6 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
         if k in mapping
     }
 
-    # 🔥 validation
     if "INSIGHT_FREQUENCY" in bq_values:
         if bq_values["INSIGHT_FREQUENCY"] not in ALLOWED_FREQUENCIES:
             raise ValueError("Invalid insight_frequency")
