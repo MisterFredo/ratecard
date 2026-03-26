@@ -393,17 +393,15 @@ def get_raw_numbers(limit: int = 200):
 
 def get_number_types():
 
-    TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_TYPES"
-
     rows = query_bq(f"""
         SELECT ID_NUMBER_TYPE, LABEL
-        FROM `{TABLE}`
+        FROM `{TABLE_NUMBERS_TYPES}`
         ORDER BY LABEL
     """)
 
     return [
         {
-            "id_number_type": r["ID_NUMBER_TYPE"],
+            "id": r["ID_NUMBER_TYPE"],   # 🔥 IMPORTANT
             "label": r["LABEL"],
         }
         for r in rows
