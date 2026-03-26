@@ -46,7 +46,6 @@ def normalize_number_payload(data: Dict) -> Dict:
         "zone": zone,
         "period": period,
         "source_id": data.get("source_id"),
-        "type_news": data.get("type_news"),
         "company_ids": data.get("company_ids") or [],
         "topic_ids": data.get("topic_ids") or [],
         "solution_ids": data.get("solution_ids") or [],
