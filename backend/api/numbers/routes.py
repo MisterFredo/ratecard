@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from typing import List
+from typing import Optional, List
 
 from api.numbers.models import NumberInput
 from core.numbers.service import (
