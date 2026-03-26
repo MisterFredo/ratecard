@@ -3,30 +3,11 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-/* ========================================================= */
+type Option = { id: string; label: string };
 
-type Option = {
-  id: string;
-  label: string;
-};
+export default function NumbersAdminList() {
 
-type NumberItem = {
-  ID_NUMBER: string;
-  LABEL?: string;
-  VALUE: number;
-  UNIT?: string;
-  SCALE?: string;
-  ID_NUMBER_TYPE: string;
-  ZONE?: string;
-  PERIOD?: string;
-  CREATED_AT?: string;
-};
-
-/* ========================================================= */
-
-export default function NumbersAdminPage() {
-
-  const [items, setItems] = useState<NumberItem[]>([]);
+  const [items, setItems] = useState<any[]>([]);
 
   const [types, setTypes] = useState<Option[]>([]);
   const [topics, setTopics] = useState<Option[]>([]);
@@ -38,95 +19,45 @@ export default function NumbersAdminPage() {
   const [companyId, setCompanyId] = useState("");
   const [solutionId, setSolutionId] = useState("");
 
-  const [loading, setLoading] = useState(false);
-
   /* ========================================================= */
 
   async function loadFilters() {
-    try {
 
-      const [typesRes, t, c, s] = await Promise.all([
-        api.get("/numbers/types"),
-        api.get("/topic/list"),
-        api.get("/company/list"),
-        api.get("/solution/list"),
-      ]);
+    const [typesRes, t, c, s] = await Promise.all([
+      api.get("/numbers/types"),
+      api.get("/topic/list"),
+      api.get("/company/list"),
+      api.get("/solution/list"),
+    ]);
 
-      const typesData = typesRes || [];
-      const topicsData = t.topics || t.entities || t.items || t || [];
-      const companiesData = c.companies || c.entities || c.items || c || [];
-      const solutionsData = s.solutions || s.entities || s.items || s || [];
-
-      setTypes(typesData.map((x: any) => ({
-        id: x.id,
-        label: x.label,
-      })));
-
-      setTopics(topicsData.map((x: any) => ({
-        id: x.id_topic || x.id,
-        label: x.label,
-      })));
-
-      setCompanies(companiesData.map((x: any) => ({
-        id: x.id_company || x.id,
-        label: x.name || x.label,
-      })));
-
-      setSolutions(solutionsData.map((x: any) => ({
-        id: x.id_solution || x.id,
-        label: x.name || x.label,
-      })));
-
-    } catch (e) {
-      console.error(e);
-    }
+    setTypes(typesRes || []);
+    setTopics(t.topics || []);
+    setCompanies(c.companies || []);
+    setSolutions(s.solutions || []);
   }
-
-  /* ========================================================= */
 
   async function search() {
-    try {
 
-      setLoading(true);
+    const params = new URLSearchParams();
 
-      const params = new URLSearchParams();
+    if (typeId) params.append("id_number_type", typeId);
+    if (topicId) params.append("topic_id", topicId);
+    if (companyId) params.append("company_id", companyId);
+    if (solutionId) params.append("solution_id", solutionId);
 
-      if (typeId) params.append("id_number_type", typeId);
-      if (topicId) params.append("topic_id", topicId);
-      if (companyId) params.append("company_id", companyId);
-      if (solutionId) params.append("solution_id", solutionId);
+    const res = await api.get(`/numbers/search?${params}`);
 
-      const res = await api.get(`/numbers/search?${params.toString()}`);
-
-      setItems(res.items || []);
-
-    } catch (e) {
-      console.error(e);
-    }
-
-    setLoading(false);
+    setItems(res.items || []);
   }
-
-  /* ========================================================= */
 
   async function handleDelete(id: string) {
 
-    if (!confirm("Supprimer ce number ?")) return;
+    if (!confirm("Delete ?")) return;
 
-    try {
+    await api.delete(`/numbers/${id}`);
 
-      await api.delete(`/numbers/${id}`);
-
-      setItems((prev) =>
-        prev.filter((n) => n.ID_NUMBER !== id)
-      );
-
-    } catch (e) {
-      console.error(e);
-    }
+    setItems(prev => prev.filter(i => i.ID_NUMBER !== id));
   }
-
-  /* ========================================================= */
 
   useEffect(() => {
     loadFilters();
@@ -134,84 +65,62 @@ export default function NumbersAdminPage() {
 
   /* ========================================================= */
 
+  function coherenceColor(c: string) {
+    if (c === "HIGH") return "text-red-600";
+    if (c === "MEDIUM") return "text-yellow-600";
+    if (c === "OK") return "text-green-600";
+    return "text-gray-400";
+  }
+
+  /* ========================================================= */
+
   return (
 
     <div className="space-y-6">
 
-      <h1 className="text-2xl font-semibold text-ratecard-blue">
-        Numbers Admin
-      </h1>
+      <h2 className="text-xl font-semibold">Numbers Admin</h2>
 
-      {/* ================== FILTERS ================== */}
-
+      {/* FILTERS */}
       <div className="grid grid-cols-5 gap-2">
 
-        <select
-          value={typeId}
-          onChange={(e) => setTypeId(e.target.value)}
-          className="border p-2"
-        >
+        <select onChange={(e) => setTypeId(e.target.value)} className="border p-2">
           <option value="">Type</option>
-          {types.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.label}
-            </option>
+          {types.map((t: any) => (
+            <option key={t.id} value={t.id}>{t.label}</option>
           ))}
         </select>
 
-        <select
-          value={topicId}
-          onChange={(e) => setTopicId(e.target.value)}
-          className="border p-2"
-        >
+        <select onChange={(e) => setTopicId(e.target.value)} className="border p-2">
           <option value="">Topic</option>
-          {topics.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.label}
-            </option>
+          {topics.map((t: any) => (
+            <option key={t.id_topic} value={t.id_topic}>{t.label}</option>
           ))}
         </select>
 
-        <select
-          value={companyId}
-          onChange={(e) => setCompanyId(e.target.value)}
-          className="border p-2"
-        >
+        <select onChange={(e) => setCompanyId(e.target.value)} className="border p-2">
           <option value="">Company</option>
-          {companies.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.label}
-            </option>
+          {companies.map((c: any) => (
+            <option key={c.id_company} value={c.id_company}>{c.name}</option>
           ))}
         </select>
 
-        <select
-          value={solutionId}
-          onChange={(e) => setSolutionId(e.target.value)}
-          className="border p-2"
-        >
+        <select onChange={(e) => setSolutionId(e.target.value)} className="border p-2">
           <option value="">Solution</option>
-          {solutions.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.label}
-            </option>
+          {solutions.map((s: any) => (
+            <option key={s.id_solution} value={s.id_solution}>{s.name}</option>
           ))}
         </select>
 
-        <button
-          onClick={search}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
+        <button onClick={search} className="bg-blue-600 text-white rounded">
           Search
         </button>
 
       </div>
 
-      {/* ================== RESULTS ================== */}
-
+      {/* TABLE */}
       <div className="border rounded">
 
-        <div className="grid grid-cols-8 gap-2 p-2 text-xs font-semibold bg-gray-100">
+        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_auto] text-xs bg-gray-100 p-2 font-semibold">
           <div>Label</div>
           <div>Value</div>
           <div>Unit</div>
@@ -219,22 +128,26 @@ export default function NumbersAdminPage() {
           <div>Type</div>
           <div>Zone</div>
           <div>Period</div>
+          <div>Coherence</div>
           <div></div>
         </div>
 
         {items.map((n) => (
 
-          <div
-            key={n.ID_NUMBER}
-            className="grid grid-cols-8 gap-2 p-2 text-sm border-t"
-          >
+          <div key={n.ID_NUMBER}
+            className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_auto] text-sm p-2 border-t">
+
             <div>{n.LABEL || "-"}</div>
             <div>{n.VALUE}</div>
             <div>{n.UNIT}</div>
             <div>{n.SCALE}</div>
-            <div>{n.ID_NUMBER_TYPE}</div>
+            <div>{n.TYPE_LABEL}</div>
             <div>{n.ZONE}</div>
             <div>{n.PERIOD}</div>
+
+            <div className={coherenceColor(n.COHERENCE)}>
+              {n.COHERENCE}
+            </div>
 
             <button
               onClick={() => handleDelete(n.ID_NUMBER)}
@@ -243,13 +156,16 @@ export default function NumbersAdminPage() {
               Delete
             </button>
 
+            {/* ENTITIES */}
+            <div className="col-span-9 text-xs text-gray-500 mt-1">
+              {(n.TOPICS || []).join(", ")} | {(n.COMPANIES || []).join(", ")} | {(n.SOLUTIONS || []).join(", ")}
+            </div>
+
           </div>
 
         ))}
 
       </div>
-
-      {loading && <div className="text-sm text-gray-500">Loading...</div>}
 
     </div>
   );
