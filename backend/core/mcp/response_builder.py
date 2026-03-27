@@ -1,4 +1,23 @@
-prompt = f"""
+# core/mcp/response_builder.py
+
+from openai import OpenAI
+
+client = OpenAI()
+
+def build_market_analysis_response(rows):
+
+    # 🔹 construire bloc contenu
+    contents = []
+
+    for r in rows:
+        title = r.get("title", "")
+        excerpt = r.get("excerpt", "")
+        contents.append(f"- {title}\n  {excerpt}")
+
+    content_block = "\n".join(contents[:20])
+
+    # 🔥 PROMPT DANS LA FONCTION (IMPORTANT)
+    prompt = f"""
 Tu es un analyste senior spécialisé en marketing digital et retail media.
 
 Tu travailles uniquement à partir des analyses fournies. Tu n'inventes rien.
@@ -47,3 +66,14 @@ STYLE :
 - Sans blabla
 - Niveau analyste (cabinet de conseil)
 """
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.1
+    )
+
+    return {
+        "text": response.choices[0].message.content,
+        "nb_contents": len(rows)
+    }
