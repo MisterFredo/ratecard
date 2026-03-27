@@ -11,8 +11,6 @@ import RadarHeader from "@/components/radars/RadarHeader";
 /* ========================================================= */
 
 const FREQUENCY_ORDER = ["WEEKLY", "MONTHLY", "QUARTERLY"];
-const ENTITY_ORDER = ["company", "topic", "solution"];
-
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 /* ========================================================= */
@@ -26,11 +24,15 @@ export default function RadarsPage() {
   const [loading, setLoading] = useState(false);
 
   const [query, setQuery] = useState("");
+
+  /* FILTERS */
   const [filters, setFilters] = useState<any>({});
 
+  /* SELECTION */
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
+  /* EXPAND */
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   /* ========================================================= */
@@ -42,6 +44,7 @@ export default function RadarsPage() {
 
     try {
       const params = new URLSearchParams();
+
       params.append("limit", String(LIMIT));
 
       if (f.query) params.append("query", f.query);
@@ -51,6 +54,7 @@ export default function RadarsPage() {
       if (f.period_to) params.append("period_to", String(f.period_to));
 
       const res = await api.get(`/radar/feed?${params.toString()}`);
+
       setItems(res?.items ?? []);
 
     } catch (e) {
@@ -65,7 +69,9 @@ export default function RadarsPage() {
     load();
   }, []);
 
-  /* ========================================================= */
+  /* =========================================================
+     SELECTION
+  ========================================================= */
 
   function toggleSelect(item: any) {
     const id = item.ID_INSIGHT;
@@ -80,107 +86,32 @@ export default function RadarsPage() {
   }
 
   /* =========================================================
-     GROUPING (FREQ → TYPE → ENTITY)
+     GROUPING
   ========================================================= */
 
-  const grouped: any = {};
+  const grouped: Record<string, Record<string, any[]>> = {};
 
   items.forEach((item) => {
     const freq = item.FREQUENCY || "OTHER";
-    const type = item.ENTITY_TYPE || "other";
     const entity = item.ENTITY_LABEL || "Autres";
 
     if (!grouped[freq]) grouped[freq] = {};
-    if (!grouped[freq][type]) grouped[freq][type] = {};
-    if (!grouped[freq][type][entity]) grouped[freq][type][entity] = [];
+    if (!grouped[freq][entity]) grouped[freq][entity] = [];
 
-    grouped[freq][type][entity].push(item);
+    grouped[freq][entity].push(item);
   });
 
   /* ========================================================= */
 
   function getVisual(item: any) {
     if (
-      item.ENTITY_TYPE === "company" ||
-      item.ENTITY_TYPE === "solution"
+      (item.ENTITY_TYPE === "company" ||
+        item.ENTITY_TYPE === "solution") &&
+      item.VISUAL_RECT_ID
     ) {
-      return `${GCS_BASE_URL}/companies/${item.ENTITY_ID}`;
+      return `${GCS_BASE_URL}/companies/${item.VISUAL_RECT_ID}`;
     }
     return null;
-  }
-
-  function renderEntityBlock(entity: string, items: any[]) {
-    const sorted = [...items].sort(
-      (a, b) =>
-        (b.YEAR * 100 + b.PERIOD) -
-        (a.YEAR * 100 + a.PERIOD)
-    );
-
-    const isExpanded = expanded[entity];
-    const visibleItems = isExpanded ? sorted : sorted.slice(0, 3);
-
-    const visual = getVisual(items[0]);
-
-    return (
-      <div key={entity} className="space-y-2">
-
-        {/* HEADER */}
-        <div className="flex items-center gap-2">
-
-          {visual ? (
-            <img
-              src={visual}
-              alt={entity}
-              className="w-5 h-5 object-contain"
-            />
-          ) : (
-            <div className="w-5 h-5 text-[9px] bg-gray-100 rounded flex items-center justify-center">
-              {entity.slice(0, 2).toUpperCase()}
-            </div>
-          )}
-
-          <div className="text-xs font-semibold text-gray-900">
-            {entity}
-          </div>
-
-        </div>
-
-        {/* CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {visibleItems.map((item: any) => {
-            const selected = selectedIds.includes(item.ID_INSIGHT);
-
-            return (
-              <RadarCard
-                key={item.ID_INSIGHT}
-                item={item}
-                selected={selected}
-                onClick={() => toggleSelect(item)}
-                onOpenDrawer={() =>
-                  openRightDrawer("radar", item.ID_INSIGHT)
-                }
-              />
-            );
-          })}
-        </div>
-
-        {/* SEE MORE */}
-        {sorted.length > 3 && (
-          <button
-            onClick={() =>
-              setExpanded((prev) => ({
-                ...prev,
-                [entity]: !prev[entity],
-              }))
-            }
-            className="text-[11px] text-gray-400 hover:text-gray-700"
-          >
-            {isExpanded ? "Voir moins ↑" : "Voir plus →"}
-          </button>
-        )}
-
-      </div>
-    );
   }
 
   /* ========================================================= */
@@ -191,6 +122,7 @@ export default function RadarsPage() {
       {/* LEFT */}
       <div className="xl:col-span-2 space-y-8">
 
+        {/* HEADER */}
         <RadarHeader
           query={query}
           setQuery={setQuery}
@@ -200,38 +132,124 @@ export default function RadarsPage() {
           }}
         />
 
+        {/* COUNT */}
         <div className="text-xs text-gray-400">
           {items.length} veilles
         </div>
 
+        {/* CONTENT */}
         {loading ? (
           <p className="text-sm text-gray-400">Chargement...</p>
         ) : (
           FREQUENCY_ORDER.map((freq) => {
-            const freqBlock = grouped[freq];
-            if (!freqBlock) return null;
+            const entities = grouped[freq];
+            if (!entities) return null;
 
             return (
               <section key={freq} className="space-y-4">
 
-                <div className="text-[11px] font-semibold uppercase text-gray-400">
+                {/* FREQUENCY HEADER */}
+                <div className="text-xs font-semibold uppercase text-gray-400">
                   {freq}
                 </div>
 
-                {ENTITY_ORDER.map((type) => {
-                  const entities = freqBlock[type];
-                  if (!entities) return null;
+                {Object.entries(entities).map(([entity, items]) => {
+
+                  const sorted = [...items].sort(
+                    (a, b) =>
+                      (b.YEAR * 100 + b.PERIOD) -
+                      (a.YEAR * 100 + a.PERIOD)
+                  );
+
+                  const isExpanded = expanded[entity];
+                  const visibleItems = isExpanded
+                    ? sorted
+                    : sorted.slice(0, 3);
+
+                  const visual = getVisual(items[0]);
 
                   return (
-                    <div key={type} className="space-y-3">
+                    <div key={entity} className="space-y-2">
 
-                      {/* TYPE HEADER */}
-                      <div className="text-[11px] text-gray-500 uppercase">
-                        {type}
+                      {/* ENTITY HEADER */}
+                      <div className="flex items-center gap-2">
+
+                        {/* VISUAL */}
+                        {visual ? (
+                          <img
+                            src={visual}
+                            alt={entity}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = "none";
+                            }}
+                            className="w-5 h-5 object-contain"
+                          />
+                        ) : (
+                          <div className="
+                            w-5 h-5 flex items-center justify-center
+                            text-[9px] bg-gray-100 rounded
+                          ">
+                            {entity.slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+
+                        {/* LABEL */}
+                        <div className="text-sm font-semibold text-gray-900">
+                          {entity}
+                        </div>
+
                       </div>
 
-                      {Object.entries(entities).map(([entity, items]) =>
-                        renderEntityBlock(entity, items as any[])
+                      {/* CARDS */}
+                      <div className="
+                        grid
+                        grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+                        gap-3
+                      ">
+                        {visibleItems.map((item: any) => {
+                          const selected = selectedIds.includes(item.ID_INSIGHT);
+
+                          return (
+                            <RadarCard
+                              key={item.ID_INSIGHT}
+                              item={item}
+                              selected={selected}
+                              onClick={() => toggleSelect(item)}
+                              onOpenDrawer={() =>
+                                openRightDrawer("radar", item.ID_INSIGHT)
+                              }
+                            />
+                          );
+                        })}
+                      </div>
+
+                      {/* SEE MORE / LESS */}
+                      {sorted.length > 3 && !isExpanded && (
+                        <button
+                          onClick={() =>
+                            setExpanded((prev) => ({
+                              ...prev,
+                              [entity]: true,
+                            }))
+                          }
+                          className="text-xs text-gray-400 hover:text-gray-700"
+                        >
+                          Voir plus →
+                        </button>
+                      )}
+
+                      {isExpanded && (
+                        <button
+                          onClick={() =>
+                            setExpanded((prev) => ({
+                              ...prev,
+                              [entity]: false,
+                            }))
+                          }
+                          className="text-xs text-gray-400 hover:text-gray-700"
+                        >
+                          Voir moins ↑
+                        </button>
                       )}
 
                     </div>
@@ -245,9 +263,15 @@ export default function RadarsPage() {
 
       </div>
 
-      {/* RIGHT */}
+      {/* RIGHT PANEL */}
       {isPanelOpen && (
-        <div className="xl:col-span-1 sticky top-6 h-[calc(100vh-120px)]">
+        <div
+          className="
+            xl:col-span-1
+            sticky top-6
+            h-[calc(100vh-120px)]
+          "
+        >
           <RadarSelectionPanel
             items={items}
             selectedIds={selectedIds}
