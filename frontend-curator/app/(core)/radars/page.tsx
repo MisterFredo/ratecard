@@ -104,14 +104,9 @@ export default function RadarsPage() {
   /* ========================================================= */
 
   function getVisual(item: any) {
-    if (
-      (item.ENTITY_TYPE === "company" ||
-        item.ENTITY_TYPE === "solution") &&
-      item.VISUAL_RECT_ID
-    ) {
-      return `${GCS_BASE_URL}/companies/${item.VISUAL_RECT_ID}`;
-    }
-    return null;
+    if (!item.VISUAL_RECT_ID) return null;
+
+    return `${GCS_BASE_URL}/companies/${item.VISUAL_RECT_ID}`;
   }
 
   /* ========================================================= */
