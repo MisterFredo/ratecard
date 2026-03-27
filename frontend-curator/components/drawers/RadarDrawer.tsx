@@ -207,9 +207,8 @@ export default function RadarDrawer({ id, onClose }: Props) {
 
                   {/* CARD */}
                   <div
-                    className={`
-                      transition
-                      ${isActive
+                    className={
+                      isActive
                         ? "p-4 rounded-lg border border-gray-300 bg-gray-50"
                         : "p-3 rounded hover:bg-gray-50"
                       }
