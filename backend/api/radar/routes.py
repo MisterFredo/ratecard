@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Optional
+
 from core.radar.service import (
     get_radar,
     list_radar_insights,
@@ -9,6 +10,13 @@ from core.radar.service import (
     update_radar,
     radar_exists,
     delete_radar_insight,
+)
+
+# 👉 AJOUTS (pattern numbers)
+from core.radar.feed_service import get_radar_feed_service
+from core.radar.insight_service import (
+    generate_radar_insight,
+    get_radar_by_ids,
 )
 
 router = APIRouter()
@@ -40,8 +48,6 @@ def status(
 
     except Exception as e:
         raise HTTPException(400, f"Erreur status radar : {e}")
-
-
 
 
 # ============================================================
@@ -177,6 +183,7 @@ def delete_route(id_insight: str):
             f"Erreur suppression radar : {e}"
         )
 
+
 # ============================================================
 # LATEST (KEY ROUTE FRONT)
 # ============================================================
@@ -207,6 +214,7 @@ def latest_radar_route(
             f"Erreur latest radar : {e}"
         )
 
+
 # ============================================================
 # GET BY ID (FRONT SIMPLE)
 # ============================================================
@@ -232,4 +240,83 @@ def get_by_id_route(id_insight: str):
         raise HTTPException(
             400,
             f"Erreur get radar : {e}"
+        )
+
+
+# ============================================================
+# FEED (NOUVELLE ROUTE - CLÉ)
+# ============================================================
+
+@router.get("/feed")
+def get_radar_feed(
+    limit: int = 50,
+    query: Optional[str] = None,
+):
+
+    try:
+
+        items = get_radar_feed_service(
+            limit=limit,
+            query=query,
+        )
+
+        return {
+            "status": "ok",
+            "items": items,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur radar feed : {e}"
+        )
+
+
+# ============================================================
+# RADAR BY IDS (POUR PANEL)
+# ============================================================
+
+@router.post("/by-ids")
+def radar_by_ids(payload: dict):
+
+    try:
+
+        ids = payload.get("ids", [])
+
+        items = get_radar_by_ids(ids)
+
+        return {
+            "status": "ok",
+            "items": items,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur radar by ids : {e}"
+        )
+
+
+# ============================================================
+# RADAR INSIGHT (LLM)
+# ============================================================
+
+@router.post("/insight")
+def radar_insight(payload: dict):
+
+    try:
+
+        ids = payload.get("ids", [])
+
+        insight = generate_radar_insight(ids)
+
+        return {
+            "status": "ok",
+            "insight": insight,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur radar insight : {e}"
         )
