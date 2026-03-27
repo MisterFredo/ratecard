@@ -88,23 +88,9 @@ def create_radar_insight(data: dict) -> str:
 
 def get_radar(entity_type, entity_id, year, period, frequency):
 
-    TABLE_RADAR_ENRICHED = f"{BQ_PROJECT}.{BQ_DATASET}.V_RADAR_ENRICHED"
-
     rows = query_bq(f"""
-        SELECT
-            ID_INSIGHT,
-            ENTITY_TYPE,
-            ENTITY_ID,
-            ENTITY_LABEL,
-            YEAR,
-            PERIOD,
-            FREQUENCY,
-            TITLE,
-            KEY_POINTS,
-            STATUS,
-            CREATED_AT,
-            UPDATED_AT
-        FROM `{TABLE_RADAR_ENRICHED}`
+        SELECT *
+        FROM `{TABLE}`
         WHERE ENTITY_TYPE = @entity_type
         AND ENTITY_ID = @entity_id
         AND YEAR = @year
@@ -119,52 +105,14 @@ def get_radar(entity_type, entity_id, year, period, frequency):
         "frequency": frequency,
     })
 
-    if not rows:
-        return None
-
-    r = rows[0]
-
-    return {
-        "id_insight": r.get("ID_INSIGHT"),
-        "entity_type": r.get("ENTITY_TYPE"),
-        "entity_id": r.get("ENTITY_ID"),
-        "entity_label": r.get("ENTITY_LABEL") or r.get("ENTITY_ID"),
-
-        "year": r.get("YEAR"),
-        "period": r.get("PERIOD"),
-        "frequency": r.get("FREQUENCY"),
-
-        "title": r.get("TITLE"),
-        "key_points": r.get("KEY_POINTS") or [],
-        "status": r.get("STATUS"),
-
-        "created_at": r.get("CREATED_AT"),
-        "updated_at": r.get("UPDATED_AT"),
-    }
-
-
-# ============================================================
+    return _map_row(rows[0]) if rows else None
 
 
 def list_radar_insights(entity_type, entity_id):
 
-    TABLE_RADAR_ENRICHED = f"{BQ_PROJECT}.{BQ_DATASET}.V_RADAR_ENRICHED"
-
     rows = query_bq(f"""
-        SELECT
-            ID_INSIGHT,
-            ENTITY_TYPE,
-            ENTITY_ID,
-            ENTITY_LABEL,
-            YEAR,
-            PERIOD,
-            FREQUENCY,
-            TITLE,
-            KEY_POINTS,
-            STATUS,
-            CREATED_AT,
-            UPDATED_AT
-        FROM `{TABLE_RADAR_ENRICHED}`
+        SELECT *
+        FROM `{TABLE}`
         WHERE ENTITY_TYPE = @entity_type
         AND ENTITY_ID = @entity_id
         ORDER BY YEAR DESC, PERIOD DESC
@@ -173,26 +121,9 @@ def list_radar_insights(entity_type, entity_id):
         "entity_id": entity_id,
     })
 
-    return [
-        {
-            "id_insight": r.get("ID_INSIGHT"),
-            "entity_type": r.get("ENTITY_TYPE"),
-            "entity_id": r.get("ENTITY_ID"),
-            "entity_label": r.get("ENTITY_LABEL") or r.get("ENTITY_ID"),
+    return [_map_row(r) for r in rows]
 
-            "year": r.get("YEAR"),
-            "period": r.get("PERIOD"),
-            "frequency": r.get("FREQUENCY"),
 
-            "title": r.get("TITLE"),
-            "key_points": r.get("KEY_POINTS") or [],
-            "status": r.get("STATUS"),
-
-            "created_at": r.get("CREATED_AT"),
-            "updated_at": r.get("UPDATED_AT"),
-        }
-        for r in rows
-    ]
 # ============================================================
 # UPDATE
 # ============================================================
@@ -499,71 +430,22 @@ def list_radar_status(entity_type, frequency, year):
 
 def get_radar_by_id(insight_id: str):
 
-    TABLE_RADAR_ENRICHED = f"{BQ_PROJECT}.{BQ_DATASET}.V_RADAR_ENRICHED"
-
     rows = query_bq(f"""
-        SELECT
-            ID_INSIGHT,
-            ENTITY_TYPE,
-            ENTITY_ID,
-            ENTITY_LABEL,
-            YEAR,
-            PERIOD,
-            FREQUENCY,
-            TITLE,
-            KEY_POINTS,
-            STATUS,
-            CREATED_AT,
-            UPDATED_AT
-        FROM `{TABLE_RADAR_ENRICHED}`
+        SELECT *
+        FROM `{TABLE}`
         WHERE ID_INSIGHT = @insight_id
         LIMIT 1
     """, {
         "insight_id": insight_id
     })
 
-    if not rows:
-        return None
-
-    r = rows[0]
-
-    return {
-        "id_insight": r.get("ID_INSIGHT"),
-        "entity_type": r.get("ENTITY_TYPE"),
-        "entity_id": r.get("ENTITY_ID"),
-        "entity_label": r.get("ENTITY_LABEL") or r.get("ENTITY_ID"),
-
-        "year": r.get("YEAR"),
-        "period": r.get("PERIOD"),
-        "frequency": r.get("FREQUENCY"),
-
-        "title": r.get("TITLE"),
-        "key_points": r.get("KEY_POINTS") or [],
-        "status": r.get("STATUS"),
-
-        "created_at": r.get("CREATED_AT"),
-        "updated_at": r.get("UPDATED_AT"),
-    }
+    return _map_row(rows[0]) if rows else None
 
 def get_latest_radar(entity_type, entity_id):
 
-    TABLE_RADAR_ENRICHED = f"{BQ_PROJECT}.{BQ_DATASET}.V_RADAR_ENRICHED"
-
     rows = query_bq(f"""
-        SELECT
-            ID_INSIGHT,
-            ENTITY_TYPE,
-            ENTITY_ID,
-            ENTITY_LABEL,
-            YEAR,
-            PERIOD,
-            FREQUENCY,
-            TITLE,
-            KEY_POINTS,
-            STATUS,
-            CREATED_AT,
-            UPDATED_AT
-        FROM `{TABLE_RADAR_ENRICHED}`
+        SELECT *
+        FROM `{TABLE}`
         WHERE ENTITY_TYPE = @entity_type
         AND ENTITY_ID = @entity_id
         ORDER BY YEAR DESC, PERIOD DESC
@@ -573,25 +455,4 @@ def get_latest_radar(entity_type, entity_id):
         "entity_id": entity_id,
     })
 
-    if not rows:
-        return None
-
-    r = rows[0]
-
-    return {
-        "id_insight": r.get("ID_INSIGHT"),
-        "entity_type": r.get("ENTITY_TYPE"),
-        "entity_id": r.get("ENTITY_ID"),
-        "entity_label": r.get("ENTITY_LABEL") or r.get("ENTITY_ID"),
-
-        "year": r.get("YEAR"),
-        "period": r.get("PERIOD"),
-        "frequency": r.get("FREQUENCY"),
-
-        "title": r.get("TITLE"),
-        "key_points": r.get("KEY_POINTS") or [],
-        "status": r.get("STATUS"),
-
-        "created_at": r.get("CREATED_AT"),
-        "updated_at": r.get("UPDATED_AT"),
-    }
+    return _map_row(rows[0]) if rows else None
