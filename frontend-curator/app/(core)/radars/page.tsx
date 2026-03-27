@@ -11,6 +11,7 @@ import RadarHeader from "@/components/radars/RadarHeader";
 /* ========================================================= */
 
 const FREQUENCY_ORDER = ["WEEKLY", "MONTHLY", "QUARTERLY"];
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 /* ========================================================= */
 
@@ -27,6 +28,9 @@ export default function RadarsPage() {
   /* SELECTION */
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+
+  /* EXPAND */
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   /* ========================================================= */
 
@@ -90,6 +94,17 @@ export default function RadarsPage() {
 
   /* ========================================================= */
 
+  function getVisual(item: any) {
+    if (item.ENTITY_TYPE === "company" || item.ENTITY_TYPE === "solution") {
+      if (item.ENTITY_ID) {
+        return `${GCS_BASE_URL}/companies/${item.ENTITY_ID}`;
+      }
+    }
+    return null;
+  }
+
+  /* ========================================================= */
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
@@ -124,41 +139,90 @@ export default function RadarsPage() {
                   {freq}
                 </div>
 
-                {Object.entries(entities).map(([entity, items]) => (
+                {Object.entries(entities).map(([entity, items]) => {
 
-                  <div key={entity} className="space-y-3">
+                  /* 🔥 TRI (plus récent → premier) */
+                  const sorted = [...items].sort(
+                    (a, b) =>
+                      (b.YEAR * 100 + b.PERIOD) -
+                      (a.YEAR * 100 + a.PERIOD)
+                  );
 
-                    {/* ENTITY HEADER */}
-                    <div className="text-sm font-semibold text-gray-900">
-                      {entity}
-                    </div>
+                  const isExpanded = expanded[entity];
+                  const visibleItems = isExpanded ? sorted : sorted.slice(0, 3);
 
-                    {/* CARDS */}
-                    <div className="
-                      grid
-                      grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
-                      gap-4
-                    ">
-                      {items.map((item: any) => {
-                        const selected = selectedIds.includes(item.ID_INSIGHT);
+                  const visual = getVisual(items[0]);
 
-                        return (
-                          <RadarCard
-                            key={item.ID_INSIGHT}
-                            item={item}
-                            selected={selected}
-                            onClick={() => toggleSelect(item)}
-                            onOpenDrawer={() =>
-                              openRightDrawer("radar", item.ID_INSIGHT)
-                            }
+                  return (
+                    <div key={entity} className="space-y-3">
+
+                      {/* ENTITY HEADER */}
+                      <div className="flex items-center gap-3">
+
+                        {/* VISUAL */}
+                        {visual ? (
+                          <img
+                            src={visual}
+                            alt={entity}
+                            className="w-6 h-6 object-contain"
                           />
-                        );
-                      })}
+                        ) : (
+                          <div className="
+                            w-6 h-6 flex items-center justify-center
+                            text-[10px] bg-gray-100 rounded
+                          ">
+                            {entity.slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+
+                        {/* LABEL */}
+                        <div className="text-sm font-semibold text-gray-900">
+                          {entity}
+                        </div>
+
+                      </div>
+
+                      {/* CARDS */}
+                      <div className="
+                        grid
+                        grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+                        gap-4
+                      ">
+                        {visibleItems.map((item: any) => {
+                          const selected = selectedIds.includes(item.ID_INSIGHT);
+
+                          return (
+                            <RadarCard
+                              key={item.ID_INSIGHT}
+                              item={item}
+                              selected={selected}
+                              onClick={() => toggleSelect(item)}
+                              onOpenDrawer={() =>
+                                openRightDrawer("radar", item.ID_INSIGHT)
+                              }
+                            />
+                          );
+                        })}
+                      </div>
+
+                      {/* SEE MORE */}
+                      {sorted.length > 3 && !isExpanded && (
+                        <button
+                          onClick={() =>
+                            setExpanded((prev) => ({
+                              ...prev,
+                              [entity]: true,
+                            }))
+                          }
+                          className="text-xs text-gray-400 hover:text-gray-700"
+                        >
+                          Voir plus →
+                        </button>
+                      )}
+
                     </div>
-
-                  </div>
-
-                ))}
+                  );
+                })}
 
               </section>
             );
