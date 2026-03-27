@@ -44,6 +44,9 @@ export default function RadarSelectionPanel({
   const [analysis, setAnalysis] = useState("");
   const [loading, setLoading] = useState(false);
 
+  /* NEW */
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
   const selectedItems = items.filter((i) =>
     selectedIds.includes(i.ID_INSIGHT)
   );
@@ -120,39 +123,65 @@ export default function RadarSelectionPanel({
       </div>
 
       {/* CONTENT */}
-      <div className="flex-1 overflow-auto p-4 space-y-6">
+      <div className="flex-1 overflow-auto p-4 space-y-4">
 
         {/* SELECTED */}
         <div className="space-y-4">
-          {selectedItems.map((item) => (
-            <div
-              key={item.ID_INSIGHT}
-              className="text-xs border-b pb-3"
-            >
-              {/* ENTITY */}
-              <div className="font-semibold text-gray-900">
-                {item.ENTITY_LABEL}
-              </div>
+          {selectedItems.map((item) => {
 
-              {/* DATE */}
-              <div className="text-gray-400 mb-1">
-                {formatRadarLabel(item)}
-              </div>
+            const isExpanded = expanded[item.ID_INSIGHT];
+            const points = item.KEY_POINTS || [];
 
-              {/* PREVIEW */}
-              <ul className="space-y-1">
-                {(item.KEY_POINTS || []).map((p: string, i: number) => (
-                  <li key={i} className="text-gray-700">
-                    • {p}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+            const visiblePoints = isExpanded
+              ? points
+              : points.slice(0, 2);
+
+            return (
+              <div
+                key={item.ID_INSIGHT}
+                className="text-xs border-b pb-3 space-y-2"
+              >
+                {/* ENTITY */}
+                <div className="font-semibold text-gray-900">
+                  {item.ENTITY_LABEL}
+                </div>
+
+                {/* DATE */}
+                <div className="text-gray-400">
+                  {formatRadarLabel(item)}
+                </div>
+
+                {/* POINTS */}
+                <ul className="space-y-1">
+                  {visiblePoints.map((p: string, i: number) => (
+                    <li key={i} className="text-gray-700">
+                      • {p}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* TOGGLE */}
+                {points.length > 2 && (
+                  <button
+                    onClick={() =>
+                      setExpanded((prev) => ({
+                        ...prev,
+                        [item.ID_INSIGHT]: !prev[item.ID_INSIGHT],
+                      }))
+                    }
+                    className="text-[11px] text-gray-400 hover:text-gray-700"
+                  >
+                    {isExpanded ? "Voir moins ↑" : "Voir plus →"}
+                  </button>
+                )}
+
+              </div>
+            );
+          })}
         </div>
 
         {/* RESULT */}
-        <div className="pt-4 border-t">
+        <div className="pt-3 border-t">
 
           {loading && (
             <div className="text-xs text-gray-400">
