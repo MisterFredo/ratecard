@@ -42,10 +42,42 @@ export default function RadarHeader({
     onSearch({
       query: value || undefined,
       frequency: frequency || undefined,
-      year: year || undefined,
-      period_from: periodFrom || undefined,
-      period_to: periodTo || undefined,
+      year: typeof year === "number" ? year : undefined,
+      period_from: typeof periodFrom === "number" ? periodFrom : undefined,
+      period_to: typeof periodTo === "number" ? periodTo : undefined,
     });
+  }
+
+  /* ========================================================= */
+
+  function resetFilters() {
+    setInput("");
+    setQuery("");
+
+    setFrequency("");
+    setYear("");
+    setPeriodFrom("");
+    setPeriodTo("");
+
+    onSearch({});
+  }
+
+  /* ========================================================= */
+
+  function handleNumberInput(
+    value: string,
+    setter: (v: number | "") => void
+  ) {
+    if (value === "") {
+      setter("");
+      return;
+    }
+
+    const num = Number(value);
+
+    if (!isNaN(num) && num > 0) {
+      setter(num);
+    }
   }
 
   /* ========================================================= */
@@ -98,14 +130,14 @@ export default function RadarHeader({
         </button>
       </div>
 
-      {/* TIMELINE FILTERS */}
-      <div className="flex flex-wrap items-center gap-3 text-sm">
+      {/* TIMELINE */}
+      <div className="flex flex-wrap items-center gap-2 text-sm">
 
         {/* FREQUENCY */}
         <select
           value={frequency}
           onChange={(e) => setFrequency(e.target.value)}
-          className="border border-gray-200 rounded px-3 py-2"
+          className="border border-gray-200 rounded px-2 py-1.5 text-xs"
         >
           <option value="">Toutes fréquences</option>
           <option value="WEEKLY">Weekly</option>
@@ -116,10 +148,12 @@ export default function RadarHeader({
         {/* YEAR */}
         <input
           type="number"
-          placeholder="Année"
+          placeholder="2025"
           value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
-          className="w-24 border border-gray-200 rounded px-3 py-2"
+          onChange={(e) =>
+            handleNumberInput(e.target.value, setYear)
+          }
+          className="w-20 border border-gray-200 rounded px-2 py-1.5 text-xs"
         />
 
         {/* PERIOD FROM */}
@@ -127,8 +161,10 @@ export default function RadarHeader({
           type="number"
           placeholder="De"
           value={periodFrom}
-          onChange={(e) => setPeriodFrom(Number(e.target.value))}
-          className="w-20 border border-gray-200 rounded px-3 py-2"
+          onChange={(e) =>
+            handleNumberInput(e.target.value, setPeriodFrom)
+          }
+          className="w-16 border border-gray-200 rounded px-2 py-1.5 text-xs"
         />
 
         {/* PERIOD TO */}
@@ -136,15 +172,17 @@ export default function RadarHeader({
           type="number"
           placeholder="À"
           value={periodTo}
-          onChange={(e) => setPeriodTo(Number(e.target.value))}
-          className="w-20 border border-gray-200 rounded px-3 py-2"
+          onChange={(e) =>
+            handleNumberInput(e.target.value, setPeriodTo)
+          }
+          className="w-16 border border-gray-200 rounded px-2 py-1.5 text-xs"
         />
 
         {/* APPLY */}
         <button
           onClick={triggerSearch}
           className="
-            px-3 py-2
+            px-3 py-1.5
             text-xs
             bg-gray-100
             rounded
@@ -152,6 +190,19 @@ export default function RadarHeader({
           "
         >
           Appliquer
+        </button>
+
+        {/* RESET */}
+        <button
+          onClick={resetFilters}
+          className="
+            px-3 py-1.5
+            text-xs
+            text-gray-400
+            hover:text-gray-700
+          "
+        >
+          Reset
         </button>
 
       </div>
