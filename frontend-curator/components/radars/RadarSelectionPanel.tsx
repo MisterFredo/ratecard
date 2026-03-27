@@ -141,7 +141,7 @@ export default function RadarSelectionPanel({
 
               {/* PREVIEW */}
               <ul className="space-y-1">
-                {(item.KEY_POINTS || []).slice(0, 2).map((p: string, i: number) => (
+                {(item.KEY_POINTS || []).map((p: string, i: number) => (
                   <li key={i} className="text-gray-700">
                     • {p}
                   </li>
