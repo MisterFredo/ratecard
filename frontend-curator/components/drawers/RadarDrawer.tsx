@@ -4,14 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 
 import EntityDrawerLayout from "@/components/drawers/EntityDrawerLayout";
-import DrawerHeader from "@/components/drawers/DrawerHeader";
+
+/* ========================================================= */
+
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 /* ========================================================= */
 
 type Radar = {
   id_insight: string;
+
   entity_type: string;
   entity_id: string;
+  entity_label?: string;
+  visual_rect_id?: string | null;
 
   year: number;
   period: number;
@@ -56,6 +62,8 @@ export default function RadarDrawer({ id, onClose }: Props) {
 
   const refs = useRef<Record<string, HTMLElement | null>>({});
 
+  /* ========================================================= */
+
   useEffect(() => {
     async function load() {
       try {
@@ -95,18 +103,61 @@ export default function RadarDrawer({ id, onClose }: Props) {
     load();
   }, [id]);
 
+  /* ========================================================= */
+
+  const entity = radars[0];
+
+  const visualUrl =
+    entity?.visual_rect_id
+      ? `${GCS_BASE_URL}/companies/${entity.visual_rect_id}`
+      : null;
+
+  /* ========================================================= */
+
   return (
     <EntityDrawerLayout onClose={onClose}>
 
-      {/* HEADER */}
-      <DrawerHeader
-        title="Veille"
-        variant="topic"
-        onClose={onClose}
-      />
+      {/* =====================================================
+          HEADER CUSTOM (REMPLACE DrawerHeader)
+      ===================================================== */}
+      <div className="px-6 pt-6 pb-4 border-b flex items-center gap-3">
 
-      {/* CONTENT */}
-      <div className="px-6 py-6 space-y-10">
+        {/* VISUAL */}
+        {visualUrl ? (
+          <img
+            src={visualUrl}
+            alt={entity?.entity_label}
+            className="w-8 h-8 object-contain"
+          />
+        ) : (
+          <div className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded text-xs text-gray-500">
+            {entity?.entity_label?.slice(0, 2).toUpperCase()}
+          </div>
+        )}
+
+        {/* TITLE */}
+        <div className="flex-1">
+          <div className="text-sm font-semibold text-gray-900">
+            {entity?.entity_label || "Veille"}
+          </div>
+          <div className="text-xs text-gray-400">
+            Veille chronologique
+          </div>
+        </div>
+
+        {/* CLOSE */}
+        <button
+          onClick={onClose}
+          className="text-xs text-gray-400 hover:text-gray-600"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* =====================================================
+          CONTENT
+      ===================================================== */}
+      <div className="px-6 py-6 space-y-6">
 
         {loading ? (
           <p className="text-sm text-gray-400">Chargement...</p>
@@ -115,9 +166,9 @@ export default function RadarDrawer({ id, onClose }: Props) {
             Aucune veille disponible.
           </p>
         ) : (
-          <div className="relative space-y-8">
+          <div className="relative space-y-6">
 
-            {/* TIMELINE LINE */}
+            {/* TIMELINE */}
             <div className="absolute left-2 top-0 bottom-0 w-px bg-gray-200" />
 
             {radars.map((radar) => {
@@ -129,7 +180,7 @@ export default function RadarDrawer({ id, onClose }: Props) {
                   ref={(el) => {
                     refs.current[radar.id_insight] = el;
                   }}
-                  className="relative pl-6"
+                  className="relative pl-5"
                 >
                   {/* DOT */}
                   <div
@@ -144,15 +195,15 @@ export default function RadarDrawer({ id, onClose }: Props) {
                     className={`
                       transition
                       ${isActive
-                        ? "p-4 rounded-lg border border-gray-300 bg-gray-50"
-                        : "p-3 rounded hover:bg-gray-50"
+                        ? "p-3 rounded-lg border border-gray-300 bg-gray-50"
+                        : "p-2 rounded hover:bg-gray-50"
                       }
                     `}
                   >
                     {/* DATE */}
                     <div
                       className={`
-                        text-xs mb-2
+                        text-[11px] mb-1
                         ${isActive ? "text-gray-700" : "text-gray-400"}
                       `}
                     >
@@ -160,19 +211,18 @@ export default function RadarDrawer({ id, onClose }: Props) {
                     </div>
 
                     {/* POINTS */}
-                    <ul className="space-y-2">
+                    <ul className="space-y-1">
                       {radar.key_points?.map((point, i) => (
                         <li
                           key={i}
                           className={`
-                            text-sm leading-relaxed
+                            text-[13px] leading-snug
                             ${isActive
                               ? "text-gray-900"
                               : "text-gray-700"}
                           `}
                         >
-                          <span className="text-gray-400 mr-2">•</span>
-                          {point}
+                          • {point}
                         </li>
                       ))}
                     </ul>
