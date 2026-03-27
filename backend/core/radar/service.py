@@ -14,6 +14,7 @@ client = OpenAI()
 TABLE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_RADAR"
 VIEW_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED"
 VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
+VIEW_RADAR = f"{BQ_PROJECT}.{BQ_DATASET}.V_RADAR_ENRICHED"
 
 
 # ============================================================
@@ -464,7 +465,7 @@ def get_radar_by_id(insight_id: str):
 
     rows = query_bq(f"""
         SELECT *
-        FROM `{TABLE}`
+        FROM `{VIEW_RADAR}`
         WHERE ID_INSIGHT = @insight_id
         LIMIT 1
     """, {
