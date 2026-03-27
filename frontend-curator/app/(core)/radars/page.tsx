@@ -36,8 +36,7 @@ export default function RadarsPage() {
     setLoading(true);
 
     try {
-      const res = await api.get(
-        `/feed?limit=${LIMIT}${
+      const res = await api.get(`/radar/feed?limit=${LIMIT}`)
           finalQuery ? `&query=${encodeURIComponent(finalQuery)}` : ""
         }`
       );
