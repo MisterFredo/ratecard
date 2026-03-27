@@ -15,7 +15,7 @@ router = APIRouter()
 class MCPQuery(BaseModel):
     query: str
 
-@router.post("/mcp/query")
+@router.post("/query")
 def mcp_query(body: MCPQuery):
 
     user_query = body.query
