@@ -30,51 +30,20 @@ def _map_row(r: Dict) -> Dict:
         "id_insight": r["ID_INSIGHT"],
         "entity_type": r["ENTITY_TYPE"],
         "entity_id": r["ENTITY_ID"],
-        "entity_label": _get_entity_label(
-            r["ENTITY_TYPE"],
-            r["ENTITY_ID"]
-        ),
+        "entity_label": r.get("ENTITY_LABEL"),  # ✅ FIX ICI
+
         "year": r["YEAR"],
         "period": r["PERIOD"],
         "frequency": r["FREQUENCY"],
         "title": r.get("TITLE"),
         "key_points": r.get("KEY_POINTS") or [],
-        "status": r["STATUS"],
-        "created_at": r["CREATED_AT"],
-        "updated_at": r["UPDATED_AT"],
+        "status": r.get("STATUS"),
 
-        # ✅ STRUCTURÉ (pas formaté)
+        "created_at": r.get("CREATED_AT"),
+        "updated_at": r.get("UPDATED_AT"),
+
         "date_key": f"{r['YEAR']}-{r['PERIOD']}",
     }
-
-def _get_entity_label(entity_type, entity_id):
-
-    if entity_type == "topic":
-        table = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
-        field = "LABEL"
-        id_field = "ID_TOPIC"
-
-    elif entity_type == "company":
-        table = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
-        field = "NAME"
-        id_field = "ID_COMPANY"
-
-    elif entity_type == "solution":
-        table = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
-        field = "NAME"
-        id_field = "ID_SOLUTION"
-
-    else:
-        return entity_id
-
-    rows = query_bq(f"""
-        SELECT {field}
-        FROM `{table}`
-        WHERE {id_field} = @id
-        LIMIT 1
-    """, {"id": entity_id})
-
-    return rows[0][field] if rows else entity_id
 
 
 # ============================================================
