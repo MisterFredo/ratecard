@@ -54,9 +54,10 @@ export default function RadarCard({
         bg-white p-4 space-y-3
         hover:shadow-md
 
-        selected
-          ? "border-green-600 bg-green-50 ring-1 ring-green-200"
-          : "border-gray-200"
+        ${
+          selected
+            ? "border-green-600 bg-green-50 ring-1 ring-green-200"
+            : "border-gray-200 hover:border-gray-300"
         }
       `}
     >
