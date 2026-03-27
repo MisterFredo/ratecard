@@ -146,9 +146,8 @@ def build_radar_prompt(radars: List[Dict]) -> str:
         points = "\n".join([f"- {p}" for p in r["key_points"]])
 
         blocks.append(f"""
+PERIODE: {r["year"]}/{r["period"]}
 ENTITY: {r["entity_label"]}
-TYPE: {r["entity_type"]}
-PERIOD: {r["year"]}/{r["period"]} ({r["frequency"]})
 
 {points}
 """.strip())
@@ -156,36 +155,71 @@ PERIOD: {r["year"]}/{r["period"]} ({r["frequency"]})
     context = "\n\n-----------------\n\n".join(blocks)
 
     return f"""
-Tu analyses plusieurs radars.
+Tu es un analyste senior en stratégie marketing et adtech.
 
-OBJECTIF :
-identifier les dynamiques communes.
+Tu ne résumes PAS.
+Tu compresses, structures et hiérarchises.
 
-CONTEXTE :
+=====================
+CONTEXTE
+=====================
 {context}
 
-TÂCHE :
-1. regrouper les signaux
-2. identifier les patterns
-3. structurer en axes
+=====================
+OBJECTIF
+=====================
+Identifier les dynamiques de marché communes à ces radars.
 
-RÈGLES :
-- pas d’invention
-- pas de résumé
+=====================
+RÈGLES STRICTES
+=====================
+
+- MAX 4 axes
+- MAX 3 points par axe
+- phrases COURTES (1 ligne)
+- pas de storytelling
 - pas de paraphrase
-- uniquement structuration
+- pas de répétition
 
-FORMAT :
+INTERDIT :
+- reprendre un point tel quel
+- citer une entreprise seule
+- décrire un cas isolé
+
+OBLIGATOIRE :
+- regrouper plusieurs signaux
+- formuler des dynamiques marché
+- être tranché
+
+=====================
+FORMAT
+=====================
 
 STRUCTURE
-- Axe :
-  - point
-  - point
+
+- Axe (titre court, 3-5 mots)
+  • point
+  • point
+
+- Axe
+  • point
 
 LECTURE
-- ce que ça raconte globalement
-"""
 
+- 3 bullet points MAX
+- phrases courtes
+- lecture stratégique
+
+=====================
+STYLE
+=====================
+
+- direct
+- dense
+- sans blabla
+- niveau COMEX
+
+"""
 
 # ============================================================
 # MAIN
