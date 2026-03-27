@@ -44,7 +44,7 @@ export default function FeedHeader({
             triggerSearch();
           }
         }}
-        placeholder="Search…"
+        placeholder="Ex : Amazon, CTV,…"
         className="
           flex-1
           border border-gray-200
@@ -65,7 +65,7 @@ export default function FeedHeader({
           hover:opacity-90 transition
         "
       >
-        Search
+        Rechercher
       </button>
     </div>
   );
