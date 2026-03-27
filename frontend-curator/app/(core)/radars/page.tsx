@@ -16,7 +16,7 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 /* ========================================================= */
 
 export default function RadarsPage() {
-  const LIMIT = 100;
+  const LIMIT = 200;
 
   const { openRightDrawer } = useDrawer();
 
@@ -24,6 +24,9 @@ export default function RadarsPage() {
   const [loading, setLoading] = useState(false);
 
   const [query, setQuery] = useState("");
+
+  /* FILTERS */
+  const [filters, setFilters] = useState<any>({});
 
   /* SELECTION */
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -34,17 +37,23 @@ export default function RadarsPage() {
 
   /* ========================================================= */
 
-  async function load(q?: string) {
-    const finalQuery = (q ?? query)?.trim();
+  async function load(customFilters?: any) {
+    const f = customFilters ?? filters;
 
     setLoading(true);
 
     try {
-      const res = await api.get(
-        `/radar/feed?limit=${LIMIT}${
-          finalQuery ? `&query=${encodeURIComponent(finalQuery)}` : ""
-        }`
-      );
+      const params = new URLSearchParams();
+
+      params.append("limit", String(LIMIT));
+
+      if (f.query) params.append("query", f.query);
+      if (f.frequency) params.append("frequency", f.frequency);
+      if (f.year) params.append("year", String(f.year));
+      if (f.period_from) params.append("period_from", String(f.period_from));
+      if (f.period_to) params.append("period_to", String(f.period_to));
+
+      const res = await api.get(`/radar/feed?${params.toString()}`);
 
       setItems(res?.items ?? []);
 
@@ -95,7 +104,10 @@ export default function RadarsPage() {
   /* ========================================================= */
 
   function getVisual(item: any) {
-    if (item.ENTITY_TYPE === "company" || item.ENTITY_TYPE === "solution") {
+    if (
+      item.ENTITY_TYPE === "company" ||
+      item.ENTITY_TYPE === "solution"
+    ) {
       if (item.ENTITY_ID) {
         return `${GCS_BASE_URL}/companies/${item.ENTITY_ID}`;
       }
@@ -115,7 +127,10 @@ export default function RadarsPage() {
         <RadarHeader
           query={query}
           setQuery={setQuery}
-          onSearch={() => load(query)}
+          onSearch={(f) => {
+            setFilters(f || {});
+            load(f);
+          }}
         />
 
         {/* COUNT */}
@@ -141,7 +156,7 @@ export default function RadarsPage() {
 
                 {Object.entries(entities).map(([entity, items]) => {
 
-                  /* 🔥 TRI (plus récent → premier) */
+                  /* TRI */
                   const sorted = [...items].sort(
                     (a, b) =>
                       (b.YEAR * 100 + b.PERIOD) -
@@ -149,7 +164,9 @@ export default function RadarsPage() {
                   );
 
                   const isExpanded = expanded[entity];
-                  const visibleItems = isExpanded ? sorted : sorted.slice(0, 3);
+                  const visibleItems = isExpanded
+                    ? sorted
+                    : sorted.slice(0, 3);
 
                   const visual = getVisual(items[0]);
 
@@ -205,7 +222,7 @@ export default function RadarsPage() {
                         })}
                       </div>
 
-                      {/* SEE MORE */}
+                      {/* SEE MORE / LESS */}
                       {sorted.length > 3 && !isExpanded && (
                         <button
                           onClick={() =>
@@ -217,6 +234,20 @@ export default function RadarsPage() {
                           className="text-xs text-gray-400 hover:text-gray-700"
                         >
                           Voir plus →
+                        </button>
+                      )}
+
+                      {isExpanded && (
+                        <button
+                          onClick={() =>
+                            setExpanded((prev) => ({
+                              ...prev,
+                              [entity]: false,
+                            }))
+                          }
+                          className="text-xs text-gray-400 hover:text-gray-700"
+                        >
+                          Voir moins ↑
                         </button>
                       )}
 
