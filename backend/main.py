@@ -67,6 +67,7 @@ include_router("api.public", "/api/public", "PUBLIC")
 
 # --- ADMIN AUTH
 include_router("api.admin", "/api/admin", "ADMIN")
+include_router("api.mcp", "/api/mcp", "MCP")
 include_router("api.radar", "/api/radar", "RADAR")
 include_router("api.numbers", "/api/numbers", "NUMBERS")
 
