@@ -16,20 +16,20 @@ type Props = {
 /* ========================================================= */
 
 function formatRadarLabel(r: any) {
-  if (r.frequency === "MONTHLY") {
-    const date = new Date(r.year, r.period - 1);
+  if (r.FREQUENCY === "MONTHLY") {
+    const date = new Date(r.YEAR, r.PERIOD - 1);
     return new Intl.DateTimeFormat("fr-FR", {
       month: "short",
       year: "numeric",
     }).format(date);
   }
 
-  if (r.frequency === "QUARTERLY") {
-    return `T${r.period} ${r.year}`;
+  if (r.FREQUENCY === "QUARTERLY") {
+    return `T${r.PERIOD} ${r.YEAR}`;
   }
 
-  if (r.frequency === "WEEKLY") {
-    return `S${r.period} ${r.year}`;
+  if (r.FREQUENCY === "WEEKLY") {
+    return `S${r.PERIOD} ${r.YEAR}`;
   }
 
   return "";
@@ -44,7 +44,7 @@ export default function RadarCard({
   onOpenDrawer,
 }: Props) {
 
-  const preview = item.key_points?.slice(0, 2) || [];
+  const preview = item.KEY_POINTS?.slice(0, 2) || [];
 
   return (
     <div
@@ -82,6 +82,13 @@ export default function RadarCard({
 
       {/* CONTENT */}
       <div className="space-y-2">
+
+        {preview.length === 0 && (
+          <p className="text-xs text-gray-400 italic">
+            Aucun signal disponible
+          </p>
+        )}
+
         {preview.map((point: string, i: number) => (
           <p
             key={i}
@@ -90,6 +97,7 @@ export default function RadarCard({
             • {point}
           </p>
         ))}
+
       </div>
 
     </div>
