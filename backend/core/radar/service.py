@@ -123,7 +123,7 @@ def get_radar(entity_type, entity_id, year, period, frequency):
 
     rows = query_bq(f"""
         SELECT *
-        FROM `{TABLE}`
+        FROM `{VIEW_RADAR}`
         WHERE ENTITY_TYPE = @entity_type
         AND ENTITY_ID = @entity_id
         AND YEAR = @year
@@ -145,7 +145,7 @@ def list_radar_insights(entity_type, entity_id):
 
     rows = query_bq(f"""
         SELECT *
-        FROM `{TABLE}`
+        FROM `{VIEW_RADAR}`
         WHERE ENTITY_TYPE = @entity_type
         AND ENTITY_ID = @entity_id
         ORDER BY YEAR DESC, PERIOD DESC
@@ -478,7 +478,7 @@ def get_latest_radar(entity_type, entity_id):
 
     rows = query_bq(f"""
         SELECT *
-        FROM `{TABLE}`
+        FROM `{VIEW_RADAR}`
         WHERE ENTITY_TYPE = @entity_type
         AND ENTITY_ID = @entity_id
         ORDER BY YEAR DESC, PERIOD DESC
