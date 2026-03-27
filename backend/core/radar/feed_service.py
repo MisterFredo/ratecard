@@ -9,7 +9,7 @@ TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
 
 
 def get_radar_feed_service(
-    limit: int = 50,
+    limit: int = 120,
     query: Optional[str] = None,
     frequency: Optional[str] = None,
     year: Optional[int] = None,
@@ -27,8 +27,8 @@ def get_radar_feed_service(
     if query:
         conditions.append("""
             (
-                LOWER(r.ENTITY_LABEL) LIKE LOWER(@query)
-                OR LOWER(r.TITLE) LIKE LOWER(@query)
+                LOWER(ENTITY_LABEL) LIKE LOWER(@query)
+                OR LOWER(TITLE) LIKE LOWER(@query)
             )
         """)
         params["query"] = f"%{query}%"
@@ -38,23 +38,23 @@ def get_radar_feed_service(
     # ============================================================
 
     if frequency:
-        conditions.append("r.FREQUENCY = @frequency")
+        conditions.append("FREQUENCY = @frequency")
         params["frequency"] = frequency
 
     if year:
-        conditions.append("r.YEAR = @year")
+        conditions.append("YEAR = @year")
         params["year"] = year
 
     if period_from:
-        conditions.append("r.PERIOD >= @period_from")
+        conditions.append("PERIOD >= @period_from")
         params["period_from"] = period_from
 
     if period_to:
-        conditions.append("r.PERIOD <= @period_to")
+        conditions.append("PERIOD <= @period_to")
         params["period_to"] = period_to
 
     # ============================================================
-    # WHERE
+    # WHERE SAFE
     # ============================================================
 
     where_clause = ""
@@ -67,38 +67,22 @@ def get_radar_feed_service(
 
     query_sql = f"""
         SELECT
-            r.ID_INSIGHT,
-            r.ENTITY_TYPE,
-            r.ENTITY_ID,
-            r.ENTITY_LABEL,
-            r.YEAR,
-            r.PERIOD,
-            r.FREQUENCY,
-            r.TITLE,
-            r.KEY_POINTS,
-            r.CREATED_AT,
-
-            -- 🔥 VISUAL FIX
-            CASE
-                WHEN r.ENTITY_TYPE = "company" THEN c.VISUAL_RECT_ID
-                WHEN r.ENTITY_TYPE = "solution" THEN s.VISUAL_RECT_ID
-                ELSE NULL
-            END AS VISUAL_RECT_ID
-
-        FROM `{TABLE_RADAR}` r
-
-        LEFT JOIN `{TABLE_COMPANY}` c
-            ON r.ENTITY_TYPE = "company"
-            AND r.ENTITY_ID = c.ID_COMPANY
-
-        LEFT JOIN `{TABLE_SOLUTION}` s
-            ON r.ENTITY_TYPE = "solution"
-            AND r.ENTITY_ID = s.ID_SOLUTION
-
+            ID_INSIGHT,
+            ENTITY_TYPE,
+            ENTITY_ID,
+            ENTITY_LABEL,
+            VISUAL_RECT_ID,
+            YEAR,
+            PERIOD,
+            FREQUENCY,
+            TITLE,
+            KEY_POINTS,
+            CREATED_AT
+        FROM `{TABLE_RADAR}`
         {where_clause}
-
-        ORDER BY r.YEAR DESC, r.PERIOD DESC
+        ORDER BY YEAR DESC, PERIOD DESC
         LIMIT @limit
     """
 
     return query_bq(query_sql, params)
+
