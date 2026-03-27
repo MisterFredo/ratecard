@@ -91,3 +91,31 @@ class RadarInsightOutput:
         key_points: List[str],
     ):
         self.key_points = key_points
+
+# ============================================================
+# PAGE FRONT CURATOR
+# ============================================================
+
+class RadarFeedItem(BaseModel):
+    id_insight: str
+
+    entity_type: str
+    entity_id: str
+
+    year: int
+    period: int
+    frequency: str
+
+    title: Optional[str] = None
+    key_points: List[str] = []
+
+    category: Optional[str] = None  # pour le group by front
+
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+class RadarInsightRequest(BaseModel):
+    ids: List[str]
+
+class RadarInsightResponse(BaseModel):
+    insight: str
