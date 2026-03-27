@@ -1,3 +1,22 @@
+# api/mcp/query.py
+
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+from core.mcp.intent import detect_intent
+from core.mcp.entity import resolve_entity
+from core.mcp.query_builder import build_content_query
+from core.mcp.response_builder import build_market_analysis_response
+
+from utils.bigquery_utils import query_bq
+
+router = APIRouter()
+
+class MCPQuery(BaseModel):
+    query: str
+
+
+
 @router.post("/query")
 def mcp_query(body: MCPQuery):
 
