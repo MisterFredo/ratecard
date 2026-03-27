@@ -5,18 +5,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  PenTool,
-  Folder,
-  Layers,
   Menu,
   X,
   Building2,
   Tag,
   Box,
-  Hash, // ✅ ajout icône
+  Hash,
+  Radar, // ✅ icône radar
 } from "lucide-react";
 
-export default function WorkspaceShell({
+export default function CuratorShell({
   children,
 }: {
   children: React.ReactNode;
@@ -30,24 +28,25 @@ export default function WorkspaceShell({
     return clean === path || clean.startsWith(path + "/");
   }
 
-  const navMain = [
-    { href: "/", label: "Search", icon: Home },
+  /* =========================================================
+     NAV
+  ========================================================= */
+
+  const navData = [
+    { href: "/", label: "Feed", icon: Home }, // rename
+    { href: "/numbers", label: "Numbers", icon: Hash },
+    { href: "/radars", label: "Radar", icon: Radar },
   ];
 
-  const navExploration = [
+  const navEntities = [
     { href: "/companies", label: "Sociétés", icon: Building2 },
     { href: "/topics", label: "Topics", icon: Tag },
     { href: "/solutions", label: "Solutions", icon: Box },
-    { href: "/numbers", label: "Numbers", icon: Hash }, // ✅ AJOUT
   ];
 
-  const navOther = [
-    { href: "/studio", label: "Studio", icon: PenTool },
-    { href: "/library", label: "Library", icon: Folder },
-    { href: "/outputs", label: "Outputs", icon: Layers },
-  ];
+  /* ========================================================= */
 
-  const renderNav = (items: typeof navMain) =>
+  const renderNav = (items: typeof navData) =>
     items.map((item) => {
       const Icon = item.icon;
       const active = isActive(item.href);
@@ -72,6 +71,8 @@ export default function WorkspaceShell({
       );
     });
 
+  /* ========================================================= */
+
   const Sidebar = (
     <>
       <Link
@@ -84,28 +85,23 @@ export default function WorkspaceShell({
         </span>
       </Link>
 
-      {/* MAIN */}
-      <nav className="space-y-2 text-sm">
-        {renderNav(navMain)}
-      </nav>
-
-      {/* EXPLORATION */}
-      <div className="mt-8">
+      {/* DATA */}
+      <div>
         <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
-          Exploration
+          Data
         </div>
         <nav className="space-y-2 text-sm">
-          {renderNav(navExploration)}
+          {renderNav(navData)}
         </nav>
       </div>
 
-      {/* OTHER */}
+      {/* ENTITIES */}
       <div className="mt-8">
         <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
-          Workspace
+          Entities
         </div>
         <nav className="space-y-2 text-sm">
-          {renderNav(navOther)}
+          {renderNav(navEntities)}
         </nav>
       </div>
 
