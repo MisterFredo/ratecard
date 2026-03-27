@@ -271,6 +271,29 @@ def get_radar_feed(
             f"Erreur radar feed : {e}"
         )
 
+# ============================================================
+# RADAR INSIGHT (LLM)
+# ============================================================
+
+@router.post("/insight")
+def radar_insight(payload: dict):
+
+    try:
+
+        ids = payload.get("ids", [])
+
+        insight = generate_radar_insight(ids)
+
+        return {
+            "status": "ok",
+            "insight": insight,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur radar insight : {e}"
+        )
 
 # ============================================================
 # RADAR BY IDS (POUR PANEL)
@@ -294,29 +317,4 @@ def radar_by_ids(payload: dict):
         raise HTTPException(
             400,
             f"Erreur radar by ids : {e}"
-        )
-
-
-# ============================================================
-# RADAR INSIGHT (LLM)
-# ============================================================
-
-@router.post("/insight")
-def radar_insight(payload: dict):
-
-    try:
-
-        ids = payload.get("ids", [])
-
-        insight = generate_radar_insight(ids)
-
-        return {
-            "status": "ok",
-            "insight": insight,
-        }
-
-    except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur radar insight : {e}"
         )
