@@ -56,7 +56,7 @@ export default function RadarSelectionPanel({
     setLoading(true);
 
     try {
-      const res: any = await api.post("/radars/insight", {
+      const res: any = await api.post("/insight", {
         ids: selectedItems.map((i) => i.ID_INSIGHT),
       });
 
