@@ -29,6 +29,7 @@ def _map_row(r: Dict) -> Dict:
         "id_insight": r["ID_INSIGHT"],
         "entity_type": r["ENTITY_TYPE"],
         "entity_id": r["ENTITY_ID"],
+        "entity_label": r.get("ENTITY_LABEL"), 
         "year": r["YEAR"],
         "period": r["PERIOD"],
         "frequency": r["FREQUENCY"],
