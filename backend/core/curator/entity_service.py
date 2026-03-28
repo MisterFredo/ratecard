@@ -178,14 +178,15 @@ def get_topic_view(
 ) -> Dict:
 
     # ============================================================
-    # 🔥 TOPIC INFO (LABEL + AXIS)
+    # 🔥 TOPIC INFO (LABEL + AXIS + DESCRIPTION)
     # ============================================================
 
     topic_rows = query_bq(f"""
         SELECT
             ID_TOPIC,
             LABEL,
-            TOPIC_AXIS
+            TOPIC_AXIS,
+            DESCRIPTION
         FROM `{TABLE_TOPIC}`
         WHERE ID_TOPIC = @topic_id
         LIMIT 1
@@ -220,13 +221,13 @@ def get_topic_view(
 
     return {
         "id_topic": topic_id,
-        "label": topic.get("LABEL"),          # 🔥 FIX
-        "topic_axis": topic.get("TOPIC_AXIS"),# 🔥 FIX
+        "label": topic.get("LABEL"),
+        "topic_axis": topic.get("TOPIC_AXIS"),
+        "description": topic.get("DESCRIPTION"),  # 🔥 AJOUT
         "nb_analyses": stats.get("NB_ANALYSES", 0),
         "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
     }
-
 # ============================================================
 # SOLUTION
 # ============================================================
