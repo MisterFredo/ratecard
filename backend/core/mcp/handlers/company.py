@@ -7,26 +7,22 @@ from core.numbers.insight_service import get_numbers_by_ids
 from core.radar.insight_service import get_latest_radar
 
 
-# ============================================================
-# CONSTANTES
-# ============================================================
-
 TABLE_COMPANY = "adex-5555.RATECARD_PROD.RATECARD_COMPANY"
 TABLE_NUMBERS = "adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED"
 
 
 # ============================================================
-# 1. COMPANY INFO
+# COMPANY INFO
 # ============================================================
 
 def _get_company_info(label: str) -> Dict:
 
-    sql = f"""
+    sql = """
     SELECT
         ID_COMPANY,
         NAME,
         DESCRIPTION
-    FROM `{TABLE_COMPANY}`
+    FROM `adex-5555.RATECARD_PROD.RATECARD_COMPANY`
     WHERE LOWER(NAME) = LOWER(@label)
     LIMIT 1
     """
@@ -37,14 +33,14 @@ def _get_company_info(label: str) -> Dict:
 
 
 # ============================================================
-# 2. NUMBERS IDS
+# NUMBERS IDS
 # ============================================================
 
 def _get_company_numbers_ids(label: str, limit: int = 3) -> List[str]:
 
-    sql = f"""
+    sql = """
     SELECT ID_NUMBER
-    FROM `{TABLE_NUMBERS}`
+    FROM `adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED`
     WHERE LOWER(entity_label) = LOWER(@label)
     ORDER BY created_at DESC
     LIMIT @limit
@@ -59,14 +55,10 @@ def _get_company_numbers_ids(label: str, limit: int = 3) -> List[str]:
 
 
 # ============================================================
-# 3. HANDLER
+# HANDLER
 # ============================================================
 
 def handle_company(entity: Dict) -> Dict:
-    """
-    Handler MCP pour :
-    → obtenir un snapshot complet d’une entreprise
-    """
 
     label = entity.get("label")
 
@@ -78,28 +70,41 @@ def handle_company(entity: Dict) -> Dict:
         }
 
     # ----------------------------------------------------------
-    # 1. INFO
+    # 1. COMPANY
     # ----------------------------------------------------------
     company = _get_company_info(label)
 
+    # ----------------------------------------------------------
+    # 🔥 FALLBACK SI NON GOUVERNÉ
+    # ----------------------------------------------------------
     if not company:
+
+        feed = search_text(query=label, limit=5) or []
+
+        # ajout URLs
+        for item in feed:
+            if item.get("type") == "news":
+                item["url"] = f"/news/{item.get('id')}"
+            else:
+                item["url"] = f"/analysis/{item.get('id')}"
+
         return {
-            "status": "empty",
+            "status": "fallback",
             "intent": "company",
             "entity": entity,
             "answer": {
-                "text": "Aucune information disponible pour cette entreprise."
+                "text": f"{label} n'est pas une entreprise suivie en détail.\nVoici les contenus disponibles :",
+                "items": feed
             }
         }
 
     company_id = company.get("ID_COMPANY")
 
     # ----------------------------------------------------------
-    # 2. FEED (3 contenus)
+    # 2. FEED
     # ----------------------------------------------------------
     feed = search_text(query=label, limit=3) or []
 
-    # 👉 ajout URL (important démo MCP)
     for item in feed:
         if item.get("type") == "news":
             item["url"] = f"/news/{item.get('id')}"
@@ -107,18 +112,15 @@ def handle_company(entity: Dict) -> Dict:
             item["url"] = f"/analysis/{item.get('id')}"
 
     # ----------------------------------------------------------
-    # 3. NUMBERS (3)
+    # 3. NUMBERS
     # ----------------------------------------------------------
     number_ids = _get_company_numbers_ids(label, limit=3)
     numbers = get_numbers_by_ids(number_ids) if number_ids else []
 
     # ----------------------------------------------------------
-    # 4. RADAR (latest)
+    # 4. RADAR
     # ----------------------------------------------------------
-    radar = None
-
-    if company_id:
-        radar = get_latest_radar("company", company_id)
+    radar = get_latest_radar("company", company_id) if company_id else None
 
     # ----------------------------------------------------------
     # 5. Suggestions
@@ -131,7 +133,7 @@ def handle_company(entity: Dict) -> Dict:
     ]
 
     # ----------------------------------------------------------
-    # 6. Réponse finale
+    # 6. RESPONSE
     # ----------------------------------------------------------
     return {
         "status": "ok",
@@ -140,7 +142,6 @@ def handle_company(entity: Dict) -> Dict:
         "answer": {
             "name": company.get("NAME"),
             "description": company.get("DESCRIPTION"),
-
             "latest_contents": feed,
             "numbers": numbers,
             "radar": radar,
