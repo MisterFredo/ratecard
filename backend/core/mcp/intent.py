@@ -74,7 +74,7 @@ def detect_intent(query: str) -> str:
         "compare",
         "difference"
     ]):
-    return "benchmark"
+        return "benchmark"
 
     # ----------------------------------------------------------
     # 🔴 DEFAULT → entity (company / topic / search)
