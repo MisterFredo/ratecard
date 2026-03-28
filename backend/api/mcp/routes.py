@@ -9,6 +9,7 @@ from core.mcp.entity import resolve_entity
 from core.mcp.handlers.topic import handle_topic
 from core.mcp.handlers.company import handle_company
 from core.mcp.handlers.numbers import handle_numbers
+from core.mcp.handlers.benchmark import handle_benchmark
 
 # ✅ moteur unique
 from core.curator.service import search
@@ -118,6 +119,13 @@ def mcp_query(body: MCPQuery):
 
     if intent == "numbers":
         return handle_numbers(entity)
+
+    # ----------------------------------------------------------
+    # 🆚 BENCHMARK
+    # ----------------------------------------------------------
+
+    if intent == "benchmark":
+        return handle_benchmark(user_query)
 
     # ----------------------------------------------------------
     # 5. FALLBACK INTELLIGENT
