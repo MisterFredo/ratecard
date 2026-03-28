@@ -104,11 +104,11 @@ def mcp_query(body: MCPQuery):
 
     if len(query_words) == 1:
 
-    if entity["type"] == "company":
-        return handle_company(entity)
+        if entity["type"] == "company":
+            return handle_company(entity)
 
-    if entity["type"] == "topic":
-        return handle_topic(entity)
+        if entity["type"] == "topic":
+            return handle_topic(entity)
 
 
     # ----------------------------------------------------------
