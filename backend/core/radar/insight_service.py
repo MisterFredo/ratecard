@@ -233,3 +233,37 @@ def generate_radar_insight(ids: List[str]) -> str:
         prompt=prompt,
         temperature=0.2,
     ) or ""
+
+def get_latest_radar(entity_type: str, entity_id: str) -> dict:
+    """
+    Récupère le dernier radar pour une entité
+    """
+
+    rows = query_bq(f"""
+        SELECT *
+        FROM `{TABLE_RADAR}`
+        WHERE ENTITY_TYPE = @entity_type
+        AND ENTITY_ID = @entity_id
+        ORDER BY YEAR DESC, PERIOD DESC
+        LIMIT 1
+    """, {
+        "entity_type": entity_type,
+        "entity_id": entity_id,
+    })
+
+    if not rows:
+        return None
+
+    r = rows[0]
+
+    return {
+        "id": r.get("ID_INSIGHT"),
+        "title": r.get("TITLE"),
+        "key_points": r.get("KEY_POINTS") or [],
+        "entity_type": r.get("ENTITY_TYPE"),
+        "entity_id": r.get("ENTITY_ID"),
+        "entity_label": r.get("ENTITY_LABEL"),
+        "year": r.get("YEAR"),
+        "period": r.get("PERIOD"),
+        "frequency": r.get("FREQUENCY"),
+    }
