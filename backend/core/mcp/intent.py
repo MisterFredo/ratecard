@@ -1,5 +1,3 @@
-# core/mcp/intent.py
-
 import unicodedata
 
 
@@ -12,14 +10,16 @@ def normalize(text: str) -> str:
 
 
 # ============================================================
-# DETECT INTENT
+# DETECT INTENT (SIMPLIFIÉ PRODUIT)
 # ============================================================
 
 def detect_intent(query: str) -> str:
 
     q = normalize(query)
 
-    # 🟢 FEED (PRIORITAIRE)
+    # ----------------------------------------------------------
+    # 🟢 FEED → "quoi de neuf"
+    # ----------------------------------------------------------
     if any(word in q for word in [
         "quoi de neuf",
         "actualite",
@@ -33,35 +33,41 @@ def detect_intent(query: str) -> str:
     ]):
         return "feed"
 
-    # 🔵 ANALYSIS
+    # ----------------------------------------------------------
+    # 🟡 NUMBERS → chiffres / data
+    # ----------------------------------------------------------
+    if any(word in q for word in [
+        "chiffre",
+        "chiffres",
+        "donnee",
+        "donnees",
+        "data",
+        "stat",
+        "stats",
+        "revenu",
+        "croissance"
+    ]):
+        return "numbers"
+
+    # ----------------------------------------------------------
+    # 🔵 TOPIC → comprendre un sujet
+    # ----------------------------------------------------------
     if any(word in q for word in [
         "tendance",
         "tendances",
         "trend",
         "evolution",
-        "analyse"
-    ]):
-        return "analysis"
-
-    # 🟣 UNDERSTAND
-    if any(word in q for word in [
+        "marche",
+        "analyse",
         "comprendre",
         "expliquer",
         "definition",
         "c est quoi",
         "c'est quoi"
     ]):
-        return "understand"
+        return "topic"
 
-    # 🟡 NUMBERS
-    if any(word in q for word in [
-        "chiffre",
-        "chiffres",
-        "donnees",
-        "data",
-        "stat"
-    ]):
-        return "numbers"
-
-    # 🔴 DEFAULT
-    return "entity_focus"
+    # ----------------------------------------------------------
+    # 🔴 DEFAULT → entity (company / topic / search)
+    # ----------------------------------------------------------
+    return "entity"
