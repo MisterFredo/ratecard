@@ -27,6 +27,8 @@ type TopicData = {
   label?: string;
   topic_axis?: string;
 
+  description?: string | null; // 🔥 AJOUT
+
   nb_analyses?: number;
   delta_30d?: number;
 
@@ -108,6 +110,16 @@ export default function TopicDrawer({ id, onClose }: any) {
         />
       }
     >
+      {/* DESCRIPTION */}
+      {data.description && (
+        <div
+          className="prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{
+            __html: data.description,
+          }}
+        />
+      )}
+
       <NumbersBlock
         numbers={numbers}
         entityId={id}
