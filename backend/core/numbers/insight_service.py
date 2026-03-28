@@ -171,3 +171,24 @@ def generate_numbers_insight(ids: List[str]) -> str:
     )
 
     return result or ""
+
+def get_latest_numbers(entity_label: str, limit: int = 3):
+
+    rows = query_bq(f"""
+        SELECT
+            ID_NUMBER,
+            LABEL,
+            VALUE,
+            UNIT,
+            SCALE,
+            ENTITY_LABEL
+        FROM `{TABLE_NUMBERS}`
+        WHERE LOWER(ENTITY_LABEL) = LOWER(@label)
+        ORDER BY CREATED_AT DESC
+        LIMIT @limit
+    """, {
+        "label": entity_label,
+        "limit": limit
+    })
+
+    return rows
