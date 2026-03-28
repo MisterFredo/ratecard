@@ -59,36 +59,47 @@ def _match_company(q: str):
 # MAIN RESOLVER
 # ============================================================
 
+
 def resolve_entity(query: str):
 
     q = normalize(query)
 
-    # ----------------------------------------------------------
-    # 1. TOPIC
-    # ----------------------------------------------------------
-    topic = _match_topic(q)
+    # --------------------------------------------------
+    # 🔵 TOPICS (hardcoded)
+    # --------------------------------------------------
 
-    if topic:
-        return {
-            "type": "topic",
-            "label": topic
-        }
+    if "retail media" in q:
+        return {"type": "topic", "label": "Retail Media"}
 
-    # ----------------------------------------------------------
-    # 2. COMPANY
-    # ----------------------------------------------------------
-    company = _match_company(q)
+    if "ctv" in q or "video" in q:
+        return {"type": "topic", "label": "CTV & VIDEO"}
 
-    if company:
-        return {
-            "type": "company",
-            "label": company
-        }
+    if "dooh" in q:
+        return {"type": "topic", "label": "DOOH"}
 
-    # ----------------------------------------------------------
-    # 3. FALLBACK (IMPORTANT)
-    # ----------------------------------------------------------
+    # --------------------------------------------------
+    # 🟢 COMPANY (DYNAMIQUE BQ)
+    # --------------------------------------------------
+
+    rows = query_bq("""
+        SELECT NAME
+        FROM `adex-5555.RATECARD_PROD.RATECARD_COMPANY`
+    """)
+
+    for r in rows:
+        name = r["NAME"]
+        if name and normalize(name) in q:
+            return {
+                "type": "company",
+                "label": name
+            }
+
+    # --------------------------------------------------
+    # 🔴 FALLBACK
+    # --------------------------------------------------
+
     return {
         "type": "unknown",
-        "label": query  # 🔥 on garde le texte !
+        "label": None
     }
+
