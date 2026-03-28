@@ -7,6 +7,7 @@ from core.feed.service import search_text
 from core.insight.service import run_insight_pipeline
 from core.numbers.insight_service import get_numbers_by_ids
 from core.radar.insight_service import get_latest_radar
+from core.mcp.suggestions import build_suggestions
 
 
 # ============================================================
@@ -105,12 +106,17 @@ def handle_topic(entity: Dict) -> Dict:
 
         feed = search_text(query=label, limit=5) or []
 
-        # ajout URLs
         for item in feed:
             if item.get("type") == "news":
                 item["url"] = f"/news/{item.get('id')}"
             else:
                 item["url"] = f"/analysis/{item.get('id')}"
+
+        suggestions = build_suggestions(
+            intent="search",
+            entity={"label": label},
+            items=feed
+        )
 
         return {
             "status": "fallback",
@@ -120,6 +126,9 @@ def handle_topic(entity: Dict) -> Dict:
                 "text": f"{label} n'est pas un sujet analysé en profondeur.\nVoici les contenus disponibles :",
                 "items": feed,
                 "available_topics": _get_all_topics()
+            },
+            "meta": {
+                "suggestions": suggestions
             }
         }
 
@@ -141,7 +150,7 @@ def handle_topic(entity: Dict) -> Dict:
             item["url"] = f"/analysis/{item.get('id')}"
 
     # ----------------------------------------------------------
-    # 4. ANALYSIS (LLM)
+    # 4. ANALYSIS (SAFE)
     # ----------------------------------------------------------
     analysis_ids = [
         i["id"]
@@ -149,7 +158,11 @@ def handle_topic(entity: Dict) -> Dict:
         if i.get("type") == "analysis"
     ][:10]
 
-    analysis = run_insight_pipeline(analysis_ids)
+    analysis_text = None
+
+    if analysis_ids:
+        analysis = run_insight_pipeline(analysis_ids)
+        analysis_text = analysis.get("insight")
 
     # ----------------------------------------------------------
     # 5. NUMBERS
@@ -163,14 +176,13 @@ def handle_topic(entity: Dict) -> Dict:
     radar = get_latest_radar("topic", topic_id)
 
     # ----------------------------------------------------------
-    # 7. SUGGESTIONS
+    # 7. 🔥 SUGGESTIONS DYNAMIQUES
     # ----------------------------------------------------------
-    suggestions = [
-        "Retail Media",
-        "CTV",
-        "Amazon",
-        "Netflix"
-    ]
+    suggestions = build_suggestions(
+        intent="topic",
+        entity=entity,
+        items=feed
+    )
 
     # ----------------------------------------------------------
     # 8. RESPONSE
@@ -183,7 +195,7 @@ def handle_topic(entity: Dict) -> Dict:
             "name": view.get("label"),
             "description": view.get("description"),
 
-            "analysis": analysis.get("insight"),
+            "analysis": analysis_text,
 
             "latest_contents": feed,
             "numbers": numbers,
