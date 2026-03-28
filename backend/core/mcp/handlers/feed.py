@@ -1,6 +1,7 @@
 from typing import Dict, List
 
 from core.feed.service import search_text
+from core.mcp.suggestions import build_suggestions
 from utils.bigquery_utils import query_bq
 
 
@@ -44,23 +45,22 @@ def _get_latest_items(limit: int = 10) -> List[Dict]:
 
     rows = query_bq(sql)
 
-    # 🔥 normalisation
     return [_normalize_item(r) for r in rows]
 
 
 # ============================================================
-# NORMALISATION (CRITIQUE)
+# NORMALISATION (ROBUSTE)
 # ============================================================
 
 def _normalize_item(r: Dict) -> Dict:
 
     return {
-        "id": r.get("id"),
+        "id": r.get("id") or r.get("ID_NEWS") or r.get("ID_CONTENT"),
         "type": r.get("type"),
-        "title": r.get("TITLE"),
-        "excerpt": r.get("EXCERPT"),
-        "published_at": r.get("PUBLISHED_AT"),
-        "url": r.get("url"),  # 🔥 clé
+        "title": r.get("title") or r.get("TITLE"),
+        "excerpt": r.get("excerpt") or r.get("EXCERPT"),
+        "published_at": r.get("published_at") or r.get("PUBLISHED_AT"),
+        "url": r.get("url"),  # 🔥 clé UX
     }
 
 
@@ -74,7 +74,7 @@ def handle_feed(entity: Dict, user_query: str) -> Dict:
     query = user_query.strip().lower() if user_query else ""
 
     # ----------------------------------------------------------
-    # MODE GLOBAL
+    # MODE GLOBAL (arrivée utilisateur)
     # ----------------------------------------------------------
 
     if not entity_label and (
@@ -83,7 +83,7 @@ def handle_feed(entity: Dict, user_query: str) -> Dict:
         rows = _get_latest_items(limit=10)
 
     # ----------------------------------------------------------
-    # MODE SEARCH
+    # MODE SEARCH (entity ou texte libre)
     # ----------------------------------------------------------
 
     else:
@@ -106,15 +106,14 @@ def handle_feed(entity: Dict, user_query: str) -> Dict:
         }
 
     # ----------------------------------------------------------
-    # SUGGESTIONS
+    # 🔥 SUGGESTIONS DYNAMIQUES
     # ----------------------------------------------------------
 
-    suggestions = [
-        "Retail Media",
-        "CTV",
-        "Amazon",
-        "Netflix"
-    ]
+    suggestions = build_suggestions(
+        intent="feed",
+        entity=entity,
+        items=rows
+    )
 
     # ----------------------------------------------------------
     # RESPONSE
