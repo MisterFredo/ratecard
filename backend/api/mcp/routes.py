@@ -99,11 +99,17 @@ def mcp_query(body: MCPQuery):
     # 3. ENRICHISSEMENT (SI ENTITY CLAIRE)
     # ----------------------------------------------------------
 
+    # 🔥 ENTITY uniquement si requête simple
+    query_words = user_query.strip().split()
+
+    if len(query_words) == 1:
+
     if entity["type"] == "company":
         return handle_company(entity)
 
     if entity["type"] == "topic":
         return handle_topic(entity)
+
 
     # ----------------------------------------------------------
     # 4. NUMBERS (INTENT SPÉCIFIQUE)
