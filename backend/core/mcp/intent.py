@@ -19,64 +19,49 @@ def detect_intent(query: str) -> str:
 
     q = normalize(query)
 
-    # ----------------------------------------------------------
-    # 🟠 NUMBERS
-    # ----------------------------------------------------------
+    # 🟢 FEED (PRIORITAIRE)
     if any(word in q for word in [
-        "chiffre",
-        "chiffres",
-        "data",
-        "donnee",
-        "donnees",
-        "stat",
-        "stats",
-        "kpi",
-        "combien"
-    ]):
-        return "numbers"
-
-    # ----------------------------------------------------------
-    # 🟢 FEED (quoi de neuf)
-    # ----------------------------------------------------------
-    if any(word in q for word in [
-        "news",
+        "quoi de neuf",
         "actualite",
         "actualites",
+        "news",
         "dernieres",
         "recent",
         "recemment",
-        "quoi de neuf",
-        "nouveau"
+        "nouveau",
+        "nouveautes"
     ]):
         return "feed"
 
-    # ----------------------------------------------------------
-    # 🟣 UNDERSTAND (radar)
-    # ----------------------------------------------------------
+    # 🔵 ANALYSIS
     if any(word in q for word in [
-        "comprendre",
-        "pourquoi",
-        "explication",
-        "expliquer",
-        "vision",
-        "lecture"
-    ]):
-        return "understand"
-
-    # ----------------------------------------------------------
-    # 🔵 ANALYSIS (lecture marché récente)
-    # ----------------------------------------------------------
-    if any(word in q for word in [
-        "analyse",
         "tendance",
         "tendances",
         "trend",
-        "marche",
-        "evolution"
+        "evolution",
+        "analyse"
     ]):
         return "analysis"
 
-    # ----------------------------------------------------------
-    # 🟡 DEFAULT → FEED (important)
-    # ----------------------------------------------------------
-    return "feed"
+    # 🟣 UNDERSTAND
+    if any(word in q for word in [
+        "comprendre",
+        "expliquer",
+        "definition",
+        "c est quoi",
+        "c'est quoi"
+    ]):
+        return "understand"
+
+    # 🟡 NUMBERS
+    if any(word in q for word in [
+        "chiffre",
+        "chiffres",
+        "donnees",
+        "data",
+        "stat"
+    ]):
+        return "numbers"
+
+    # 🔴 DEFAULT
+    return "entity_focus"
