@@ -2,41 +2,93 @@
 
 import unicodedata
 
+from utils.bigquery_utils import query_bq
+
+
+# ============================================================
+# NORMALIZE
+# ============================================================
+
 def normalize(text: str) -> str:
-    """
-    Normalise le texte :
-    - minuscules
-    - suppression accents
-    """
     return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("utf-8").lower()
 
+
+# ============================================================
+# LOOKUP TOPIC
+# ============================================================
+
+def _match_topic(q: str):
+
+    sql = """
+    SELECT LABEL
+    FROM `adex-5555.RATECARD_PROD.RATECARD_TOPIC`
+    """
+
+    rows = query_bq(sql)
+
+    for r in rows:
+        label = r["LABEL"]
+        if normalize(label) in q:
+            return label
+
+    return None
+
+
+# ============================================================
+# LOOKUP COMPANY
+# ============================================================
+
+def _match_company(q: str):
+
+    sql = """
+    SELECT NAME
+    FROM `adex-5555.RATECARD_PROD.RATECARD_COMPANY`
+    """
+
+    rows = query_bq(sql)
+
+    for r in rows:
+        name = r["NAME"]
+        if normalize(name) in q:
+            return name
+
+    return None
+
+
+# ============================================================
+# MAIN RESOLVER
+# ============================================================
 
 def resolve_entity(query: str):
 
     q = normalize(query)
 
-    # 🔵 TOPICS
+    # ----------------------------------------------------------
+    # 1. TOPIC
+    # ----------------------------------------------------------
+    topic = _match_topic(q)
 
-    if "retail media" in q:
+    if topic:
         return {
             "type": "topic",
-            "label": "Retail Media"
+            "label": topic
         }
 
-    if "ctv" in q or "video" in q:
+    # ----------------------------------------------------------
+    # 2. COMPANY
+    # ----------------------------------------------------------
+    company = _match_company(q)
+
+    if company:
         return {
-            "type": "topic",
-            "label": "CTV & VIDEO"
+            "type": "company",
+            "label": company
         }
 
-    if "dooh" in q:
-        return {
-            "type": "topic",
-            "label": "DOOH"
-        }
-
-    # fallback
+    # ----------------------------------------------------------
+    # 3. FALLBACK (IMPORTANT)
+    # ----------------------------------------------------------
     return {
         "type": "unknown",
-        "label": None
+        "label": query  # 🔥 on garde le texte !
     }
