@@ -27,11 +27,11 @@ def _get_company_info(label: str) -> Dict:
         NAME,
         DESCRIPTION
     FROM `{TABLE_COMPANY}`
-    WHERE LOWER(NAME) = LOWER("{label}")
+    WHERE LOWER(NAME) = LOWER(@label)
     LIMIT 1
     """
 
-    rows = query_bq(sql)
+    rows = query_bq(sql, {"label": label})
 
     return rows[0] if rows else {}
 
@@ -45,12 +45,15 @@ def _get_company_numbers_ids(label: str, limit: int = 3) -> List[str]:
     sql = f"""
     SELECT ID_NUMBER
     FROM `{TABLE_NUMBERS}`
-    WHERE LOWER(entity_label) = LOWER("{label}")
+    WHERE LOWER(entity_label) = LOWER(@label)
     ORDER BY created_at DESC
-    LIMIT {limit}
+    LIMIT @limit
     """
 
-    rows = query_bq(sql)
+    rows = query_bq(sql, {
+        "label": label,
+        "limit": limit
+    })
 
     return [r["ID_NUMBER"] for r in rows]
 
@@ -79,26 +82,47 @@ def handle_company(entity: Dict) -> Dict:
     # ----------------------------------------------------------
     company = _get_company_info(label)
 
+    if not company:
+        return {
+            "status": "empty",
+            "intent": "company",
+            "entity": entity,
+            "answer": {
+                "text": "Aucune information disponible pour cette entreprise."
+            }
+        }
+
+    company_id = company.get("ID_COMPANY")
+
     # ----------------------------------------------------------
     # 2. FEED (3 contenus)
     # ----------------------------------------------------------
-    feed = search_text(query=label, limit=3)
+    feed = search_text(query=label, limit=3) or []
+
+    # 👉 ajout URL (important démo MCP)
+    for item in feed:
+        if item.get("type") == "news":
+            item["url"] = f"/news/{item.get('id')}"
+        else:
+            item["url"] = f"/analysis/{item.get('id')}"
 
     # ----------------------------------------------------------
     # 3. NUMBERS (3)
     # ----------------------------------------------------------
     number_ids = _get_company_numbers_ids(label, limit=3)
-    numbers = get_numbers_by_ids(number_ids)
+    numbers = get_numbers_by_ids(number_ids) if number_ids else []
 
     # ----------------------------------------------------------
     # 4. RADAR (latest)
     # ----------------------------------------------------------
-    radar = get_latest_radar("company", company.get("ID_COMPANY"))
+    radar = None
+
+    if company_id:
+        radar = get_latest_radar("company", company_id)
 
     # ----------------------------------------------------------
-    # 5. FORMATAGE
+    # 5. Suggestions
     # ----------------------------------------------------------
-
     suggestions = [
         "Amazon",
         "Google",
@@ -106,6 +130,9 @@ def handle_company(entity: Dict) -> Dict:
         "Netflix"
     ]
 
+    # ----------------------------------------------------------
+    # 6. Réponse finale
+    # ----------------------------------------------------------
     return {
         "status": "ok",
         "intent": "company",
