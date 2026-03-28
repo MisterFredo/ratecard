@@ -11,8 +11,10 @@ from core.mcp.handlers.topic import handle_topic
 from core.mcp.handlers.company import handle_company
 from core.mcp.handlers.numbers import handle_numbers
 
-# fallback
-from core.feed.service import search_text
+# ✅ SOURCE DE VÉRITÉ (Curator)
+from core.curator.service import search
+
+# insight + suggestions
 from core.insight.service import run_insight_pipeline
 from core.mcp.suggestions import build_suggestions
 
@@ -60,28 +62,28 @@ def mcp_query(body: MCPQuery):
         return handle_numbers(entity)
 
     # ----------------------------------------------------------
-    # 🔵 TOPIC (analyse marché)
+    # 🔵 TOPIC
     # ----------------------------------------------------------
     if intent == "topic":
         return handle_topic(entity)
 
     # ----------------------------------------------------------
-    # 🔴 ENTITY (company / topic / unknown)
+    # 🔴 ENTITY
     # ----------------------------------------------------------
     if intent == "entity":
 
-        # ✅ COMPANY
         if entity["type"] == "company":
             return handle_company(entity)
 
-        # ✅ TOPIC
         if entity["type"] == "topic":
             return handle_topic(entity)
 
-        # 🔥 UNKNOWN → fallback search
+        # ------------------------------------------------------
+        # 🔥 UNKNOWN → CURATOR SEARCH
+        # ------------------------------------------------------
         if entity["type"] == "unknown":
 
-            rows = search_text(query=user_query, limit=10) or []
+            rows = search(q=user_query, limit=10) or []
 
             if not rows:
                 return {
@@ -140,9 +142,9 @@ def mcp_query(body: MCPQuery):
             }
 
     # ----------------------------------------------------------
-    # 🔥 FALLBACK GLOBAL (ULTIME SÉCURITÉ)
+    # 🔥 FALLBACK GLOBAL
     # ----------------------------------------------------------
-    rows = search_text(query=user_query, limit=10) or []
+    rows = search(q=user_query, limit=10) or []
 
     if not rows:
         return {
