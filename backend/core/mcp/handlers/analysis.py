@@ -1,3 +1,7 @@
+from typing import Dict
+
+from core.feed.service import search_text
+
 def handle_analysis(entity, user_query):
 
     query = entity.get("label") or user_query
