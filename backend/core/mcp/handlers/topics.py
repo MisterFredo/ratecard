@@ -3,6 +3,7 @@ from typing import Dict, List
 from utils.bigquery_utils import query_bq
 
 from core.curator.entity_service import get_topic_view
+from core.feed.service import search_text
 from core.insight.service import run_insight_pipeline
 from core.numbers.insight_service import get_numbers_by_ids
 from core.radar.insight_service import get_latest_radar
@@ -20,11 +21,11 @@ TABLE_NUMBERS = "adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED"
 # 1. RESOLVE TOPIC ID
 # ============================================================
 
-def _get_topic_id(label: str) -> str:
+def _get_topic_id(label: str):
 
-    sql = f"""
+    sql = """
     SELECT ID_TOPIC
-    FROM `{TABLE_TOPIC}`
+    FROM `adex-5555.RATECARD_PROD.RATECARD_TOPIC`
     WHERE LOWER(LABEL) = LOWER(@label)
     LIMIT 1
     """
@@ -35,14 +36,31 @@ def _get_topic_id(label: str) -> str:
 
 
 # ============================================================
-# 2. NUMBERS IDS
+# 2. LIST TOPICS (GUIDAGE)
+# ============================================================
+
+def _get_all_topics():
+
+    sql = """
+    SELECT LABEL
+    FROM `adex-5555.RATECARD_PROD.RATECARD_TOPIC`
+    ORDER BY LABEL
+    """
+
+    rows = query_bq(sql)
+
+    return [r["LABEL"] for r in rows]
+
+
+# ============================================================
+# 3. NUMBERS IDS
 # ============================================================
 
 def _get_topic_numbers_ids(label: str, limit: int = 3) -> List[str]:
 
-    sql = f"""
+    sql = """
     SELECT ID_NUMBER
-    FROM `{TABLE_NUMBERS}`
+    FROM `adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED`
     WHERE LOWER(entity_label) = LOWER(@label)
     ORDER BY created_at DESC
     LIMIT @limit
@@ -57,7 +75,7 @@ def _get_topic_numbers_ids(label: str, limit: int = 3) -> List[str]:
 
 
 # ============================================================
-# 3. HANDLER
+# 4. HANDLER
 # ============================================================
 
 def handle_topic(entity: Dict) -> Dict:
@@ -76,17 +94,32 @@ def handle_topic(entity: Dict) -> Dict:
         }
 
     # ----------------------------------------------------------
-    # 1. RESOLVE ID
+    # 1. RESOLVE
     # ----------------------------------------------------------
     topic_id = _get_topic_id(label)
 
+    # ----------------------------------------------------------
+    # 🔥 FALLBACK (SUJET NON GOUVERNÉ)
+    # ----------------------------------------------------------
     if not topic_id:
+
+        feed = search_text(query=label, limit=5) or []
+
+        # ajout URLs
+        for item in feed:
+            if item.get("type") == "news":
+                item["url"] = f"/news/{item.get('id')}"
+            else:
+                item["url"] = f"/analysis/{item.get('id')}"
+
         return {
-            "status": "empty",
+            "status": "fallback",
             "intent": "topic",
             "entity": entity,
             "answer": {
-                "text": "Aucune donnée disponible pour ce sujet."
+                "text": f"{label} n'est pas un sujet analysé en profondeur.\nVoici les contenus disponibles :",
+                "items": feed,
+                "available_topics": _get_all_topics()
             }
         }
 
@@ -94,7 +127,6 @@ def handle_topic(entity: Dict) -> Dict:
     # 2. VIEW (SOURCE DE VÉRITÉ)
     # ----------------------------------------------------------
     view = get_topic_view(topic_id, limit=10)
-
     items = view.get("items", []) or []
 
     # ----------------------------------------------------------
@@ -102,7 +134,6 @@ def handle_topic(entity: Dict) -> Dict:
     # ----------------------------------------------------------
     feed = items[:3]
 
-    # 👉 ajout URL
     for item in feed:
         if item.get("type") == "news":
             item["url"] = f"/news/{item.get('id')}"
@@ -110,7 +141,7 @@ def handle_topic(entity: Dict) -> Dict:
             item["url"] = f"/analysis/{item.get('id')}"
 
     # ----------------------------------------------------------
-    # 4. ANALYSIS (LLM sur 10 contenus)
+    # 4. ANALYSIS (LLM)
     # ----------------------------------------------------------
     analysis_ids = [
         i["id"]
@@ -121,7 +152,7 @@ def handle_topic(entity: Dict) -> Dict:
     analysis = run_insight_pipeline(analysis_ids)
 
     # ----------------------------------------------------------
-    # 5. NUMBERS (3)
+    # 5. NUMBERS
     # ----------------------------------------------------------
     number_ids = _get_topic_numbers_ids(label, limit=3)
     numbers = get_numbers_by_ids(number_ids) if number_ids else []
@@ -132,7 +163,7 @@ def handle_topic(entity: Dict) -> Dict:
     radar = get_latest_radar("topic", topic_id)
 
     # ----------------------------------------------------------
-    # 7. Suggestions
+    # 7. SUGGESTIONS
     # ----------------------------------------------------------
     suggestions = [
         "Retail Media",
@@ -142,7 +173,7 @@ def handle_topic(entity: Dict) -> Dict:
     ]
 
     # ----------------------------------------------------------
-    # 8. Réponse finale
+    # 8. RESPONSE
     # ----------------------------------------------------------
     return {
         "status": "ok",
