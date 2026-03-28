@@ -1,7 +1,11 @@
 from typing import Dict, List
 
 from utils.bigquery_utils import query_bq
-from core.numbers.insight_service import generate_numbers_insight
+
+from core.numbers.insight_service import (
+    generate_numbers_insight,
+    get_numbers_by_ids,
+)
 
 
 # ============================================================
@@ -12,14 +16,10 @@ TABLE_NUMBERS = "adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED"
 
 
 # ============================================================
-# 1. SÉLECTION AUTOMATIQUE DES IDS
+# 1. SÉLECTION AUTOMATIQUE
 # ============================================================
 
 def _get_latest_numbers_ids(entity: Dict, limit: int = 10) -> List[str]:
-    """
-    Remplace la sélection utilisateur de l'UI.
-    Ici, on choisit automatiquement les derniers chiffres pertinents.
-    """
 
     if entity["type"] in ["company", "topic", "solution"] and entity["label"]:
         sql = f"""
@@ -30,7 +30,6 @@ def _get_latest_numbers_ids(entity: Dict, limit: int = 10) -> List[str]:
         LIMIT {limit}
         """
     else:
-        # fallback : derniers chiffres globaux
         sql = f"""
         SELECT ID_NUMBER
         FROM `{TABLE_NUMBERS}`
@@ -44,20 +43,19 @@ def _get_latest_numbers_ids(entity: Dict, limit: int = 10) -> List[str]:
 
 
 # ============================================================
-# 2. HANDLER PRINCIPAL
+# HANDLER
 # ============================================================
 
 def handle_numbers(entity: Dict) -> Dict:
     """
-    Handler MCP pour les chiffres.
-
-    Flow :
-    entity → sélection → pipeline → réponse
+    Handler MCP pour :
+    → voir les chiffres
+    → les comprendre
     """
 
-    # -------------------------------
-    # 1. Sélection automatique
-    # -------------------------------
+    # ----------------------------------------------------------
+    # 1. Sélection
+    # ----------------------------------------------------------
     ids = _get_latest_numbers_ids(entity)
 
     if not ids:
@@ -66,18 +64,24 @@ def handle_numbers(entity: Dict) -> Dict:
             "intent": "numbers",
             "entity": entity,
             "answer": {
-                "text": "Aucun chiffre disponible."
+                "items": [],
+                "text": ""
             }
         }
 
-    # -------------------------------
-    # 2. Pipeline existant (LLM)
-    # -------------------------------
+    # ----------------------------------------------------------
+    # 2. FETCH CHIFFRES (BRUT)
+    # ----------------------------------------------------------
+    numbers = get_numbers_by_ids(ids)
+
+    # ----------------------------------------------------------
+    # 3. INSIGHT (LLM)
+    # ----------------------------------------------------------
     insight = generate_numbers_insight(ids)
 
-    # -------------------------------
-    # 3. Suggestions (exploration)
-    # -------------------------------
+    # ----------------------------------------------------------
+    # 4. Suggestions
+    # ----------------------------------------------------------
     suggestions = [
         "Retail Media",
         "CTV",
@@ -85,15 +89,16 @@ def handle_numbers(entity: Dict) -> Dict:
         "Netflix"
     ]
 
-    # -------------------------------
-    # 4. Réponse finale
-    # -------------------------------
+    # ----------------------------------------------------------
+    # 5. Réponse
+    # ----------------------------------------------------------
     return {
         "status": "ok",
         "intent": "numbers",
         "entity": entity,
         "answer": {
-            "text": insight,
+            "items": numbers,       # 🔥 DATA brute
+            "text": insight,        # 🔥 structuration
             "nb_numbers": len(ids)
         },
         "meta": {
