@@ -5,6 +5,7 @@ from utils.bigquery_utils import query_bq
 from core.feed.service import search_text
 from core.numbers.insight_service import get_numbers_by_ids
 from core.radar.insight_service import get_latest_radar
+from core.mcp.suggestions import build_suggestions
 
 
 TABLE_COMPANY = "adex-5555.RATECARD_PROD.RATECARD_COMPANY"
@@ -81,12 +82,18 @@ def handle_company(entity: Dict) -> Dict:
 
         feed = search_text(query=label, limit=5) or []
 
-        # ajout URLs
+        # 👉 ajout URLs
         for item in feed:
             if item.get("type") == "news":
                 item["url"] = f"/news/{item.get('id')}"
             else:
                 item["url"] = f"/analysis/{item.get('id')}"
+
+        suggestions = build_suggestions(
+            intent="search",
+            entity={"label": label},
+            items=feed
+        )
 
         return {
             "status": "fallback",
@@ -95,13 +102,16 @@ def handle_company(entity: Dict) -> Dict:
             "answer": {
                 "text": f"{label} n'est pas une entreprise suivie en détail.\nVoici les contenus disponibles :",
                 "items": feed
+            },
+            "meta": {
+                "suggestions": suggestions
             }
         }
 
     company_id = company.get("ID_COMPANY")
 
     # ----------------------------------------------------------
-    # 2. FEED
+    # 2. FEED (3 contenus)
     # ----------------------------------------------------------
     feed = search_text(query=label, limit=3) or []
 
@@ -123,14 +133,13 @@ def handle_company(entity: Dict) -> Dict:
     radar = get_latest_radar("company", company_id) if company_id else None
 
     # ----------------------------------------------------------
-    # 5. Suggestions
+    # 5. 🔥 SUGGESTIONS DYNAMIQUES
     # ----------------------------------------------------------
-    suggestions = [
-        "Amazon",
-        "Google",
-        "Criteo",
-        "Netflix"
-    ]
+    suggestions = build_suggestions(
+        intent="company",
+        entity=entity,
+        items=feed
+    )
 
     # ----------------------------------------------------------
     # 6. RESPONSE
