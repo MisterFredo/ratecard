@@ -1,7 +1,6 @@
 # core/mcp/entity.py
 
 import unicodedata
-
 from utils.bigquery_utils import query_bq
 
 
@@ -14,44 +13,40 @@ def normalize(text: str) -> str:
 
 
 # ============================================================
-# LOOKUP TOPIC
+# LOAD ENTITIES (CACHEABLE)
 # ============================================================
 
-def _match_topic(q: str):
+def _get_topics():
+    rows = query_bq("""
+        SELECT LABEL
+        FROM `adex-5555.RATECARD_PROD.RATECARD_TOPIC`
+    """)
+    return [r["LABEL"] for r in rows if r.get("LABEL")]
 
-    sql = """
-    SELECT LABEL
-    FROM `adex-5555.RATECARD_PROD.RATECARD_TOPIC`
-    """
 
-    rows = query_bq(sql)
+def _get_companies():
+    rows = query_bq("""
+        SELECT NAME
+        FROM `adex-5555.RATECARD_PROD.RATECARD_COMPANY`
+    """)
+    return [r["NAME"] for r in rows if r.get("NAME")]
 
-    for r in rows:
-        label = r["LABEL"]
+
+# ============================================================
+# MATCH HELPERS
+# ============================================================
+
+def _match_topic(q: str, topics):
+    for label in topics:
         if normalize(label) in q:
             return label
-
     return None
 
 
-# ============================================================
-# LOOKUP COMPANY
-# ============================================================
-
-def _match_company(q: str):
-
-    sql = """
-    SELECT NAME
-    FROM `adex-5555.RATECARD_PROD.RATECARD_COMPANY`
-    """
-
-    rows = query_bq(sql)
-
-    for r in rows:
-        name = r["NAME"]
+def _match_company(q: str, companies):
+    for name in companies:
         if normalize(name) in q:
             return name
-
     return None
 
 
@@ -59,13 +54,12 @@ def _match_company(q: str):
 # MAIN RESOLVER
 # ============================================================
 
-
 def resolve_entity(query: str):
 
     q = normalize(query)
 
     # --------------------------------------------------
-    # 🔵 TOPICS (hardcoded)
+    # 🔵 HARD OVERRIDES (prioritaires)
     # --------------------------------------------------
 
     if "retail media" in q:
@@ -78,21 +72,30 @@ def resolve_entity(query: str):
         return {"type": "topic", "label": "DOOH"}
 
     # --------------------------------------------------
-    # 🟢 COMPANY (DYNAMIQUE BQ)
+    # 🔵 TOPIC DYNAMIQUE
     # --------------------------------------------------
 
-    rows = query_bq("""
-        SELECT NAME
-        FROM `adex-5555.RATECARD_PROD.RATECARD_COMPANY`
-    """)
+    topics = _get_topics()
+    topic_match = _match_topic(q, topics)
 
-    for r in rows:
-        name = r["NAME"]
-        if name and normalize(name) in q:
-            return {
-                "type": "company",
-                "label": name
-            }
+    if topic_match:
+        return {
+            "type": "topic",
+            "label": topic_match
+        }
+
+    # --------------------------------------------------
+    # 🟢 COMPANY DYNAMIQUE
+    # --------------------------------------------------
+
+    companies = _get_companies()
+    company_match = _match_company(q, companies)
+
+    if company_match:
+        return {
+            "type": "company",
+            "label": company_match
+        }
 
     # --------------------------------------------------
     # 🔴 FALLBACK
@@ -102,4 +105,3 @@ def resolve_entity(query: str):
         "type": "unknown",
         "label": None
     }
-
