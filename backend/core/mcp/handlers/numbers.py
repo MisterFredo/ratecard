@@ -81,8 +81,8 @@ def handle_numbers(entity: Dict) -> Dict:
             "intent": "numbers",
             "entity": entity,
             "answer": {
-                "items": [],
-                "text": ""
+                "insight": insight,
+                "data": numbers
             }
         }
 
