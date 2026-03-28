@@ -7,6 +7,8 @@ from core.numbers.insight_service import (
     get_numbers_by_ids,
 )
 
+from core.mcp.suggestions import build_suggestions
+
 
 # ============================================================
 # CONSTANTE
@@ -16,28 +18,43 @@ TABLE_NUMBERS = "adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED"
 
 
 # ============================================================
-# 1. SÉLECTION AUTOMATIQUE
+# 1. SÉLECTION AUTOMATIQUE (SAFE)
 # ============================================================
 
 def _get_latest_numbers_ids(entity: Dict, limit: int = 10) -> List[str]:
 
-    if entity["type"] in ["company", "topic", "solution"] and entity["label"]:
+    label = entity.get("label")
+    entity_type = entity.get("type")
+
+    if entity_type in ["company", "topic", "solution"] and label:
+
         sql = f"""
         SELECT ID_NUMBER
         FROM `{TABLE_NUMBERS}`
-        WHERE LOWER(entity_label) = LOWER("{entity['label']}")
+        WHERE LOWER(entity_label) = LOWER(@label)
         ORDER BY created_at DESC
-        LIMIT {limit}
-        """
-    else:
-        sql = f"""
-        SELECT ID_NUMBER
-        FROM `{TABLE_NUMBERS}`
-        ORDER BY created_at DESC
-        LIMIT {limit}
+        LIMIT @limit
         """
 
-    rows = query_bq(sql)
+        params = {
+            "label": label,
+            "limit": limit
+        }
+
+    else:
+
+        sql = f"""
+        SELECT ID_NUMBER
+        FROM `{TABLE_NUMBERS}`
+        ORDER BY created_at DESC
+        LIMIT @limit
+        """
+
+        params = {
+            "limit": limit
+        }
+
+    rows = query_bq(sql, params)
 
     return [r["ID_NUMBER"] for r in rows]
 
@@ -70,7 +87,7 @@ def handle_numbers(entity: Dict) -> Dict:
         }
 
     # ----------------------------------------------------------
-    # 2. FETCH CHIFFRES (BRUT)
+    # 2. FETCH CHIFFRES (DATA)
     # ----------------------------------------------------------
     numbers = get_numbers_by_ids(ids)
 
@@ -80,25 +97,24 @@ def handle_numbers(entity: Dict) -> Dict:
     insight = generate_numbers_insight(ids)
 
     # ----------------------------------------------------------
-    # 4. Suggestions
+    # 4. 🔥 SUGGESTIONS DYNAMIQUES
     # ----------------------------------------------------------
-    suggestions = [
-        "Retail Media",
-        "CTV",
-        "Amazon",
-        "Netflix"
-    ]
+    suggestions = build_suggestions(
+        intent="numbers",
+        entity=entity,
+        items=numbers
+    )
 
     # ----------------------------------------------------------
-    # 5. Réponse
+    # 5. RESPONSE
     # ----------------------------------------------------------
     return {
         "status": "ok",
         "intent": "numbers",
         "entity": entity,
         "answer": {
-            "items": numbers,       # 🔥 DATA brute
-            "text": insight,        # 🔥 structuration
+            "items": numbers,       # 🔥 data brute
+            "text": insight,        # 🔥 structuration LLM
             "nb_numbers": len(ids)
         },
         "meta": {
