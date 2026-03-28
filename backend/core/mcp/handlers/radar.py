@@ -1,5 +1,3 @@
-# core/mcp/handlers/radar.py
-
 from typing import Dict, List
 
 from utils.bigquery_utils import query_bq
@@ -7,6 +5,10 @@ from utils.bigquery_utils import query_bq
 from core.radar.insight_service import (
     generate_radar_insight,
 )
+
+# ============================================================
+# CONSTANTE
+# ============================================================
 
 TABLE_RADAR = "adex-5555.RATECARD_PROD.V_RADAR_ENRICHED"
 
@@ -20,12 +22,15 @@ def _get_latest_radar_ids(entity: Dict, limit: int = 5) -> List[str]:
     Sélection automatique des radars pertinents.
     """
 
-    if entity["type"] in ["company", "topic", "solution"] and entity["label"]:
+    entity_label = entity.get("label")
+    entity_type = entity.get("type")
+
+    if entity_type in ["company", "topic", "solution"] and entity_label:
 
         sql = f"""
         SELECT ID_INSIGHT
         FROM `{TABLE_RADAR}`
-        WHERE LOWER(entity_label) = LOWER("{entity['label']}")
+        WHERE LOWER(entity_label) = LOWER("{entity_label}")
         ORDER BY YEAR DESC, PERIOD DESC
         LIMIT {limit}
         """
@@ -50,32 +55,33 @@ def _get_latest_radar_ids(entity: Dict, limit: int = 5) -> List[str]:
 
 def handle_radar(entity: Dict) -> Dict:
     """
-    Handler MCP pour COMPRENDRE un sujet.
+    Handler MCP pour :
+    → comprendre les dynamiques de marché
     """
 
-    # -------------------------------
+    # ----------------------------------------------------------
     # 1. Sélection
-    # -------------------------------
+    # ----------------------------------------------------------
     ids = _get_latest_radar_ids(entity)
 
     if not ids:
         return {
             "status": "empty",
-            "intent": "understand",
+            "intent": "radar",
             "entity": entity,
             "answer": {
-                "text": "Aucun radar disponible pour ce sujet."
+                "text": "Aucune dynamique disponible."
             }
         }
 
-    # -------------------------------
-    # 2. Pipeline radar
-    # -------------------------------
+    # ----------------------------------------------------------
+    # 2. Pipeline radar (EXISTANT)
+    # ----------------------------------------------------------
     insight = generate_radar_insight(ids)
 
-    # -------------------------------
+    # ----------------------------------------------------------
     # 3. Suggestions
-    # -------------------------------
+    # ----------------------------------------------------------
     suggestions = [
         "Retail Media",
         "CTV",
@@ -83,14 +89,15 @@ def handle_radar(entity: Dict) -> Dict:
         "Netflix"
     ]
 
-    # -------------------------------
+    # ----------------------------------------------------------
     # 4. Réponse
-    # -------------------------------
+    # ----------------------------------------------------------
     return {
         "status": "ok",
-        "intent": "understand",
+        "intent": "radar",
         "entity": entity,
         "answer": {
+            "title": "Dynamiques du marché",
             "text": insight,
             "nb_radars": len(ids)
         },
