@@ -66,20 +66,82 @@ def mcp_query(body: MCPQuery):
         return handle_topic(entity)
 
     # ----------------------------------------------------------
-    # 🔴 ENTITY (company / topic / fallback)
+    # 🔴 ENTITY (company / topic / unknown)
     # ----------------------------------------------------------
     if intent == "entity":
 
+        # ✅ COMPANY
         if entity["type"] == "company":
             return handle_company(entity)
 
+        # ✅ TOPIC
         if entity["type"] == "topic":
             return handle_topic(entity)
 
-    # ----------------------------------------------------------
-    # 🔥 FALLBACK GLOBAL (SEARCH)
-    # ----------------------------------------------------------
+        # 🔥 UNKNOWN → fallback search
+        if entity["type"] == "unknown":
 
+            rows = search_text(query=user_query, limit=10) or []
+
+            if not rows:
+                return {
+                    "status": "empty",
+                    "intent": "search",
+                    "entity": {
+                        "type": "text",
+                        "label": user_query
+                    },
+                    "answer": {
+                        "items": []
+                    }
+                }
+
+            # 👉 ajout URL
+            for item in rows:
+                if item.get("type") == "news":
+                    item["url"] = f"/news/{item.get('id')}"
+                else:
+                    item["url"] = f"/analysis/{item.get('id')}"
+
+            # 👉 analyse
+            analysis_ids = [
+                r["id"]
+                for r in rows
+                if r.get("type") == "analysis"
+            ]
+
+            analysis_text = None
+
+            if analysis_ids:
+                result = run_insight_pipeline(analysis_ids)
+                analysis_text = result.get("insight")
+
+            # 👉 suggestions
+            suggestions = build_suggestions(
+                intent="search",
+                entity={"label": user_query},
+                items=rows
+            )
+
+            return {
+                "status": "ok",
+                "intent": "search",
+                "entity": {
+                    "type": "text",
+                    "label": user_query
+                },
+                "answer": {
+                    "items": rows,
+                    "analysis": analysis_text
+                },
+                "meta": {
+                    "suggestions": suggestions
+                }
+            }
+
+    # ----------------------------------------------------------
+    # 🔥 FALLBACK GLOBAL (ULTIME SÉCURITÉ)
+    # ----------------------------------------------------------
     rows = search_text(query=user_query, limit=10) or []
 
     if not rows:
@@ -95,27 +157,12 @@ def mcp_query(body: MCPQuery):
             }
         }
 
-    # 👉 ajout URL
     for item in rows:
         if item.get("type") == "news":
             item["url"] = f"/news/{item.get('id')}"
         else:
             item["url"] = f"/analysis/{item.get('id')}"
 
-    # 👉 analyse si possible
-    analysis_ids = [
-        r["id"]
-        for r in rows
-        if r.get("type") == "analysis"
-    ]
-
-    analysis_text = None
-
-    if analysis_ids:
-        result = run_insight_pipeline(analysis_ids)
-        analysis_text = result.get("insight")
-
-    # 👉 suggestions dynamiques
     suggestions = build_suggestions(
         intent="search",
         entity={"label": user_query},
@@ -131,7 +178,7 @@ def mcp_query(body: MCPQuery):
         },
         "answer": {
             "items": rows,
-            "analysis": analysis_text
+            "analysis": None
         },
         "meta": {
             "suggestions": suggestions
