@@ -4,19 +4,17 @@ from pydantic import BaseModel
 # MCP core
 from core.mcp.intent import detect_intent
 from core.mcp.entity import resolve_entity
-from core.mcp.suggestions import build_suggestions
 
-# 🔥 handlers
+# handlers
 from core.mcp.handlers.feed import handle_feed
-from core.mcp.handlers.analysis import handle_analysis
-from core.mcp.handlers.numbers import handle_numbers
-from core.mcp.handlers.radar import handle_radar
-from core.mcp.handlers.company import handle_company
 from core.mcp.handlers.topic import handle_topic
+from core.mcp.handlers.company import handle_company
+from core.mcp.handlers.numbers import handle_numbers
 
-# services
+# fallback
 from core.feed.service import search_text
 from core.insight.service import run_insight_pipeline
+from core.mcp.suggestions import build_suggestions
 
 router = APIRouter()
 
@@ -30,50 +28,59 @@ def mcp_query(body: MCPQuery):
 
     user_query = body.query
 
-    # 🔒 sécurité simple
+    # ----------------------------------------------------------
+    # 🔒 SAFETY
+    # ----------------------------------------------------------
     if "call the" in user_query.lower():
         return {
             "status": "error",
             "message": "Invalid query"
         }
 
-    # ----------------------------------
+    # ----------------------------------------------------------
     # 1. INTENT
-    # ----------------------------------
+    # ----------------------------------------------------------
     intent = detect_intent(user_query)
 
-    # ----------------------------------
+    # ----------------------------------------------------------
     # 2. ENTITY
-    # ----------------------------------
+    # ----------------------------------------------------------
     entity = resolve_entity(user_query)
 
-    # ----------------------------------
-    # 🔥 3. ROUTING PRINCIPAL
-    # ----------------------------------
-
+    # ----------------------------------------------------------
+    # 🟢 FEED
+    # ----------------------------------------------------------
     if intent == "feed":
         return handle_feed(entity, user_query)
 
-    if intent == "analysis":
-        return handle_analysis(entity, user_query)
-
+    # ----------------------------------------------------------
+    # 🟡 NUMBERS
+    # ----------------------------------------------------------
     if intent == "numbers":
         return handle_numbers(entity)
 
-    if intent == "understand":
-        return handle_radar(entity)
-
-    if intent == "company":
-        return handle_company(entity)
-
+    # ----------------------------------------------------------
+    # 🔵 TOPIC (analyse marché)
+    # ----------------------------------------------------------
     if intent == "topic":
         return handle_topic(entity)
 
-    # ----------------------------------
-    # 🔥 4. FALLBACK → SEARCH TEXT
-    # ----------------------------------
+    # ----------------------------------------------------------
+    # 🔴 ENTITY (company / topic / fallback)
+    # ----------------------------------------------------------
+    if intent == "entity":
 
-    rows = search_text(query=user_query, limit=10)
+        if entity["type"] == "company":
+            return handle_company(entity)
+
+        if entity["type"] == "topic":
+            return handle_topic(entity)
+
+    # ----------------------------------------------------------
+    # 🔥 FALLBACK GLOBAL (SEARCH)
+    # ----------------------------------------------------------
+
+    rows = search_text(query=user_query, limit=10) or []
 
     if not rows:
         return {
@@ -88,32 +95,32 @@ def mcp_query(body: MCPQuery):
             }
         }
 
-    # 👉 ids analyses uniquement
-    analysis_ids = [
-        r["id"]
-        for r in rows
-        if r.get("type") == "analysis"
-    ]
-
-    analysis = None
-
-    if analysis_ids:
-        result = run_insight_pipeline(analysis_ids)
-        analysis = result.get("insight")
-
-    # 👉 ajout URL (important pour UX GPT)
+    # 👉 ajout URL
     for item in rows:
         if item.get("type") == "news":
             item["url"] = f"/news/{item.get('id')}"
         else:
             item["url"] = f"/analysis/{item.get('id')}"
 
-    # 👉 suggestions simples
-    suggestions = [
-        "Analyse les tendances CTV",
-        "Donne-moi les chiffres Amazon",
-        "Que fait Criteo en ce moment ?"
+    # 👉 analyse si possible
+    analysis_ids = [
+        r["id"]
+        for r in rows
+        if r.get("type") == "analysis"
     ]
+
+    analysis_text = None
+
+    if analysis_ids:
+        result = run_insight_pipeline(analysis_ids)
+        analysis_text = result.get("insight")
+
+    # 👉 suggestions dynamiques
+    suggestions = build_suggestions(
+        intent="search",
+        entity={"label": user_query},
+        items=rows
+    )
 
     return {
         "status": "ok",
@@ -124,7 +131,7 @@ def mcp_query(body: MCPQuery):
         },
         "answer": {
             "items": rows,
-            "analysis": analysis
+            "analysis": analysis_text
         },
         "meta": {
             "suggestions": suggestions
