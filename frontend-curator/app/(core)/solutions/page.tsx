@@ -139,7 +139,7 @@ export default function SolutionsPage() {
           Aucune solution pour le moment.
         </p>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
           {sorted.map((s) => (
             <SolutionCard
               key={s.id_solution}
