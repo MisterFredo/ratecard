@@ -2,44 +2,81 @@
 
 import unicodedata
 
+
+# ============================================================
+# NORMALIZE
+# ============================================================
+
 def normalize(text: str) -> str:
     return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("utf-8").lower()
 
+
+# ============================================================
+# DETECT INTENT
+# ============================================================
 
 def detect_intent(query: str) -> str:
 
     q = normalize(query)
 
-    # 🔵 MARKET ANALYSIS
+    # ----------------------------------------------------------
+    # 🟠 NUMBERS
+    # ----------------------------------------------------------
     if any(word in q for word in [
-        "tendance",
-        "tendances",
-        "trend",
-        "evolution",
-        "marche",
-        "analyse"
+        "chiffre",
+        "chiffres",
+        "data",
+        "donnee",
+        "donnees",
+        "stat",
+        "stats",
+        "kpi",
+        "combien"
     ]):
-        return "market_analysis"
+        return "numbers"
 
-    # 🟡 NEWS
+    # ----------------------------------------------------------
+    # 🟢 FEED (quoi de neuf)
+    # ----------------------------------------------------------
     if any(word in q for word in [
         "news",
         "actualite",
+        "actualites",
         "dernieres",
-        "recemment"
+        "recent",
+        "recemment",
+        "quoi de neuf",
+        "nouveau"
     ]):
-        return "news_monitoring"
+        return "feed"
 
-    # 🟢 BENCHMARK
+    # ----------------------------------------------------------
+    # 🟣 UNDERSTAND (radar)
+    # ----------------------------------------------------------
     if any(word in q for word in [
-        "vs",
-        "compar",
-        "compare",
-        "difference",
-        "meilleur",
-        "domin"
+        "comprendre",
+        "pourquoi",
+        "explication",
+        "expliquer",
+        "vision",
+        "lecture"
     ]):
-        return "benchmark"
+        return "understand"
 
-    # 🔴 DEFAULT
-    return "entity_focus"
+    # ----------------------------------------------------------
+    # 🔵 ANALYSIS (lecture marché récente)
+    # ----------------------------------------------------------
+    if any(word in q for word in [
+        "analyse",
+        "tendance",
+        "tendances",
+        "trend",
+        "marche",
+        "evolution"
+    ]):
+        return "analysis"
+
+    # ----------------------------------------------------------
+    # 🟡 DEFAULT → FEED (important)
+    # ----------------------------------------------------------
+    return "feed"
