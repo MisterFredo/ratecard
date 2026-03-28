@@ -4,6 +4,7 @@ from pydantic import BaseModel
 # MCP core
 from core.mcp.intent import detect_intent
 from core.mcp.entity import resolve_entity
+from core.mcp.suggestions import build_suggestions
 
 # 🔥 handlers
 from core.mcp.handlers.feed import handle_feed
