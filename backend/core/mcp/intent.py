@@ -67,6 +67,15 @@ def detect_intent(query: str) -> str:
     ]):
         return "topic"
 
+    if any(word in q for word in [
+        "vs",
+        "versus",
+        "compar",
+        "compare",
+        "difference"
+    ]):
+    return "benchmark"
+
     # ----------------------------------------------------------
     # 🔴 DEFAULT → entity (company / topic / search)
     # ----------------------------------------------------------
