@@ -9,13 +9,10 @@ TABLE_CONTENT = "adex-5555.RATECARD_PROD.RATECARD_CONTENT"
 
 
 # ============================================================
-# FETCH LATEST (SANS SEARCH)
+# FETCH LATEST (AVEC URL)
 # ============================================================
 
 def _get_latest_items(limit: int = 10) -> List[Dict]:
-    """
-    Derniers contenus globaux (arrivée utilisateur)
-    """
 
     sql = f"""
     SELECT
@@ -23,7 +20,8 @@ def _get_latest_items(limit: int = 10) -> List[Dict]:
         'news' as type,
         n.TITLE,
         n.EXCERPT,
-        n.PUBLISHED_AT
+        n.PUBLISHED_AT,
+        n.SOURCE_URL as url
     FROM `{TABLE_NEWS}` n
     WHERE n.STATUS = 'PUBLISHED'
 
@@ -34,7 +32,8 @@ def _get_latest_items(limit: int = 10) -> List[Dict]:
         'analysis' as type,
         c.TITLE,
         c.EXCERPT,
-        c.PUBLISHED_AT
+        c.PUBLISHED_AT,
+        NULL as url
     FROM `{TABLE_CONTENT}` c
     WHERE c.STATUS = 'PUBLISHED'
       AND c.IS_ACTIVE = TRUE
@@ -43,7 +42,26 @@ def _get_latest_items(limit: int = 10) -> List[Dict]:
     LIMIT {limit}
     """
 
-    return query_bq(sql)
+    rows = query_bq(sql)
+
+    # 🔥 normalisation
+    return [_normalize_item(r) for r in rows]
+
+
+# ============================================================
+# NORMALISATION (CRITIQUE)
+# ============================================================
+
+def _normalize_item(r: Dict) -> Dict:
+
+    return {
+        "id": r.get("id"),
+        "type": r.get("type"),
+        "title": r.get("TITLE"),
+        "excerpt": r.get("EXCERPT"),
+        "published_at": r.get("PUBLISHED_AT"),
+        "url": r.get("url"),  # 🔥 clé
+    }
 
 
 # ============================================================
@@ -51,31 +69,30 @@ def _get_latest_items(limit: int = 10) -> List[Dict]:
 # ============================================================
 
 def handle_feed(entity: Dict, user_query: str) -> Dict:
-    """
-    Handler MCP pour :
-    → découvrir les contenus (quoi de neuf)
-    """
-
-    # ----------------------------------------------------------
-    # 1. Déterminer le mode
-    # ----------------------------------------------------------
 
     entity_label = entity.get("label")
     query = user_query.strip().lower() if user_query else ""
 
-    # 👉 cas 1 : exploration globale
+    # ----------------------------------------------------------
+    # MODE GLOBAL
+    # ----------------------------------------------------------
+
     if not entity_label and (
         not query or "quoi de neuf" in query or "actualité" in query
     ):
         rows = _get_latest_items(limit=10)
 
-    # 👉 cas 2 : recherche ciblée
+    # ----------------------------------------------------------
+    # MODE SEARCH
+    # ----------------------------------------------------------
+
     else:
         search_query = entity_label or user_query
-        rows = search_text(query=search_query, limit=10)
+        raw_rows = search_text(query=search_query, limit=10)
+        rows = [_normalize_item(r) for r in raw_rows]
 
     # ----------------------------------------------------------
-    # 2. Gestion vide
+    # EMPTY
     # ----------------------------------------------------------
 
     if not rows:
@@ -89,7 +106,7 @@ def handle_feed(entity: Dict, user_query: str) -> Dict:
         }
 
     # ----------------------------------------------------------
-    # 3. Suggestions (exploration)
+    # SUGGESTIONS
     # ----------------------------------------------------------
 
     suggestions = [
@@ -100,7 +117,7 @@ def handle_feed(entity: Dict, user_query: str) -> Dict:
     ]
 
     # ----------------------------------------------------------
-    # 4. Réponse
+    # RESPONSE
     # ----------------------------------------------------------
 
     return {
