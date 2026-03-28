@@ -23,6 +23,27 @@ router = APIRouter()
 class MCPQuery(BaseModel):
     query: str
 
+def clean_query(q: str) -> str:
+
+    q = q.lower()
+
+    noise = [
+        "👉",
+        "comprendre",
+        "analyse",
+        "donne moi",
+        "parle moi de",
+        "je veux",
+        "explique",
+        "c est quoi",
+        "c'est quoi"
+    ]
+
+    for n in noise:
+        q = q.replace(n, "")
+
+    return q.strip()
+
 
 @router.post("/query")
 def mcp_query(body: MCPQuery):
@@ -41,7 +62,9 @@ def mcp_query(body: MCPQuery):
     # ----------------------------------------------------------
     # 1. SEARCH FIRST (clé)
     # ----------------------------------------------------------
-    rows = search(q=user_query, limit=10) or []
+    cleaned_query = clean_query(user_query)
+
+    rows = search(q=cleaned_query, limit=10)
 
     # 👉 enrichir URLs
     for item in rows:
