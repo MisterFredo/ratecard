@@ -5,13 +5,12 @@ from pydantic import BaseModel
 from core.mcp.intent import detect_intent
 from core.mcp.entity import resolve_entity
 
-# handlers
-from core.mcp.handlers.feed import handle_feed
+# handlers enrichissement
 from core.mcp.handlers.topic import handle_topic
 from core.mcp.handlers.company import handle_company
 from core.mcp.handlers.numbers import handle_numbers
 
-# ✅ SOURCE DE VÉRITÉ (Curator)
+# ✅ moteur unique
 from core.curator.service import search
 
 # insight + suggestions
@@ -40,9 +39,16 @@ def mcp_query(body: MCPQuery):
         }
 
     # ----------------------------------------------------------
-    # 1. INTENT
+    # 1. SEARCH FIRST (clé)
     # ----------------------------------------------------------
-    intent = detect_intent(user_query)
+    rows = search(q=user_query, limit=10) or []
+
+    # 👉 enrichir URLs
+    for item in rows:
+        if item.get("type") == "news":
+            item["url"] = f"/news/{item.get('id')}"
+        else:
+            item["url"] = f"/analysis/{item.get('id')}"
 
     # ----------------------------------------------------------
     # 2. ENTITY
@@ -50,121 +56,55 @@ def mcp_query(body: MCPQuery):
     entity = resolve_entity(user_query)
 
     # ----------------------------------------------------------
-    # 🟢 FEED
+    # 3. ENRICHISSEMENT (SI ENTITY CLAIRE)
     # ----------------------------------------------------------
-    if intent == "feed":
-        return handle_feed(entity, user_query)
+
+    if entity["type"] == "company":
+        return handle_company(entity)
+
+    if entity["type"] == "topic":
+        return handle_topic(entity)
 
     # ----------------------------------------------------------
-    # 🟡 NUMBERS
+    # 4. NUMBERS (INTENT SPÉCIFIQUE)
     # ----------------------------------------------------------
+    intent = detect_intent(user_query)
+
     if intent == "numbers":
         return handle_numbers(entity)
 
     # ----------------------------------------------------------
-    # 🔵 TOPIC
+    # 5. FALLBACK INTELLIGENT
     # ----------------------------------------------------------
-    if intent == "topic":
-        return handle_topic(entity)
-
-    # ----------------------------------------------------------
-    # 🔴 ENTITY
-    # ----------------------------------------------------------
-    if intent == "entity":
-
-        if entity["type"] == "company":
-            return handle_company(entity)
-
-        if entity["type"] == "topic":
-            return handle_topic(entity)
-
-        # ------------------------------------------------------
-        # 🔥 UNKNOWN → CURATOR SEARCH
-        # ------------------------------------------------------
-        if entity["type"] == "unknown":
-
-            rows = search(q=user_query, limit=10) or []
-
-            if not rows:
-                return {
-                    "status": "empty",
-                    "intent": "search",
-                    "entity": {
-                        "type": "text",
-                        "label": user_query
-                    },
-                    "answer": {
-                        "items": []
-                    }
-                }
-
-            # 👉 ajout URL
-            for item in rows:
-                if item.get("type") == "news":
-                    item["url"] = f"/news/{item.get('id')}"
-                else:
-                    item["url"] = f"/analysis/{item.get('id')}"
-
-            # 👉 analyse
-            analysis_ids = [
-                r["id"]
-                for r in rows
-                if r.get("type") == "analysis"
-            ]
-
-            analysis_text = None
-
-            if analysis_ids:
-                result = run_insight_pipeline(analysis_ids)
-                analysis_text = result.get("insight")
-
-            # 👉 suggestions
-            suggestions = build_suggestions(
-                intent="search",
-                entity={"label": user_query},
-                items=rows
-            )
-
-            return {
-                "status": "ok",
-                "intent": "search",
-                "entity": {
-                    "type": "text",
-                    "label": user_query
-                },
-                "answer": {
-                    "items": rows,
-                    "analysis": analysis_text
-                },
-                "meta": {
-                    "suggestions": suggestions
-                }
-            }
-
-    # ----------------------------------------------------------
-    # 🔥 FALLBACK GLOBAL
-    # ----------------------------------------------------------
-    rows = search(q=user_query, limit=10) or []
 
     if not rows:
         return {
-            "status": "empty",
+            "status": "ok",
             "intent": "search",
             "entity": {
                 "type": "text",
                 "label": user_query
             },
             "answer": {
+                "text": f"Aucun contenu direct trouvé pour {user_query}, mais le sujet semble émergent.",
                 "items": []
             }
         }
 
-    for item in rows:
-        if item.get("type") == "news":
-            item["url"] = f"/news/{item.get('id')}"
-        else:
-            item["url"] = f"/analysis/{item.get('id')}"
+    # 👉 insight si analyses
+    analysis_ids = [
+        r["id"]
+        for r in rows
+        if r.get("type") == "analysis"
+    ]
 
+    analysis_text = None
+
+    if analysis_ids:
+        result = run_insight_pipeline(analysis_ids)
+        analysis_text = result.get("insight")
+
+    # 👉 suggestions
     suggestions = build_suggestions(
         intent="search",
         entity={"label": user_query},
@@ -180,7 +120,7 @@ def mcp_query(body: MCPQuery):
         },
         "answer": {
             "items": rows,
-            "analysis": None
+            "analysis": analysis_text
         },
         "meta": {
             "suggestions": suggestions
