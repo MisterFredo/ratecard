@@ -23,6 +23,11 @@ router = APIRouter()
 class MCPQuery(BaseModel):
     query: str
 
+
+# ============================================================
+# CLEAN QUERY
+# ============================================================
+
 def clean_query(q: str) -> str:
 
     q = q.lower()
@@ -45,6 +50,10 @@ def clean_query(q: str) -> str:
     return q.strip()
 
 
+# ============================================================
+# ROUTE
+# ============================================================
+
 @router.post("/query")
 def mcp_query(body: MCPQuery):
 
@@ -60,11 +69,19 @@ def mcp_query(body: MCPQuery):
         }
 
     # ----------------------------------------------------------
-    # 1. SEARCH FIRST (clé)
+    # 1. SEARCH FIRST (ROBUSTE)
     # ----------------------------------------------------------
+
     cleaned_query = clean_query(user_query)
 
-    rows = search(q=cleaned_query, limit=10)
+    # 👉 sécurité : éviter query vide
+    search_query = cleaned_query if cleaned_query else user_query
+
+    rows = search(q=search_query, limit=10) or []
+
+    # 👉 fallback si clean a cassé le search
+    if not rows and cleaned_query != user_query:
+        rows = search(q=user_query, limit=10) or []
 
     # 👉 enrichir URLs
     for item in rows:
