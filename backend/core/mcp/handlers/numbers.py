@@ -21,7 +21,7 @@ TABLE_NUMBERS = "adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED"
 # 1. SÉLECTION AUTOMATIQUE (SAFE)
 # ============================================================
 
-def _get_latest_numbers_ids(entity: Dict, limit: int = 30) -> List[str]:
+def _get_latest_numbers_ids(entity: Dict, limit: int = 15) -> List[str]:
 
     label = entity.get("label")
     entity_type = entity.get("type")
