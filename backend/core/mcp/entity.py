@@ -35,7 +35,7 @@ def _get_companies():
 
 
 # ============================================================
-# MATCH HELPERS (AMÉLIORÉ)
+# MATCH HELPERS (AMÉLIORÉ + SPÉCIFICITÉ)
 # ============================================================
 
 def _match_best(q: str, candidates):
@@ -44,17 +44,29 @@ def _match_best(q: str, candidates):
 
     best_match = None
     best_score = 0
+    best_length = 0
 
     for label in candidates:
         l = normalize(label)
 
+        # exact match → priorité absolue
+        if q == l:
+            return label
+
         score = sum(1 for token in q_tokens if token in l)
 
-        if score > best_score:
-            best_score = score
-            best_match = label
+        if score > 0:
+            length = len(l)
 
-    return best_match if best_score > 0 else None
+            # 🔥 priorité :
+            # 1. score tokens
+            # 2. longueur (plus spécifique)
+            if score > best_score or (score == best_score and length > best_length):
+                best_score = score
+                best_length = length
+                best_match = label
+
+    return best_match
 
 
 # ============================================================
@@ -87,7 +99,7 @@ def _detect_topic_override(q: str):
 
 
 # ============================================================
-# MAIN RESOLVER
+# MAIN RESOLVER (FIX PRIORITÉ)
 # ============================================================
 
 def resolve_entity(query: str):
@@ -95,20 +107,7 @@ def resolve_entity(query: str):
     q = normalize(query)
 
     # --------------------------------------------------
-    # 🔴 PRIORITÉ 1 → COMPANY
-    # --------------------------------------------------
-
-    companies = _get_companies()
-    company_match = _match_best(q, companies)
-
-    if company_match:
-        return {
-            "type": "company",
-            "label": company_match
-        }
-
-    # --------------------------------------------------
-    # 🔵 PRIORITÉ 2 → HARD TOPIC
+    # 🔵 PRIORITÉ 1 → HARD TOPIC
     # --------------------------------------------------
 
     override = _detect_topic_override(q)
@@ -120,7 +119,7 @@ def resolve_entity(query: str):
         }
 
     # --------------------------------------------------
-    # 🔵 PRIORITÉ 3 → TOPIC DYNAMIQUE
+    # 🔵 PRIORITÉ 2 → TOPIC DYNAMIQUE (🔥 important)
     # --------------------------------------------------
 
     topics = _get_topics()
@@ -130,6 +129,19 @@ def resolve_entity(query: str):
         return {
             "type": "topic",
             "label": topic_match
+        }
+
+    # --------------------------------------------------
+    # 🟢 PRIORITÉ 3 → COMPANY
+    # --------------------------------------------------
+
+    companies = _get_companies()
+    company_match = _match_best(q, companies)
+
+    if company_match:
+        return {
+            "type": "company",
+            "label": company_match
         }
 
     # --------------------------------------------------
