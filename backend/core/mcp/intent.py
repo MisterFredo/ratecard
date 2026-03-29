@@ -10,7 +10,7 @@ def normalize(text: str) -> str:
 
 
 # ============================================================
-# KEYWORDS CONFIG
+# KEYWORDS CONFIG (CORRIGÉ)
 # ============================================================
 
 INTENT_KEYWORDS = {
@@ -20,9 +20,12 @@ INTENT_KEYWORDS = {
         "dernieres", "recent", "recemment", "nouveau", "nouveautes"
     ],
 
+    # 🔥 plus strict
     "numbers": [
-        "chiffre", "chiffres", "donnee", "donnees", "data",
-        "stat", "stats", "revenu", "croissance", "kpi", "volume"
+        "chiffre", "chiffres",
+        "donnee", "donnees",
+        "stat", "stats",
+        "kpi"
     ],
 
     "topic": [
@@ -36,7 +39,6 @@ INTENT_KEYWORDS = {
         "meilleur", "moins bon"
     ],
 
-    # 🔥 NEW → très important pour ton produit
     "agentic": [
         "ia", "ai", "genai", "chatgpt", "agent",
         "assistant", "copilot"
@@ -45,7 +47,7 @@ INTENT_KEYWORDS = {
 
 
 # ============================================================
-# DETECT INTENT (V2 ROBUSTE)
+# DETECT INTENT (STABLE)
 # ============================================================
 
 def detect_intent(query: str) -> str:
@@ -53,36 +55,36 @@ def detect_intent(query: str) -> str:
     q = normalize(query)
 
     # ----------------------------------------------------------
-    # 🔴 PRIORITÉ 1 → BENCHMARK (comparaison)
+    # 🔴 BENCHMARK
     # ----------------------------------------------------------
     if any(word in q for word in INTENT_KEYWORDS["benchmark"]):
         return "benchmark"
 
     # ----------------------------------------------------------
-    # 🟡 PRIORITÉ 2 → NUMBERS (data explicite)
+    # 🟡 NUMBERS (STRICT)
     # ----------------------------------------------------------
     if any(word in q for word in INTENT_KEYWORDS["numbers"]):
         return "numbers"
 
     # ----------------------------------------------------------
-    # 🟢 PRIORITÉ 3 → FEED (actualité)
+    # 🟢 FEED
     # ----------------------------------------------------------
     if any(word in q for word in INTENT_KEYWORDS["feed"]):
         return "feed"
 
     # ----------------------------------------------------------
-    # 🔵 PRIORITÉ 4 → AGENTIC / IA
+    # 🔵 AGENTIC
     # ----------------------------------------------------------
     if any(word in q for word in INTENT_KEYWORDS["agentic"]):
         return "topic"
 
     # ----------------------------------------------------------
-    # 🔵 PRIORITÉ 5 → TOPIC (analyse)
+    # 🔵 TOPIC
     # ----------------------------------------------------------
     if any(word in q for word in INTENT_KEYWORDS["topic"]):
         return "topic"
 
     # ----------------------------------------------------------
-    # ⚪ DEFAULT → ENTITY
+    # ⚪ DEFAULT
     # ----------------------------------------------------------
     return "entity"
