@@ -1,6 +1,6 @@
-# core/mcp/entity.py
-
 import unicodedata
+from functools import lru_cache
+
 from utils.bigquery_utils import query_bq
 
 
@@ -13,9 +13,10 @@ def normalize(text: str) -> str:
 
 
 # ============================================================
-# LOAD ENTITIES (CACHEABLE)
+# LOAD ENTITIES (CACHE)
 # ============================================================
 
+@lru_cache(maxsize=1)
 def _get_topics():
     rows = query_bq("""
         SELECT LABEL
@@ -24,6 +25,7 @@ def _get_topics():
     return [r["LABEL"] for r in rows if r.get("LABEL")]
 
 
+@lru_cache(maxsize=1)
 def _get_companies():
     rows = query_bq("""
         SELECT NAME
@@ -33,20 +35,54 @@ def _get_companies():
 
 
 # ============================================================
-# MATCH HELPERS
+# MATCH HELPERS (AMÉLIORÉ)
 # ============================================================
 
-def _match_topic(q: str, topics):
-    for label in topics:
-        if normalize(label) in q:
-            return label
-    return None
+def _match_best(q: str, candidates):
+
+    q_tokens = q.split()
+
+    best_match = None
+    best_score = 0
+
+    for label in candidates:
+        l = normalize(label)
+
+        score = sum(1 for token in q_tokens if token in l)
+
+        if score > best_score:
+            best_score = score
+            best_match = label
+
+    return best_match if best_score > 0 else None
 
 
-def _match_company(q: str, companies):
-    for name in companies:
-        if normalize(name) in q:
-            return name
+# ============================================================
+# HARD OVERRIDES (EXTENDED)
+# ============================================================
+
+def _detect_topic_override(q: str):
+
+    mapping = {
+        "retail media": "Retail Media",
+        "ctv": "CTV & VIDEO",
+        "video": "CTV & VIDEO",
+        "dooh": "DOOH",
+        "search": "Search",
+        "social": "Social",
+        "audio": "Audio",
+        "display": "Display",
+        "retail data": "Retail Data",
+        "marketplace": "Marketplaces",
+        "agent": "Agentic Commerce",
+        "ia": "Agentic Commerce",
+        "ai": "Agentic Commerce",
+    }
+
+    for key, value in mapping.items():
+        if key in q:
+            return value
+
     return None
 
 
@@ -59,37 +95,11 @@ def resolve_entity(query: str):
     q = normalize(query)
 
     # --------------------------------------------------
-    # 🔵 HARD OVERRIDES (prioritaires)
-    # --------------------------------------------------
-
-    if "retail media" in q:
-        return {"type": "topic", "label": "Retail Media"}
-
-    if "ctv" in q or "video" in q:
-        return {"type": "topic", "label": "CTV & VIDEO"}
-
-    if "dooh" in q:
-        return {"type": "topic", "label": "DOOH"}
-
-    # --------------------------------------------------
-    # 🔵 TOPIC DYNAMIQUE
-    # --------------------------------------------------
-
-    topics = _get_topics()
-    topic_match = _match_topic(q, topics)
-
-    if topic_match:
-        return {
-            "type": "topic",
-            "label": topic_match
-        }
-
-    # --------------------------------------------------
-    # 🟢 COMPANY DYNAMIQUE
+    # 🔴 PRIORITÉ 1 → COMPANY
     # --------------------------------------------------
 
     companies = _get_companies()
-    company_match = _match_company(q, companies)
+    company_match = _match_best(q, companies)
 
     if company_match:
         return {
@@ -98,7 +108,32 @@ def resolve_entity(query: str):
         }
 
     # --------------------------------------------------
-    # 🔴 FALLBACK
+    # 🔵 PRIORITÉ 2 → HARD TOPIC
+    # --------------------------------------------------
+
+    override = _detect_topic_override(q)
+
+    if override:
+        return {
+            "type": "topic",
+            "label": override
+        }
+
+    # --------------------------------------------------
+    # 🔵 PRIORITÉ 3 → TOPIC DYNAMIQUE
+    # --------------------------------------------------
+
+    topics = _get_topics()
+    topic_match = _match_best(q, topics)
+
+    if topic_match:
+        return {
+            "type": "topic",
+            "label": topic_match
+        }
+
+    # --------------------------------------------------
+    # ⚪ FALLBACK
     # --------------------------------------------------
 
     return {
