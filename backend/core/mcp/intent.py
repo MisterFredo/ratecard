@@ -10,44 +10,7 @@ def normalize(text: str) -> str:
 
 
 # ============================================================
-# KEYWORDS CONFIG (CORRIGÉ)
-# ============================================================
-
-INTENT_KEYWORDS = {
-
-    "feed": [
-        "quoi de neuf", "actualite", "actualites", "news",
-        "dernieres", "recent", "recemment", "nouveau", "nouveautes"
-    ],
-
-    # 🔥 plus strict
-    "numbers": [
-        "chiffre", "chiffres",
-        "donnee", "donnees",
-        "stat", "stats",
-        "kpi"
-    ],
-
-    "topic": [
-        "tendance", "tendances", "trend", "evolution",
-        "marche", "analyse", "comprendre", "expliquer",
-        "definition", "c est quoi", "c'est quoi"
-    ],
-
-    "benchmark": [
-        "vs", "versus", "compar", "compare", "difference",
-        "meilleur", "moins bon"
-    ],
-
-    "agentic": [
-        "ia", "ai", "genai", "chatgpt", "agent",
-        "assistant", "copilot"
-    ]
-}
-
-
-# ============================================================
-# DETECT INTENT (STABLE)
+# DETECT INTENT (SIMPLIFIÉ PRODUIT)
 # ============================================================
 
 def detect_intent(query: str) -> str:
@@ -55,36 +18,65 @@ def detect_intent(query: str) -> str:
     q = normalize(query)
 
     # ----------------------------------------------------------
-    # 🔴 BENCHMARK
+    # 🟢 FEED → "quoi de neuf"
     # ----------------------------------------------------------
-    if any(word in q for word in INTENT_KEYWORDS["benchmark"]):
-        return "benchmark"
-
-    # ----------------------------------------------------------
-    # 🟡 NUMBERS (STRICT)
-    # ----------------------------------------------------------
-    if any(word in q for word in INTENT_KEYWORDS["numbers"]):
-        return "numbers"
-
-    # ----------------------------------------------------------
-    # 🟢 FEED
-    # ----------------------------------------------------------
-    if any(word in q for word in INTENT_KEYWORDS["feed"]):
+    if any(word in q for word in [
+        "quoi de neuf",
+        "actualite",
+        "actualites",
+        "news",
+        "dernieres",
+        "recent",
+        "recemment",
+        "nouveau",
+        "nouveautes"
+    ]):
         return "feed"
 
     # ----------------------------------------------------------
-    # 🔵 AGENTIC
+    # 🟡 NUMBERS → chiffres / data
     # ----------------------------------------------------------
-    if any(word in q for word in INTENT_KEYWORDS["agentic"]):
-        return "topic"
+    if any(word in q for word in [
+        "chiffre",
+        "chiffres",
+        "donnee",
+        "donnees",
+        "data",
+        "stat",
+        "stats",
+        "revenu",
+        "croissance"
+    ]):
+        return "numbers"
 
     # ----------------------------------------------------------
-    # 🔵 TOPIC
+    # 🔵 TOPIC → comprendre un sujet
     # ----------------------------------------------------------
-    if any(word in q for word in INTENT_KEYWORDS["topic"]):
+    if any(word in q for word in [
+        "tendance",
+        "tendances",
+        "trend",
+        "evolution",
+        "marche",
+        "analyse",
+        "comprendre",
+        "expliquer",
+        "definition",
+        "c est quoi",
+        "c'est quoi"
+    ]):
         return "topic"
 
+    if any(word in q for word in [
+        "vs",
+        "versus",
+        "compar",
+        "compare",
+        "difference"
+    ]):
+        return "benchmark"
+
     # ----------------------------------------------------------
-    # ⚪ DEFAULT
+    # 🔴 DEFAULT → entity (company / topic / search)
     # ----------------------------------------------------------
     return "entity"
