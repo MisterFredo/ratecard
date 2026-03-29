@@ -375,7 +375,7 @@ def _insert_relations(id_number, company_ids, topic_ids, solution_ids):
 # LIST
 # ============================================================
 
-def list_numbers(limit: int = 100):
+def list_numbers(limit: int = 400):
 
     return query_bq(f"""
         SELECT *
