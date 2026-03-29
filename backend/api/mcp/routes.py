@@ -21,6 +21,10 @@ from core.mcp.suggestions import build_suggestions
 router = APIRouter()
 
 
+# ============================================================
+# MODEL
+# ============================================================
+
 class MCPQuery(BaseModel):
     query: str
 
@@ -52,6 +56,42 @@ def clean_query(q: str) -> str:
 
 
 # ============================================================
+# 🧠 DECISION ENGINE (V1 SIMPLE)
+# ============================================================
+
+def decide_route(intent, entity, rows, query):
+
+    # --------------------------------------------------
+    # 🔴 PRIORITÉ 1 → BENCHMARK
+    # --------------------------------------------------
+    if intent == "benchmark":
+        return "benchmark"
+
+    # --------------------------------------------------
+    # 🟡 PRIORITÉ 2 → NUMBERS
+    # --------------------------------------------------
+    if intent == "numbers":
+        return "numbers"
+
+    # --------------------------------------------------
+    # 🔵 PRIORITÉ 3 → ENTITY (topic / company)
+    # --------------------------------------------------
+    if entity["type"] in ["company", "topic"]:
+        return entity["type"]
+
+    # --------------------------------------------------
+    # 🟢 PRIORITÉ 4 → SEARCH SI CONTENU
+    # --------------------------------------------------
+    if rows:
+        return "search"
+
+    # --------------------------------------------------
+    # ⚪ FALLBACK
+    # --------------------------------------------------
+    return "search"
+
+
+# ============================================================
 # ROUTE
 # ============================================================
 
@@ -70,17 +110,17 @@ def mcp_query(body: MCPQuery):
         }
 
     # ----------------------------------------------------------
-    # 1. SEARCH FIRST (ROBUSTE)
+    # 1. CLEAN
     # ----------------------------------------------------------
-
     cleaned_query = clean_query(user_query)
-
-    # 👉 sécurité : éviter query vide
     search_query = cleaned_query if cleaned_query else user_query
 
+    # ----------------------------------------------------------
+    # 2. SEARCH (ROBUSTE)
+    # ----------------------------------------------------------
     rows = search(q=search_query, limit=10) or []
 
-    # 👉 fallback si clean a cassé le search
+    # 👉 fallback si clean casse le search
     if not rows and cleaned_query != user_query:
         rows = search(q=user_query, limit=10) or []
 
@@ -92,43 +132,34 @@ def mcp_query(body: MCPQuery):
             item["url"] = f"/analysis/{item.get('id')}"
 
     # ----------------------------------------------------------
-    # 2. ENTITY
+    # 3. INTENT + ENTITY
     # ----------------------------------------------------------
+    intent = detect_intent(user_query)
     entity = resolve_entity(user_query)
 
     # ----------------------------------------------------------
-    # 3. ENRICHISSEMENT (SI ENTITY CLAIRE)
+    # 4. DECISION
     # ----------------------------------------------------------
-
-    # 🔥 ENTITY uniquement si requête simple
-    query_words = user_query.strip().split()
-
-    if len(query_words) == 1:
-
-        if entity["type"] == "company":
-            return handle_company(entity)
-
-        if entity["type"] == "topic":
-            return handle_topic(entity)
-
+    decision = decide_route(intent, entity, rows, user_query)
 
     # ----------------------------------------------------------
-    # 4. NUMBERS (INTENT SPÉCIFIQUE)
-    # ----------------------------------------------------------
-    intent = detect_intent(user_query)
-
-    if intent == "numbers":
-        return handle_numbers(entity)
-
-    # ----------------------------------------------------------
-    # 🆚 BENCHMARK
+    # 5. ROUTING
     # ----------------------------------------------------------
 
-    if intent == "benchmark":
+    if decision == "benchmark":
         return handle_benchmark(user_query)
 
+    if decision == "numbers":
+        return handle_numbers(entity)
+
+    if decision == "company":
+        return handle_company(entity)
+
+    if decision == "topic":
+        return handle_topic(entity)
+
     # ----------------------------------------------------------
-    # 5. FALLBACK INTELLIGENT
+    # 6. SEARCH FALLBACK
     # ----------------------------------------------------------
 
     if not rows:
@@ -145,7 +176,10 @@ def mcp_query(body: MCPQuery):
             }
         }
 
-    # 👉 insight si analyses
+    # ----------------------------------------------------------
+    # 7. INSIGHT (ANALYSES)
+    # ----------------------------------------------------------
+
     analysis_ids = [
         r["id"]
         for r in rows
@@ -158,12 +192,19 @@ def mcp_query(body: MCPQuery):
         result = run_insight_pipeline(analysis_ids)
         analysis_text = result.get("insight")
 
-    # 👉 suggestions
+    # ----------------------------------------------------------
+    # 8. SUGGESTIONS
+    # ----------------------------------------------------------
+
     suggestions = build_suggestions(
         intent="search",
         entity={"label": user_query},
         items=rows
     )
+
+    # ----------------------------------------------------------
+    # 9. RESPONSE
+    # ----------------------------------------------------------
 
     return {
         "status": "ok",
