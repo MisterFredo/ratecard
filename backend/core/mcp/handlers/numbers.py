@@ -60,6 +60,47 @@ def _get_latest_numbers_ids(entity: Dict, limit: int = 10) -> List[str]:
 
 
 # ============================================================
+# 2. STRUCTURATION PAR SEGMENT
+# ============================================================
+
+def _group_numbers_by_segment(numbers: List[Dict]) -> Dict:
+
+    grouped = {}
+
+    for n in numbers:
+        segment = n.get("segment") or "Other"
+
+        if segment not in grouped:
+            grouped[segment] = []
+
+        grouped[segment].append(n)
+
+    return grouped
+
+
+# ============================================================
+# 3. TRI PAR PRIORITÉ MÉTIER
+# ============================================================
+
+def _sort_numbers(numbers: List[Dict]) -> List[Dict]:
+
+    priority = {
+        "MARKET_SHARE": 1,
+        "REVENUE": 2,
+        "GROWTH": 3,
+        "USERS": 4,
+        "VOLUME": 5,
+        "PERFORMANCE": 6,
+        "OTHER": 7
+    }
+
+    return sorted(
+        numbers,
+        key=lambda x: priority.get(x.get("category"), 99)
+    )
+
+
+# ============================================================
 # HANDLER
 # ============================================================
 
@@ -81,8 +122,13 @@ def handle_numbers(entity: Dict) -> Dict:
             "intent": "numbers",
             "entity": entity,
             "answer": {
-                "insight": insight,
-                "data": numbers
+                "items": [],
+                "grouped": {},
+                "text": "Aucun chiffre disponible",
+                "nb_numbers": 0
+            },
+            "meta": {
+                "suggestions": []
             }
         }
 
@@ -92,30 +138,41 @@ def handle_numbers(entity: Dict) -> Dict:
     numbers = get_numbers_by_ids(ids)
 
     # ----------------------------------------------------------
-    # 3. INSIGHT (LLM)
+    # 3. TRI
     # ----------------------------------------------------------
-    insight = generate_numbers_insight(ids)
+    numbers_sorted = _sort_numbers(numbers)
 
     # ----------------------------------------------------------
-    # 4. 🔥 SUGGESTIONS DYNAMIQUES
+    # 4. STRUCTURATION
+    # ----------------------------------------------------------
+    numbers_grouped = _group_numbers_by_segment(numbers_sorted)
+
+    # ----------------------------------------------------------
+    # 5. INSIGHT (LLM basé sur structure)
+    # ----------------------------------------------------------
+    insight = generate_numbers_insight(numbers_grouped)
+
+    # ----------------------------------------------------------
+    # 6. SUGGESTIONS DYNAMIQUES
     # ----------------------------------------------------------
     suggestions = build_suggestions(
         intent="numbers",
         entity=entity,
-        items=numbers
+        items=numbers_sorted
     )
 
     # ----------------------------------------------------------
-    # 5. RESPONSE
+    # 7. RESPONSE
     # ----------------------------------------------------------
     return {
         "status": "ok",
         "intent": "numbers",
         "entity": entity,
         "answer": {
-            "items": numbers,       # 🔥 data brute
-            "text": insight,        # 🔥 structuration LLM
-            "nb_numbers": len(ids)
+            "items": numbers_sorted,        # data triée
+            "grouped": numbers_grouped,     # 🔥 structuration clé
+            "text": insight,                # 🔥 insight LLM
+            "nb_numbers": len(numbers_sorted)
         },
         "meta": {
             "suggestions": suggestions
