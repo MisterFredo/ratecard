@@ -1,6 +1,6 @@
-import unicodedata
-from functools import lru_cache
+# core/mcp/entity.py
 
+import unicodedata
 from utils.bigquery_utils import query_bq
 
 
@@ -13,10 +13,9 @@ def normalize(text: str) -> str:
 
 
 # ============================================================
-# LOAD ENTITIES (CACHE)
+# LOAD ENTITIES (CACHEABLE)
 # ============================================================
 
-@lru_cache(maxsize=1)
 def _get_topics():
     rows = query_bq("""
         SELECT LABEL
@@ -25,7 +24,6 @@ def _get_topics():
     return [r["LABEL"] for r in rows if r.get("LABEL")]
 
 
-@lru_cache(maxsize=1)
 def _get_companies():
     rows = query_bq("""
         SELECT NAME
@@ -35,71 +33,25 @@ def _get_companies():
 
 
 # ============================================================
-# MATCH HELPERS (AMÉLIORÉ + SPÉCIFICITÉ)
+# MATCH HELPERS
 # ============================================================
 
-def _match_best(q: str, candidates):
-
-    q_tokens = q.split()
-
-    best_match = None
-    best_score = 0
-    best_length = 0
-
-    for label in candidates:
-        l = normalize(label)
-
-        # exact match → priorité absolue
-        if q == l:
+def _match_topic(q: str, topics):
+    for label in topics:
+        if normalize(label) in q:
             return label
-
-        score = sum(1 for token in q_tokens if token in l)
-
-        if score > 0:
-            length = len(l)
-
-            # 🔥 priorité :
-            # 1. score tokens
-            # 2. longueur (plus spécifique)
-            if score > best_score or (score == best_score and length > best_length):
-                best_score = score
-                best_length = length
-                best_match = label
-
-    return best_match
+    return None
 
 
-# ============================================================
-# HARD OVERRIDES (EXTENDED)
-# ============================================================
-
-def _detect_topic_override(q: str):
-
-    mapping = {
-        "retail media": "Retail Media",
-        "ctv": "CTV & VIDEO",
-        "video": "CTV & VIDEO",
-        "dooh": "DOOH",
-        "search": "Search",
-        "social": "Social",
-        "audio": "Audio",
-        "display": "Display",
-        "retail data": "Retail Data",
-        "marketplace": "Marketplaces",
-        "agent": "Agentic Commerce",
-        "ia": "Agentic Commerce",
-        "ai": "Agentic Commerce",
-    }
-
-    for key, value in mapping.items():
-        if key in q:
-            return value
-
+def _match_company(q: str, companies):
+    for name in companies:
+        if normalize(name) in q:
+            return name
     return None
 
 
 # ============================================================
-# MAIN RESOLVER (FIX PRIORITÉ)
+# MAIN RESOLVER
 # ============================================================
 
 def resolve_entity(query: str):
@@ -107,23 +59,24 @@ def resolve_entity(query: str):
     q = normalize(query)
 
     # --------------------------------------------------
-    # 🔵 PRIORITÉ 1 → HARD TOPIC
+    # 🔵 HARD OVERRIDES (prioritaires)
     # --------------------------------------------------
 
-    override = _detect_topic_override(q)
+    if "retail media" in q:
+        return {"type": "topic", "label": "Retail Media"}
 
-    if override:
-        return {
-            "type": "topic",
-            "label": override
-        }
+    if "ctv" in q or "video" in q:
+        return {"type": "topic", "label": "CTV & VIDEO"}
+
+    if "dooh" in q:
+        return {"type": "topic", "label": "DOOH"}
 
     # --------------------------------------------------
-    # 🔵 PRIORITÉ 2 → TOPIC DYNAMIQUE (🔥 important)
+    # 🔵 TOPIC DYNAMIQUE
     # --------------------------------------------------
 
     topics = _get_topics()
-    topic_match = _match_best(q, topics)
+    topic_match = _match_topic(q, topics)
 
     if topic_match:
         return {
@@ -132,11 +85,11 @@ def resolve_entity(query: str):
         }
 
     # --------------------------------------------------
-    # 🟢 PRIORITÉ 3 → COMPANY
+    # 🟢 COMPANY DYNAMIQUE
     # --------------------------------------------------
 
     companies = _get_companies()
-    company_match = _match_best(q, companies)
+    company_match = _match_company(q, companies)
 
     if company_match:
         return {
@@ -145,7 +98,7 @@ def resolve_entity(query: str):
         }
 
     # --------------------------------------------------
-    # ⚪ FALLBACK
+    # 🔴 FALLBACK
     # --------------------------------------------------
 
     return {
