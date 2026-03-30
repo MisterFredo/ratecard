@@ -7,16 +7,20 @@ export default function TopicColumn({
   topics,
   isFoundation = false,
 }: any) {
+  const safeTopics = Array.isArray(topics) ? topics : [];
+
   return (
     <div className={`${isFoundation ? "max-w-4xl mx-auto" : ""}`}>
 
+      {/* TITLE */}
       <h2 className="text-xs uppercase tracking-widest text-gray-400 text-center mb-6">
         {title}
       </h2>
 
+      {/* GRID */}
       <div className="grid grid-cols-2 gap-4">
-        {(topics || []).map((t: any) => (
-          <MiniTopicCard key={t.id_topic} topic={t} />
+        {safeTopics.map((t: any) => (
+          <MiniTopicCard key={t?.id_topic || Math.random()} topic={t} />
         ))}
       </div>
 
