@@ -31,7 +31,7 @@ bucket = storage_client.bucket(BUCKET_NAME)
 # ==================================================================
 # UPLOAD — compatible UBLA (ne touche JAMAIS aux ACL objet)
 # ==================================================================
-def upload_bytes(folder: str, filename: str, data: bytes) -> str:
+def upload_bytes(folder: str, filename: str, data: bytes, content_type: str = "image/jpeg") -> str:
     """
     Upload un fichier binaire dans GCS.
     Retourne l’URL publique (si bucket public).
@@ -40,16 +40,11 @@ def upload_bytes(folder: str, filename: str, data: bytes) -> str:
     path = f"{folder}/{filename}"
     blob = bucket.blob(path)
 
-    # Upload simple — aucune ACL objet (UBLA interdit les ACL)
     blob.upload_from_string(
         data,
-        content_type="image/jpeg"
+        content_type=content_type
     )
 
-    # ⚠️ Ne surtout pas appeler blob.make_public()
-    # ⚠️ Ne surtout pas modifier blob.acl.*
-
-    # L'accès public dépend des permissions du bucket (déjà configurées)
     return f"{BASE_URL}/{path}"
 
 def get_public_url(folder: str, filename: str | None) -> str | None:
