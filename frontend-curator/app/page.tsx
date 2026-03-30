@@ -169,18 +169,24 @@ export default function Home() {
       {/* STEP 4 — BLOCS */}
       {/* ========================= */}
       {step === 4 && (
-        <div className="grid grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {[1, 2, 3, 4, 5, 6]
-            .slice(0, subStep)
-            .map((i) => (
-              <div
-                key={i}
-                className="p-6 border rounded-xl shadow-sm text-center"
-              >
-                Bloc {i}
-              </div>
-            ))}
-        </div>
+        <>
+          <h1 className="text-4xl font-bold text-center mb-16">
+            Concrètement, à quoi ça sert ?
+          </h1>
+
+          <div className="grid grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {[1, 2, 3, 4, 5, 6]
+              .slice(0, subStep)
+              .map((i) => (
+                <div
+                  key={i}
+                  className="p-6 border rounded-xl shadow-sm text-center"
+                >
+                  Bloc {i}
+                </div>
+              ))}
+          </div>
+        </>
       )}
 
       {/* CONTROL */}
@@ -207,8 +213,8 @@ function ChaosScene({ companies, sources, topics }: any) {
   const [phase, setPhase] = useState("scatter");
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("connect"), 1500);
-    const t2 = setTimeout(() => setPhase("merge"), 3000);
+    const t1 = setTimeout(() => setPhase("connect"), 2000);
+    const t2 = setTimeout(() => setPhase("merge"), 5000);
 
     return () => {
       clearTimeout(t1);
@@ -219,9 +225,9 @@ function ChaosScene({ companies, sources, topics }: any) {
   const items = [...companies, ...sources, ...topics];
 
   return (
-    <div className="relative w-full h-[70vh] flex items-center justify-center overflow-hidden">
+    <div className="relative w-full h-[75vh] flex items-center justify-center overflow-hidden">
 
-      {/* ELEMENTS */}
+      {/* ELEMENTS CHAOS */}
       {items.map((item, i) => {
         const isCompany = item.id_company;
         const isSource = item.source_id;
@@ -235,11 +241,11 @@ function ChaosScene({ companies, sources, topics }: any) {
         return (
           <div
             key={i}
-            className={`
-              absolute transition-all duration-1000
-              ${phase === "merge" ? "opacity-0 scale-50" : "opacity-100"}
-            `}
-            style={{ transform: getTransform(i) }}
+            className="absolute transition-all duration-1000"
+            style={{
+              transform: chaoticTransform(i, phase),
+              opacity: phase === "merge" ? 0.4 : 1,
+            }}
           >
             {src ? (
               <img
@@ -255,10 +261,10 @@ function ChaosScene({ companies, sources, topics }: any) {
         );
       })}
 
-      {/* CONNEXIONS (phase connect) */}
-      {phase === "connect" && (
+      {/* CONNEXIONS */}
+      {phase !== "scatter" && (
         <svg className="absolute w-full h-full pointer-events-none">
-          {Array.from({ length: 25 }).map((_, i) => (
+          {Array.from({ length: 40 }).map((_, i) => (
             <line
               key={i}
               x1={Math.random() * 100 + "%"}
@@ -267,37 +273,41 @@ function ChaosScene({ companies, sources, topics }: any) {
               y2={Math.random() * 100 + "%"}
               stroke="#999"
               strokeWidth="1"
-              opacity="0.15"
+              opacity="0.1"
             />
           ))}
         </svg>
       )}
 
-      {/* LOGO FINAL */}
+      {/* LOGO CENTRE */}
       {phase === "merge" && (
-        <div className="absolute text-center">
+        <div className="absolute">
           <img
             src="/assets/brand/getcurator-logo.png"
-            className="w-48 mx-auto mb-4"
+            className="w-56 mx-auto"
           />
-          <div className="text-3xl font-bold">
-            getcurator.ai
-          </div>
         </div>
       )}
     </div>
   );
 }
 
-function getTransform(i: number) {
-  const angle = (i * 37) % 360;
-  const radius = 200;
+function chaoticTransform(i: number, phase: string) {
+  const base = i * 37;
 
-  const x = Math.cos(angle) * radius;
-  const y = Math.sin(angle) * radius;
+  const spread = phase === "scatter" ? 350 : 200;
+
+  const x =
+    Math.cos(base) * spread +
+    Math.sin(i * 13) * 50;
+
+  const y =
+    Math.sin(base) * spread +
+    Math.cos(i * 17) * 50;
 
   return `translate(${x}px, ${y}px)`;
 }
+
 
 //
 // =========================
