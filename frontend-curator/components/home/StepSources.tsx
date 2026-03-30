@@ -23,7 +23,7 @@ export default function StepSources({ sources }: any) {
       <div className="
         absolute inset-0
         flex flex-wrap justify-center gap-10
-        opacity-10
+        opacity-25
         pointer-events-none
       ">
         {sources.slice(0, 40).map((s: any, i: number) => (
