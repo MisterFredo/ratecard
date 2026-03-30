@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import VisualSection from "@/components/visuals/VisualSection";
+
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+const SOURCE_MEDIA_PATH = "sources";
 
 export default function EditSource() {
 
@@ -17,9 +21,14 @@ export default function EditSource() {
   const [author, setAuthor] = useState("");
   const [authorProfile, setAuthorProfile] = useState("");
 
+  const [logoFilename, setLogoFilename] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // ---------------------------------------------------------
+  // LOAD
+  // ---------------------------------------------------------
   useEffect(() => {
     async function load() {
       try {
@@ -31,6 +40,9 @@ export default function EditSource() {
         setDomain(res.domain || "");
         setAuthor(res.author || "");
         setAuthorProfile(res.author_profile || "");
+
+        setLogoFilename(res.logo || null); // ✅ NEW
+
       } catch (e) {
         console.error(e);
         alert("Erreur chargement source");
@@ -44,6 +56,9 @@ export default function EditSource() {
     }
   }, [sourceId]);
 
+  // ---------------------------------------------------------
+  // SAVE
+  // ---------------------------------------------------------
   async function save() {
 
     if (!name.trim()) {
@@ -78,6 +93,29 @@ export default function EditSource() {
     }
   }
 
+  // ---------------------------------------------------------
+  // RELOAD (après upload logo)
+  // ---------------------------------------------------------
+  async function reloadSource() {
+
+    try {
+
+      const s = await api.get(`/source/${sourceId}`);
+
+      setLogoFilename(s.logo || null);
+
+    } catch (e) {
+
+      console.error(e);
+      alert("❌ Erreur rechargement source");
+
+    }
+
+  }
+
+  // ---------------------------------------------------------
+  // DELETE
+  // ---------------------------------------------------------
   async function remove() {
 
     if (!confirm("Supprimer cette source ?")) {
@@ -104,6 +142,13 @@ export default function EditSource() {
     return <div>Chargement...</div>;
   }
 
+  const logoUrl = logoFilename
+    ? `${GCS_BASE_URL}/${SOURCE_MEDIA_PATH}/${logoFilename}`
+    : null;
+
+  // ---------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------
   return (
     <div className="space-y-10">
 
@@ -113,10 +158,7 @@ export default function EditSource() {
           Modifier la source
         </h1>
 
-        <Link
-          href="/admin/source"
-          className="underline"
-        >
+        <Link href="/admin/source" className="underline">
           ← Retour
         </Link>
 
@@ -212,6 +254,16 @@ export default function EditSource() {
         </button>
 
       </div>
+
+      {/* ✅ VISUAL SECTION — EXACT COMPANY */}
+      <VisualSection
+        entityId={sourceId}
+        rectUrl={logoUrl}
+        onUpdated={reloadSource}
+        mediaPath={SOURCE_MEDIA_PATH}
+        field="logo"
+        endpoint="source"
+      />
 
     </div>
   );
