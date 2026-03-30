@@ -1,58 +1,61 @@
 "use client";
 
-export default function StepUseCases({ subStep }: any) {
-  const blocks = [
+export default function StepUseCases() {
+  const useCases = [
     "Préparer une présentation interne",
-    "Préparer un rendez-vous fournisseur",
     "Analyser un concurrent",
     "Faire de la veille sur un sujet",
-    "Structurer une formation",
     "Produire une analyse rapidement",
+    "Structurer une formation",
+    "Préparer un rendez-vous fournisseur",
   ];
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="relative w-full h-[70vh] flex items-center justify-center">
 
-      {/* TITLE */}
-      <h1 className="text-5xl font-semibold text-center mb-16 tracking-tight">
-        Concrètement,
-        <span className="block text-gray-400 font-normal">
-          dans votre quotidien
-        </span>
-      </h1>
+      {/* ========================= */}
+      {/* CENTER LOGO */}
+      {/* ========================= */}
+      <div className="absolute z-10 text-center">
+        <img
+          src="/assets/brand/logo_stack_curator.png"
+          className="w-48 mx-auto mb-4"
+        />
+      </div>
 
-      {/* GRID */}
-      <div className="grid grid-cols-3 gap-8">
+      {/* ========================= */}
+      {/* USE CASES AROUND */}
+      {/* ========================= */}
+      {useCases.map((text, i) => {
+        const angle = (i / useCases.length) * Math.PI * 2;
+        const radius = 220;
 
-        {blocks.slice(0, subStep).map((text, i) => (
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+
+        return (
           <div
             key={i}
             className="
-              group
-              p-8
-              rounded-2xl
+              absolute
+              px-5 py-3
+              rounded-xl
               border border-gray-200
               bg-white
-              text-center
+              text-sm text-center
 
               transition-all duration-300
 
-              hover:scale-105
-              hover:shadow-xl
-              hover:border-black
+              hover:scale-105 hover:shadow-lg
             "
+            style={{
+              transform: `translate(${x}px, ${y}px)`,
+            }}
           >
-            <p className="
-              text-base font-medium text-gray-800
-              group-hover:text-black
-              transition
-            ">
-              {text}
-            </p>
+            {text}
           </div>
-        ))}
-
-      </div>
+        );
+      })}
 
     </div>
   );
