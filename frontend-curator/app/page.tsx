@@ -1,77 +1,117 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const router = useRouter();
+  const [sources, setSources] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
 
-  const [step, setStep] = useState(0);
+  const [visibleSources, setVisibleSources] = useState(0);
+  const [visibleCompanies, setVisibleCompanies] = useState(0);
 
+  const [phase, setPhase] = useState<"sources" | "companies">("sources");
+
+  // =========================
+  // FETCH REAL DATA
+  // =========================
   useEffect(() => {
-    const timers = [
-      setTimeout(() => setStep(1), 1500),
-      setTimeout(() => setStep(2), 3000),
-      setTimeout(() => setStep(3), 4500),
-      setTimeout(() => setStep(4), 6000),
-      setTimeout(() => router.push("/feed"), 7500),
-    ];
+    fetch("/api/source/list")
+      .then((r) => r.json())
+      .then((data) => setSources(data.sources || []));
 
-    return () => timers.forEach(clearTimeout);
+    fetch("/api/company/list")
+      .then((r) => r.json())
+      .then((data) => setCompanies(data.companies || []));
   }, []);
 
+  // =========================
+  // ANIMATION SOURCES
+  // =========================
+  useEffect(() => {
+    if (phase !== "sources" || sources.length === 0) return;
+
+    const interval = setInterval(() => {
+      setVisibleSources((prev) => {
+        if (prev >= sources.length) {
+          setPhase("companies");
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 120);
+
+    return () => clearInterval(interval);
+  }, [sources, phase]);
+
+  // =========================
+  // ANIMATION COMPANIES
+  // =========================
+  useEffect(() => {
+    if (phase !== "companies" || companies.length === 0) return;
+
+    const interval = setInterval(() => {
+      setVisibleCompanies((prev) =>
+        Math.min(prev + 4, companies.length)
+      );
+    }, 60);
+
+    return () => clearInterval(interval);
+  }, [companies, phase]);
+
+  // =========================
+  // RENDER
+  // =========================
   return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-gradient-to-b from-gray-100 to-white">
 
-      <h1 className="text-4xl font-bold mb-8 text-center">
-        Trop d’information, pas assez de signal
+      {/* TITLE */}
+      <h1 className="text-4xl font-bold mb-10 text-center">
+        L’information est partout
       </h1>
 
-      {/* CHAOS */}
-      <div className={`flex gap-3 flex-wrap max-w-3xl justify-center transition-all duration-700 ${step > 2 ? "opacity-20 scale-95" : "opacity-100"}`}>
-        {["Amazon", "Walmart", "LinkedIn", "YouTube", "TikTok", "+45%", "insight", "study", "podcast"].map((item, i) => (
-          <div key={i} className="px-3 py-1 bg-gray-200 rounded-md text-sm">
-            {item}
+      {/* ========================= */}
+      {/* SOURCES */}
+      {/* ========================= */}
+      {phase === "sources" && (
+        <div className="flex flex-wrap gap-3 max-w-4xl justify-center">
+          {sources.slice(0, visibleSources).map((s) => (
+            <Item key={s.source_id} label={s.name} />
+          ))}
+        </div>
+      )}
+
+      {/* ========================= */}
+      {/* COMPANIES */}
+      {/* ========================= */}
+      {phase === "companies" && (
+        <>
+          <h2 className="text-2xl mt-6 mb-6 text-gray-600">
+            Et des centaines d’acteurs
+          </h2>
+
+          <div className="flex flex-wrap gap-2 max-w-5xl justify-center">
+            {companies.slice(0, visibleCompanies).map((c) => (
+              <Item key={c.id_company} label={c.name} small />
+            ))}
           </div>
-        ))}
-      </div>
-
-      {/* FILTER */}
-      {step >= 2 && (
-        <div className="flex gap-6 mt-6 text-sm text-gray-600 animate-fade-in">
-          <div>Qualité</div>
-          <div>Redondance</div>
-          <div>Structuration</div>
-        </div>
-      )}
-
-      {/* ANALYSIS */}
-      {step >= 3 && (
-        <div className="flex gap-6 mt-10">
-          <Card title="Commerce agentique" subtitle="Transformation du funnel" />
-          <Card title="Amazon Ads" subtitle="+ croissance revenus" />
-          <Card title="Walmart" subtitle="Montée marketplace" />
-        </div>
-      )}
-
-      {/* CTA */}
-      {step >= 4 && (
-        <button
-          onClick={() => router.push("/feed")}
-          className="mt-10 px-6 py-3 bg-black text-white rounded-lg"
-        >
-          Entrer dans Curator
-        </button>
+        </>
       )}
     </div>
   );
 }
 
-function Card({ title, subtitle }: any) {
+// =========================
+// COMPONENT
+// =========================
+
+function Item({ label, small = false }: any) {
   return (
-    <div className="bg-white shadow-lg rounded-xl p-4 w-48">
-      <div className="font-semibold">{title}</div>
-      <div className="text-sm text-gray-500">{subtitle}</div>
+    <div
+      className={`px-3 py-1 rounded-md bg-gray-200 ${
+        small ? "text-xs" : "text-sm"
+      }`}
+    >
+      {label}
     </div>
   );
 }
