@@ -83,7 +83,7 @@ def upload_source_visual(payload: SourceVisualUpload):
                         "fname", "STRING", filename
                     ),
                     bigquery.ScalarQueryParameter(
-                        now = datetime.utcnow().isoformat()
+                        "now", "TIMESTAMP", datetime.utcnow()
                     ),
                     bigquery.ScalarQueryParameter(
                         "id", "STRING", payload.id_source
