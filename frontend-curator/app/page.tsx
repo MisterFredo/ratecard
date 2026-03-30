@@ -15,11 +15,11 @@ export default function Home() {
   // FETCH REAL DATA
   // =========================
   useEffect(() => {
-    fetch("/api/source/list")
+    fetch("/source/list")
       .then((r) => r.json())
       .then((data) => setSources(data.sources || []));
 
-    fetch("/api/company/list")
+    fetch("/company/list")
       .then((r) => r.json())
       .then((data) => setCompanies(data.companies || []));
   }, []);
