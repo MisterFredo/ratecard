@@ -41,7 +41,7 @@ export default function Home() {
   // NAVIGATION
   // =========================
   function handleNext() {
-    setStep((s) => Math.min(s + 1, 3)); // 🔥 max step = 3 maintenant
+    setStep((s) => Math.min(s + 1, 3));
   }
 
   useEffect(() => {
@@ -61,11 +61,8 @@ export default function Home() {
       {/* ========================= */}
 
       {step === 0 && <StepTopics topics={topics} />}
-
       {step === 1 && <StepSources sources={sources} />}
-
       {step === 2 && <StepCompanies companies={companies} />}
-
       {step === 3 && (
         <StepChaos
           companies={companies}
@@ -77,14 +74,16 @@ export default function Home() {
       {/* CONTROL */}
       {/* ========================= */}
 
-      <div className="flex justify-center mt-12">
-        <button
-          onClick={handleNext}
-          className="px-6 py-3 bg-black text-white rounded-lg"
-        >
-          Next →
-        </button>
-      </div>
+      {step !== 3 && (
+        <div className="flex justify-center mt-12">
+          <button
+            onClick={handleNext}
+            className="px-6 py-3 bg-black text-white rounded-lg"
+          >
+            Next →
+          </button>
+        </div>
+      )}
 
     </div>
   );
