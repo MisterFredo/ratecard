@@ -6,27 +6,22 @@ import { api } from "@/lib/api";
 type Props = {
   entityId: string;
 
-  // preview URL
+  // 🔑 URL calculée par le parent (ou null)
   rectUrl: string | null;
 
-  // callback reload
+  // 🔑 signal simple : “le visuel a changé”
   onUpdated: () => void;
-
-  // 🔥 NEW — rend le composant générique
-  endpoint: "company" | "source";
 };
 
 export default function VisualSection({
   entityId,
   rectUrl,
   onUpdated,
-  endpoint,
 }: Props) {
-
   const [loading, setLoading] = useState(false);
 
   /* ---------------------------------------------------------
-     Convert file → base64
+     Convert file → base64 (sans header)
   --------------------------------------------------------- */
   function fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -41,68 +36,40 @@ export default function VisualSection({
   }
 
   /* ---------------------------------------------------------
-     UPLOAD — dynamique
+     UPLOAD — LOGO SOCIÉTÉ
   --------------------------------------------------------- */
   async function upload(file: File) {
-
     setLoading(true);
 
     try {
-
       const base64 = await fileToBase64(file);
 
-      // 🔥 clé dynamique
-      if (!entityId) {
-        throw new Error("Missing entityId");
-      }
-
-      const payload =
-        endpoint === "company"
-          ? { id_company: entityId }
-          : { id_source: entityId };
-
-      const res = await api.post(
-        `/visuals/${endpoint}/upload`,
-        {
-          ...payload,
-          base64_image: base64,
-        }
-      );
+      const res = await api.post("/visuals/company/upload", {
+        id_company: entityId,
+        base64_image: base64,
+      });
 
       if (res.status !== "ok") {
         throw new Error("Upload échoué");
       }
 
+      // ✅ on ne manipule PLUS d’URL ici
       onUpdated();
-
     } catch (e) {
-
       console.error(e);
       alert("❌ Erreur upload visuel");
-
     } finally {
-
       setLoading(false);
-
     }
   }
-
-  /* ---------------------------------------------------------
-     LABEL dynamique
-  --------------------------------------------------------- */
-  const label =
-    endpoint === "company"
-      ? "Logo de la société"
-      : "Logo de la source";
 
   /* ---------------------------------------------------------
      UI
   --------------------------------------------------------- */
   return (
     <div className="p-4 border rounded bg-white space-y-4">
-
       <h2 className="text-xl font-semibold text-ratecard-blue">
-        {label}
+        Logo de la société
       </h2>
 
       <p className="text-sm text-gray-600">
@@ -112,23 +79,18 @@ export default function VisualSection({
       </p>
 
       {loading && (
-        <p className="text-sm text-gray-500">
-          Traitement en cours…
-        </p>
+        <p className="text-sm text-gray-500">Traitement en cours…</p>
       )}
 
-      {/* PREVIEW */}
+      {/* PREVIEW LOGO */}
       <div className="space-y-2">
-
         {rectUrl ? (
           <div className="max-w-xl border rounded bg-white p-8 flex items-center justify-center">
-
             <img
               src={rectUrl}
-              alt="Logo"
+              alt="Logo société"
               className="max-h-40 w-auto object-contain"
             />
-
           </div>
         ) : (
           <div className="max-w-xl h-40 bg-gray-100 border rounded flex items-center justify-center text-sm text-gray-500">
@@ -146,7 +108,6 @@ export default function VisualSection({
             }
           }}
         />
-
       </div>
     </div>
   );
