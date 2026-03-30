@@ -11,23 +11,30 @@ export default function Home() {
 
   const [step, setStep] = useState(0);
 
+  const [error, setError] = useState<string | null>(null);
+
   // =========================
-  // FETCH
+  // FETCH DATA (ALIGNÉ AVEC TON FEED)
   // =========================
   useEffect(() => {
     async function load() {
-      const sourcesRes = await api.get("/source/list");
-      const companiesRes = await api.get("/company/list");
+      try {
+        const sourcesRes = await api.get("/source/list");
+        const companiesRes = await api.get("/company/list");
 
-      setSources(sourcesRes.sources || []);
-      setCompanies(companiesRes.companies || []);
+        setSources(sourcesRes.sources || []);
+        setCompanies(companiesRes.companies || []);
+      } catch (e) {
+        console.error("❌ Home load error", e);
+        setError("Erreur de chargement des données");
+      }
     }
 
     load();
   }, []);
 
   // =========================
-  // KEYBOARD CONTROL (🔥 important)
+  // CONTROLE CLAVIER (→)
   // =========================
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -44,28 +51,38 @@ export default function Home() {
   // RENDER
   // =========================
   return (
-    <div className="h-screen w-full flex flex-col items-center justify-center bg-white">
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-white px-6">
 
-      <h1 className="text-4xl font-bold mb-10">
+      {/* TITLE */}
+      <h1 className="text-4xl font-bold mb-10 text-center">
         L’information est partout
       </h1>
 
+      {/* ERROR */}
+      {error && (
+        <div className="text-red-500 mb-4">
+          {error}
+        </div>
+      )}
+
       {/* ========================= */}
-      {/* STEP 0 → SOURCES */}
+      {/* SOURCES */}
       {/* ========================= */}
       {step >= 0 && (
         <div className="flex flex-wrap gap-4 max-w-4xl justify-center">
           {sources.slice(0, step * 3 + 1).map((s) => (
             <Logo
               key={s.source_id}
-              src={`${GCS_BASE_URL}/${s.logo}`}
+              type="source"
+              id={s.logo}
+              label={s.name}
             />
           ))}
         </div>
       )}
 
       {/* ========================= */}
-      {/* STEP 3 → COMPANIES */}
+      {/* COMPANIES */}
       {/* ========================= */}
       {step >= 3 && (
         <>
@@ -77,7 +94,9 @@ export default function Home() {
             {companies.slice(0, (step - 2) * 10).map((c) => (
               <Logo
                 key={c.id_company}
-                src={`${GCS_BASE_URL}/${c.media_logo_rectangle_id}`}
+                type="company"
+                id={c.media_logo_rectangle_id}
+                label={c.name}
                 small
               />
             ))}
@@ -85,10 +104,10 @@ export default function Home() {
         </>
       )}
 
-      {/* CONTROL BUTTON */}
+      {/* CONTROL */}
       <button
         onClick={() => setStep((s) => s + 1)}
-        className="mt-10 px-6 py-2 bg-black text-white rounded"
+        className="mt-10 px-6 py-3 bg-black text-white rounded-lg"
       >
         Next →
       </button>
@@ -96,20 +115,52 @@ export default function Home() {
   );
 }
 
+//
 // =========================
-// LOGO COMPONENT
+// LOGO COMPONENT (ROBUSTE)
 // =========================
+//
 
-function Logo({ src, small = false }: any) {
-  if (!src) return null;
+function Logo({ type, id, label, small = false }: any) {
+  if (!id) {
+    return (
+      <Fallback label={label} small={small} />
+    );
+  }
+
+  let src = "";
+
+  if (type === "company") {
+    src = `${GCS_BASE_URL}/companies/${id}`;
+  } else {
+    // ⚠️ Sources → on suppose que LOGO contient déjà le bon path
+    src = `${GCS_BASE_URL}/${id}`;
+  }
 
   return (
     <img
       src={src}
+      alt={label}
+      onError={(e) => {
+        (e.currentTarget as HTMLImageElement).style.display = "none";
+      }}
       className={`object-contain ${
         small ? "h-6" : "h-10"
       }`}
-      alt=""
     />
+  );
+}
+
+//
+// =========================
+// FALLBACK TEXTE
+// =========================
+//
+
+function Fallback({ label, small }: any) {
+  return (
+    <div className="px-2 py-1 bg-gray-200 text-xs rounded">
+      {label}
+    </div>
   );
 }
