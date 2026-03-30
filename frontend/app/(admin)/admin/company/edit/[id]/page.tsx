@@ -255,6 +255,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
             console.error(e);
           }
         }}
+        endpoint="company"
       />
 
     </div>
