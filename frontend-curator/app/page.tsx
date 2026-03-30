@@ -13,7 +13,6 @@ export default function Home() {
   const [sources, setSources] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
 
-  const [visibleSources, setVisibleSources] = useState(0);
   const [visibleCompanies, setVisibleCompanies] = useState(0);
 
   // =========================
@@ -38,25 +37,7 @@ export default function Home() {
   }, []);
 
   // =========================
-  // ANIMATION SOURCES (lent)
-  // =========================
-  useEffect(() => {
-    if (step !== 1 || sources.length === 0) return;
-
-    let i = 0;
-
-    const interval = setInterval(() => {
-      i += 1;
-      setVisibleSources(i);
-
-      if (i >= sources.length) clearInterval(interval);
-    }, 150); // 🔥 lent
-
-    return () => clearInterval(interval);
-  }, [step, sources]);
-
-  // =========================
-  // ANIMATION COMPANIES (très lent)
+  // ANIMATION ACTEURS (lent)
   // =========================
   useEffect(() => {
     if (step !== 2 || companies.length === 0) return;
@@ -66,7 +47,7 @@ export default function Home() {
     const interval = setInterval(() => {
       i += 1;
       setVisibleCompanies(i);
-    }, 250); // 🔥 très lent pour parler
+    }, 250); // 🔥 lent pour parler
 
     return () => clearInterval(interval);
   }, [step, companies]);
@@ -74,17 +55,6 @@ export default function Home() {
   // =========================
   // NAVIGATION
   // =========================
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "ArrowRight") {
-        handleNext();
-      }
-    }
-
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  });
-
   function handleNext() {
     if (step === 3) {
       setSubStep((s) => Math.min(s + 1, 6));
@@ -94,6 +64,15 @@ export default function Home() {
     }
   }
 
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "ArrowRight") handleNext();
+    }
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  });
+
   return (
     <div className="w-full min-h-screen bg-white px-10 py-16">
 
@@ -102,22 +81,39 @@ export default function Home() {
       {/* ========================= */}
       {step === 0 && (
         <>
-          <h1 className="text-4xl font-bold text-center mb-12">
-            Sujets traités
+          <h1 className="text-4xl font-bold text-center mb-16">
+            Deux écosystèmes, un socle commun
           </h1>
 
-          <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
-            {topics.map((t) => (
-              <div
-                key={t.id_topic}
-                className="px-4 py-2 border rounded-lg text-sm text-center"
-              >
-                <div className="font-semibold">{t.label}</div>
-                <div className="text-gray-400 text-xs">
-                  {t.topic_axis}
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+
+            <Column
+              title="Foundations"
+              color="bg-blue-50"
+              border="border-blue-200"
+              items={topics.filter(
+                (t) => t.topic_axis === "FOUNDATIONS"
+              )}
+            />
+
+            <Column
+              title="Retail"
+              color="bg-green-50"
+              border="border-green-200"
+              items={topics.filter(
+                (t) => t.topic_axis === "RETAIL"
+              )}
+            />
+
+            <Column
+              title="Media"
+              color="bg-purple-50"
+              border="border-purple-200"
+              items={topics.filter(
+                (t) => t.topic_axis === "MEDIA"
+              )}
+            />
+
           </div>
         </>
       )}
@@ -127,31 +123,34 @@ export default function Home() {
       {/* ========================= */}
       {step === 1 && (
         <>
-          <h1 className="text-4xl font-bold text-center mb-12">
-            L’information est partout
+          <h1 className="text-4xl font-bold text-center mb-16">
+            Des sources filtrées d'horizons différents
           </h1>
 
-          <div className="flex flex-wrap justify-center gap-4 max-w-6xl mx-auto">
-            {sources.slice(0, visibleSources).map((s) => (
-              <Logo
+          <div className="grid grid-cols-5 gap-6 max-w-5xl mx-auto">
+
+            {sources.slice(0, 30).map((s) => (
+              <SourceLogo
                 key={s.source_id}
                 src={`${GCS_BASE_URL}/sources/${s.logo}`}
               />
             ))}
+
           </div>
         </>
       )}
 
       {/* ========================= */}
-      {/* STEP 2 — COMPANIES */}
+      {/* STEP 2 — ACTEURS */}
       {/* ========================= */}
       {step === 2 && (
         <>
-          <h1 className="text-4xl font-bold text-center mb-12">
+          <h1 className="text-4xl font-bold text-center mb-16">
             Des centaines d’acteurs
           </h1>
 
           <div className="flex flex-wrap justify-center gap-3 max-w-6xl mx-auto">
+
             {companies.slice(0, visibleCompanies).map((c) => (
               <Logo
                 key={c.id_company}
@@ -159,6 +158,7 @@ export default function Home() {
                 small
               />
             ))}
+
           </div>
         </>
       )}
@@ -190,13 +190,49 @@ export default function Home() {
           Next →
         </button>
       </div>
+
     </div>
   );
 }
 
+//
 // =========================
-// LOGO COMPONENT
+// COMPONENTS
 // =========================
+//
+
+function Column({ title, items, color, border }: any) {
+  return (
+    <div className="space-y-4">
+      <h2 className="text-sm font-semibold uppercase text-gray-400 text-center">
+        {title}
+      </h2>
+
+      <div className="flex flex-wrap justify-center gap-3">
+        {items.map((t: any) => (
+          <div
+            key={t.id_topic}
+            className={`px-4 py-2 rounded-lg text-sm border ${color} ${border}`}
+          >
+            {t.label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SourceLogo({ src }: any) {
+  return (
+    <div className="w-full h-20 flex items-center justify-center bg-white border rounded-xl shadow-sm">
+      <img
+        src={src}
+        alt=""
+        className="max-w-[80%] max-h-[70%] object-contain"
+      />
+    </div>
+  );
+}
 
 function Logo({ src, small = false }: any) {
   return (
