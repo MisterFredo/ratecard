@@ -27,7 +27,7 @@ export default function MiniTopicCard({ topic }: any) {
       className="
         group
         rounded-xl border border-gray-200 bg-white
-        p-3
+        p-2.5
         transition-all duration-200
         hover:border-gray-300
       "
