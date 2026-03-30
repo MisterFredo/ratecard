@@ -22,7 +22,9 @@ export default function StepChaos({ companies, sources }: any) {
   return (
     <div className="relative w-full h-[75vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-white to-gray-100">
 
+      {/* ========================= */}
       {/* ELEMENTS */}
+      {/* ========================= */}
       {items.map((item, i) => {
         const isCompany = item.id_company;
 
@@ -36,7 +38,7 @@ export default function StepChaos({ companies, sources }: any) {
             className="absolute transition-all duration-1000"
             style={{
               transform: spiralTransform(i, phase),
-              opacity: phase === "merge" ? 0.5 : 1,
+              opacity: phase === "merge" ? 0 : 1, // 🔥 disparition totale au merge
             }}
           >
             <img
@@ -47,7 +49,9 @@ export default function StepChaos({ companies, sources }: any) {
         );
       })}
 
+      {/* ========================= */}
       {/* CONNECTIONS */}
+      {/* ========================= */}
       {phase !== "scatter" && (
         <svg className="absolute w-full h-full pointer-events-none">
           {Array.from({ length: 50 }).map((_, i) => (
@@ -59,18 +63,25 @@ export default function StepChaos({ companies, sources }: any) {
               y2={Math.random() * 100 + "%"}
               stroke="#bbb"
               strokeWidth="1"
-              opacity="0.08"
+              opacity={phase === "merge" ? 0 : 0.08} // 🔥 fade des lignes aussi
             />
           ))}
         </svg>
       )}
 
-      {/* LOGO FINAL */}
+      {/* ========================= */}
+      {/* LOGO FINAL (HERO) */}
+      {/* ========================= */}
       {phase === "merge" && (
-        <div className="absolute animate-fadeIn">
+        <div
+          className="absolute flex items-center justify-center"
+          style={{
+            animation: "zoomIn 1.2s cubic-bezier(0.22,1,0.36,1) forwards",
+          }}
+        >
           <img
             src="/assets/brand/logo_stack_curator.png"
-            className="w-56 mx-auto"
+            className="w-64 mx-auto"
           />
         </div>
       )}
@@ -90,7 +101,7 @@ function spiralTransform(i: number, phase: string) {
       ? 300 + i * 2
       : phase === "connect"
       ? 180 + i
-      : 80;
+      : 60; // 🔥 encore plus serré avant disparition
 
   const x = Math.cos(angle) * radius;
   const y = Math.sin(angle) * radius;
