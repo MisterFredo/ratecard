@@ -76,7 +76,8 @@ def upload_source_visual(payload: SourceVisualUpload):
                     bigquery.ScalarQueryParameter("now", "TIMESTAMP", datetime.utcnow()),
                     bigquery.ScalarQueryParameter("id", "STRING", payload.id_source),
                 ]
-            )
+            ),
+            location="EU",  # ✅ IMPORTANT
         ).result()
 
         return {"status": "ok", "filename": filename}
