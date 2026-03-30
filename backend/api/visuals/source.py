@@ -48,7 +48,10 @@ def to_rectangle_logo(image_bytes: bytes) -> bytes:
 # ============================================================
 
 @router.post("/upload")
-def upload_source_visual(payload: SourceVisualUpload):
+def upload_source_visual(payload: dict):
+    print("RECEIVED SOURCE:", payload)
+    return {"status": "debug"}
+    
     try:
         try:
             image_bytes = base64.b64decode(payload.base64_image)
