@@ -1,6 +1,6 @@
 "use client";
 
-import Column from "./Column";
+import TopicColumn from "@/components/home/TopicColumn";
 
 export default function StepTopics({ topics }: any) {
   return (
@@ -21,16 +21,14 @@ export default function StepTopics({ topics }: any) {
       {/* ========================= */}
       <div className="grid grid-cols-2 gap-16 mb-16">
 
-        <Column
+        <TopicColumn
           title="Retail"
-          variant="retail"
-          items={topics.filter((t: any) => t.topic_axis === "RETAIL")}
+          topics={topics.filter((t: any) => t.topic_axis === "RETAIL")}
         />
 
-        <Column
+        <TopicColumn
           title="Media"
-          variant="media"
-          items={topics.filter((t: any) => t.topic_axis === "MEDIA")}
+          topics={topics.filter((t: any) => t.topic_axis === "MEDIA")}
         />
 
       </div>
@@ -40,10 +38,9 @@ export default function StepTopics({ topics }: any) {
       {/* ========================= */}
       <div className="border-t pt-12">
 
-        <Column
+        <TopicColumn
           title="Foundations"
-          variant="foundation"
-          items={topics.filter((t: any) => t.topic_axis === "FOUNDATIONS")}
+          topics={topics.filter((t: any) => t.topic_axis === "FOUNDATIONS")}
           isFoundation
         />
 
