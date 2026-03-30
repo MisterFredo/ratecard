@@ -9,7 +9,12 @@ export default function Home() {
   const [sources, setSources] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
 
-  const [step, setStep] = useState(0);
+  const [visibleSources, setVisibleSources] = useState(0);
+  const [visibleCompanies, setVisibleCompanies] = useState(0);
+
+  const [phase, setPhase] = useState<"sources" | "companies">("sources");
+
+  const [speed, setSpeed] = useState(40); // 🔥 vitesse ajustable
 
   // =========================
   // FETCH
@@ -27,12 +32,58 @@ export default function Home() {
   }, []);
 
   // =========================
-  // CONTROL (flèche droite)
+  // ANIMATION SOURCES
+  // =========================
+  useEffect(() => {
+    if (phase !== "sources" || sources.length === 0) return;
+
+    let i = 0;
+
+    const interval = setInterval(() => {
+      i += Math.max(1, Math.floor(i / 10)); // 🔥 accélération progressive
+
+      setVisibleSources(i);
+
+      if (i >= sources.length) {
+        clearInterval(interval);
+        setPhase("companies");
+      }
+    }, speed);
+
+    return () => clearInterval(interval);
+  }, [sources, phase, speed]);
+
+  // =========================
+  // ANIMATION COMPANIES
+  // =========================
+  useEffect(() => {
+    if (phase !== "companies" || companies.length === 0) return;
+
+    let i = 0;
+
+    const interval = setInterval(() => {
+      i += Math.max(2, Math.floor(i / 8));
+
+      setVisibleCompanies(i);
+
+      if (i >= companies.length) {
+        clearInterval(interval);
+      }
+    }, speed / 2); // 🔥 plus rapide
+
+    return () => clearInterval(interval);
+  }, [companies, phase, speed]);
+
+  // =========================
+  // CONTROL TEMPO (CLAVIER)
   // =========================
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "ArrowRight") {
-        setStep((s) => s + 1);
+      if (e.key === "ArrowUp") {
+        setSpeed((s) => Math.max(10, s - 10)); // + rapide
+      }
+      if (e.key === "ArrowDown") {
+        setSpeed((s) => s + 10); // + lent
       }
     }
 
@@ -43,7 +94,6 @@ export default function Home() {
   return (
     <div className="w-full min-h-screen bg-white px-8 py-16">
 
-      {/* TITLE */}
       <h1 className="text-4xl font-bold text-center mb-12">
         L’information est partout
       </h1>
@@ -51,9 +101,9 @@ export default function Home() {
       {/* ========================= */}
       {/* SOURCES */}
       {/* ========================= */}
-      <div className="flex flex-wrap justify-center items-start gap-4 w-full max-w-6xl mx-auto">
+      <div className="flex flex-wrap justify-center gap-4 max-w-6xl mx-auto">
 
-        {sources.slice(0, step * 2 + 1).map((s) => (
+        {sources.slice(0, visibleSources).map((s) => (
           <Logo
             key={s.source_id}
             src={`${GCS_BASE_URL}/sources/${s.logo}`}
@@ -65,15 +115,15 @@ export default function Home() {
       {/* ========================= */}
       {/* COMPANIES */}
       {/* ========================= */}
-      {step >= 5 && (
+      {phase === "companies" && (
         <>
           <h2 className="text-2xl text-center mt-16 mb-8 text-gray-600">
             Et des centaines d’acteurs
           </h2>
 
-          <div className="flex flex-wrap justify-center items-start gap-3 w-full max-w-6xl mx-auto">
+          <div className="flex flex-wrap justify-center gap-3 max-w-6xl mx-auto">
 
-            {companies.slice(0, (step - 4) * 6).map((c) => (
+            {companies.slice(0, visibleCompanies).map((c) => (
               <Logo
                 key={c.id_company}
                 src={`${GCS_BASE_URL}/companies/${c.media_logo_rectangle_id}`}
@@ -85,34 +135,21 @@ export default function Home() {
         </>
       )}
 
-      {/* CONTROL */}
-      <div className="flex justify-center mt-12">
-        <button
-          onClick={() => setStep((s) => s + 1)}
-          className="px-6 py-3 bg-black text-white rounded-lg"
-        >
-          Next →
-        </button>
-      </div>
-
     </div>
   );
 }
 
 //
 // =========================
-// LOGO COMPONENT
+// LOGO
 // =========================
 //
 
 function Logo({ src, small = false }: any) {
   return (
     <div
-      className={`
-        flex items-center justify-center
-        bg-white border rounded-lg
-        ${small ? "w-16 h-10" : "w-24 h-14"}
-      `}
+      className={`flex items-center justify-center border rounded-lg bg-white
+      ${small ? "w-16 h-10" : "w-24 h-14"}`}
     >
       <img
         src={src}
