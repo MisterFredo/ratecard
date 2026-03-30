@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Pencil, Trash2 } from "lucide-react";
+
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+const SOURCE_MEDIA_PATH = "sources";
 
 type SourceRow = {
   source_id: string;
@@ -11,151 +13,186 @@ type SourceRow = {
   type_source?: string | null;
   domain?: string | null;
   author?: string | null;
-  created_at?: string;
+  logo?: string | null;
 };
 
 export default function SourceList() {
-  const [loading, setLoading] = useState(true);
-  const [sources, setSources] = useState<SourceRow[]>([]);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  async function load() {
-    try {
-      const res = await api.get("/source/list");
-      setSources(res.sources || []);
-    } catch (e) {
-      console.error(e);
-      alert("Erreur chargement sources");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [sources, setSources] = useState<SourceRow[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const res = await api.get("/source/list");
+        setSources(res.sources || []);
+      } catch (e) {
+        console.error(e);
+        alert("❌ Erreur chargement sources");
+      } finally {
+        setLoading(false);
+      }
+    }
+
     load();
   }, []);
 
-  async function handleDelete(id: string) {
-    const confirmDelete = confirm(
-      "Confirmer la suppression de cette source ?"
-    );
-    if (!confirmDelete) return;
+  async function deleteSource(id: string, name: string) {
+
+    const ok = confirm(`Supprimer la source "${name}" ?`);
+    if (!ok) return;
 
     try {
-      setDeletingId(id);
+
       await api.delete(`/source/${id}`);
+
       setSources((prev) =>
         prev.filter((s) => s.source_id !== id)
       );
+
     } catch (e) {
+
       console.error(e);
-      alert("Erreur suppression source");
-    } finally {
-      setDeletingId(null);
+      alert("❌ Erreur suppression");
+
     }
+
   }
 
-  if (loading) {
-    return (
-      <div className="p-6 text-sm text-gray-500">
-        Chargement...
-      </div>
-    );
-  }
+  const q = search.toLowerCase();
+
+  const filteredSources = sources.filter((s) =>
+    s.name.toLowerCase().includes(q) ||
+    (s.type_source || "").toLowerCase().includes(q) ||
+    (s.domain || "").toLowerCase().includes(q)
+  );
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="space-y-8">
 
-      {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">
+        <h1 className="text-3xl font-semibold text-ratecard-blue">
           Sources
         </h1>
 
         <Link
           href="/admin/source/create"
-          className="bg-ratecard-blue text-white px-4 py-2 rounded-md hover:opacity-90 transition"
+          className="bg-ratecard-green px-4 py-2 text-white rounded"
         >
           + Ajouter une source
         </Link>
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
+      {/* SEARCH */}
+      <div>
+        <input
+          type="text"
+          placeholder="Rechercher une source..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border px-3 py-2 rounded w-full max-w-md"
+        />
+      </div>
 
-        <table className="w-full text-sm">
+      {loading ? (
+        <p className="text-gray-500">Chargement…</p>
+      ) : filteredSources.length === 0 ? (
+        <p className="italic text-gray-500">
+          Aucune source.
+        </p>
+      ) : (
+        <table className="w-full text-sm border-collapse">
 
-          <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wide">
-            <tr>
-              <th className="text-left px-4 py-3">Nom</th>
-              <th className="text-left px-4 py-3">Type</th>
-              <th className="text-left px-4 py-3">Domaine</th>
-              <th className="text-left px-4 py-3">Auteur</th>
-              <th className="text-center px-4 py-3 w-20">
-                Actions
-              </th>
+          <thead>
+            <tr className="bg-gray-100 border-b text-left">
+              <th className="p-2">Nom</th>
+              <th className="p-2">Type</th>
+              <th className="p-2">Domaine</th>
+              <th className="p-2">Auteur</th>
+              <th className="p-2">Logo</th>
+              <th className="p-2 text-right">Actions</th>
             </tr>
           </thead>
 
-          <tbody className="divide-y">
+          <tbody>
 
-            {sources.length === 0 && (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-6 text-center text-gray-400"
+            {filteredSources.map((s) => {
+
+              const logoUrl = s.logo
+                ? `${GCS_BASE_URL}/${SOURCE_MEDIA_PATH}/${s.logo}`
+                : null;
+
+              return (
+
+                <tr
+                  key={s.source_id}
+                  className="border-b hover:bg-gray-50"
                 >
-                  Aucune source enregistrée
-                </td>
-              </tr>
-            )}
 
-            {sources.map((s) => (
-              <tr key={s.source_id} className="hover:bg-gray-50 transition">
+                  <td className="p-2 font-medium">
+                    {s.name}
+                  </td>
 
-                <td className="px-4 py-3 font-medium">
-                  {s.name}
-                </td>
+                  <td className="p-2">
+                    {s.type_source || (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
 
-                <td className="px-4 py-3 text-gray-600">
-                  {s.type_source || "—"}
-                </td>
+                  <td className="p-2">
+                    {s.domain || (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
 
-                <td className="px-4 py-3 text-gray-600">
-                  {s.domain || "—"}
-                </td>
+                  <td className="p-2">
+                    {s.author || (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
 
-                <td className="px-4 py-3 text-gray-600">
-                  {s.author || "—"}
-                </td>
+                  <td className="p-2">
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        alt={`Logo ${s.name}`}
+                        className="h-10 max-w-[120px] object-contain"
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-sm">—</span>
+                    )}
+                  </td>
 
-                <td className="px-4 py-3 text-center space-x-2">
+                  <td className="p-2 text-right space-x-3">
 
-                  <Link
-                    href={`/admin/source/edit/${s.source_id}`}
-                    className="inline-flex items-center text-gray-500 hover:text-black transition"
-                  >
-                    <Pencil size={16} />
-                  </Link>
+                    <Link
+                      href={`/admin/source/edit/${s.source_id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Modifier
+                    </Link>
 
-                  <button
-                    onClick={() => handleDelete(s.source_id)}
-                    disabled={deletingId === s.source_id}
-                    className="inline-flex items-center text-red-500 hover:text-red-700 transition disabled:opacity-50"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                    <button
+                      onClick={() => deleteSource(s.source_id, s.name)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Supprimer
+                    </button>
 
-                </td>
+                  </td>
 
-              </tr>
-            ))}
+                </tr>
+
+              );
+
+            })}
 
           </tbody>
 
         </table>
-
-      </div>
+      )}
 
     </div>
   );
