@@ -11,8 +11,11 @@ import {
   Tag,
   Box,
   Hash,
-  Radar, // ✅ icône radar
+  Radar,
+  Sparkles, // MCP
 } from "lucide-react";
+
+const LOGO_URL = "/assets/brand/symbol_curator.png";
 
 export default function CuratorShell({
   children,
@@ -28,12 +31,10 @@ export default function CuratorShell({
     return clean === path || clean.startsWith(path + "/");
   }
 
-  /* =========================================================
-     NAV
-  ========================================================= */
+  /* ========================================================= */
 
   const navData = [
-    { href: "/", label: "Feed", icon: Home }, // rename
+    { href: "/", label: "Feed", icon: Home },
     { href: "/numbers", label: "Numbers", icon: Hash },
     { href: "/radars", label: "Radar", icon: Radar },
   ];
@@ -46,7 +47,7 @@ export default function CuratorShell({
 
   /* ========================================================= */
 
-  const renderNav = (items: typeof navData) =>
+  const renderNav = (items: any[]) =>
     items.map((item) => {
       const Icon = item.icon;
       const active = isActive(item.href);
@@ -60,8 +61,8 @@ export default function CuratorShell({
             flex items-center gap-2 px-3 py-2 rounded-md transition
             ${
               active
-                ? "bg-teal-100 text-teal-900 font-semibold"
-                : "text-gray-700 hover:bg-slate-100"
+                ? "bg-emerald-100 text-emerald-800 font-semibold"
+                : "text-gray-700 hover:bg-emerald-50"
             }
           `}
         >
@@ -75,12 +76,14 @@ export default function CuratorShell({
 
   const Sidebar = (
     <>
+      {/* LOGO */}
       <Link
         href="/"
         onClick={() => setMobileOpen(false)}
-        className="mb-10 block"
+        className="mb-10 flex items-center gap-3"
       >
-        <span className="text-xl font-semibold tracking-wide text-teal-700">
+        <img src={LOGO_URL} className="w-8 h-8" />
+        <span className="text-lg font-semibold text-gray-900">
           Curator
         </span>
       </Link>
@@ -105,16 +108,39 @@ export default function CuratorShell({
         </nav>
       </div>
 
+      {/* MCP */}
+      <div className="mt-10">
+        <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
+          AI
+        </div>
+
+        <a
+          href="https://chatgpt.com/g/g-69c5cc7fed548191a395a92fe0fe3dbd-get-curator"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="
+            flex items-center gap-2 px-3 py-2 rounded-md transition
+            text-gray-700 hover:bg-emerald-50
+          "
+        >
+          <Sparkles size={18} />
+          <span>MCP Assistant</span>
+        </a>
+      </div>
+
       <div className="text-xs text-gray-400 mt-10">
         © {new Date().getFullYear()} Curator
       </div>
     </>
   );
 
+  /* ========================================================= */
+
   return (
     <div className="min-h-screen flex">
+
       {/* Desktop */}
-      <aside className="hidden md:flex w-56 bg-slate-50 border-r p-6 flex-col">
+      <aside className="hidden md:flex w-56 bg-white border-r p-6 flex-col">
         {Sidebar}
       </aside>
 
@@ -125,7 +151,7 @@ export default function CuratorShell({
             className="absolute inset-0 bg-black/40"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="relative w-4/5 max-w-xs bg-slate-50 p-6 flex-col">
+          <aside className="relative w-4/5 max-w-xs bg-white p-6 flex-col">
             <button
               onClick={() => setMobileOpen(false)}
               className="absolute top-4 right-4"
@@ -143,9 +169,13 @@ export default function CuratorShell({
           <button onClick={() => setMobileOpen(true)}>
             <Menu />
           </button>
-          <span className="font-semibold text-teal-700">
-            Curator
-          </span>
+
+          <div className="flex items-center gap-2">
+            <img src={LOGO_URL} className="w-6 h-6" />
+            <span className="font-semibold text-gray-900">
+              Curator
+            </span>
+          </div>
         </div>
 
         <div className="p-4 md:p-8 w-full">
