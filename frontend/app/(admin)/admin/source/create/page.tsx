@@ -191,8 +191,6 @@ export default function CreateSource() {
           entityId={sourceId}
           rectUrl={logoUrl}
           onUpdated={reloadSource}
-          mediaPath={SOURCE_MEDIA_PATH} // 🔥 important
-          field="logo"                  // 🔥 important
           endpoint="source"             // 🔥 important
         />
       )}
