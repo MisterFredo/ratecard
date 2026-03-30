@@ -84,7 +84,7 @@ export default function CuratorShell({
       >
         <img src={LOGO_URL} className="w-8 h-8" />
         <span className="text-lg font-semibold text-gray-900">
-          Curator
+          GetCurator
         </span>
       </Link>
 
