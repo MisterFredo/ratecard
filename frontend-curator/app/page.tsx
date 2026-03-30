@@ -56,7 +56,7 @@ export default function Home() {
         {sources.slice(0, step * 2 + 1).map((s) => (
           <Logo
             key={s.source_id}
-            src={`${GCS_BASE_URL}/${s.logo}`}
+            src={`${GCS_BASE_URL}/sources/${s.logo}`}
           />
         ))}
 
