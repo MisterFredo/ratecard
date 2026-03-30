@@ -283,7 +283,7 @@ function ChaosScene({ companies, sources, topics }: any) {
       {phase === "merge" && (
         <div className="absolute">
           <img
-            src="/assets/brand/getcurator-logo.png"
+            src="/assets/brand/logo_stack_curator.png"
             className="w-56 mx-auto"
           />
         </div>
