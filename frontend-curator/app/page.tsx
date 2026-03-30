@@ -7,6 +7,7 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL;
 
 export default function Home() {
   const [step, setStep] = useState(0);
+  const [subStep, setSubStep] = useState(0);
 
   const [topics, setTopics] = useState<any[]>([]);
   const [sources, setSources] = useState<any[]>([]);
@@ -16,7 +17,7 @@ export default function Home() {
   const [visibleCompanies, setVisibleCompanies] = useState(0);
 
   // =========================
-  // FETCH REAL DATA
+  // FETCH DATA (BQ)
   // =========================
   useEffect(() => {
     async function load() {
@@ -25,13 +26,9 @@ export default function Home() {
         const s = await api.get("/source/list");
         const c = await api.get("/company/list");
 
-        console.log("TOPICS →", t);
-        console.log("SOURCES →", s);
-        console.log("COMPANIES →", c);
-
-        setTopics(t?.topics || t || []);
-        setSources(s?.sources || s || []);
-        setCompanies(c?.companies || c || []);
+        setTopics(t.topics || []);
+        setSources(s.sources || []);
+        setCompanies(c.companies || []);
       } catch (e) {
         console.error("❌ LOAD ERROR", e);
       }
@@ -41,7 +38,7 @@ export default function Home() {
   }, []);
 
   // =========================
-  // ANIMATION SOURCES
+  // ANIMATION SOURCES (lent)
   // =========================
   useEffect(() => {
     if (step !== 1 || sources.length === 0) return;
@@ -53,13 +50,13 @@ export default function Home() {
       setVisibleSources(i);
 
       if (i >= sources.length) clearInterval(interval);
-    }, 120);
+    }, 150); // 🔥 lent
 
     return () => clearInterval(interval);
   }, [step, sources]);
 
   // =========================
-  // ANIMATION COMPANIES
+  // ANIMATION COMPANIES (très lent)
   // =========================
   useEffect(() => {
     if (step !== 2 || companies.length === 0) return;
@@ -67,26 +64,35 @@ export default function Home() {
     let i = 0;
 
     const interval = setInterval(() => {
-      i += Math.max(1, Math.floor(i / 15));
+      i += 1;
       setVisibleCompanies(i);
-    }, 150);
+    }, 250); // 🔥 très lent pour parler
 
     return () => clearInterval(interval);
   }, [step, companies]);
 
   // =========================
-  // NAV
+  // NAVIGATION
   // =========================
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "ArrowRight") {
-        setStep((s) => s + 1);
+        handleNext();
       }
     }
 
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, []);
+  });
+
+  function handleNext() {
+    if (step === 3) {
+      setSubStep((s) => Math.min(s + 1, 6));
+    } else {
+      setStep((s) => s + 1);
+      setSubStep(0);
+    }
+  }
 
   return (
     <div className="w-full min-h-screen bg-white px-10 py-16">
@@ -101,16 +107,14 @@ export default function Home() {
           </h1>
 
           <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
-            {topics.map((t: any) => (
+            {topics.map((t) => (
               <div
-                key={t.id_topic || t.ID_TOPIC}
-                className="px-4 py-2 border rounded-lg text-sm"
+                key={t.id_topic}
+                className="px-4 py-2 border rounded-lg text-sm text-center"
               >
-                <div className="font-semibold">
-                  {t.label || t.LABEL}
-                </div>
+                <div className="font-semibold">{t.label}</div>
                 <div className="text-gray-400 text-xs">
-                  {t.topic_axis || t.TOPIC_AXIS}
+                  {t.topic_axis}
                 </div>
               </div>
             ))}
@@ -128,7 +132,7 @@ export default function Home() {
           </h1>
 
           <div className="flex flex-wrap justify-center gap-4 max-w-6xl mx-auto">
-            {sources.slice(0, visibleSources).map((s: any) => (
+            {sources.slice(0, visibleSources).map((s) => (
               <Logo
                 key={s.source_id}
                 src={`${GCS_BASE_URL}/sources/${s.logo}`}
@@ -148,7 +152,7 @@ export default function Home() {
           </h1>
 
           <div className="flex flex-wrap justify-center gap-3 max-w-6xl mx-auto">
-            {companies.slice(0, visibleCompanies).map((c: any) => (
+            {companies.slice(0, visibleCompanies).map((c) => (
               <Logo
                 key={c.id_company}
                 src={`${GCS_BASE_URL}/companies/${c.media_logo_rectangle_id}`}
@@ -160,25 +164,27 @@ export default function Home() {
       )}
 
       {/* ========================= */}
-      {/* STEP 3 — CARDS */}
+      {/* STEP 3 — BLOCS */}
       {/* ========================= */}
       {step === 3 && (
         <div className="grid grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div
-              key={i}
-              className="p-6 border rounded-xl shadow-sm text-center"
-            >
-              Bloc {i}
-            </div>
-          ))}
+          {[1, 2, 3, 4, 5, 6]
+            .slice(0, subStep)
+            .map((i) => (
+              <div
+                key={i}
+                className="p-6 border rounded-xl shadow-sm text-center"
+              >
+                Bloc {i}
+              </div>
+            ))}
         </div>
       )}
 
       {/* CONTROL */}
       <div className="flex justify-center mt-12">
         <button
-          onClick={() => setStep((s) => s + 1)}
+          onClick={handleNext}
           className="px-6 py-3 bg-black text-white rounded-lg"
         >
           Next →
@@ -189,7 +195,7 @@ export default function Home() {
 }
 
 // =========================
-// LOGO
+// LOGO COMPONENT
 // =========================
 
 function Logo({ src, small = false }: any) {
