@@ -262,7 +262,6 @@ export default function CreateCompany() {
           entityId={companyId}
           rectUrl={rectUrl}
           onUpdated={reloadCompany}
-          endpoint="company" 
         />
       )}
 
