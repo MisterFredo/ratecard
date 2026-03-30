@@ -48,10 +48,7 @@ def to_rectangle_logo(image_bytes: bytes) -> bytes:
 # ============================================================
 
 @router.post("/upload")
-def upload_source_visual(payload: dict):
-    print("RECEIVED SOURCE:", payload)
-    return {"status": "debug"}
-    
+def upload_source_visual(payload: SourceVisualUpload):
     try:
         try:
             image_bytes = base64.b64decode(payload.base64_image)
@@ -60,13 +57,10 @@ def upload_source_visual(payload: dict):
 
         logo_bytes = to_rectangle_logo(image_bytes)
 
-        # 🔒 NOM DÉTERMINISTE
         filename = f"SOURCE_{payload.id_source}_logo.jpg"
 
-        # Upload GCS
         upload_bytes(GCS_FOLDER, filename, logo_bytes)
 
-        # Update BigQuery
         client = get_bigquery_client()
         client.query(
             f"""
@@ -78,15 +72,9 @@ def upload_source_visual(payload: dict):
             """,
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter(
-                        "fname", "STRING", filename
-                    ),
-                    bigquery.ScalarQueryParameter(
-                        "now", "TIMESTAMP", datetime.utcnow()
-                    ),
-                    bigquery.ScalarQueryParameter(
-                        "id", "STRING", payload.id_source
-                    ),
+                    bigquery.ScalarQueryParameter("fname", "STRING", filename),
+                    bigquery.ScalarQueryParameter("now", "TIMESTAMP", datetime.utcnow()),
+                    bigquery.ScalarQueryParameter("id", "STRING", payload.id_source),
                 ]
             )
         ).result()
@@ -103,8 +91,6 @@ def upload_source_visual(payload: dict):
                 "message": str(e),
             }
         )
-
-
 # ============================================================
 # RESET LOGO SOURCE
 # ============================================================
