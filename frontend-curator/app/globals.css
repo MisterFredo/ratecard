@@ -25,3 +25,14 @@ html, body {
 .animate-fadeIn {
   animation: fadeIn 0.4s ease forwards;
 }
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1.6);
+    opacity: 1;
+  }
+}
