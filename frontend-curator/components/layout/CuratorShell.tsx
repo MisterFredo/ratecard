@@ -15,7 +15,7 @@ import {
   Sparkles, // MCP
 } from "lucide-react";
 
-const LOGO_URL = "/assets/brand/symbol_curator.png";
+const LOGO_URL = "/assets/brand/symbol_curator.jpeg";
 
 export default function CuratorShell({
   children,
