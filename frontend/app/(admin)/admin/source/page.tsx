@@ -155,11 +155,15 @@ export default function SourceList() {
 
                   <td className="p-2">
                     {logoUrl ? (
-                      <img
-                        src={logoUrl}
-                        alt={`Logo ${s.name}`}
-                        className="h-10 max-w-[120px] object-contain"
-                      />
+                      <div className="w-14 h-14 flex items-center justify-center bg-white rounded">
+
+                        <img
+                          src={logoUrl}
+                          alt={`Logo ${s.name}`}
+                          className="max-w-[70%] max-h-[70%] object-contain"
+                        />
+
+                      </div>
                     ) : (
                       <span className="text-gray-400 text-sm">—</span>
                     )}
