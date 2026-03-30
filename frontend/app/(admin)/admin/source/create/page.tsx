@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import VisualSection from "@/components/visuals/VisualSection";
+import VisualSectionSource from "@/components/visuals/VisualSectionSource"; // ✅ CHANGE ICI
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
-const SOURCE_MEDIA_PATH = "sources"; // ✅ à créer côté GCS
+const SOURCE_MEDIA_PATH = "sources";
 
 export default function CreateSource() {
 
@@ -22,9 +22,6 @@ export default function CreateSource() {
 
   const [loading, setLoading] = useState(false);
 
-  // ---------------------------------------------------------
-  // CREATE
-  // ---------------------------------------------------------
   async function save() {
 
     if (!name.trim()) {
@@ -65,9 +62,6 @@ export default function CreateSource() {
     }
   }
 
-  // ---------------------------------------------------------
-  // RELOAD SOURCE
-  // ---------------------------------------------------------
   async function reloadSource() {
 
     if (!sourceId) return;
@@ -76,9 +70,7 @@ export default function CreateSource() {
 
       const s = await api.get(`/source/${sourceId}`);
 
-      setLogoFilename(
-        s.logo || null
-      );
+      setLogoFilename(s.logo || null);
 
     } catch (e) {
 
@@ -93,9 +85,6 @@ export default function CreateSource() {
     ? `${GCS_BASE_URL}/${SOURCE_MEDIA_PATH}/${logoFilename}`
     : null;
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
   return (
     <div className="space-y-10">
 
@@ -185,13 +174,12 @@ export default function CreateSource() {
         {loading ? "Création..." : "Créer la source"}
       </button>
 
-      {/* VISUAL — EXACT PATTERN COMPANY */}
+      {/* ✅ VERSION SIMPLE = EXACT COMPANY */}
       {sourceId && (
-        <VisualSection
+        <VisualSectionSource
           entityId={sourceId}
           rectUrl={logoUrl}
           onUpdated={reloadSource}
-          endpoint="source"             // 🔥 important
         />
       )}
 
