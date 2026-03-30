@@ -12,7 +12,6 @@ import StepUseCases from "@/components/home/StepUseCases";
 
 export default function Home() {
   const [step, setStep] = useState(0);
-  const [subStep, setSubStep] = useState(0);
 
   const [topics, setTopics] = useState<any[]>([]);
   const [sources, setSources] = useState<any[]>([]);
@@ -43,12 +42,7 @@ export default function Home() {
   // NAVIGATION
   // =========================
   function handleNext() {
-    if (step === 4) {
-      setSubStep((s) => Math.min(s + 1, 6));
-    } else {
-      setStep((s) => s + 1);
-      setSubStep(0);
-    }
+    setStep((s) => Math.min(s + 1, 4));
   }
 
   useEffect(() => {
@@ -77,16 +71,10 @@ export default function Home() {
         <StepChaos
           companies={companies}
           sources={sources}
-          topics={topics}
-          onFinish={() => setStep(4)}
         />
       )}
 
-      {step === 4 && (
-        <StepUseCases
-          subStep={subStep}
-        />
-      )}
+      {step === 4 && <StepUseCases />}
 
       {/* ========================= */}
       {/* CONTROL */}
