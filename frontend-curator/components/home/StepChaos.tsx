@@ -77,3 +77,23 @@ export default function StepChaos({ companies, sources }: any) {
     </div>
   );
 }
+
+/* ========================= */
+/* SPIRAL TRANSFORM */
+/* ========================= */
+
+function spiralTransform(i: number, phase: string) {
+  const angle = i * 0.5;
+
+  const radius =
+    phase === "scatter"
+      ? 300 + i * 2
+      : phase === "connect"
+      ? 180 + i
+      : 80;
+
+  const x = Math.cos(angle) * radius;
+  const y = Math.sin(angle) * radius;
+
+  return `translate(${x}px, ${y}px)`;
+}
