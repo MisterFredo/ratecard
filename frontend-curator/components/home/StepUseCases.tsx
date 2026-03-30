@@ -2,101 +2,78 @@
 
 export default function StepUseCases() {
   const useCases = [
-    { text: "Préparer une présentation interne", angle: 0 },
-    { text: "Analyser un concurrent", angle: 60 },
-    { text: "Faire de la veille sur un sujet", angle: 120 },
-    { text: "Produire une analyse rapidement", angle: 180 },
-    { text: "Structurer une formation", angle: 240 },
-    { text: "Préparer un rendez-vous fournisseur", angle: 300 },
+    { text: "Structurer une formation", x: 0, y: -180 },
+    { text: "Préparer un rendez-vous", x: 160, y: -120 },
+    { text: "Concevoir une présentation", x: 200, y: 0 },
+    { text: "Analyser concurrentielle", x: 160, y: 120 },
+    { text: "Piloter une veille", x: 0, y: 180 },
+    { text: "Produire une analyse", x: -200, y: 0 },
   ];
-
-  const radius = 240;
 
   return (
     <div className="relative w-full h-[70vh] flex items-center justify-center">
 
       {/* ========================= */}
-      {/* CENTER LOGO */}
+      {/* CENTER (IDENTIQUE AU CHAOS) */}
       {/* ========================= */}
       <div className="absolute z-20 text-center">
         <img
           src="/assets/brand/logo_stack_curator.png"
-          className="w-48 mx-auto"
+          className="w-56 mx-auto"
         />
       </div>
 
       {/* ========================= */}
-      {/* CONNECTION LINES */}
+      {/* SOFT FLOW (PAS DE FLÈCHES) */}
       {/* ========================= */}
       <svg className="absolute w-full h-full pointer-events-none">
-        {useCases.map((_, i) => {
-          const angle = (useCases[i].angle * Math.PI) / 180;
-
-          const x2 = Math.cos(angle) * radius;
-          const y2 = Math.sin(angle) * radius;
-
-          return (
-            <line
-              key={i}
-              x1="50%"
-              y1="50%"
-              x2={`calc(50% + ${x2}px)`}
-              y2={`calc(50% + ${y2}px)`}
-              stroke="#bbb"
-              strokeWidth="1"
-              markerEnd="url(#arrow)"
-            />
-          );
-        })}
-
-        {/* Arrow marker */}
-        <defs>
-          <marker
-            id="arrow"
-            markerWidth="6"
-            markerHeight="6"
-            refX="5"
-            refY="3"
-            orient="auto"
-          >
-            <path d="M0,0 L6,3 L0,6 Z" fill="#bbb" />
-          </marker>
-        </defs>
+        {useCases.map((u, i) => (
+          <path
+            key={i}
+            d={`
+              M 50% 50%
+              Q ${50 + u.x / 4}% ${50 + u.y / 4}%
+              ${50 + u.x / 2}% ${50 + u.y / 2}%
+            `}
+            stroke="#d1d5db"
+            strokeWidth="1.5"
+            fill="none"
+            opacity="0.4"
+          />
+        ))}
       </svg>
 
       {/* ========================= */}
-      {/* USE CASES */}
+      {/* USE CASES (PREMIUM CARDS) */}
       {/* ========================= */}
-      {useCases.map((u, i) => {
-        const angle = (u.angle * Math.PI) / 180;
+      {useCases.map((u, i) => (
+        <div
+          key={i}
+          className="
+            absolute z-10
 
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius;
+            px-6 py-3
+            rounded-xl
 
-        return (
-          <div
-            key={i}
-            className="
-              absolute z-10
-              px-6 py-3
-              rounded-full
-              border border-gray-200
-              bg-white
-              text-sm
+            bg-white/80 backdrop-blur
+            border border-gray-200
 
-              shadow-sm
-              transition-all duration-300
+            text-sm text-gray-800
 
-              hover:scale-105 hover:shadow-md hover:border-gray-300
-            "
-            style={{
-              transform: `translate(${x}px, ${y}px)`,
-            }}
-          >
-            {u.text}
-          </div>
-        );
-      })}
+            shadow-[0_8px_20px_rgba(0,0,0,0.04)]
+
+            transition-all duration-300
+
+            hover:scale-105
+            hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)]
+          "
+          style={{
+            transform: `translate(${u.x}px, ${u.y}px)`,
+          }}
+        >
+          {u.text}
+        </div>
+      ))}
     </div>
   );
 }
