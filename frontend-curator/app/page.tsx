@@ -6,84 +6,73 @@ import { api } from "@/lib/api";
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL;
 
 export default function Home() {
+  const [step, setStep] = useState(0);
+
+  const [topics, setTopics] = useState<any[]>([]);
   const [sources, setSources] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
 
   const [visibleSources, setVisibleSources] = useState(0);
   const [visibleCompanies, setVisibleCompanies] = useState(0);
 
-  const [phase, setPhase] = useState<"sources" | "companies">("sources");
-
-  const [speed, setSpeed] = useState(40); // 🔥 vitesse ajustable
-
   // =========================
   // FETCH
   // =========================
   useEffect(() => {
     async function load() {
-      const sourcesRes = await api.get("/source/list");
-      const companiesRes = await api.get("/company/list");
+      const t = await api.get("/topic/list");
+      const s = await api.get("/source/list");
+      const c = await api.get("/company/list");
 
-      setSources(sourcesRes.sources || []);
-      setCompanies(companiesRes.companies || []);
+      setTopics(t.topics || []);
+      setSources(s.sources || []);
+      setCompanies(c.companies || []);
     }
 
     load();
   }, []);
 
   // =========================
-  // ANIMATION SOURCES
+  // SOURCES ANIMATION (lent)
   // =========================
   useEffect(() => {
-    if (phase !== "sources" || sources.length === 0) return;
+    if (step !== 1) return;
 
     let i = 0;
 
     const interval = setInterval(() => {
-      i += Math.max(1, Math.floor(i / 10)); // 🔥 accélération progressive
-
+      i += 1;
       setVisibleSources(i);
 
-      if (i >= sources.length) {
-        clearInterval(interval);
-        setPhase("companies");
-      }
-    }, speed);
+      if (i >= sources.length) clearInterval(interval);
+    }, 120); // 🔥 lent
 
     return () => clearInterval(interval);
-  }, [sources, phase, speed]);
+  }, [step, sources]);
 
   // =========================
-  // ANIMATION COMPANIES
+  // COMPANIES ANIMATION (très lent + saturation)
   // =========================
   useEffect(() => {
-    if (phase !== "companies" || companies.length === 0) return;
+    if (step !== 2) return;
 
     let i = 0;
 
     const interval = setInterval(() => {
-      i += Math.max(2, Math.floor(i / 8));
-
+      i += Math.max(1, Math.floor(i / 15)); // accélération douce
       setVisibleCompanies(i);
-
-      if (i >= companies.length) {
-        clearInterval(interval);
-      }
-    }, speed / 2); // 🔥 plus rapide
+    }, 150); // 🔥 lent pour parler
 
     return () => clearInterval(interval);
-  }, [companies, phase, speed]);
+  }, [step, companies]);
 
   // =========================
-  // CONTROL TEMPO (CLAVIER)
+  // NAVIGATION
   // =========================
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "ArrowUp") {
-        setSpeed((s) => Math.max(10, s - 10)); // + rapide
-      }
-      if (e.key === "ArrowDown") {
-        setSpeed((s) => s + 10); // + lent
+      if (e.key === "ArrowRight") {
+        setStep((s) => s + 1);
       }
     }
 
@@ -92,37 +81,63 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="w-full min-h-screen bg-white px-8 py-16">
-
-      <h1 className="text-4xl font-bold text-center mb-12">
-        L’information est partout
-      </h1>
+    <div className="w-full min-h-screen bg-white px-10 py-16">
 
       {/* ========================= */}
-      {/* SOURCES */}
+      {/* STEP 0 — TOPICS */}
       {/* ========================= */}
-      <div className="flex flex-wrap justify-center gap-4 max-w-6xl mx-auto">
-
-        {sources.slice(0, visibleSources).map((s) => (
-          <Logo
-            key={s.source_id}
-            src={`${GCS_BASE_URL}/sources/${s.logo}`}
-          />
-        ))}
-
-      </div>
-
-      {/* ========================= */}
-      {/* COMPANIES */}
-      {/* ========================= */}
-      {phase === "companies" && (
+      {step === 0 && (
         <>
-          <h2 className="text-2xl text-center mt-16 mb-8 text-gray-600">
-            Et des centaines d’acteurs
-          </h2>
+          <h1 className="text-4xl font-bold text-center mb-12">
+            Sujets traités
+          </h1>
+
+          <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
+            {topics.map((t) => (
+              <div
+                key={t.id_topic}
+                className="px-4 py-2 border rounded-lg text-sm"
+              >
+                <div className="font-semibold">{t.label}</div>
+                <div className="text-gray-400 text-xs">
+                  {t.topic_axis}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ========================= */}
+      {/* STEP 1 — SOURCES */}
+      {/* ========================= */}
+      {step === 1 && (
+        <>
+          <h1 className="text-4xl font-bold text-center mb-12">
+            L’information est partout
+          </h1>
+
+          <div className="flex flex-wrap justify-center gap-4 max-w-6xl mx-auto">
+            {sources.slice(0, visibleSources).map((s) => (
+              <Logo
+                key={s.source_id}
+                src={`${GCS_BASE_URL}/sources/${s.logo}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ========================= */}
+      {/* STEP 2 — ACTEURS */}
+      {/* ========================= */}
+      {step === 2 && (
+        <>
+          <h1 className="text-4xl font-bold text-center mb-12">
+            Des centaines d’acteurs
+          </h1>
 
           <div className="flex flex-wrap justify-center gap-3 max-w-6xl mx-auto">
-
             {companies.slice(0, visibleCompanies).map((c) => (
               <Logo
                 key={c.id_company}
@@ -130,10 +145,39 @@ export default function Home() {
                 small
               />
             ))}
+          </div>
+        </>
+      )}
+
+      {/* ========================= */}
+      {/* STEP 3 — USE CASES */}
+      {/* ========================= */}
+      {step === 3 && (
+        <>
+          <div className="grid grid-cols-3 gap-6 max-w-5xl mx-auto">
+
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="p-6 border rounded-xl shadow-sm text-center"
+              >
+                Bloc {i}
+              </div>
+            ))}
 
           </div>
         </>
       )}
+
+      {/* CONTROL */}
+      <div className="flex justify-center mt-12">
+        <button
+          onClick={() => setStep((s) => s + 1)}
+          className="px-6 py-3 bg-black text-white rounded-lg"
+        >
+          Next →
+        </button>
+      </div>
 
     </div>
   );
