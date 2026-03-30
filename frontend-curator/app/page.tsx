@@ -55,7 +55,7 @@ export default function Home() {
   });
 
   return (
-    <div className="w-full min-h-screen bg-white px-10 py-16">
+    <div className="w-full min-h-screen bg-white px-10 py-10">
 
       {/* ========================= */}
       {/* STEPS */}
