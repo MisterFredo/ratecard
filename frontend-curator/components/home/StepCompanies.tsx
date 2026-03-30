@@ -25,7 +25,7 @@ export default function StepCompanies({ companies }: any) {
       {/* TITLE */}
       {/* ========================= */}
       <h1 className="text-5xl font-semibold text-center mb-16 tracking-tight">
-        Des centaines d'acteurs
+        Des centaines d'acteurs identifiés et référencés
         <span className="block text-gray-400 font-normal">
           AdTech, Agences, Annonceurs, MarTech, Média, Plateformes, Retailers
         </span>
