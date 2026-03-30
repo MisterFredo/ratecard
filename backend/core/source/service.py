@@ -25,13 +25,16 @@ def create_source(data: SourceCreate) -> str:
     now = datetime.utcnow().isoformat()
 
     row = [{
-        "SOURCE_ID": source_id,  # ← obligatoire
+        "SOURCE_ID": source_id,
         "NAME": data.name,
         "TYPE_SOURCE": data.type_source,
         "DESCRIPTION": data.description,
         "DOMAIN": data.domain,
         "AUTHOR": data.author,
         "AUTHOR_PROFILE": data.author_profile,
+
+        "LOGO": None,  # ✅ ALIGN COMPANY
+
         "CREATED_AT": now,
     }]
 
@@ -47,6 +50,7 @@ def create_source(data: SourceCreate) -> str:
 
     return source_id
 
+
 # ============================================================
 # LIST SOURCES (snake_case contractuel)
 # ============================================================
@@ -61,6 +65,7 @@ def list_sources():
             DOMAIN,
             AUTHOR,
             AUTHOR_PROFILE,
+            LOGO,
             CREATED_AT
         FROM `{TABLE_SOURCE}`
         ORDER BY NAME ASC
@@ -77,6 +82,7 @@ def list_sources():
             "domain": r["DOMAIN"],
             "author": r["AUTHOR"],
             "author_profile": r["AUTHOR_PROFILE"],
+            "logo": r.get("LOGO"),
             "created_at": r["CREATED_AT"],
         }
         for r in rows
@@ -97,6 +103,7 @@ def get_source(source_id: str):
             DOMAIN,
             AUTHOR,
             AUTHOR_PROFILE,
+            LOGO,
             CREATED_AT
         FROM `{TABLE_SOURCE}`
         WHERE SOURCE_ID = @id
@@ -118,6 +125,7 @@ def get_source(source_id: str):
         "domain": r["DOMAIN"],
         "author": r["AUTHOR"],
         "author_profile": r["AUTHOR_PROFILE"],
+        "logo": r.get("LOGO"),
         "created_at": r["CREATED_AT"],
     }
 
@@ -139,6 +147,7 @@ def update_source(source_id: str, data: SourceUpdate) -> bool:
         "domain": "DOMAIN",
         "author": "AUTHOR",
         "author_profile": "AUTHOR_PROFILE",
+        "logo": "LOGO",  # ✅ NEW
     }
 
     bq_values = {
@@ -146,6 +155,9 @@ def update_source(source_id: str, data: SourceUpdate) -> bool:
         for k, v in values.items()
         if k in mapping
     }
+
+    if not bq_values:
+        return False
 
     return update_bq(
         table=TABLE_SOURCE,
