@@ -20,8 +20,8 @@ export default function Home() {
   useEffect(() => {
     async function load() {
       try {
-        const sourcesRes = await api.get("/api/source/list");
-        const companiesRes = await api.get("/api/company/list");
+        const sourcesRes = await api.get("/source/list");
+        const companiesRes = await api.get("/company/list");
 
         setSources(sourcesRes.sources || []);
         setCompanies(companiesRes.companies || []);
