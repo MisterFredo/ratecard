@@ -3,6 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import VisualSection from "@/components/visuals/VisualSection";
+
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+const SOURCE_MEDIA_PATH = "sources"; // ✅ à créer côté GCS
 
 export default function CreateSource() {
 
@@ -13,8 +17,14 @@ export default function CreateSource() {
   const [author, setAuthor] = useState("");
   const [authorProfile, setAuthorProfile] = useState("");
 
+  const [sourceId, setSourceId] = useState<string | null>(null);
+  const [logoFilename, setLogoFilename] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
 
+  // ---------------------------------------------------------
+  // CREATE
+  // ---------------------------------------------------------
   async function save() {
 
     if (!name.trim()) {
@@ -26,7 +36,7 @@ export default function CreateSource() {
 
       setLoading(true);
 
-      await api.post("/source/create", {
+      const res = await api.post("/source/create", {
         name,
         type_source: typeSource || null,
         description: description || null,
@@ -35,14 +45,13 @@ export default function CreateSource() {
         author_profile: authorProfile || null,
       });
 
-      alert("Source créée avec succès");
+      if (!res.source_id) {
+        throw new Error("ID source manquant");
+      }
 
-      setName("");
-      setTypeSource("");
-      setDescription("");
-      setDomain("");
-      setAuthor("");
-      setAuthorProfile("");
+      setSourceId(res.source_id);
+
+      alert("Source créée. Vous pouvez maintenant ajouter un logo.");
 
     } catch (e) {
 
@@ -56,6 +65,37 @@ export default function CreateSource() {
     }
   }
 
+  // ---------------------------------------------------------
+  // RELOAD SOURCE
+  // ---------------------------------------------------------
+  async function reloadSource() {
+
+    if (!sourceId) return;
+
+    try {
+
+      const s = await api.get(`/source/${sourceId}`);
+
+      setLogoFilename(
+        s.logo || null
+      );
+
+    } catch (e) {
+
+      console.error(e);
+      alert("❌ Erreur rechargement source");
+
+    }
+
+  }
+
+  const logoUrl = logoFilename
+    ? `${GCS_BASE_URL}/${SOURCE_MEDIA_PATH}/${logoFilename}`
+    : null;
+
+  // ---------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------
   return (
     <div className="space-y-10">
 
@@ -89,7 +129,6 @@ export default function CreateSource() {
           className="border p-2 w-full rounded"
           value={typeSource}
           onChange={(e) => setTypeSource(e.target.value)}
-          placeholder="Social / Blog / Event"
         />
       </div>
 
@@ -124,7 +163,6 @@ export default function CreateSource() {
           className="border p-2 w-full rounded"
           value={authorProfile}
           onChange={(e) => setAuthorProfile(e.target.value)}
-          placeholder="https://linkedin.com/..."
         />
       </div>
 
@@ -146,6 +184,18 @@ export default function CreateSource() {
       >
         {loading ? "Création..." : "Créer la source"}
       </button>
+
+      {/* VISUAL — EXACT PATTERN COMPANY */}
+      {sourceId && (
+        <VisualSection
+          entityId={sourceId}
+          rectUrl={logoUrl}
+          onUpdated={reloadSource}
+          mediaPath={SOURCE_MEDIA_PATH} // 🔥 important
+          field="logo"                  // 🔥 important
+          endpoint="source"             // 🔥 important
+        />
+      )}
 
     </div>
   );
