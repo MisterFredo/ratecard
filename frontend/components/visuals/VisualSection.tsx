@@ -52,6 +52,10 @@ export default function VisualSection({
       const base64 = await fileToBase64(file);
 
       // 🔥 clé dynamique
+      if (!entityId) {
+        throw new Error("Missing entityId");
+      }
+
       const payload =
         endpoint === "company"
           ? { id_company: entityId }
