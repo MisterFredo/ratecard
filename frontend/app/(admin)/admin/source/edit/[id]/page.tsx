@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import VisualSection from "@/components/visuals/VisualSection";
+import VisualSectionSource from "@/components/visuals/VisualSectionSource"; // ✅
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 const SOURCE_MEDIA_PATH = "sources";
@@ -40,8 +40,7 @@ export default function EditSource() {
         setDomain(res.domain || "");
         setAuthor(res.author || "");
         setAuthorProfile(res.author_profile || "");
-
-        setLogoFilename(res.logo || null); // ✅ NEW
+        setLogoFilename(res.logo || null);
 
       } catch (e) {
         console.error(e);
@@ -94,14 +93,13 @@ export default function EditSource() {
   }
 
   // ---------------------------------------------------------
-  // RELOAD (après upload logo)
+  // RELOAD
   // ---------------------------------------------------------
   async function reloadSource() {
 
     try {
 
       const s = await api.get(`/source/${sourceId}`);
-
       setLogoFilename(s.logo || null);
 
     } catch (e) {
@@ -118,14 +116,11 @@ export default function EditSource() {
   // ---------------------------------------------------------
   async function remove() {
 
-    if (!confirm("Supprimer cette source ?")) {
-      return;
-    }
+    if (!confirm("Supprimer cette source ?")) return;
 
     try {
 
       await api.delete(`/source/${sourceId}`);
-
       alert("Source supprimée");
 
       window.location.href = "/admin/source";
@@ -153,7 +148,6 @@ export default function EditSource() {
     <div className="space-y-10">
 
       <div className="flex justify-between items-center">
-
         <h1 className="text-2xl font-semibold">
           Modifier la source
         </h1>
@@ -161,14 +155,10 @@ export default function EditSource() {
         <Link href="/admin/source" className="underline">
           ← Retour
         </Link>
-
       </div>
 
       <div className="space-y-2 max-w-xl">
-        <label className="block text-sm font-medium">
-          Nom
-        </label>
-
+        <label className="block text-sm font-medium">Nom</label>
         <input
           className="border p-2 w-full rounded"
           value={name}
@@ -177,10 +167,7 @@ export default function EditSource() {
       </div>
 
       <div className="space-y-2 max-w-md">
-        <label className="block text-sm font-medium">
-          Type de source
-        </label>
-
+        <label className="block text-sm font-medium">Type</label>
         <input
           className="border p-2 w-full rounded"
           value={typeSource}
@@ -189,10 +176,7 @@ export default function EditSource() {
       </div>
 
       <div className="space-y-2 max-w-md">
-        <label className="block text-sm font-medium">
-          Domaine
-        </label>
-
+        <label className="block text-sm font-medium">Domaine</label>
         <input
           className="border p-2 w-full rounded"
           value={domain}
@@ -201,10 +185,7 @@ export default function EditSource() {
       </div>
 
       <div className="space-y-2 max-w-md">
-        <label className="block text-sm font-medium">
-          Auteur
-        </label>
-
+        <label className="block text-sm font-medium">Auteur</label>
         <input
           className="border p-2 w-full rounded"
           value={author}
@@ -213,10 +194,7 @@ export default function EditSource() {
       </div>
 
       <div className="space-y-2 max-w-xl">
-        <label className="block text-sm font-medium">
-          Profil auteur
-        </label>
-
+        <label className="block text-sm font-medium">Profil auteur</label>
         <input
           className="border p-2 w-full rounded"
           value={authorProfile}
@@ -225,10 +203,7 @@ export default function EditSource() {
       </div>
 
       <div className="space-y-2 max-w-3xl">
-        <label className="block text-sm font-medium">
-          Description
-        </label>
-
+        <label className="block text-sm font-medium">Description</label>
         <textarea
           className="border p-2 w-full rounded h-24"
           value={description}
@@ -237,11 +212,10 @@ export default function EditSource() {
       </div>
 
       <div className="flex gap-4">
-
         <button
           onClick={save}
           disabled={saving}
-          className="bg-ratecard-blue px-6 py-2 text-white rounded disabled:opacity-50"
+          className="bg-ratecard-blue px-6 py-2 text-white rounded"
         >
           {saving ? "Sauvegarde..." : "Enregistrer"}
         </button>
@@ -252,15 +226,13 @@ export default function EditSource() {
         >
           Supprimer
         </button>
-
       </div>
 
-      {/* ✅ VISUAL SECTION — EXACT COMPANY */}
-      <VisualSection
+      {/* ✅ EXACT COMPANY PATTERN */}
+      <VisualSectionSource
         entityId={sourceId}
         rectUrl={logoUrl}
         onUpdated={reloadSource}
-        endpoint="source"
       />
 
     </div>
