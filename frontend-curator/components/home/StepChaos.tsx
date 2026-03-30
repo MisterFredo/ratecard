@@ -80,7 +80,7 @@ export default function StepChaos({ companies, sources }: any) {
           }}
         >
           <img
-            src="/assets/brand/logo_stack_curator.png"
+            src="/assets/brand/logo_stack_curator.jpeg"
             className="w-64 mx-auto"
           />
         </div>
