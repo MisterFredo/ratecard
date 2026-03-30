@@ -3,6 +3,8 @@
 import TopicColumn from "@/components/home/TopicColumn";
 
 export default function StepTopics({ topics }: any) {
+  const safeTopics = topics || [];
+
   return (
     <div className="max-w-6xl mx-auto">
 
@@ -23,12 +25,12 @@ export default function StepTopics({ topics }: any) {
 
         <TopicColumn
           title="Retail"
-          topics={topics.filter((t: any) => t.topic_axis === "RETAIL")}
+          topics={safeTopics.filter((t: any) => t.topic_axis === "RETAIL")}
         />
 
         <TopicColumn
           title="Media"
-          topics={topics.filter((t: any) => t.topic_axis === "MEDIA")}
+          topics={safeTopics.filter((t: any) => t.topic_axis === "MEDIA")}
         />
 
       </div>
@@ -40,7 +42,7 @@ export default function StepTopics({ topics }: any) {
 
         <TopicColumn
           title="Foundations"
-          topics={topics.filter((t: any) => t.topic_axis === "FOUNDATIONS")}
+          topics={safeTopics.filter((t: any) => t.topic_axis === "FOUNDATIONS")}
           isFoundation
         />
 
