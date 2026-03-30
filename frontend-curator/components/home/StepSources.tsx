@@ -24,7 +24,7 @@ export default function StepSources({ sources }: any) {
         absolute bottom-0 left-0 right-0
         h-[60%]
         flex flex-wrap justify-center gap-10
-        opacity-20
+        opacity-15
         pointer-events-none
       ">
         {sources.slice(0, 40).map((s: any, i: number) => (
