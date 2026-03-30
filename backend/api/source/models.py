@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
-from typing import List
 
 
 # ============================================================
@@ -21,6 +20,8 @@ class SourceCreate(BaseModel):
 
     author: Optional[str] = None
     author_profile: Optional[str] = None
+
+    logo: Optional[str] = None  # ✅ NEW
 
     class Config:
         extra = "forbid"
@@ -44,8 +45,11 @@ class SourceUpdate(BaseModel):
     author: Optional[str] = None
     author_profile: Optional[str] = None
 
+    logo: Optional[str] = None  # ✅ NEW
+
     class Config:
         extra = "forbid"
+
 
 # ============================================================
 # OUT
@@ -67,10 +71,13 @@ class SourceOut(BaseModel):
     author: Optional[str] = None
     author_profile: Optional[str] = None
 
+    logo: Optional[str] = None  # ✅ NEW
+
     created_at: Optional[datetime] = None
 
     class Config:
         extra = "forbid"
+
 
 class SourceListOut(BaseModel):
     status: str
