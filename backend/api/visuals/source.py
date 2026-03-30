@@ -31,10 +31,14 @@ class SourceVisualReset(BaseModel):
 
 
 # ============================================================
-# IMAGE UTILS (on garde EXACTEMENT le même)
+# IMAGE UTILS
 # ============================================================
 
 def to_rectangle_logo(image_bytes: bytes) -> bytes:
+    """
+    Génère un logo rectangulaire simple.
+    Pas de versionnement, pas de logique avancée.
+    """
     img = Image.open(BytesIO(image_bytes)).convert("RGB")
     img.thumbnail((800, 400), Image.LANCZOS)
 
@@ -57,10 +61,13 @@ def upload_source_visual(payload: SourceVisualUpload):
 
         logo_bytes = to_rectangle_logo(image_bytes)
 
+        # 🔒 NOM DÉTERMINISTE — UNE SOURCE = UN FICHIER
         filename = f"SOURCE_{payload.id_source}_logo.jpg"
 
+        # Upload GCS (overwrite autorisé)
         upload_bytes(GCS_FOLDER, filename, logo_bytes)
 
+        # Update BigQuery
         client = get_bigquery_client()
         client.query(
             f"""
@@ -72,12 +79,17 @@ def upload_source_visual(payload: SourceVisualUpload):
             """,
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter("fname", "STRING", filename),
-                    bigquery.ScalarQueryParameter("now", "TIMESTAMP", datetime.utcnow()),
-                    bigquery.ScalarQueryParameter("id", "STRING", payload.id_source),
+                    bigquery.ScalarQueryParameter(
+                        "fname", "STRING", filename
+                    ),
+                    bigquery.ScalarQueryParameter(
+                        "now", "TIMESTAMP", datetime.utcnow()
+                    ),
+                    bigquery.ScalarQueryParameter(
+                        "id", "STRING", payload.id_source
+                    ),
                 ]
-            ),
-            location="EU",  # ✅ IMPORTANT
+            )
         ).result()
 
         return {"status": "ok", "filename": filename}
@@ -92,6 +104,8 @@ def upload_source_visual(payload: SourceVisualUpload):
                 "message": str(e),
             }
         )
+
+
 # ============================================================
 # RESET LOGO SOURCE
 # ============================================================
@@ -120,9 +134,11 @@ def reset_source_visual(payload: SourceVisualReset):
         for r in rows:
             old_file = r["LOGO"]
 
+        # Suppression GCS si existant
         if old_file:
             delete_file(GCS_FOLDER, old_file)
 
+        # Reset BigQuery
         client.query(
             f"""
             UPDATE `{TABLE_SOURCE}`
@@ -153,5 +169,3 @@ def reset_source_visual(payload: SourceVisualReset):
                 "message": str(e),
             }
         )
-
-
