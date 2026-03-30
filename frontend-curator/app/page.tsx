@@ -16,7 +16,7 @@ export default function Home() {
   const [visibleCompanies, setVisibleCompanies] = useState(0);
 
   // =========================
-  // FETCH DATA (BQ)
+  // FETCH DATA
   // =========================
   useEffect(() => {
     async function load() {
@@ -37,7 +37,7 @@ export default function Home() {
   }, []);
 
   // =========================
-  // ANIMATION ACTEURS (lent)
+  // ANIMATION ACTEURS
   // =========================
   useEffect(() => {
     if (step !== 2 || companies.length === 0) return;
@@ -47,7 +47,7 @@ export default function Home() {
     const interval = setInterval(() => {
       i += 1;
       setVisibleCompanies(i);
-    }, 250); // 🔥 lent pour parler
+    }, 250);
 
     return () => clearInterval(interval);
   }, [step, companies]);
@@ -56,7 +56,7 @@ export default function Home() {
   // NAVIGATION
   // =========================
   function handleNext() {
-    if (step === 3) {
+    if (step === 4) {
       setSubStep((s) => Math.min(s + 1, 6));
     } else {
       setStep((s) => s + 1);
@@ -91,27 +91,21 @@ export default function Home() {
               title="Foundations"
               color="bg-blue-50"
               border="border-blue-200"
-              items={topics.filter(
-                (t) => t.topic_axis === "FOUNDATIONS"
-              )}
+              items={topics.filter(t => t.topic_axis === "FOUNDATIONS")}
             />
 
             <Column
               title="Retail"
               color="bg-green-50"
               border="border-green-200"
-              items={topics.filter(
-                (t) => t.topic_axis === "RETAIL"
-              )}
+              items={topics.filter(t => t.topic_axis === "RETAIL")}
             />
 
             <Column
               title="Media"
               color="bg-purple-50"
               border="border-purple-200"
-              items={topics.filter(
-                (t) => t.topic_axis === "MEDIA"
-              )}
+              items={topics.filter(t => t.topic_axis === "MEDIA")}
             />
 
           </div>
@@ -128,14 +122,12 @@ export default function Home() {
           </h1>
 
           <div className="grid grid-cols-5 gap-6 max-w-5xl mx-auto">
-
             {sources.slice(0, 30).map((s) => (
               <SourceLogo
                 key={s.source_id}
                 src={`${GCS_BASE_URL}/sources/${s.logo}`}
               />
             ))}
-
           </div>
         </>
       )}
@@ -150,7 +142,6 @@ export default function Home() {
           </h1>
 
           <div className="flex flex-wrap justify-center gap-3 max-w-6xl mx-auto">
-
             {companies.slice(0, visibleCompanies).map((c) => (
               <Logo
                 key={c.id_company}
@@ -158,15 +149,26 @@ export default function Home() {
                 small
               />
             ))}
-
           </div>
         </>
       )}
 
       {/* ========================= */}
-      {/* STEP 3 — BLOCS */}
+      {/* STEP 3 — CHAOS */}
       {/* ========================= */}
       {step === 3 && (
+        <ChaosScene
+          companies={companies.slice(0, 60)}
+          sources={sources.slice(0, 10)}
+          topics={topics.slice(0, 10)}
+          onFinish={() => setStep(4)}
+        />
+      )}
+
+      {/* ========================= */}
+      {/* STEP 4 — BLOCS */}
+      {/* ========================= */}
+      {step === 4 && (
         <div className="grid grid-cols-3 gap-6 max-w-5xl mx-auto">
           {[1, 2, 3, 4, 5, 6]
             .slice(0, subStep)
@@ -193,6 +195,86 @@ export default function Home() {
 
     </div>
   );
+}
+
+//
+// =========================
+// CHAOS SCENE
+// =========================
+//
+
+function ChaosScene({ companies, sources, topics, onFinish }: any) {
+  const [phase, setPhase] = useState("scatter");
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("connect"), 1500);
+    const t2 = setTimeout(() => setPhase("merge"), 3000);
+    const t3 = setTimeout(() => onFinish(), 4500);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, []);
+
+  const items = [...companies, ...sources, ...topics];
+
+  return (
+    <div className="relative w-full h-[70vh] flex items-center justify-center overflow-hidden">
+
+      {items.map((item, i) => {
+        const isCompany = item.id_company;
+        const isSource = item.source_id;
+
+        const src = isCompany
+          ? `${GCS_BASE_URL}/companies/${item.media_logo_rectangle_id}`
+          : isSource
+          ? `${GCS_BASE_URL}/sources/${item.logo}`
+          : null;
+
+        return (
+          <div
+            key={i}
+            className={`absolute transition-all duration-1000 ${
+              phase === "merge" ? "opacity-0 scale-50" : ""
+            }`}
+            style={{ transform: getTransform(i) }}
+          >
+            {src ? (
+              <img src={src} className="w-14 h-10 object-contain" />
+            ) : (
+              <div className="text-xs bg-gray-100 px-2 py-1 rounded">
+                {item.label}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {phase === "merge" && (
+        <div className="absolute text-center">
+          <img
+            src="/assets/brand/getcurator-logo.png"
+            className="w-40 mx-auto mb-4"
+          />
+          <div className="text-3xl font-bold">
+            getcurator.ai
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function getTransform(i: number) {
+  const angle = (i * 37) % 360;
+  const radius = 200;
+
+  const x = Math.cos(angle) * radius;
+  const y = Math.sin(angle) * radius;
+
+  return `translate(${x}px, ${y}px)`;
 }
 
 //
@@ -227,7 +309,6 @@ function SourceLogo({ src }: any) {
     <div className="w-full h-20 flex items-center justify-center bg-white border rounded-xl shadow-sm">
       <img
         src={src}
-        alt=""
         className="max-w-[80%] max-h-[70%] object-contain"
       />
     </div>
@@ -236,15 +317,8 @@ function SourceLogo({ src }: any) {
 
 function Logo({ src, small = false }: any) {
   return (
-    <div
-      className={`flex items-center justify-center border rounded-lg bg-white
-      ${small ? "w-16 h-10" : "w-24 h-14"}`}
-    >
-      <img
-        src={src}
-        alt=""
-        className="max-w-full max-h-full object-contain"
-      />
+    <div className={`flex items-center justify-center border rounded-lg bg-white ${small ? "w-16 h-10" : "w-24 h-14"}`}>
+      <img src={src} className="max-w-full max-h-full object-contain" />
     </div>
   );
 }
