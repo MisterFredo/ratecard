@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 export default function Home() {
   const [sources, setSources] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
@@ -11,17 +13,29 @@ export default function Home() {
 
   const [phase, setPhase] = useState<"sources" | "companies">("sources");
 
+  const [error, setError] = useState<string | null>(null);
+
   // =========================
-  // FETCH REAL DATA
+  // FETCH REAL DATA (ROBUSTE)
   // =========================
   useEffect(() => {
-    fetch("/source/list")
-      .then((r) => r.json())
-      .then((data) => setSources(data.sources || []));
+    async function load() {
+      try {
+        const resSources = await fetch(`${API}/api/source/list`);
+        const resCompanies = await fetch(`${API}/api/company/list`);
 
-    fetch("/company/list")
-      .then((r) => r.json())
-      .then((data) => setCompanies(data.companies || []));
+        const dataSources = await resSources.json();
+        const dataCompanies = await resCompanies.json();
+
+        setSources(dataSources.sources || []);
+        setCompanies(dataCompanies.companies || []);
+      } catch (e) {
+        console.error(e);
+        setError("Erreur de chargement API");
+      }
+    }
+
+    load();
   }, []);
 
   // =========================
@@ -32,7 +46,7 @@ export default function Home() {
 
     const interval = setInterval(() => {
       setVisibleSources((prev) => {
-        if (prev >= sources.length) {
+        if (prev >= Math.min(sources.length, 30)) {
           setPhase("companies");
           return prev;
         }
@@ -51,7 +65,7 @@ export default function Home() {
 
     const interval = setInterval(() => {
       setVisibleCompanies((prev) =>
-        Math.min(prev + 4, companies.length)
+        Math.min(prev + 5, Math.min(companies.length, 120))
       );
     }, 60);
 
@@ -62,18 +76,25 @@ export default function Home() {
   // RENDER
   // =========================
   return (
-    <div className="h-screen w-full flex flex-col items-center justify-center bg-gradient-to-b from-gray-100 to-white">
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-gradient-to-b from-gray-100 to-white px-6">
 
       {/* TITLE */}
       <h1 className="text-4xl font-bold mb-10 text-center">
         L’information est partout
       </h1>
 
+      {/* ERROR */}
+      {error && (
+        <div className="text-red-500 mb-4">
+          {error}
+        </div>
+      )}
+
       {/* ========================= */}
       {/* SOURCES */}
       {/* ========================= */}
       {phase === "sources" && (
-        <div className="flex flex-wrap gap-3 max-w-4xl justify-center">
+        <div className="flex flex-wrap gap-3 max-w-4xl justify-center animate-fade-in">
           {sources.slice(0, visibleSources).map((s) => (
             <Item key={s.source_id} label={s.name} />
           ))}
@@ -89,7 +110,7 @@ export default function Home() {
             Et des centaines d’acteurs
           </h2>
 
-          <div className="flex flex-wrap gap-2 max-w-5xl justify-center">
+          <div className="flex flex-wrap gap-2 max-w-5xl justify-center animate-fade-in">
             {companies.slice(0, visibleCompanies).map((c) => (
               <Item key={c.id_company} label={c.name} small />
             ))}
@@ -107,7 +128,7 @@ export default function Home() {
 function Item({ label, small = false }: any) {
   return (
     <div
-      className={`px-3 py-1 rounded-md bg-gray-200 ${
+      className={`px-3 py-1 rounded-md bg-gray-200 transition-all duration-300 ${
         small ? "text-xs" : "text-sm"
       }`}
     >
