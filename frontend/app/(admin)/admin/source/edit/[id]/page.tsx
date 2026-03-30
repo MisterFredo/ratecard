@@ -260,8 +260,6 @@ export default function EditSource() {
         entityId={sourceId}
         rectUrl={logoUrl}
         onUpdated={reloadSource}
-        mediaPath={SOURCE_MEDIA_PATH}
-        field="logo"
         endpoint="source"
       />
 
