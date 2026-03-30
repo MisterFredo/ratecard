@@ -8,7 +8,6 @@ import StepTopics from "@/components/home/StepTopics";
 import StepSources from "@/components/home/StepSources";
 import StepCompanies from "@/components/home/StepCompanies";
 import StepChaos from "@/components/home/StepChaos";
-import StepUseCases from "@/components/home/StepUseCases";
 
 export default function Home() {
   const [step, setStep] = useState(0);
@@ -42,7 +41,7 @@ export default function Home() {
   // NAVIGATION
   // =========================
   function handleNext() {
-    setStep((s) => Math.min(s + 1, 4));
+    setStep((s) => Math.min(s + 1, 3)); // 🔥 max step = 3 maintenant
   }
 
   useEffect(() => {
@@ -73,8 +72,6 @@ export default function Home() {
           sources={sources}
         />
       )}
-
-      {step === 4 && <StepUseCases />}
 
       {/* ========================= */}
       {/* CONTROL */}
