@@ -16,27 +16,35 @@ export default function Home() {
   const [visibleCompanies, setVisibleCompanies] = useState(0);
 
   // =========================
-  // FETCH
+  // FETCH REAL DATA
   // =========================
   useEffect(() => {
     async function load() {
-      const t = await api.get("/topic/list");
-      const s = await api.get("/source/list");
-      const c = await api.get("/company/list");
+      try {
+        const t = await api.get("/topic/list");
+        const s = await api.get("/source/list");
+        const c = await api.get("/company/list");
 
-      setTopics(t.topics || []);
-      setSources(s.sources || []);
-      setCompanies(c.companies || []);
+        console.log("TOPICS →", t);
+        console.log("SOURCES →", s);
+        console.log("COMPANIES →", c);
+
+        setTopics(t?.topics || t || []);
+        setSources(s?.sources || s || []);
+        setCompanies(c?.companies || c || []);
+      } catch (e) {
+        console.error("❌ LOAD ERROR", e);
+      }
     }
 
     load();
   }, []);
 
   // =========================
-  // SOURCES ANIMATION (lent)
+  // ANIMATION SOURCES
   // =========================
   useEffect(() => {
-    if (step !== 1) return;
+    if (step !== 1 || sources.length === 0) return;
 
     let i = 0;
 
@@ -45,29 +53,29 @@ export default function Home() {
       setVisibleSources(i);
 
       if (i >= sources.length) clearInterval(interval);
-    }, 120); // 🔥 lent
+    }, 120);
 
     return () => clearInterval(interval);
   }, [step, sources]);
 
   // =========================
-  // COMPANIES ANIMATION (très lent + saturation)
+  // ANIMATION COMPANIES
   // =========================
   useEffect(() => {
-    if (step !== 2) return;
+    if (step !== 2 || companies.length === 0) return;
 
     let i = 0;
 
     const interval = setInterval(() => {
-      i += Math.max(1, Math.floor(i / 15)); // accélération douce
+      i += Math.max(1, Math.floor(i / 15));
       setVisibleCompanies(i);
-    }, 150); // 🔥 lent pour parler
+    }, 150);
 
     return () => clearInterval(interval);
   }, [step, companies]);
 
   // =========================
-  // NAVIGATION
+  // NAV
   // =========================
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -93,14 +101,16 @@ export default function Home() {
           </h1>
 
           <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
-            {topics.map((t) => (
+            {topics.map((t: any) => (
               <div
-                key={t.id_topic}
+                key={t.id_topic || t.ID_TOPIC}
                 className="px-4 py-2 border rounded-lg text-sm"
               >
-                <div className="font-semibold">{t.label}</div>
+                <div className="font-semibold">
+                  {t.label || t.LABEL}
+                </div>
                 <div className="text-gray-400 text-xs">
-                  {t.topic_axis}
+                  {t.topic_axis || t.TOPIC_AXIS}
                 </div>
               </div>
             ))}
@@ -118,7 +128,7 @@ export default function Home() {
           </h1>
 
           <div className="flex flex-wrap justify-center gap-4 max-w-6xl mx-auto">
-            {sources.slice(0, visibleSources).map((s) => (
+            {sources.slice(0, visibleSources).map((s: any) => (
               <Logo
                 key={s.source_id}
                 src={`${GCS_BASE_URL}/sources/${s.logo}`}
@@ -129,7 +139,7 @@ export default function Home() {
       )}
 
       {/* ========================= */}
-      {/* STEP 2 — ACTEURS */}
+      {/* STEP 2 — COMPANIES */}
       {/* ========================= */}
       {step === 2 && (
         <>
@@ -138,7 +148,7 @@ export default function Home() {
           </h1>
 
           <div className="flex flex-wrap justify-center gap-3 max-w-6xl mx-auto">
-            {companies.slice(0, visibleCompanies).map((c) => (
+            {companies.slice(0, visibleCompanies).map((c: any) => (
               <Logo
                 key={c.id_company}
                 src={`${GCS_BASE_URL}/companies/${c.media_logo_rectangle_id}`}
@@ -150,23 +160,19 @@ export default function Home() {
       )}
 
       {/* ========================= */}
-      {/* STEP 3 — USE CASES */}
+      {/* STEP 3 — CARDS */}
       {/* ========================= */}
       {step === 3 && (
-        <>
-          <div className="grid grid-cols-3 gap-6 max-w-5xl mx-auto">
-
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                className="p-6 border rounded-xl shadow-sm text-center"
-              >
-                Bloc {i}
-              </div>
-            ))}
-
-          </div>
-        </>
+        <div className="grid grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="p-6 border rounded-xl shadow-sm text-center"
+            >
+              Bloc {i}
+            </div>
+          ))}
+        </div>
       )}
 
       {/* CONTROL */}
@@ -178,16 +184,13 @@ export default function Home() {
           Next →
         </button>
       </div>
-
     </div>
   );
 }
 
-//
 // =========================
 // LOGO
 // =========================
-//
 
 function Logo({ src, small = false }: any) {
   return (
