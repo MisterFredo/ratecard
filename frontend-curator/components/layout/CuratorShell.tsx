@@ -34,7 +34,7 @@ export default function CuratorShell({
   /* ========================================================= */
 
   const navData = [
-    { href: "/", label: "Feed", icon: Home },
+    { href: "/feed", label: "Feed", icon: Home },
     { href: "/numbers", label: "Numbers", icon: Hash },
     { href: "/radars", label: "Radar", icon: Radar },
   ];
