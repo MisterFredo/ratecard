@@ -3,49 +3,84 @@
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL;
 
 export default function StepSources({ sources }: any) {
+  const formats = [
+    { label: "Articles", value: 1240 },
+    { label: "Analyses", value: 320 },
+    { label: "Interviews", value: 190 },
+    { label: "Podcasts", value: 85 },
+    { label: "Vidéos", value: 140 },
+    { label: "Événements", value: 60 },
+    { label: "Tribunes", value: 110 },
+    { label: "Posts LinkedIn", value: 540 },
+  ];
+
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="relative max-w-6xl mx-auto">
 
       {/* ========================= */}
-      {/* TITLE */}
+      {/* BACKGROUND LOGOS */}
       {/* ========================= */}
-      <h1 className="text-5xl font-semibold text-center mb-20 tracking-tight">
-        Des sources filtrées
-        <span className="block text-gray-400 font-normal">
-          d'horizons différents
-        </span>
-      </h1>
+      <div className="
+        absolute inset-0
+        flex flex-wrap justify-center gap-10
+        opacity-10
+        pointer-events-none
+      ">
+        {sources.slice(0, 40).map((s: any, i: number) => (
+          <img
+            key={s.source_id}
+            src={`${GCS_BASE_URL}/sources/${s.logo}`}
+            className="w-20 h-14 object-contain"
+            style={{
+              transform: `translateY(${Math.sin(i) * 10}px)`
+            }}
+          />
+        ))}
+      </div>
 
       {/* ========================= */}
-      {/* LOGO CLOUD */}
+      {/* CONTENT */}
       {/* ========================= */}
-      <div className="flex flex-wrap justify-center gap-10">
+      <div className="relative z-10">
 
-        {sources.slice(0, 40).map((s: any, i: number) => {
-          const size =
-            i % 5 === 0
-              ? "w-28 h-20"
-              : i % 3 === 0
-              ? "w-24 h-16"
-              : "w-20 h-14";
+        {/* TITLE */}
+        <h1 className="text-5xl font-semibold text-center mb-20 tracking-tight">
+          Une matière riche
+          <span className="block text-gray-400 font-normal">
+            structurée et exploitable
+          </span>
+        </h1>
 
-          return (
-            <div
-              key={s.source_id}
-              className={`
-                flex items-center justify-center
-                ${size}
-                opacity-80 hover:opacity-100
-                transition duration-300
-              `}
-            >
-              <img
-                src={`${GCS_BASE_URL}/sources/${s.logo}`}
-                className="max-w-full max-h-full object-contain"
-              />
+        {/* FORMATS */}
+        <div className="max-w-3xl mx-auto space-y-5">
+
+          {formats.map((f, i) => (
+            <div key={i}>
+
+              <div className="flex items-center justify-between">
+                <span className="text-lg text-gray-800">
+                  {f.label}
+                </span>
+
+                <span className="text-lg font-semibold text-gray-900">
+                  {f.value}
+                </span>
+              </div>
+
+              {/* BAR */}
+              <div className="mt-2 h-[3px] bg-gray-100 rounded">
+                <div
+                  className="h-full bg-black"
+                  style={{
+                    width: `${Math.min(f.value / 15, 100)}%`,
+                  }}
+                />
+              </div>
+
             </div>
-          );
-        })}
+          ))}
+
+        </div>
 
       </div>
 
