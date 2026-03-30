@@ -46,9 +46,9 @@ export default function StepSources({ sources }: any) {
 
         {/* TITLE */}
         <h1 className="text-5xl font-semibold text-center mb-20 tracking-tight">
-          Une matière riche
+          Des sources multiples et de qualité hétérogène
           <span className="block text-gray-400 font-normal">
-            structurée et exploitable
+            rendues structurées et exploitables
           </span>
         </h1>
 
