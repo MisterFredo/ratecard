@@ -4,14 +4,14 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL;
 
 export default function StepSources({ sources }: any) {
   const formats = [
-    { label: "Articles", value: +/- 7600 },
-    { label: "Analyses", value: +/- 1450 },
-    { label: "Interviews", value: +/- 420 },
-    { label: "Podcasts", value: +/- 285 },
-    { label: "Vidéos", value: +/- 140 },
-    { label: "Événements", value: +/- 260 },
-    { label: "Tribunes", value: +/- 510 },
-    { label: "Posts LinkedIn", value: +/- 2540 },
+    { label: "Articles", value: 4600 },
+    { label: "Analyses", value: 1050 },
+    { label: "Interviews", value: 420 },
+    { label: "Podcasts", value: 285 },
+    { label: "Vidéos", value: 140 },
+    { label: "Événements", value: 260 },
+    { label: "Tribunes", value: 510 },
+    { label: "Posts LinkedIn", value: 2500 },
   ];
 
   return (
