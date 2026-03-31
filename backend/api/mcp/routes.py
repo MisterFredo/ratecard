@@ -11,12 +11,13 @@ from core.mcp.handlers.company import handle_company
 from core.mcp.handlers.numbers import handle_numbers
 from core.mcp.handlers.benchmark import handle_benchmark
 
-# ✅ moteur unique
+# moteur recherche
 from core.curator.service import search
 
 # insight + suggestions
 from core.insight.service import run_insight_pipeline
 from core.mcp.suggestions import build_suggestions
+
 
 router = APIRouter()
 
@@ -26,7 +27,7 @@ class MCPQuery(BaseModel):
 
 
 # ============================================================
-# CLEAN QUERY
+# CLEAN QUERY (NON DESTRUCTIF)
 # ============================================================
 
 def clean_query(q: str) -> str:
@@ -35,14 +36,12 @@ def clean_query(q: str) -> str:
 
     noise = [
         "👉",
-        "comprendre",
-        "analyse",
         "donne moi",
         "parle moi de",
         "je veux",
-        "explique",
-        "c est quoi",
-        "c'est quoi"
+        # ⚠️ volontairement retiré :
+        # "analyse", "explique", "comprendre"
+        # car impact sur intent detection
     ]
 
     for n in noise:
@@ -52,7 +51,7 @@ def clean_query(q: str) -> str:
 
 
 # ============================================================
-# ROUTE
+# ROUTE MCP
 # ============================================================
 
 @router.post("/query")
@@ -70,21 +69,47 @@ def mcp_query(body: MCPQuery):
         }
 
     # ----------------------------------------------------------
-    # 1. SEARCH FIRST (ROBUSTE)
+    # 1. INTENT + ENTITY (PRIORITAIRE)
+    # ----------------------------------------------------------
+    intent = detect_intent(user_query)
+    entity = resolve_entity(user_query)
+
+    # ----------------------------------------------------------
+    # 2. NUMBERS (PRIORITÉ MAX)
+    # ----------------------------------------------------------
+    if intent == "numbers":
+        return handle_numbers(entity, user_query)
+
+    # ----------------------------------------------------------
+    # 3. BENCHMARK
+    # ----------------------------------------------------------
+    if intent == "benchmark":
+        return handle_benchmark(user_query)
+
+    # ----------------------------------------------------------
+    # 4. ENTITY (COMPANY / TOPIC)
+    # ----------------------------------------------------------
+    if entity and entity.get("type") == "company":
+        return handle_company(entity)
+
+    if entity and entity.get("type") == "topic":
+        return handle_topic(entity)
+
+    # ----------------------------------------------------------
+    # 5. SEARCH (FALLBACK INTELLIGENT)
     # ----------------------------------------------------------
 
     cleaned_query = clean_query(user_query)
 
-    # 👉 sécurité : éviter query vide
     search_query = cleaned_query if cleaned_query else user_query
 
     rows = search(q=search_query, limit=10) or []
 
-    # 👉 fallback si clean a cassé le search
+    # fallback si nettoyage trop agressif
     if not rows and cleaned_query != user_query:
         rows = search(q=user_query, limit=10) or []
 
-    # 👉 enrichir URLs
+    # enrichissement URLs
     for item in rows:
         if item.get("type") == "news":
             item["url"] = f"/news/{item.get('id')}"
@@ -92,45 +117,8 @@ def mcp_query(body: MCPQuery):
             item["url"] = f"/analysis/{item.get('id')}"
 
     # ----------------------------------------------------------
-    # 2. ENTITY
+    # 6. FALLBACK VIDE
     # ----------------------------------------------------------
-    entity = resolve_entity(user_query)
-
-    # ----------------------------------------------------------
-    # 3. ENRICHISSEMENT (SI ENTITY CLAIRE)
-    # ----------------------------------------------------------
-
-    # 🔥 ENTITY uniquement si requête simple
-    query_words = user_query.strip().split()
-
-    if len(query_words) == 1:
-
-        if entity["type"] == "company":
-            return handle_company(entity)
-
-        if entity["type"] == "topic":
-            return handle_topic(entity)
-
-
-    # ----------------------------------------------------------
-    # 4. NUMBERS (INTENT SPÉCIFIQUE)
-    # ----------------------------------------------------------
-    intent = detect_intent(user_query)
-
-    if intent == "numbers":
-        return handle_numbers(entity)
-
-    # ----------------------------------------------------------
-    # 🆚 BENCHMARK
-    # ----------------------------------------------------------
-
-    if intent == "benchmark":
-        return handle_benchmark(user_query)
-
-    # ----------------------------------------------------------
-    # 5. FALLBACK INTELLIGENT
-    # ----------------------------------------------------------
-
     if not rows:
         return {
             "status": "ok",
@@ -140,12 +128,14 @@ def mcp_query(body: MCPQuery):
                 "label": user_query
             },
             "answer": {
-                "text": f"Aucun contenu direct trouvé pour {user_query}, mais le sujet semble émergent.",
+                "text": f"Aucune donnée disponible dans Curator pour cette requête.",
                 "items": []
             }
         }
 
-    # 👉 insight si analyses
+    # ----------------------------------------------------------
+    # 7. INSIGHT (SI ANALYSES)
+    # ----------------------------------------------------------
     analysis_ids = [
         r["id"]
         for r in rows
@@ -158,13 +148,18 @@ def mcp_query(body: MCPQuery):
         result = run_insight_pipeline(analysis_ids)
         analysis_text = result.get("insight")
 
-    # 👉 suggestions
+    # ----------------------------------------------------------
+    # 8. SUGGESTIONS
+    # ----------------------------------------------------------
     suggestions = build_suggestions(
         intent="search",
         entity={"label": user_query},
         items=rows
     )
 
+    # ----------------------------------------------------------
+    # 9. RESPONSE
+    # ----------------------------------------------------------
     return {
         "status": "ok",
         "intent": "search",
