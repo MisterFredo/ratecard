@@ -18,7 +18,41 @@ def detect_intent(query: str) -> str:
     q = normalize(query)
 
     # ----------------------------------------------------------
-    # 🟢 FEED → "quoi de neuf"
+    # 🟡 NUMBERS (PRIORITAIRE)
+    # ----------------------------------------------------------
+    if any(word in q for word in [
+        "chiffre", "chiffres",
+        "donnee", "donnees",
+        "data",
+        "stat", "stats",
+        "revenu", "revenus",
+        "croissance",
+        "kpi",
+        "volume",
+        "gmv",
+        "ca",
+        "part de marche",
+        "market share",
+        "taux",
+        "combien",
+        "quel est", "quelle est",
+    ]):
+        return "numbers"
+
+    # ----------------------------------------------------------
+    # 🟣 BENCHMARK
+    # ----------------------------------------------------------
+    if any(word in q for word in [
+        "vs",
+        "versus",
+        "compar",
+        "compare",
+        "difference"
+    ]):
+        return "benchmark"
+
+    # ----------------------------------------------------------
+    # 🟢 FEED
     # ----------------------------------------------------------
     if any(word in q for word in [
         "quoi de neuf",
@@ -34,23 +68,7 @@ def detect_intent(query: str) -> str:
         return "feed"
 
     # ----------------------------------------------------------
-    # 🟡 NUMBERS → chiffres / data
-    # ----------------------------------------------------------
-    if any(word in q for word in [
-        "chiffre",
-        "chiffres",
-        "donnee",
-        "donnees",
-        "data",
-        "stat",
-        "stats",
-        "revenu",
-        "croissance"
-    ]):
-        return "numbers"
-
-    # ----------------------------------------------------------
-    # 🔵 TOPIC → comprendre un sujet
+    # 🔵 TOPIC (RÉDUIT)
     # ----------------------------------------------------------
     if any(word in q for word in [
         "tendance",
@@ -58,7 +76,6 @@ def detect_intent(query: str) -> str:
         "trend",
         "evolution",
         "marche",
-        "analyse",
         "comprendre",
         "expliquer",
         "definition",
@@ -67,16 +84,7 @@ def detect_intent(query: str) -> str:
     ]):
         return "topic"
 
-    if any(word in q for word in [
-        "vs",
-        "versus",
-        "compar",
-        "compare",
-        "difference"
-    ]):
-        return "benchmark"
-
     # ----------------------------------------------------------
-    # 🔴 DEFAULT → entity (company / topic / search)
+    # 🔴 DEFAULT
     # ----------------------------------------------------------
     return "entity"
