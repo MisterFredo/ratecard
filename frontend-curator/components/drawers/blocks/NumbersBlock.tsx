@@ -44,7 +44,7 @@ function formatValue(n: NumberItem) {
   const scale = scaleMap[n.scale || ""] || "";
   const unit = n.unit || "";
 
-  return [item.VALUE, scale, unit]
+  return [n.value, scale, unit]
     .filter(Boolean)
     .join(" ");
 }
