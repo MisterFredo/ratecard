@@ -13,7 +13,7 @@ TABLE_NUMBERS = "adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED"
 
 
 # ============================================================
-# COMPANY INFO
+# COMPANY INFO (ROBUST MATCH)
 # ============================================================
 
 def _get_company_info(label: str) -> Dict:
@@ -24,7 +24,7 @@ def _get_company_info(label: str) -> Dict:
         NAME,
         DESCRIPTION
     FROM `adex-5555.RATECARD_PROD.RATECARD_COMPANY`
-    WHERE LOWER(NAME) = LOWER(@label)
+    WHERE LOWER(@label) LIKE CONCAT('%', LOWER(NAME), '%')
     LIMIT 1
     """
 
@@ -37,7 +37,7 @@ def _get_company_info(label: str) -> Dict:
 # NUMBERS IDS
 # ============================================================
 
-def _get_company_numbers_ids(label: str, limit: int = 3) -> List[str]:
+def _get_company_numbers_ids(label: str, limit: int = 6) -> List[str]:
 
     sql = """
     SELECT ID_NUMBER
@@ -71,7 +71,7 @@ def handle_company(entity: Dict) -> Dict:
         }
 
     # ----------------------------------------------------------
-    # 1. COMPANY
+    # 1. COMPANY INFO
     # ----------------------------------------------------------
     company = _get_company_info(label)
 
@@ -80,9 +80,14 @@ def handle_company(entity: Dict) -> Dict:
     # ----------------------------------------------------------
     if not company:
 
-        feed = search_text(query=label, limit=5) or []
+        feed = search_text(query=label, limit=10) or []
 
-        # 👉 ajout URLs
+        feed = [
+            f for f in feed
+            if f.get("type") in ["analysis", "news"]
+        ][:5]
+
+        # enrichissement URLs
         for item in feed:
             if item.get("type") == "news":
                 item["url"] = f"/news/{item.get('id')}"
@@ -111,9 +116,14 @@ def handle_company(entity: Dict) -> Dict:
     company_id = company.get("ID_COMPANY")
 
     # ----------------------------------------------------------
-    # 2. FEED (3 contenus)
+    # 2. FEED (PERTINENT)
     # ----------------------------------------------------------
-    feed = search_text(query=label, limit=3) or []
+    feed_raw = search_text(query=label, limit=10) or []
+
+    feed = [
+        f for f in feed_raw
+        if f.get("type") in ["analysis", "news"]
+    ][:3]
 
     for item in feed:
         if item.get("type") == "news":
@@ -122,18 +132,18 @@ def handle_company(entity: Dict) -> Dict:
             item["url"] = f"/analysis/{item.get('id')}"
 
     # ----------------------------------------------------------
-    # 3. NUMBERS
+    # 3. NUMBERS (ENRICHIS)
     # ----------------------------------------------------------
-    number_ids = _get_company_numbers_ids(label, limit=3)
+    number_ids = _get_company_numbers_ids(label, limit=6)
     numbers = get_numbers_by_ids(number_ids) if number_ids else []
 
     # ----------------------------------------------------------
-    # 4. RADAR
+    # 4. RADAR (SIGNAL STRATÉGIQUE)
     # ----------------------------------------------------------
     radar = get_latest_radar("company", company_id) if company_id else None
 
     # ----------------------------------------------------------
-    # 5. 🔥 SUGGESTIONS DYNAMIQUES
+    # 5. SUGGESTIONS
     # ----------------------------------------------------------
     suggestions = build_suggestions(
         intent="company",
@@ -142,7 +152,7 @@ def handle_company(entity: Dict) -> Dict:
     )
 
     # ----------------------------------------------------------
-    # 6. RESPONSE
+    # 6. RESPONSE (STRUCTURE PRODUIT)
     # ----------------------------------------------------------
     return {
         "status": "ok",
@@ -151,9 +161,15 @@ def handle_company(entity: Dict) -> Dict:
         "answer": {
             "name": company.get("NAME"),
             "description": company.get("DESCRIPTION"),
-            "latest_contents": feed,
-            "numbers": numbers,
+
+            # 🔥 priorité stratégique
             "radar": radar,
+
+            # 🔥 preuve data
+            "numbers": numbers,
+
+            # 🔥 contexte marché
+            "latest_contents": feed,
         },
         "meta": {
             "suggestions": suggestions
