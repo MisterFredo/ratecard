@@ -74,11 +74,43 @@ def mcp_query(body: MCPQuery):
     intent = detect_intent(user_query)
     entity = resolve_entity(user_query)
 
+    # 👉 sécurité entity (CRITIQUE FIX)
+    if not entity or entity.get("type") == "unknown":
+        entity = {"type": None, "label": None}
+
     # ----------------------------------------------------------
     # 2. NUMBERS (PRIORITÉ MAX)
     # ----------------------------------------------------------
     if intent == "numbers":
-        return handle_numbers(entity, user_query)
+
+        result = handle_numbers(entity, user_query)
+
+        # 👉 fallback si aucun chiffre trouvé
+        if result.get("status") in ["empty", "error"]:
+            # on bascule vers search
+            cleaned_query = clean_query(user_query)
+            search_query = cleaned_query if cleaned_query else user_query
+
+            rows = search(q=search_query, limit=10) or []
+
+            if rows:
+                for item in rows:
+                    if item.get("type") == "news":
+                        item["url"] = f"/news/{item.get('id')}"
+                    else:
+                        item["url"] = f"/analysis/{item.get('id')}"
+
+                return {
+                    "status": "ok",
+                    "intent": "search_fallback",
+                    "entity": entity,
+                    "answer": {
+                        "text": "Aucun chiffre précis trouvé, voici les contenus associés :",
+                        "items": rows
+                    }
+                }
+
+        return result
 
     # ----------------------------------------------------------
     # 3. BENCHMARK
@@ -89,10 +121,10 @@ def mcp_query(body: MCPQuery):
     # ----------------------------------------------------------
     # 4. ENTITY (COMPANY / TOPIC)
     # ----------------------------------------------------------
-    if entity and entity.get("type") == "company":
+    if entity.get("type") == "company":
         return handle_company(entity)
 
-    if entity and entity.get("type") == "topic":
+    if entity.get("type") == "topic":
         return handle_topic(entity)
 
     # ----------------------------------------------------------
@@ -100,7 +132,6 @@ def mcp_query(body: MCPQuery):
     # ----------------------------------------------------------
 
     cleaned_query = clean_query(user_query)
-
     search_query = cleaned_query if cleaned_query else user_query
 
     rows = search(q=search_query, limit=10) or []
@@ -128,13 +159,13 @@ def mcp_query(body: MCPQuery):
                 "label": user_query
             },
             "answer": {
-                "text": f"Aucune donnée disponible dans Curator pour cette requête.",
+                "text": "Aucune donnée disponible dans Curator pour cette requête.",
                 "items": []
             }
         }
 
     # ----------------------------------------------------------
-    # 7. INSIGHT (SI ANALYSES)
+    # 7. INSIGHT
     # ----------------------------------------------------------
     analysis_ids = [
         r["id"]
