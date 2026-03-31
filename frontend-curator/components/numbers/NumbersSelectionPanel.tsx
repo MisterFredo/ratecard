@@ -23,7 +23,9 @@ function formatValue(item: any) {
   const scale = scaleMap[item.SCALE || ""] || "";
   const unit = item.UNIT || "";
 
-  return `${item.VALUE}${scale}${unit}`;
+  return [item.VALUE, scale, unit]
+    .filter(Boolean)
+    .join(" ");
 }
 
 /* ========================================================= */
