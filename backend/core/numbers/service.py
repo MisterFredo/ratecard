@@ -591,9 +591,9 @@ def get_numbers_for_entity(
 
 def get_numbers_feed_service(limit: int = 50, query: Optional[str] = None):
 
-    base_query = """
+    base_query = f"""
         SELECT *
-        FROM `adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED`
+        FROM `{VIEW_NUMBERS_CARDS}`
     """
 
     if query:
