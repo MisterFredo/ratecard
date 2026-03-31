@@ -10,10 +10,18 @@ export default function TopicColumn({
   return (
     <div className={`${isFoundation ? "max-w-4xl mx-auto" : ""}`}>
 
-      <h2 className="text-xs uppercase tracking-widest text-gray-400 text-center mb-6">
+      {/* TITLE */}
+      <h2
+        className={`text-center mb-6 ${
+          isFoundation
+            ? "text-lg md:text-xl font-semibold text-black tracking-tight"
+            : "text-sm md:text-base font-semibold text-gray-600 uppercase tracking-widest"
+        }`}
+      >
         {title}
       </h2>
 
+      {/* GRID */}
       <div className="grid grid-cols-2 gap-4">
         {safeTopics.map((t: any) => (
           <MiniTopicCard key={t?.id_topic || Math.random()} topic={t} />
