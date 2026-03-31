@@ -1,3 +1,5 @@
+# core/mcp/entity.py
+
 import unicodedata
 from functools import lru_cache
 from utils.bigquery_utils import query_bq
@@ -37,7 +39,7 @@ def _get_companies():
 
 
 # ============================================================
-# TOKEN MATCH (ROBUSTE)
+# TOKEN MATCH (AMÉLIORÉ)
 # ============================================================
 
 def _token_match(q: str, candidates):
@@ -53,7 +55,8 @@ def _token_match(q: str, candidates):
 
         score = len(q_tokens & c_tokens)
 
-        if score > best_score:
+        # 🔥 score strict → évite faux positifs
+        if score > best_score and score >= len(c_tokens):
             best_score = score
             best_match = c
 
@@ -82,20 +85,7 @@ def resolve_entity(query: str):
         return {"type": "topic", "label": "DOOH"}
 
     # --------------------------------------------------
-    # 🔵 TOPIC MATCH (PRIORITAIRE)
-    # --------------------------------------------------
-
-    topics = _get_topics()
-    topic_match = _token_match(q, topics)
-
-    if topic_match:
-        return {
-            "type": "topic",
-            "label": topic_match
-        }
-
-    # --------------------------------------------------
-    # 🟢 COMPANY MATCH
+    # 🟢 COMPANY FIRST (FIX CRITIQUE)
     # --------------------------------------------------
 
     companies = _get_companies()
@@ -105,6 +95,19 @@ def resolve_entity(query: str):
         return {
             "type": "company",
             "label": company_match
+        }
+
+    # --------------------------------------------------
+    # 🔵 TOPIC MATCH
+    # --------------------------------------------------
+
+    topics = _get_topics()
+    topic_match = _token_match(q, topics)
+
+    if topic_match:
+        return {
+            "type": "topic",
+            "label": topic_match
         }
 
     # --------------------------------------------------
