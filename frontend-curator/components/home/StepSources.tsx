@@ -4,14 +4,14 @@ const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL;
 
 export default function StepSources({ sources }: any) {
   const formats = [
-    { label: "Articles", value: 1240 },
-    { label: "Analyses", value: 320 },
-    { label: "Interviews", value: 190 },
-    { label: "Podcasts", value: 85 },
-    { label: "Vidéos", value: 140 },
-    { label: "Événements", value: 60 },
-    { label: "Tribunes", value: 110 },
-    { label: "Posts LinkedIn", value: 540 },
+    { label: "Articles", value: +/- 7600 },
+    { label: "Analyses", value: +/- 1450 },
+    { label: "Interviews", value: +/- 420 },
+    { label: "Podcasts", value: +/- 285 },
+    { label: "Vidéos", value: +/- 140 },
+    { label: "Événements", value: +/- 260 },
+    { label: "Tribunes", value: +/- 510 },
+    { label: "Posts LinkedIn", value: +/- 2540 },
   ];
 
   return (
@@ -68,7 +68,6 @@ export default function StepSources({ sources }: any) {
                 </span>
               </div>
 
-              {/* BAR */}
               <div className="mt-2 h-[3px] bg-gray-100 rounded">
                 <div
                   className="h-full bg-black"
@@ -80,6 +79,39 @@ export default function StepSources({ sources }: any) {
 
             </div>
           ))}
+
+        </div>
+
+        {/* ========================= */}
+        {/* NUMBERS TO REMEMBER */}
+        {/* ========================= */}
+        <div className="mt-20 text-center">
+
+          <div className="text-sm uppercase tracking-widest text-gray-400 mb-6">
+            Quelle exploitation dans GetCurator ?
+          </div>
+
+          <div className="flex justify-center gap-16">
+
+            <div>
+              <div className="text-3xl font-semibold text-gray-900">
+                2 466
+              </div>
+              <div className="text-sm text-gray-500 mt-1">
+                analyses
+              </div>
+            </div>
+
+            <div>
+              <div className="text-3xl font-semibold text-gray-900">
+                928
+              </div>
+              <div className="text-sm text-gray-500 mt-1">
+                news
+              </div>
+            </div>
+
+          </div>
 
         </div>
 
