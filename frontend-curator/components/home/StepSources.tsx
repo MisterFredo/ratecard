@@ -98,7 +98,7 @@ export default function StepSources({ sources }: any) {
         <div className="mt-20 text-center">
 
           <div className="text-sm uppercase tracking-widest text-gray-400 mb-6">
-            Ce que Curator extrait réellement
+            Ce que nous avons extrait avec GetCurator :
           </div>
 
           <div className="flex justify-center gap-16">
