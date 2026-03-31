@@ -13,7 +13,11 @@ TABLE_NUMBERS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NUMBERS_ENRICHED"
 
 def get_numbers_by_ids(ids: List[str]) -> List[Dict]:
 
-    if not ids:
+    # 🔥 sécurité totale
+    if isinstance(ids, str):
+        ids = [ids]
+
+    if not ids or not isinstance(ids, list):
         return []
 
     rows = query_bq(
@@ -42,7 +46,6 @@ def get_numbers_by_ids(ids: List[str]) -> List[Dict]:
         {"ids": ids}
     )
 
-    # 👉 on normalise pour le LLM
     return [
         {
             "id": r.get("ID_NUMBER"),
