@@ -54,6 +54,7 @@ def query_bq(sql: str, params: dict = None) -> list[dict]:
     Exécute une requête SELECT sur BigQuery.
     Supporte automatiquement les paramètres ARRAY.
     """
+
     client = get_bigquery_client()
 
     job_config = None
@@ -65,14 +66,15 @@ def query_bq(sql: str, params: dict = None) -> list[dict]:
 
             # 🔥 CAS ARRAY (LIST)
             if isinstance(value, list):
+
+                # 👉 FIX CRITIQUE : array vide sécurisé
                 if len(value) == 0:
-                    # BigQuery n'aime pas les arrays vides
-                    continue
+                    value = ["__EMPTY__"]  # valeur impossible
 
                 query_parameters.append(
                     bigquery.ArrayQueryParameter(
                         name,
-                        "STRING",  # tes filtres sont des STRING
+                        "STRING",
                         value
                     )
                 )
@@ -87,7 +89,7 @@ def query_bq(sql: str, params: dict = None) -> list[dict]:
                     )
                 )
 
-            # 🔥 CAS AUTRES (STRING, TIMESTAMP, etc.)
+            # 🔥 CAS AUTRES
             else:
                 query_parameters.append(
                     bigquery.ScalarQueryParameter(
@@ -102,8 +104,8 @@ def query_bq(sql: str, params: dict = None) -> list[dict]:
         )
 
     job = client.query(sql, job_config=job_config)
-    return [dict(row) for row in job.result()]
 
+    return [dict(row) for row in job.result()]
 
 
 # ---------------------------------------------------------
