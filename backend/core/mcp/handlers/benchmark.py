@@ -40,15 +40,13 @@ def handle_benchmark(user_query: str) -> Dict:
         }
 
     # ----------------------------------------------------------
-    # SEARCH
+    # SEARCH PAR ENTITÉ (SÉPARÉ)
     # ----------------------------------------------------------
 
     rows_1 = search(q=e1, limit=5) or []
     rows_2 = search(q=e2, limit=5) or []
 
-    rows = rows_1 + rows_2
-
-    if not rows:
+    if not rows_1 and not rows_2:
         return {
             "status": "empty",
             "intent": "benchmark",
@@ -59,17 +57,31 @@ def handle_benchmark(user_query: str) -> Dict:
         }
 
     # ----------------------------------------------------------
-    # URL enrichissement
+    # ENRICHISSEMENT URL + TAG ENTITÉ
     # ----------------------------------------------------------
 
-    for item in rows:
+    for item in rows_1:
+        item["entity"] = e1
+        if item.get("type") == "news":
+            item["url"] = f"/news/{item.get('id')}"
+        else:
+            item["url"] = f"/analysis/{item.get('id')}"
+
+    for item in rows_2:
+        item["entity"] = e2
         if item.get("type") == "news":
             item["url"] = f"/news/{item.get('id')}"
         else:
             item["url"] = f"/analysis/{item.get('id')}"
 
     # ----------------------------------------------------------
-    # ANALYSIS
+    # MERGE (mais structuré)
+    # ----------------------------------------------------------
+
+    rows = rows_1 + rows_2
+
+    # ----------------------------------------------------------
+    # ANALYSIS (PLUS PERTINENT)
     # ----------------------------------------------------------
 
     analysis_ids = [
@@ -95,7 +107,7 @@ def handle_benchmark(user_query: str) -> Dict:
     )
 
     # ----------------------------------------------------------
-    # RESPONSE
+    # RESPONSE STRUCTURÉE
     # ----------------------------------------------------------
 
     return {
@@ -107,7 +119,11 @@ def handle_benchmark(user_query: str) -> Dict:
         },
         "answer": {
             "analysis": analysis_text,
-            "items": rows
+            "items": rows,
+            "breakdown": {
+                e1: rows_1,
+                e2: rows_2
+            }
         },
         "meta": {
             "suggestions": suggestions
