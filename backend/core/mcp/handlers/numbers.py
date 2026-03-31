@@ -10,18 +10,40 @@ from core.numbers.insight_service import (
 from core.mcp.suggestions import build_suggestions
 
 
-# ============================================================
-# CONSTANTE
-# ============================================================
-
 TABLE_NUMBERS = "adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED"
 
 
 # ============================================================
-# 1. SÉLECTION AUTOMATIQUE (SAFE)
+# 🔎 PARSE INTENTION NUMBERS
 # ============================================================
 
-def _get_latest_numbers_ids(entity: Dict, limit: int = 15) -> List[str]:
+def _detect_numbers_filter(query: str) -> List[str]:
+
+    q = query.lower()
+
+    mapping = {
+        "MARKET_SHARE": ["part de marche", "market share"],
+        "REVENUE": ["revenu", "ca", "chiffre d affaire"],
+        "GROWTH": ["croissance", "growth"],
+        "USERS": ["utilisateur", "users", "audience"],
+        "VOLUME": ["volume", "gmv"],
+        "PERFORMANCE": ["cpm", "cpc", "ctr", "roi"]
+    }
+
+    detected = []
+
+    for category, keywords in mapping.items():
+        if any(k in q for k in keywords):
+            detected.append(category)
+
+    return detected
+
+
+# ============================================================
+# 1. SÉLECTION IDs
+# ============================================================
+
+def _get_latest_numbers_ids(entity: Dict, limit: int = 30) -> List[str]:
 
     label = entity.get("label")
     entity_type = entity.get("type")
@@ -60,26 +82,7 @@ def _get_latest_numbers_ids(entity: Dict, limit: int = 15) -> List[str]:
 
 
 # ============================================================
-# 2. STRUCTURATION PAR SEGMENT
-# ============================================================
-
-def _group_numbers_by_segment(numbers: List[Dict]) -> Dict:
-
-    grouped = {}
-
-    for n in numbers:
-        segment = n.get("segment") or "Other"
-
-        if segment not in grouped:
-            grouped[segment] = []
-
-        grouped[segment].append(n)
-
-    return grouped
-
-
-# ============================================================
-# 3. TRI PAR PRIORITÉ MÉTIER
+# 2. TRI
 # ============================================================
 
 def _sort_numbers(numbers: List[Dict]) -> List[Dict]:
@@ -101,18 +104,34 @@ def _sort_numbers(numbers: List[Dict]) -> List[Dict]:
 
 
 # ============================================================
+# 3. GROUP
+# ============================================================
+
+def _group_numbers_by_segment(numbers: List[Dict]) -> Dict:
+
+    grouped = {}
+
+    for n in numbers:
+        segment = n.get("segment") or "Other"
+
+        grouped.setdefault(segment, []).append(n)
+
+    return grouped
+
+
+# ============================================================
 # HANDLER
 # ============================================================
 
-def handle_numbers(entity: Dict) -> Dict:
-    """
-    Handler MCP pour :
-    → voir les chiffres
-    → les comprendre
-    """
+def handle_numbers(entity: Dict, user_query: str) -> Dict:
 
     # ----------------------------------------------------------
-    # 1. Sélection
+    # 1. INTENTION (CRITIQUE)
+    # ----------------------------------------------------------
+    filters = _detect_numbers_filter(user_query)
+
+    # ----------------------------------------------------------
+    # 2. IDS
     # ----------------------------------------------------------
     ids = _get_latest_numbers_ids(entity)
 
@@ -133,27 +152,40 @@ def handle_numbers(entity: Dict) -> Dict:
         }
 
     # ----------------------------------------------------------
-    # 2. FETCH CHIFFRES (DATA)
+    # 3. DATA
     # ----------------------------------------------------------
     numbers = get_numbers_by_ids(ids)
 
     # ----------------------------------------------------------
-    # 3. TRI
+    # 4. FILTRAGE INTELLIGENT
+    # ----------------------------------------------------------
+    if filters:
+        numbers_filtered = [
+            n for n in numbers
+            if n.get("category") in filters
+        ]
+
+        # fallback si filtre trop strict
+        if numbers_filtered:
+            numbers = numbers_filtered
+
+    # ----------------------------------------------------------
+    # 5. TRI
     # ----------------------------------------------------------
     numbers_sorted = _sort_numbers(numbers)
 
     # ----------------------------------------------------------
-    # 4. STRUCTURATION
+    # 6. GROUP
     # ----------------------------------------------------------
     numbers_grouped = _group_numbers_by_segment(numbers_sorted)
 
     # ----------------------------------------------------------
-    # 5. INSIGHT (LLM basé sur structure)
+    # 7. INSIGHT
     # ----------------------------------------------------------
     insight = generate_numbers_insight(numbers_grouped)
 
     # ----------------------------------------------------------
-    # 6. SUGGESTIONS DYNAMIQUES
+    # 8. SUGGESTIONS
     # ----------------------------------------------------------
     suggestions = build_suggestions(
         intent="numbers",
@@ -162,16 +194,16 @@ def handle_numbers(entity: Dict) -> Dict:
     )
 
     # ----------------------------------------------------------
-    # 7. RESPONSE
+    # 9. RESPONSE
     # ----------------------------------------------------------
     return {
         "status": "ok",
         "intent": "numbers",
         "entity": entity,
         "answer": {
-            "items": numbers_sorted,        # data triée
-            "grouped": numbers_grouped,     # 🔥 structuration clé
-            "text": insight,                # 🔥 insight LLM
+            "items": numbers_sorted,
+            "grouped": numbers_grouped,
+            "text": insight,
             "nb_numbers": len(numbers_sorted)
         },
         "meta": {
