@@ -5,16 +5,20 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // --------------------------------------------------
-  // 🟢 ROUTES PUBLIQUES
+  // 🟢 ROUTES PUBLIQUES + ASSETS
   // --------------------------------------------------
   if (
-    pathname === "/" ||              // 👉 HOME publique
-    pathname.startsWith("/login")
+    pathname === "/" ||                     // 👉 HOME publique
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/assets") ||      // 🔥 FIX LOGO
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon")
   ) {
     return NextResponse.next();
   }
 
-  const session = request.cookies.get("curator_session");
+  const session =
+    request.cookies.get("curator_session")?.value === "ok";
 
   // --------------------------------------------------
   // 🔒 PROTECTION
@@ -29,5 +33,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
