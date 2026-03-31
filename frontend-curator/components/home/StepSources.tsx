@@ -8,7 +8,6 @@ export default function StepSources({ sources }: any) {
     { label: "Articles", rhythm: "quotidien" },
     { label: "Newsletters", rhythm: "quotidien" },
     { label: "Analyses", rhythm: "hebdomadaire" },
-    { label: "Tribunes", rhythm: "hebdomadaire" },
     { label: "Podcasts", rhythm: "hebdomadaire" },
     { label: "Rapports marchés", rhythm: "en continu" },
     { label: "Interviews", rhythm: "en continu" },
@@ -25,7 +24,7 @@ export default function StepSources({ sources }: any) {
       <div className="
         absolute bottom-0 left-0 right-0
         h-[60%]
-        flex flex-wrap justify-center gap-10
+        flex flex-wrap justify-center gap-6
         opacity-10
         pointer-events-none
       ">
