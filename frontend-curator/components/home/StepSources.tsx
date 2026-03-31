@@ -6,6 +6,7 @@ export default function StepSources({ sources }: any) {
   const formats = [
     { label: "Posts LinkedIn", rhythm: "plusieurs fois par jour" },
     { label: "Articles", rhythm: "quotidien" },
+    { label: "Newsletters", rhythm: "quotidien" },
     { label: "Analyses", rhythm: "hebdomadaire" },
     { label: "Tribunes", rhythm: "hebdomadaire" },
     { label: "Podcasts", rhythm: "hebdomadaire" },
