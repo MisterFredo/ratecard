@@ -33,7 +33,7 @@ type Props = {
 /* ========================================================= */
 
 function formatValue(n: NumberItem) {
-  if (!n.value) return "";
+  if (n.value === undefined || n.value === null) return "";
 
   const scaleMap: any = {
     millions: "M",
