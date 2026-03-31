@@ -91,7 +91,7 @@ export default function NumbersPage() {
         <NumbersHeader
           query={query}
           setQuery={setQuery}
-          onSearch={() => load(query)}
+          onSearch={(q) => load(q)}
         />
 
         {/* COUNT */}
