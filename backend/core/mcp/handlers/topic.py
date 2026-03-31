@@ -19,7 +19,7 @@ TABLE_NUMBERS = "adex-5555.RATECARD_PROD.V_NUMBERS_ENRICHED"
 
 
 # ============================================================
-# 1. RESOLVE TOPIC ID
+# 1. RESOLVE TOPIC ID (ROBUST)
 # ============================================================
 
 def _get_topic_id(label: str):
@@ -27,7 +27,7 @@ def _get_topic_id(label: str):
     sql = """
     SELECT ID_TOPIC
     FROM `adex-5555.RATECARD_PROD.RATECARD_TOPIC`
-    WHERE LOWER(LABEL) = LOWER(@label)
+    WHERE LOWER(@label) LIKE CONCAT('%', LOWER(LABEL), '%')
     LIMIT 1
     """
 
@@ -57,7 +57,7 @@ def _get_all_topics():
 # 3. NUMBERS IDS
 # ============================================================
 
-def _get_topic_numbers_ids(label: str, limit: int = 3) -> List[str]:
+def _get_topic_numbers_ids(label: str, limit: int = 6) -> List[str]:
 
     sql = """
     SELECT ID_NUMBER
@@ -104,7 +104,12 @@ def handle_topic(entity: Dict) -> Dict:
     # ----------------------------------------------------------
     if not topic_id:
 
-        feed = search_text(query=label, limit=5) or []
+        feed_raw = search_text(query=label, limit=10) or []
+
+        feed = [
+            f for f in feed_raw
+            if f.get("type") in ["analysis", "news"]
+        ][:8]
 
         for item in feed:
             if item.get("type") == "news":
@@ -139,9 +144,12 @@ def handle_topic(entity: Dict) -> Dict:
     items = view.get("items", []) or []
 
     # ----------------------------------------------------------
-    # 3. FEED (3)
+    # 3. FEED (FILTRÉ)
     # ----------------------------------------------------------
-    feed = items[:3]
+    feed = [
+        i for i in items
+        if i.get("type") in ["analysis", "news"]
+    ][:3]
 
     for item in feed:
         if item.get("type") == "news":
@@ -150,7 +158,7 @@ def handle_topic(entity: Dict) -> Dict:
             item["url"] = f"/analysis/{item.get('id')}"
 
     # ----------------------------------------------------------
-    # 4. ANALYSIS (SAFE)
+    # 4. ANALYSIS
     # ----------------------------------------------------------
     analysis_ids = [
         i["id"]
@@ -167,7 +175,7 @@ def handle_topic(entity: Dict) -> Dict:
     # ----------------------------------------------------------
     # 5. NUMBERS
     # ----------------------------------------------------------
-    number_ids = _get_topic_numbers_ids(label, limit=3)
+    number_ids = _get_topic_numbers_ids(label, limit=6)
     numbers = get_numbers_by_ids(number_ids) if number_ids else []
 
     # ----------------------------------------------------------
@@ -176,7 +184,7 @@ def handle_topic(entity: Dict) -> Dict:
     radar = get_latest_radar("topic", topic_id)
 
     # ----------------------------------------------------------
-    # 7. 🔥 SUGGESTIONS DYNAMIQUES
+    # 7. SUGGESTIONS
     # ----------------------------------------------------------
     suggestions = build_suggestions(
         intent="topic",
@@ -185,7 +193,7 @@ def handle_topic(entity: Dict) -> Dict:
     )
 
     # ----------------------------------------------------------
-    # 8. RESPONSE
+    # 8. RESPONSE (STRUCTURE PRODUIT)
     # ----------------------------------------------------------
     return {
         "status": "ok",
@@ -195,11 +203,23 @@ def handle_topic(entity: Dict) -> Dict:
             "name": view.get("label"),
             "description": view.get("description"),
 
+            # 🔥 signal stratégique
+            "radar": radar,
+
+            # 🔥 compréhension marché
             "analysis": analysis_text,
 
-            "latest_contents": feed,
+            # 🔥 preuve data
             "numbers": numbers,
-            "radar": radar,
+
+            # 🔥 contexte
+            "latest_contents": feed,
+
+            # 🔥 bonus UX
+            "stats": {
+                "nb_analyses": view.get("nb_analyses"),
+                "delta_30d": view.get("delta_30d")
+            }
         },
         "meta": {
             "suggestions": suggestions
