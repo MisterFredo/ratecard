@@ -1,6 +1,5 @@
-# core/mcp/entity.py
-
 import unicodedata
+from functools import lru_cache
 from utils.bigquery_utils import query_bq
 
 
@@ -9,13 +8,17 @@ from utils.bigquery_utils import query_bq
 # ============================================================
 
 def normalize(text: str) -> str:
-    return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("utf-8").lower()
+    return unicodedata.normalize("NFKD", text)\
+        .encode("ascii", "ignore")\
+        .decode("utf-8")\
+        .lower()
 
 
 # ============================================================
-# LOAD ENTITIES (CACHEABLE)
+# CACHE (CRITIQUE)
 # ============================================================
 
+@lru_cache(maxsize=1)
 def _get_topics():
     rows = query_bq("""
         SELECT LABEL
@@ -24,6 +27,7 @@ def _get_topics():
     return [r["LABEL"] for r in rows if r.get("LABEL")]
 
 
+@lru_cache(maxsize=1)
 def _get_companies():
     rows = query_bq("""
         SELECT NAME
@@ -33,21 +37,27 @@ def _get_companies():
 
 
 # ============================================================
-# MATCH HELPERS
+# TOKEN MATCH (ROBUSTE)
 # ============================================================
 
-def _match_topic(q: str, topics):
-    for label in topics:
-        if normalize(label) in q:
-            return label
-    return None
+def _token_match(q: str, candidates):
 
+    q_tokens = set(q.split())
 
-def _match_company(q: str, companies):
-    for name in companies:
-        if normalize(name) in q:
-            return name
-    return None
+    best_match = None
+    best_score = 0
+
+    for c in candidates:
+        c_norm = normalize(c)
+        c_tokens = set(c_norm.split())
+
+        score = len(q_tokens & c_tokens)
+
+        if score > best_score:
+            best_score = score
+            best_match = c
+
+    return best_match if best_score > 0 else None
 
 
 # ============================================================
@@ -59,7 +69,7 @@ def resolve_entity(query: str):
     q = normalize(query)
 
     # --------------------------------------------------
-    # 🔵 HARD OVERRIDES (prioritaires)
+    # 🔵 HARD OVERRIDES (rapides et fiables)
     # --------------------------------------------------
 
     if "retail media" in q:
@@ -72,11 +82,11 @@ def resolve_entity(query: str):
         return {"type": "topic", "label": "DOOH"}
 
     # --------------------------------------------------
-    # 🔵 TOPIC DYNAMIQUE
+    # 🔵 TOPIC MATCH (PRIORITAIRE)
     # --------------------------------------------------
 
     topics = _get_topics()
-    topic_match = _match_topic(q, topics)
+    topic_match = _token_match(q, topics)
 
     if topic_match:
         return {
@@ -85,11 +95,11 @@ def resolve_entity(query: str):
         }
 
     # --------------------------------------------------
-    # 🟢 COMPANY DYNAMIQUE
+    # 🟢 COMPANY MATCH
     # --------------------------------------------------
 
     companies = _get_companies()
-    company_match = _match_company(q, companies)
+    company_match = _token_match(q, companies)
 
     if company_match:
         return {
