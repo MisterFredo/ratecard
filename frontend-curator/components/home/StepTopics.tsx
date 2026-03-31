@@ -17,7 +17,7 @@ export default function StepTopics({ topics }: any) {
       </h1>
 
       {/* TOP */}
-      <div className="grid grid-cols-2 gap-20 mb-10">
+      <div className="grid grid-cols-2 gap-16 mb-10">
 
         <TopicColumn
           title="Retail"
