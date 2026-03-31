@@ -7,7 +7,7 @@ import { useState } from "react";
 type Props = {
   query: string;
   setQuery: (q: string) => void;
-  onSearch: () => void;
+  onSearch: (q: string) => void;   // 🔥 CHANGEMENT
 };
 
 /* ========================================================= */
@@ -17,12 +17,14 @@ export default function NumbersHeader({
   setQuery,
   onSearch,
 }: Props) {
+
   const [input, setInput] = useState(query);
 
   function triggerSearch() {
     const value = input.trim();
-    setQuery(value);
-    onSearch();
+
+    setQuery(value);      // OK pour synchro globale
+    onSearch(value);      // 🔥 on passe la vraie valeur
   }
 
   return (
