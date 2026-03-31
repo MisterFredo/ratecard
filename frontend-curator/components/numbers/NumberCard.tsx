@@ -26,6 +26,13 @@ function formatValue(item: any) {
 /* ========================================================= */
 
 export default function NumberCard({ item, onClick, selected }: Props) {
+
+  const entities = item.ENTITIES || [];
+
+  const companies = entities.filter((e: any) => e.ENTITY_TYPE === "company");
+  const topics = entities.filter((e: any) => e.ENTITY_TYPE === "topic");
+  const solutions = entities.filter((e: any) => e.ENTITY_TYPE === "solution");
+
   return (
     <div
       onClick={onClick}
@@ -78,14 +85,41 @@ export default function NumberCard({ item, onClick, selected }: Props) {
         </div>
       )}
 
-      {/* ENTITY */}
-      {item.ENTITY_LABEL && (
-        <div className="
-          text-[10px] text-gray-500 mt-2 uppercase
-        ">
-          {item.ENTITY_LABEL}
-        </div>
-      )}
+      {/* ENTITIES */}
+      <div className="mt-2 flex flex-wrap gap-1">
+
+        {/* COMPANY */}
+        {companies.map((c: any) => (
+          <span
+            key={c.ENTITY_ID}
+            className="text-[10px] px-2 py-[2px] rounded-full bg-blue-50 text-blue-600"
+          >
+            {c.ENTITY_LABEL}
+          </span>
+        ))}
+
+        {/* SOLUTION */}
+        {solutions.map((s: any) => (
+          <span
+            key={s.ENTITY_ID}
+            className="text-[10px] px-2 py-[2px] rounded-full bg-purple-50 text-purple-600"
+          >
+            {s.ENTITY_LABEL}
+          </span>
+        ))}
+
+        {/* TOPIC */}
+        {topics.map((t: any) => (
+          <span
+            key={t.ENTITY_ID}
+            className="text-[10px] px-2 py-[2px] rounded-full bg-gray-100 text-gray-600"
+          >
+            {t.ENTITY_LABEL}
+          </span>
+        ))}
+
+      </div>
+
     </div>
   );
 }
