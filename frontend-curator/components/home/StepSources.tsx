@@ -22,7 +22,8 @@ export default function StepSources({ sources }: any) {
       {/* BACKGROUND LOGOS */}
       {/* ========================= */}
       <div className="
-        absolute bottom-0 left-0 right-0
+        absolute top-1/2 -translate-y-1/2
+        left-0 right-0
         h-[60%]
         flex flex-wrap justify-center gap-6
         opacity-10
