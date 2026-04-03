@@ -3,11 +3,12 @@
 import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
+  NewsletterNumberItem,
 } from "@/types/newsletter";
 
 type EditorialItem = {
   id: string;
-  type: "news" | "breve" | "analysis";
+  type: "news" | "breve" | "analysis" | "number";
 };
 
 type Props = {
@@ -15,6 +16,7 @@ type Props = {
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
+  numbers: NewsletterNumberItem[]; // 👈 AJOUT
   setEditorialOrder: React.Dispatch<
     React.SetStateAction<EditorialItem[]>
   >;
@@ -25,6 +27,7 @@ export default function DigestEditorialFlow({
   news,
   breves,
   analyses,
+  numbers, // 👈 AJOUT
   setEditorialOrder,
 }: Props) {
 
@@ -67,7 +70,35 @@ export default function DigestEditorialFlow({
     if (item.type === "breve") {
       return breves.find((b) => b.id === item.id);
     }
-    return analyses.find((a) => a.id === item.id);
+    if (item.type === "analysis") {
+      return analyses.find((a) => a.id === item.id);
+    }
+    if (item.type === "number") {
+      return numbers.find((n) => n.id === item.id);
+    }
+    return null;
+  }
+
+  function getLabel(type: EditorialItem["type"]) {
+    switch (type) {
+      case "news":
+        return "news";
+      case "breve":
+        return "brève";
+      case "analysis":
+        return "analyse";
+      case "number":
+        return "chiffre"; // 👈 IMPORTANT (UX)
+      default:
+        return type;
+    }
+  }
+
+  function getTitle(item: EditorialItem, source: any) {
+    if (item.type === "number") {
+      return `${source.label} (${source.value ?? ""} ${source.unit ?? ""})`;
+    }
+    return source.title;
   }
 
   if (editorialOrder.length === 0) {
@@ -101,6 +132,8 @@ export default function DigestEditorialFlow({
               className="flex items-center justify-between px-3 py-2 text-sm"
             >
               <div className="flex items-start gap-2 min-w-0">
+
+                {/* TYPE */}
                 <span className="
                   text-[10px]
                   uppercase
@@ -108,18 +141,20 @@ export default function DigestEditorialFlow({
                   text-gray-400
                   shrink-0
                 ">
-                  {item.type}
+                  {getLabel(item.type)}
                 </span>
 
+                {/* TITLE */}
                 <span className="
                   text-gray-900
                   font-medium
                   truncate
                 ">
-                  {source.title}
+                  {getTitle(item, source)}
                 </span>
               </div>
 
+              {/* ACTIONS */}
               <div className="flex items-center gap-1 text-xs">
 
                 <button
