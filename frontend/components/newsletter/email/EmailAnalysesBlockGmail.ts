@@ -1,3 +1,20 @@
+import { escapeHtml } from "./EmailHelpers";
+import type { NewsletterAnalysisItem } from "@/types/newsletter";
+
+const PUBLIC_SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://ratecard.fr";
+
+function formatDate(dateString?: string) {
+  if (!dateString) return "";
+  const d = new Date(dateString);
+  return d.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export function EmailAnalysesBlockGmail(
   analyses: NewsletterAnalysisItem[]
 ) {
