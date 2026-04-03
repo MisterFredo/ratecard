@@ -25,22 +25,61 @@ def search_digest(
     period: Optional[str] = "total",
 ) -> Dict[str, Any]:
 
+    # =========================
+    # NEWS
+    # =========================
     news = _search_news_digest(
-        topics, companies, news_types, limit, cursor, "NEWS", period
+        topics=topics,
+        companies=companies,
+        news_types=news_types,
+        limit=limit,
+        cursor=cursor,
+        news_kind="NEWS",
+        period=period,
     )
 
+    # =========================
+    # BRÈVES
+    # =========================
     breves = _search_news_digest(
-        topics, companies, news_types, limit, cursor, "BRIEF", period
+        topics=topics,
+        companies=companies,
+        news_types=news_types,
+        limit=limit,
+        cursor=cursor,
+        news_kind="BRIEF",
+        period=period,
     )
 
+    # =========================
+    # ANALYSES (V_CONTENT_ENRICHED)
+    # =========================
     analyses = _search_analyses_digest(
-        topics, companies, limit, cursor, period
+        topics=topics,
+        companies=companies,
+        limit=limit,
+        cursor=cursor,
+        period=period,
     )
 
+    # =========================
+    # NUMBERS (V_NUMBERS_ENRICHED)
+    # =========================
+    numbers = _search_numbers_digest(
+        topics=topics,
+        companies=companies,
+        limit=limit,
+        period=period,
+    )
+
+    # =========================
+    # RETURN
+    # =========================
     return {
         "news": news,
         "breves": breves,
         "analyses": analyses,
+        "numbers": numbers,
     }
 
 
