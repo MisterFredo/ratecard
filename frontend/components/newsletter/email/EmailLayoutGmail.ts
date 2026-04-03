@@ -28,31 +28,27 @@ export function EmailLayoutGmail(content: string) {
             background:#FFFFFF;
           "
         >
+
+          <!-- =========================
+              CONTENT (FIX STRUCTURE)
+          ========================== -->
+          ${content}
+
+          <!-- =========================
+              FOOTER
+          ========================== -->
           <tr>
             <td style="
-              padding:24px 32px 0 32px;
+              padding:36px 32px 26px 32px;
+              font-size:12px;
+              color:#9CA3AF;
               font-family:Arial,Helvetica,sans-serif;
-              color:#111827;
+              line-height:1.5;
             ">
-
-              ${content}
-
-              <!-- FOOTER -->
-              <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-                <tr>
-                  <td style="
-                      padding:36px 0 26px 0;
-                      font-size:12px;
-                      color:#9CA3AF;
-                      line-height:1.5;
-                    ">
-                    © Ratecard – Lecture stratégique du marché
-                  </td>
-                </tr>
-              </table>
-
+              © Ratecard – Lecture stratégique du marché
             </td>
           </tr>
+
         </table>
 
       </td>
