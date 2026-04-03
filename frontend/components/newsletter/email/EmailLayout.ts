@@ -49,6 +49,7 @@ export function EmailLayout(content: string) {
 
 <body style="margin:0;padding:0;background:#F3F4F6;">
 
+  <!-- WRAPPER -->
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#F3F4F6;">
     <tr>
       <td align="center">
@@ -67,33 +68,28 @@ export function EmailLayout(content: string) {
             background:#ffffff;
           "
         >
+
+          <!-- =========================
+              CONTENT (IMPORTANT FIX)
+          ========================== -->
+          ${content}
+
+          <!-- =========================
+              FOOTER
+          ========================== -->
           <tr>
-            <td
-              class="mobile-padding"
-              style="
-                padding: 24px 32px 0 32px;
-              "
-            >
-
-              ${content}
-
-              <!-- FOOTER -->
-              <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-                <tr>
-                  <td style="
-                      padding:36px 0 26px 0;
-                      font-size:12px;
-                      color:#9CA3AF;
-                      font-family:Arial,Helvetica,sans-serif;
-                      line-height:1.5;
-                    ">
-                    © Ratecard – Lecture stratégique du marché
-                  </td>
-                </tr>
-              </table>
-
+            <td style="
+              padding:36px 32px 26px 32px;
+              font-size:12px;
+              color:#9CA3AF;
+              font-family:Arial,Helvetica,sans-serif;
+              line-height:1.5;
+              text-align:left;
+            ">
+              © Ratecard – Lecture stratégique du marché
             </td>
           </tr>
+
         </table>
 
       </td>
