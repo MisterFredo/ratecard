@@ -1,3 +1,15 @@
+import {
+  buildContentImageUrl,
+  escapeHtml,
+  renderEmailTags,
+} from "./EmailHelpers";
+
+import type { NewsletterNewsItem } from "@/types/newsletter";
+
+const PUBLIC_SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://ratecard.fr";
+
 export function EmailBrevesBlockGmail(
   breves: NewsletterNewsItem[]
 ) {
