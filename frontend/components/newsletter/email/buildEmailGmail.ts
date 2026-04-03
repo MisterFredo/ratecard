@@ -1,7 +1,7 @@
 import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
-  NewsletterNumberItem, // 👈 NEW
+  NewsletterNumberItem,
   HeaderConfig,
   TopicStat,
 } from "@/types/newsletter";
@@ -12,7 +12,7 @@ import { EmailNewsBlockGmail } from "./EmailNewsBlockGmail";
 import { EmailStatsBlockGmail } from "./EmailStatsBlockGmail";
 import { EmailBrevesBlockGmail } from "./EmailBrevesBlockGmail";
 import { EmailAnalysesBlockGmail } from "./EmailAnalysesBlockGmail";
-import { EmailNumbersBlockGmail } from "./EmailNumbersBlockGmail"; // 👈 NEW
+import { EmailNumbersBlockGmail } from "./EmailNumbersBlockGmail";
 import { EmailSignatureGmail } from "./EmailSignatureGmail";
 
 type Props = {
@@ -21,7 +21,7 @@ type Props = {
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
-  numbers?: NewsletterNumberItem[]; // 👈 NEW
+  numbers?: NewsletterNumberItem[];
   topicStats?: TopicStat[];
 };
 
@@ -31,16 +31,19 @@ export function buildEmailGmail({
   news,
   breves,
   analyses,
-  numbers = [], // 👈 NEW
+  numbers = [],
   topicStats = [],
 }: Props) {
 
   const blocks = [
 
+    /* =========================
+        HEADER
+    ========================== */
     EmailHeaderGmail(headerConfig),
 
     /* =========================
-        NUMBERS 🔥
+        NUMBERS
     ========================== */
     numbers.length > 0
       ? EmailNumbersBlockGmail(numbers)
@@ -51,13 +54,6 @@ export function buildEmailGmail({
     ========================== */
     news.length > 0
       ? EmailNewsBlockGmail(news)
-      : "",
-
-    /* =========================
-        STATS
-    ========================== */
-    headerConfig.showTopicStats && topicStats.length > 0
-      ? EmailStatsBlockGmail(topicStats)
       : "",
 
     /* =========================
@@ -75,11 +71,25 @@ export function buildEmailGmail({
       : "",
 
     /* =========================
+        STATS (FIN)
+    ========================== */
+    headerConfig.showTopicStats && topicStats.length > 0
+      ? EmailStatsBlockGmail(topicStats)
+      : "",
+
+    /* =========================
         SIGNATURE
     ========================== */
-    EmailSignatureGmail()
+    EmailSignatureGmail(),
 
   ].join("");
 
-  return EmailLayoutGmail(blocks);
+  /* 🔥 CRITIQUE */
+  const content = `
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+    ${blocks}
+  </table>
+  `;
+
+  return EmailLayoutGmail(content);
 }
