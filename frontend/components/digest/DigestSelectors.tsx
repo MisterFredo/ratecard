@@ -1,28 +1,27 @@
 "use client";
 
 import NewsletterSelector from "@/components/newsletter/NewsletterSelector";
+
 import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
+  NewsletterNumberItem,
 } from "@/types/newsletter";
 
-type NewsletterNumberItem = {
-  id: string;
-  label: string;
-  value?: number;
-  unit?: string;
-};
+/* =========================================================
+   TYPES
+========================================================= */
 
 type EditorialItem = {
   id: string;
-  type: "news" | "breve" | "analysis" | "number"; // 🔥 NEW
+  type: "news" | "breve" | "analysis" | "number";
 };
 
 type Props = {
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
-  numbers: NewsletterNumberItem[]; // 🔥 NEW
+  numbers: NewsletterNumberItem[];
 
   editorialOrder: EditorialItem[];
   setEditorialOrder: React.Dispatch<
@@ -30,14 +29,22 @@ type Props = {
   >;
 };
 
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 export default function DigestSelectors({
   news,
   breves,
   analyses,
-  numbers, // 🔥 NEW
+  numbers,
   editorialOrder,
   setEditorialOrder,
 }: Props) {
+
+  /* =========================================
+     UPDATE SELECTION
+  ========================================= */
 
   function updateTypeSelection(
     ids: string[],
@@ -47,13 +54,19 @@ export default function DigestSelectors({
       const others = prev.filter(
         (item) => item.type !== type
       );
+
       const updated = ids.map((id) => ({
         id,
         type,
       }));
+
       return [...others, ...updated];
     });
   }
+
+  /* =========================================
+     COUNTERS
+  ========================================= */
 
   const newsSelected = editorialOrder.filter(
     (i) => i.type === "news"
@@ -70,6 +83,10 @@ export default function DigestSelectors({
   const numbersSelected = editorialOrder.filter(
     (i) => i.type === "number"
   ).length;
+
+  /* =========================================
+     RENDER
+  ========================================= */
 
   return (
     <div className="space-y-5">
@@ -168,7 +185,7 @@ export default function DigestSelectors({
       </section>
 
       {/* =========================
-          NUMBERS 🔥
+          NUMBERS
       ========================== */}
       <section className="space-y-2">
         <div className="flex items-center justify-between text-sm">
@@ -195,7 +212,7 @@ export default function DigestSelectors({
           onChange={(ids) =>
             updateTypeSelection(ids, "number")
           }
-          labelKey="label" // 🔥 important pour numbers
+          labelKey="label"
         />
       </section>
 
