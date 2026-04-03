@@ -5,7 +5,7 @@ import DigestEngine from "@/components/digest/DigestEngine";
 import DigestSelectors from "@/components/digest/DigestSelectors";
 import DigestEditorialFlow from "@/components/digest/DigestEditorialFlow";
 import DigestHeaderConfig from "@/components/digest/DigestHeaderConfig";
-import DigestPreviewPanel from "@/components/digest/DigestPreviewPanel";
+import DigestPreviewPanel from "@/components/digest/DigestPreviewPanel"; // ✅ FIX
 import DigestTopicStats from "@/components/digest/DigestTopicStats";
 import { api } from "@/lib/api";
 
@@ -19,57 +19,33 @@ import type {
 
 import type { SelectOption } from "@/components/ui/SearchableMultiSelect";
 
-/* =========================================================
-   TYPES
-========================================================= */
-
 type EditorialItem = {
   id: string;
   type: "news" | "breve" | "analysis" | "number";
 };
-
-/* =========================================================
-   PAGE
-========================================================= */
 
 export default function DigestPage() {
   const [loading, setLoading] = useState(false);
 
   const [news, setNews] = useState<NewsletterNewsItem[]>([]);
   const [breves, setBreves] = useState<NewsletterNewsItem[]>([]);
-  const [analyses, setAnalyses] =
-    useState<NewsletterAnalysisItem[]>([]);
-  const [numbers, setNumbers] =
-    useState<NewsletterNumberItem[]>([]);
+  const [analyses, setAnalyses] = useState<NewsletterAnalysisItem[]>([]);
+  const [numbers, setNumbers] = useState<NewsletterNumberItem[]>([]);
 
-  const [selectedTopics, setSelectedTopics] =
-    useState<SelectOption[]>([]);
-  const [selectedCompanies, setSelectedCompanies] =
-    useState<SelectOption[]>([]);
-  const [selectedTypes, setSelectedTypes] =
-    useState<SelectOption[]>([]);
+  const [selectedTopics, setSelectedTopics] = useState<SelectOption[]>([]);
+  const [selectedCompanies, setSelectedCompanies] = useState<SelectOption[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<SelectOption[]>([]);
 
-  /* =========================================
-     HEADER CONFIG
-  ========================================= */
-
-  const [headerConfig, setHeaderConfig] =
-    useState<HeaderConfig>({
-      title: "Newsletter Ratecard",
-      subtitle: "",
-      period: "",
-      headerCompany: undefined,
-      showTopicStats: false,
-    });
+  const [headerConfig, setHeaderConfig] = useState<HeaderConfig>({
+    title: "Newsletter Ratecard",
+    subtitle: "",
+    period: "",
+    headerCompany: undefined,
+    showTopicStats: false,
+  });
 
   const [introText, setIntroText] = useState("");
-
-  const [editorialOrder, setEditorialOrder] =
-    useState<EditorialItem[]>([]);
-
-  /* =========================================
-     BAROMÈTRE
-  ========================================= */
+  const [editorialOrder, setEditorialOrder] = useState<EditorialItem[]>([]);
 
   const [topicStats, setTopicStats] = useState<TopicStat[]>([]);
 
@@ -78,17 +54,13 @@ export default function DigestPage() {
       try {
         const res = await api.get("/news/breves/stats");
 
-        const topics: TopicStat[] =
-          (res.topics_stats || [])
-            .map((t: any) => ({
-              label: t.label,
-              last_30_days: t.last_30_days ?? 0,
-              total: t.total ?? 0,
-            }))
-            .sort(
-              (a: TopicStat, b: TopicStat) =>
-                b.last_30_days - a.last_30_days
-            );
+        const topics: TopicStat[] = (res.topics_stats || [])
+          .map((t: any) => ({
+            label: t.label,
+            last_30_days: t.last_30_days ?? 0,
+            total: t.total ?? 0,
+          }))
+          .sort((a, b) => b.last_30_days - a.last_30_days);
 
         setTopicStats(topics);
       } catch (e) {
@@ -99,10 +71,6 @@ export default function DigestPage() {
     loadStats();
   }, []);
 
-  /* =========================================
-     SEARCH
-  ========================================= */
-
   async function handleSearch(filters: {
     topics: string[];
     companies: string[];
@@ -112,15 +80,12 @@ export default function DigestPage() {
     setLoading(true);
 
     try {
-      const json = await api.post(
-        "/admin/digest/search",
-        {
-          ...filters,
-          limit: 20,
-        }
-      );
+      const json = await api.post("/admin/digest/search", {
+        ...filters,
+        limit: 20,
+      });
 
-      const data = json.result || {};
+      const data = json.result || json || {}; // ✅ FIX ROBUSTE
 
       setNews(data.news || []);
       setBreves(data.breves || []);
@@ -134,10 +99,6 @@ export default function DigestPage() {
       setLoading(false);
     }
   }
-
-  /* =========================================
-     MAP ORDER → DATA
-  ========================================= */
 
   const editorialNews = useMemo(
     () =>
@@ -175,21 +136,13 @@ export default function DigestPage() {
     [editorialOrder, numbers]
   );
 
-  /* =========================================
-     LAYOUT
-  ========================================= */
-
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold tracking-tight">
-        Digest
-      </h1>
+      <h1 className="text-lg font-semibold tracking-tight">Digest</h1>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_1.3fr] gap-6 items-start">
 
-        {/* LEFT PANEL */}
         <div className="space-y-5">
-
           <DigestHeaderConfig
             headerConfig={headerConfig}
             setHeaderConfig={setHeaderConfig}
@@ -228,7 +181,6 @@ export default function DigestPage() {
           />
         </div>
 
-        {/* RIGHT PANEL */}
         <div className="sticky top-6 h-[calc(100vh-4rem)] overflow-y-auto pr-2">
           <DigestPreviewPanel
             headerConfig={headerConfig}
