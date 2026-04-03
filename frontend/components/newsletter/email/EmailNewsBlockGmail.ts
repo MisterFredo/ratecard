@@ -1,15 +1,3 @@
-import {
-  buildContentImageUrl,
-  escapeHtml,
-  renderEmailTags,
-} from "./EmailHelpers";
-
-import type { NewsletterNewsItem } from "@/types/newsletter";
-
-const PUBLIC_SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://ratecard.fr";
-
 export function EmailNewsBlockGmail(
   news: NewsletterNewsItem[]
 ) {
@@ -32,10 +20,10 @@ export function EmailNewsBlockGmail(
       return `
 <tr>
 <td style="
-    padding:28px 16px;
-    border-bottom:1px solid #E5E7EB;
-    font-family:Arial,Helvetica,sans-serif;
-  ">
+  padding:28px 0;
+  border-bottom:1px solid #E5E7EB;
+  font-family:Arial,Helvetica,sans-serif;
+">
 
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
@@ -43,30 +31,32 @@ export function EmailNewsBlockGmail(
       ${
         imageUrl
           ? `
-          <!-- IMAGE -->
-          <td
-            valign="top"
+      <!-- IMAGE -->
+      <td
+        width="140"
+        valign="top"
+        style="
+          width:140px;
+          padding-right:16px;
+        "
+      >
+        <a href="${newsUrl}" target="_blank">
+          <img 
+            src="${imageUrl}" 
+            alt=""
+            width="140"
+            border="0"
             style="
-              width:140px;
-              padding-right:16px;
+              display:block;
+              width:100%;
+              max-width:140px;
+              height:auto;
+              border:1px solid #F3F4F6;
             "
-          >
-            <a href="${newsUrl}" target="_blank">
-              <img 
-                src="${imageUrl}" 
-                alt=""
-                width="140"
-                style="
-                  display:block;
-                  width:100%;
-                  max-width:140px;
-                  height:auto;
-                  border:1px solid #F3F4F6;
-                "
-              />
-            </a>
-          </td>
-          `
+          />
+        </a>
+      </td>
+      `
           : ""
       }
 
@@ -75,44 +65,49 @@ export function EmailNewsBlockGmail(
 
         <!-- DATE -->
         <div style="
-            font-size:12px;
-            color:#6B7280;
-            margin-bottom:6px;
-          ">
+          font-size:12px;
+          color:#6B7280;
+          margin-bottom:6px;
+        ">
           ${new Date(n.published_at).toLocaleDateString("fr-FR")}
         </div>
 
         <!-- TITLE -->
-        <a href="${newsUrl}" 
-           target="_blank"
-           style="text-decoration:none;color:#111827;">
+        <a href="${newsUrl}" target="_blank" style="text-decoration:none;">
           <div style="
-              font-size:18px;
-              font-weight:700;
-              margin-bottom:10px;
-              line-height:1.3;
-            ">
+            font-size:18px;
+            font-weight:700;
+            color:#111827;
+            line-height:1.3;
+            margin-bottom:8px;
+          ">
             ${escapeHtml(n.title)}
           </div>
         </a>
 
+        ${
+          tags
+            ? `
         <!-- TAGS -->
-        <div style="margin-bottom:8px;">
+        <div style="margin-bottom:6px;">
           ${tags}
         </div>
+        `
+            : ""
+        }
 
-        <!-- EXCERPT -->
         ${
           n.excerpt
             ? `
-            <div style="
-                font-size:14px;
-                color:#374151;
-                line-height:1.4;
-              ">
-                ${escapeHtml(n.excerpt)}
-              </div>
-            `
+        <!-- EXCERPT -->
+        <div style="
+          font-size:14px;
+          color:#374151;
+          line-height:1.4;
+        ">
+          ${escapeHtml(n.excerpt)}
+        </div>
+        `
             : ""
         }
 
@@ -130,18 +125,17 @@ export function EmailNewsBlockGmail(
   return `
 <tr>
 <td style="
-    padding-top:32px;
-    font-family:Arial,Helvetica,sans-serif;
-  ">
+  padding-top:32px;
+  font-family:Arial,Helvetica,sans-serif;
+">
   <div style="
-      font-size:13px;
-      font-weight:700;
-      letter-spacing:0.08em;
-      text-transform:uppercase;
-      color:#111827;
-      margin-bottom:18px;
-      padding-left:8px;
-    ">
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#111827;
+    margin-bottom:16px;
+  ">
     Actualités
   </div>
 </td>
