@@ -1,19 +1,15 @@
 from typing import Optional, List, Dict, Any
-from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 
 
 # ============================================================
-# TABLES / VIEWS
+# VIEWS
 # ============================================================
 
 VIEW_NEWS_ENRICHED = f"{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED"
-
-TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
-TABLE_CONTENT_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC"
-TABLE_CONTENT_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY"
+VIEW_CONTENT_ENRICHED = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 
 
 # ============================================================
@@ -30,31 +26,15 @@ def search_digest(
 ) -> Dict[str, Any]:
 
     news = _search_news_digest(
-        topics=topics,
-        companies=companies,
-        news_types=news_types,
-        limit=limit,
-        cursor=cursor,
-        news_kind="NEWS",
-        period=period,
+        topics, companies, news_types, limit, cursor, "NEWS", period
     )
 
     breves = _search_news_digest(
-        topics=topics,
-        companies=companies,
-        news_types=news_types,
-        limit=limit,
-        cursor=cursor,
-        news_kind="BRIEF",
-        period=period,
+        topics, companies, news_types, limit, cursor, "BRIEF", period
     )
 
     analyses = _search_analyses_digest(
-        topics=topics,
-        companies=companies,
-        limit=limit,
-        cursor=cursor,
-        period=period,
+        topics, companies, limit, cursor, period
     )
 
     return {
@@ -69,13 +49,13 @@ def search_digest(
 # ============================================================
 
 def _search_news_digest(
-    topics: Optional[List[str]],
-    companies: Optional[List[str]],
-    news_types: Optional[List[str]],
-    limit: int,
-    cursor: Optional[str],
-    news_kind: str,
-    period: Optional[str],
+    topics,
+    companies,
+    news_types,
+    limit,
+    cursor,
+    news_kind,
+    period,
 ):
 
     where_clauses = [
@@ -84,35 +64,35 @@ def _search_news_digest(
         f"news_kind = '{news_kind}'",
     ]
 
-    params = {
-        "limit": limit
-    }
+    params = {"limit": limit}
 
+    # 🔥 TOPICS (OK avec ta vue)
     if topics:
-        where_clauses.append(
-            """
+        where_clauses.append("""
             EXISTS (
                 SELECT 1
                 FROM UNNEST(topics) t
                 WHERE t.id_topic IN UNNEST(@topics)
             )
-            """
-        )
+        """)
         params["topics"] = topics
 
+    # 🔥 COMPANY
     if companies:
         where_clauses.append("id_company IN UNNEST(@companies)")
         params["companies"] = companies
 
+    # 🔥 NEWS TYPE
     if news_types:
         where_clauses.append("news_type IN UNNEST(@news_types)")
         params["news_types"] = news_types
 
+    # 🔥 CURSOR
     if cursor:
         where_clauses.append("published_at < @cursor")
         params["cursor"] = cursor
 
-    # Period filter
+    # 🔥 PERIOD
     if period == "7d":
         where_clauses.append(
             "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
@@ -121,6 +101,7 @@ def _search_news_digest(
         where_clauses.append(
             "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
         )
+
     where_sql = " AND ".join(where_clauses)
 
     sql = f"""
@@ -146,95 +127,92 @@ def _search_news_digest(
 
     return [
         {
-            "id": r.get("id_news"),
-            "title": r.get("title"),
-            "excerpt": r.get("excerpt"),
-            "published_at": r.get("published_at"),
-            "news_type": r.get("news_type"),
-            "news_kind": r.get("news_kind"),
-            "visual_rect_id": r.get("visual_rect_id"),
+            "id": r["id_news"],
+            "title": r["title"],
+            "excerpt": r["excerpt"],
+            "published_at": r["published_at"],
+            "news_type": r["news_type"],
+            "news_kind": r["news_kind"],
+            "visual_rect_id": r["visual_rect_id"],
             "company": {
-                "id_company": r.get("id_company"),
-                "name": r.get("company_name"),
-                "is_partner": bool(r.get("is_partner")),
+                "id_company": r["id_company"],
+                "name": r["company_name"],
+                "is_partner": bool(r["is_partner"]),
             },
-            "topics": r.get("topics") or [],
+            "topics": r["topics"] or [],
         }
         for r in rows
     ]
 
+
 # ============================================================
-# ANALYSES
+# ANALYSES (🔥 FIX MAJEUR ICI)
 # ============================================================
 
 def _search_analyses_digest(
-    topics: Optional[List[str]],
-    companies: Optional[List[str]],
-    limit: int,
-    cursor: Optional[str],
-    period: Optional[str],
+    topics,
+    companies,
+    limit,
+    cursor,
+    period,
 ):
 
     where_clauses = [
-        "C.STATUS = 'PUBLISHED'",
-        "C.IS_ACTIVE = TRUE",
-        "C.PUBLISHED_AT IS NOT NULL",
+        "published_at IS NOT NULL",
     ]
 
-    params = {
-        "limit": limit
-    }
+    params = {"limit": limit}
 
+    # 🔥 TOPICS (ARRAY dans la vue)
     if topics:
-        where_clauses.append(
-            f"""
+        where_clauses.append("""
             EXISTS (
                 SELECT 1
-                FROM `{TABLE_CONTENT_TOPIC}` CT
-                WHERE CT.ID_CONTENT = C.ID_CONTENT
-                  AND CT.ID_TOPIC IN UNNEST(@topics)
+                FROM UNNEST(topics) t
+                WHERE t.id_topic IN UNNEST(@topics)
             )
-            """
-        )
+        """)
         params["topics"] = topics
 
+    # 🔥 COMPANIES (ARRAY dans la vue)
     if companies:
-        where_clauses.append(
-            f"""
+        where_clauses.append("""
             EXISTS (
                 SELECT 1
-                FROM `{TABLE_CONTENT_COMPANY}` CC
-                WHERE CC.ID_CONTENT = C.ID_CONTENT
-                  AND CC.ID_COMPANY IN UNNEST(@companies)
+                FROM UNNEST(companies) c
+                WHERE c.id_company IN UNNEST(@companies)
             )
-            """
-        )
+        """)
         params["companies"] = companies
 
+    # 🔥 CURSOR
     if cursor:
-        where_clauses.append("C.PUBLISHED_AT < @cursor")
+        where_clauses.append("published_at < @cursor")
         params["cursor"] = cursor
 
-    # Period filter (ALIGNEMENT ALIAS)
+    # 🔥 PERIOD
     if period == "7d":
         where_clauses.append(
-            "DATE(C.PUBLISHED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
+            "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
         )
     elif period == "30d":
         where_clauses.append(
-            "DATE(C.PUBLISHED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
+            "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
         )
 
     where_sql = " AND ".join(where_clauses)
 
     sql = f"""
         SELECT
-            C.ID_CONTENT,
-            C.EXCERPT,
-            C.PUBLISHED_AT
-        FROM `{TABLE_CONTENT}` C
+            id_content,
+            title,
+            excerpt,
+            published_at,
+            topics,
+            companies
+        FROM `{VIEW_CONTENT_ENRICHED}`
         WHERE {where_sql}
-        ORDER BY C.PUBLISHED_AT DESC
+        ORDER BY published_at DESC
         LIMIT @limit
     """
 
@@ -242,9 +220,12 @@ def _search_analyses_digest(
 
     return [
         {
-            "id": r.get("ID_CONTENT"),
-            "excerpt": r.get("EXCERPT"),
-            "published_at": r.get("PUBLISHED_AT"),
+            "id": r["id_content"],
+            "title": r["title"],
+            "excerpt": r["excerpt"],
+            "published_at": r["published_at"],
+            "topics": r["topics"] or [],
+            "companies": r["companies"] or [],
         }
         for r in rows
     ]
