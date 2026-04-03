@@ -1,13 +1,3 @@
-import {
-  buildContentImageUrl,
-  escapeHtml,
-  renderEmailTags,
-} from "./EmailHelpers";
-
-const PUBLIC_SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://ratecard.fr";
-
 export function EmailNewsBlock(news: any[]) {
   if (!news.length) return "";
 
@@ -25,10 +15,9 @@ export function EmailNewsBlock(news: any[]) {
       return `
 <tr>
 <td style="
-    padding:36px 16px;
-    border-bottom:1px solid #E5E7EB;
-    font-family:Arial,Helvetica,sans-serif;
-  ">
+  padding:32px 0;
+  border-bottom:1px solid #E5E7EB;
+">
 
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
@@ -36,91 +25,98 @@ export function EmailNewsBlock(news: any[]) {
       ${
         imageUrl
           ? `
-          <!-- IMAGE COLUMN -->
-          <td
-            valign="top"
-            align="center"
-            class="stack-column"
-            style="
-              width:180px;
-              padding-right:24px;
-            "
-          >
-            <a href="${newsUrl}" target="_blank" style="text-decoration:none;">
+      <!-- IMAGE -->
+      <td
+        width="180"
+        valign="top"
+        style="
+          width:180px;
+          padding-right:20px;
+        "
+      >
+        <a href="${newsUrl}" target="_blank" style="text-decoration:none;">
 
-              <table cellpadding="0" cellspacing="0" role="presentation">
-                <tr>
-                  <td style="
-                    border:1px solid #F3F4F6;
-                    padding:10px;
-                    background:#FFFFFF;
-                    text-align:center;
-                  ">
-                    <img 
-                      src="${imageUrl}" 
-                      alt=""
-                      width="140"
-                      style="
-                        display:block;
-                        width:100%;
-                        max-width:140px;
-                        height:auto;
-                      "
-                    />
-                  </td>
-                </tr>
-              </table>
+          <table cellpadding="0" cellspacing="0" role="presentation">
+            <tr>
+              <td style="
+                border:1px solid #F3F4F6;
+                background:#FFFFFF;
+                text-align:center;
+                padding:8px;
+              ">
+                <img 
+                  src="${imageUrl}" 
+                  alt=""
+                  width="140"
+                  border="0"
+                  style="
+                    display:block;
+                    width:100%;
+                    max-width:140px;
+                    height:auto;
+                  "
+                />
+              </td>
+            </tr>
+          </table>
 
-            </a>
-          </td>
-          `
+        </a>
+      </td>
+      `
           : ""
       }
 
-      <!-- TEXT COLUMN -->
+      <!-- TEXT -->
       <td valign="top">
 
         <!-- DATE -->
         <div style="
-            font-size:12px;
-            color:#6B7280;
-            margin-bottom:8px;
-          ">
+          font-size:12px;
+          color:#6B7280;
+          margin-bottom:8px;
+          font-family:Arial,Helvetica,sans-serif;
+        ">
           ${new Date(n.published_at).toLocaleDateString("fr-FR")}
         </div>
 
         <!-- TITLE -->
-        <a href="${newsUrl}" 
-           target="_blank"
-           style="text-decoration:none;color:#111827;">
+        <a href="${newsUrl}" target="_blank" style="text-decoration:none;">
           <div style="
-              font-size:20px;
-              font-weight:700;
-              margin-bottom:12px;
-              line-height:1.35;
-            ">
+            font-size:20px;
+            font-weight:700;
+            color:#111827;
+            line-height:1.35;
+            margin-bottom:10px;
+            font-family:Arial,Helvetica,sans-serif;
+          ">
             ${escapeHtml(n.title)}
           </div>
         </a>
 
         <!-- TAGS -->
-        <div style="margin-bottom:10px;">
+        ${
+          tags
+            ? `
+        <div style="margin-bottom:8px;">
           ${tags}
         </div>
+        `
+            : ""
+        }
 
         <!-- EXCERPT -->
         ${
           n.excerpt
             ? `
-            <div style="
-                font-size:15px;
-                color:#374151;
-                margin-top:10px;
-                line-height:1.4;
-              ">
-                ${escapeHtml(n.excerpt)}
-              </div>
-            `
+        <div style="
+          font-size:15px;
+          color:#374151;
+          line-height:1.5;
+          font-family:Arial,Helvetica,sans-serif;
+        ">
+          ${escapeHtml(n.excerpt)}
+        </div>
+        `
             : ""
         }
 
@@ -138,18 +134,17 @@ export function EmailNewsBlock(news: any[]) {
   return `
 <tr>
 <td style="
-    padding-top:42px;
-    font-family:Arial,Helvetica,sans-serif;
-  ">
+  padding-top:36px;
+  font-family:Arial,Helvetica,sans-serif;
+">
   <div style="
-      font-size:13px;
-      font-weight:700;
-      letter-spacing:0.08em;
-      text-transform:uppercase;
-      color:#111827;
-      margin-bottom:22px;
-      padding-left:8px;
-    ">
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#111827;
+    margin-bottom:18px;
+  ">
     Actualités
   </div>
 </td>
