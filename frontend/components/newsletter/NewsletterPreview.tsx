@@ -8,6 +8,7 @@ import { buildEmailGmail } from "./email/buildEmailGmail";
 import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
+  NewsletterNumberItem,
   HeaderConfig,
   TopicStat,
 } from "@/types/newsletter";
@@ -18,6 +19,7 @@ type Props = {
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
+  numbers?: NewsletterNumberItem[];
   topicStats?: TopicStat[];
 };
 
@@ -27,19 +29,11 @@ export default function NewsletterPreview({
   news,
   breves,
   analyses,
+  numbers = [],
   topicStats = [],
 }: Props) {
-  /* ======================================
-     MODE SWITCH
-  ====================================== */
 
-  const [mode, setMode] = useState<"brevo" | "gmail">(
-    "brevo"
-  );
-
-  /* ======================================
-     BUILD HTML (DYNAMIC)
-  ====================================== */
+  const [mode, setMode] = useState<"brevo" | "gmail">("brevo");
 
   const html = useMemo(() => {
     if (mode === "gmail") {
@@ -49,6 +43,7 @@ export default function NewsletterPreview({
         news,
         breves,
         analyses,
+        numbers,
         topicStats,
       });
     }
@@ -59,6 +54,7 @@ export default function NewsletterPreview({
       news,
       breves,
       analyses,
+      numbers,
       topicStats,
     });
   }, [
@@ -68,27 +64,16 @@ export default function NewsletterPreview({
     news,
     breves,
     analyses,
+    numbers,
     topicStats,
   ]);
 
   const hiddenRef = useRef<HTMLDivElement>(null);
 
-  /* ======================================
-     COPY RAW HTML (BREVO)
-  ====================================== */
-
   function copyHtml() {
     navigator.clipboard.writeText(html);
-    alert(
-      mode === "gmail"
-        ? "HTML Gmail copié."
-        : "HTML Brevo copié."
-    );
+    alert(mode === "gmail" ? "HTML Gmail copié." : "HTML Brevo copié.");
   }
-
-  /* ======================================
-     COPY RENDERED VERSION (GMAIL)
-  ====================================== */
 
   function copyForGmail() {
     if (!hiddenRef.current) return;
@@ -111,19 +96,17 @@ export default function NewsletterPreview({
     alert("Version collable Gmail copiée.");
   }
 
-  /* ======================================
-     RENDER
-  ====================================== */
-
   return (
     <section className="space-y-4">
-      {/* HEADER BAR */}
+
+      {/* HEADER */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">
           Preview newsletter
         </h2>
 
         <div className="flex items-center gap-3">
+
           {/* MODE SWITCH */}
           <div className="flex border rounded overflow-hidden text-xs">
             <button
@@ -149,7 +132,7 @@ export default function NewsletterPreview({
             </button>
           </div>
 
-          {/* ACTION BUTTONS */}
+          {/* ACTIONS */}
           <button
             onClick={copyHtml}
             className="px-3 py-1.5 rounded bg-gray-900 text-white text-xs"
@@ -165,10 +148,11 @@ export default function NewsletterPreview({
               Copier pour Gmail
             </button>
           )}
+
         </div>
       </div>
 
-      {/* PREVIEW FRAME */}
+      {/* PREVIEW */}
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         <iframe
           title="Newsletter preview"
@@ -177,7 +161,7 @@ export default function NewsletterPreview({
         />
       </div>
 
-      {/* Hidden container used for Gmail copy */}
+      {/* Hidden container */}
       <div
         ref={hiddenRef}
         style={{
@@ -186,6 +170,7 @@ export default function NewsletterPreview({
           top: 0,
         }}
       />
+
     </section>
   );
 }
