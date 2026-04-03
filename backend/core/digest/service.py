@@ -229,3 +229,91 @@ def _search_analyses_digest(
         }
         for r in rows
     ]
+
+def _search_numbers_digest(
+    topics,
+    companies,
+    limit,
+    period,
+):
+
+    where_clauses = []
+    params = {"limit": limit}
+
+    # 🔥 FILTER TOPICS
+    if topics:
+        where_clauses.append("""
+            EXISTS (
+                SELECT 1
+                FROM UNNEST(@topics) t
+                WHERE ENTITY_TYPE = 'topic'
+                AND ENTITY_ID = t
+            )
+        """)
+        params["topics"] = topics
+
+    # 🔥 FILTER COMPANIES
+    if companies:
+        where_clauses.append("""
+            ENTITY_TYPE = 'company'
+            AND ENTITY_ID IN UNNEST(@companies)
+        """)
+        params["companies"] = companies
+
+    # 🔥 PERIOD (based on CREATED_AT)
+    if period == "7d":
+        where_clauses.append(
+            "DATE(CREATED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
+        )
+    elif period == "30d":
+        where_clauses.append(
+            "DATE(CREATED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
+        )
+
+    where_sql = ""
+    if where_clauses:
+        where_sql = "WHERE " + " AND ".join(where_clauses)
+
+    sql = f"""
+        SELECT
+            ID_NUMBER,
+            ENTITY_TYPE,
+            ENTITY_ID,
+            ENTITY_LABEL,
+            LABEL,
+            VALUE,
+            UNIT,
+            SCALE,
+            TYPE,
+            CATEGORY,
+            ZONE,
+            PERIOD,
+            CREATED_AT
+        FROM `{VIEW_NUMBERS_ENRICHED}`
+        {where_sql}
+        ORDER BY CREATED_AT DESC
+        LIMIT @limit
+    """
+
+    rows = query_bq(sql, params)
+
+    return [
+        {
+            "id": r["ID_NUMBER"],
+            "label": r["LABEL"],
+            "value": r["VALUE"],
+            "unit": r["UNIT"],
+            "scale": r["SCALE"],
+            "type": r["TYPE"],
+            "category": r["CATEGORY"],
+            "zone": r["ZONE"],
+            "period": r["PERIOD"],
+            "created_at": r["CREATED_AT"],
+            "entity": {
+                "type": r["ENTITY_TYPE"],
+                "id": r["ENTITY_ID"],
+                "label": r["ENTITY_LABEL"],
+            },
+        }
+        for r in rows
+    ]
