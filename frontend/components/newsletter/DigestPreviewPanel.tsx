@@ -1,8 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
-import NewsletterPreview from "./NewsletterPreview";
-
 import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
@@ -10,6 +7,29 @@ import type {
   HeaderConfig,
   TopicStat,
 } from "@/types/newsletter";
+
+/* =========================================================
+   UTILS
+========================================================= */
+
+function formatValue(n: NewsletterNumberItem) {
+  if (n.value === undefined || n.value === null) return "";
+
+  const scaleMap: any = {
+    thousand: "K",
+    million: "M",
+    millions: "M",
+    billion: "Md",
+    billions: "Md",
+  };
+
+  const scale = scaleMap[n.scale || ""] || "";
+  const unit = n.unit || "";
+
+  return [n.value, scale, unit]
+    .filter(Boolean)
+    .join(" ");
+}
 
 /* =========================================================
    TYPES
@@ -21,7 +41,7 @@ type Props = {
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
-  numbers: NewsletterNumberItem[]; // 👈 NEW
+  numbers?: NewsletterNumberItem[];
   topicStats?: TopicStat[];
 };
 
@@ -29,84 +49,161 @@ type Props = {
    COMPONENT
 ========================================================= */
 
-export default function DigestPreviewPanel({
+export default function NewsletterPreview({
   headerConfig,
   introText,
   news,
   breves,
   analyses,
-  numbers, // 👈 NEW
+  numbers = [],
   topicStats = [],
 }: Props) {
 
-  /* =========================================
-     META
-  ========================================= */
-
-  const totalItems = useMemo(
-    () =>
-      news.length +
-      breves.length +
-      analyses.length +
-      numbers.length,
-    [news, breves, analyses, numbers]
-  );
-
-  const isEmpty = totalItems === 0;
-
-  /* =========================================
-     RENDER
-  ========================================= */
-
   return (
-    <div className="h-full flex flex-col border border-gray-200 rounded-lg bg-white overflow-hidden">
+    <div style={{ fontFamily: "Arial, Helvetica, sans-serif" }}>
 
       {/* =========================
           HEADER
       ========================== */}
-      <div className="flex items-center justify-between px-5 py-4 border-b bg-white">
-        <h2 className="text-sm font-semibold tracking-tight">
-          Preview newsletter
-        </h2>
-
-        <div className="text-xs text-gray-400">
-          {totalItems} élément{totalItems > 1 ? "s" : ""}
+      <div style={{
+        padding: "40px",
+        textAlign: "center",
+        borderBottom: "1px solid #E5E7EB"
+      }}>
+        <div style={{
+          fontSize: "28px",
+          fontWeight: 700,
+          marginBottom: "10px",
+          color: "#111827"
+        }}>
+          {headerConfig.title}
         </div>
+
+        {headerConfig.subtitle && (
+          <div style={{
+            fontSize: "18px",
+            color: "#6B7280"
+          }}>
+            {headerConfig.subtitle}
+          </div>
+        )}
       </div>
 
       {/* =========================
-          BODY
+          INTRO
       ========================== */}
-      <div className="flex-1 overflow-y-auto bg-white px-3 py-4">
+      {introText && (
+        <div style={{
+          padding: "24px 32px",
+          fontSize: "14px",
+          color: "#374151",
+          lineHeight: "1.6"
+        }}>
+          {introText}
+        </div>
+      )}
 
-        {isEmpty ? (
-          <div className="h-full flex items-center justify-center text-center text-gray-400 text-sm">
-            <div className="space-y-1">
-              <div className="font-medium text-gray-500">
-                Aucune sélection
-              </div>
-              <div>
-                Sélectionnez des contenus à gauche.
-              </div>
+      {/* =========================
+          NUMBERS
+      ========================== */}
+      {numbers.length > 0 && (
+        <div style={{ padding: "0 24px", marginTop: "20px" }}>
+
+          {/* TITLE */}
+          <div style={{
+            fontSize: "13px",
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "#111827",
+            marginBottom: "18px",
+            paddingLeft: "8px",
+          }}>
+            Chiffres clés
+          </div>
+
+          {/* GRID */}
+          <table width="100%" cellPadding="0" cellSpacing="0">
+            <tr>
+              {numbers.map((n) => (
+                <td key={n.id} style={{ width: "50%", padding: "8px" }}>
+
+                  <div style={{
+                    border: "1px solid #E5E7EB",
+                    borderRadius: "8px",
+                    padding: "14px",
+                  }}>
+
+                    <div style={{
+                      fontSize: "22px",
+                      fontWeight: 700,
+                      color: "#111827",
+                      marginBottom: "6px",
+                    }}>
+                      {formatValue(n)}
+                    </div>
+
+                    <div style={{
+                      fontSize: "13px",
+                      color: "#374151",
+                    }}>
+                      {n.label}
+                    </div>
+
+                  </div>
+
+                </td>
+              ))}
+            </tr>
+          </table>
+        </div>
+      )}
+
+      {/* =========================
+          NEWS
+      ========================== */}
+      {news.length > 0 && (
+        <div style={{ padding: "24px" }}>
+          <h3>News</h3>
+          {news.map((n) => (
+            <div key={n.id} style={{ marginBottom: "12px" }}>
+              <strong>{n.title}</strong>
+              <div>{n.excerpt}</div>
             </div>
-          </div>
-        ) : (
-          <div className="mx-auto w-full max-w-[820px]">
+          ))}
+        </div>
+      )}
 
-            <NewsletterPreview
-              headerConfig={headerConfig}
-              introText={introText}
-              news={news}
-              breves={breves}
-              analyses={analyses}
-              numbers={numbers} // 👈 NEW
-              topicStats={topicStats}
-            />
+      {/* =========================
+          BRÈVES
+      ========================== */}
+      {breves.length > 0 && (
+        <div style={{ padding: "24px" }}>
+          <h3>Brèves</h3>
+          {breves.map((b) => (
+            <div key={b.id} style={{ marginBottom: "12px" }}>
+              <strong>{b.title}</strong>
+              <div>{b.excerpt}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
-          </div>
-        )}
+      {/* =========================
+          ANALYSES
+      ========================== */}
+      {analyses.length > 0 && (
+        <div style={{ padding: "24px" }}>
+          <h3>Analyses</h3>
+          {analyses.map((a) => (
+            <div key={a.id} style={{ marginBottom: "12px" }}>
+              <strong>{a.title}</strong>
+              <div>{a.excerpt}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      </div>
     </div>
   );
 }
