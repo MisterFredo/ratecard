@@ -1,13 +1,3 @@
-import {
-  buildContentImageUrl,
-  escapeHtml,
-  renderEmailTags,
-} from "./EmailHelpers";
-
-const PUBLIC_SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://ratecard.fr";
-
 export function EmailBrevesBlock(breves: any[]) {
   if (!breves.length) return "";
 
@@ -25,10 +15,10 @@ export function EmailBrevesBlock(breves: any[]) {
       return `
 <tr>
 <td style="
-    padding:32px 16px;
-    border-bottom:1px solid #E5E7EB;
-    font-family:Arial,Helvetica,sans-serif;
-  ">
+  padding:28px 0;
+  border-bottom:1px solid #E5E7EB;
+  font-family:Arial,Helvetica,sans-serif;
+">
 
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
@@ -36,44 +26,44 @@ export function EmailBrevesBlock(breves: any[]) {
       ${
         imageUrl
           ? `
-          <!-- IMAGE -->
-          <td
-            valign="top"
-            align="center"
-            class="stack-column"
-            style="
-              width:150px;
-              padding-right:20px;
-            "
-          >
-            <a href="${breveUrl}" target="_blank">
+      <!-- IMAGE -->
+      <td
+        width="150"
+        valign="top"
+        style="
+          width:150px;
+          padding-right:18px;
+        "
+      >
+        <a href="${breveUrl}" target="_blank">
 
-              <table cellpadding="0" cellspacing="0" role="presentation">
-                <tr>
-                  <td style="
-                    border:1px solid #F3F4F6;
-                    padding:8px;
-                    background:#FFFFFF;
-                    text-align:center;
-                  ">
-                    <img 
-                      src="${imageUrl}"
-                      alt=""
-                      width="110"
-                      style="
-                        display:block;
-                        width:100%;
-                        max-width:110px;
-                        height:auto;
-                      "
-                    />
-                  </td>
-                </tr>
-              </table>
+          <table cellpadding="0" cellspacing="0" role="presentation">
+            <tr>
+              <td style="
+                border:1px solid #F3F4F6;
+                background:#FFFFFF;
+                text-align:center;
+                padding:6px;
+              ">
+                <img 
+                  src="${imageUrl}"
+                  alt=""
+                  width="110"
+                  border="0"
+                  style="
+                    display:block;
+                    width:100%;
+                    max-width:110px;
+                    height:auto;
+                  "
+                />
+              </td>
+            </tr>
+          </table>
 
-            </a>
-          </td>
-          `
+        </a>
+      </td>
+      `
           : ""
       }
 
@@ -81,36 +71,41 @@ export function EmailBrevesBlock(breves: any[]) {
       <td valign="top">
 
         <!-- TITLE -->
-        <a href="${breveUrl}"
-           target="_blank"
-           style="text-decoration:none;color:#111827;">
+        <a href="${breveUrl}" target="_blank" style="text-decoration:none;">
           <div style="
-              font-size:17px;
-              font-weight:700;
-              margin-bottom:10px;
-              line-height:1.35;
-            ">
+            font-size:17px;
+            font-weight:700;
+            color:#111827;
+            line-height:1.35;
+            margin-bottom:8px;
+          ">
             ${escapeHtml(b.title)}
           </div>
         </a>
 
+        ${
+          tags
+            ? `
         <!-- TAGS -->
-        <div style="margin-bottom:8px;">
+        <div style="margin-bottom:6px;">
           ${tags}
         </div>
+        `
+            : ""
+        }
 
-        <!-- EXCERPT -->
         ${
           b.excerpt
             ? `
-            <div style="
-                font-size:15px;
-                color:#374151;
-                line-height:1.4;
-              ">
-                ${escapeHtml(b.excerpt)}
-              </div>
-            `
+        <!-- EXCERPT -->
+        <div style="
+          font-size:14px;
+          color:#374151;
+          line-height:1.4;
+        ">
+          ${escapeHtml(b.excerpt)}
+        </div>
+        `
             : ""
         }
 
@@ -128,18 +123,17 @@ export function EmailBrevesBlock(breves: any[]) {
   return `
 <tr>
 <td style="
-    padding-top:40px;
-    font-family:Arial,Helvetica,sans-serif;
-  ">
+  padding-top:36px;
+  font-family:Arial,Helvetica,sans-serif;
+">
   <div style="
-      font-size:13px;
-      font-weight:700;
-      letter-spacing:0.08em;
-      text-transform:uppercase;
-      color:#111827;
-      margin-bottom:22px;
-      padding-left:8px;
-    ">
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#111827;
+    margin-bottom:18px;
+  ">
     Brèves
   </div>
 </td>
