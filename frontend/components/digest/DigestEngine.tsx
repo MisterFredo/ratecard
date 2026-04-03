@@ -51,26 +51,43 @@ export default function DigestEngine({
         const c = await api.get("/company/list");
         const nt = await api.get("/news/types");
 
-        const topicsData = t.result || t;
-        const companiesData = c.result || c;
-        const typesData = nt.result || nt;
+        // 🔥 NORMALISATION ULTRA ROBUSTE
+        const topicsRaw =
+          Array.isArray(t)
+            ? t
+            : t?.result?.topics || t?.topics || t?.result || [];
+
+        const companiesRaw =
+          Array.isArray(c)
+            ? c
+            : c?.result?.companies || c?.companies || c?.result || [];
+
+        const typesRaw =
+          Array.isArray(nt)
+            ? nt
+            : nt?.result?.types || nt?.types || nt?.result || [];
+
+        // 🔥 DEBUG (à enlever après)
+        console.log("TOPICS RAW", topicsRaw);
+        console.log("COMPANIES RAW", companiesRaw);
+        console.log("TYPES RAW", typesRaw);
 
         setTopicOptions(
-          (topicsData.topics || []).map((x: any) => ({
-            id: x.ID_TOPIC,
-            label: x.LABEL,
+          topicsRaw.map((x: any) => ({
+            id: x.ID_TOPIC ?? x.id_topic ?? x.id,
+            label: x.LABEL ?? x.label ?? x.name,
           }))
         );
 
         setCompanyOptions(
-          (companiesData.companies || []).map((x: any) => ({
-            id: x.ID_COMPANY,
-            label: x.NAME,
+          companiesRaw.map((x: any) => ({
+            id: x.ID_COMPANY ?? x.id_company ?? x.id,
+            label: x.NAME ?? x.name,
           }))
         );
 
         setTypeOptions(
-          (typesData.types || []).map((x: any) => ({
+          typesRaw.map((x: any) => ({
             id: x.code || x.CODE || x.news_type || x.TYPE,
             label: x.label || x.LABEL,
           }))
