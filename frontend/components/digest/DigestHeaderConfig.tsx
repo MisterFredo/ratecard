@@ -38,11 +38,11 @@ export default function DigestHeaderConfig({
       try {
         const res = await api.get("/company/list");
 
-        // Support ancien format { companies: [...] }
-        // et nouveau format direct [...]
-        const raw = Array.isArray(res)
-          ? res
-          : res?.companies || [];
+        const data = res.result || res;
+
+        const raw = Array.isArray(data)
+          ? data
+          : data?.companies || [];
 
         const mapped: CompanyOption[] = raw.map((c: any) => ({
           id_company: c.id_company ?? c.ID_COMPANY,
@@ -55,11 +55,10 @@ export default function DigestHeaderConfig({
 
         setCompanies(mapped);
 
-        // Auto-select Ratecard si rien sélectionné
         if (!headerConfig.headerCompany && mapped.length > 0) {
           const ratecard =
             mapped.find((c) =>
-              c.name.toLowerCase().includes("ratecard")
+              (c.name || "").toLowerCase().includes("ratecard")
             ) || mapped[0];
 
           setHeaderConfig((prev) => ({
@@ -76,14 +75,13 @@ export default function DigestHeaderConfig({
     }
 
     loadCompanies();
-  }, []);
+  }, [headerConfig.headerCompany, setHeaderConfig]);
 
   /* ========================================= */
 
   function handleCompanyChange(id: string) {
 
     if (!id) {
-      // reset si vide
       setHeaderConfig((prev) => ({
         ...prev,
         headerCompany: undefined,
@@ -108,7 +106,6 @@ export default function DigestHeaderConfig({
   return (
     <section className="border border-gray-200 rounded-lg bg-white px-4 py-4 space-y-3">
 
-      {/* HEADER TITLE + BAROMÈTRE */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold tracking-tight">
           Configuration
@@ -130,10 +127,8 @@ export default function DigestHeaderConfig({
         </div>
       </div>
 
-      {/* GRID */}
       <div className="grid grid-cols-2 gap-3">
 
-        {/* TITRE */}
         <input
           type="text"
           placeholder="Titre newsletter"
@@ -147,7 +142,6 @@ export default function DigestHeaderConfig({
           className="border border-gray-200 rounded px-3 py-1.5 text-sm col-span-2"
         />
 
-        {/* PÉRIODE */}
         <input
           type="text"
           placeholder="Période (ex : semaine du 27 février 2026)"
@@ -161,7 +155,6 @@ export default function DigestHeaderConfig({
           className="border border-gray-200 rounded px-3 py-1.5 text-sm col-span-2"
         />
 
-        {/* SOUS-TITRE */}
         <input
           type="text"
           placeholder="Sous-titre (optionnel)"
@@ -175,16 +168,13 @@ export default function DigestHeaderConfig({
           className="border border-gray-200 rounded px-3 py-1.5 text-sm col-span-2"
         />
 
-        {/* SÉLECTION SOCIÉTÉ HEADER */}
         <div className="col-span-2">
           <label className="text-xs text-gray-500 block mb-1">
             Société (logo header)
           </label>
 
           <select
-            value={
-              headerConfig.headerCompany?.id_company ?? ""
-            }
+            value={headerConfig.headerCompany?.id_company ?? ""}
             onChange={(e) =>
               handleCompanyChange(e.target.value)
             }
@@ -206,24 +196,26 @@ export default function DigestHeaderConfig({
               </option>
             ))}
           </select>
+
+          {/* PREVIEW LOGO */}
+          {headerConfig.headerCompany?.media_logo_rectangle_id && (
+            <div className="mt-2">
+              <img
+                src={`https://storage.googleapis.com/ratecard-media/companies/${headerConfig.headerCompany.media_logo_rectangle_id}`}
+                alt=""
+                className="h-8 object-contain"
+              />
+            </div>
+          )}
         </div>
 
-        {/* INTRODUCTION */}
         <textarea
           placeholder="Introduction de la newsletter..."
           value={introText}
           onChange={(e) =>
             setIntroText(e.target.value)
           }
-          className="
-            border border-gray-200
-            rounded
-            px-3 py-2
-            text-sm
-            min-h-[90px]
-            col-span-2
-            resize-y
-          "
+          className="border border-gray-200 rounded px-3 py-2 text-sm min-h-[90px] col-span-2 resize-y"
         />
       </div>
     </section>
