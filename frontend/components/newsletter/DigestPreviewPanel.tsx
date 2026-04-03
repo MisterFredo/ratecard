@@ -6,9 +6,14 @@ import NewsletterPreview from "./NewsletterPreview";
 import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
+  NewsletterNumberItem,
   HeaderConfig,
   TopicStat,
 } from "@/types/newsletter";
+
+/* =========================================================
+   TYPES
+========================================================= */
 
 type Props = {
   headerConfig: HeaderConfig;
@@ -16,8 +21,13 @@ type Props = {
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
+  numbers: NewsletterNumberItem[]; // 👈 NEW
   topicStats?: TopicStat[];
 };
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 export default function DigestPreviewPanel({
   headerConfig,
@@ -25,15 +35,28 @@ export default function DigestPreviewPanel({
   news,
   breves,
   analyses,
+  numbers, // 👈 NEW
   topicStats = [],
 }: Props) {
 
+  /* =========================================
+     META
+  ========================================= */
+
   const totalItems = useMemo(
-    () => news.length + breves.length + analyses.length,
-    [news, breves, analyses]
+    () =>
+      news.length +
+      breves.length +
+      analyses.length +
+      numbers.length,
+    [news, breves, analyses, numbers]
   );
 
   const isEmpty = totalItems === 0;
+
+  /* =========================================
+     RENDER
+  ========================================= */
 
   return (
     <div className="h-full flex flex-col border border-gray-200 rounded-lg bg-white overflow-hidden">
@@ -76,6 +99,7 @@ export default function DigestPreviewPanel({
               news={news}
               breves={breves}
               analyses={analyses}
+              numbers={numbers} // 👈 NEW
               topicStats={topicStats}
             />
 
