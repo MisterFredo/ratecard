@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
@@ -16,7 +18,7 @@ type Props = {
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
-  numbers: NewsletterNumberItem[]; // 👈 AJOUT
+  numbers: NewsletterNumberItem[];
   setEditorialOrder: React.Dispatch<
     React.SetStateAction<EditorialItem[]>
   >;
@@ -27,9 +29,100 @@ export default function DigestEditorialFlow({
   news,
   breves,
   analyses,
-  numbers, // 👈 AJOUT
+  numbers,
   setEditorialOrder,
 }: Props) {
+
+  /* =========================================
+     INDEX MAPS (PERF)
+  ========================================= */
+
+  const newsMap = useMemo(
+    () => Object.fromEntries(news.map(n => [n.id, n])),
+    [news]
+  );
+
+  const brevesMap = useMemo(
+    () => Object.fromEntries(breves.map(b => [b.id, b])),
+    [breves]
+  );
+
+  const analysesMap = useMemo(
+    () => Object.fromEntries(analyses.map(a => [a.id, a])),
+    [analyses]
+  );
+
+  const numbersMap = useMemo(
+    () => Object.fromEntries(numbers.map(n => [n.id, n])),
+    [numbers]
+  );
+
+  /* =========================================
+     UTILS
+  ========================================= */
+
+  function formatValue(n: NewsletterNumberItem) {
+    if (n.value === undefined || n.value === null) return "";
+
+    const scaleMap: any = {
+      thousand: "K",
+      million: "M",
+      millions: "M",
+      billion: "Md",
+      billions: "Md",
+    };
+
+    const scale = scaleMap[n.scale || ""] || "";
+    const unit = n.unit || "";
+
+    return [n.value, scale, unit]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  function resolveSource(item: EditorialItem) {
+    switch (item.type) {
+      case "news":
+        return newsMap[item.id];
+      case "breve":
+        return brevesMap[item.id];
+      case "analysis":
+        return analysesMap[item.id];
+      case "number":
+        return numbersMap[item.id];
+      default:
+        return null;
+    }
+  }
+
+  function getLabel(type: EditorialItem["type"]) {
+    switch (type) {
+      case "news":
+        return "news";
+      case "breve":
+        return "brève";
+      case "analysis":
+        return "analyse";
+      case "number":
+        return "chiffre";
+      default:
+        return type;
+    }
+  }
+
+  function getTitle(item: EditorialItem, source: any) {
+    if (!source) return "";
+
+    if (item.type === "number") {
+      return `${source.label} — ${formatValue(source)}`;
+    }
+
+    return source.title || "";
+  }
+
+  /* =========================================
+     ACTIONS
+  ========================================= */
 
   function moveUp(index: number) {
     if (index === 0) return;
@@ -63,43 +156,9 @@ export default function DigestEditorialFlow({
     );
   }
 
-  function resolveSource(item: EditorialItem) {
-    if (item.type === "news") {
-      return news.find((n) => n.id === item.id);
-    }
-    if (item.type === "breve") {
-      return breves.find((b) => b.id === item.id);
-    }
-    if (item.type === "analysis") {
-      return analyses.find((a) => a.id === item.id);
-    }
-    if (item.type === "number") {
-      return numbers.find((n) => n.id === item.id);
-    }
-    return null;
-  }
-
-  function getLabel(type: EditorialItem["type"]) {
-    switch (type) {
-      case "news":
-        return "news";
-      case "breve":
-        return "brève";
-      case "analysis":
-        return "analyse";
-      case "number":
-        return "chiffre"; // 👈 IMPORTANT (UX)
-      default:
-        return type;
-    }
-  }
-
-  function getTitle(item: EditorialItem, source: any) {
-    if (item.type === "number") {
-      return `${source.label} (${source.value ?? ""} ${source.unit ?? ""})`;
-    }
-    return source.title;
-  }
+  /* =========================================
+     EMPTY STATE
+  ========================================= */
 
   if (editorialOrder.length === 0) {
     return (
@@ -113,6 +172,10 @@ export default function DigestEditorialFlow({
       </section>
     );
   }
+
+  /* =========================================
+     RENDER
+  ========================================= */
 
   return (
     <section className="space-y-2">
@@ -133,64 +196,26 @@ export default function DigestEditorialFlow({
             >
               <div className="flex items-start gap-2 min-w-0">
 
-                {/* TYPE */}
-                <span className="
-                  text-[10px]
-                  uppercase
-                  tracking-wide
-                  text-gray-400
-                  shrink-0
-                ">
+                <span className="text-[10px] uppercase tracking-wide text-gray-400 shrink-0">
                   {getLabel(item.type)}
                 </span>
 
-                {/* TITLE */}
-                <span className="
-                  text-gray-900
-                  font-medium
-                  truncate
-                ">
+                <span className="text-gray-900 font-medium truncate">
                   {getTitle(item, source)}
                 </span>
               </div>
 
-              {/* ACTIONS */}
               <div className="flex items-center gap-1 text-xs">
 
-                <button
-                  onClick={() => moveUp(index)}
-                  className="
-                    px-1.5 py-0.5
-                    border border-gray-200
-                    rounded
-                    hover:bg-gray-50
-                  "
-                >
+                <button onClick={() => moveUp(index)} className="px-1.5 py-0.5 border border-gray-200 rounded hover:bg-gray-50">
                   ↑
                 </button>
 
-                <button
-                  onClick={() => moveDown(index)}
-                  className="
-                    px-1.5 py-0.5
-                    border border-gray-200
-                    rounded
-                    hover:bg-gray-50
-                  "
-                >
+                <button onClick={() => moveDown(index)} className="px-1.5 py-0.5 border border-gray-200 rounded hover:bg-gray-50">
                   ↓
                 </button>
 
-                <button
-                  onClick={() => removeItem(index)}
-                  className="
-                    px-1.5 py-0.5
-                    border border-gray-200
-                    rounded
-                    text-red-600
-                    hover:bg-red-50
-                  "
-                >
+                <button onClick={() => removeItem(index)} className="px-1.5 py-0.5 border border-gray-200 rounded text-red-600 hover:bg-red-50">
                   ✕
                 </button>
 
