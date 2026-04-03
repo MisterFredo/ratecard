@@ -36,50 +36,49 @@ export function EmailBrevesBlock(breves: any[]) {
       ${
         imageUrl
           ? `
-          <!-- IMAGE COLUMN -->
+          <!-- IMAGE -->
           <td
             valign="top"
             align="center"
             class="stack-column"
             style="
               width:150px;
-              padding-right:22px;
-              vertical-align:top;
+              padding-right:20px;
             "
           >
-            <a href="${breveUrl}" target="_blank" style="text-decoration:none;">
-              <div style="
-                width:130px;
-                height:95px;
-                background:#FFFFFF;
-                border:1px solid #F3F4F6;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-              ">
-                <img 
-                  src="${imageUrl}"
-                  alt=""
-                  style="
-                    max-width:85%;
-                    max-height:85%;
-                    height:auto;
-                    display:block;
-                  "
-                />
-              </div>
+            <a href="${breveUrl}" target="_blank">
+
+              <table cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                  <td style="
+                    border:1px solid #F3F4F6;
+                    padding:8px;
+                    background:#FFFFFF;
+                    text-align:center;
+                  ">
+                    <img 
+                      src="${imageUrl}"
+                      alt=""
+                      width="110"
+                      style="
+                        display:block;
+                        width:100%;
+                        max-width:110px;
+                        height:auto;
+                      "
+                    />
+                  </td>
+                </tr>
+              </table>
+
             </a>
           </td>
           `
           : ""
       }
 
-      <!-- TEXT COLUMN -->
-      <td
-        valign="top"
-        class="stack-column"
-        style="vertical-align:top;"
-      >
+      <!-- TEXT -->
+      <td valign="top">
 
         <!-- TITLE -->
         <a href="${breveUrl}"
@@ -107,7 +106,6 @@ export function EmailBrevesBlock(breves: any[]) {
             <div style="
                 font-size:15px;
                 color:#374151;
-                margin-top:10px;
                 line-height:1.4;
               ">
                 ${escapeHtml(b.excerpt)}
