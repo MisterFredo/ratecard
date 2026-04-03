@@ -1,5 +1,24 @@
 import type { NewsletterNumberItem } from "@/types/newsletter";
 
+function formatValue(n: NewsletterNumberItem) {
+  if (n.value === undefined || n.value === null) return "";
+
+  const scaleMap: any = {
+    thousand: "K",
+    million: "M",
+    millions: "M",
+    billion: "Md",
+    billions: "Md",
+  };
+
+  const scale = scaleMap[n.scale || ""] || "";
+  const unit = n.unit || "";
+
+  return [n.value, scale, unit]
+    .filter(Boolean)
+    .join(" ");
+}
+
 export function EmailNumbersBlockGmail(
   numbers: NewsletterNumberItem[]
 ) {
