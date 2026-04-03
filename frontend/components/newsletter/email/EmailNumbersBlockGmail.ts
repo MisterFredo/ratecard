@@ -1,4 +1,5 @@
 import type { NewsletterNumberItem } from "@/types/newsletter";
+import { escapeHtml } from "./EmailHelpers";
 
 function formatValue(n: NewsletterNumberItem) {
   if (n.value === undefined || n.value === null) return "";
@@ -19,40 +20,56 @@ function formatValue(n: NewsletterNumberItem) {
     .join(" ");
 }
 
-export function EmailNumbersBlockGmail(numbers: NewsletterNumberItem[]) {
+export function EmailNumbersBlockGmail(
+  numbers: NewsletterNumberItem[]
+) {
+  if (!numbers?.length) return "";
+
   return `
 <tr>
-<td style="padding-top:24px; font-family:Arial,Helvetica,sans-serif;">
+<td style="
+  padding:26px 16px 30px 16px;
+  font-family:Arial,Helvetica,sans-serif;
+">
 
+  <!-- TITLE -->
   <div style="
-    font-size:14px;
-    font-weight:bold;
-    margin-bottom:12px;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#111827;
+    margin-bottom:14px;
   ">
     Chiffres clés
   </div>
 
   ${numbers
     .map(
-      (n) => `
+      (n, index) => `
     <div style="
-      margin-bottom:12px;
-      padding-bottom:12px;
-      border-bottom:1px solid #E5E7EB;
+      margin-bottom:${index === numbers.length - 1 ? "0" : "14px"};
+      padding-bottom:${index === numbers.length - 1 ? "0" : "14px"};
+      border-bottom:${index === numbers.length - 1 ? "none" : "1px solid #E5E7EB"};
     ">
+
       <div style="
         font-size:18px;
-        font-weight:bold;
+        font-weight:700;
+        color:#111827;
+        margin-bottom:4px;
       ">
         ${formatValue(n)}
       </div>
 
       <div style="
         font-size:13px;
-        color:#444;
+        color:#374151;
+        line-height:1.4;
       ">
-        ${n.label}
+        ${escapeHtml(n.label)}
       </div>
+
     </div>
   `
     )
