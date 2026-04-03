@@ -32,7 +32,7 @@ export function EmailNewsBlockGmail(
       return `
 <tr>
 <td style="
-    padding:36px 16px;
+    padding:28px 16px;
     border-bottom:1px solid #E5E7EB;
     font-family:Arial,Helvetica,sans-serif;
   ">
@@ -43,51 +43,41 @@ export function EmailNewsBlockGmail(
       ${
         imageUrl
           ? `
-          <!-- IMAGE COLUMN -->
+          <!-- IMAGE -->
           <td
             valign="top"
-            align="center"
             style="
-              width:180px;
-              padding-right:24px;
-              vertical-align:top;
+              width:140px;
+              padding-right:16px;
             "
           >
-            <a href="${newsUrl}" target="_blank" style="text-decoration:none;">
-              <div style="
-                width:160px;
-                height:120px;
-                background:#FFFFFF;
-                border:1px solid #F3F4F6;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-              ">
-                <img 
-                  src="${imageUrl}" 
-                  alt=""
-                  style="
-                    max-width:85%;
-                    max-height:85%;
-                    height:auto;
-                    display:block;
-                  "
-                />
-              </div>
+            <a href="${newsUrl}" target="_blank">
+              <img 
+                src="${imageUrl}" 
+                alt=""
+                width="140"
+                style="
+                  display:block;
+                  width:100%;
+                  max-width:140px;
+                  height:auto;
+                  border:1px solid #F3F4F6;
+                "
+              />
             </a>
           </td>
           `
           : ""
       }
 
-      <!-- TEXT COLUMN -->
-      <td valign="top" style="vertical-align:top;">
+      <!-- TEXT -->
+      <td valign="top">
 
         <!-- DATE -->
         <div style="
             font-size:12px;
             color:#6B7280;
-            margin-bottom:8px;
+            margin-bottom:6px;
           ">
           ${new Date(n.published_at).toLocaleDateString("fr-FR")}
         </div>
@@ -97,17 +87,17 @@ export function EmailNewsBlockGmail(
            target="_blank"
            style="text-decoration:none;color:#111827;">
           <div style="
-              font-size:20px;
+              font-size:18px;
               font-weight:700;
-              margin-bottom:12px;
-              line-height:1.35;
+              margin-bottom:10px;
+              line-height:1.3;
             ">
             ${escapeHtml(n.title)}
           </div>
         </a>
 
         <!-- TAGS -->
-        <div style="margin-bottom:10px;">
+        <div style="margin-bottom:8px;">
           ${tags}
         </div>
 
@@ -116,9 +106,8 @@ export function EmailNewsBlockGmail(
           n.excerpt
             ? `
             <div style="
-                font-size:15px;
+                font-size:14px;
                 color:#374151;
-                margin-top:10px;
                 line-height:1.4;
               ">
                 ${escapeHtml(n.excerpt)}
@@ -141,7 +130,7 @@ export function EmailNewsBlockGmail(
   return `
 <tr>
 <td style="
-    padding-top:42px;
+    padding-top:32px;
     font-family:Arial,Helvetica,sans-serif;
   ">
   <div style="
@@ -150,7 +139,7 @@ export function EmailNewsBlockGmail(
       letter-spacing:0.08em;
       text-transform:uppercase;
       color:#111827;
-      margin-bottom:22px;
+      margin-bottom:18px;
       padding-left:8px;
     ">
     Actualités
