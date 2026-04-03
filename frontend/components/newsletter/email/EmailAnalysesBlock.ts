@@ -1,3 +1,30 @@
+import type { NewsletterAnalysisItem } from "@/types/newsletter";
+import { escapeHtml, formatDate } from "./EmailHelpers";
+
+const PUBLIC_SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://ratecard.fr";
+
+function renderSectionTitle(label: string) {
+  return `
+<tr>
+<td style="
+    padding:42px 0 18px 0;
+    font-family:Arial,Helvetica,sans-serif;
+  ">
+  <div style="
+      font-size:13px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+      color:#111827;
+    ">
+    ${label}
+  </div>
+</td>
+</tr>`;
+}
+
 export function EmailAnalysesBlock(
   analyses: NewsletterAnalysisItem[]
 ) {
