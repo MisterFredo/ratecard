@@ -1,7 +1,7 @@
 import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
-  NewsletterNumberItem, // 👈 AJOUT
+  NewsletterNumberItem,
   HeaderConfig,
   TopicStat,
 } from "@/types/newsletter";
@@ -12,7 +12,7 @@ import { EmailStatsBlock } from "./EmailStatsBlock";
 import { EmailNewsBlock } from "./EmailNewsBlock";
 import { EmailBrevesBlock } from "./EmailBrevesBlock";
 import { EmailAnalysesBlock } from "./EmailAnalysesBlock";
-import { EmailNumbersBlock } from "./EmailNumbersBlock"; // 👈 NEW
+import { EmailNumbersBlock } from "./EmailNumbersBlock";
 
 type Props = {
   headerConfig: HeaderConfig;
@@ -20,7 +20,7 @@ type Props = {
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
-  numbers?: NewsletterNumberItem[]; // 👈 NEW
+  numbers?: NewsletterNumberItem[];
   topicStats?: TopicStat[];
 };
 
@@ -30,15 +30,19 @@ export function buildEmail({
   news,
   breves,
   analyses,
-  numbers = [], // 👈 NEW
+  numbers = [],
   topicStats = [],
 }: Props) {
 
   const blocks = [
+
+    /* =========================
+        HEADER
+    ========================== */
     EmailHeader(headerConfig, introText),
 
     /* =========================
-        NUMBERS (🔥 AVANT LE CONTENU)
+        NUMBERS
     ========================== */
     numbers.length > 0
       ? EmailNumbersBlock(numbers)
@@ -49,13 +53,6 @@ export function buildEmail({
     ========================== */
     news.length > 0
       ? EmailNewsBlock(news)
-      : "",
-
-    /* =========================
-        STATS
-    ========================== */
-    headerConfig.showTopicStats && topicStats.length > 0
-      ? EmailStatsBlock(topicStats)
       : "",
 
     /* =========================
@@ -71,7 +68,22 @@ export function buildEmail({
     analyses.length > 0
       ? EmailAnalysesBlock(analyses)
       : "",
+
+    /* =========================
+        STATS (FIN)
+    ========================== */
+    headerConfig.showTopicStats && topicStats.length > 0
+      ? EmailStatsBlock(topicStats)
+      : "",
+
   ].join("");
 
-  return EmailLayout(blocks);
+  /* 🔥 CRITIQUE : wrapper TABLE */
+  const content = `
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+    ${blocks}
+  </table>
+  `;
+
+  return EmailLayout(content);
 }
