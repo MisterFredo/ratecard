@@ -44,30 +44,33 @@ export function EmailNewsBlock(news: any[]) {
             style="
               width:180px;
               padding-right:24px;
-              vertical-align:top;
             "
           >
             <a href="${newsUrl}" target="_blank" style="text-decoration:none;">
-              <div style="
-                width:160px;
-                height:120px;
-                background:#FFFFFF;
-                border:1px solid #F3F4F6;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-              ">
-                <img 
-                  src="${imageUrl}" 
-                  alt=""
-                  style="
-                    max-width:85%;
-                    max-height:85%;
-                    height:auto;
-                    display:block;
-                  " 
-                />
-              </div>
+
+              <table cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                  <td style="
+                    border:1px solid #F3F4F6;
+                    padding:10px;
+                    background:#FFFFFF;
+                    text-align:center;
+                  ">
+                    <img 
+                      src="${imageUrl}" 
+                      alt=""
+                      width="140"
+                      style="
+                        display:block;
+                        width:100%;
+                        max-width:140px;
+                        height:auto;
+                      "
+                    />
+                  </td>
+                </tr>
+              </table>
+
             </a>
           </td>
           `
@@ -75,11 +78,7 @@ export function EmailNewsBlock(news: any[]) {
       }
 
       <!-- TEXT COLUMN -->
-      <td
-        valign="top"
-        class="stack-column"
-        style="vertical-align:top;"
-      >
+      <td valign="top">
 
         <!-- DATE -->
         <div style="
