@@ -1,18 +1,10 @@
-import uuid
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import Dict, Any
+import uuid
 
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import (
-    query_bq,
-    insert_bq,
-    update_bq,
-    get_bigquery_client,
-)
+from utils.bigquery_utils import query_bq, insert_bq, update_bq
 
-# ============================================================
-# TABLE
-# ============================================================
 
 TABLE_TEMPLATE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_DIGEST_TEMPLATE"
 
@@ -44,9 +36,17 @@ def create_template(data: Dict[str, Any]) -> str:
     row = [{
         "ID_TEMPLATE": template_id,
         "NAME": data["name"],
+
+        # 🔥 FILTRES
         "TOPICS": _normalize_array(data.get("topics")),
         "COMPANIES": _normalize_array(data.get("companies")),
         "NEWS_TYPES": _normalize_array(data.get("news_types")),
+
+        # 🔥 CONFIG EDITO (NOUVEAU)
+        "EDITORIAL_ORDER": data.get("editorial_order", []),
+        "HEADER_CONFIG": data.get("header_config", {}),
+        "INTRO_TEXT": data.get("intro_text", ""),
+
         "CREATED_AT": now,
         "UPDATED_AT": now,
     }]
@@ -57,7 +57,7 @@ def create_template(data: Dict[str, Any]) -> str:
 
 
 # ============================================================
-# LIST TEMPLATES
+# LIST
 # ============================================================
 
 def list_templates():
@@ -92,7 +92,7 @@ def list_templates():
 
 
 # ============================================================
-# GET ONE TEMPLATE
+# GET ONE
 # ============================================================
 
 def get_template(template_id: str):
@@ -115,16 +115,24 @@ def get_template(template_id: str):
     return {
         "id_template": r["ID_TEMPLATE"],
         "name": r["NAME"],
+
+        # filtres
         "topics": r.get("TOPICS") or [],
         "companies": r.get("COMPANIES") or [],
         "news_types": r.get("NEWS_TYPES") or [],
+
+        # 🔥 éditorial
+        "editorial_order": r.get("EDITORIAL_ORDER") or [],
+        "header_config": r.get("HEADER_CONFIG") or {},
+        "intro_text": r.get("INTRO_TEXT") or "",
+
         "created_at": r.get("CREATED_AT"),
         "updated_at": r.get("UPDATED_AT"),
     }
 
 
 # ============================================================
-# UPDATE TEMPLATE
+# UPDATE
 # ============================================================
 
 def update_template(template_id: str, data: Dict[str, Any]):
@@ -143,6 +151,16 @@ def update_template(template_id: str, data: Dict[str, Any]):
     if "news_types" in data:
         fields["NEWS_TYPES"] = _normalize_array(data.get("news_types"))
 
+    # 🔥 éditorial
+    if "editorial_order" in data:
+        fields["EDITORIAL_ORDER"] = data.get("editorial_order")
+
+    if "header_config" in data:
+        fields["HEADER_CONFIG"] = data.get("header_config")
+
+    if "intro_text" in data:
+        fields["INTRO_TEXT"] = data.get("intro_text")
+
     if not fields:
         return False
 
@@ -158,7 +176,7 @@ def update_template(template_id: str, data: Dict[str, Any]):
 
 
 # ============================================================
-# DELETE TEMPLATE
+# DELETE
 # ============================================================
 
 def delete_template(template_id: str):
