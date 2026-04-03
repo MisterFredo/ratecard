@@ -1,4 +1,5 @@
 import type { NewsletterNumberItem } from "@/types/newsletter";
+import { escapeHtml } from "./EmailHelpers";
 
 function formatValue(n: NewsletterNumberItem) {
   if (n.value === undefined || n.value === null) return "";
@@ -20,6 +21,14 @@ function formatValue(n: NewsletterNumberItem) {
 }
 
 export function EmailNumbersBlock(numbers: NewsletterNumberItem[]) {
+  if (!numbers.length) return "";
+
+  // 🔥 GROUP BY 2 (email safe grid)
+  const rows = [];
+  for (let i = 0; i < numbers.length; i += 2) {
+    rows.push(numbers.slice(i, i + 2));
+  }
+
   return `
 <tr>
 <td style="
@@ -40,46 +49,67 @@ export function EmailNumbersBlock(numbers: NewsletterNumberItem[]) {
 </td>
 </tr>
 
+${rows
+  .map(
+    (pair) => `
 <tr>
-<td style="padding:0 8px 24px 8px;">
+<td style="padding:0 8px;">
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
 
-      ${numbers
+      ${pair
         .map(
           (n) => `
-        <td style="width:50%; padding:8px; vertical-align:top;">
-          <div style="
-            border:1px solid #E5E7EB;
-            border-radius:8px;
-            padding:14px;
-            background:#FFFFFF;
-          ">
-            <div style="
-              font-size:20px;
-              font-weight:700;
-              color:#111827;
-              margin-bottom:6px;
+      <td style="
+        width:50%;
+        padding:8px;
+        vertical-align:top;
+      ">
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+          <tr>
+            <td style="
+              border:1px solid #E5E7EB;
+              padding:14px;
+              background:#FFFFFF;
             ">
-              ${formatValue(n)}
-            </div>
 
-            <div style="
-              font-size:13px;
-              color:#374151;
-              line-height:1.4;
-            ">
-              ${n.label}
-            </div>
-          </div>
-        </td>
+              <div style="
+                font-size:20px;
+                font-weight:700;
+                color:#111827;
+                margin-bottom:6px;
+              ">
+                ${formatValue(n)}
+              </div>
+
+              <div style="
+                font-size:13px;
+                color:#374151;
+                line-height:1.4;
+              ">
+                ${escapeHtml(n.label)}
+              </div>
+
+            </td>
+          </tr>
+        </table>
+      </td>
       `
         )
         .join("")}
+
+      ${
+        pair.length === 1
+          ? `<td style="width:50%;"></td>`
+          : ""
+      }
 
     </tr>
   </table>
 </td>
 </tr>
+`
+  )
+  .join("")}
 `;
 }
