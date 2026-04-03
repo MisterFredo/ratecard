@@ -42,69 +42,40 @@ export default function DigestSelectors({
   setEditorialOrder,
 }: Props) {
 
-  /* =========================================
-     UPDATE SELECTION
-  ========================================= */
-
   function updateTypeSelection(
     ids: string[],
     type: EditorialItem["type"]
   ) {
     setEditorialOrder((prev) => {
-      const others = prev.filter(
-        (item) => item.type !== type
-      );
+      const prevSameType = prev.filter(i => i.type === type);
 
-      const updated = ids.map((id) => ({
-        id,
-        type,
-      }));
+      const newItems = ids
+        .filter(id => !prevSameType.some(i => i.id === id))
+        .map(id => ({ id, type }));
 
-      return [...others, ...updated];
+      const keptItems = prevSameType.filter(i => ids.includes(i.id));
+
+      const others = prev.filter(i => i.type !== type);
+
+      return [...others, ...keptItems, ...newItems];
     });
   }
 
-  /* =========================================
-     COUNTERS
-  ========================================= */
-
-  const newsSelected = editorialOrder.filter(
-    (i) => i.type === "news"
-  ).length;
-
-  const brevesSelected = editorialOrder.filter(
-    (i) => i.type === "breve"
-  ).length;
-
-  const analysesSelected = editorialOrder.filter(
-    (i) => i.type === "analysis"
-  ).length;
-
-  const numbersSelected = editorialOrder.filter(
-    (i) => i.type === "number"
-  ).length;
-
-  /* =========================================
-     RENDER
-  ========================================= */
+  const newsSelected = editorialOrder.filter(i => i.type === "news").length;
+  const brevesSelected = editorialOrder.filter(i => i.type === "breve").length;
+  const analysesSelected = editorialOrder.filter(i => i.type === "analysis").length;
+  const numbersSelected = editorialOrder.filter(i => i.type === "number").length;
 
   return (
     <div className="space-y-5">
 
-      {/* =========================
-          NEWS
-      ========================== */}
+      {/* NEWS */}
       <section className="space-y-2">
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            <h2 className="font-semibold tracking-tight">
-              News
-            </h2>
-            <span className="text-xs text-gray-400">
-              {news.length} résultats
-            </span>
+            <h2 className="font-semibold tracking-tight">News</h2>
+            <span className="text-xs text-gray-400">{news.length} résultats</span>
           </div>
-
           <span className="text-xs font-medium text-gray-500">
             {newsSelected} sélectionnée{newsSelected > 1 ? "s" : ""}
           </span>
@@ -113,29 +84,19 @@ export default function DigestSelectors({
         <NewsletterSelector
           title=""
           items={news}
-          selectedIds={editorialOrder
-            .filter((i) => i.type === "news")
-            .map((i) => i.id)}
-          onChange={(ids) =>
-            updateTypeSelection(ids, "news")
-          }
+          selectedIds={editorialOrder.filter(i => i.type === "news").map(i => i.id)}
+          onChange={(ids) => updateTypeSelection(ids, "news")}
+          labelKey="title"
         />
       </section>
 
-      {/* =========================
-          BRÈVES
-      ========================== */}
+      {/* BRÈVES */}
       <section className="space-y-2">
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            <h2 className="font-semibold tracking-tight">
-              Brèves
-            </h2>
-            <span className="text-xs text-gray-400">
-              {breves.length} résultats
-            </span>
+            <h2 className="font-semibold tracking-tight">Brèves</h2>
+            <span className="text-xs text-gray-400">{breves.length} résultats</span>
           </div>
-
           <span className="text-xs font-medium text-gray-500">
             {brevesSelected} sélectionnée{brevesSelected > 1 ? "s" : ""}
           </span>
@@ -144,29 +105,19 @@ export default function DigestSelectors({
         <NewsletterSelector
           title=""
           items={breves}
-          selectedIds={editorialOrder
-            .filter((i) => i.type === "breve")
-            .map((i) => i.id)}
-          onChange={(ids) =>
-            updateTypeSelection(ids, "breve")
-          }
+          selectedIds={editorialOrder.filter(i => i.type === "breve").map(i => i.id)}
+          onChange={(ids) => updateTypeSelection(ids, "breve")}
+          labelKey="title"
         />
       </section>
 
-      {/* =========================
-          ANALYSES
-      ========================== */}
+      {/* ANALYSES */}
       <section className="space-y-2">
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            <h2 className="font-semibold tracking-tight">
-              Analyses
-            </h2>
-            <span className="text-xs text-gray-400">
-              {analyses.length} résultats
-            </span>
+            <h2 className="font-semibold tracking-tight">Analyses</h2>
+            <span className="text-xs text-gray-400">{analyses.length} résultats</span>
           </div>
-
           <span className="text-xs font-medium text-gray-500">
             {analysesSelected} sélectionnée{analysesSelected > 1 ? "s" : ""}
           </span>
@@ -175,29 +126,19 @@ export default function DigestSelectors({
         <NewsletterSelector
           title=""
           items={analyses}
-          selectedIds={editorialOrder
-            .filter((i) => i.type === "analysis")
-            .map((i) => i.id)}
-          onChange={(ids) =>
-            updateTypeSelection(ids, "analysis")
-          }
+          selectedIds={editorialOrder.filter(i => i.type === "analysis").map(i => i.id)}
+          onChange={(ids) => updateTypeSelection(ids, "analysis")}
+          labelKey="title"
         />
       </section>
 
-      {/* =========================
-          NUMBERS
-      ========================== */}
+      {/* NUMBERS */}
       <section className="space-y-2">
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            <h2 className="font-semibold tracking-tight">
-              Chiffres clés
-            </h2>
-            <span className="text-xs text-gray-400">
-              {numbers.length} résultats
-            </span>
+            <h2 className="font-semibold tracking-tight">Chiffres clés</h2>
+            <span className="text-xs text-gray-400">{numbers.length} résultats</span>
           </div>
-
           <span className="text-xs font-medium text-gray-500">
             {numbersSelected} sélectionné{numbersSelected > 1 ? "s" : ""}
           </span>
@@ -205,13 +146,12 @@ export default function DigestSelectors({
 
         <NewsletterSelector
           title=""
-          items={numbers}
-          selectedIds={editorialOrder
-            .filter((i) => i.type === "number")
-            .map((i) => i.id)}
-          onChange={(ids) =>
-            updateTypeSelection(ids, "number")
-          }
+          items={numbers.map(n => ({
+            ...n,
+            label: `${n.label} — ${n.value ?? ""} ${n.unit ?? ""}`
+          }))}
+          selectedIds={editorialOrder.filter(i => i.type === "number").map(i => i.id)}
+          onChange={(ids) => updateTypeSelection(ids, "number")}
           labelKey="label"
         />
       </section>
