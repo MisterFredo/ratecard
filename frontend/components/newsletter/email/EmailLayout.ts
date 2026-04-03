@@ -69,14 +69,18 @@ export function EmailLayout(content: string) {
           "
         >
 
-          <!-- =========================
-              CONTENT (IMPORTANT FIX)
-          ========================== -->
-          ${content}
+          <!-- CONTENT WRAPPER (🔥 FIX CRITIQUE) -->
+          <tr>
+            <td style="padding:0 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
 
-          <!-- =========================
-              FOOTER
-          ========================== -->
+                ${content}
+
+              </table>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
           <tr>
             <td style="
               padding:36px 32px 26px 32px;
