@@ -6,15 +6,23 @@ import type {
   NewsletterAnalysisItem,
 } from "@/types/newsletter";
 
+type NewsletterNumberItem = {
+  id: string;
+  label: string;
+  value?: number;
+  unit?: string;
+};
+
 type EditorialItem = {
   id: string;
-  type: "news" | "breve" | "analysis";
+  type: "news" | "breve" | "analysis" | "number"; // 🔥 NEW
 };
 
 type Props = {
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
+  numbers: NewsletterNumberItem[]; // 🔥 NEW
 
   editorialOrder: EditorialItem[];
   setEditorialOrder: React.Dispatch<
@@ -26,9 +34,11 @@ export default function DigestSelectors({
   news,
   breves,
   analyses,
+  numbers, // 🔥 NEW
   editorialOrder,
   setEditorialOrder,
 }: Props) {
+
   function updateTypeSelection(
     ids: string[],
     type: EditorialItem["type"]
@@ -57,6 +67,10 @@ export default function DigestSelectors({
     (i) => i.type === "analysis"
   ).length;
 
+  const numbersSelected = editorialOrder.filter(
+    (i) => i.type === "number"
+  ).length;
+
   return (
     <div className="space-y-5">
 
@@ -75,8 +89,7 @@ export default function DigestSelectors({
           </div>
 
           <span className="text-xs font-medium text-gray-500">
-            {newsSelected} sélectionnée
-            {newsSelected > 1 ? "s" : ""}
+            {newsSelected} sélectionnée{newsSelected > 1 ? "s" : ""}
           </span>
         </div>
 
@@ -107,8 +120,7 @@ export default function DigestSelectors({
           </div>
 
           <span className="text-xs font-medium text-gray-500">
-            {brevesSelected} sélectionnée
-            {brevesSelected > 1 ? "s" : ""}
+            {brevesSelected} sélectionnée{brevesSelected > 1 ? "s" : ""}
           </span>
         </div>
 
@@ -139,8 +151,7 @@ export default function DigestSelectors({
           </div>
 
           <span className="text-xs font-medium text-gray-500">
-            {analysesSelected} sélectionnée
-            {analysesSelected > 1 ? "s" : ""}
+            {analysesSelected} sélectionnée{analysesSelected > 1 ? "s" : ""}
           </span>
         </div>
 
@@ -153,6 +164,38 @@ export default function DigestSelectors({
           onChange={(ids) =>
             updateTypeSelection(ids, "analysis")
           }
+        />
+      </section>
+
+      {/* =========================
+          NUMBERS 🔥
+      ========================== */}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold tracking-tight">
+              Chiffres clés
+            </h2>
+            <span className="text-xs text-gray-400">
+              {numbers.length} résultats
+            </span>
+          </div>
+
+          <span className="text-xs font-medium text-gray-500">
+            {numbersSelected} sélectionné{numbersSelected > 1 ? "s" : ""}
+          </span>
+        </div>
+
+        <NewsletterSelector
+          title=""
+          items={numbers}
+          selectedIds={editorialOrder
+            .filter((i) => i.type === "number")
+            .map((i) => i.id)}
+          onChange={(ids) =>
+            updateTypeSelection(ids, "number")
+          }
+          labelKey="label" // 🔥 important pour numbers
         />
       </section>
 
