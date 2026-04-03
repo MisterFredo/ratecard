@@ -1,6 +1,7 @@
 import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
+  NewsletterNumberItem, // 👈 NEW
   HeaderConfig,
   TopicStat,
 } from "@/types/newsletter";
@@ -11,6 +12,7 @@ import { EmailNewsBlockGmail } from "./EmailNewsBlockGmail";
 import { EmailStatsBlockGmail } from "./EmailStatsBlockGmail";
 import { EmailBrevesBlockGmail } from "./EmailBrevesBlockGmail";
 import { EmailAnalysesBlockGmail } from "./EmailAnalysesBlockGmail";
+import { EmailNumbersBlockGmail } from "./EmailNumbersBlockGmail"; // 👈 NEW
 import { EmailSignatureGmail } from "./EmailSignatureGmail";
 
 type Props = {
@@ -19,6 +21,7 @@ type Props = {
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
+  numbers?: NewsletterNumberItem[]; // 👈 NEW
   topicStats?: TopicStat[];
 };
 
@@ -28,6 +31,7 @@ export function buildEmailGmail({
   news,
   breves,
   analyses,
+  numbers = [], // 👈 NEW
   topicStats = [],
 }: Props) {
 
@@ -35,22 +39,44 @@ export function buildEmailGmail({
 
     EmailHeaderGmail(headerConfig),
 
+    /* =========================
+        NUMBERS 🔥
+    ========================== */
+    numbers.length > 0
+      ? EmailNumbersBlockGmail(numbers)
+      : "",
+
+    /* =========================
+        NEWS
+    ========================== */
     news.length > 0
       ? EmailNewsBlockGmail(news)
       : "",
 
+    /* =========================
+        STATS
+    ========================== */
     headerConfig.showTopicStats && topicStats.length > 0
       ? EmailStatsBlockGmail(topicStats)
       : "",
 
+    /* =========================
+        BRÈVES
+    ========================== */
     breves.length > 0
       ? EmailBrevesBlockGmail(breves)
       : "",
 
+    /* =========================
+        ANALYSES
+    ========================== */
     analyses.length > 0
       ? EmailAnalysesBlockGmail(analyses)
       : "",
 
+    /* =========================
+        SIGNATURE
+    ========================== */
     EmailSignatureGmail()
 
   ].join("");
