@@ -1,4 +1,9 @@
 import type { NewsletterNumberItem } from "@/types/newsletter";
+import {
+  buildContentImageUrl,
+  escapeHtml,
+  renderEmailTags,
+} from "./EmailHelpers";
 
 function formatValue(n: NewsletterNumberItem) {
   if (n.value === undefined || n.value === null) return "";
