@@ -54,3 +54,24 @@ export type NewsletterAnalysisItem = {
   excerpt?: string;
   published_at: string;
 };
+
+export type NewsletterNumberItem = {
+  id: string;
+
+  label: string;
+  value?: number;
+  unit?: string;
+  scale?: string;
+
+  type?: string;
+  category?: string;
+
+  zone?: string;
+  period?: string;
+
+  entity?: {
+    type: "company" | "topic" | "solution";
+    id: string;
+    label: string;
+  };
+};
