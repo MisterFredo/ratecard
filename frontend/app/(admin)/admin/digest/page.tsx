@@ -12,16 +12,25 @@ import { api } from "@/lib/api";
 import type {
   NewsletterNewsItem,
   NewsletterAnalysisItem,
+  NewsletterNumberItem,
   HeaderConfig,
   TopicStat,
 } from "@/types/newsletter";
 
 import type { SelectOption } from "@/components/ui/SearchableMultiSelect";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 type EditorialItem = {
   id: string;
-  type: "news" | "breve" | "analysis";
+  type: "news" | "breve" | "analysis" | "number";
 };
+
+/* =========================================================
+   PAGE
+========================================================= */
 
 export default function DigestPage() {
   const [loading, setLoading] = useState(false);
@@ -30,6 +39,8 @@ export default function DigestPage() {
   const [breves, setBreves] = useState<NewsletterNewsItem[]>([]);
   const [analyses, setAnalyses] =
     useState<NewsletterAnalysisItem[]>([]);
+  const [numbers, setNumbers] =
+    useState<NewsletterNumberItem[]>([]);
 
   const [selectedTopics, setSelectedTopics] =
     useState<SelectOption[]>([]);
@@ -57,7 +68,7 @@ export default function DigestPage() {
     useState<EditorialItem[]>([]);
 
   /* =========================================
-     BAROMÈTRE (encapsulé backend)
+     BAROMÈTRE
   ========================================= */
 
   const [topicStats, setTopicStats] = useState<TopicStat[]>([]);
@@ -89,7 +100,7 @@ export default function DigestPage() {
   }, []);
 
   /* =========================================
-     SEARCH (ALIGNÉ BACKEND)
+     SEARCH
   ========================================= */
 
   async function handleSearch(filters: {
@@ -114,6 +125,8 @@ export default function DigestPage() {
       setNews(data.news || []);
       setBreves(data.breves || []);
       setAnalyses(data.analyses || []);
+      setNumbers(data.numbers || []);
+
       setEditorialOrder([]);
     } catch (e) {
       console.error("Erreur search digest", e);
@@ -151,6 +164,15 @@ export default function DigestPage() {
         .map((i) => analyses.find((a) => a.id === i.id))
         .filter(Boolean) as NewsletterAnalysisItem[],
     [editorialOrder, analyses]
+  );
+
+  const editorialNumbers = useMemo(
+    () =>
+      editorialOrder
+        .filter((i) => i.type === "number")
+        .map((i) => numbers.find((n) => n.id === i.id))
+        .filter(Boolean) as NewsletterNumberItem[],
+    [editorialOrder, numbers]
   );
 
   /* =========================================
@@ -191,6 +213,7 @@ export default function DigestPage() {
             news={news}
             breves={breves}
             analyses={analyses}
+            numbers={numbers}
             editorialOrder={editorialOrder}
             setEditorialOrder={setEditorialOrder}
           />
@@ -200,6 +223,7 @@ export default function DigestPage() {
             news={news}
             breves={breves}
             analyses={analyses}
+            numbers={numbers}
             setEditorialOrder={setEditorialOrder}
           />
         </div>
@@ -212,6 +236,7 @@ export default function DigestPage() {
             news={editorialNews}
             breves={editorialBreves}
             analyses={editorialAnalyses}
+            numbers={editorialNumbers}
             topicStats={topicStats}
           />
         </div>
