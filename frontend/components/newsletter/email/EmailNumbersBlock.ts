@@ -1,29 +1,6 @@
-import type { NewsletterNumberItem } from "@/types/newsletter";
-import { escapeHtml } from "./EmailHelpers";
-
-function formatValue(n: NewsletterNumberItem) {
-  if (n.value === undefined || n.value === null) return "";
-
-  const scaleMap: any = {
-    thousand: "K",
-    million: "M",
-    millions: "M",
-    billion: "Md",
-    billions: "Md",
-  };
-
-  const scale = scaleMap[n.scale || ""] || "";
-  const unit = n.unit || "";
-
-  return [n.value, scale, unit]
-    .filter(Boolean)
-    .join(" ");
-}
-
 export function EmailNumbersBlock(numbers: NewsletterNumberItem[]) {
   if (!numbers.length) return "";
 
-  // 🔥 GROUP BY 2 (email safe grid)
   const rows = [];
   for (let i = 0; i < numbers.length; i += 2) {
     rows.push(numbers.slice(i, i + 2));
@@ -60,19 +37,21 @@ ${rows
       ${pair
         .map(
           (n) => `
+<td width="50%" valign="top" style="width:50%; padding:8px;">
+  
+  <!-- CARD -->
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+    <tr>
       <td style="
-        width:50%;
-        padding:8px;
-        vertical-align:top;
+        border:1px solid #E5E7EB;
+        background:#FFFFFF;
       ">
+
         <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
           <tr>
-            <td style="
-              border:1px solid #E5E7EB;
-              padding:14px;
-              background:#FFFFFF;
-            ">
+            <td style="padding:14px;">
 
+              <!-- VALUE -->
               <div style="
                 font-size:20px;
                 font-weight:700;
@@ -82,6 +61,7 @@ ${rows
                 ${formatValue(n)}
               </div>
 
+              <!-- LABEL -->
               <div style="
                 font-size:13px;
                 color:#374151;
@@ -93,14 +73,19 @@ ${rows
             </td>
           </tr>
         </table>
+
       </td>
-      `
+    </tr>
+  </table>
+
+</td>
+`
         )
         .join("")}
 
       ${
         pair.length === 1
-          ? `<td style="width:50%;"></td>`
+          ? `<td width="50%" style="width:50%;"></td>`
           : ""
       }
 
