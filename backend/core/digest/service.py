@@ -10,6 +10,7 @@ from utils.bigquery_utils import query_bq
 
 VIEW_NEWS_ENRICHED = f"{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED"
 VIEW_CONTENT_ENRICHED = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
+VIEW_NUMBERS_ENRICHED = f"{BQ_PROJECT}.{BQ_DATASET}.V_NUMBERS_ENRICHED"
 
 
 # ============================================================
