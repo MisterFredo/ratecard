@@ -9,7 +9,7 @@ function renderSectionTitle(label: string) {
   return `
 <tr>
 <td style="
-    padding:42px 0 18px 0;
+    padding:36px 0 16px 0;
     font-family:Arial,Helvetica,sans-serif;
   ">
   <div style="
@@ -35,7 +35,7 @@ export function EmailAnalysesBlock(
       (a) => `
 <tr>
 <td style="
-    padding:34px 0;
+    padding:28px 0;
     border-bottom:1px solid #E5E7EB;
     font-family:Arial,Helvetica,sans-serif;
   ">
@@ -48,7 +48,7 @@ export function EmailAnalysesBlock(
         <div style="
             font-size:12px;
             color:#6B7280;
-            margin-bottom:10px;
+            margin-bottom:8px;
           ">
           ${formatDate(a.published_at)}
         </div>
@@ -58,10 +58,10 @@ export function EmailAnalysesBlock(
            target="_blank"
            style="text-decoration:none;color:#111827;">
           <div style="
-              font-size:22px;
+              font-size:20px;
               font-weight:700;
               line-height:1.35;
-              margin-bottom:14px;
+              margin-bottom:12px;
             ">
             ${escapeHtml(a.title)}
           </div>
@@ -72,10 +72,10 @@ export function EmailAnalysesBlock(
           a.excerpt
             ? `
             <div style="
-                font-size:16px;
-                line-height:1.7;
+                font-size:15px;
+                line-height:1.6;
                 color:#374151;
-                margin-bottom:20px;
+                margin-bottom:16px;
               ">
                 ${escapeHtml(a.excerpt)}
               </div>
@@ -87,14 +87,13 @@ export function EmailAnalysesBlock(
         <a href="${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}"
            target="_blank"
            style="
+              display:inline-block;
               font-size:14px;
               font-weight:600;
               color:#111827;
-              text-decoration:none;
-              border-bottom:1px solid #111827;
-              padding-bottom:2px;
+              text-decoration:underline;
            ">
-          Lire l’analyse complète
+          Lire l’analyse complète →
         </a>
 
       </td>
