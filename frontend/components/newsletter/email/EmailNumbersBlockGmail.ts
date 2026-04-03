@@ -1,3 +1,5 @@
+import type { NewsletterNumberItem } from "@/types/newsletter";
+
 export function EmailNumbersBlockGmail(
   numbers: NewsletterNumberItem[]
 ) {
