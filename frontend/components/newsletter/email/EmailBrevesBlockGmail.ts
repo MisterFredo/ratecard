@@ -32,7 +32,7 @@ export function EmailBrevesBlockGmail(
       return `
 <tr>
 <td style="
-    padding:32px 16px;
+    padding:28px 16px;
     border-bottom:1px solid #E5E7EB;
     font-family:Arial,Helvetica,sans-serif;
   ">
@@ -43,62 +43,52 @@ export function EmailBrevesBlockGmail(
       ${
         imageUrl
           ? `
-          <!-- IMAGE COLUMN -->
+          <!-- IMAGE -->
           <td
             valign="top"
-            align="center"
             style="
-              width:150px;
-              padding-right:22px;
-              vertical-align:top;
+              width:120px;
+              padding-right:16px;
             "
           >
-            <a href="${breveUrl}" target="_blank" style="text-decoration:none;">
-              <div style="
-                width:130px;
-                height:95px;
-                background:#FFFFFF;
-                border:1px solid #F3F4F6;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-              ">
-                <img 
-                  src="${imageUrl}"
-                  alt=""
-                  style="
-                    max-width:85%;
-                    max-height:85%;
-                    height:auto;
-                    display:block;
-                  "
-                />
-              </div>
+            <a href="${breveUrl}" target="_blank">
+              <img 
+                src="${imageUrl}"
+                alt=""
+                width="120"
+                style="
+                  display:block;
+                  width:100%;
+                  max-width:120px;
+                  height:auto;
+                  border:1px solid #F3F4F6;
+                "
+              />
             </a>
           </td>
           `
           : ""
       }
 
-      <!-- TEXT COLUMN -->
-      <td valign="top" style="vertical-align:top;">
+      <!-- TEXT -->
+      <td valign="top">
 
         <!-- TITLE -->
         <a href="${breveUrl}"
            target="_blank"
            style="text-decoration:none;color:#111827;">
           <div style="
-              font-size:17px;
+              font-size:16px;
               font-weight:700;
-              margin-bottom:10px;
-              line-height:1.35;
+              margin-bottom:8px;
+              line-height:1.3;
             ">
             ${escapeHtml(b.title)}
           </div>
         </a>
 
         <!-- TAGS -->
-        <div style="margin-bottom:8px;">
+        <div style="margin-bottom:6px;">
           ${tags}
         </div>
 
@@ -107,9 +97,8 @@ export function EmailBrevesBlockGmail(
           b.excerpt
             ? `
             <div style="
-                font-size:15px;
+                font-size:14px;
                 color:#374151;
-                margin-top:10px;
                 line-height:1.4;
               ">
                 ${escapeHtml(b.excerpt)}
@@ -132,7 +121,7 @@ export function EmailBrevesBlockGmail(
   return `
 <tr>
 <td style="
-    padding-top:40px;
+    padding-top:32px;
     font-family:Arial,Helvetica,sans-serif;
   ">
   <div style="
@@ -141,7 +130,7 @@ export function EmailBrevesBlockGmail(
       letter-spacing:0.08em;
       text-transform:uppercase;
       color:#111827;
-      margin-bottom:22px;
+      margin-bottom:18px;
       padding-left:8px;
     ">
     Brèves
