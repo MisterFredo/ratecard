@@ -10,7 +10,7 @@ export function EmailHeaderGmail(
       : null;
 
   return `
-<!-- TOP SIGNATURE BAR -->
+<!-- TOP BAR -->
 <tr>
   <td style="
       height:6px;
@@ -24,7 +24,7 @@ export function EmailHeaderGmail(
 
 <tr>
   <td style="
-      padding:36px 24px 32px 24px;
+      padding:56px 28px 44px 28px;
       background:#FFFFFF;
       border-bottom:1px solid #E5E7EB;
       font-family:Arial,Helvetica,sans-serif;
@@ -34,16 +34,12 @@ export function EmailHeaderGmail(
     ${
       logo
         ? `
-        <div style="margin-bottom:24px;">
+        <div style="margin-bottom:32px;">
           <img 
             src="${logo}"
             alt="${escapeHtml(headerConfig.headerCompany?.name || "logo")}"
-            width="160"
-            style="
-              display:inline-block;
-              height:auto;
-              max-width:160px;
-            "
+            width="170"
+            style="display:inline-block;height:auto;"
           />
         </div>
         `
@@ -55,10 +51,10 @@ export function EmailHeaderGmail(
         ? `
         <div style="
             font-size:12px;
-            letter-spacing:0.18em;
+            letter-spacing:0.20em;
             text-transform:uppercase;
             color:#6B7280;
-            margin-bottom:14px;
+            margin-bottom:16px;
             font-weight:600;
           ">
           ${escapeHtml(headerConfig.subtitle)}
@@ -74,12 +70,12 @@ export function EmailHeaderGmail(
           <tr>
             <td align="center">
               <div style="
-                  font-size:28px;
+                  font-size:32px;
                   font-weight:700;
                   color:#111827;
-                  line-height:1.25;
-                  margin-bottom:${headerConfig.period ? "10px" : "14px"};
-                  max-width:600px;
+                  line-height:1.2;
+                  margin-bottom:${headerConfig.period ? "12px" : "18px"};
+                  max-width:640px;
                 ">
                 ${escapeHtml(headerConfig.title)}
               </div>
@@ -94,11 +90,11 @@ export function EmailHeaderGmail(
       headerConfig.period
         ? `
         <div style="
-            font-size:18px;
+            font-size:22px;
             font-weight:700;
             color:#84CC16;
             line-height:1.3;
-            margin-bottom:6px;
+            margin-bottom:10px;
           ">
           ${escapeHtml(headerConfig.period)}
         </div>
