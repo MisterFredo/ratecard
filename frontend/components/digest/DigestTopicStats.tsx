@@ -26,13 +26,12 @@ export default function DigestTopicStats({
   useEffect(() => {
     async function loadStats() {
       try {
-        const data = await api.get("/news/breves/stats");
+        const res = await api.get("/news/breves/stats");
+        const data = res.result || res;
 
         const stats: TopicStat[] =
           data?.topics_stats || [];
 
-        // on garde uniquement les 12 topics gouvernés
-        // tri décroissant sur la période choisie
         const sorted = [...stats].sort((a, b) => {
           if (period === 7) {
             return (
@@ -46,7 +45,9 @@ export default function DigestTopicStats({
           );
         });
 
-        setTopics(sorted);
+        // 🔥 LIMIT 12
+        setTopics(sorted.slice(0, 12));
+
       } catch (e) {
         console.error("Erreur stats topics", e);
       } finally {
@@ -67,7 +68,15 @@ export default function DigestTopicStats({
     );
   }
 
-  if (!topics.length) return null;
+  if (!topics.length) {
+    return (
+      <div
+        className={`border border-gray-200 rounded-lg p-4 bg-gray-50 text-xs text-gray-400 ${className}`}
+      >
+        Aucune donnée disponible
+      </div>
+    );
+  }
 
   return (
     <div
