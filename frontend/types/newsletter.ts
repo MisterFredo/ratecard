@@ -22,11 +22,47 @@ export type NewsletterNewsItem = {
   }[];
 };
 
+/* =========================================================
+   HEADER
+========================================================= */
+
 export type HeaderCompany = {
   id_company: string;
   name: string;
   media_logo_rectangle_id?: string | null;
 };
+
+export type HeaderConfig = {
+  title: string;
+  subtitle?: string;
+
+  // période éditoriale
+  period?: string;
+
+  // logo
+  headerCompany?: HeaderCompany;
+
+  // affichage baromètre
+  showTopicStats?: boolean;
+
+  /* =========================
+     🔥 NEW — CUSTOM HEADER
+  ========================= */
+
+  // top bar
+  topBarEnabled?: boolean;
+  topBarColor?: string;
+
+  // couleur période
+  periodColor?: string;
+
+  // intro riche (TipTap HTML)
+  introHtml?: string;
+};
+
+/* =========================================================
+   STATS
+========================================================= */
 
 export type TopicStat = {
   label: string;
@@ -34,19 +70,9 @@ export type TopicStat = {
   total: number;
 };
 
-export type HeaderConfig = {
-  title: string;
-  subtitle?: string;
-
-  // 👇 Nouveau champ pour séparer le titre principal
-  // de la période (ex: "semaine du 27 février 2026")
-  period?: string;
-
-  // Société sélectionnée pour le logo header
-  headerCompany?: HeaderCompany;
-
-  showTopicStats?: boolean;
-};
+/* =========================================================
+   ANALYSES
+========================================================= */
 
 export type NewsletterAnalysisItem = {
   id: string;
@@ -54,6 +80,10 @@ export type NewsletterAnalysisItem = {
   excerpt?: string;
   published_at: string;
 };
+
+/* =========================================================
+   NUMBERS
+========================================================= */
 
 export type NewsletterNumberItem = {
   id: string;
