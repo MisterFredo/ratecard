@@ -35,28 +35,22 @@ export type HeaderCompany = {
 export type HeaderConfig = {
   title: string;
   subtitle?: string;
-
-  // période éditoriale
   period?: string;
 
-  // logo
   headerCompany?: HeaderCompany;
 
-  // affichage baromètre
   showTopicStats?: boolean;
 
-  /* =========================
-     🔥 NEW — CUSTOM HEADER
-  ========================= */
+  /* ===============================
+     NEW (HEADER V2)
+  =============================== */
+  variant?: "media" | "consulting";
 
-  // top bar
   topBarEnabled?: boolean;
   topBarColor?: string;
 
-  // couleur période
   periodColor?: string;
 
-  // intro riche (TipTap HTML)
   introHtml?: string;
 };
 
