@@ -13,64 +13,156 @@ export default function HeaderMainFields({
   headerConfig,
   setHeaderConfig,
 }: Props) {
-  return (
-    <>
-      {/* TITLE */}
-      <input
-        type="text"
-        placeholder="Titre newsletter"
-        value={headerConfig.title}
-        onChange={(e) =>
-          setHeaderConfig((prev) => ({
-            ...prev,
-            title: e.target.value,
-          }))
-        }
-        className="border border-gray-200 rounded px-3 py-1.5 text-sm col-span-2"
-      />
+  const variant = headerConfig.variant || "media";
 
-      {/* PERIOD + COLOR */}
-      <div className="col-span-2 flex gap-2 items-center">
+  return (
+    <div className="col-span-2 space-y-4">
+
+      {/* =====================================================
+         VARIANT SWITCH (🔥 CORE UX)
+      ===================================================== */}
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-gray-500">
+          Type de header
+        </label>
+
+        <div className="flex border rounded overflow-hidden text-xs">
+          <button
+            onClick={() =>
+              setHeaderConfig((prev) => ({
+                ...prev,
+                variant: "media",
+              }))
+            }
+            className={`px-3 py-1.5 ${
+              variant === "media"
+                ? "bg-black text-white"
+                : "bg-white text-gray-600"
+            }`}
+          >
+            Media
+          </button>
+
+          <button
+            onClick={() =>
+              setHeaderConfig((prev) => ({
+                ...prev,
+                variant: "consulting",
+              }))
+            }
+            className={`px-3 py-1.5 border-l ${
+              variant === "consulting"
+                ? "bg-black text-white"
+                : "bg-white text-gray-600"
+            }`}
+          >
+            Consulting
+          </button>
+        </div>
+      </div>
+
+      {/* =====================================================
+         TITLE
+      ===================================================== */}
+      <div>
+        <label className="text-xs text-gray-500 block mb-1">
+          Titre principal
+        </label>
+
         <input
           type="text"
-          placeholder="Période (ex : semaine du 27 mars)"
-          value={headerConfig.period ?? ""}
+          placeholder={
+            variant === "consulting"
+              ? "Ex: Les tendances du retail media en 2026"
+              : "Newsletter Ratecard"
+          }
+          value={headerConfig.title}
           onChange={(e) =>
             setHeaderConfig((prev) => ({
               ...prev,
-              period: e.target.value,
+              title: e.target.value,
             }))
           }
-          className="border border-gray-200 rounded px-3 py-1.5 text-sm flex-1"
-        />
-
-        <input
-          type="color"
-          value={headerConfig.periodColor || "#84CC16"}
-          onChange={(e) =>
-            setHeaderConfig((prev) => ({
-              ...prev,
-              periodColor: e.target.value,
-            }))
-          }
-          className="h-8 w-10 border rounded"
-          title="Couleur période"
+          className="
+            border border-gray-200 rounded
+            px-3 py-2 text-sm w-full
+          "
         />
       </div>
 
-      {/* SUBTITLE */}
-      <input
-        type="text"
-        placeholder="Sous-titre (optionnel)"
-        value={headerConfig.subtitle ?? ""}
-        onChange={(e) =>
-          setHeaderConfig((prev) => ({
-            ...prev,
-            subtitle: e.target.value,
-          }))
-        }
-        className="border border-gray-200 rounded px-3 py-1.5 text-sm col-span-2"
-      />
-    </>
+      {/* =====================================================
+         SUBTITLE (CONTEXT)
+      ===================================================== */}
+      <div>
+        <label className="text-xs text-gray-500 block mb-1">
+          Contexte / univers
+        </label>
+
+        <input
+          type="text"
+          placeholder={
+            variant === "consulting"
+              ? "Ex: Retail Media / IA / Amazon"
+              : "Sous-titre (optionnel)"
+          }
+          value={headerConfig.subtitle ?? ""}
+          onChange={(e) =>
+            setHeaderConfig((prev) => ({
+              ...prev,
+              subtitle: e.target.value,
+            }))
+          }
+          className="
+            border border-gray-200 rounded
+            px-3 py-2 text-sm w-full
+          "
+        />
+      </div>
+
+      {/* =====================================================
+         PERIOD + COLOR
+      ===================================================== */}
+      <div>
+        <label className="text-xs text-gray-500 block mb-1">
+          Période / date
+        </label>
+
+        <div className="flex gap-2 items-center">
+          <input
+            type="text"
+            placeholder={
+              variant === "consulting"
+                ? "Ex: Mars 2026"
+                : "Ex: semaine du 27 mars"
+            }
+            value={headerConfig.period ?? ""}
+            onChange={(e) =>
+              setHeaderConfig((prev) => ({
+                ...prev,
+                period: e.target.value,
+              }))
+            }
+            className="
+              border border-gray-200 rounded
+              px-3 py-2 text-sm flex-1
+            "
+          />
+
+          <input
+            type="color"
+            value={headerConfig.periodColor || "#84CC16"}
+            onChange={(e) =>
+              setHeaderConfig((prev) => ({
+                ...prev,
+                periodColor: e.target.value,
+              }))
+            }
+            className="h-9 w-10 border rounded"
+            title="Couleur période"
+          />
+        </div>
+      </div>
+
+    </div>
   );
 }
