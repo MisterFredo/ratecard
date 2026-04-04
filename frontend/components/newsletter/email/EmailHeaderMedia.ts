@@ -19,7 +19,11 @@ export function EmailHeaderMedia(
         <td colspan="2" style="
           height:4px;
           background:${headerConfig.topBarColor || "#84CC16"};
-        "></td>
+          line-height:4px;
+          font-size:0;
+        ">
+          &nbsp;
+        </td>
       </tr>`
       : ""
   }
@@ -27,40 +31,40 @@ export function EmailHeaderMedia(
 <tr>
 <td colspan="2" style="
   padding:0;
-  background:#F9FAFB;
+  background:#FFFFFF;
   font-family:Arial,Helvetica,sans-serif;
 ">
 
+  <!-- CONTAINER -->
   <div style="
     max-width:640px;
     margin:0 auto;
-    background:#FFFFFF;
     padding:28px 28px 24px 28px;
     border-bottom:1px solid #E5E7EB;
   ">
 
-    <!-- SIGNATURE RATECARD -->
-    <div style="
-      text-align:center;
-      font-size:13px;
-      font-weight:700;
-      letter-spacing:0.08em;
-      color:#111827;
-      margin-bottom:14px;
-    ">
-      RATECARD
-    </div>
+    ${
+      logo
+        ? `
+        <div style="margin-bottom:14px;">
+          <img src="${logo}" style="
+            max-width:120px;
+            max-height:32px;
+            display:block;
+          " />
+        </div>`
+        : ""
+    }
 
     ${
       headerConfig.subtitle
         ? `
         <div style="
-          font-size:10px;
-          letter-spacing:0.18em;
+          font-size:11px;
+          letter-spacing:0.14em;
           text-transform:uppercase;
-          color:#9CA3AF;
-          text-align:center;
-          margin-bottom:8px;
+          color:#6B7280;
+          margin-bottom:6px;
         ">
           ${escapeHtml(headerConfig.subtitle)}
         </div>`
@@ -71,12 +75,11 @@ export function EmailHeaderMedia(
       headerConfig.title
         ? `
         <div style="
-          font-size:24px;
+          font-size:26px;
           font-weight:700;
           color:#111827;
-          line-height:1.3;
-          text-align:center;
-          margin-bottom:12px;
+          line-height:1.25;
+          margin-bottom:8px;
         ">
           ${escapeHtml(headerConfig.title)}
         </div>`
@@ -86,23 +89,24 @@ export function EmailHeaderMedia(
     ${
       headerConfig.period
         ? `
-        <div style="text-align:center; margin-bottom:14px;">
-
-          <span style="
-            display:inline-block;
-            font-size:12px;
-            font-weight:600;
-            color:#111827;
-            background:#F3F4F6;
-            padding:6px 12px;
-            border-radius:999px;
-          ">
-            ${escapeHtml(headerConfig.period)}
-          </span>
-
+        <div style="
+          font-size:14px;
+          font-weight:600;
+          color:${headerConfig.periodColor || "#84CC16"};
+          margin-bottom:14px;
+        ">
+          ${escapeHtml(headerConfig.period)}
         </div>`
         : ""
     }
+
+    <!-- ACCENT -->
+    <div style="
+      width:40px;
+      height:3px;
+      background:#111827;
+      margin-bottom:16px;
+    "></div>
 
     ${
       introText
@@ -110,29 +114,10 @@ export function EmailHeaderMedia(
         <div style="
           font-size:14px;
           color:#4B5563;
-          max-width:520px;
-          margin:0 auto;
           line-height:1.6;
-          text-align:left;
+          max-width:520px;
         ">
           ${escapeHtml(introText).replace(/\n/g, "<br/>")}
-        </div>`
-        : ""
-    }
-
-    ${
-      logo
-        ? `
-        <div style="
-          margin-top:18px;
-          text-align:center;
-          opacity:0.7;
-        ">
-          <img src="${logo}" style="
-            max-width:100px;
-            max-height:28px;
-            display:inline-block;
-          " />
         </div>`
         : ""
     }
