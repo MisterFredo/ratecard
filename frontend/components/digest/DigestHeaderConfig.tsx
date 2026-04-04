@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { HeaderConfig } from "@/types/newsletter";
 
 import HeaderMainFields from "./HeaderMainFields";
@@ -25,16 +25,21 @@ export default function DigestHeaderConfig({
 }: Props) {
 
   /* =========================================================
-     SAFE DEFAULTS (🔥 CRITIQUE MAIS STABLE)
-     → ne dépend QUE du montage
+     SAFE DEFAULTS (🔥 EXECUTION ONCE)
+     → évite loop + override user
   ========================================================= */
 
+  const initialized = useRef(false);
+
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     setHeaderConfig((prev) => ({
       ...prev,
 
       /* ===============================
-         VARIANT (🔥 CORE)
+         VARIANT (CORE)
       =============================== */
       variant: prev.variant || "media",
 
@@ -54,18 +59,20 @@ export default function DigestHeaderConfig({
       periodColor: prev.periodColor || "#84CC16",
 
       /* ===============================
-         INTRO (HTML → SOURCE UNIQUE)
+         INTRO (SOURCE UNIQUE)
       =============================== */
-      introHtml: prev.introHtml ?? "",
+      introHtml:
+        prev.introHtml ??
+        (introText || ""), // 🔥 sync initial
 
       /* ===============================
-         BACKWARD COMPAT (IMPORTANT)
+         BACKWARD COMPAT
       =============================== */
       title: prev.title || "",
       subtitle: prev.subtitle ?? "",
       period: prev.period ?? "",
     }));
-  }, [setHeaderConfig]);
+  }, [setHeaderConfig, introText]);
 
   /* ========================================================= */
 
@@ -83,7 +90,7 @@ export default function DigestHeaderConfig({
       <div className="grid grid-cols-2 gap-3">
 
         {/* ===============================
-            MAIN TEXT (title / subtitle / period / variant)
+            MAIN TEXT
         =============================== */}
         <HeaderMainFields
           headerConfig={headerConfig}
@@ -91,7 +98,7 @@ export default function DigestHeaderConfig({
         />
 
         {/* ===============================
-            BRANDING (logo / colors / topbar)
+            BRANDING
         =============================== */}
         <HeaderBranding
           headerConfig={headerConfig}
@@ -99,7 +106,7 @@ export default function DigestHeaderConfig({
         />
 
         {/* ===============================
-            INTRO (HTML EDITOR 🔥)
+            INTRO (HTML EDITOR)
         =============================== */}
         <HeaderIntroEditor
           headerConfig={headerConfig}
