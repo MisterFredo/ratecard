@@ -75,7 +75,7 @@ export function EmailHeaderMedia(
       headerConfig.title
         ? `
         <div style="
-          font-size:16px;
+          font-size:20px;
           font-weight:600;
           color:#111827;
           margin-bottom:6px;
