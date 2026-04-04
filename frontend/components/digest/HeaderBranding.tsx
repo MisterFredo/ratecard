@@ -52,7 +52,7 @@ export default function HeaderBranding({
 
         setCompanies(mapped);
 
-        // auto select uniquement si vide
+        // auto select si vide
         if (!headerConfig.headerCompany && mapped.length > 0) {
           const ratecard =
             mapped.find((c) =>
@@ -103,6 +103,49 @@ export default function HeaderBranding({
     <div className="col-span-2 space-y-4">
 
       {/* =====================================================
+         VARIANT SWITCH
+      ===================================================== */}
+      <div className="flex items-center gap-3 text-xs">
+
+        <span className="text-gray-400">Style</span>
+
+        <button
+          onClick={() =>
+            setHeaderConfig((prev) => ({
+              ...prev,
+              variant: "media",
+            }))
+          }
+          className={`
+            px-3 py-1 rounded border
+            ${variant === "media"
+              ? "bg-black text-white border-black"
+              : "bg-white text-gray-600 border-gray-200"}
+          `}
+        >
+          Média
+        </button>
+
+        <button
+          onClick={() =>
+            setHeaderConfig((prev) => ({
+              ...prev,
+              variant: "consulting",
+            }))
+          }
+          className={`
+            px-3 py-1 rounded border
+            ${variant === "consulting"
+              ? "bg-black text-white border-black"
+              : "bg-white text-gray-600 border-gray-200"}
+          `}
+        >
+          Consulting
+        </button>
+
+      </div>
+
+      {/* =====================================================
          DISPLAY OPTIONS
       ===================================================== */}
       <div className="flex flex-wrap items-center gap-4 text-xs text-gray-600">
@@ -146,7 +189,9 @@ export default function HeaderBranding({
             type="color"
             value={
               headerConfig.topBarColor ||
-              (variant === "consulting" ? "#111827" : "#84CC16")
+              (variant === "consulting"
+                ? "#111827"
+                : "#84CC16")
             }
             onChange={(e) =>
               setHeaderConfig((prev) => ({
