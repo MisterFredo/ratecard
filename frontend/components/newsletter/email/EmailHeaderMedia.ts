@@ -33,7 +33,7 @@ export function EmailHeaderMedia(
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
 ">
 
-  <!-- HERO (NO CROP) -->
+  <!-- HERO (FULL IMAGE) -->
   <div style="
     max-width:640px;
     margin:0 auto;
@@ -53,7 +53,7 @@ export function EmailHeaderMedia(
     max-width:640px;
     margin:0 auto;
     background:#FFFFFF;
-    padding:22px 24px 18px 24px;
+    padding:22px 24px 16px 24px;
     border-bottom:1px solid #E5E7EB;
   ">
 
@@ -61,7 +61,7 @@ export function EmailHeaderMedia(
       logo
         ? `
         <div style="
-          margin-bottom:12px;
+          margin-bottom:10px;
           text-align:center;
         ">
           <img src="${logo}" style="
@@ -81,7 +81,7 @@ export function EmailHeaderMedia(
           letter-spacing:0.14em;
           text-transform:uppercase;
           color:#9CA3AF;
-          margin-bottom:14px;
+          margin-bottom:16px;
           text-align:center;
           font-weight:600;
         ">
@@ -90,43 +90,58 @@ export function EmailHeaderMedia(
         : ""
     }
 
-    <!-- TITLE + DATE INLINE -->
-    <div style="
-      text-align:center;
-      margin-bottom:6px;
+    <!-- SPLIT TITLE / DATE -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="
+      border-collapse:collapse;
     ">
-      
-      ${
-        headerConfig.title
-          ? `
-          <span style="
-            font-size:22px;
-            font-weight:700;
-            color:#111827;
-            letter-spacing:-0.01em;
-          ">
-            ${escapeHtml(headerConfig.title)}
-          </span>
-          `
-          : ""
-      }
+      <tr>
 
-      ${
-        headerConfig.period
-          ? `
-          <span style="
-            font-size:14px;
-            font-weight:600;
-            color:${headerConfig.periodColor || "#84CC16"};
-            margin-left:10px;
-          ">
-            — ${escapeHtml(headerConfig.period)}
-          </span>
-          `
-          : ""
-      }
+        <!-- LEFT : TITLE -->
+        <td style="
+          text-align:left;
+          vertical-align:top;
+          padding-right:10px;
+        ">
+          ${
+            headerConfig.title
+              ? `
+              <div style="
+                font-size:22px;
+                font-weight:700;
+                color:#111827;
+                line-height:1.3;
+                letter-spacing:-0.01em;
+              ">
+                ${escapeHtml(headerConfig.title)}
+              </div>
+              `
+              : ""
+          }
+        </td>
 
-    </div>
+        <!-- RIGHT : DATE -->
+        <td style="
+          text-align:right;
+          vertical-align:top;
+          white-space:nowrap;
+        ">
+          ${
+            headerConfig.period
+              ? `
+              <div style="
+                font-size:14px;
+                font-weight:600;
+                color:${headerConfig.periodColor || "#84CC16"};
+              ">
+                ${escapeHtml(headerConfig.period)}
+              </div>
+              `
+              : ""
+          }
+        </td>
+
+      </tr>
+    </table>
 
   </div>
 
