@@ -14,41 +14,47 @@ export function EmailHeaderConsulting(
   ${
     headerConfig.topBarEnabled !== false
       ? `
-      <tr>
-        <td colspan="2" style="
-          height:4px;
-          background:${headerConfig.topBarColor || "#111827"};
-        "></td>
-      </tr>`
+<tr>
+  <td colspan="2" style="
+    height:4px;
+    background:${headerConfig.topBarColor || "#111827"};
+  "></td>
+</tr>`
       : ""
   }
 
 <tr>
 <td colspan="2" style="
-  padding:40px 32px 28px 32px;
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial;
+  padding:36px 32px 30px 32px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
   background:#FFFFFF;
   border-bottom:1px solid #E5E7EB;
 ">
 
+  <!-- LOGO -->
   ${
     logo
       ? `
-      <div style="margin-bottom:18px;">
-        <img src="${logo}" width="140" />
+      <div style="margin-bottom:20px;">
+        <img 
+          src="${logo}" 
+          width="130"
+          style="display:block;height:auto;"
+        />
       </div>`
       : ""
   }
 
+  <!-- SUBTITLE -->
   ${
     headerConfig.subtitle
       ? `
       <div style="
-        font-size:11px;
-        letter-spacing:0.14em;
+        font-size:10px;
+        letter-spacing:0.16em;
         text-transform:uppercase;
         color:#6B7280;
-        margin-bottom:10px;
+        margin-bottom:12px;
         font-weight:600;
       ">
         ${headerConfig.subtitle}
@@ -56,15 +62,16 @@ export function EmailHeaderConsulting(
       : ""
   }
 
+  <!-- TITLE -->
   ${
     headerConfig.title
       ? `
       <div style="
-        font-size:26px;
+        font-size:28px;
         font-weight:700;
         color:#111827;
-        line-height:1.3;
-        margin-bottom:10px;
+        line-height:1.25;
+        margin-bottom:${headerConfig.period ? "12px" : "16px"};
         max-width:640px;
       ">
         ${headerConfig.title}
@@ -72,26 +79,37 @@ export function EmailHeaderConsulting(
       : ""
   }
 
+  <!-- PERIOD -->
   ${
     headerConfig.period
       ? `
       <div style="
         font-size:13px;
+        font-weight:500;
         color:${headerConfig.periodColor || "#6B7280"};
-        margin-bottom:14px;
+        margin-bottom:18px;
       ">
         ${headerConfig.period}
       </div>`
       : ""
   }
 
+  <!-- SEPARATOR (🔥 CONSULTING TOUCH) -->
+  <div style="
+    width:40px;
+    height:2px;
+    background:#111827;
+    margin-bottom:18px;
+  "></div>
+
+  <!-- INTRO -->
   ${
     introHtml
       ? `
       <div style="
         font-size:15px;
         color:#374151;
-        line-height:1.6;
+        line-height:1.65;
         max-width:640px;
       ">
         ${introHtml}
