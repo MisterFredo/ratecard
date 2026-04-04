@@ -1,9 +1,9 @@
 import type { NewsletterNumberItem } from "@/types/newsletter";
-import {
-  buildContentImageUrl,
-  escapeHtml,
-  renderEmailTags,
-} from "./EmailHelpers";
+import { escapeHtml } from "./EmailHelpers";
+
+/* =========================================================
+   FORMAT VALUE
+========================================================= */
 
 function formatValue(n: NewsletterNumberItem) {
   if (n.value === undefined || n.value === null) return "";
@@ -24,6 +24,10 @@ function formatValue(n: NewsletterNumberItem) {
     .join(" ");
 }
 
+/* =========================================================
+   BLOCK
+========================================================= */
+
 export function EmailNumbersBlockGmail(
   numbers: NewsletterNumberItem[]
 ) {
@@ -32,20 +36,20 @@ export function EmailNumbersBlockGmail(
   return `
 <tr>
 <td style="
-  padding:26px 16px 30px 16px;
-  font-family:Arial,Helvetica,sans-serif;
+  padding:36px 20px 36px 20px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,Helvetica,sans-serif;
 ">
 
   <!-- TITLE -->
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
       <td style="
-        font-size:13px;
-        font-weight:700;
-        letter-spacing:0.08em;
+        font-size:12px;
+        font-weight:600;
+        letter-spacing:0.14em;
         text-transform:uppercase;
-        color:#111827;
-        padding-bottom:14px;
+        color:#6B7280;
+        padding-bottom:18px;
       ">
         Chiffres clés
       </td>
@@ -58,38 +62,65 @@ export function EmailNumbersBlockGmail(
     ${numbers
       .map(
         (n, index) => `
+<tr>
+  <td style="
+    padding:${index === numbers.length - 1 ? "14px 0 0 0" : "14px 0"};
+    border-bottom:${index === numbers.length - 1 ? "none" : "1px solid #F1F5F9"};
+  ">
+
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
       <tr>
-        <td style="
-          padding-bottom:${index === numbers.length - 1 ? "0" : "14px"};
-          border-bottom:${index === numbers.length - 1 ? "none" : "1px solid #E5E7EB"};
+
+        <!-- VALUE -->
+        <td valign="top" style="
+          width:120px;
+          font-size:22px;
+          font-weight:700;
+          color:#111827;
+          letter-spacing:-0.02em;
+          padding-right:10px;
         ">
+          ${formatValue(n)}
+        </td>
 
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-            <tr>
-              <td style="
-                font-size:18px;
-                font-weight:700;
-                color:#111827;
-                padding-bottom:4px;
-              ">
-                ${formatValue(n)}
-              </td>
-            </tr>
+        <!-- TEXT -->
+        <td valign="top">
 
-            <tr>
-              <td style="
-                font-size:13px;
-                color:#374151;
-                line-height:1.4;
+          <!-- LABEL -->
+          <div style="
+            font-size:14px;
+            color:#374151;
+            line-height:1.5;
+            font-weight:500;
+          ">
+            ${escapeHtml(n.label)}
+          </div>
+
+          ${
+            n.entity
+              ? `
+              <!-- ENTITY -->
+              <div style="
+                margin-top:6px;
+                font-size:11px;
+                color:#9CA3AF;
+                text-transform:uppercase;
+                letter-spacing:0.08em;
               ">
-                ${escapeHtml(n.label)}
-              </td>
-            </tr>
-          </table>
+                ${escapeHtml(n.entity.label)}
+              </div>
+              `
+              : ""
+          }
 
         </td>
+
       </tr>
-      `
+    </table>
+
+  </td>
+</tr>
+`
       )
       .join("")}
 
