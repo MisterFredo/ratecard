@@ -10,6 +10,8 @@ export function EmailHeaderMedia(
       ? `https://storage.googleapis.com/ratecard-media/companies/${headerConfig.headerCompany.media_logo_rectangle_id}`
       : null;
 
+  const heroImage = `${process.env.NEXT_PUBLIC_BASE_URL || ""}/assets/brand/LeTouquet.jpg`;
+
   return `
 
   ${
@@ -27,16 +29,33 @@ export function EmailHeaderMedia(
 <tr>
 <td colspan="2" style="
   padding:0;
-  background:#F9FAFB;
-  font-family:Arial,Helvetica,sans-serif;
+  background:#F3F4F6;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
 ">
+
+  <!-- HERO IMAGE -->
+  <div style="
+    max-width:640px;
+    margin:0 auto;
+    overflow:hidden;
+  ">
+    <img 
+      src="${heroImage}" 
+      style="
+        width:100%;
+        height:auto;
+        display:block;
+        border-bottom:1px solid #E5E7EB;
+      "
+    />
+  </div>
 
   <!-- CONTAINER -->
   <div style="
     max-width:640px;
     margin:0 auto;
     background:#FFFFFF;
-    padding:48px 32px 40px 32px;
+    padding:40px 28px 36px 28px;
     border-bottom:1px solid #E5E7EB;
   ">
 
@@ -44,21 +63,21 @@ export function EmailHeaderMedia(
       logo
         ? `
         <div style="
-          margin-bottom:28px;
+          margin-bottom:24px;
           text-align:center;
         ">
           
           <div style="
             display:inline-block;
-            padding:12px 20px;
+            padding:10px 18px;
             background:#FFFFFF;
             border:1px solid #E5E7EB;
             border-radius:8px;
           ">
             <img src="${logo}" style="
               display:block;
-              max-width:140px;
-              max-height:40px;
+              max-width:130px;
+              max-height:36px;
               width:auto;
               height:auto;
             " />
@@ -72,12 +91,13 @@ export function EmailHeaderMedia(
       headerConfig.subtitle
         ? `
         <div style="
-          font-size:11px;
-          letter-spacing:0.22em;
+          font-size:12px;
+          letter-spacing:0.18em;
           text-transform:uppercase;
           color:#9CA3AF;
-          margin-bottom:16px;
+          margin-bottom:14px;
           text-align:center;
+          font-weight:600;
         ">
           ${escapeHtml(headerConfig.subtitle)}
         </div>`
@@ -88,11 +108,11 @@ export function EmailHeaderMedia(
       headerConfig.title
         ? `
         <div style="
-          font-size:34px;
+          font-size:30px;
           font-weight:800;
           color:#111827;
-          line-height:1.2;
-          margin-bottom:14px;
+          line-height:1.25;
+          margin-bottom:12px;
           text-align:center;
         ">
           ${escapeHtml(headerConfig.title)}
@@ -104,10 +124,10 @@ export function EmailHeaderMedia(
       headerConfig.period
         ? `
         <div style="
-          font-size:18px;
+          font-size:16px;
           font-weight:700;
           color:${headerConfig.periodColor || "#84CC16"};
-          margin-bottom:18px;
+          margin-bottom:16px;
           text-align:center;
         ">
           ${escapeHtml(headerConfig.period)}
@@ -115,10 +135,11 @@ export function EmailHeaderMedia(
 
         <!-- ACCENT LINE -->
         <div style="
-          width:40px;
-          height:3px;
+          width:32px;
+          height:2px;
           background:${headerConfig.periodColor || "#84CC16"};
-          margin:16px auto 24px auto;
+          margin:14px auto 22px auto;
+          border-radius:2px;
         "></div>
         `
         : ""
@@ -132,7 +153,7 @@ export function EmailHeaderMedia(
           color:#374151;
           max-width:520px;
           margin:0 auto;
-          line-height:1.65;
+          line-height:1.7;
           text-align:left;
         ">
           ${escapeHtml(introText).replace(/\n/g, "<br/>")}
