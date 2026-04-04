@@ -2,25 +2,39 @@ import type { HeaderConfig } from "@/types/newsletter";
 import { escapeHtml } from "./EmailHelpers";
 
 export function EmailHeaderGmail(
-  headerConfig: HeaderConfig
+  headerConfig: HeaderConfig,
+  introText?: string // 👈 fallback legacy
 ) {
   const logo =
     headerConfig.headerCompany?.media_logo_rectangle_id
       ? `https://storage.googleapis.com/ratecard-media/companies/${headerConfig.headerCompany.media_logo_rectangle_id}`
       : null;
 
+  // 🔥 priorité HTML editor
+  const intro =
+    headerConfig.introHtml ||
+    (introText
+      ? escapeHtml(introText).replace(/\n/g, "<br/>")
+      : "");
+
   return `
 <!-- TOP BAR -->
+${
+  headerConfig.topBarEnabled !== false
+    ? `
 <tr>
   <td style="
       height:6px;
-      background:#84CC16;
+      background:${headerConfig.topBarColor || "#84CC16"};
       line-height:6px;
       font-size:0;
     ">
     &nbsp;
   </td>
 </tr>
+`
+    : ""
+}
 
 <tr>
   <td style="
@@ -92,12 +106,35 @@ export function EmailHeaderGmail(
         <div style="
             font-size:22px;
             font-weight:700;
-            color:#84CC16;
+            color:${headerConfig.periodColor || "#84CC16"};
             line-height:1.3;
             margin-bottom:10px;
           ">
           ${escapeHtml(headerConfig.period)}
         </div>
+        `
+        : ""
+    }
+
+    ${
+      intro
+        ? `
+        <table role="presentation" width="100%">
+          <tr>
+            <td align="center">
+              <div style="
+                  font-size:15px;
+                  color:#4B5563;
+                  line-height:1.6;
+                  max-width:560px;
+                  margin-top:22px;
+                  text-align:left;
+                ">
+                ${intro}
+              </div>
+            </td>
+          </tr>
+        </table>
         `
         : ""
     }
