@@ -33,7 +33,7 @@ export function EmailHeaderMedia(
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
 ">
 
-  <!-- HERO (FULL IMAGE) -->
+  <!-- HERO (FULL IMAGE, NO CROP) -->
   <div style="
     max-width:640px;
     margin:0 auto;
@@ -53,19 +53,17 @@ export function EmailHeaderMedia(
     max-width:640px;
     margin:0 auto;
     background:#FFFFFF;
-    padding:22px 24px 16px 24px;
+    padding:20px 24px 14px 24px;
     border-bottom:1px solid #E5E7EB;
+    text-align:center;
   ">
 
     ${
       logo
         ? `
-        <div style="
-          margin-bottom:10px;
-          text-align:center;
-        ">
+        <div style="margin-bottom:10px;">
           <img src="${logo}" style="
-            max-width:105px;
+            max-width:100px;
             height:auto;
             opacity:0.9;
           " />
@@ -74,74 +72,48 @@ export function EmailHeaderMedia(
     }
 
     ${
-      headerConfig.subtitle
+      headerConfig.title
         ? `
         <div style="
-          font-size:12px;
-          letter-spacing:0.14em;
-          text-transform:uppercase;
-          color:#9CA3AF;
-          margin-bottom:16px;
-          text-align:center;
+          font-size:16px;
           font-weight:600;
+          color:#111827;
+          margin-bottom:6px;
         ">
-          ${escapeHtml(headerConfig.subtitle)}
-        </div>`
+          ${escapeHtml(headerConfig.title)}
+        </div>
+        `
         : ""
     }
 
-    <!-- SPLIT TITLE / DATE -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="
-      border-collapse:collapse;
-    ">
-      <tr>
-
-        <!-- LEFT : TITLE -->
-        <td style="
-          text-align:left;
-          vertical-align:top;
-          padding-right:10px;
+    ${
+      headerConfig.subtitle
+        ? `
+        <div style="
+          font-size:16px;
+          font-weight:500;
+          color:#6B7280;
+          margin-bottom:8px;
         ">
-          ${
-            headerConfig.title
-              ? `
-              <div style="
-                font-size:22px;
-                font-weight:700;
-                color:#111827;
-                line-height:1.3;
-                letter-spacing:-0.01em;
-              ">
-                ${escapeHtml(headerConfig.title)}
-              </div>
-              `
-              : ""
-          }
-        </td>
+          ${escapeHtml(headerConfig.subtitle)}
+        </div>
+        `
+        : ""
+    }
 
-        <!-- RIGHT : DATE -->
-        <td style="
-          text-align:right;
-          vertical-align:top;
-          white-space:nowrap;
+    ${
+      headerConfig.period
+        ? `
+        <div style="
+          font-size:14px;
+          font-weight:600;
+          color:${headerConfig.periodColor || "#84CC16"};
         ">
-          ${
-            headerConfig.period
-              ? `
-              <div style="
-                font-size:14px;
-                font-weight:600;
-                color:${headerConfig.periodColor || "#84CC16"};
-              ">
-                ${escapeHtml(headerConfig.period)}
-              </div>
-              `
-              : ""
-          }
-        </td>
-
-      </tr>
-    </table>
+          ${escapeHtml(headerConfig.period)}
+        </div>
+        `
+        : ""
+    }
 
   </div>
 
