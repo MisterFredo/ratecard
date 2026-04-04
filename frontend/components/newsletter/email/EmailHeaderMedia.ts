@@ -17,7 +17,7 @@ export function EmailHeaderMedia(
       ? `
       <tr>
         <td colspan="2" style="
-          height:6px;
+          height:4px;
           background:${headerConfig.topBarColor || "#84CC16"};
         "></td>
       </tr>`
@@ -31,53 +31,36 @@ export function EmailHeaderMedia(
   font-family:Arial,Helvetica,sans-serif;
 ">
 
-  <!-- CONTAINER -->
   <div style="
     max-width:640px;
     margin:0 auto;
     background:#FFFFFF;
-    padding:48px 32px 40px 32px;
+    padding:28px 28px 24px 28px;
     border-bottom:1px solid #E5E7EB;
   ">
 
-    ${
-      logo
-        ? `
-        <div style="
-          margin-bottom:28px;
-          text-align:center;
-        ">
-          
-          <div style="
-            display:inline-block;
-            padding:12px 20px;
-            background:#FFFFFF;
-            border:1px solid #E5E7EB;
-            border-radius:8px;
-          ">
-            <img src="${logo}" style="
-              display:block;
-              max-width:140px;
-              max-height:40px;
-              width:auto;
-              height:auto;
-            " />
-          </div>
-
-        </div>`
-        : ""
-    }
+    <!-- SIGNATURE RATECARD -->
+    <div style="
+      text-align:center;
+      font-size:13px;
+      font-weight:700;
+      letter-spacing:0.08em;
+      color:#111827;
+      margin-bottom:14px;
+    ">
+      RATECARD
+    </div>
 
     ${
       headerConfig.subtitle
         ? `
         <div style="
-          font-size:11px;
-          letter-spacing:0.22em;
+          font-size:10px;
+          letter-spacing:0.18em;
           text-transform:uppercase;
           color:#9CA3AF;
-          margin-bottom:16px;
           text-align:center;
+          margin-bottom:8px;
         ">
           ${escapeHtml(headerConfig.subtitle)}
         </div>`
@@ -88,12 +71,12 @@ export function EmailHeaderMedia(
       headerConfig.title
         ? `
         <div style="
-          font-size:34px;
-          font-weight:800;
+          font-size:24px;
+          font-weight:700;
           color:#111827;
-          line-height:1.2;
-          margin-bottom:14px;
+          line-height:1.3;
           text-align:center;
+          margin-bottom:12px;
         ">
           ${escapeHtml(headerConfig.title)}
         </div>`
@@ -103,24 +86,21 @@ export function EmailHeaderMedia(
     ${
       headerConfig.period
         ? `
-        <div style="
-          font-size:18px;
-          font-weight:700;
-          color:${headerConfig.periodColor || "#84CC16"};
-          margin-bottom:18px;
-          text-align:center;
-        ">
-          ${escapeHtml(headerConfig.period)}
-        </div>
+        <div style="text-align:center; margin-bottom:14px;">
 
-        <!-- ACCENT LINE -->
-        <div style="
-          width:40px;
-          height:3px;
-          background:${headerConfig.periodColor || "#84CC16"};
-          margin:16px auto 24px auto;
-        "></div>
-        `
+          <span style="
+            display:inline-block;
+            font-size:12px;
+            font-weight:600;
+            color:#111827;
+            background:#F3F4F6;
+            padding:6px 12px;
+            border-radius:999px;
+          ">
+            ${escapeHtml(headerConfig.period)}
+          </span>
+
+        </div>`
         : ""
     }
 
@@ -128,14 +108,31 @@ export function EmailHeaderMedia(
       introText
         ? `
         <div style="
-          font-size:15px;
-          color:#374151;
+          font-size:14px;
+          color:#4B5563;
           max-width:520px;
           margin:0 auto;
-          line-height:1.65;
+          line-height:1.6;
           text-align:left;
         ">
           ${escapeHtml(introText).replace(/\n/g, "<br/>")}
+        </div>`
+        : ""
+    }
+
+    ${
+      logo
+        ? `
+        <div style="
+          margin-top:18px;
+          text-align:center;
+          opacity:0.7;
+        ">
+          <img src="${logo}" style="
+            max-width:100px;
+            max-height:28px;
+            display:inline-block;
+          " />
         </div>`
         : ""
     }
