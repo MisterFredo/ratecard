@@ -25,24 +25,45 @@ export default function DigestHeaderConfig({
 }: Props) {
 
   /* =========================================================
-     SAFE DEFAULTS (🔥 CRITIQUE)
+     SAFE DEFAULTS (🔥 CRITIQUE MAIS STABLE)
+     → ne dépend QUE du montage
   ========================================================= */
 
   useEffect(() => {
     setHeaderConfig((prev) => ({
       ...prev,
 
-      // 🔥 sécurise les nouveaux champs
+      /* ===============================
+         VARIANT (🔥 CORE)
+      =============================== */
+      variant: prev.variant || "media",
+
+      /* ===============================
+         TOP BAR
+      =============================== */
       topBarEnabled:
         prev.topBarEnabled !== undefined
           ? prev.topBarEnabled
           : true,
 
       topBarColor: prev.topBarColor || "#84CC16",
+
+      /* ===============================
+         COLORS
+      =============================== */
       periodColor: prev.periodColor || "#84CC16",
 
-      // 🔥 intro unifiée
+      /* ===============================
+         INTRO (HTML → SOURCE UNIQUE)
+      =============================== */
       introHtml: prev.introHtml ?? "",
+
+      /* ===============================
+         BACKWARD COMPAT (IMPORTANT)
+      =============================== */
+      title: prev.title || "",
+      subtitle: prev.subtitle ?? "",
+      period: prev.period ?? "",
     }));
   }, [setHeaderConfig]);
 
@@ -61,19 +82,25 @@ export default function DigestHeaderConfig({
       {/* GRID */}
       <div className="grid grid-cols-2 gap-3">
 
-        {/* MAIN TEXT */}
+        {/* ===============================
+            MAIN TEXT (title / subtitle / period / variant)
+        =============================== */}
         <HeaderMainFields
           headerConfig={headerConfig}
           setHeaderConfig={setHeaderConfig}
         />
 
-        {/* BRANDING / COLORS */}
+        {/* ===============================
+            BRANDING (logo / colors / topbar)
+        =============================== */}
         <HeaderBranding
           headerConfig={headerConfig}
           setHeaderConfig={setHeaderConfig}
         />
 
-        {/* INTRO RICH TEXT */}
+        {/* ===============================
+            INTRO (HTML EDITOR 🔥)
+        =============================== */}
         <HeaderIntroEditor
           headerConfig={headerConfig}
           setHeaderConfig={setHeaderConfig}
