@@ -33,19 +33,16 @@ export function EmailHeaderMedia(
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
 ">
 
-  <!-- HERO IMAGE -->
+  <!-- HERO (NO CROP) -->
   <div style="
     max-width:640px;
     margin:0 auto;
-    overflow:hidden;
-    background:#000;
   ">
     <img 
       src="${heroImage}" 
       style="
         width:100%;
-        height:220px;
-        object-fit:cover;
+        height:auto;
         display:block;
       "
     />
@@ -56,7 +53,7 @@ export function EmailHeaderMedia(
     max-width:640px;
     margin:0 auto;
     background:#FFFFFF;
-    padding:28px 24px 26px 24px;
+    padding:22px 24px 18px 24px;
     border-bottom:1px solid #E5E7EB;
   ">
 
@@ -64,12 +61,11 @@ export function EmailHeaderMedia(
       logo
         ? `
         <div style="
-          margin-bottom:18px;
+          margin-bottom:12px;
           text-align:center;
         ">
           <img src="${logo}" style="
-            display:inline-block;
-            max-width:110px;
+            max-width:105px;
             height:auto;
             opacity:0.9;
           " />
@@ -82,10 +78,10 @@ export function EmailHeaderMedia(
         ? `
         <div style="
           font-size:12px;
-          letter-spacing:0.16em;
+          letter-spacing:0.14em;
           text-transform:uppercase;
           color:#9CA3AF;
-          margin-bottom:10px;
+          margin-bottom:14px;
           text-align:center;
           font-weight:600;
         ">
@@ -94,63 +90,43 @@ export function EmailHeaderMedia(
         : ""
     }
 
-    ${
-      headerConfig.title
-        ? `
-        <div style="
-          font-size:24px;
-          font-weight:700;
-          color:#111827;
-          line-height:1.3;
-          margin-bottom:8px;
-          text-align:center;
-          letter-spacing:-0.01em;
-        ">
-          ${escapeHtml(headerConfig.title)}
-        </div>`
-        : ""
-    }
+    <!-- TITLE + DATE INLINE -->
+    <div style="
+      text-align:center;
+      margin-bottom:6px;
+    ">
+      
+      ${
+        headerConfig.title
+          ? `
+          <span style="
+            font-size:22px;
+            font-weight:700;
+            color:#111827;
+            letter-spacing:-0.01em;
+          ">
+            ${escapeHtml(headerConfig.title)}
+          </span>
+          `
+          : ""
+      }
 
-    ${
-      headerConfig.period
-        ? `
-        <div style="
-          font-size:14px;
-          font-weight:600;
-          color:${headerConfig.periodColor || "#84CC16"};
-          margin-bottom:14px;
-          text-align:center;
-        ">
-          ${escapeHtml(headerConfig.period)}
-        </div>
+      ${
+        headerConfig.period
+          ? `
+          <span style="
+            font-size:14px;
+            font-weight:600;
+            color:${headerConfig.periodColor || "#84CC16"};
+            margin-left:10px;
+          ">
+            — ${escapeHtml(headerConfig.period)}
+          </span>
+          `
+          : ""
+      }
 
-        <div style="
-          width:24px;
-          height:2px;
-          background:${headerConfig.periodColor || "#84CC16"};
-          margin:10px auto 18px auto;
-          opacity:0.6;
-          border-radius:2px;
-        "></div>
-        `
-        : ""
-    }
-
-    ${
-      introText
-        ? `
-        <div style="
-          font-size:15px;
-          color:#374151;
-          max-width:520px;
-          margin:0 auto;
-          line-height:1.7;
-          text-align:left;
-        ">
-          ${escapeHtml(introText).replace(/\n/g, "<br/>")}
-        </div>`
-        : ""
-    }
+    </div>
 
   </div>
 
