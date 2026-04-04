@@ -24,7 +24,12 @@ export default function HeaderBranding({
   const [companies, setCompanies] = useState<CompanyOption[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* LOAD COMPANIES */
+  const variant = headerConfig.variant || "media";
+
+  /* =========================================================
+     LOAD COMPANIES
+  ========================================================= */
+
   useEffect(() => {
     async function loadCompanies() {
       try {
@@ -47,6 +52,7 @@ export default function HeaderBranding({
 
         setCompanies(mapped);
 
+        // auto select uniquement si vide
         if (!headerConfig.headerCompany && mapped.length > 0) {
           const ratecard =
             mapped.find((c) =>
@@ -66,7 +72,9 @@ export default function HeaderBranding({
     }
 
     loadCompanies();
-  }, [headerConfig.headerCompany, setHeaderConfig]);
+  }, [setHeaderConfig]);
+
+  /* ========================================================= */
 
   function handleCompanyChange(id: string) {
     if (!id) {
@@ -89,13 +97,18 @@ export default function HeaderBranding({
     }));
   }
 
+  /* ========================================================= */
+
   return (
-    <>
-      {/* TOGGLES */}
-      <div className="col-span-2 flex items-center gap-4 text-xs text-gray-500">
+    <div className="col-span-2 space-y-4">
+
+      {/* =====================================================
+         DISPLAY OPTIONS
+      ===================================================== */}
+      <div className="flex flex-wrap items-center gap-4 text-xs text-gray-600">
 
         {/* BAROMÈTRE */}
-        <label className="flex items-center gap-1">
+        <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
             checked={headerConfig.showTopicStats ?? false}
@@ -107,11 +120,11 @@ export default function HeaderBranding({
             }
             className="h-3 w-3"
           />
-          Baromètre
+          <span>Afficher baromètre</span>
         </label>
 
         {/* TOP BAR */}
-        <label className="flex items-center gap-1">
+        <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
             checked={headerConfig.topBarEnabled ?? true}
@@ -123,27 +136,35 @@ export default function HeaderBranding({
             }
             className="h-3 w-3"
           />
-          Barre haute
+          <span>Barre haute</span>
         </label>
 
         {/* COLOR */}
-        <input
-          type="color"
-          value={headerConfig.topBarColor || "#84CC16"}
-          onChange={(e) =>
-            setHeaderConfig((prev) => ({
-              ...prev,
-              topBarColor: e.target.value,
-            }))
-          }
-          className="h-6 w-8 border rounded"
-        />
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400">Couleur</span>
+          <input
+            type="color"
+            value={
+              headerConfig.topBarColor ||
+              (variant === "consulting" ? "#111827" : "#84CC16")
+            }
+            onChange={(e) =>
+              setHeaderConfig((prev) => ({
+                ...prev,
+                topBarColor: e.target.value,
+              }))
+            }
+            className="h-6 w-8 border rounded cursor-pointer"
+          />
+        </div>
       </div>
 
-      {/* COMPANY */}
-      <div className="col-span-2">
+      {/* =====================================================
+         COMPANY (LOGO)
+      ===================================================== */}
+      <div>
         <label className="text-xs text-gray-500 block mb-1">
-          Société (logo header)
+          Logo header
         </label>
 
         <select
@@ -152,28 +173,51 @@ export default function HeaderBranding({
             handleCompanyChange(e.target.value)
           }
           disabled={loading}
-          className="border border-gray-200 rounded px-3 py-1.5 text-sm w-full"
+          className="
+            border border-gray-200 rounded
+            px-3 py-2 text-sm w-full
+          "
         >
           <option value="">
-            {loading ? "Chargement..." : "Sélectionner une société"}
+            {loading
+              ? "Chargement..."
+              : "Aucun logo"}
           </option>
 
           {companies.map((company) => (
-            <option key={company.id_company} value={company.id_company}>
+            <option
+              key={company.id_company}
+              value={company.id_company}
+            >
               {company.name}
             </option>
           ))}
         </select>
 
+        {/* PREVIEW */}
         {headerConfig.headerCompany?.media_logo_rectangle_id && (
-          <div className="mt-2">
-            <img
-              src={`https://storage.googleapis.com/ratecard-media/companies/${headerConfig.headerCompany.media_logo_rectangle_id}`}
-              className="h-8 object-contain"
-            />
+          <div className="mt-3 flex items-center gap-3">
+
+            <div className="
+              border border-gray-200
+              rounded
+              px-3 py-2
+              bg-white
+            ">
+              <img
+                src={`https://storage.googleapis.com/ratecard-media/companies/${headerConfig.headerCompany.media_logo_rectangle_id}`}
+                className="h-6 object-contain"
+              />
+            </div>
+
+            <span className="text-xs text-gray-400">
+              aperçu logo
+            </span>
+
           </div>
         )}
       </div>
-    </>
+
+    </div>
   );
 }
