@@ -1,9 +1,9 @@
 import type { NewsletterNumberItem } from "@/types/newsletter";
-import {
-  buildContentImageUrl,
-  escapeHtml,
-  renderEmailTags,
-} from "./EmailHelpers";
+import { escapeHtml } from "./EmailHelpers";
+
+/* =========================================================
+   FORMAT VALUE
+========================================================= */
 
 function formatValue(n: NewsletterNumberItem) {
   if (n.value === undefined || n.value === null) return "";
@@ -24,6 +24,10 @@ function formatValue(n: NewsletterNumberItem) {
     .join(" ");
 }
 
+/* =========================================================
+   BLOCK
+========================================================= */
+
 export function EmailNumbersBlock(numbers: NewsletterNumberItem[]) {
   if (!numbers.length) return "";
 
@@ -33,22 +37,27 @@ export function EmailNumbersBlock(numbers: NewsletterNumberItem[]) {
   }
 
   return `
+<!-- =========================
+    NUMBERS BLOCK
+========================= -->
 <tr>
 <td style="
-  padding-top:40px;
-  font-family:Arial,Helvetica,sans-serif;
+  padding:52px 24px 12px 24px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,Helvetica,sans-serif;
 ">
+
+  <!-- TITLE -->
   <div style="
-    font-size:13px;
-    font-weight:700;
-    letter-spacing:0.08em;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0.14em;
     text-transform:uppercase;
-    color:#111827;
-    margin-bottom:22px;
-    padding-left:8px;
+    color:#6B7280;
+    margin-bottom:26px;
   ">
     Chiffres clés
   </div>
+
 </td>
 </tr>
 
@@ -56,45 +65,68 @@ ${rows
   .map(
     (pair) => `
 <tr>
-<td style="padding:0 8px;">
+<td style="padding:0 16px 6px 16px;">
+
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
 
       ${pair
         .map(
           (n) => `
-<td width="50%" valign="top" style="width:50%; padding:8px;">
-  
+<td width="50%" valign="top" style="padding:10px;">
+
   <!-- CARD -->
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     <tr>
       <td style="
-        border:1px solid #E5E7EB;
         background:#FFFFFF;
+        border:1px solid #F1F5F9;
       ">
 
         <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
           <tr>
-            <td style="padding:14px;">
+            <td style="
+              padding:20px 18px 18px 18px;
+            ">
 
               <!-- VALUE -->
               <div style="
-                font-size:20px;
+                font-size:28px;
                 font-weight:700;
                 color:#111827;
-                margin-bottom:6px;
+                letter-spacing:-0.02em;
+                line-height:1.1;
+                margin-bottom:8px;
               ">
                 ${formatValue(n)}
               </div>
 
               <!-- LABEL -->
               <div style="
-                font-size:13px;
-                color:#374151;
-                line-height:1.4;
+                font-size:14px;
+                color:#4B5563;
+                line-height:1.5;
+                font-weight:500;
               ">
                 ${escapeHtml(n.label)}
               </div>
+
+              ${
+                n.entity
+                  ? `
+                  <!-- ENTITY -->
+                  <div style="
+                    margin-top:10px;
+                    font-size:11px;
+                    color:#9CA3AF;
+                    text-transform:uppercase;
+                    letter-spacing:0.08em;
+                  ">
+                    ${escapeHtml(n.entity.label)}
+                  </div>
+                  `
+                  : ""
+              }
 
             </td>
           </tr>
@@ -111,12 +143,13 @@ ${rows
 
       ${
         pair.length === 1
-          ? `<td width="50%" style="width:50%;"></td>`
+          ? `<td width="50%"></td>`
           : ""
       }
 
     </tr>
   </table>
+
 </td>
 </tr>
 `
