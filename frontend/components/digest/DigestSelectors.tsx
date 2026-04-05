@@ -30,6 +30,15 @@ type Props = {
 };
 
 /* =========================================================
+   HELPERS
+========================================================= */
+
+function formatDate(date?: string) {
+  if (!date) return "";
+  return new Date(date).toLocaleDateString("fr-FR");
+}
+
+/* =========================================================
    COMPONENT
 ========================================================= */
 
@@ -83,10 +92,13 @@ export default function DigestSelectors({
 
         <NewsletterSelector
           title=""
-          items={news}
+          items={news.map(n => ({
+            ...n,
+            label: `${n.title} · ${formatDate(n.published_at)}`
+          }))}
           selectedIds={editorialOrder.filter(i => i.type === "news").map(i => i.id)}
           onChange={(ids) => updateTypeSelection(ids, "news")}
-          labelKey="title"
+          labelKey="label"
         />
       </section>
 
@@ -104,10 +116,13 @@ export default function DigestSelectors({
 
         <NewsletterSelector
           title=""
-          items={breves}
+          items={breves.map(b => ({
+            ...b,
+            label: `${b.title} · ${formatDate(b.published_at)}`
+          }))}
           selectedIds={editorialOrder.filter(i => i.type === "breve").map(i => i.id)}
           onChange={(ids) => updateTypeSelection(ids, "breve")}
-          labelKey="title"
+          labelKey="label"
         />
       </section>
 
@@ -125,10 +140,13 @@ export default function DigestSelectors({
 
         <NewsletterSelector
           title=""
-          items={analyses}
+          items={analyses.map(a => ({
+            ...a,
+            label: `${a.title} · ${formatDate(a.published_at)}`
+          }))}
           selectedIds={editorialOrder.filter(i => i.type === "analysis").map(i => i.id)}
           onChange={(ids) => updateTypeSelection(ids, "analysis")}
-          labelKey="title"
+          labelKey="label"
         />
       </section>
 
@@ -148,7 +166,7 @@ export default function DigestSelectors({
           title=""
           items={numbers.map(n => ({
             ...n,
-            label: `${n.label} — ${n.value ?? ""} ${n.unit ?? ""}`
+            label: `${n.label} · ${n.value ?? ""} ${n.unit ?? ""}${n.period ? ` · ${n.period}` : ""}`
           }))}
           selectedIds={editorialOrder.filter(i => i.type === "number").map(i => i.id)}
           onChange={(ids) => updateTypeSelection(ids, "number")}
