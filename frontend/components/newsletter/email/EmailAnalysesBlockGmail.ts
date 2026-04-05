@@ -5,8 +5,6 @@ import {
   renderEmailTags,
 } from "./EmailHelpers";
 
-const url = `https://getcurator.ai/analysis?analysis_id=${a.id}`;
-
 export function EmailAnalysesBlockGmail(
   analyses: NewsletterAnalysisItem[]
 ) {
@@ -14,13 +12,15 @@ export function EmailAnalysesBlockGmail(
 
   const rows = analyses
     .map((a, index) => {
-      const url = `${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}`;
+
+      // ✅ URL UNIQUE → CURATOR
+      const url = `https://getcurator.ai/analysis?analysis_id=${a.id}`;
       const safeUrl = escapeHtml(url);
 
       const tags = renderEmailTags({
         topics: a.topics,
-        companies: a.companies || (a.company ? [a.company] : []),
-        styles: a.styles || ["ANALYSE"],
+        companies: a.company ? [a.company] : [],
+        styles: ["ANALYSE"],
       });
 
       return `
@@ -41,7 +41,7 @@ export function EmailAnalysesBlockGmail(
           color:#6B7280;
           margin-bottom:4px;
         ">
-          ${formatDate(a.published_at) || ""}
+          ${formatDate(a.published_at)}
         </div>
 
         <!-- TITLE -->
@@ -91,8 +91,7 @@ export function EmailAnalysesBlockGmail(
               color:#111827;
               text-decoration:none;
               border-bottom:1px solid #111827;
-              padding-bottom:1px;
-             ">
+            ">
             Lire l’analyse →
           </a>
         </div>
