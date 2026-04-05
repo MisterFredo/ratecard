@@ -14,7 +14,7 @@ export function EmailAnalysesBlockGmail(
     .map((a, index) => {
 
       // ✅ URL UNIQUE → CURATOR
-      const url = `https://getcurator.ai/analysis?analysis_id=${a.id}`;
+      const url = `https://www.getcurator.ai/feed?analysis_id=${a.id}`;
       const safeUrl = escapeHtml(url);
 
       const tags = renderEmailTags({
