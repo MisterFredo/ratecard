@@ -24,7 +24,17 @@ def search_digest(
     limit: int = 20,
     cursor: Optional[str] = None,
     period: Optional[str] = "total",
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
 ) -> Dict[str, Any]:
+
+    # =========================================================
+    # PRIORITÉ AUX DATES (override du period)
+    # =========================================================
+
+    use_period = period
+    if date_from or date_to:
+        use_period = None  # 🔥 désactive logique existante
 
     # =========================
     # NEWS
@@ -36,7 +46,9 @@ def search_digest(
         limit=limit,
         cursor=cursor,
         news_kind="NEWS",
-        period=period,
+        period=use_period,
+        date_from=date_from,
+        date_to=date_to,
     )
 
     # =========================
@@ -49,28 +61,34 @@ def search_digest(
         limit=limit,
         cursor=cursor,
         news_kind="BRIEF",
-        period=period,
+        period=use_period,
+        date_from=date_from,
+        date_to=date_to,
     )
 
     # =========================
-    # ANALYSES (V_CONTENT_ENRICHED)
+    # ANALYSES
     # =========================
     analyses = _search_analyses_digest(
         topics=topics,
         companies=companies,
         limit=limit,
         cursor=cursor,
-        period=period,
+        period=use_period,
+        date_from=date_from,
+        date_to=date_to,
     )
 
     # =========================
-    # NUMBERS (V_NUMBERS_ENRICHED)
+    # NUMBERS
     # =========================
     numbers = _search_numbers_digest(
         topics=topics,
         companies=companies,
         limit=limit,
-        period=period,
+        period=use_period,
+        date_from=date_from,
+        date_to=date_to,
     )
 
     # =========================
@@ -82,7 +100,6 @@ def search_digest(
         "analyses": analyses,
         "numbers": numbers,
     }
-
 
 # ============================================================
 # NEWS / BRÈVES
