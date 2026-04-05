@@ -8,6 +8,8 @@ import HeaderMainFields from "./HeaderMainFields";
 import HeaderBranding from "./HeaderBranding";
 import EditorialEditor from "./EditorialEditor";
 
+const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL || "";
+
 type Props = {
   headerConfig: HeaderConfig;
   setHeaderConfig: React.Dispatch<
@@ -70,7 +72,6 @@ export default function DigestHeaderConfig({
         prev.introHtml ??
         (introText || ""),
 
-      /* 🔥 NEW */
       eventId: prev.eventId || undefined,
 
       heroLink: prev.heroLink || "",
@@ -82,6 +83,13 @@ export default function DigestHeaderConfig({
       period: prev.period ?? "",
     }));
   }, [setHeaderConfig, introText]);
+
+  /* ---------------------------------------------------------
+     COMPUTED HERO URL
+  --------------------------------------------------------- */
+  const heroUrl = headerConfig.eventId
+    ? `${GCS}/events/EVENT_${headerConfig.eventId}_rect.jpg`
+    : null;
 
   /* --------------------------------------------------------- */
 
@@ -122,12 +130,18 @@ export default function DigestHeaderConfig({
           <select
             className="w-full border rounded px-2 py-1 text-sm"
             value={headerConfig.eventId || ""}
-            onChange={(e) =>
+            onChange={(e) => {
+              const eventId = e.target.value || undefined;
+
               setHeaderConfig((prev) => ({
                 ...prev,
-                eventId: e.target.value || undefined,
-              }))
-            }
+                eventId,
+                /* 🔥 injecte aussi l'URL (utile debug / export) */
+                heroImageUrl: eventId
+                  ? `${GCS}/events/EVENT_${eventId}_rect.jpg`
+                  : "",
+              }));
+            }}
           >
             <option value="">— Aucun event —</option>
 
@@ -138,7 +152,22 @@ export default function DigestHeaderConfig({
             ))}
           </select>
 
-          {/* 🔽 FALLBACK MANUEL */}
+          {/* 🔥 URL AUTO (READ ONLY) */}
+          {heroUrl && (
+            <div className="text-xs text-gray-500 break-all">
+              {heroUrl}
+            </div>
+          )}
+
+          {/* 🔥 PREVIEW */}
+          {heroUrl && (
+            <img
+              src={heroUrl}
+              className="w-full max-w-md rounded border"
+            />
+          )}
+
+          {/* 🔽 MANUEL */}
           <input
             type="text"
             placeholder="Lien du visuel (hero)"
