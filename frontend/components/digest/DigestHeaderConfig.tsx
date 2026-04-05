@@ -133,13 +133,22 @@ export default function DigestHeaderConfig({
             onChange={(e) => {
               const eventId = e.target.value || undefined;
 
+              const selectedEvent = events.find(
+                (ev) => ev.ID_EVENT === eventId
+              );
+
               setHeaderConfig((prev) => ({
                 ...prev,
                 eventId,
-                /* 🔥 injecte aussi l'URL (utile debug / export) */
+
+                /* 🔥 AUTO IMAGE */
                 heroImageUrl: eventId
                   ? `${GCS}/events/EVENT_${eventId}_rect.jpg`
                   : "",
+
+                /* 🔥 AUTO LINK (le vrai sujet) */
+                heroLink:
+                  selectedEvent?.EXTERNAL_URL || "",
               }));
             }}
           >
