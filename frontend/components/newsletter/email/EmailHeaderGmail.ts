@@ -2,8 +2,7 @@ import type { HeaderConfig } from "@/types/newsletter";
 import { escapeHtml } from "./EmailHelpers";
 
 export function EmailHeaderGmail(
-  headerConfig: HeaderConfig,
-  introText?: string
+  headerConfig: HeaderConfig
 ) {
   const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL || "";
 
@@ -36,16 +35,6 @@ export function EmailHeaderGmail(
     headerConfig.headerCompany?.media_logo_rectangle_id
       ? `https://storage.googleapis.com/ratecard-media/companies/${headerConfig.headerCompany.media_logo_rectangle_id}`
       : null;
-
-  /* =========================================================
-     INTRO (HTML PRIORITAIRE)
-  ========================================================= */
-
-  const intro =
-    headerConfig.introHtml ||
-    (introText
-      ? escapeHtml(introText).replace(/\n/g, "<br/>")
-      : "");
 
   /* =========================================================
      RENDER
@@ -192,29 +181,6 @@ ${
           ">
           ${escapeHtml(headerConfig.period)}
         </div>
-        `
-        : ""
-    }
-
-    ${
-      intro
-        ? `
-        <table role="presentation" width="100%">
-          <tr>
-            <td align="center">
-              <div style="
-                  font-size:15px;
-                  color:#4B5563;
-                  line-height:1.6;
-                  max-width:560px;
-                  margin-top:22px;
-                  text-align:left;
-                ">
-                ${intro}
-              </div>
-            </td>
-          </tr>
-        </table>
         `
         : ""
     }
