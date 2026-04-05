@@ -11,6 +11,7 @@ export function EmailHeaderMedia(
   ========================================================= */
 
   const hasEvent = !!headerConfig.eventId;
+
   const showHero =
     hasEvent && headerConfig.showHero !== false;
 
@@ -18,7 +19,9 @@ export function EmailHeaderMedia(
     ? `${GCS}/events/EVENT_${headerConfig.eventId}_rect.jpg`
     : null;
 
-  const heroLink = headerConfig.heroLink || null;
+  const heroLink = headerConfig.heroLink
+    ? escapeHtml(headerConfig.heroLink)
+    : null;
 
   /* =========================================================
      LOGO CONFIG
@@ -42,12 +45,12 @@ export function EmailHeaderMedia(
   ${
     headerConfig.topBarEnabled !== false
       ? `
-      <tr>
-        <td colspan="2" style="
-          height:5px;
-          background:${headerConfig.topBarColor || "#84CC16"};
-        "></td>
-      </tr>`
+<tr>
+  <td colspan="2" style="
+    height:5px;
+    background:${headerConfig.topBarColor || "#84CC16"};
+  "></td>
+</tr>`
       : ""
   }
 
@@ -72,6 +75,8 @@ export function EmailHeaderMedia(
         <a href="${heroLink}" target="_blank" style="display:block;">
           <img 
             src="${heroImage}" 
+            alt=""
+            border="0"
             style="
               width:100%;
               height:auto;
@@ -83,6 +88,8 @@ export function EmailHeaderMedia(
         : `
         <img 
           src="${heroImage}" 
+          alt=""
+          border="0"
           style="
             width:100%;
             height:auto;
@@ -113,20 +120,32 @@ export function EmailHeaderMedia(
           ${
             headerConfig.logoLink
               ? `
-              <a href="${headerConfig.logoLink}" target="_blank">
-                <img src="${logo}" style="
-                  max-width:100px;
-                  height:auto;
-                  opacity:0.9;
-                " />
+              <a href="${escapeHtml(
+                headerConfig.logoLink
+              )}" target="_blank">
+                <img 
+                  src="${logo}" 
+                  alt=""
+                  border="0"
+                  style="
+                    max-width:100px;
+                    height:auto;
+                    opacity:0.9;
+                  " 
+                />
               </a>
               `
               : `
-              <img src="${logo}" style="
-                max-width:100px;
-                height:auto;
-                opacity:0.9;
-              " />
+              <img 
+                src="${logo}" 
+                alt=""
+                border="0"
+                style="
+                  max-width:100px;
+                  height:auto;
+                  opacity:0.9;
+                " 
+              />
               `
           }
         </div>
