@@ -5,7 +5,7 @@ import {
   renderEmailTags,
 } from "./EmailHelpers";
 
-const PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL!;
+const url = `https://getcurator.ai/analysis?analysis_id=${a.id}`;
 
 function renderSectionTitle(label: string) {
   return `
