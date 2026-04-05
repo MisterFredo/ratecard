@@ -59,7 +59,7 @@ export function buildEmailGmail({
         EDITORIAL (🔥 NEW)
     ========================== */
     editorial.trim()
-      ? EmailEditorialBlock(editorial)
+      ? EmailEditorialBlockGmail(editorial)
       : "",
 
     /* =========================
