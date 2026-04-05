@@ -43,7 +43,7 @@ export function EmailAnalysesBlock(
     .map((a) => {
 
       // ✅ URL → CURATOR (pas de fallback)
-      const url = `https://getcurator.ai/analysis?analysis_id=${a.id}`;
+      const url = `https://www.getcurator.ai/feed?analysis_id=${a.id}`;
 
       const tags = renderEmailTags({
         topics: a.topics,
