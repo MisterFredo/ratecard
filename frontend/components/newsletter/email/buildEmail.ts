@@ -14,9 +14,18 @@ import { EmailBrevesBlock } from "./EmailBrevesBlock";
 import { EmailAnalysesBlock } from "./EmailAnalysesBlock";
 import { EmailNumbersBlock } from "./EmailNumbersBlock";
 
+/* 🔥 NEW */
+import { EmailEditorialBlock } from "./EmailEditorialBlock";
+
 type Props = {
   headerConfig: HeaderConfig;
+
+  /* 🔥 NEW */
+  editorialHtml?: string;
+
+  /* 🔥 legacy fallback */
   introText?: string;
+
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
@@ -26,6 +35,7 @@ type Props = {
 
 export function buildEmail({
   headerConfig,
+  editorialHtml,
   introText,
   news,
   breves,
@@ -34,12 +44,22 @@ export function buildEmail({
   topicStats = [],
 }: Props) {
 
+  /* 🔥 source unique */
+  const editorial = editorialHtml || introText || "";
+
   const blocks = [
 
     /* =========================
-        HEADER
+        HEADER (clean, no editorial)
     ========================== */
-    EmailHeader(headerConfig, introText),
+    EmailHeader(headerConfig),
+
+    /* =========================
+        EDITORIAL (🔥 NEW POSITION)
+    ========================== */
+    editorial.trim()
+      ? EmailEditorialBlock(editorial)
+      : "",
 
     /* =========================
         NUMBERS
@@ -78,7 +98,6 @@ export function buildEmail({
 
   ].join("");
 
-  /* 🔥 CRITIQUE : wrapper TABLE */
   const content = `
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     ${blocks}
