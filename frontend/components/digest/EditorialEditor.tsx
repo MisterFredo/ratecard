@@ -56,15 +56,20 @@ export default function HeaderIntroEditor({
   /* ========================================================= */
 
   return (
-    <div className="col-span-2 space-y-3">
+    <div className="col-span-2 space-y-3 border-t pt-4">
 
       {/* =====================================================
-         HEADER
+         HEADER EDITORIAL (NEW 🔥)
       ===================================================== */}
       <div className="flex items-center justify-between">
-        <label className="text-xs font-medium text-gray-500">
-          Introduction (rich text)
-        </label>
+        <div>
+          <div className="text-sm font-semibold tracking-tight">
+            Editorial
+          </div>
+          <div className="text-[11px] text-gray-400">
+            Bloc éditorial optionnel (après intro & chiffres)
+          </div>
+        </div>
 
         {/* TEMPLATE BUTTONS */}
         <div className="flex gap-2 text-xs">
@@ -78,7 +83,7 @@ export default function HeaderIntroEditor({
               hover:bg-gray-50
             "
           >
-            Template Media
+            Media
           </button>
 
           <button
@@ -90,14 +95,14 @@ export default function HeaderIntroEditor({
               hover:bg-gray-50
             "
           >
-            Template Consulting
+            Consulting
           </button>
 
         </div>
       </div>
 
       {/* =====================================================
-         CONTEXT HINT (UX 🔥)
+         CONTEXT HINT
       ===================================================== */}
       <div className="text-[11px] text-gray-400 leading-relaxed">
         {variant === "consulting" ? (
@@ -107,7 +112,7 @@ export default function HeaderIntroEditor({
           </>
         ) : (
           <>
-            Introduction éditoriale courte pour contextualiser la sélection
+            Lecture éditoriale pour contextualiser la sélection
           </>
         )}
       </div>
@@ -123,7 +128,6 @@ export default function HeaderIntroEditor({
             introHtml: html,
           }));
 
-          // compat legacy
           setIntroText(html);
         }}
       />
