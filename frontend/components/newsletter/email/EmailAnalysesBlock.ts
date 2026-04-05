@@ -5,27 +5,34 @@ import {
   renderEmailTags,
 } from "./EmailHelpers";
 
-const url = `https://getcurator.ai/analysis?analysis_id=${a.id}`;
+/* =========================================================
+   SECTION TITLE
+========================================================= */
 
 function renderSectionTitle(label: string) {
   return `
 <tr>
 <td style="
-    padding:32px 0 12px 0;
-    font-family:Arial,Helvetica,sans-serif;
-  ">
+  padding:32px 0 12px 0;
+  font-family:Arial,Helvetica,sans-serif;
+">
   <div style="
-      font-size:12px;
-      font-weight:600;
-      text-transform:uppercase;
-      letter-spacing:0.12em;
-      color:#6B7280;
-    ">
+    font-size:12px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:#6B7280;
+  ">
     ${label}
   </div>
 </td>
-</tr>`;
+</tr>
+`;
 }
+
+/* =========================================================
+   ANALYSES BLOCK
+========================================================= */
 
 export function EmailAnalysesBlock(
   analyses: NewsletterAnalysisItem[]
@@ -35,6 +42,7 @@ export function EmailAnalysesBlock(
   const rows = analyses
     .map((a) => {
 
+      // ✅ URL → CURATOR (pas de fallback)
       const url = `https://getcurator.ai/analysis?analysis_id=${a.id}`;
 
       const tags = renderEmailTags({
@@ -79,7 +87,11 @@ export function EmailAnalysesBlock(
 
         ${
           tags
-            ? `<div style="margin-bottom:6px;">${tags}</div>`
+            ? `
+        <div style="margin-bottom:6px;">
+          ${tags}
+        </div>
+        `
             : ""
         }
 
