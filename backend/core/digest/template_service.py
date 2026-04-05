@@ -3,7 +3,9 @@ from typing import Dict, Any
 import uuid
 
 from config import BQ_PROJECT, BQ_DATASET
+from core.digest.service import search_digest
 from utils.bigquery_utils import query_bq, insert_bq, update_bq
+
 
 
 TABLE_TEMPLATE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_DIGEST_TEMPLATE"
@@ -54,6 +56,44 @@ def create_template(data: Dict[str, Any]) -> str:
     insert_bq(TABLE_TEMPLATE, row)
 
     return template_id
+
+# ============================================================
+# APPLY TEMPLATE
+# ============================================================
+
+def apply_template(template_id: str):
+
+    tpl = get_template(template_id)
+
+    if not tpl:
+        return None
+
+    # 🔥 1. FILTRES
+    topics = tpl.get("topics")
+    companies = tpl.get("companies")
+    news_types = tpl.get("news_types")
+
+    # 🔥 2. SEARCH (réutilisation pure)
+    result = search_digest(
+        topics=topics,
+        companies=companies,
+        news_types=news_types,
+        limit=50,  # ou ajustable
+        period="total",
+    )
+
+    # 🔥 3. STRUCTURE FINALE
+    return {
+        "news": result.get("news", []),
+        "breves": result.get("breves", []),
+        "analyses": result.get("analyses", []),
+        "numbers": result.get("numbers", []),
+
+        # 🔥 éditorial existant
+        "editorial_order": tpl.get("editorial_order") or [],
+        "header_config": tpl.get("header_config") or {},
+        "intro_text": tpl.get("intro_text") or "",
+    }
 
 
 # ============================================================
