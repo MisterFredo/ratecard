@@ -18,7 +18,8 @@ import {
   Database,
   Calendar,
   BarChart3,
-  Image, // ✅ NEW
+  Image,
+  LayoutTemplate, // ✅ NEW
 } from "lucide-react";
 
 export default function AdminShell({
@@ -73,8 +74,15 @@ export default function AdminShell({
       icon: Mail,
     },
 
+    // 🔥 NEW — TEMPLATES DIGEST
     {
-      href: "/admin/event", // ✅ NEW
+      href: "/admin/digest/templates",
+      label: "Templates Digest",
+      icon: LayoutTemplate,
+    },
+
+    {
+      href: "/admin/event",
       label: "Events (assets)",
       icon: Image,
     },
