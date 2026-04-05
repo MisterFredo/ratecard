@@ -4,12 +4,11 @@ export function EmailEditorialBlock(html: string) {
   return `
 <tr>
 <td style="
-  padding:24px 0;
+  padding:24px 32px;
   border-bottom:1px solid #F3F4F6;
   font-family:Arial,Helvetica,sans-serif;
 ">
 
-  <!-- LABEL -->
   <div style="
     font-size:11px;
     text-transform:uppercase;
@@ -21,7 +20,6 @@ export function EmailEditorialBlock(html: string) {
     Editorial
   </div>
 
-  <!-- CONTENT -->
   <div style="
     font-size:15px;
     line-height:1.65;
