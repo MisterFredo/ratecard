@@ -1,19 +1,11 @@
-import { escapeHtml, renderEmailTags } from "./EmailHelpers";
 import type { NewsletterAnalysisItem } from "@/types/newsletter";
+import {
+  escapeHtml,
+  formatDate,
+  renderEmailTags,
+} from "./EmailHelpers";
 
-const PUBLIC_SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://ratecard.fr";
-
-function formatDate(dateString?: string) {
-  if (!dateString) return "";
-  const d = new Date(dateString);
-  return d.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
+const PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL!;
 
 export function EmailAnalysesBlockGmail(
   analyses: NewsletterAnalysisItem[]
@@ -22,11 +14,9 @@ export function EmailAnalysesBlockGmail(
 
   const rows = analyses
     .map((a, index) => {
-
-      /* ✅ EXACTEMENT COMME NEWS */
       const url = `${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}`;
+      const safeUrl = escapeHtml(url);
 
-      /* 🔥 TAGS */
       const tags = renderEmailTags({
         topics: a.topics,
         companies: a.companies || (a.company ? [a.company] : []),
@@ -36,8 +26,8 @@ export function EmailAnalysesBlockGmail(
       return `
 <tr>
 <td style="
-  padding:24px 0;
-  border-bottom:${index === analyses.length - 1 ? "none" : "1px solid #E5E7EB"};
+  padding:16px 0;
+  border-bottom:${index === analyses.length - 1 ? "none" : "1px solid #F3F4F6"};
   font-family:Arial,Helvetica,sans-serif;
 ">
 
@@ -49,19 +39,19 @@ export function EmailAnalysesBlockGmail(
         <div style="
           font-size:12px;
           color:#6B7280;
-          margin-bottom:6px;
+          margin-bottom:4px;
         ">
           ${formatDate(a.published_at) || ""}
         </div>
 
         <!-- TITLE -->
-        <a href="${url}" target="_blank" style="text-decoration:none;">
+        <a href="${safeUrl}" target="_blank" style="text-decoration:none;">
           <div style="
-            font-size:19px;
-            font-weight:700;
+            font-size:14px;
+            font-weight:600;
             color:#111827;
             line-height:1.35;
-            margin-bottom:8px;
+            margin-bottom:4px;
           ">
             ${escapeHtml(a.title)}
           </div>
@@ -70,7 +60,7 @@ export function EmailAnalysesBlockGmail(
         ${
           tags
             ? `
-        <div style="margin-bottom:8px;">
+        <div style="margin-bottom:4px;">
           ${tags}
         </div>
         `
@@ -81,10 +71,9 @@ export function EmailAnalysesBlockGmail(
           a.excerpt
             ? `
         <div style="
-          font-size:14px;
-          line-height:1.5;
-          color:#374151;
-          margin-bottom:12px;
+          font-size:13px;
+          line-height:1.4;
+          color:#6B7280;
         ">
           ${escapeHtml(a.excerpt)}
         </div>
@@ -93,18 +82,20 @@ export function EmailAnalysesBlockGmail(
         }
 
         <!-- CTA -->
-        <a href="${url}"
-           target="_blank"
-           style="
-            font-size:13px;
-            font-weight:600;
-            color:#111827;
-            text-decoration:none;
-            border-bottom:1px solid #111827;
-            padding-bottom:1px;
-           ">
-          Lire l’analyse →
-        </a>
+        <div style="margin-top:6px;">
+          <a href="${safeUrl}"
+             target="_blank"
+             style="
+              font-size:12px;
+              font-weight:600;
+              color:#111827;
+              text-decoration:none;
+              border-bottom:1px solid #111827;
+              padding-bottom:1px;
+             ">
+            Lire l’analyse →
+          </a>
+        </div>
 
       </td>
     </tr>
@@ -119,15 +110,16 @@ export function EmailAnalysesBlockGmail(
   return `
 <tr>
 <td style="
-  padding:30px 0 12px 0;
+  padding-top:28px;
   font-family:Arial,Helvetica,sans-serif;
 ">
   <div style="
-    font-size:12px;
+    font-size:11px;
     font-weight:600;
+    letter-spacing:0.14em;
     text-transform:uppercase;
-    letter-spacing:0.12em;
-    color:#6B7280;
+    color:#9CA3AF;
+    margin-bottom:10px;
   ">
     Analyses
   </div>
