@@ -4,9 +4,8 @@ export function EmailEditorialBlock(html: string) {
   return `
 <tr>
 <td style="
-  padding:32px 28px;
-  background:#FFFFFF;
-  border-bottom:1px solid #E5E7EB;
+  padding:24px 0;
+  border-bottom:1px solid #F3F4F6;
   font-family:Arial,Helvetica,sans-serif;
 ">
 
@@ -16,7 +15,7 @@ export function EmailEditorialBlock(html: string) {
     text-transform:uppercase;
     letter-spacing:0.14em;
     color:#9CA3AF;
-    margin-bottom:14px;
+    margin-bottom:10px;
     font-weight:600;
   ">
     Editorial
@@ -24,8 +23,8 @@ export function EmailEditorialBlock(html: string) {
 
   <!-- CONTENT -->
   <div style="
-    font-size:16px;
-    line-height:1.75;
+    font-size:15px;
+    line-height:1.65;
     color:#111827;
     max-width:560px;
   ">
