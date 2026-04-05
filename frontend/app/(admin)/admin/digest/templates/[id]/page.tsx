@@ -4,42 +4,65 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
-export default function TemplateEditorPage() {
+import DigestHeaderConfig from "@/components/digest/DigestHeaderConfig";
+import type { HeaderConfig } from "@/types/newsletter";
+
+export default function TemplateEditPage() {
   const params = useParams();
   const router = useRouter();
 
-  const isNew = params.id === "new";
+  const templateId = params.id as string;
+
+  /* =========================================================
+     STATE
+  ========================================================= */
 
   const [name, setName] = useState("");
+
   const [topics, setTopics] = useState<string[]>([]);
   const [companies, setCompanies] = useState<string[]>([]);
   const [newsTypes, setNewsTypes] = useState<string[]>([]);
 
+  const [headerConfig, setHeaderConfig] = useState<HeaderConfig>({
+    title: "",
+    subtitle: "",
+    period: "",
+    headerCompany: undefined,
+    showTopicStats: false,
+    topBarEnabled: true,
+    topBarColor: "#84CC16",
+    periodColor: "#84CC16",
+    introHtml: "",
+  });
+
+  const [introText, setIntroText] = useState("");
+
   const [loading, setLoading] = useState(false);
 
-  /* =========================
-     LOAD (EDIT)
-  ========================= */
+  /* =========================================================
+     LOAD TEMPLATE
+  ========================================================= */
 
   useEffect(() => {
-    if (isNew) return;
-
     async function load() {
-      const res = await api.get(`/admin/digest/template/${params.id}`);
+      const res = await api.get(`/admin/digest/template/${templateId}`);
       const tpl = res.template;
 
       setName(tpl.name || "");
       setTopics(tpl.topics || []);
       setCompanies(tpl.companies || []);
       setNewsTypes(tpl.news_types || []);
+
+      setHeaderConfig(tpl.header_config || {});
+      setIntroText(tpl.intro_text || "");
     }
 
-    load();
-  }, [params.id]);
+    if (templateId) load();
+  }, [templateId]);
 
-  /* =========================
+  /* =========================================================
      SAVE
-  ========================= */
+  ========================================================= */
 
   async function handleSave() {
     setLoading(true);
@@ -49,33 +72,30 @@ export default function TemplateEditorPage() {
       topics,
       companies,
       news_types: newsTypes,
+      header_config: headerConfig,
+      intro_text: introText,
     };
 
     try {
-      if (isNew) {
-        await api.post("/admin/digest/template", payload);
-      } else {
-        await api.put(`/admin/digest/template/${params.id}`, payload);
-      }
-
+      await api.put(`/admin/digest/template/${templateId}`, payload);
       router.push("/admin/digest/templates");
     } finally {
       setLoading(false);
     }
   }
 
-  /* =========================
+  /* =========================================================
      UI
-  ========================= */
+  ========================================================= */
 
   return (
-    <div className="space-y-6 max-w-xl">
+    <div className="space-y-6 max-w-2xl">
 
       <h1 className="text-lg font-semibold">
-        {isNew ? "Nouveau template" : "Modifier template"}
+        Modifier template
       </h1>
 
-      <div className="space-y-4">
+      <div className="bg-white border rounded-lg p-4 space-y-3">
 
         <input
           value={name}
@@ -87,9 +107,7 @@ export default function TemplateEditorPage() {
         <input
           value={topics.join(",")}
           onChange={(e) =>
-            setTopics(
-              e.target.value.split(",").map((s) => s.trim())
-            )
+            setTopics(e.target.value.split(",").map((s) => s.trim()))
           }
           placeholder="Topics (ids séparés par ,)"
           className="w-full border rounded px-3 py-2 text-sm"
@@ -98,9 +116,7 @@ export default function TemplateEditorPage() {
         <input
           value={companies.join(",")}
           onChange={(e) =>
-            setCompanies(
-              e.target.value.split(",").map((s) => s.trim())
-            )
+            setCompanies(e.target.value.split(",").map((s) => s.trim()))
           }
           placeholder="Companies (ids)"
           className="w-full border rounded px-3 py-2 text-sm"
@@ -109,9 +125,7 @@ export default function TemplateEditorPage() {
         <input
           value={newsTypes.join(",")}
           onChange={(e) =>
-            setNewsTypes(
-              e.target.value.split(",").map((s) => s.trim())
-            )
+            setNewsTypes(e.target.value.split(",").map((s) => s.trim()))
           }
           placeholder="News types"
           className="w-full border rounded px-3 py-2 text-sm"
@@ -119,7 +133,15 @@ export default function TemplateEditorPage() {
 
       </div>
 
+      <DigestHeaderConfig
+        headerConfig={headerConfig}
+        setHeaderConfig={setHeaderConfig}
+        introText={introText}
+        setIntroText={setIntroText}
+      />
+
       <div className="flex gap-3">
+
         <button
           onClick={handleSave}
           disabled={loading}
@@ -134,6 +156,7 @@ export default function TemplateEditorPage() {
         >
           Annuler
         </button>
+
       </div>
 
     </div>
