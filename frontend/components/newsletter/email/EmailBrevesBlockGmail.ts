@@ -27,9 +27,7 @@ export function EmailBrevesBlockGmail(
 
       const tags = renderEmailTags({
         topics: b.topics,
-        companies:
-          b.companies ||
-          (b.company ? [b.company] : []),
+        companies: b.company ? [b.company] : [],
         styles: b.news_type ? [b.news_type] : [],
       });
 
