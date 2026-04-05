@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation"; // ✅ AJOUT
 
 import FeedExplorer from "@/components/feed/FeedExplorer";
 import SelectionPanel from "@/components/insight/SelectionPanel";
@@ -18,6 +19,10 @@ import { api } from "@/lib/api";
 
 export default function FeedPage() {
   const LIMIT = 20;
+
+  const searchParams = useSearchParams(); // ✅ AJOUT
+  const analysisId = searchParams.get("analysis_id"); // ✅ AJOUT
+  const newsId = searchParams.get("news_id"); // ✅ AJOUT
 
   /* =========================================================
      DATA
@@ -112,6 +117,30 @@ export default function FeedPage() {
   }, []);
 
   /* =========================================================
+     OPEN DRAWER FROM URL ✅ AJOUT
+  ========================================================= */
+
+  useEffect(() => {
+    if (!analysisId && !newsId) return;
+    if (selectedItem) return;
+
+    if (analysisId) {
+      setSelectedItem({
+        id: analysisId,
+        type: "analysis",
+      } as FeedItem);
+    }
+
+    if (newsId) {
+      setSelectedItem({
+        id: newsId,
+        type: "news",
+      } as FeedItem);
+    }
+
+  }, [analysisId, newsId]);
+
+  /* =========================================================
      STATS
   ========================================================= */
 
@@ -171,10 +200,7 @@ export default function FeedPage() {
         : [...prev, item.id]
     );
 
-    // ouverture panel
     setIsPanelOpen(true);
-
-    // reset analyse
     setAnalysis("");
   }
 
@@ -208,7 +234,6 @@ export default function FeedPage() {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
 
-      {/* LEFT */}
       <div className="xl:col-span-2">
         <FeedExplorer
           query={query}
@@ -234,7 +259,6 @@ export default function FeedPage() {
         />
       </div>
 
-      {/* RIGHT */}
       {isPanelOpen && (
         <div
           id="selection-panel"
@@ -253,7 +277,6 @@ export default function FeedPage() {
         </div>
       )}
 
-      {/* DRAWERS */}
       {selectedItem && (
         <>
           {selectedItem.type === "analysis" && (
