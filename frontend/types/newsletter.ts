@@ -111,8 +111,11 @@ export type NewsletterAnalysisItem = {
   excerpt?: string;
   published_at: string;
 
+  /* 🔥 CRITIQUE */
+  url?: string;
+
   /* ===============================
-     BADGES (🔥 ALIGN WITH NEWS)
+     BADGES (ALIGN WITH NEWS)
   =============================== */
 
   topics?: {
