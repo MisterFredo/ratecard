@@ -52,6 +52,7 @@ export type HeaderConfig = {
   periodColor?: string;
 
   introHtml?: string;
+  eventId?: string;
 
   /* ===============================
      NEW (MEDIA LOGIC)
