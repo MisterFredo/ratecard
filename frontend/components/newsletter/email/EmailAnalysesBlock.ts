@@ -5,10 +5,6 @@ import {
   renderEmailTags,
 } from "./EmailHelpers";
 
-const PUBLIC_SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://ratecard.fr";
-
 function renderSectionTitle(label: string) {
   return `
 <tr>
@@ -30,20 +26,21 @@ function renderSectionTitle(label: string) {
 }
 
 export function EmailAnalysesBlock(
-  analyses: any[]
+  analyses: NewsletterAnalysisItem[]
 ) {
   if (!analyses.length) return "";
 
   const rows = analyses
     .map((a) => {
 
-      const url = `${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}`;
+      /* 🔥 URL = SOURCE DE VÉRITÉ */
+      const url = a.url || "#";
 
-      /* 🔥 TAGS (même logique que News) */
+      /* 🔥 TAGS (aligné avec News / Brèves) */
       const tags = renderEmailTags({
         topics: a.topics,
         companies: a.companies || (a.company ? [a.company] : []),
-        styles: a.styles || [],
+        styles: a.styles || ["ANALYSE"], // 👉 fallback intelligent
       });
 
       return `
