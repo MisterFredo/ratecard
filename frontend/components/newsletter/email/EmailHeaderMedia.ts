@@ -4,17 +4,42 @@ import { escapeHtml } from "./EmailHelpers";
 export function EmailHeaderMedia(
   headerConfig: HeaderConfig
 ) {
+  const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL || "";
+  const BASE = process.env.NEXT_PUBLIC_BASE_URL || "";
+
+  /* =========================================================
+     HERO CONFIG
+  ========================================================= */
+
+  const showHero =
+    headerConfig.showHero !== false;
+
+  const heroImage = headerConfig.eventId
+    ? `${GCS}/events/EVENT_${headerConfig.eventId}_rect.jpg`
+    : headerConfig.heroImageUrl
+    ? headerConfig.heroImageUrl
+    : `${BASE}/assets/brand/LeTouquet.jpg`;
+
+  const heroLink = headerConfig.eventId
+    ? headerConfig.heroLink || "#"
+    : headerConfig.heroLink;
+
+  /* =========================================================
+     LOGO CONFIG
+  ========================================================= */
+
+  const showLogo =
+    headerConfig.showLogo !== false;
+
   const logo =
+    showLogo &&
     headerConfig.headerCompany?.media_logo_rectangle_id
       ? `https://storage.googleapis.com/ratecard-media/companies/${headerConfig.headerCompany.media_logo_rectangle_id}`
       : null;
 
-  /* ===============================
-     HERO IMAGE (override possible)
-  =============================== */
-  const heroImage =
-    headerConfig.heroImageUrl ||
-    `${process.env.NEXT_PUBLIC_BASE_URL || ""}/assets/brand/LeTouquet.jpg`;
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return `
 
@@ -37,15 +62,18 @@ export function EmailHeaderMedia(
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
 ">
 
+  ${
+    showHero
+      ? `
   <!-- HERO -->
   <div style="
     max-width:640px;
     margin:0 auto;
   ">
     ${
-      headerConfig.heroLink
+      heroLink
         ? `
-        <a href="${headerConfig.heroLink}" target="_blank" style="display:block;">
+        <a href="${heroLink}" target="_blank" style="display:block;">
           <img 
             src="${heroImage}" 
             style="
@@ -68,6 +96,9 @@ export function EmailHeaderMedia(
         `
     }
   </div>
+  `
+      : ""
+  }
 
   <!-- CONTENT -->
   <div style="
