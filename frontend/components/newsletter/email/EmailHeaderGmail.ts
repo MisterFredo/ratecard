@@ -3,19 +3,53 @@ import { escapeHtml } from "./EmailHelpers";
 
 export function EmailHeaderGmail(
   headerConfig: HeaderConfig,
-  introText?: string // 👈 fallback legacy
+  introText?: string
 ) {
+  const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL || "";
+
+  /* =========================================================
+     HERO (🔥 EVENT ONLY)
+  ========================================================= */
+
+  const hasEvent = !!headerConfig.eventId;
+
+  const showHero =
+    hasEvent && headerConfig.showHero !== false;
+
+  const heroImage = hasEvent
+    ? `${GCS}/events/EVENT_${headerConfig.eventId}_rect.jpg`
+    : null;
+
+  const heroLink = headerConfig.heroLink
+    ? escapeHtml(headerConfig.heroLink)
+    : null;
+
+  /* =========================================================
+     LOGO
+  ========================================================= */
+
+  const showLogo =
+    headerConfig.showLogo !== false;
+
   const logo =
+    showLogo &&
     headerConfig.headerCompany?.media_logo_rectangle_id
       ? `https://storage.googleapis.com/ratecard-media/companies/${headerConfig.headerCompany.media_logo_rectangle_id}`
       : null;
 
-  // 🔥 priorité HTML editor
+  /* =========================================================
+     INTRO (HTML PRIORITAIRE)
+  ========================================================= */
+
   const intro =
     headerConfig.introHtml ||
     (introText
       ? escapeHtml(introText).replace(/\n/g, "<br/>")
       : "");
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return `
 <!-- TOP BAR -->
@@ -30,6 +64,51 @@ ${
       font-size:0;
     ">
     &nbsp;
+  </td>
+</tr>
+`
+    : ""
+}
+
+<!-- HERO -->
+${
+  showHero && heroImage
+    ? `
+<tr>
+  <td style="padding:0;background:#F3F4F6;">
+    ${
+      heroLink
+        ? `
+      <a href="${heroLink}" target="_blank" style="display:block;">
+        <img 
+          src="${heroImage}"
+          alt=""
+          border="0"
+          style="
+            width:100%;
+            max-width:720px;
+            height:auto;
+            display:block;
+            margin:0 auto;
+          "
+        />
+      </a>
+      `
+        : `
+      <img 
+        src="${heroImage}"
+        alt=""
+        border="0"
+        style="
+          width:100%;
+          max-width:720px;
+          height:auto;
+          display:block;
+          margin:0 auto;
+        "
+      />
+      `
+    }
   </td>
 </tr>
 `
@@ -52,6 +131,7 @@ ${
           <img 
             src="${logo}"
             alt="${escapeHtml(headerConfig.headerCompany?.name || "logo")}"
+            border="0"
             width="170"
             style="display:inline-block;height:auto;"
           />
