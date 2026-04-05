@@ -138,6 +138,20 @@ def admin_delete_template(template_id: str):
         "deleted": True,
     }
 
+@router.post("/digest/template/apply")
+def admin_apply_template(payload: dict):
+    template_id = payload.get("template_id")
+
+    if not template_id:
+        raise HTTPException(400, "template_id requis")
+
+    result = apply_template(template_id)
+
+    return {
+        "status": "ok",
+        "result": result,
+    }
+
 # ============================================================
 # MONTHLY INSIGHTS
 # ============================================================
