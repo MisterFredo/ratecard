@@ -16,7 +16,7 @@ import { EmailNumbersBlockGmail } from "./EmailNumbersBlockGmail";
 import { EmailSignatureGmail } from "./EmailSignatureGmail";
 
 /* 🔥 NEW */
-import { EmailEditorialBlock } from "./EmailEditorialBlockGmail";
+import { EmailEditorialBlockGmail } from "./EmailEditorialBlockGmail";
 
 type Props = {
   headerConfig: HeaderConfig;
