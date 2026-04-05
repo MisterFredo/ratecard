@@ -53,7 +53,7 @@ def search_digest(
     )
 
     # =========================
-    # ANALYSES (V_CONTENT_ENRICHED)
+    # ANALYSES
     # =========================
     analyses = _search_analyses_digest(
         topics=topics,
@@ -64,7 +64,7 @@ def search_digest(
     )
 
     # =========================
-    # NUMBERS (V_NUMBERS_ENRICHED)
+    # NUMBERS
     # =========================
     numbers = _search_numbers_digest(
         topics=topics,
@@ -73,9 +73,6 @@ def search_digest(
         period=period,
     )
 
-    # =========================
-    # RETURN
-    # =========================
     return {
         "news": news,
         "breves": breves,
@@ -106,7 +103,6 @@ def _search_news_digest(
 
     params = {"limit": limit}
 
-    # 🔥 TOPICS (OK avec ta vue)
     if topics:
         where_clauses.append("""
             EXISTS (
@@ -117,22 +113,18 @@ def _search_news_digest(
         """)
         params["topics"] = topics
 
-    # 🔥 COMPANY
     if companies:
         where_clauses.append("id_company IN UNNEST(@companies)")
         params["companies"] = companies
 
-    # 🔥 NEWS TYPE
     if news_types:
         where_clauses.append("news_type IN UNNEST(@news_types)")
         params["news_types"] = news_types
 
-    # 🔥 CURSOR
     if cursor:
         where_clauses.append("published_at < @cursor")
         params["cursor"] = cursor
 
-    # 🔥 PERIOD
     if period == "7d":
         where_clauses.append(
             "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
@@ -186,7 +178,7 @@ def _search_news_digest(
 
 
 # ============================================================
-# ANALYSES (🔥 FIX MAJEUR ICI)
+# ANALYSES (🔥 FIX URL)
 # ============================================================
 
 def _search_analyses_digest(
@@ -203,7 +195,6 @@ def _search_analyses_digest(
 
     params = {"limit": limit}
 
-    # 🔥 TOPICS (ARRAY dans la vue)
     if topics:
         where_clauses.append("""
             EXISTS (
@@ -214,7 +205,6 @@ def _search_analyses_digest(
         """)
         params["topics"] = topics
 
-    # 🔥 COMPANIES (ARRAY dans la vue)
     if companies:
         where_clauses.append("""
             EXISTS (
@@ -225,12 +215,10 @@ def _search_analyses_digest(
         """)
         params["companies"] = companies
 
-    # 🔥 CURSOR
     if cursor:
         where_clauses.append("published_at < @cursor")
         params["cursor"] = cursor
 
-    # 🔥 PERIOD
     if period == "7d":
         where_clauses.append(
             "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
@@ -249,7 +237,8 @@ def _search_analyses_digest(
             excerpt,
             published_at,
             topics,
-            companies
+            companies,
+            source_url
         FROM `{VIEW_CONTENT_ENRICHED}`
         WHERE {where_sql}
         ORDER BY published_at DESC
@@ -266,9 +255,15 @@ def _search_analyses_digest(
             "published_at": r["published_at"],
             "topics": r["topics"] or [],
             "companies": r["companies"] or [],
+            "url": r.get("source_url"),  # 🔥 FIX
         }
         for r in rows
     ]
+
+
+# ============================================================
+# NUMBERS
+# ============================================================
 
 def _search_numbers_digest(
     topics,
@@ -280,7 +275,6 @@ def _search_numbers_digest(
     where_clauses = []
     params = {"limit": limit}
 
-    # 🔥 FILTER TOPICS
     if topics:
         where_clauses.append("""
             EXISTS (
@@ -292,7 +286,6 @@ def _search_numbers_digest(
         """)
         params["topics"] = topics
 
-    # 🔥 FILTER COMPANIES
     if companies:
         where_clauses.append("""
             ENTITY_TYPE = 'company'
@@ -300,7 +293,6 @@ def _search_numbers_digest(
         """)
         params["companies"] = companies
 
-    # 🔥 PERIOD (based on CREATED_AT)
     if period == "7d":
         where_clauses.append(
             "DATE(CREATED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
