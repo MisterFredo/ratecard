@@ -1,6 +1,10 @@
 import { escapeHtml, renderEmailTags } from "./EmailHelpers";
 import type { NewsletterAnalysisItem } from "@/types/newsletter";
 
+const PUBLIC_SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://ratecard.fr";
+
 function formatDate(dateString?: string) {
   if (!dateString) return "";
   const d = new Date(dateString);
@@ -19,10 +23,10 @@ export function EmailAnalysesBlockGmail(
   const rows = analyses
     .map((a, index) => {
 
-      /* 🔥 SOURCE DE VÉRITÉ */
-      const url = a.url || "#";
+      /* ✅ EXACTEMENT COMME NEWS */
+      const url = `${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}`;
 
-      /* 🔥 TAGS (aligné avec News / Brèves) */
+      /* 🔥 TAGS */
       const tags = renderEmailTags({
         topics: a.topics,
         companies: a.companies || (a.company ? [a.company] : []),
@@ -66,7 +70,6 @@ export function EmailAnalysesBlockGmail(
         ${
           tags
             ? `
-        <!-- TAGS -->
         <div style="margin-bottom:8px;">
           ${tags}
         </div>
@@ -77,7 +80,6 @@ export function EmailAnalysesBlockGmail(
         ${
           a.excerpt
             ? `
-        <!-- EXCERPT -->
         <div style="
           font-size:14px;
           line-height:1.5;
