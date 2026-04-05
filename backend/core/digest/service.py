@@ -17,6 +17,12 @@ VIEW_NUMBERS_ENRICHED = f"{BQ_PROJECT}.{BQ_DATASET}.V_NUMBERS_ENRICHED"
 # PUBLIC API
 # ============================================================
 
+from typing import Optional, List, Dict, Any
+
+# ============================================================
+# MAIN
+# ============================================================
+
 def search_digest(
     topics: Optional[List[str]] = None,
     companies: Optional[List[str]] = None,
@@ -29,12 +35,12 @@ def search_digest(
 ) -> Dict[str, Any]:
 
     # =========================================================
-    # PRIORITÉ AUX DATES (override du period)
+    # PRIORITÉ AUX DATES
     # =========================================================
 
     use_period = period
     if date_from or date_to:
-        use_period = None  # 🔥 désactive logique existante
+        use_period = None
 
     # =========================
     # NEWS
@@ -91,15 +97,13 @@ def search_digest(
         date_to=date_to,
     )
 
-    # =========================
-    # RETURN
-    # =========================
     return {
         "news": news,
         "breves": breves,
         "analyses": analyses,
         "numbers": numbers,
     }
+
 
 # ============================================================
 # NEWS / BRÈVES
@@ -125,11 +129,10 @@ def _search_news_digest(
 
     params = {"limit": limit}
 
-    # =========================================================
+    # -------------------------
     # FILTERS
-    # =========================================================
+    # -------------------------
 
-    # 🔥 TOPICS
     if topics:
         where_clauses.append("""
             EXISTS (
@@ -140,24 +143,21 @@ def _search_news_digest(
         """)
         params["topics"] = topics
 
-    # 🔥 COMPANY
     if companies:
         where_clauses.append("id_company IN UNNEST(@companies)")
         params["companies"] = companies
 
-    # 🔥 NEWS TYPE
     if news_types:
         where_clauses.append("news_type IN UNNEST(@news_types)")
         params["news_types"] = news_types
 
-    # 🔥 CURSOR
     if cursor:
         where_clauses.append("published_at < @cursor")
         params["cursor"] = cursor
 
-    # =========================================================
-    # DATE OVERRIDE (PRIORITAIRE)
-    # =========================================================
+    # -------------------------
+    # DATE OVERRIDE
+    # -------------------------
 
     if date_from:
         where_clauses.append("DATE(published_at) >= DATE(@date_from)")
@@ -167,9 +167,9 @@ def _search_news_digest(
         where_clauses.append("DATE(published_at) <= DATE(@date_to)")
         params["date_to"] = date_to
 
-    # =========================================================
-    # PERIOD (UNIQUEMENT SI PAS DE DATES)
-    # =========================================================
+    # -------------------------
+    # PERIOD
+    # -------------------------
 
     if not date_from and not date_to:
         if period == "7d":
@@ -181,11 +181,9 @@ def _search_news_digest(
                 "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
             )
 
-    # =========================================================
+    # -------------------------
     # SQL
-    # =========================================================
-
-    where_sql = " AND ".join(where_clauses)
+    # -------------------------
 
     sql = f"""
         SELECT
@@ -201,16 +199,12 @@ def _search_news_digest(
             is_partner,
             topics
         FROM `{VIEW_NEWS_ENRICHED}`
-        WHERE {where_sql}
+        WHERE {" AND ".join(where_clauses)}
         ORDER BY published_at DESC
         LIMIT @limit
     """
 
     rows = query_bq(sql, params)
-
-    # =========================================================
-    # FORMAT
-    # =========================================================
 
     return [
         {
@@ -231,8 +225,9 @@ def _search_news_digest(
         for r in rows
     ]
 
+
 # ============================================================
-# ANALYSES (🔥 FIX MAJEUR ICI)
+# ANALYSES
 # ============================================================
 
 def _search_analyses_digest(
@@ -251,11 +246,10 @@ def _search_analyses_digest(
 
     params = {"limit": limit}
 
-    # =========================================================
+    # -------------------------
     # FILTERS
-    # =========================================================
+    # -------------------------
 
-    # 🔥 TOPICS (ARRAY)
     if topics:
         where_clauses.append("""
             EXISTS (
@@ -266,7 +260,6 @@ def _search_analyses_digest(
         """)
         params["topics"] = topics
 
-    # 🔥 COMPANIES (ARRAY)
     if companies:
         where_clauses.append("""
             EXISTS (
@@ -277,14 +270,13 @@ def _search_analyses_digest(
         """)
         params["companies"] = companies
 
-    # 🔥 CURSOR
     if cursor:
         where_clauses.append("published_at < @cursor")
         params["cursor"] = cursor
 
-    # =========================================================
-    # DATE OVERRIDE (PRIORITAIRE)
-    # =========================================================
+    # -------------------------
+    # DATE OVERRIDE
+    # -------------------------
 
     if date_from:
         where_clauses.append("DATE(published_at) >= DATE(@date_from)")
@@ -294,9 +286,9 @@ def _search_analyses_digest(
         where_clauses.append("DATE(published_at) <= DATE(@date_to)")
         params["date_to"] = date_to
 
-    # =========================================================
-    # PERIOD (UNIQUEMENT SI PAS DE DATES)
-    # =========================================================
+    # -------------------------
+    # PERIOD
+    # -------------------------
 
     if not date_from and not date_to:
         if period == "7d":
@@ -308,11 +300,9 @@ def _search_analyses_digest(
                 "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
             )
 
-    # =========================================================
+    # -------------------------
     # SQL
-    # =========================================================
-
-    where_sql = " AND ".join(where_clauses)
+    # -------------------------
 
     sql = f"""
         SELECT
@@ -323,16 +313,12 @@ def _search_analyses_digest(
             topics,
             companies
         FROM `{VIEW_CONTENT_ENRICHED}`
-        WHERE {where_sql}
+        WHERE {" AND ".join(where_clauses)}
         ORDER BY published_at DESC
         LIMIT @limit
     """
 
     rows = query_bq(sql, params)
-
-    # =========================================================
-    # FORMAT
-    # =========================================================
 
     return [
         {
