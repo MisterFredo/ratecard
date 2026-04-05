@@ -5,7 +5,7 @@ import type { HeaderConfig } from "@/types/newsletter";
 
 import HeaderMainFields from "./HeaderMainFields";
 import HeaderBranding from "./HeaderBranding";
-import HeaderIntroEditor from "./HeaderIntroEditor";
+import EditorialEditor from "./EditorialEditor";
 
 type Props = {
   headerConfig: HeaderConfig;
@@ -58,14 +58,14 @@ export default function DigestHeaderConfig({
       periodColor: prev.periodColor || "#84CC16",
 
       /* ===============================
-         INTRO
+         EDITORIAL (ex-intro)
       =============================== */
       introHtml:
         prev.introHtml ??
         (introText || ""),
 
       /* ===============================
-         MEDIA DEFAULTS (NEW)
+         MEDIA DEFAULTS
       =============================== */
       heroLink: prev.heroLink || "",
       heroImageUrl: prev.heroImageUrl || "",
@@ -112,7 +112,7 @@ export default function DigestHeaderConfig({
         />
 
         {/* ===============================
-            MEDIA (NEW)
+            MEDIA (HEADER)
         =============================== */}
         <div className="col-span-2 border-t pt-3 space-y-2">
 
@@ -120,7 +120,6 @@ export default function DigestHeaderConfig({
             Media (Header)
           </div>
 
-          {/* HERO LINK */}
           <input
             type="text"
             placeholder="Lien du visuel (hero)"
@@ -134,7 +133,6 @@ export default function DigestHeaderConfig({
             }
           />
 
-          {/* HERO IMAGE URL */}
           <input
             type="text"
             placeholder="URL image (optionnel)"
@@ -148,7 +146,6 @@ export default function DigestHeaderConfig({
             }
           />
 
-          {/* LOGO LINK */}
           <input
             type="text"
             placeholder="Lien du logo (optionnel)"
@@ -165,9 +162,9 @@ export default function DigestHeaderConfig({
         </div>
 
         {/* ===============================
-            INTRO (HTML EDITOR)
+            EDITORIAL (🔥 AVANT NUMBERS)
         =============================== */}
-        <HeaderIntroEditor
+        <EditorialEditor
           headerConfig={headerConfig}
           setHeaderConfig={setHeaderConfig}
           introText={introText}
