@@ -42,29 +42,52 @@ export type HeaderConfig = {
   showTopicStats?: boolean;
 
   /* ===============================
-     NEW (HEADER V2)
+     VARIANT
   =============================== */
   variant?: "media" | "consulting";
 
+  /* ===============================
+     TOP BAR
+  =============================== */
   topBarEnabled?: boolean;
   topBarColor?: string;
 
+  /* ===============================
+     COLORS
+  =============================== */
   periodColor?: string;
 
+  /* ===============================
+     EDITORIAL
+  =============================== */
   introHtml?: string;
+
+  /* ===============================
+     EVENT (🔥 CORE)
+  =============================== */
   eventId?: string;
 
   /* ===============================
-     NEW (MEDIA LOGIC)
+     HERO CONTROL (🔥 NEW)
+  =============================== */
+  showHero?: boolean;
+
+  /* ===============================
+     MEDIA (FALLBACK)
   =============================== */
 
-  // 🔗 lien cliquable sur le hero (image Le Touquet, etc.)
+  // lien cliquable sur le hero
   heroLink?: string;
 
-  // 🖼️ optionnel : override du visuel hero (sinon fallback LeTouquet)
+  // override image hero
   heroImageUrl?: string;
 
-  // 🔗 rendre le logo cliquable (ex: homepage Ratecard)
+  /* ===============================
+     LOGO CONTROL (🔥 NEW)
+  =============================== */
+  showLogo?: boolean;
+
+  // lien du logo
   logoLink?: string;
 };
 
