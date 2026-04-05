@@ -52,6 +52,19 @@ export type HeaderConfig = {
   periodColor?: string;
 
   introHtml?: string;
+
+  /* ===============================
+     NEW (MEDIA LOGIC)
+  =============================== */
+
+  // 🔗 lien cliquable sur le hero (image Le Touquet, etc.)
+  heroLink?: string;
+
+  // 🖼️ optionnel : override du visuel hero (sinon fallback LeTouquet)
+  heroImageUrl?: string;
+
+  // 🔗 rendre le logo cliquable (ex: homepage Ratecard)
+  logoLink?: string;
 };
 
 /* =========================================================
