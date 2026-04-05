@@ -1,4 +1,4 @@
-export function EmailEditorialBlock(html: string) {
+export function EmailEditorialBlockGmail(html: string) {
   if (!html) return "";
 
   return `
