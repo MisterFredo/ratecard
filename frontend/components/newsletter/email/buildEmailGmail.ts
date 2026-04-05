@@ -15,9 +15,18 @@ import { EmailAnalysesBlockGmail } from "./EmailAnalysesBlockGmail";
 import { EmailNumbersBlockGmail } from "./EmailNumbersBlockGmail";
 import { EmailSignatureGmail } from "./EmailSignatureGmail";
 
+/* 🔥 NEW */
+import { EmailEditorialBlock } from "./EmailEditorialBlock";
+
 type Props = {
   headerConfig: HeaderConfig;
+
+  /* 🔥 NEW */
+  editorialHtml?: string;
+
+  /* 🔁 fallback temporaire */
   introText?: string;
+
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
@@ -27,6 +36,7 @@ type Props = {
 
 export function buildEmailGmail({
   headerConfig,
+  editorialHtml,
   introText,
   news,
   breves,
@@ -35,12 +45,22 @@ export function buildEmailGmail({
   topicStats = [],
 }: Props) {
 
+  /* 🔥 source unique */
+  const editorial = editorialHtml || introText || "";
+
   const blocks = [
 
     /* =========================
         HEADER
     ========================== */
     EmailHeaderGmail(headerConfig),
+
+    /* =========================
+        EDITORIAL (🔥 NEW)
+    ========================== */
+    editorial.trim()
+      ? EmailEditorialBlock(editorial)
+      : "",
 
     /* =========================
         NUMBERS
@@ -84,7 +104,6 @@ export function buildEmailGmail({
 
   ].join("");
 
-  /* 🔥 CRITIQUE */
   const content = `
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
     ${blocks}
