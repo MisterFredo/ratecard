@@ -24,96 +24,85 @@ function formatValue(n: NewsletterNumberItem) {
     .join(" ");
 }
 
+/* =========================================================
+   BLOCK
+========================================================= */
+
 export function EmailNumbersBlockGmail(
   numbers: NewsletterNumberItem[]
 ) {
   if (!numbers?.length) return "";
 
-  return `
+  const rows = numbers
+    .map((n, index) => `
 <tr>
 <td style="
-  padding:22px 20px 20px 20px;
+  padding:16px 0;
+  border-bottom:${index === numbers.length - 1 ? "none" : "1px solid #F3F4F6"};
   font-family:Arial,Helvetica,sans-serif;
 ">
 
-  <!-- TITLE -->
+  <!-- VALUE -->
+  <div style="
+    font-size:18px;
+    font-weight:700;
+    color:#111827;
+    line-height:1.2;
+    margin-bottom:4px;
+  ">
+    ${formatValue(n)}
+  </div>
+
+  <!-- LABEL -->
+  <div style="
+    font-size:14px;
+    color:#374151;
+    line-height:1.4;
+  ">
+    ${escapeHtml(n.label)}
+  </div>
+
+  ${
+    n.entity
+      ? `
+  <!-- ENTITY -->
+  <div style="
+    margin-top:4px;
+    font-size:11px;
+    color:#9CA3AF;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+  ">
+    ${escapeHtml(n.entity.label)}
+  </div>
+  `
+      : ""
+  }
+
+</td>
+</tr>
+`)
+    .join("");
+
+  return `
+<tr>
+<td style="
+  padding-top:28px;
+  font-family:Arial,Helvetica,sans-serif;
+">
   <div style="
     font-size:11px;
     font-weight:600;
-    letter-spacing:0.12em;
+    letter-spacing:0.14em;
     text-transform:uppercase;
     color:#9CA3AF;
     margin-bottom:10px;
   ">
     Chiffres clés
   </div>
-
-  <!-- LIST -->
-  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-
-    ${numbers
-      .map(
-        (n) => `
-<tr>
-  <td style="padding:8px 0;">
-
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-      <tr>
-
-        <!-- VALUE -->
-        <td valign="top" style="
-          width:100px;
-          font-size:18px;
-          font-weight:700;
-          color:#111827;
-          letter-spacing:-0.01em;
-          padding-right:8px;
-        ">
-          ${formatValue(n)}
-        </td>
-
-        <!-- TEXT -->
-        <td valign="top">
-
-          <div style="
-            font-size:13px;
-            color:#374151;
-            line-height:1.4;
-            font-weight:500;
-          ">
-            ${escapeHtml(n.label)}
-          </div>
-
-          ${
-            n.entity
-              ? `
-              <div style="
-                margin-top:3px;
-                font-size:10px;
-                color:#9CA3AF;
-                text-transform:uppercase;
-                letter-spacing:0.06em;
-              ">
-                ${escapeHtml(n.entity.label)}
-              </div>
-              `
-              : ""
-          }
-
-        </td>
-
-      </tr>
-    </table>
-
-  </td>
-</tr>
-`
-      )
-      .join("")}
-
-  </table>
-
 </td>
 </tr>
+
+${rows}
 `;
 }
