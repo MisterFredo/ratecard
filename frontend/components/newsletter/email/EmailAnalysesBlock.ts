@@ -1,5 +1,9 @@
 import type { NewsletterAnalysisItem } from "@/types/newsletter";
-import { escapeHtml, formatDate } from "./EmailHelpers";
+import {
+  escapeHtml,
+  formatDate,
+  renderEmailTags,
+} from "./EmailHelpers";
 
 const PUBLIC_SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
@@ -26,13 +30,23 @@ function renderSectionTitle(label: string) {
 }
 
 export function EmailAnalysesBlock(
-  analyses: NewsletterAnalysisItem[]
+  analyses: any[]
 ) {
   if (!analyses.length) return "";
 
   const rows = analyses
-    .map(
-      (a) => `
+    .map((a) => {
+
+      const url = `${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}`;
+
+      /* 🔥 TAGS (même logique que News) */
+      const tags = renderEmailTags({
+        topics: a.topics,
+        companies: a.companies || (a.company ? [a.company] : []),
+        styles: a.styles || [],
+      });
+
+      return `
 <tr>
 <td style="
   padding:28px 0;
@@ -54,27 +68,28 @@ export function EmailAnalysesBlock(
         </div>
 
         <!-- TITLE -->
-        <a href="${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}"
-           target="_blank"
-           style="text-decoration:none;">
-           
-          <table role="presentation" width="100%">
-            <tr>
-              <td>
-                <div style="
-                  font-size:20px;
-                  font-weight:700;
-                  color:#111827;
-                  line-height:1.35;
-                  margin-bottom:12px;
-                ">
-                  ${escapeHtml(a.title)}
-                </div>
-              </td>
-            </tr>
-          </table>
-
+        <a href="${url}" target="_blank" style="text-decoration:none;">
+          <div style="
+            font-size:20px;
+            font-weight:700;
+            color:#111827;
+            line-height:1.35;
+            margin-bottom:10px;
+          ">
+            ${escapeHtml(a.title)}
+          </div>
         </a>
+
+        ${
+          tags
+            ? `
+        <!-- TAGS -->
+        <div style="margin-bottom:10px;">
+          ${tags}
+        </div>
+        `
+            : ""
+        }
 
         ${
           a.excerpt
@@ -93,7 +108,7 @@ export function EmailAnalysesBlock(
         }
 
         <!-- CTA -->
-        <a href="${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}"
+        <a href="${url}"
            target="_blank"
            style="
             font-size:14px;
@@ -112,8 +127,8 @@ export function EmailAnalysesBlock(
 
 </td>
 </tr>
-`
-    )
+`;
+    })
     .join("");
 
   return renderSectionTitle("Analyses") + rows;
