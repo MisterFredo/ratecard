@@ -2,15 +2,19 @@ import type { HeaderConfig } from "@/types/newsletter";
 import { escapeHtml } from "./EmailHelpers";
 
 export function EmailHeaderMedia(
-  headerConfig: HeaderConfig,
-  introText?: string
+  headerConfig: HeaderConfig
 ) {
   const logo =
     headerConfig.headerCompany?.media_logo_rectangle_id
       ? `https://storage.googleapis.com/ratecard-media/companies/${headerConfig.headerCompany.media_logo_rectangle_id}`
       : null;
 
-  const heroImage = `${process.env.NEXT_PUBLIC_BASE_URL || ""}/assets/brand/LeTouquet.jpg`;
+  /* ===============================
+     HERO IMAGE (override possible)
+  =============================== */
+  const heroImage =
+    headerConfig.heroImageUrl ||
+    `${process.env.NEXT_PUBLIC_BASE_URL || ""}/assets/brand/LeTouquet.jpg`;
 
   return `
 
@@ -33,19 +37,36 @@ export function EmailHeaderMedia(
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
 ">
 
-  <!-- HERO (FULL IMAGE, NO CROP) -->
+  <!-- HERO -->
   <div style="
     max-width:640px;
     margin:0 auto;
   ">
-    <img 
-      src="${heroImage}" 
-      style="
-        width:100%;
-        height:auto;
-        display:block;
-      "
-    />
+    ${
+      headerConfig.heroLink
+        ? `
+        <a href="${headerConfig.heroLink}" target="_blank" style="display:block;">
+          <img 
+            src="${heroImage}" 
+            style="
+              width:100%;
+              height:auto;
+              display:block;
+            "
+          />
+        </a>
+        `
+        : `
+        <img 
+          src="${heroImage}" 
+          style="
+            width:100%;
+            height:auto;
+            display:block;
+          "
+        />
+        `
+    }
   </div>
 
   <!-- CONTENT -->
@@ -62,12 +83,27 @@ export function EmailHeaderMedia(
       logo
         ? `
         <div style="margin-bottom:10px;">
-          <img src="${logo}" style="
-            max-width:100px;
-            height:auto;
-            opacity:0.9;
-          " />
-        </div>`
+          ${
+            headerConfig.logoLink
+              ? `
+              <a href="${headerConfig.logoLink}" target="_blank">
+                <img src="${logo}" style="
+                  max-width:100px;
+                  height:auto;
+                  opacity:0.9;
+                " />
+              </a>
+              `
+              : `
+              <img src="${logo}" style="
+                max-width:100px;
+                height:auto;
+                opacity:0.9;
+              " />
+              `
+          }
+        </div>
+        `
         : ""
     }
 
