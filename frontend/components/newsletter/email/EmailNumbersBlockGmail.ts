@@ -24,65 +24,13 @@ function formatValue(n: NewsletterNumberItem) {
     .join(" ");
 }
 
-/* =========================================================
-   BLOCK
-========================================================= */
+export function EmailNumbersBlock(numbers: NewsletterNumberItem[]) {
+  if (!numbers.length) return "";
 
-export function EmailNumbersBlockGmail(
-  numbers: NewsletterNumberItem[]
-) {
-  if (!numbers?.length) return "";
-
-  const rows = numbers
-    .map((n, index) => `
-<tr>
-<td style="
-  padding:16px 0;
-  border-bottom:${index === numbers.length - 1 ? "none" : "1px solid #F3F4F6"};
-  font-family:Arial,Helvetica,sans-serif;
-">
-
-  <!-- VALUE -->
-  <div style="
-    font-size:18px;
-    font-weight:700;
-    color:#111827;
-    line-height:1.2;
-    margin-bottom:4px;
-  ">
-    ${formatValue(n)}
-  </div>
-
-  <!-- LABEL -->
-  <div style="
-    font-size:14px;
-    color:#374151;
-    line-height:1.4;
-  ">
-    ${escapeHtml(n.label)}
-  </div>
-
-  ${
-    n.entity
-      ? `
-  <!-- ENTITY -->
-  <div style="
-    margin-top:4px;
-    font-size:11px;
-    color:#9CA3AF;
-    text-transform:uppercase;
-    letter-spacing:0.06em;
-  ">
-    ${escapeHtml(n.entity.label)}
-  </div>
-  `
-      : ""
+  const rows = [];
+  for (let i = 0; i < numbers.length; i += 2) {
+    rows.push(numbers.slice(i, i + 2));
   }
-
-</td>
-</tr>
-`)
-    .join("");
 
   return `
 <tr>
@@ -103,6 +51,66 @@ export function EmailNumbersBlockGmail(
 </td>
 </tr>
 
-${rows}
+${rows
+  .map(
+    (pair, index) => `
+<tr>
+<td style="
+  padding:12px 0;
+  border-bottom:${index === rows.length - 1 ? "none" : "1px solid #F3F4F6"};
+">
+
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr>
+
+${pair
+  .map(
+    (n) => `
+<td width="50%" valign="top" style="padding-right:12px;">
+
+  <div style="
+    font-size:16px;
+    font-weight:700;
+    color:#111827;
+    margin-bottom:2px;
+  ">
+    ${formatValue(n)}
+  </div>
+
+  <div style="
+    font-size:13px;
+    color:#374151;
+    line-height:1.3;
+  ">
+    ${escapeHtml(n.label)}
+  </div>
+
+  ${
+    n.entity
+      ? `<div style="
+          font-size:11px;
+          color:#9CA3AF;
+          margin-top:2px;
+        ">
+          ${escapeHtml(n.entity.label)}
+        </div>`
+      : ""
+  }
+
+</td>
+`
+  )
+  .join("")}
+
+${pair.length === 1 ? `<td width="50%"></td>` : ""}
+
+</tr>
+</table>
+
+</td>
+</tr>
+`
+  )
+  .join("")}
 `;
 }
