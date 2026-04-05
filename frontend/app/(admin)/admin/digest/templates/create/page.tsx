@@ -1,60 +1,99 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import SearchableMultiSelect, {
+  SelectOption,
+} from "@/components/ui/SearchableMultiSelect";
 
-import DigestHeaderConfig from "@/components/digest/DigestHeaderConfig";
-import type { HeaderConfig } from "@/types/newsletter";
-
-export default function TemplateCreatePage() {
-  const router = useRouter();
-
-  /* =========================================================
-     STATE
-  ========================================================= */
-
+export default function AdminDigestTemplateCreatePage() {
   const [name, setName] = useState("");
 
-  const [topics, setTopics] = useState<string[]>([]);
-  const [companies, setCompanies] = useState<string[]>([]);
-  const [newsTypes, setNewsTypes] = useState<string[]>([]);
+  const [topics, setTopics] = useState<SelectOption[]>([]);
+  const [companies, setCompanies] = useState<SelectOption[]>([]);
+  const [types, setTypes] = useState<SelectOption[]>([]);
 
-  const [headerConfig, setHeaderConfig] = useState<HeaderConfig>({
-    title: "",
-    subtitle: "",
-    period: "",
-    headerCompany: undefined,
-    showTopicStats: false,
-    topBarEnabled: true,
-    topBarColor: "#84CC16",
-    periodColor: "#84CC16",
-    introHtml: "",
-  });
-
-  const [introText, setIntroText] = useState("");
+  const [topicOptions, setTopicOptions] = useState<SelectOption[]>([]);
+  const [companyOptions, setCompanyOptions] = useState<SelectOption[]>([]);
+  const [typeOptions, setTypeOptions] = useState<SelectOption[]>([]);
 
   const [loading, setLoading] = useState(false);
+
+  /* =========================================================
+     LOAD REFERENTIALS (🔥 EXACTEMENT COMME DIGEST ENGINE)
+  ========================================================= */
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const t = await api.get("/topic/list");
+        const c = await api.get("/company/list");
+        const nt = await api.get("/news/types");
+
+        const topicsRaw =
+          Array.isArray(t)
+            ? t
+            : t?.result?.topics || t?.topics || t?.result || [];
+
+        const companiesRaw =
+          Array.isArray(c)
+            ? c
+            : c?.result?.companies || c?.companies || c?.result || [];
+
+        const typesRaw =
+          Array.isArray(nt)
+            ? nt
+            : nt?.result?.types || nt?.types || nt?.result || [];
+
+        setTopicOptions(
+          topicsRaw.map((x: any) => ({
+            id: x.ID_TOPIC ?? x.id_topic ?? x.id,
+            label: x.LABEL ?? x.label ?? x.name,
+          }))
+        );
+
+        setCompanyOptions(
+          companiesRaw.map((x: any) => ({
+            id: x.ID_COMPANY ?? x.id_company ?? x.id,
+            label: x.NAME ?? x.name,
+          }))
+        );
+
+        setTypeOptions(
+          typesRaw.map((x: any) => ({
+            id: x.code || x.CODE || x.news_type || x.TYPE,
+            label: x.label || x.LABEL,
+          }))
+        );
+
+      } catch (e) {
+        console.error("Erreur load référentiels", e);
+      }
+    }
+
+    load();
+  }, []);
 
   /* =========================================================
      SAVE
   ========================================================= */
 
-  async function handleSave() {
+  async function handleCreate() {
     setLoading(true);
 
-    const payload = {
-      name,
-      topics,
-      companies,
-      news_types: newsTypes,
-      header_config: headerConfig,
-      intro_text: introText,
-    };
-
     try {
-      await api.post("/admin/digest/template", payload);
-      router.push("/admin/digest/templates");
+      await api.post("/admin/digest/template", {
+        name,
+        topics: topics.map((t) => t.id),
+        companies: companies.map((c) => c.id),
+        news_types: types.map((t) => t.id),
+      });
+
+      alert("Template créé");
+
+    } catch (e) {
+      console.error(e);
+      alert("Erreur");
     } finally {
       setLoading(false);
     }
@@ -65,75 +104,47 @@ export default function TemplateCreatePage() {
   ========================================================= */
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="max-w-3xl space-y-6">
 
       <h1 className="text-lg font-semibold">
         Nouveau template
       </h1>
 
-      <div className="bg-white border rounded-lg p-4 space-y-3">
-
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Nom du template"
-          className="w-full border rounded px-3 py-2 text-sm"
-        />
-
-        <input
-          value={topics.join(",")}
-          onChange={(e) =>
-            setTopics(e.target.value.split(",").map((s) => s.trim()))
-          }
-          placeholder="Topics (ids séparés par ,)"
-          className="w-full border rounded px-3 py-2 text-sm"
-        />
-
-        <input
-          value={companies.join(",")}
-          onChange={(e) =>
-            setCompanies(e.target.value.split(",").map((s) => s.trim()))
-          }
-          placeholder="Companies (ids)"
-          className="w-full border rounded px-3 py-2 text-sm"
-        />
-
-        <input
-          value={newsTypes.join(",")}
-          onChange={(e) =>
-            setNewsTypes(e.target.value.split(",").map((s) => s.trim()))
-          }
-          placeholder="News types"
-          className="w-full border rounded px-3 py-2 text-sm"
-        />
-
-      </div>
-
-      <DigestHeaderConfig
-        headerConfig={headerConfig}
-        setHeaderConfig={setHeaderConfig}
-        introText={introText}
-        setIntroText={setIntroText}
+      <input
+        className="w-full border p-2 rounded"
+        placeholder="Nom du template"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
       />
 
-      <div className="flex gap-3">
+      <SearchableMultiSelect
+        label="Topics"
+        options={topicOptions}
+        values={topics}
+        onChange={setTopics}
+      />
 
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          className="px-4 py-2 bg-black text-white text-sm rounded"
-        >
-          {loading ? "Enregistrement…" : "Créer"}
-        </button>
+      <SearchableMultiSelect
+        label="Sociétés"
+        options={companyOptions}
+        values={companies}
+        onChange={setCompanies}
+      />
 
-        <button
-          onClick={() => router.push("/admin/digest/templates")}
-          className="px-4 py-2 border text-sm rounded"
-        >
-          Annuler
-        </button>
+      <SearchableMultiSelect
+        label="Types"
+        options={typeOptions}
+        values={types}
+        onChange={setTypes}
+      />
 
-      </div>
+      <button
+        onClick={handleCreate}
+        disabled={loading}
+        className="bg-black text-white px-4 py-2 rounded"
+      >
+        Créer
+      </button>
 
     </div>
   );
