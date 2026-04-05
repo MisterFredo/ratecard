@@ -113,6 +113,8 @@ def _search_news_digest(
     cursor,
     news_kind,
     period,
+    date_from=None,
+    date_to=None,
 ):
 
     where_clauses = [
@@ -123,7 +125,11 @@ def _search_news_digest(
 
     params = {"limit": limit}
 
-    # 🔥 TOPICS (OK avec ta vue)
+    # =========================================================
+    # FILTERS
+    # =========================================================
+
+    # 🔥 TOPICS
     if topics:
         where_clauses.append("""
             EXISTS (
@@ -149,15 +155,35 @@ def _search_news_digest(
         where_clauses.append("published_at < @cursor")
         params["cursor"] = cursor
 
-    # 🔥 PERIOD
-    if period == "7d":
-        where_clauses.append(
-            "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
-        )
-    elif period == "30d":
-        where_clauses.append(
-            "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
-        )
+    # =========================================================
+    # DATE OVERRIDE (PRIORITAIRE)
+    # =========================================================
+
+    if date_from:
+        where_clauses.append("DATE(published_at) >= DATE(@date_from)")
+        params["date_from"] = date_from
+
+    if date_to:
+        where_clauses.append("DATE(published_at) <= DATE(@date_to)")
+        params["date_to"] = date_to
+
+    # =========================================================
+    # PERIOD (UNIQUEMENT SI PAS DE DATES)
+    # =========================================================
+
+    if not date_from and not date_to:
+        if period == "7d":
+            where_clauses.append(
+                "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
+            )
+        elif period == "30d":
+            where_clauses.append(
+                "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
+            )
+
+    # =========================================================
+    # SQL
+    # =========================================================
 
     where_sql = " AND ".join(where_clauses)
 
@@ -182,6 +208,10 @@ def _search_news_digest(
 
     rows = query_bq(sql, params)
 
+    # =========================================================
+    # FORMAT
+    # =========================================================
+
     return [
         {
             "id": r["id_news"],
@@ -201,7 +231,6 @@ def _search_news_digest(
         for r in rows
     ]
 
-
 # ============================================================
 # ANALYSES (🔥 FIX MAJEUR ICI)
 # ============================================================
@@ -212,6 +241,8 @@ def _search_analyses_digest(
     limit,
     cursor,
     period,
+    date_from=None,
+    date_to=None,
 ):
 
     where_clauses = [
@@ -220,7 +251,11 @@ def _search_analyses_digest(
 
     params = {"limit": limit}
 
-    # 🔥 TOPICS (ARRAY dans la vue)
+    # =========================================================
+    # FILTERS
+    # =========================================================
+
+    # 🔥 TOPICS (ARRAY)
     if topics:
         where_clauses.append("""
             EXISTS (
@@ -231,7 +266,7 @@ def _search_analyses_digest(
         """)
         params["topics"] = topics
 
-    # 🔥 COMPANIES (ARRAY dans la vue)
+    # 🔥 COMPANIES (ARRAY)
     if companies:
         where_clauses.append("""
             EXISTS (
@@ -247,15 +282,35 @@ def _search_analyses_digest(
         where_clauses.append("published_at < @cursor")
         params["cursor"] = cursor
 
-    # 🔥 PERIOD
-    if period == "7d":
-        where_clauses.append(
-            "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
-        )
-    elif period == "30d":
-        where_clauses.append(
-            "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
-        )
+    # =========================================================
+    # DATE OVERRIDE (PRIORITAIRE)
+    # =========================================================
+
+    if date_from:
+        where_clauses.append("DATE(published_at) >= DATE(@date_from)")
+        params["date_from"] = date_from
+
+    if date_to:
+        where_clauses.append("DATE(published_at) <= DATE(@date_to)")
+        params["date_to"] = date_to
+
+    # =========================================================
+    # PERIOD (UNIQUEMENT SI PAS DE DATES)
+    # =========================================================
+
+    if not date_from and not date_to:
+        if period == "7d":
+            where_clauses.append(
+                "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
+            )
+        elif period == "30d":
+            where_clauses.append(
+                "DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
+            )
+
+    # =========================================================
+    # SQL
+    # =========================================================
 
     where_sql = " AND ".join(where_clauses)
 
@@ -274,6 +329,10 @@ def _search_analyses_digest(
     """
 
     rows = query_bq(sql, params)
+
+    # =========================================================
+    # FORMAT
+    # =========================================================
 
     return [
         {
