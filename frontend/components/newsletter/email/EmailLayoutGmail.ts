@@ -4,17 +4,30 @@ export function EmailLayoutGmail(content: string) {
 <html>
 <head>
 <meta charset="UTF-8" />
+
+<style>
+  body, table, td, div, p {
+    font-family: Arial, Helvetica, sans-serif !important;
+  }
+</style>
+
 </head>
 
 <body style="
   margin:0;
   padding:0;
   background:#F3F4F6;
+  font-family:Arial,Helvetica,sans-serif;
 ">
 
-  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#F3F4F6;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+    style="
+      background:#F3F4F6;
+      font-family:Arial,Helvetica,sans-serif;
+    "
+  >
     <tr>
-      <td align="center">
+      <td align="center" style="font-family:Arial,Helvetica,sans-serif;">
 
         <!-- MAIN CONTAINER -->
         <table
@@ -26,21 +39,31 @@ export function EmailLayoutGmail(content: string) {
             width:100%;
             max-width:720px;
             background:#FFFFFF;
+            font-family:Arial,Helvetica,sans-serif;
           "
         >
 
-          <!-- CONTENT WRAPPER (🔥 FIX CRITIQUE) -->
+          <!-- CONTENT WRAPPER -->
           <tr>
             <td style="
               padding:0 24px;
               font-family:Arial,Helvetica,sans-serif;
               color:#111827;
             ">
-              <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+
+              <!-- 🔥 INNER WRAPPER (CRITICAL) -->
+              <table 
+                width="100%" 
+                cellpadding="0" 
+                cellspacing="0" 
+                role="presentation"
+                style="font-family:Arial,Helvetica,sans-serif;"
+              >
 
                 ${content}
 
               </table>
+
             </td>
           </tr>
 
