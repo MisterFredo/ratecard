@@ -24,7 +24,7 @@ function formatValue(n: NewsletterNumberItem) {
     .join(" ");
 }
 
-export function EmailNumbersBlock(numbers: NewsletterNumberItem[]) {
+export function EmailNumbersBlockGmail(numbers: NewsletterNumberItem[]) {
   if (!numbers.length) return "";
 
   const rows = [];
