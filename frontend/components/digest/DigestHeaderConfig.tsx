@@ -25,8 +25,7 @@ export default function DigestHeaderConfig({
 }: Props) {
 
   /* =========================================================
-     SAFE DEFAULTS (🔥 EXECUTION ONCE)
-     → évite loop + override user
+     SAFE DEFAULTS
   ========================================================= */
 
   const initialized = useRef(false);
@@ -39,7 +38,7 @@ export default function DigestHeaderConfig({
       ...prev,
 
       /* ===============================
-         VARIANT (CORE)
+         VARIANT
       =============================== */
       variant: prev.variant || "media",
 
@@ -59,11 +58,18 @@ export default function DigestHeaderConfig({
       periodColor: prev.periodColor || "#84CC16",
 
       /* ===============================
-         INTRO (SOURCE UNIQUE)
+         INTRO
       =============================== */
       introHtml:
         prev.introHtml ??
-        (introText || ""), // 🔥 sync initial
+        (introText || ""),
+
+      /* ===============================
+         MEDIA DEFAULTS (NEW)
+      =============================== */
+      heroLink: prev.heroLink || "",
+      heroImageUrl: prev.heroImageUrl || "",
+      logoLink: prev.logoLink || "",
 
       /* ===============================
          BACKWARD COMPAT
@@ -77,7 +83,7 @@ export default function DigestHeaderConfig({
   /* ========================================================= */
 
   return (
-    <section className="border border-gray-200 rounded-lg bg-white px-4 py-4 space-y-4">
+    <section className="border border-gray-200 rounded-lg bg-white px-4 py-4 space-y-5">
 
       {/* HEADER */}
       <div className="flex items-center justify-between">
@@ -104,6 +110,59 @@ export default function DigestHeaderConfig({
           headerConfig={headerConfig}
           setHeaderConfig={setHeaderConfig}
         />
+
+        {/* ===============================
+            MEDIA (NEW)
+        =============================== */}
+        <div className="col-span-2 border-t pt-3 space-y-2">
+
+          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Media (Header)
+          </div>
+
+          {/* HERO LINK */}
+          <input
+            type="text"
+            placeholder="Lien du visuel (hero)"
+            className="w-full border rounded px-2 py-1 text-sm"
+            value={headerConfig.heroLink || ""}
+            onChange={(e) =>
+              setHeaderConfig((prev) => ({
+                ...prev,
+                heroLink: e.target.value,
+              }))
+            }
+          />
+
+          {/* HERO IMAGE URL */}
+          <input
+            type="text"
+            placeholder="URL image (optionnel)"
+            className="w-full border rounded px-2 py-1 text-sm"
+            value={headerConfig.heroImageUrl || ""}
+            onChange={(e) =>
+              setHeaderConfig((prev) => ({
+                ...prev,
+                heroImageUrl: e.target.value,
+              }))
+            }
+          />
+
+          {/* LOGO LINK */}
+          <input
+            type="text"
+            placeholder="Lien du logo (optionnel)"
+            className="w-full border rounded px-2 py-1 text-sm"
+            value={headerConfig.logoLink || ""}
+            onChange={(e) =>
+              setHeaderConfig((prev) => ({
+                ...prev,
+                logoLink: e.target.value,
+              }))
+            }
+          />
+
+        </div>
 
         {/* ===============================
             INTRO (HTML EDITOR)
