@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Any
 import uuid
 import json
@@ -57,7 +57,6 @@ def create_template(data: Dict[str, Any]) -> str:
 
     return template_id
 
-
 # ============================================================
 # APPLY TEMPLATE
 # ============================================================
@@ -69,29 +68,85 @@ def apply_template(template_id: str):
     if not tpl:
         return None
 
-    # 🔥 FILTRES
-    topics = tpl.get("topics")
-    companies = tpl.get("companies")
-    news_types = tpl.get("news_types")
+    header_config = tpl.get("header_config") or {}
+    blocks = header_config.get("blocks", {})
 
-    # 🔥 SEARCH
-    result = search_digest(
-        topics=topics,
-        companies=companies,
-        news_types=news_types,
-        limit=50,
+    # =========================================================
+    # PERIOD RESOLUTION
+    # =========================================================
+
+    def resolve_period(block):
+
+        period = block.get("period")
+
+        if period == "last_month":
+            return get_previous_month_range()
+
+        return None, None
+
+    # =========================================================
+    # NEWS
+    # =========================================================
+
+    news_block = blocks.get("news", {})
+    news_from, news_to = resolve_period(news_block)
+
+    news = search_digest(
+        topics=news_block.get("topics"),
+        companies=news_block.get("companies"),
+        news_types=None,
+        limit=news_block.get("limit", 10),
         period="total",
-    )
+        date_from=news_from,
+        date_to=news_to,
+    ).get("news", [])
+
+    # =========================================================
+    # BRÈVES
+    # =========================================================
+
+    breves_block = blocks.get("breves", {})
+    breves_from, breves_to = resolve_period(breves_block)
+
+    breves = search_digest(
+        topics=breves_block.get("topics"),
+        companies=breves_block.get("companies"),
+        news_types=None,
+        limit=breves_block.get("limit", 10),
+        period="total",
+        date_from=breves_from,
+        date_to=breves_to,
+    ).get("breves", [])
+
+    # =========================================================
+    # ANALYSES
+    # =========================================================
+
+    analyses_block = blocks.get("analyses", {})
+    analyses_from, analyses_to = resolve_period(analyses_block)
+
+    analyses = search_digest(
+        topics=analyses_block.get("topics"),
+        companies=analyses_block.get("companies"),
+        news_types=None,
+        limit=analyses_block.get("limit", 10),
+        period="total",
+        date_from=analyses_from,
+        date_to=analyses_to,
+    ).get("analyses", [])
+
+    # =========================================================
+    # FINAL STRUCTURE
+    # =========================================================
 
     return {
-        "news": result.get("news", []),
-        "breves": result.get("breves", []),
-        "analyses": result.get("analyses", []),
-        "numbers": result.get("numbers", []),
+        "news": news,
+        "breves": breves,
+        "analyses": analyses,
+        "numbers": [],  # pas concerné
 
-        # 🔥 éditorial
         "editorial_order": tpl.get("editorial_order") or [],
-        "header_config": tpl.get("header_config") or {},
+        "header_config": header_config,
         "intro_text": tpl.get("intro_text") or "",
     }
 
@@ -134,6 +189,22 @@ def list_templates():
 # ============================================================
 # GET ONE
 # ============================================================
+
+def get_previous_month_range():
+    """
+    Retourne le mois calendaire précédent complet.
+    Exemple :
+    - 5 avril → 1er mars → 31 mars
+    """
+    today = datetime.utcnow()
+
+    first_day_current_month = today.replace(day=1)
+
+    last_day_previous_month = first_day_current_month - timedelta(days=1)
+
+    first_day_previous_month = last_day_previous_month.replace(day=1)
+
+    return first_day_previous_month, last_day_previous_month
 
 def get_template(template_id: str):
 
