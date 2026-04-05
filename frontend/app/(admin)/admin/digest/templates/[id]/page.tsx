@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import SearchableMultiSelect, {
+  SelectOption,
+} from "@/components/ui/SearchableMultiSelect";
 
 import DigestHeaderConfig from "@/components/digest/DigestHeaderConfig";
 import type { HeaderConfig } from "@/types/newsletter";
@@ -19,9 +22,16 @@ export default function TemplateEditPage() {
 
   const [name, setName] = useState("");
 
-  const [topics, setTopics] = useState<string[]>([]);
-  const [companies, setCompanies] = useState<string[]>([]);
-  const [newsTypes, setNewsTypes] = useState<string[]>([]);
+  const [topics, setTopics] = useState<SelectOption[]>([]);
+  const [companies, setCompanies] = useState<SelectOption[]>([]);
+  const [types, setTypes] = useState<SelectOption[]>([]);
+
+  const [topicOptions, setTopicOptions] = useState<SelectOption[]>([]);
+  const [companyOptions, setCompanyOptions] = useState<SelectOption[]>([]);
+  const [typeOptions, setTypeOptions] = useState<SelectOption[]>([]);
+
+  const [limit, setLimit] = useState(10);
+  const [period, setPeriod] = useState<"last_month" | "30d" | "7d">("last_month");
 
   const [headerConfig, setHeaderConfig] = useState<HeaderConfig>({
     title: "",
@@ -40,24 +50,111 @@ export default function TemplateEditPage() {
   const [loading, setLoading] = useState(false);
 
   /* =========================================================
+     LOAD REFERENTIALS
+  ========================================================= */
+
+  useEffect(() => {
+    async function loadRefs() {
+      try {
+        const t = await api.get("/topic/list");
+        const c = await api.get("/company/list");
+        const nt = await api.get("/news/types");
+
+        const topicsRaw =
+          Array.isArray(t)
+            ? t
+            : t?.result?.topics || t?.topics || t?.result || [];
+
+        const companiesRaw =
+          Array.isArray(c)
+            ? c
+            : c?.result?.companies || c?.companies || c?.result || [];
+
+        const typesRaw =
+          Array.isArray(nt)
+            ? nt
+            : nt?.result?.types || nt?.types || nt?.result || [];
+
+        setTopicOptions(
+          topicsRaw.map((x: any) => ({
+            id: x.ID_TOPIC ?? x.id_topic ?? x.id,
+            label: x.LABEL ?? x.label ?? x.name,
+          }))
+        );
+
+        setCompanyOptions(
+          companiesRaw.map((x: any) => ({
+            id: x.ID_COMPANY ?? x.id_company ?? x.id,
+            label: x.NAME ?? x.name,
+          }))
+        );
+
+        setTypeOptions(
+          typesRaw.map((x: any) => ({
+            id: x.code || x.CODE || x.news_type || x.TYPE,
+            label: x.label || x.LABEL,
+          }))
+        );
+
+      } catch (e) {
+        console.error("Erreur load référentiels", e);
+      }
+    }
+
+    loadRefs();
+  }, []);
+
+  /* =========================================================
      LOAD TEMPLATE
   ========================================================= */
 
   useEffect(() => {
-    async function load() {
-      const res = await api.get(`/admin/digest/template/${templateId}`);
-      const tpl = res.template;
+    async function loadTemplate() {
+      try {
+        const res = await api.get(`/admin/digest/template/${templateId}`);
+        const tpl = res.template;
 
-      setName(tpl.name || "");
-      setTopics(tpl.topics || []);
-      setCompanies(tpl.companies || []);
-      setNewsTypes(tpl.news_types || []);
+        setName(tpl.name || "");
 
-      setHeaderConfig(tpl.header_config || {});
-      setIntroText(tpl.intro_text || "");
+        // 🔥 mapping vers SelectOption
+        setTopics(
+          (tpl.topics || []).map((id: string) => ({
+            id,
+            label: id,
+          }))
+        );
+
+        setCompanies(
+          (tpl.companies || []).map((id: string) => ({
+            id,
+            label: id,
+          }))
+        );
+
+        setTypes(
+          (tpl.news_types || []).map((id: string) => ({
+            id,
+            label: id,
+          }))
+        );
+
+        const blocks = tpl.header_config?.blocks || {};
+
+        const baseBlock =
+          blocks.news || blocks.analyses || blocks.breves || {};
+
+        setLimit(baseBlock.limit || 10);
+        setPeriod(baseBlock.period || "last_month");
+
+        setHeaderConfig(tpl.header_config || {});
+        setIntroText(tpl.intro_text || "");
+
+      } catch (e) {
+        console.error("Erreur load template", e);
+      }
     }
 
-    if (templateId) load();
+    if (templateId) loadTemplate();
   }, [templateId]);
 
   /* =========================================================
@@ -67,18 +164,46 @@ export default function TemplateEditPage() {
   async function handleSave() {
     setLoading(true);
 
-    const payload = {
-      name,
-      topics,
-      companies,
-      news_types: newsTypes,
-      header_config: headerConfig,
-      intro_text: introText,
-    };
-
     try {
-      await api.put(`/admin/digest/template/${templateId}`, payload);
+      await api.put(`/admin/digest/template/${templateId}`, {
+        name,
+
+        topics: topics.map((t) => t.id),
+        companies: companies.map((c) => c.id),
+        news_types: types.map((t) => t.id),
+
+        header_config: {
+          ...headerConfig,
+          blocks: {
+            news: {
+              topics: topics.map((t) => t.id),
+              companies: companies.map((c) => c.id),
+              limit,
+              period,
+            },
+            breves: {
+              topics: topics.map((t) => t.id),
+              companies: companies.map((c) => c.id),
+              limit,
+              period,
+            },
+            analyses: {
+              topics: topics.map((t) => t.id),
+              companies: companies.map((c) => c.id),
+              limit,
+              period,
+            },
+          },
+        },
+
+        intro_text: introText,
+      });
+
       router.push("/admin/digest/templates");
+
+    } catch (e) {
+      console.error(e);
+      alert("Erreur sauvegarde");
     } finally {
       setLoading(false);
     }
@@ -89,48 +214,75 @@ export default function TemplateEditPage() {
   ========================================================= */
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="max-w-3xl space-y-6">
 
       <h1 className="text-lg font-semibold">
         Modifier template
       </h1>
 
-      <div className="bg-white border rounded-lg p-4 space-y-3">
+      <input
+        className="w-full border p-2 rounded"
+        placeholder="Nom du template"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
 
+      <SearchableMultiSelect
+        label="Topics"
+        options={topicOptions}
+        values={topics}
+        onChange={setTopics}
+      />
+
+      <SearchableMultiSelect
+        label="Sociétés"
+        options={companyOptions}
+        values={companies}
+        onChange={setCompanies}
+      />
+
+      <SearchableMultiSelect
+        label="Types"
+        options={typeOptions}
+        values={types}
+        onChange={setTypes}
+      />
+
+      {/* LIMIT */}
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">
+          Nombre d’items
+        </label>
         <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Nom du template"
-          className="w-full border rounded px-3 py-2 text-sm"
+          type="number"
+          value={limit}
+          onChange={(e) => setLimit(Number(e.target.value))}
+          className="w-full border p-2 rounded"
         />
+      </div>
 
-        <input
-          value={topics.join(",")}
-          onChange={(e) =>
-            setTopics(e.target.value.split(",").map((s) => s.trim()))
-          }
-          placeholder="Topics (ids séparés par ,)"
-          className="w-full border rounded px-3 py-2 text-sm"
-        />
-
-        <input
-          value={companies.join(",")}
-          onChange={(e) =>
-            setCompanies(e.target.value.split(",").map((s) => s.trim()))
-          }
-          placeholder="Companies (ids)"
-          className="w-full border rounded px-3 py-2 text-sm"
-        />
-
-        <input
-          value={newsTypes.join(",")}
-          onChange={(e) =>
-            setNewsTypes(e.target.value.split(",").map((s) => s.trim()))
-          }
-          placeholder="News types"
-          className="w-full border rounded px-3 py-2 text-sm"
-        />
-
+      {/* PERIOD */}
+      <div className="flex gap-2">
+        {[
+          { key: "last_month", label: "Mois précédent" },
+          { key: "30d", label: "30 jours" },
+          { key: "7d", label: "7 jours" },
+        ].map((p) => (
+          <button
+            key={p.key}
+            onClick={() => setPeriod(p.key as any)}
+            className={`
+              px-3 py-2 text-xs rounded
+              ${
+                period === p.key
+                  ? "bg-black text-white"
+                  : "bg-gray-100 text-gray-700"
+              }
+            `}
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
 
       <DigestHeaderConfig
@@ -141,7 +293,6 @@ export default function TemplateEditPage() {
       />
 
       <div className="flex gap-3">
-
         <button
           onClick={handleSave}
           disabled={loading}
@@ -156,7 +307,6 @@ export default function TemplateEditPage() {
         >
           Annuler
         </button>
-
       </div>
 
     </div>
