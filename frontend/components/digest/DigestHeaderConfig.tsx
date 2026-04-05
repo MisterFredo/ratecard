@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { HeaderConfig } from "@/types/newsletter";
+import { api } from "@/lib/api";
 
 import HeaderMainFields from "./HeaderMainFields";
 import HeaderBranding from "./HeaderBranding";
@@ -24,12 +25,30 @@ export default function DigestHeaderConfig({
   setIntroText,
 }: Props) {
 
-  /* =========================================================
-     SAFE DEFAULTS
-  ========================================================= */
-
   const initialized = useRef(false);
 
+  /* 🔥 EVENTS */
+  const [events, setEvents] = useState<any[]>([]);
+
+  /* ---------------------------------------------------------
+     LOAD EVENTS
+  --------------------------------------------------------- */
+  useEffect(() => {
+    async function loadEvents() {
+      try {
+        const res = await api.get("/event/list");
+        setEvents(res.events || []);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    loadEvents();
+  }, []);
+
+  /* ---------------------------------------------------------
+     DEFAULTS
+  --------------------------------------------------------- */
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
@@ -37,50 +56,34 @@ export default function DigestHeaderConfig({
     setHeaderConfig((prev) => ({
       ...prev,
 
-      /* ===============================
-         VARIANT
-      =============================== */
       variant: prev.variant || "media",
 
-      /* ===============================
-         TOP BAR
-      =============================== */
       topBarEnabled:
         prev.topBarEnabled !== undefined
           ? prev.topBarEnabled
           : true,
 
       topBarColor: prev.topBarColor || "#84CC16",
-
-      /* ===============================
-         COLORS
-      =============================== */
       periodColor: prev.periodColor || "#84CC16",
 
-      /* ===============================
-         EDITORIAL (ex-intro)
-      =============================== */
       introHtml:
         prev.introHtml ??
         (introText || ""),
 
-      /* ===============================
-         MEDIA DEFAULTS
-      =============================== */
+      /* 🔥 NEW */
+      eventId: prev.eventId || undefined,
+
       heroLink: prev.heroLink || "",
       heroImageUrl: prev.heroImageUrl || "",
       logoLink: prev.logoLink || "",
 
-      /* ===============================
-         BACKWARD COMPAT
-      =============================== */
       title: prev.title || "",
       subtitle: prev.subtitle ?? "",
       period: prev.period ?? "",
     }));
   }, [setHeaderConfig, introText]);
 
-  /* ========================================================= */
+  /* --------------------------------------------------------- */
 
   return (
     <section className="border border-gray-200 rounded-lg bg-white px-4 py-4 space-y-5">
@@ -92,20 +95,15 @@ export default function DigestHeaderConfig({
         </h2>
       </div>
 
-      {/* GRID */}
       <div className="grid grid-cols-2 gap-3">
 
-        {/* ===============================
-            MAIN TEXT
-        =============================== */}
+        {/* MAIN */}
         <HeaderMainFields
           headerConfig={headerConfig}
           setHeaderConfig={setHeaderConfig}
         />
 
-        {/* ===============================
-            BRANDING
-        =============================== */}
+        {/* BRANDING */}
         <HeaderBranding
           headerConfig={headerConfig}
           setHeaderConfig={setHeaderConfig}
@@ -114,12 +112,33 @@ export default function DigestHeaderConfig({
         {/* ===============================
             MEDIA (HEADER)
         =============================== */}
-        <div className="col-span-2 border-t pt-3 space-y-2">
+        <div className="col-span-2 border-t pt-3 space-y-3">
 
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
             Media (Header)
           </div>
 
+          {/* 🔥 EVENT SELECT */}
+          <select
+            className="w-full border rounded px-2 py-1 text-sm"
+            value={headerConfig.eventId || ""}
+            onChange={(e) =>
+              setHeaderConfig((prev) => ({
+                ...prev,
+                eventId: e.target.value || undefined,
+              }))
+            }
+          >
+            <option value="">— Aucun event —</option>
+
+            {events.map((e) => (
+              <option key={e.ID_EVENT} value={e.ID_EVENT}>
+                {e.LABEL}
+              </option>
+            ))}
+          </select>
+
+          {/* 🔽 FALLBACK MANUEL */}
           <input
             type="text"
             placeholder="Lien du visuel (hero)"
@@ -135,7 +154,7 @@ export default function DigestHeaderConfig({
 
           <input
             type="text"
-            placeholder="URL image (optionnel)"
+            placeholder="URL image (fallback)"
             className="w-full border rounded px-2 py-1 text-sm"
             value={headerConfig.heroImageUrl || ""}
             onChange={(e) =>
@@ -161,9 +180,7 @@ export default function DigestHeaderConfig({
 
         </div>
 
-        {/* ===============================
-            EDITORIAL (🔥 AVANT NUMBERS)
-        =============================== */}
+        {/* EDITORIAL */}
         <EditorialEditor
           headerConfig={headerConfig}
           setHeaderConfig={setHeaderConfig}
