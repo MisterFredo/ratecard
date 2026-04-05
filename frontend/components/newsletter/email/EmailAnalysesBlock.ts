@@ -33,21 +33,21 @@ export function EmailAnalysesBlock(
   if (!analyses.length) return "";
 
   const rows = analyses
-    .map((a, index) => {
-      const url = `${PUBLIC_SITE_URL}/analysis?analysis_id=${a.id}`;
-      const safeUrl = escapeHtml(url);
+    .map((a) => {
+
+      const url = `https://getcurator.ai/analysis?analysis_id=${a.id}`;
 
       const tags = renderEmailTags({
         topics: a.topics,
-        companies: a.companies || (a.company ? [a.company] : []),
-        styles: a.styles || ["ANALYSE"],
+        companies: a.company ? [a.company] : [],
+        styles: ["ANALYSE"],
       });
 
       return `
 <tr>
 <td style="
-  padding:16px 0;
-  border-bottom:${index === analyses.length - 1 ? "none" : "1px solid #F3F4F6"};
+  padding:24px 0;
+  border-bottom:1px solid #E5E7EB;
   font-family:Arial,Helvetica,sans-serif;
 ">
 
@@ -59,19 +59,19 @@ export function EmailAnalysesBlock(
         <div style="
           font-size:12px;
           color:#6B7280;
-          margin-bottom:4px;
+          margin-bottom:6px;
         ">
-          ${formatDate(a.published_at) || ""}
+          ${formatDate(a.published_at)}
         </div>
 
         <!-- TITLE -->
-        <a href="${safeUrl}" target="_blank" style="text-decoration:none;">
+        <a href="${url}" target="_blank" style="text-decoration:none;">
           <div style="
-            font-size:14px;
+            font-size:16px;
             font-weight:600;
             color:#111827;
-            line-height:1.35;
-            margin-bottom:4px;
+            line-height:1.3;
+            margin-bottom:6px;
           ">
             ${escapeHtml(a.title)}
           </div>
@@ -79,11 +79,7 @@ export function EmailAnalysesBlock(
 
         ${
           tags
-            ? `
-        <div style="margin-bottom:4px;">
-          ${tags}
-        </div>
-        `
+            ? `<div style="margin-bottom:6px;">${tags}</div>`
             : ""
         }
 
@@ -91,9 +87,10 @@ export function EmailAnalysesBlock(
           a.excerpt
             ? `
         <div style="
-          font-size:13px;
-          line-height:1.4;
+          font-size:14px;
           color:#6B7280;
+          line-height:1.4;
+          margin-bottom:8px;
         ">
           ${escapeHtml(a.excerpt)}
         </div>
@@ -102,20 +99,15 @@ export function EmailAnalysesBlock(
         }
 
         <!-- CTA -->
-        <div style="margin-top:6px;">
-          <a href="${safeUrl}"
-             target="_blank"
-             style="
-              font-size:12px;
-              font-weight:600;
-              color:#111827;
-              text-decoration:none;
-              border-bottom:1px solid #111827;
-              padding-bottom:1px;
-             ">
-            Lire l’analyse →
-          </a>
-        </div>
+        <a href="${url}" target="_blank" style="
+          font-size:13px;
+          font-weight:600;
+          color:#111827;
+          text-decoration:none;
+          border-bottom:1px solid #111827;
+        ">
+          Lire l’analyse →
+        </a>
 
       </td>
     </tr>
