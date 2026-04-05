@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { HeaderConfig } from "@/types/newsletter";
 
 import HeaderMainFields from "./HeaderMainFields";
