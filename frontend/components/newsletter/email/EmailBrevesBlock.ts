@@ -9,12 +9,11 @@ const PUBLIC_SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   "https://ratecard.fr";
 
-
 export function EmailBrevesBlock(breves: any[]) {
   if (!breves.length) return "";
 
   const rows = breves
-    .map((b) => {
+    .map((b, index) => {
       const imageUrl = buildContentImageUrl(b.visual_rect_id);
       const breveUrl = `${PUBLIC_SITE_URL}/news?news_id=${b.id}`;
 
@@ -27,8 +26,8 @@ export function EmailBrevesBlock(breves: any[]) {
       return `
 <tr>
 <td style="
-  padding:28px 0;
-  border-bottom:1px solid #E5E7EB;
+  padding:18px 0;
+  border-bottom:${index === breves.length - 1 ? "none" : "1px solid #F3F4F6"};
   font-family:Arial,Helvetica,sans-serif;
 ">
 
@@ -40,11 +39,11 @@ export function EmailBrevesBlock(breves: any[]) {
           ? `
       <!-- IMAGE -->
       <td
-        width="150"
+        width="120"
         valign="top"
         style="
-          width:150px;
-          padding-right:18px;
+          width:120px;
+          padding-right:14px;
         "
       >
         <a href="${breveUrl}" target="_blank">
@@ -52,20 +51,17 @@ export function EmailBrevesBlock(breves: any[]) {
           <table cellpadding="0" cellspacing="0" role="presentation">
             <tr>
               <td style="
-                border:1px solid #F3F4F6;
                 background:#FFFFFF;
-                text-align:center;
-                padding:6px;
               ">
                 <img 
                   src="${imageUrl}"
                   alt=""
-                  width="110"
+                  width="100"
                   border="0"
                   style="
                     display:block;
                     width:100%;
-                    max-width:110px;
+                    max-width:100px;
                     height:auto;
                   "
                 />
@@ -85,11 +81,11 @@ export function EmailBrevesBlock(breves: any[]) {
         <!-- TITLE -->
         <a href="${breveUrl}" target="_blank" style="text-decoration:none;">
           <div style="
-            font-size:17px;
-            font-weight:700;
-            color:#111827;
+            font-size:15px;
+            font-weight:600;
+            color:#374151;
             line-height:1.35;
-            margin-bottom:8px;
+            margin-bottom:6px;
           ">
             ${escapeHtml(b.title)}
           </div>
@@ -98,8 +94,10 @@ export function EmailBrevesBlock(breves: any[]) {
         ${
           tags
             ? `
-        <!-- TAGS -->
-        <div style="margin-bottom:6px;">
+        <div style="
+          margin-bottom:6px;
+          opacity:0.8;
+        ">
           ${tags}
         </div>
         `
@@ -109,10 +107,9 @@ export function EmailBrevesBlock(breves: any[]) {
         ${
           b.excerpt
             ? `
-        <!-- EXCERPT -->
         <div style="
-          font-size:14px;
-          color:#374151;
+          font-size:13px;
+          color:#6B7280;
           line-height:1.4;
         ">
           ${escapeHtml(b.excerpt)}
@@ -135,16 +132,16 @@ export function EmailBrevesBlock(breves: any[]) {
   return `
 <tr>
 <td style="
-  padding-top:36px;
+  padding-top:28px;
   font-family:Arial,Helvetica,sans-serif;
 ">
   <div style="
-    font-size:13px;
-    font-weight:700;
-    letter-spacing:0.08em;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.12em;
     text-transform:uppercase;
-    color:#111827;
-    margin-bottom:18px;
+    color:#9CA3AF;
+    margin-bottom:12px;
   ">
     Brèves
   </div>
