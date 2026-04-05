@@ -12,7 +12,10 @@ import type {
 
 type Props = {
   headerConfig: HeaderConfig;
-  introText?: string;
+
+  // 🔥 rename logique
+  editorialHtml?: string;
+
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
@@ -22,7 +25,7 @@ type Props = {
 
 export default function DigestPreviewPanel({
   headerConfig,
-  introText,
+  editorialHtml,
   news,
   breves,
   analyses,
@@ -75,11 +78,14 @@ export default function DigestPreviewPanel({
 
             <NewsletterPreview
               headerConfig={headerConfig}
-              introText={introText}
+
+              // 🔥 clé : on passe editorial au lieu de intro
+              editorialHtml={editorialHtml}
+
               news={news}
               breves={breves}
               analyses={analyses}
-              numbers={numbers}       // ✅ OK
+              numbers={numbers}
               topicStats={topicStats}
             />
 
