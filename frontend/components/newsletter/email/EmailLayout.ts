@@ -7,6 +7,10 @@ export function EmailLayout(content: string) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <base target="_blank" />
 <style>
+  body, table, td, div, p {
+    font-family: Arial, Helvetica, sans-serif !important;
+  }
+
   @media only screen and (max-width: 600px) {
 
     .container {
@@ -47,12 +51,22 @@ export function EmailLayout(content: string) {
 </style>
 </head>
 
-<body style="margin:0;padding:0;background:#F3F4F6;">
+<body style="
+  margin:0;
+  padding:0;
+  background:#F3F4F6;
+  font-family:Arial,Helvetica,sans-serif;
+">
 
   <!-- WRAPPER -->
-  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#F3F4F6;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+    style="
+      background:#F3F4F6;
+      font-family:Arial,Helvetica,sans-serif;
+    "
+  >
     <tr>
-      <td align="center">
+      <td align="center" style="font-family:Arial,Helvetica,sans-serif;">
 
         <!-- MAIN CONTAINER -->
         <table
@@ -66,17 +80,30 @@ export function EmailLayout(content: string) {
             max-width:720px;
             margin:0 auto;
             background:#ffffff;
+            font-family:Arial,Helvetica,sans-serif;
           "
         >
 
-          <!-- CONTENT WRAPPER (🔥 FIX CRITIQUE) -->
+          <!-- CONTENT WRAPPER -->
           <tr>
-            <td style="padding:0 32px;">
-              <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+            <td style="
+              padding:0 32px;
+              font-family:Arial,Helvetica,sans-serif;
+            ">
+
+              <!-- INNER WRAPPER (🔥 CRITICAL DOUBLE FIX) -->
+              <table 
+                width="100%" 
+                cellpadding="0" 
+                cellspacing="0" 
+                role="presentation"
+                style="font-family:Arial,Helvetica,sans-serif;"
+              >
 
                 ${content}
 
               </table>
+
             </td>
           </tr>
 
