@@ -1,27 +1,13 @@
-import {
-  buildContentImageUrl,
-  escapeHtml,
-  renderEmailTags,
-} from "./EmailHelpers";
-
-import type { NewsletterNewsItem } from "@/types/newsletter";
-
-const PUBLIC_SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://ratecard.fr";
-
 export function EmailNewsBlockGmail(
   news: NewsletterNewsItem[]
 ) {
   if (!news.length) return "";
 
   const rows = news
-    .map((n) => {
-      const imageUrl = buildContentImageUrl(
-        n.visual_rect_id
-      );
-
+    .map((n, index) => {
+      const imageUrl = buildContentImageUrl(n.visual_rect_id);
       const newsUrl = `${PUBLIC_SITE_URL}/news?news_id=${n.id}`;
+      const safeUrl = escapeHtml(newsUrl);
 
       const tags = renderEmailTags({
         topics: n.topics,
@@ -32,8 +18,8 @@ export function EmailNewsBlockGmail(
       return `
 <tr>
 <td style="
-  padding:28px 0;
-  border-bottom:1px solid #E5E7EB;
+  padding:16px 0;
+  border-bottom:${index === news.length - 1 ? "none" : "1px solid #F3F4F6"};
   font-family:Arial,Helvetica,sans-serif;
 ">
 
@@ -43,27 +29,26 @@ export function EmailNewsBlockGmail(
       ${
         imageUrl
           ? `
-      <!-- IMAGE -->
+      <!-- MINI THUMB -->
       <td
-        width="140"
+        width="64"
         valign="top"
         style="
-          width:140px;
-          padding-right:16px;
+          width:64px;
+          padding-right:12px;
         "
       >
-        <a href="${newsUrl}" target="_blank">
+        <a href="${safeUrl}" target="_blank" style="display:block;">
           <img 
             src="${imageUrl}" 
             alt=""
-            width="140"
+            width="56"
             border="0"
             style="
               display:block;
-              width:100%;
-              max-width:140px;
+              width:56px;
               height:auto;
-              border:1px solid #F3F4F6;
+              border-radius:6px;
             "
           />
         </a>
@@ -79,19 +64,19 @@ export function EmailNewsBlockGmail(
         <div style="
           font-size:12px;
           color:#6B7280;
-          margin-bottom:6px;
+          margin-bottom:4px;
         ">
           ${new Date(n.published_at).toLocaleDateString("fr-FR")}
         </div>
 
         <!-- TITLE -->
-        <a href="${newsUrl}" target="_blank" style="text-decoration:none;">
+        <a href="${safeUrl}" target="_blank" style="text-decoration:none;">
           <div style="
-            font-size:18px;
-            font-weight:700;
+            font-size:14px;
+            font-weight:600;
             color:#111827;
-            line-height:1.3;
-            margin-bottom:8px;
+            line-height:1.35;
+            margin-bottom:4px;
           ">
             ${escapeHtml(n.title)}
           </div>
@@ -101,7 +86,7 @@ export function EmailNewsBlockGmail(
           tags
             ? `
         <!-- TAGS -->
-        <div style="margin-bottom:6px;">
+        <div style="margin-bottom:4px;">
           ${tags}
         </div>
         `
@@ -111,10 +96,10 @@ export function EmailNewsBlockGmail(
         ${
           n.excerpt
             ? `
-        <!-- EXCERPT -->
+        <!-- EXCERPT (SEULE DIFFÉRENCE AVEC BRÈVES) -->
         <div style="
-          font-size:14px;
-          color:#374151;
+          font-size:13px;
+          color:#6B7280;
           line-height:1.4;
         ">
           ${escapeHtml(n.excerpt)}
@@ -137,16 +122,16 @@ export function EmailNewsBlockGmail(
   return `
 <tr>
 <td style="
-  padding-top:32px;
+  padding-top:28px;
   font-family:Arial,Helvetica,sans-serif;
 ">
   <div style="
-    font-size:13px;
-    font-weight:700;
-    letter-spacing:0.08em;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.14em;
     text-transform:uppercase;
-    color:#111827;
-    margin-bottom:16px;
+    color:#9CA3AF;
+    margin-bottom:10px;
   ">
     Actualités
   </div>
