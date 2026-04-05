@@ -4,18 +4,17 @@ export function EmailEditorialBlockGmail(html: string) {
   return `
 <tr>
 <td style="
-  padding:28px 24px 22px 24px;
-  background:#FFFFFF;
+  padding:24px 0;
   font-family:Arial,Helvetica,sans-serif;
 ">
 
-  <!-- TITLE -->
+  <!-- LABEL -->
   <div style="
     font-size:11px;
     text-transform:uppercase;
-    letter-spacing:0.16em;
+    letter-spacing:0.14em;
     color:#9CA3AF;
-    margin-bottom:12px;
+    margin-bottom:10px;
     font-weight:600;
   ">
     Editorial
@@ -23,8 +22,8 @@ export function EmailEditorialBlockGmail(html: string) {
 
   <!-- CONTENT -->
   <div style="
-    font-size:16px;
-    line-height:1.7;
+    font-size:15px;
+    line-height:1.65;
     color:#111827;
     max-width:560px;
   ">
@@ -34,7 +33,7 @@ export function EmailEditorialBlockGmail(html: string) {
 </td>
 </tr>
 
-<!-- SEPARATOR (subtle) -->
+<!-- SEPARATOR -->
 <tr>
   <td style="
     height:1px;
@@ -44,9 +43,9 @@ export function EmailEditorialBlockGmail(html: string) {
   ">&nbsp;</td>
 </tr>
 
-<!-- SPACER (important Gmail) -->
+<!-- SPACER (GMAIL SAFE) -->
 <tr>
-  <td height="10" style="font-size:0; line-height:0;">&nbsp;</td>
+  <td height="8" style="font-size:0; line-height:0;">&nbsp;</td>
 </tr>
 `;
 }
