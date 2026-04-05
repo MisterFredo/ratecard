@@ -17,10 +17,14 @@ export default function AdminDigestTemplateCreatePage() {
   const [companyOptions, setCompanyOptions] = useState<SelectOption[]>([]);
   const [typeOptions, setTypeOptions] = useState<SelectOption[]>([]);
 
+  // 🔥 NEW
+  const [limit, setLimit] = useState(10);
+  const [period, setPeriod] = useState<"last_month" | "30d" | "7d">("last_month");
+
   const [loading, setLoading] = useState(false);
 
   /* =========================================================
-     LOAD REFERENTIALS (🔥 EXACTEMENT COMME DIGEST ENGINE)
+     LOAD REFERENTIALS
   ========================================================= */
 
   useEffect(() => {
@@ -84,9 +88,37 @@ export default function AdminDigestTemplateCreatePage() {
     try {
       await api.post("/admin/digest/template", {
         name,
+
         topics: topics.map((t) => t.id),
         companies: companies.map((c) => c.id),
         news_types: types.map((t) => t.id),
+
+        // 🔥 CONFIG TEMPLATE (clé du système)
+        header_config: {
+          blocks: {
+            news: {
+              topics: topics.map((t) => t.id),
+              companies: companies.map((c) => c.id),
+              limit,
+              period,
+            },
+            breves: {
+              topics: topics.map((t) => t.id),
+              companies: companies.map((c) => c.id),
+              limit,
+              period,
+            },
+            analyses: {
+              topics: topics.map((t) => t.id),
+              companies: companies.map((c) => c.id),
+              limit,
+              period,
+            },
+          },
+        },
+
+        editorial_order: [],
+        intro_text: "",
       });
 
       alert("Template créé");
@@ -137,6 +169,43 @@ export default function AdminDigestTemplateCreatePage() {
         values={types}
         onChange={setTypes}
       />
+
+      {/* 🔥 LIMIT */}
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">
+          Nombre d’items
+        </label>
+        <input
+          type="number"
+          value={limit}
+          onChange={(e) => setLimit(Number(e.target.value))}
+          className="w-full border p-2 rounded"
+        />
+      </div>
+
+      {/* 🔥 PERIOD */}
+      <div className="flex gap-2">
+        {[
+          { key: "last_month", label: "Mois précédent" },
+          { key: "30d", label: "30 jours" },
+          { key: "7d", label: "7 jours" },
+        ].map((p) => (
+          <button
+            key={p.key}
+            onClick={() => setPeriod(p.key as any)}
+            className={`
+              px-3 py-2 text-xs rounded
+              ${
+                period === p.key
+                  ? "bg-black text-white"
+                  : "bg-gray-100 text-gray-700"
+              }
+            `}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
 
       <button
         onClick={handleCreate}
