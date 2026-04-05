@@ -1,14 +1,14 @@
-export function EmailEditorialBlockGmail(html: string) {
+export function EmailEditorialBlock(html: string) {
   if (!html) return "";
 
   return `
 <tr>
 <td style="
-  padding:24px 0;
+  padding:24px 32px;
+  border-bottom:1px solid #F3F4F6;
   font-family:Arial,Helvetica,sans-serif;
 ">
 
-  <!-- LABEL -->
   <div style="
     font-size:11px;
     text-transform:uppercase;
@@ -20,7 +20,6 @@ export function EmailEditorialBlockGmail(html: string) {
     Editorial
   </div>
 
-  <!-- CONTENT -->
   <div style="
     font-size:15px;
     line-height:1.65;
@@ -31,21 +30,6 @@ export function EmailEditorialBlockGmail(html: string) {
   </div>
 
 </td>
-</tr>
-
-<!-- SEPARATOR -->
-<tr>
-  <td style="
-    height:1px;
-    background:#F3F4F6;
-    font-size:0;
-    line-height:0;
-  ">&nbsp;</td>
-</tr>
-
-<!-- SPACER (GMAIL SAFE) -->
-<tr>
-  <td height="8" style="font-size:0; line-height:0;">&nbsp;</td>
 </tr>
 `;
 }
