@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Dict, Any
 import uuid
+import json
 
 from config import BQ_PROJECT, BQ_DATASET
 from core.digest.service import search_digest
 from utils.bigquery_utils import query_bq, insert_bq, update_bq
-
 
 
 TABLE_TEMPLATE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_DIGEST_TEMPLATE"
@@ -44,9 +44,9 @@ def create_template(data: Dict[str, Any]) -> str:
         "COMPANIES": _normalize_array(data.get("companies")),
         "NEWS_TYPES": _normalize_array(data.get("news_types")),
 
-        # 🔥 CONFIG EDITO (NOUVEAU)
-        "EDITORIAL_ORDER": data.get("editorial_order", []),
-        "HEADER_CONFIG": data.get("header_config", {}),
+        # 🔥 CONFIG EDITO (STRING SAFE)
+        "EDITORIAL_ORDER": json.dumps(data.get("editorial_order", [])),
+        "HEADER_CONFIG": json.dumps(data.get("header_config", {})),
         "INTRO_TEXT": data.get("intro_text", ""),
 
         "CREATED_AT": now,
@@ -56,6 +56,7 @@ def create_template(data: Dict[str, Any]) -> str:
     insert_bq(TABLE_TEMPLATE, row)
 
     return template_id
+
 
 # ============================================================
 # APPLY TEMPLATE
@@ -68,28 +69,27 @@ def apply_template(template_id: str):
     if not tpl:
         return None
 
-    # 🔥 1. FILTRES
+    # 🔥 FILTRES
     topics = tpl.get("topics")
     companies = tpl.get("companies")
     news_types = tpl.get("news_types")
 
-    # 🔥 2. SEARCH (réutilisation pure)
+    # 🔥 SEARCH
     result = search_digest(
         topics=topics,
         companies=companies,
         news_types=news_types,
-        limit=50,  # ou ajustable
+        limit=50,
         period="total",
     )
 
-    # 🔥 3. STRUCTURE FINALE
     return {
         "news": result.get("news", []),
         "breves": result.get("breves", []),
         "analyses": result.get("analyses", []),
         "numbers": result.get("numbers", []),
 
-        # 🔥 éditorial existant
+        # 🔥 éditorial
         "editorial_order": tpl.get("editorial_order") or [],
         "header_config": tpl.get("header_config") or {},
         "intro_text": tpl.get("intro_text") or "",
@@ -156,14 +156,14 @@ def get_template(template_id: str):
         "id_template": r["ID_TEMPLATE"],
         "name": r["NAME"],
 
-        # filtres
+        # 🔥 filtres
         "topics": r.get("TOPICS") or [],
         "companies": r.get("COMPANIES") or [],
         "news_types": r.get("NEWS_TYPES") or [],
 
-        # 🔥 éditorial
-        "editorial_order": r.get("EDITORIAL_ORDER") or [],
-        "header_config": r.get("HEADER_CONFIG") or {},
+        # 🔥 éditorial (parse JSON STRING)
+        "editorial_order": json.loads(r.get("EDITORIAL_ORDER") or "[]"),
+        "header_config": json.loads(r.get("HEADER_CONFIG") or "{}"),
         "intro_text": r.get("INTRO_TEXT") or "",
 
         "created_at": r.get("CREATED_AT"),
@@ -191,12 +191,12 @@ def update_template(template_id: str, data: Dict[str, Any]):
     if "news_types" in data:
         fields["NEWS_TYPES"] = _normalize_array(data.get("news_types"))
 
-    # 🔥 éditorial
+    # 🔥 éditorial (STRING SAFE)
     if "editorial_order" in data:
-        fields["EDITORIAL_ORDER"] = data.get("editorial_order")
+        fields["EDITORIAL_ORDER"] = json.dumps(data.get("editorial_order"))
 
     if "header_config" in data:
-        fields["HEADER_CONFIG"] = data.get("header_config")
+        fields["HEADER_CONFIG"] = json.dumps(data.get("header_config"))
 
     if "intro_text" in data:
         fields["INTRO_TEXT"] = data.get("intro_text")
