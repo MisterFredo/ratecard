@@ -1,3 +1,29 @@
+import type { NewsletterNumberItem } from "@/types/newsletter";
+import { escapeHtml } from "./EmailHelpers";
+
+/* =========================================================
+   FORMAT VALUE
+========================================================= */
+
+function formatValue(n: NewsletterNumberItem) {
+  if (n.value === undefined || n.value === null) return "";
+
+  const scaleMap: any = {
+    thousand: "K",
+    million: "M",
+    millions: "M",
+    billion: "Md",
+    billions: "Md",
+  };
+
+  const scale = scaleMap[n.scale || ""] || "";
+  const unit = n.unit || "";
+
+  return [n.value, scale, unit]
+    .filter(Boolean)
+    .join(" ");
+}
+
 export function EmailNumbersBlock(numbers: NewsletterNumberItem[]) {
   if (!numbers.length) return "";
 
