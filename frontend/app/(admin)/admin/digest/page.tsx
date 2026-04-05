@@ -19,10 +19,14 @@ import type {
 
 import type { SelectOption } from "@/components/ui/SearchableMultiSelect";
 
+/* ========================================================= */
+
 type EditorialItem = {
   id: string;
   type: "news" | "breve" | "analysis" | "number";
 };
+
+/* ========================================================= */
 
 export default function DigestPage() {
   const [loading, setLoading] = useState(false);
@@ -37,18 +41,33 @@ export default function DigestPage() {
   const [selectedTypes, setSelectedTypes] = useState<SelectOption[]>([]);
 
   /* =========================================================
-     🔥 HEADER CONFIG (CRITIQUE FIX)
+     🔥 STORE GLOBAL DES ITEMS (FIX)
+  ========================================================= */
+
+  const [selectedItemsMap, setSelectedItemsMap] = useState<{
+    [id: string]: any;
+  }>({});
+
+  function storeItems(items: any[]) {
+    setSelectedItemsMap((prev) => {
+      const next = { ...prev };
+      items.forEach((i) => {
+        if (i?.id) next[i.id] = i;
+      });
+      return next;
+    });
+  }
+
+  /* =========================================================
+     HEADER CONFIG
   ========================================================= */
 
   const [headerConfig, setHeaderConfig] = useState<HeaderConfig>({
     title: "Newsletter Ratecard",
     subtitle: "",
     period: "",
-
     headerCompany: undefined,
     showTopicStats: false,
-
-    // 🔥 NEW FIELDS (SINON BUGS)
     topBarEnabled: true,
     topBarColor: "#84CC16",
     periodColor: "#84CC16",
@@ -62,7 +81,7 @@ export default function DigestPage() {
   const [topicStats, setTopicStats] = useState<TopicStat[]>([]);
 
   /* =========================================================
-     LOAD STATS (ROBUSTE)
+     LOAD STATS
   ========================================================= */
 
   useEffect(() => {
@@ -114,6 +133,17 @@ export default function DigestPage() {
       setAnalyses(data.analyses || []);
       setNumbers(data.numbers || []);
 
+      /* 🔥 CRITIQUE : on stocke les items */
+      storeItems([
+        ...(data.news || []),
+        ...(data.breves || []),
+        ...(data.analyses || []),
+        ...(data.numbers || []),
+      ]);
+
+      // ❌ ON NE RESET PLUS
+      // setEditorialOrder([]);
+
     } catch (e) {
       console.error("Erreur search digest", e);
     } finally {
@@ -122,43 +152,43 @@ export default function DigestPage() {
   }
 
   /* =========================================================
-     MAP ORDER → DATA
+     MAP ORDER → DATA (FIX)
   ========================================================= */
 
   const editorialNews = useMemo(
     () =>
       editorialOrder
         .filter((i) => i.type === "news")
-        .map((i) => news.find((n) => n.id === i.id))
+        .map((i) => selectedItemsMap[i.id])
         .filter(Boolean) as NewsletterNewsItem[],
-    [editorialOrder, news]
+    [editorialOrder, selectedItemsMap]
   );
 
   const editorialBreves = useMemo(
     () =>
       editorialOrder
         .filter((i) => i.type === "breve")
-        .map((i) => breves.find((b) => b.id === i.id))
+        .map((i) => selectedItemsMap[i.id])
         .filter(Boolean) as NewsletterNewsItem[],
-    [editorialOrder, breves]
+    [editorialOrder, selectedItemsMap]
   );
 
   const editorialAnalyses = useMemo(
     () =>
       editorialOrder
         .filter((i) => i.type === "analysis")
-        .map((i) => analyses.find((a) => a.id === i.id))
+        .map((i) => selectedItemsMap[i.id])
         .filter(Boolean) as NewsletterAnalysisItem[],
-    [editorialOrder, analyses]
+    [editorialOrder, selectedItemsMap]
   );
 
   const editorialNumbers = useMemo(
     () =>
       editorialOrder
         .filter((i) => i.type === "number")
-        .map((i) => numbers.find((n) => n.id === i.id))
+        .map((i) => selectedItemsMap[i.id])
         .filter(Boolean) as NewsletterNumberItem[],
-    [editorialOrder, numbers]
+    [editorialOrder, selectedItemsMap]
   );
 
   /* =========================================================
@@ -206,10 +236,10 @@ export default function DigestPage() {
 
           <DigestEditorialFlow
             editorialOrder={editorialOrder}
-            news={news}
-            breves={breves}
-            analyses={analyses}
-            numbers={numbers}
+            news={editorialNews}
+            breves={editorialBreves}
+            analyses={editorialAnalyses}
+            numbers={editorialNumbers}
             setEditorialOrder={setEditorialOrder}
           />
 
