@@ -114,7 +114,6 @@ export default function DigestPage() {
       setAnalyses(data.analyses || []);
       setNumbers(data.numbers || []);
 
-      setEditorialOrder([]);
     } catch (e) {
       console.error("Erreur search digest", e);
     } finally {
