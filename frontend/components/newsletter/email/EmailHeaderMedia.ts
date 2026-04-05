@@ -5,24 +5,20 @@ export function EmailHeaderMedia(
   headerConfig: HeaderConfig
 ) {
   const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL || "";
-  const BASE = process.env.NEXT_PUBLIC_BASE_URL || "";
 
   /* =========================================================
-     HERO CONFIG
+     HERO CONFIG (🔥 EVENT ONLY)
   ========================================================= */
 
+  const hasEvent = !!headerConfig.eventId;
   const showHero =
-    headerConfig.showHero !== false;
+    hasEvent && headerConfig.showHero !== false;
 
-  const heroImage = headerConfig.eventId
+  const heroImage = hasEvent
     ? `${GCS}/events/EVENT_${headerConfig.eventId}_rect.jpg`
-    : headerConfig.heroImageUrl
-    ? headerConfig.heroImageUrl
-    : `${BASE}/assets/brand/LeTouquet.jpg`;
+    : null;
 
-  /* 🔥 lien propre (pas de #) */
-  const heroLink =
-    headerConfig.heroLink || null;
+  const heroLink = headerConfig.heroLink || null;
 
   /* =========================================================
      LOGO CONFIG
@@ -63,7 +59,7 @@ export function EmailHeaderMedia(
 ">
 
   ${
-    showHero
+    showHero && heroImage
       ? `
   <!-- HERO -->
   <div style="
