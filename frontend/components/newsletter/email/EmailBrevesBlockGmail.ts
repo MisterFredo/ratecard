@@ -1,15 +1,3 @@
-import {
-  buildContentImageUrl,
-  escapeHtml,
-  renderEmailTags,
-} from "./EmailHelpers";
-
-import type { NewsletterNewsItem } from "@/types/newsletter";
-
-const PUBLIC_SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://ratecard.fr";
-
 export function EmailBrevesBlockGmail(
   breves: NewsletterNewsItem[]
 ) {
@@ -17,12 +5,8 @@ export function EmailBrevesBlockGmail(
 
   const rows = breves
     .map((b, index) => {
-      const imageUrl = buildContentImageUrl(
-        b.visual_rect_id
-      );
-
+      const imageUrl = buildContentImageUrl(b.visual_rect_id);
       const breveUrl = `${PUBLIC_SITE_URL}/news?news_id=${b.id}`;
-
       const safeUrl = escapeHtml(breveUrl);
 
       const tags = renderEmailTags({
@@ -34,8 +18,8 @@ export function EmailBrevesBlockGmail(
       return `
 <tr>
 <td style="
-  padding:24px 0;
-  border-bottom:${index === breves.length - 1 ? "none" : "1px solid #E5E7EB"};
+  padding:16px 0;
+  border-bottom:${index === breves.length - 1 ? "none" : "1px solid #F3F4F6"};
   font-family:Arial,Helvetica,sans-serif;
 ">
 
@@ -45,13 +29,13 @@ export function EmailBrevesBlockGmail(
       ${
         imageUrl
           ? `
-      <!-- IMAGE -->
+      <!-- MINI THUMB -->
       <td
-        width="120"
+        width="64"
         valign="top"
         style="
-          width:120px;
-          padding-right:14px;
+          width:64px;
+          padding-right:12px;
         "
       >
         <a href="${safeUrl}" target="_blank" style="display:block;">
@@ -59,13 +43,12 @@ export function EmailBrevesBlockGmail(
             src="${imageUrl}"
             alt=""
             border="0"
-            width="120"
+            width="56"
             style="
               display:block;
-              width:100%;
-              max-width:120px;
+              width:56px;
               height:auto;
-              border:1px solid #F3F4F6;
+              border-radius:6px;
             "
           />
         </a>
@@ -80,11 +63,11 @@ export function EmailBrevesBlockGmail(
         <!-- TITLE -->
         <a href="${safeUrl}" target="_blank" style="text-decoration:none;">
           <div style="
-            font-size:16px;
+            font-size:14px;
             font-weight:600;
             color:#111827;
-            line-height:1.3;
-            margin-bottom:6px;
+            line-height:1.35;
+            margin-bottom:4px;
           ">
             ${escapeHtml(b.title)}
           </div>
@@ -94,7 +77,7 @@ export function EmailBrevesBlockGmail(
           tags
             ? `
         <!-- TAGS -->
-        <div style="margin-bottom:6px;">
+        <div style="margin-bottom:4px;">
           ${tags}
         </div>
         `
@@ -104,9 +87,9 @@ export function EmailBrevesBlockGmail(
         ${
           b.excerpt
             ? `
-        <!-- EXCERPT -->
+        <!-- EXCERPT (optionnel si tu veux le garder) -->
         <div style="
-          font-size:14px;
+          font-size:12px;
           color:#6B7280;
           line-height:1.4;
         ">
@@ -134,12 +117,12 @@ export function EmailBrevesBlockGmail(
   font-family:Arial,Helvetica,sans-serif;
 ">
   <div style="
-    font-size:12px;
+    font-size:11px;
     font-weight:600;
-    letter-spacing:0.12em;
+    letter-spacing:0.14em;
     text-transform:uppercase;
-    color:#6B7280;
-    margin-bottom:14px;
+    color:#9CA3AF;
+    margin-bottom:10px;
   ">
     Brèves
   </div>
