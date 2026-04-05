@@ -92,20 +92,6 @@ export function EmailBrevesBlock(breves: NewsletterNewsItem[]) {
             : ""
         }
 
-        ${
-          b.excerpt
-            ? `
-        <div style="
-          font-size:12px;
-          color:#6B7280;
-          line-height:1.4;
-        ">
-          ${escapeHtml(b.excerpt)}
-        </div>
-        `
-            : ""
-        }
-
       </td>
 
     </tr>
