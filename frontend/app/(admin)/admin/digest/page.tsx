@@ -221,7 +221,7 @@ export default function DigestPage() {
 
           <DigestPreviewPanel
             headerConfig={headerConfig}
-            introText={introText}
+            editorialHtml={introText}
             news={editorialNews}
             breves={editorialBreves}
             analyses={editorialAnalyses}
