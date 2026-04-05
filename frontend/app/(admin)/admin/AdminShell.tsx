@@ -17,7 +17,8 @@ import {
   Link2,
   Database,
   Calendar,
-  BarChart3, // ✅ NEW
+  BarChart3,
+  Image, // ✅ NEW
 } from "lucide-react";
 
 export default function AdminShell({
@@ -34,11 +35,8 @@ export default function AdminShell({
 
   const navItems = [
     { href: "/admin/content", label: "Contenus", icon: Layers },
-
     { href: "/admin/content/stock", label: "Stock", icon: Archive },
-
     { href: "/admin/news", label: "News", icon: Newspaper },
-
     { href: "/admin/search", label: "Search", icon: Search },
 
     // =====================================================
@@ -54,7 +52,7 @@ export default function AdminShell({
     },
 
     {
-      href: "/admin/numbers", // ✅ NEW
+      href: "/admin/numbers",
       label: "Numbers",
       icon: BarChart3,
     },
@@ -75,20 +73,21 @@ export default function AdminShell({
       icon: Mail,
     },
 
+    {
+      href: "/admin/event", // ✅ NEW
+      label: "Events (assets)",
+      icon: Image,
+    },
+
     // =====================================================
     // ENTITIES
     // =====================================================
 
     { href: "/admin/company", label: "Sociétés", icon: Building2 },
-
     { href: "/admin/solution", label: "Solutions", icon: Puzzle },
-
     { href: "/admin/matching", label: "Matching", icon: Link2 },
-
     { href: "/admin/topic", label: "Topics", icon: Tags },
-
     { href: "/admin/concept", label: "Concepts", icon: BookOpen },
-
     { href: "/admin/source", label: "Sources", icon: LinkIcon },
   ];
 
