@@ -23,6 +23,21 @@ def _normalize_array(value):
     return []
 
 
+def get_previous_month_range():
+    """
+    Retourne le mois calendaire précédent complet.
+    Exemple :
+    - 5 avril → 1er mars → 31 mars
+    """
+    today = datetime.utcnow()
+
+    first_day_current_month = today.replace(day=1)
+    last_day_previous_month = first_day_current_month - timedelta(days=1)
+    first_day_previous_month = last_day_previous_month.replace(day=1)
+
+    return first_day_previous_month, last_day_previous_month
+
+
 # ============================================================
 # CREATE TEMPLATE
 # ============================================================
@@ -39,12 +54,12 @@ def create_template(data: Dict[str, Any]) -> str:
         "ID_TEMPLATE": template_id,
         "NAME": data["name"],
 
-        # 🔥 FILTRES
+        # 🔥 FILTRES (fallback global)
         "TOPICS": _normalize_array(data.get("topics")),
         "COMPANIES": _normalize_array(data.get("companies")),
         "NEWS_TYPES": _normalize_array(data.get("news_types")),
 
-        # 🔥 CONFIG EDITO (STRING SAFE)
+        # 🔥 CONFIG EDITO (JSON STRING SAFE)
         "EDITORIAL_ORDER": json.dumps(data.get("editorial_order", [])),
         "HEADER_CONFIG": json.dumps(data.get("header_config", {})),
         "INTRO_TEXT": data.get("intro_text", ""),
@@ -56,6 +71,7 @@ def create_template(data: Dict[str, Any]) -> str:
     insert_bq(TABLE_TEMPLATE, row)
 
     return template_id
+
 
 # ============================================================
 # APPLY TEMPLATE
@@ -76,7 +92,6 @@ def apply_template(template_id: str):
     # =========================================================
 
     def resolve_period(block):
-
         period = block.get("period")
 
         if period == "last_month":
@@ -85,55 +100,35 @@ def apply_template(template_id: str):
         return None, None
 
     # =========================================================
-    # NEWS
+    # GENERIC BLOCK RUNNER
     # =========================================================
 
-    news_block = blocks.get("news", {})
-    news_from, news_to = resolve_period(news_block)
+    def run_block(block, kind):
 
-    news = search_digest(
-        topics=news_block.get("topics"),
-        companies=news_block.get("companies"),
-        news_types=None,
-        limit=news_block.get("limit", 10),
-        period="total",
-        date_from=news_from,
-        date_to=news_to,
-    ).get("news", [])
+        if not block:
+            return []
 
-    # =========================================================
-    # BRÈVES
-    # =========================================================
+        date_from, date_to = resolve_period(block)
 
-    breves_block = blocks.get("breves", {})
-    breves_from, breves_to = resolve_period(breves_block)
+        result = search_digest(
+            topics=block.get("topics"),
+            companies=block.get("companies"),
+            news_types=block.get("news_types"),
+            limit=block.get("limit", 10),
+            period="total",
+            date_from=date_from,
+            date_to=date_to,
+        )
 
-    breves = search_digest(
-        topics=breves_block.get("topics"),
-        companies=breves_block.get("companies"),
-        news_types=None,
-        limit=breves_block.get("limit", 10),
-        period="total",
-        date_from=breves_from,
-        date_to=breves_to,
-    ).get("breves", [])
+        return result.get(kind, [])
 
     # =========================================================
-    # ANALYSES
+    # EXECUTION
     # =========================================================
 
-    analyses_block = blocks.get("analyses", {})
-    analyses_from, analyses_to = resolve_period(analyses_block)
-
-    analyses = search_digest(
-        topics=analyses_block.get("topics"),
-        companies=analyses_block.get("companies"),
-        news_types=None,
-        limit=analyses_block.get("limit", 10),
-        period="total",
-        date_from=analyses_from,
-        date_to=analyses_to,
-    ).get("analyses", [])
+    news = run_block(blocks.get("news"), "news")
+    breves = run_block(blocks.get("breves"), "breves")
+    analyses = run_block(blocks.get("analyses"), "analyses")
 
     # =========================================================
     # FINAL STRUCTURE
@@ -143,7 +138,7 @@ def apply_template(template_id: str):
         "news": news,
         "breves": breves,
         "analyses": analyses,
-        "numbers": [],  # pas concerné
+        "numbers": [],  # volontairement exclu
 
         "editorial_order": tpl.get("editorial_order") or [],
         "header_config": header_config,
@@ -190,22 +185,6 @@ def list_templates():
 # GET ONE
 # ============================================================
 
-def get_previous_month_range():
-    """
-    Retourne le mois calendaire précédent complet.
-    Exemple :
-    - 5 avril → 1er mars → 31 mars
-    """
-    today = datetime.utcnow()
-
-    first_day_current_month = today.replace(day=1)
-
-    last_day_previous_month = first_day_current_month - timedelta(days=1)
-
-    first_day_previous_month = last_day_previous_month.replace(day=1)
-
-    return first_day_previous_month, last_day_previous_month
-
 def get_template(template_id: str):
 
     rows = query_bq(
@@ -227,12 +206,12 @@ def get_template(template_id: str):
         "id_template": r["ID_TEMPLATE"],
         "name": r["NAME"],
 
-        # 🔥 filtres
+        # filtres globaux (fallback)
         "topics": r.get("TOPICS") or [],
         "companies": r.get("COMPANIES") or [],
         "news_types": r.get("NEWS_TYPES") or [],
 
-        # 🔥 éditorial (parse JSON STRING)
+        # éditorial
         "editorial_order": json.loads(r.get("EDITORIAL_ORDER") or "[]"),
         "header_config": json.loads(r.get("HEADER_CONFIG") or "{}"),
         "intro_text": r.get("INTRO_TEXT") or "",
@@ -262,7 +241,7 @@ def update_template(template_id: str, data: Dict[str, Any]):
     if "news_types" in data:
         fields["NEWS_TYPES"] = _normalize_array(data.get("news_types"))
 
-    # 🔥 éditorial (STRING SAFE)
+    # éditorial (JSON STRING SAFE)
     if "editorial_order" in data:
         fields["EDITORIAL_ORDER"] = json.dumps(data.get("editorial_order"))
 
