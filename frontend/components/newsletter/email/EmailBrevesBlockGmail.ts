@@ -84,21 +84,6 @@ export function EmailBrevesBlockGmail(
             : ""
         }
 
-        ${
-          b.excerpt
-            ? `
-        <!-- EXCERPT (optionnel si tu veux le garder) -->
-        <div style="
-          font-size:12px;
-          color:#6B7280;
-          line-height:1.4;
-        ">
-          ${escapeHtml(b.excerpt)}
-        </div>
-        `
-            : ""
-        }
-
       </td>
 
     </tr>
