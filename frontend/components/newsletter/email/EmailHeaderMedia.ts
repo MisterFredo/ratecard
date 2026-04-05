@@ -20,9 +20,9 @@ export function EmailHeaderMedia(
     ? headerConfig.heroImageUrl
     : `${BASE}/assets/brand/LeTouquet.jpg`;
 
-  const heroLink = headerConfig.eventId
-    ? headerConfig.heroLink || "#"
-    : headerConfig.heroLink;
+  /* 🔥 lien propre (pas de #) */
+  const heroLink =
+    headerConfig.heroLink || null;
 
   /* =========================================================
      LOGO CONFIG
