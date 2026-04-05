@@ -16,24 +16,28 @@ export function EmailBrevesBlockGmail(
   if (!breves.length) return "";
 
   const rows = breves
-    .map((b) => {
+    .map((b, index) => {
       const imageUrl = buildContentImageUrl(
         b.visual_rect_id
       );
 
       const breveUrl = `${PUBLIC_SITE_URL}/news?news_id=${b.id}`;
 
+      const safeUrl = escapeHtml(breveUrl);
+
       const tags = renderEmailTags({
         topics: b.topics,
-        companies: b.company ? [b.company] : [],
+        companies:
+          b.companies ||
+          (b.company ? [b.company] : []),
         styles: b.news_type ? [b.news_type] : [],
       });
 
       return `
 <tr>
 <td style="
-  padding:26px 0;
-  border-bottom:1px solid #E5E7EB;
+  padding:24px 0;
+  border-bottom:${index === breves.length - 1 ? "none" : "1px solid #E5E7EB"};
   font-family:Arial,Helvetica,sans-serif;
 ">
 
@@ -52,12 +56,12 @@ export function EmailBrevesBlockGmail(
           padding-right:14px;
         "
       >
-        <a href="${breveUrl}" target="_blank">
+        <a href="${safeUrl}" target="_blank" style="display:block;">
           <img 
             src="${imageUrl}"
             alt=""
-            width="120"
             border="0"
+            width="120"
             style="
               display:block;
               width:100%;
@@ -76,10 +80,10 @@ export function EmailBrevesBlockGmail(
       <td valign="top">
 
         <!-- TITLE -->
-        <a href="${breveUrl}" target="_blank" style="text-decoration:none;">
+        <a href="${safeUrl}" target="_blank" style="text-decoration:none;">
           <div style="
             font-size:16px;
-            font-weight:700;
+            font-weight:600;
             color:#111827;
             line-height:1.3;
             margin-bottom:6px;
@@ -105,7 +109,7 @@ export function EmailBrevesBlockGmail(
         <!-- EXCERPT -->
         <div style="
           font-size:14px;
-          color:#374151;
+          color:#6B7280;
           line-height:1.4;
         ">
           ${escapeHtml(b.excerpt)}
@@ -128,16 +132,16 @@ export function EmailBrevesBlockGmail(
   return `
 <tr>
 <td style="
-  padding-top:32px;
+  padding-top:28px;
   font-family:Arial,Helvetica,sans-serif;
 ">
   <div style="
-    font-size:13px;
-    font-weight:700;
-    letter-spacing:0.08em;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0.12em;
     text-transform:uppercase;
-    color:#111827;
-    margin-bottom:16px;
+    color:#6B7280;
+    margin-bottom:14px;
   ">
     Brèves
   </div>
