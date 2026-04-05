@@ -1,3 +1,14 @@
+import type { NewsletterNewsItem } from "@/types/newsletter";
+import {
+  buildContentImageUrl,
+  escapeHtml,
+  renderEmailTags,
+} from "./EmailHelpers";
+
+const PUBLIC_SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://ratecard.fr";
+
 export function EmailBrevesBlock(breves: NewsletterNewsItem[]) {
   if (!breves.length) return "";
 
