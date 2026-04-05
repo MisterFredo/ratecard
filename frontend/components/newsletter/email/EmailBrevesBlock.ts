@@ -20,7 +20,7 @@ export function EmailBrevesBlock(breves: NewsletterNewsItem[]) {
       const tags = renderEmailTags({
         topics: b.topics,
         companies: b.company ? [b.company] : [],
-        styles: b.styles || (b.news_type ? [b.news_type] : []),
+        styles: b.news_type ? [b.news_type] : [],
       });
 
       return `
