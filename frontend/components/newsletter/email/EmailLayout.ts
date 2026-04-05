@@ -6,6 +6,7 @@ export function EmailLayout(content: string) {
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <base target="_blank" />
+
 <style>
   body, table, td, div, p {
     font-family: Arial, Helvetica, sans-serif !important;
@@ -60,15 +61,17 @@ export function EmailLayout(content: string) {
 
   <!-- WRAPPER -->
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-    style="
-      background:#F3F4F6;
-      font-family:Arial,Helvetica,sans-serif;
-    "
+    style="background:#F3F4F6;"
   >
     <tr>
-      <td align="center" style="font-family:Arial,Helvetica,sans-serif;">
+      <td align="center">
 
-        <!-- MAIN CONTAINER -->
+        <!-- SPACER TOP -->
+        <table width="100%" role="presentation">
+          <tr><td height="24"></td></tr>
+        </table>
+
+        <!-- MAIN CARD -->
         <table
           width="720"
           cellpadding="0"
@@ -79,25 +82,23 @@ export function EmailLayout(content: string) {
             width:100%;
             max-width:720px;
             margin:0 auto;
-            background:#ffffff;
-            font-family:Arial,Helvetica,sans-serif;
+            background:#FFFFFF;
+            border-radius:8px;
+            overflow:hidden;
+            box-shadow:0 1px 2px rgba(0,0,0,0.04);
           "
         >
 
           <!-- CONTENT WRAPPER -->
           <tr>
-            <td style="
-              padding:0 32px;
-              font-family:Arial,Helvetica,sans-serif;
-            ">
+            <td style="padding:0 32px;">
 
-              <!-- INNER WRAPPER (🔥 CRITICAL DOUBLE FIX) -->
+              <!-- INNER WRAPPER -->
               <table 
                 width="100%" 
                 cellpadding="0" 
                 cellspacing="0" 
                 role="presentation"
-                style="font-family:Arial,Helvetica,sans-serif;"
               >
 
                 ${content}
@@ -110,17 +111,23 @@ export function EmailLayout(content: string) {
           <!-- FOOTER -->
           <tr>
             <td style="
-              padding:36px 32px 26px 32px;
+              padding:32px;
+              border-top:1px solid #E5E7EB;
               font-size:12px;
               color:#9CA3AF;
-              font-family:Arial,Helvetica,sans-serif;
               line-height:1.5;
               text-align:left;
             ">
-              © Ratecard – Lecture stratégique du marché
+              © Ratecard<br/>
+              Lecture stratégique du marché
             </td>
           </tr>
 
+        </table>
+
+        <!-- SPACER BOTTOM -->
+        <table width="100%" role="presentation">
+          <tr><td height="24"></td></tr>
         </table>
 
       </td>
