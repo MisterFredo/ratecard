@@ -110,6 +110,28 @@ export type NewsletterAnalysisItem = {
   title: string;
   excerpt?: string;
   published_at: string;
+
+  /* ===============================
+     BADGES (🔥 ALIGN WITH NEWS)
+  =============================== */
+
+  topics?: {
+    id_topic?: string;
+    label?: string;
+    LABEL?: string;
+  }[];
+
+  companies?: {
+    id_company: string;
+    name: string;
+  }[];
+
+  company?: {
+    id_company: string;
+    name: string;
+  };
+
+  styles?: string[];
 };
 
 /* =========================================================
