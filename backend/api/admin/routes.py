@@ -140,6 +140,7 @@ def admin_delete_template(template_id: str):
 
 @router.post("/digest/template/apply")
 def admin_apply_template(payload: dict):
+
     template_id = payload.get("template_id")
 
     if not template_id:
