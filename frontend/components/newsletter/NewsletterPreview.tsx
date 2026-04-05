@@ -15,7 +15,13 @@ import type {
 
 type Props = {
   headerConfig: HeaderConfig;
+
+  // 🔥 NEW
+  editorialHtml?: string;
+
+  // 🔥 legacy fallback (à supprimer plus tard)
   introText?: string;
+
   news: NewsletterNewsItem[];
   breves: NewsletterNewsItem[];
   analyses: NewsletterAnalysisItem[];
@@ -25,6 +31,7 @@ type Props = {
 
 export default function NewsletterPreview({
   headerConfig,
+  editorialHtml,
   introText,
   news,
   breves,
@@ -35,11 +42,14 @@ export default function NewsletterPreview({
 
   const [mode, setMode] = useState<"brevo" | "gmail">("brevo");
 
+  // 🔥 source unique éditoriale
+  const editorial = editorialHtml || introText || "";
+
   const html = useMemo(() => {
     if (mode === "gmail") {
       return buildEmailGmail({
         headerConfig,
-        introText,
+        editorialHtml: editorial, // ✅ clé
         news,
         breves,
         analyses,
@@ -50,7 +60,7 @@ export default function NewsletterPreview({
 
     return buildEmail({
       headerConfig,
-      introText,
+      editorialHtml: editorial, // ✅ clé
       news,
       breves,
       analyses,
@@ -60,7 +70,7 @@ export default function NewsletterPreview({
   }, [
     mode,
     headerConfig,
-    introText,
+    editorial,
     news,
     breves,
     analyses,
