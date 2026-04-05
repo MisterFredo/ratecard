@@ -63,31 +63,26 @@ export type HeaderConfig = {
   introHtml?: string;
 
   /* ===============================
-     EVENT (🔥 CORE)
+     EVENT (🔥 SOURCE DE VÉRITÉ)
   =============================== */
   eventId?: string;
 
   /* ===============================
-     HERO CONTROL (🔥 NEW)
+     HERO CONTROL
   =============================== */
   showHero?: boolean;
 
-  /* ===============================
-     MEDIA (FALLBACK)
-  =============================== */
-
-  // lien cliquable sur le hero
+  // lien cliquable du hero (event ou autre)
   heroLink?: string;
 
-  // override image hero
+  /* ⚠️ volontairement conservé UNIQUEMENT en fallback */
   heroImageUrl?: string;
 
   /* ===============================
-     LOGO CONTROL (🔥 NEW)
+     LOGO CONTROL
   =============================== */
   showLogo?: boolean;
 
-  // lien du logo
   logoLink?: string;
 };
 
@@ -111,11 +106,11 @@ export type NewsletterAnalysisItem = {
   excerpt?: string;
   published_at: string;
 
-  /* 🔥 CRITIQUE */
+  /* 🔥 SOURCE DE VÉRITÉ POUR LE LIEN */
   url?: string;
 
   /* ===============================
-     BADGES (ALIGN WITH NEWS)
+     BADGES (ALIGNÉS NEWS / BRÈVES)
   =============================== */
 
   topics?: {
