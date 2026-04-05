@@ -4,74 +4,43 @@ import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import VisualSectionEvent from "@/components/visuals/VisualSectionEvent";
-import EntityBaseForm from "@/components/forms/EntityBaseForm";
-import HtmlEditor from "@/components/admin/HtmlEditor";
 
 const GCS = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 export default function CreateEvent() {
   const [label, setLabel] = useState("");
-  const [description, setDescription] = useState(""); // 🔑 HTML
-  const [seoTitle, setSeoTitle] = useState("");
-  const [seoDescription, setSeoDescription] = useState("");
-
-  // 🔗 URL externe
   const [externalUrl, setExternalUrl] = useState("");
-
-  // 🔑 Home / Navigation
-  const [homeLabel, setHomeLabel] = useState("");
-  const [homeOrder, setHomeOrder] = useState<number | null>(null);
-  const [isActiveHome, setIsActiveHome] = useState(false);
-  const [isActiveNav, setIsActiveNav] = useState(false);
-
-  // 🎨 Couleur événement
-  const [eventColor, setEventColor] = useState<string>("");
 
   const [eventId, setEventId] = useState<string | null>(null);
   const [squareUrl, setSquareUrl] = useState<string | null>(null);
   const [rectUrl, setRectUrl] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
-     CREATE (DATA ONLY)
+     CREATE
   --------------------------------------------------------- */
   async function save() {
     if (!label.trim()) {
-      alert("Nom de l’événement requis");
+      alert("Nom requis");
       return;
     }
 
     try {
       const res = await api.post("/event/create", {
         label,
-        description: description || null, // 🔑 HTML
-        seo_title: seoTitle || null,
-        seo_description: seoDescription || null,
         external_url: externalUrl || null,
       });
 
       if (!res.id_event) {
-        alert("Erreur création event");
+        alert("Erreur création");
         return;
       }
 
       setEventId(res.id_event);
 
-      // Mise à jour des paramètres Home / Nav / Couleur
-      await api.put(`/event/update/${res.id_event}`, {
-        home_label: homeLabel || null,
-        home_order: homeOrder,
-        is_active_home: isActiveHome,
-        is_active_nav: isActiveNav,
-        event_color: eventColor || null,
-        external_url: externalUrl || null,
-      });
-
-      alert(
-        "Événement créé. Vous pouvez maintenant ajouter les visuels et le contexte."
-      );
+      alert("Event créé. Ajoute les visuels.");
     } catch (e) {
       console.error(e);
-      alert("❌ Erreur création événement");
+      alert("❌ Erreur");
     }
   }
 
@@ -79,177 +48,83 @@ export default function CreateEvent() {
      UI
   --------------------------------------------------------- */
   return (
-    <div className="space-y-10">
+    <div className="space-y-8 max-w-2xl">
+
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">
-          Ajouter un événement
+        <h1 className="text-xl font-semibold">
+          Event (assets)
         </h1>
         <Link href="/admin/event" className="underline">
           ← Retour
         </Link>
       </div>
 
-      {/* DONNÉES DE BASE */}
-      <EntityBaseForm
-        values={{ name: label }}
-        onChange={{ setName: setLabel }}
-        labels={{ name: "Nom de l’événement" }}
-      />
+      {/* BASIC */}
+      <div className="space-y-4">
 
-      {/* DESCRIPTION HTML */}
-      <div className="space-y-2 max-w-2xl">
-        <label className="block text-sm font-medium">
-          Description éditoriale
-        </label>
-
-        <HtmlEditor
-          value={description}
-          onChange={setDescription}
-        />
-      </div>
-
-      {/* SEO */}
-      <div className="space-y-4 max-w-2xl">
         <div>
-          <label className="block text-sm font-medium mb-1">
-            SEO title
+          <label className="text-sm font-medium">
+            Nom
           </label>
           <input
             className="border p-2 w-full rounded"
-            value={seoTitle}
-            onChange={(e) => setSeoTitle(e.target.value)}
-            placeholder="Titre pour Google (optionnel)"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">
-            SEO description
+          <label className="text-sm font-medium">
+            URL (clic hero)
           </label>
-          <textarea
-            className="border p-2 w-full rounded h-20"
-            value={seoDescription}
-            onChange={(e) => setSeoDescription(e.target.value)}
-            placeholder="Description meta (optionnelle)"
+          <input
+            className="border p-2 w-full rounded"
+            value={externalUrl}
+            onChange={(e) => setExternalUrl(e.target.value)}
+            placeholder="https://..."
           />
         </div>
-      </div>
 
-      {/* URL EXTERNE */}
-      <div className="space-y-2 max-w-2xl">
-        <label className="block text-sm font-medium mb-1">
-          URL externe de l’événement
-        </label>
-        <input
-          type="url"
-          className="border p-2 w-full rounded"
-          value={externalUrl}
-          onChange={(e) => setExternalUrl(e.target.value)}
-          placeholder="https://events.ratecard.fr/..."
-        />
-      </div>
-
-      {/* HOME / NAV */}
-      <div className="space-y-6 border-t pt-6">
-        <h2 className="text-lg font-semibold">
-          Affichage sur la Home et la navigation
-        </h2>
-
-        <div className="max-w-md space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Label Home (court)
-            </label>
-            <input
-              className="border p-2 w-full rounded"
-              value={homeLabel}
-              onChange={(e) => setHomeLabel(e.target.value)}
-              placeholder="Ex : Paris, Le Touquet, Miami"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Ordre d’affichage sur la Home
-            </label>
-            <input
-              type="number"
-              className="border p-2 w-full rounded"
-              value={homeOrder ?? ""}
-              onChange={(e) =>
-                setHomeOrder(
-                  e.target.value ? Number(e.target.value) : null
-                )
-              }
-              placeholder="Ex : 1, 2, 3"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Couleur de l’événement
-            </label>
-            <input
-              type="color"
-              className="border p-1 w-16 h-10 rounded"
-              value={eventColor}
-              onChange={(e) => setEventColor(e.target.value)}
-            />
-          </div>
-
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={isActiveHome}
-              onChange={(e) => setIsActiveHome(e.target.checked)}
-            />
-            Afficher sur la Home
-          </label>
-
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={isActiveNav}
-              onChange={(e) => setIsActiveNav(e.target.checked)}
-            />
-            Afficher dans la navigation
-          </label>
-        </div>
       </div>
 
       {/* ACTION */}
       <button
         onClick={save}
-        className="bg-ratecard-blue px-4 py-2 text-white rounded"
+        className="bg-black text-white px-4 py-2 rounded"
       >
-        Créer l’événement
+        Créer
       </button>
 
-      {/* VISUELS — POST CRÉATION */}
+      {/* VISUALS */}
       {eventId && (
-        <VisualSectionEvent
-          eventId={eventId}
-          squareUrl={squareUrl}
-          rectUrl={rectUrl}
-          onUpdated={({ square, rectangle }) => {
-            setSquareUrl(
-              square
-                ? `${GCS}/events/EVENT_${eventId}_square.jpg`
-                : null
-            );
-            setRectUrl(
-              rectangle
-                ? `${GCS}/events/EVENT_${eventId}_rect.jpg`
-                : null
-            );
-          }}
-        />
+        <div className="space-y-4 border-t pt-6">
+
+          <div className="text-sm font-medium text-gray-500">
+            Visuels (GCS)
+          </div>
+
+          <VisualSectionEvent
+            eventId={eventId}
+            squareUrl={squareUrl}
+            rectUrl={rectUrl}
+            onUpdated={({ square, rectangle }) => {
+              setSquareUrl(
+                square
+                  ? `${GCS}/events/EVENT_${eventId}_square.jpg`
+                  : null
+              );
+              setRectUrl(
+                rectangle
+                  ? `${GCS}/events/EVENT_${eventId}_rect.jpg`
+                  : null
+              );
+            }}
+          />
+
+        </div>
       )}
+
     </div>
   );
 }
-
-
-
-
