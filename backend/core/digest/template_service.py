@@ -48,18 +48,18 @@ def create_template(data: Dict[str, Any]) -> str:
         raise ValueError("NAME obligatoire")
 
     template_id = str(uuid.uuid4())
-    now = datetime.utcnow()
+    now = datetime.utcnow().isoformat()  # 🔥 important
 
     row = [{
         "ID_TEMPLATE": template_id,
         "NAME": data["name"],
 
-        # 🔥 FILTRES (fallback global)
+        # 🔥 FILTRES
         "TOPICS": _normalize_array(data.get("topics")),
         "COMPANIES": _normalize_array(data.get("companies")),
         "NEWS_TYPES": _normalize_array(data.get("news_types")),
 
-        # 🔥 CONFIG EDITO (JSON STRING SAFE)
+        # 🔥 JSON SAFE
         "EDITORIAL_ORDER": json.dumps(data.get("editorial_order", [])),
         "HEADER_CONFIG": json.dumps(data.get("header_config", {})),
         "INTRO_TEXT": data.get("intro_text", ""),
@@ -68,10 +68,19 @@ def create_template(data: Dict[str, Any]) -> str:
         "UPDATED_AT": now,
     }]
 
-    insert_bq(TABLE_TEMPLATE, row)
+    client = get_bigquery_client()
+
+    job = client.load_table_from_json(
+        row,
+        TABLE_TEMPLATE,
+        job_config=bigquery.LoadJobConfig(
+            write_disposition="WRITE_APPEND"
+        ),
+    )
+
+    job.result()
 
     return template_id
-
 
 # ============================================================
 # APPLY TEMPLATE
