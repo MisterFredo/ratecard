@@ -78,7 +78,7 @@ export default function DigestPage() {
 
   const [introText, setIntroText] = useState("");
 
-  const [editorialOrder, setEditorialOrder] = useState<EditorialItem[]>(([]);
+  const [editorialOrder, setEditorialOrder] = useState<EditorialItem[]>([]);
 
   const [topicStats, setTopicStats] = useState<TopicStat[]>([]);
 
