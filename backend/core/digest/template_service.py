@@ -3,6 +3,7 @@ from typing import Dict, Any
 import uuid
 import json
 
+from google.cloud import bigquery
 from config import BQ_PROJECT, BQ_DATASET
 from core.digest.service import search_digest
 from utils.bigquery_utils import (
