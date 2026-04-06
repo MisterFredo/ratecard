@@ -123,6 +123,9 @@ def apply_template(template_id: str):
         if not block:
             return []
 
+        if block.get("limit", 0) <= 0:
+            return []  # 🔥 bloc désactivé
+
         date_from, date_to = resolve_period(block)
 
         result = search_digest(
