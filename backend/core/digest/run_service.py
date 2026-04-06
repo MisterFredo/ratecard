@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 
 from google.cloud import bigquery
-from utils.bigquery_utils import get_bigquery_client
+from utils.bigquery_utils import get_bigquery_client, query_bq
 
 from core.digest.template_service import list_templates, apply_template
 from config import BQ_PROJECT, BQ_DATASET
@@ -62,3 +62,28 @@ def generate_monthly_runs(period: str):
     job.result()
 
     return rows
+
+
+def list_runs():
+
+    rows = query_bq(f"""
+        SELECT
+            ID_RUN,
+            ID_TEMPLATE,
+            PERIOD,
+            STATUS,
+            CREATED_AT
+        FROM `{TABLE_RUN}`
+        ORDER BY CREATED_AT DESC
+    """)
+
+    return [
+        {
+            "id_run": r["ID_RUN"],
+            "id_template": r["ID_TEMPLATE"],
+            "period": r["PERIOD"],
+            "status": r["STATUS"],
+            "created_at": r["CREATED_AT"],
+        }
+        for r in rows
+    ]
