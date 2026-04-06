@@ -14,30 +14,60 @@ type SourceRow = {
   domain?: string | null;
   author?: string | null;
   logo?: string | null;
+
+  // 🔥 NEW
+  universe_id?: string | null;
+};
+
+type Universe = {
+  id_universe: string;
+  label: string;
 };
 
 export default function SourceList() {
 
   const [sources, setSources] = useState<SourceRow[]>([]);
+  const [universes, setUniverses] = useState<Universe[]>([]);
+
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+
+  // =========================================================
+  // LOAD DATA
+  // =========================================================
 
   useEffect(() => {
     async function load() {
       setLoading(true);
+
       try {
-        const res = await api.get("/source/list");
-        setSources(res.sources || []);
+
+        const [sourcesRes, universesRes] = await Promise.all([
+          api.get("/source/list"),
+          api.get("/universe/list"),
+        ]);
+
+        setSources(sourcesRes.sources || []);
+        setUniverses(universesRes.universes || []);
+
       } catch (e) {
+
         console.error(e);
         alert("❌ Erreur chargement sources");
+
       } finally {
+
         setLoading(false);
+
       }
     }
 
     load();
   }, []);
+
+  // =========================================================
+  // DELETE
+  // =========================================================
 
   async function deleteSource(id: string, name: string) {
 
@@ -58,7 +88,17 @@ export default function SourceList() {
       alert("❌ Erreur suppression");
 
     }
+  }
 
+  // =========================================================
+  // HELPERS
+  // =========================================================
+
+  function getUniverseLabel(universeId?: string | null) {
+    if (!universeId) return null;
+
+    const u = universes.find((x) => x.id_universe === universeId);
+    return u?.label || null;
   }
 
   const q = search.toLowerCase();
@@ -68,6 +108,10 @@ export default function SourceList() {
     (s.type_source || "").toLowerCase().includes(q) ||
     (s.domain || "").toLowerCase().includes(q)
   );
+
+  // =========================================================
+  // UI
+  // =========================================================
 
   return (
     <div className="space-y-8">
@@ -111,6 +155,7 @@ export default function SourceList() {
               <th className="p-2">Type</th>
               <th className="p-2">Domaine</th>
               <th className="p-2">Auteur</th>
+              <th className="p-2">Univers</th>
               <th className="p-2">Logo</th>
               <th className="p-2 text-right">Actions</th>
             </tr>
@@ -131,44 +176,55 @@ export default function SourceList() {
                   className="border-b hover:bg-gray-50"
                 >
 
+                  {/* NAME */}
                   <td className="p-2 font-medium">
                     {s.name}
                   </td>
 
+                  {/* TYPE */}
                   <td className="p-2">
                     {s.type_source || (
                       <span className="text-gray-400">—</span>
                     )}
                   </td>
 
+                  {/* DOMAIN */}
                   <td className="p-2">
                     {s.domain || (
                       <span className="text-gray-400">—</span>
                     )}
                   </td>
 
+                  {/* AUTHOR */}
                   <td className="p-2">
                     {s.author || (
                       <span className="text-gray-400">—</span>
                     )}
                   </td>
 
+                  {/* 🔥 UNIVERSE */}
+                  <td className="p-2">
+                    {getUniverseLabel(s.universe_id) || (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+
+                  {/* LOGO */}
                   <td className="p-2">
                     {logoUrl ? (
                       <div className="w-14 h-14 flex items-center justify-center bg-white rounded">
-
                         <img
                           src={logoUrl}
                           alt={`Logo ${s.name}`}
                           className="max-w-[70%] max-h-[70%] object-contain"
                         />
-
                       </div>
                     ) : (
                       <span className="text-gray-400 text-sm">—</span>
                     )}
                   </td>
 
+                  {/* ACTIONS */}
                   <td className="p-2 text-right space-x-3">
 
                     <Link
