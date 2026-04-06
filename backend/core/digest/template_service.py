@@ -102,70 +102,30 @@ def apply_template(template_id: str):
     if not tpl:
         return None
 
-    header_config = tpl.get("header_config") or {}
-    blocks = header_config.get("blocks", {})
+    blocks = tpl.get("blocks") or {}
 
     # =========================================================
-    # PERIOD RESOLUTION
+    # 🔥 CALL CENTRAL
     # =========================================================
 
-    def resolve_period(block):
-        period = block.get("period")
-
-        if period == "last_month":
-            return get_previous_month_range()
-
-        return None, None
-
-    # =========================================================
-    # GENERIC BLOCK RUNNER
-    # =========================================================
-
-    def run_block(block, kind):
-
-        if not block:
-            return []
-
-        if block.get("limit", 0) <= 0:
-            return []  # 🔥 bloc désactivé
-
-        date_from, date_to = resolve_period(block)
-
-        result = search_digest(
-            topics=block.get("topics"),
-            companies=block.get("companies"),
-            news_types=block.get("news_types"),
-            limit=block.get("limit", 10),
-            period="total",
-            date_from=date_from,
-            date_to=date_to,
-        )
-
-        return result.get(kind, [])
-
-    # =========================================================
-    # EXECUTION
-    # =========================================================
-
-    news = run_block(blocks.get("news"), "news")
-    breves = run_block(blocks.get("breves"), "breves")
-    analyses = run_block(blocks.get("analyses"), "analyses")
+    data = search_digest(
+        blocks_config=blocks
+    )
 
     # =========================================================
     # FINAL STRUCTURE
     # =========================================================
 
     return {
-        "news": news,
-        "breves": breves,
-        "analyses": analyses,
-        "numbers": [],  # volontairement exclu
+        "news": data.get("news", []),
+        "breves": data.get("breves", []),
+        "analyses": data.get("analyses", []),
+        "numbers": data.get("numbers", []),
 
         "editorial_order": tpl.get("editorial_order") or [],
-        "header_config": header_config,
+        "header_config": tpl.get("header_config") or {},
         "intro_text": tpl.get("intro_text") or "",
     }
-
 
 # ============================================================
 # LIST
@@ -227,12 +187,13 @@ def get_template(template_id: str):
         "id_template": r["ID_TEMPLATE"],
         "name": r["NAME"],
 
-        # filtres globaux (fallback)
         "topics": r.get("TOPICS") or [],
         "companies": r.get("COMPANIES") or [],
         "news_types": r.get("NEWS_TYPES") or [],
 
-        # éditorial
+        # 🔥 NEW
+        "blocks": json.loads(r.get("BLOCKS") or "{}"),
+
         "editorial_order": json.loads(r.get("EDITORIAL_ORDER") or "[]"),
         "header_config": json.loads(r.get("HEADER_CONFIG") or "{}"),
         "intro_text": r.get("INTRO_TEXT") or "",
@@ -262,12 +223,15 @@ def update_template(template_id: str, data: Dict[str, Any]):
     if "news_types" in data:
         fields["NEWS_TYPES"] = _normalize_array(data.get("news_types"))
 
-    # éditorial (JSON STRING SAFE)
-    if "editorial_order" in data:
-        fields["EDITORIAL_ORDER"] = json.dumps(data.get("editorial_order"))
+    # 🔥 NEW
+    if "blocks" in data:
+        fields["BLOCKS"] = json.dumps(data.get("blocks"))
 
     if "header_config" in data:
         fields["HEADER_CONFIG"] = json.dumps(data.get("header_config"))
+
+    if "editorial_order" in data:
+        fields["EDITORIAL_ORDER"] = json.dumps(data.get("editorial_order"))
 
     if "intro_text" in data:
         fields["INTRO_TEXT"] = data.get("intro_text")
@@ -275,7 +239,7 @@ def update_template(template_id: str, data: Dict[str, Any]):
     if not fields:
         return False
 
-    fields["UPDATED_AT"] = datetime.utcnow()
+    fields["UPDATED_AT"] = datetime.utcnow().isoformat()
 
     update_bq(
         table=TABLE_TEMPLATE,
@@ -284,7 +248,6 @@ def update_template(template_id: str, data: Dict[str, Any]):
     )
 
     return True
-
 
 # ============================================================
 # DELETE
