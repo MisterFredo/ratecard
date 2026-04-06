@@ -8,6 +8,8 @@ from core.digest.template_service import (
     delete_template,
 )
 
+from core.digest.run_service import generate_monthly_runs
+
 from core.radar.service import (
     create_radar_insight,
     get_radar,
@@ -151,6 +153,22 @@ def admin_apply_template(payload: dict):
     return {
         "status": "ok",
         "result": result,
+    }
+
+
+@router.post("/digest/run/generate")
+def admin_generate_digest_runs(payload: dict):
+
+    period = payload.get("period")
+
+    if not period:
+        raise HTTPException(400, "period requis")
+
+    runs = generate_monthly_runs(period)
+
+    return {
+        "status": "ok",
+        "count": len(runs),
     }
 
 # ============================================================
