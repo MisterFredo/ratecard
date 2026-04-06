@@ -31,6 +31,10 @@ def normalize_key(text: str) -> str:
 # GENERATE SUMMARY + ANALYSE FROM SOURCE
 # ============================================================
 
+# ============================================================
+# GENERATE SUMMARY + ANALYSE FROM SOURCE
+# ============================================================
+
 def generate_summary(
     source_id: Optional[str],
     source_text: str,
@@ -59,7 +63,7 @@ def generate_summary(
     )
 
     # ============================================================
-    # PROMPT (STRICTEMENT IDENTIQUE)
+    # PROMPT (AMÉLIORÉ)
     # ============================================================
 
     prompt = f"""
@@ -70,10 +74,20 @@ RÈGLES ABSOLUES :
 - Aucun fait inventé.
 - Aucun chiffre inventé.
 - Aucun acteur inventé.
-- Toute analyse doit être strictement déduite du texte.
-- Ne pas extrapoler au-delà des éléments explicitement mentionnés.
-- Style professionnel, clair et structuré.
+- Toute analyse doit être déduite des éléments présents dans la source.
+- Ne pas extrapoler au-delà de ce qui est implicitement ou explicitement contenu dans le texte.
+- Ne jamais formuler de recommandation.
+- Ne jamais dire ce qu’il faut faire.
+- Style professionnel, clair, structuré et synthétique.
 - Rédige toujours en français.
+
+OBJECTIF :
+Produire une analyse structurée permettant de comprendre :
+- ce qui se passe
+- comment cela fonctionne
+- quelles dynamiques sont à l’œuvre
+
+L’objectif est d’expliciter les logiques sous-jacentes, pas de prendre des décisions à la place du lecteur.
 
 ================ SOURCE ================
 Source : {source_id or "inconnue"}
@@ -83,13 +97,15 @@ Source : {source_id or "inconnue"}
 ================ FORMAT OBLIGATOIRE ================
 
 TITLE
-(Titre factuel.)
+(Titre factuel et informatif.)
 
 EXCERPT
-(3 phrases synthétiques.)
+(3 phrases synthétiques permettant de comprendre rapidement le sujet et son intérêt.)
 
 POINTS CLES
-(Liste factuelle. Les points clés doivent être séparés par des retours à la ligne.Tu dois être exhaustif en te limitant strictement à la source)
+(Liste factuelle des éléments importants présents dans la source.
+Exhaustif mais strictement basé sur le texte.
+Une ligne = une information.)
 
 CITATIONS
 (Liste exacte ou "Aucun")
@@ -103,73 +119,49 @@ label | valeur | unité | acteur | marché | période
 Règles :
 
 - Une ligne = un seul chiffre
-- Ne JAMAIS écrire plusieurs chiffres sur une même ligne
-- Ne JAMAIS concaténer plusieurs lignes
-- Ne JAMAIS ajouter de texte avant ou après les lignes
-
-- Le séparateur doit être exactement : " | " (espace + pipe + espace)
-
-LABEL
-- Court, explicite et métier
-- Ne doit PAS contenir acteur, marché ou période
-
-VALEUR
-- Uniquement un nombre
-- Utiliser un point pour les décimales (ex: 5.6)
-- Aucun symbole ou texte
-
-UNITÉ
-- Doit être EXACTEMENT parmi :
-  %, $, €, millions, milliards, x, utilisateurs, autres
-
-ACTEUR
-- Nom de l’entreprise, plateforme ou organisation si mentionnée
-- Sinon : "Non précisé"
-
-MARCHÉ
-- Pays, région ou scope (ex: US, Europe, Global)
-- Sinon : "Non précisé"
-
-PÉRIODE
-- Année ou période (ex: 2024, Q1 2025)
-- Sinon : "Non précisé"
+- Ne JAMAIS concaténer plusieurs chiffres
+- Ne JAMAIS ajouter de texte autour
+- Le séparateur doit être exactement : " | "
 
 ACTEURS
 (Liste des entreprises citées ou "Aucun")
-Chaque société doit être sur une ligne spécifique, il est interdit d'avoir plusieurs sociétés sur la même ligne
 
 CONCEPTS
 (Liste des notions métier identifiées dans la source.
-Chaque concept doit être suivi de son topic entre parenthèses sous la forme exacte :
-"Nom du concept (Topic: Nom exact du topic)"
-Le topic doit obligatoirement être choisi parmi la liste autorisée.
-Si aucun concept pertinent, écrire "Aucun")
+Chaque concept doit être associé à un topic existant.)
 
 SOLUTIONS
-(Noms de produits, plateformes ou offres Ou "Aucun")
-Chaque solution doit être sur une ligne spécifique, il est interdit d'avoir plusieurs solutions sur la même ligne
+(Noms de produits, plateformes ou offres ou "Aucun")
 
 TOPICS
-(Choisir 1 à 3 topics uniquement parmi cette liste.
-Ne jamais inventer ni reformuler.)
+(Choisir 1 à 3 topics uniquement parmi la liste suivante.
+Ne jamais inventer.)
 
 {topics_list_text}
 
 ================ ANALYSE STRATEGIQUE ================
 
 MECANIQUE
-(Explique en 3 à 6 lignes la mécanique business ou opérationnelle décrite dans la source.
-Strictement basée sur le texte.)
+- Expliquer COMMENT cela fonctionne réellement
+- Décrire la logique business, opérationnelle ou de marché
+- Ne pas reformuler le texte
+- Mettre en évidence les relations (offre, demande, comportement, structure)
 
 ENJEU
-(Quel est l’enjeu stratégique sous-jacent ? 2 à 4 lignes.)
+- Identifier ce que cela révèle comme logique ou tension
+- Répondre implicitement à : "qu’est-ce que cela change dans la manière de penser ce sujet"
+- Ne pas donner de recommandation
 
 FRICTION
-(Quel point de tension, limite ou incertitude apparaît ? 1 à 3 lignes.
-Si aucun, écrire "Aucun")
+- Identifier les limites, tensions ou incertitudes présentes dans la source
+- Si aucune, écrire "Aucun"
 
 SIGNAL
-(Quel signal de marché cela révèle-t-il ? 2 à 4 lignes.)
+- Identifier la dynamique de marché sous-jacente
+- Aller au-delà des faits sans inventer
+- Mettre en évidence une transformation, un déplacement ou une tendance
+- Ne pas répéter le contenu
+- Ne pas être descriptif
 """
 
     raw = run_llm(prompt)
