@@ -171,6 +171,13 @@ def admin_generate_digest_runs(payload: dict):
         "count": len(runs),
     }
 
+@router.get("/digest/run")
+def admin_list_runs():
+    return {
+        "status": "ok",
+        "runs": list_runs(),
+    }
+
 # ============================================================
 # MONTHLY INSIGHTS
 # ============================================================
@@ -262,4 +269,17 @@ def admin_generate_monthly(payload: dict):
     return {
         "status": "ok",
         "result": result,
+    }
+
+@router.get("/digest/run/{id_run}")
+def admin_get_run(id_run: str):
+
+    run = get_run(id_run)
+
+    if not run:
+        raise HTTPException(404, "run introuvable")
+
+    return {
+        "status": "ok",
+        "run": run,
     }
