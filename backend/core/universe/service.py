@@ -14,7 +14,7 @@ TABLE_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.UNIVERSE"
 
 
 # ============================================================
-# LIST UNIVERSES
+# LIST
 # ============================================================
 
 def list_universes():
@@ -44,7 +44,7 @@ def list_universes():
 
 
 # ============================================================
-# GET ONE UNIVERSE
+# GET ONE
 # ============================================================
 
 def get_universe(universe_id: str):
