@@ -1,5 +1,14 @@
+import uuid
+from datetime import datetime
+
+from google.cloud import bigquery
+
 from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq
+from utils.bigquery_utils import (
+    query_bq,
+    update_bq,
+    get_bigquery_client,
+)
 
 TABLE_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.UNIVERSE"
 
