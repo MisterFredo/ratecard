@@ -6,6 +6,10 @@ import SearchableMultiSelect, {
   SelectOption,
 } from "@/components/ui/SearchableMultiSelect";
 
+import DigestHeaderConfig from "@/components/digest/DigestHeaderConfig";
+
+import type { HeaderConfig } from "@/types/newsletter";
+
 export default function AdminDigestTemplateCreatePage() {
   const [name, setName] = useState("");
 
@@ -17,8 +21,32 @@ export default function AdminDigestTemplateCreatePage() {
   const [companyOptions, setCompanyOptions] = useState<SelectOption[]>([]);
   const [typeOptions, setTypeOptions] = useState<SelectOption[]>([]);
 
-  // 🔥 NEW
-  const [limit, setLimit] = useState(10);
+  /* =========================================================
+     HEADER CONFIG (CLONE DIGEST PAGE)
+  ========================================================= */
+
+  const [headerConfig, setHeaderConfig] = useState<HeaderConfig>({
+    title: "Newsletter Ratecard",
+    subtitle: "",
+    period: "",
+    headerCompany: undefined,
+    showTopicStats: false,
+    topBarEnabled: true,
+    topBarColor: "#84CC16",
+    periodColor: "#84CC16",
+    introHtml: "",
+  });
+
+  const [introText, setIntroText] = useState("");
+
+  /* =========================================================
+     BLOCK CONFIG
+  ========================================================= */
+
+  const [limitNews, setLimitNews] = useState(10);
+  const [limitBreves, setLimitBreves] = useState(5);
+  const [limitAnalyses, setLimitAnalyses] = useState(0);
+
   const [period, setPeriod] = useState<"last_month" | "30d" | "7d">("last_month");
 
   const [loading, setLoading] = useState(false);
@@ -79,7 +107,7 @@ export default function AdminDigestTemplateCreatePage() {
   }, []);
 
   /* =========================================================
-     SAVE
+     SAVE TEMPLATE
   ========================================================= */
 
   async function handleCreate() {
@@ -89,36 +117,35 @@ export default function AdminDigestTemplateCreatePage() {
       await api.post("/admin/digest/template", {
         name,
 
-        topics: topics.map((t) => t.id),
-        companies: companies.map((c) => c.id),
-        news_types: types.map((t) => t.id),
+        header_config: headerConfig, // 🔥 FULL CONFIG
+        intro_text: introText,
 
-        // 🔥 CONFIG TEMPLATE (clé du système)
-        header_config: {
-          blocks: {
-            news: {
-              topics: topics.map((t) => t.id),
-              companies: companies.map((c) => c.id),
-              limit,
-              period,
-            },
-            breves: {
-              topics: topics.map((t) => t.id),
-              companies: companies.map((c) => c.id),
-              limit,
-              period,
-            },
-            analyses: {
-              topics: topics.map((t) => t.id),
-              companies: companies.map((c) => c.id),
-              limit,
-              period,
-            },
+        // 🔥 BLOCKS STRUCTURÉS
+        blocks: {
+          news: {
+            topics: topics.map((t) => t.id),
+            companies: companies.map((c) => c.id),
+            news_types: types.map((t) => t.id),
+            limit: limitNews,
+            period,
+          },
+          breves: {
+            topics: topics.map((t) => t.id),
+            companies: companies.map((c) => c.id),
+            news_types: types.map((t) => t.id),
+            limit: limitBreves,
+            period,
+          },
+          analyses: {
+            topics: topics.map((t) => t.id),
+            companies: companies.map((c) => c.id),
+            news_types: types.map((t) => t.id),
+            limit: limitAnalyses, // 🔥 0 = OFF
+            period,
           },
         },
 
         editorial_order: [],
-        intro_text: "",
       });
 
       alert("Template créé");
@@ -136,7 +163,7 @@ export default function AdminDigestTemplateCreatePage() {
   ========================================================= */
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-4xl space-y-6">
 
       <h1 className="text-lg font-semibold">
         Nouveau template
@@ -149,6 +176,15 @@ export default function AdminDigestTemplateCreatePage() {
         onChange={(e) => setName(e.target.value)}
       />
 
+      {/* 🔥 HEADER (CLONE DIGEST) */}
+      <DigestHeaderConfig
+        headerConfig={headerConfig}
+        setHeaderConfig={setHeaderConfig}
+        introText={introText}
+        setIntroText={setIntroText}
+      />
+
+      {/* 🔥 FILTERS */}
       <SearchableMultiSelect
         label="Topics"
         options={topicOptions}
@@ -170,17 +206,39 @@ export default function AdminDigestTemplateCreatePage() {
         onChange={setTypes}
       />
 
-      {/* 🔥 LIMIT */}
-      <div>
-        <label className="text-xs text-gray-500 mb-1 block">
-          Nombre d’items
-        </label>
-        <input
-          type="number"
-          value={limit}
-          onChange={(e) => setLimit(Number(e.target.value))}
-          className="w-full border p-2 rounded"
-        />
+      {/* 🔥 LIMITS PAR BLOC */}
+      <div className="grid grid-cols-3 gap-4">
+
+        <div>
+          <label className="text-xs">News</label>
+          <input
+            type="number"
+            value={limitNews}
+            onChange={(e) => setLimitNews(Number(e.target.value))}
+            className="w-full border p-2 rounded"
+          />
+        </div>
+
+        <div>
+          <label className="text-xs">Brèves</label>
+          <input
+            type="number"
+            value={limitBreves}
+            onChange={(e) => setLimitBreves(Number(e.target.value))}
+            className="w-full border p-2 rounded"
+          />
+        </div>
+
+        <div>
+          <label className="text-xs">Analyses</label>
+          <input
+            type="number"
+            value={limitAnalyses}
+            onChange={(e) => setLimitAnalyses(Number(e.target.value))}
+            className="w-full border p-2 rounded"
+          />
+        </div>
+
       </div>
 
       {/* 🔥 PERIOD */}
