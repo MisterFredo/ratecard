@@ -25,20 +25,36 @@ def generate_monthly_runs(period: str):
         if not result:
             continue
 
+        # =========================================================
+        # 🔥 HEADER ENRICHI (IMPORTANT)
+        # =========================================================
+
+        header_config = result.get("header_config", {})
+
+        header_config["period"] = period  # 💥 injection dynamique
+
+        # =========================================================
+        # 🔥 STRUCTURE DATA
+        # =========================================================
+
+        data_payload = {
+            "news": result.get("news", []),
+            "breves": result.get("breves", []),
+            "analyses": result.get("analyses", []),
+            "numbers": result.get("numbers", []),
+        }
+
         rows.append({
             "ID_RUN": str(uuid.uuid4()),
             "ID_TEMPLATE": t["id_template"],
             "PERIOD": period,
             "STATUS": "draft",
 
-            "DATA": json.dumps({
-                "news": result.get("news", []),
-                "breves": result.get("breves", []),
-                "analyses": result.get("analyses", []),
-                "numbers": result.get("numbers", []),
-            }),
+            # 🔥 DATA CLEAN
+            "DATA": json.dumps(data_payload),
 
-            "HEADER_CONFIG": json.dumps(result.get("header_config", {})),
+            # 🔥 CONFIG SNAPSHOT
+            "HEADER_CONFIG": json.dumps(header_config),
             "INTRO_TEXT": result.get("intro_text", ""),
             "EDITORIAL_ORDER": json.dumps(result.get("editorial_order", [])),
 
@@ -62,7 +78,6 @@ def generate_monthly_runs(period: str):
     job.result()
 
     return rows
-
 
 def list_runs():
 
@@ -110,8 +125,8 @@ def get_run(id_run: str):
         "period": r["PERIOD"],
         "status": r["STATUS"],
 
-        "data": json.loads(r["DATA"] or "{}"),
-        "header_config": json.loads(r["HEADER_CONFIG"] or "{}"),
-        "editorial_order": json.loads(r["EDITORIAL_ORDER"] or "[]"),
-        "intro_text": r["INTRO_TEXT"] or "",
+        "data": json.loads(r.get("DATA") or "{}"),
+        "header_config": json.loads(r.get("HEADER_CONFIG") or "{}"),
+        "editorial_order": json.loads(r.get("EDITORIAL_ORDER") or "[]"),
+        "intro_text": r.get("INTRO_TEXT") or "",
     }
