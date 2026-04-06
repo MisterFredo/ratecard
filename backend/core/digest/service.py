@@ -375,12 +375,17 @@ def _search_numbers_digest(
     companies,
     limit,
     period,
+    date_from=None,
+    date_to=None,
 ):
 
     where_clauses = []
     params = {"limit": limit}
 
+    # =========================================================
     # 🔥 FILTER TOPICS
+    # =========================================================
+
     if topics:
         where_clauses.append("""
             EXISTS (
@@ -392,7 +397,10 @@ def _search_numbers_digest(
         """)
         params["topics"] = topics
 
+    # =========================================================
     # 🔥 FILTER COMPANIES
+    # =========================================================
+
     if companies:
         where_clauses.append("""
             ENTITY_TYPE = 'company'
@@ -400,15 +408,35 @@ def _search_numbers_digest(
         """)
         params["companies"] = companies
 
-    # 🔥 PERIOD (based on CREATED_AT)
-    if period == "7d":
-        where_clauses.append(
-            "DATE(CREATED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
-        )
-    elif period == "30d":
-        where_clauses.append(
-            "DATE(CREATED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
-        )
+    # =========================================================
+    # 🔥 DATE OVERRIDE (PRIORITAIRE)
+    # =========================================================
+
+    if date_from:
+        where_clauses.append("DATE(CREATED_AT) >= DATE(@date_from)")
+        params["date_from"] = date_from
+
+    if date_to:
+        where_clauses.append("DATE(CREATED_AT) <= DATE(@date_to)")
+        params["date_to"] = date_to
+
+    # =========================================================
+    # 🔥 PERIOD (fallback si pas de dates)
+    # =========================================================
+
+    if not date_from and not date_to:
+        if period == "7d":
+            where_clauses.append(
+                "DATE(CREATED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)"
+            )
+        elif period == "30d":
+            where_clauses.append(
+                "DATE(CREATED_AT) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)"
+            )
+
+    # =========================================================
+    # SQL
+    # =========================================================
 
     where_sql = ""
     if where_clauses:
