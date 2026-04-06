@@ -45,7 +45,7 @@ export default function DigestTemplatesPage() {
         <h1 className="text-lg font-semibold">Templates Digest</h1>
 
         <Link
-          href="/admin/digest/templates/new"
+          href="/admin/digest/templates/create"
           className="px-3 py-2 bg-black text-white text-sm rounded"
         >
           Nouveau template
