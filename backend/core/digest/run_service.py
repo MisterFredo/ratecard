@@ -87,3 +87,31 @@ def list_runs():
         }
         for r in rows
     ]
+
+def get_run(id_run: str):
+
+    rows = query_bq(
+        f"""
+        SELECT *
+        FROM `{TABLE_RUN}`
+        WHERE ID_RUN = @id
+        LIMIT 1
+        """,
+        {"id": id_run},
+    )
+
+    if not rows:
+        return None
+
+    r = rows[0]
+
+    return {
+        "id_run": r["ID_RUN"],
+        "period": r["PERIOD"],
+        "status": r["STATUS"],
+
+        "data": json.loads(r["DATA"] or "{}"),
+        "header_config": json.loads(r["HEADER_CONFIG"] or "{}"),
+        "editorial_order": json.loads(r["EDITORIAL_ORDER"] or "[]"),
+        "intro_text": r["INTRO_TEXT"] or "",
+    }
