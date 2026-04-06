@@ -14,6 +14,7 @@ from api.source.models import SourceCreate, SourceUpdate
 
 
 TABLE_SOURCE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE"
+TABLE_SOURCE_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.SOURCE_UNIVERSE"
 
 
 # ============================================================
@@ -32,9 +33,7 @@ def create_source(data: SourceCreate) -> str:
         "DOMAIN": data.domain,
         "AUTHOR": data.author,
         "AUTHOR_PROFILE": data.author_profile,
-
-        "LOGO": None,  # ✅ ALIGN COMPANY
-
+        "LOGO": None,
         "CREATED_AT": now,
     }]
 
@@ -48,6 +47,26 @@ def create_source(data: SourceCreate) -> str:
         ),
     ).result()
 
+    # ============================================================
+    # 🔥 INSERT UNIVERSE (si fourni)
+    # ============================================================
+
+    if getattr(data, "universe_id", None):
+
+        universe_row = [{
+            "ID_SOURCE": source_id,
+            "ID_UNIVERSE": data.universe_id,
+            "CREATED_AT": now,
+        }]
+
+        client.load_table_from_json(
+            universe_row,
+            TABLE_SOURCE_UNIVERSE,
+            job_config=bigquery.LoadJobConfig(
+                write_disposition="WRITE_APPEND"
+            ),
+        ).result()
+
     return source_id
 
 
@@ -58,17 +77,20 @@ def list_sources():
 
     sql = f"""
         SELECT
-            SOURCE_ID,
-            NAME,
-            TYPE_SOURCE,
-            DESCRIPTION,
-            DOMAIN,
-            AUTHOR,
-            AUTHOR_PROFILE,
-            LOGO,
-            CREATED_AT
-        FROM `{TABLE_SOURCE}`
-        ORDER BY NAME ASC
+            s.SOURCE_ID,
+            s.NAME,
+            s.TYPE_SOURCE,
+            s.DESCRIPTION,
+            s.DOMAIN,
+            s.AUTHOR,
+            s.AUTHOR_PROFILE,
+            s.LOGO,
+            s.CREATED_AT,
+            su.ID_UNIVERSE
+        FROM `{TABLE_SOURCE}` s
+        LEFT JOIN `{TABLE_SOURCE_UNIVERSE}` su
+        ON s.SOURCE_ID = su.ID_SOURCE
+        ORDER BY s.NAME ASC
     """
 
     rows = query_bq(sql)
@@ -84,10 +106,10 @@ def list_sources():
             "author_profile": r["AUTHOR_PROFILE"],
             "logo": r.get("LOGO"),
             "created_at": r["CREATED_AT"],
+            "universe_id": r.get("ID_UNIVERSE"),
         }
         for r in rows
     ]
-
 
 # ============================================================
 # GET ONE SOURCE (snake_case contractuel)
@@ -96,17 +118,20 @@ def get_source(source_id: str):
 
     sql = f"""
         SELECT
-            SOURCE_ID,
-            NAME,
-            TYPE_SOURCE,
-            DESCRIPTION,
-            DOMAIN,
-            AUTHOR,
-            AUTHOR_PROFILE,
-            LOGO,
-            CREATED_AT
-        FROM `{TABLE_SOURCE}`
-        WHERE SOURCE_ID = @id
+            s.SOURCE_ID,
+            s.NAME,
+            s.TYPE_SOURCE,
+            s.DESCRIPTION,
+            s.DOMAIN,
+            s.AUTHOR,
+            s.AUTHOR_PROFILE,
+            s.LOGO,
+            s.CREATED_AT,
+            su.ID_UNIVERSE
+        FROM `{TABLE_SOURCE}` s
+        LEFT JOIN `{TABLE_SOURCE_UNIVERSE}` su
+        ON s.SOURCE_ID = su.ID_SOURCE
+        WHERE s.SOURCE_ID = @id
         LIMIT 1
     """
 
@@ -127,9 +152,8 @@ def get_source(source_id: str):
         "author_profile": r["AUTHOR_PROFILE"],
         "logo": r.get("LOGO"),
         "created_at": r["CREATED_AT"],
+        "universe_id": r.get("ID_UNIVERSE"),
     }
-
-
 # ============================================================
 # UPDATE SOURCE
 # ============================================================
@@ -147,8 +171,12 @@ def update_source(source_id: str, data: SourceUpdate) -> bool:
         "domain": "DOMAIN",
         "author": "AUTHOR",
         "author_profile": "AUTHOR_PROFILE",
-        "logo": "LOGO",  # ✅ NEW
+        "logo": "LOGO",
     }
+
+    # ============================================================
+    # UPDATE TABLE SOURCE
+    # ============================================================
 
     bq_values = {
         mapping[k]: v
@@ -156,20 +184,56 @@ def update_source(source_id: str, data: SourceUpdate) -> bool:
         if k in mapping
     }
 
-    if not bq_values:
-        return False
+    updated = False
 
-    return update_bq(
-        table=TABLE_SOURCE,
-        fields=bq_values,
-        where={"SOURCE_ID": source_id},
-    )
+    if bq_values:
+        updated = update_bq(
+            table=TABLE_SOURCE,
+            fields=bq_values,
+            where={"SOURCE_ID": source_id},
+        )
 
+    # ============================================================
+    # 🔥 UPDATE UNIVERSE
+    # ============================================================
 
-# ============================================================
-# DELETE SOURCE
-# ============================================================
+    if "universe_id" in values:
+
+        # delete existing mapping
+        query_bq(
+            f"""
+            DELETE FROM `{TABLE_SOURCE_UNIVERSE}`
+            WHERE ID_SOURCE = @id
+            """,
+            {"id": source_id},
+        )
+
+        # insert new mapping if provided
+        if values["universe_id"]:
+            query_bq(
+                f"""
+                INSERT INTO `{TABLE_SOURCE_UNIVERSE}` (
+                    ID_SOURCE,
+                    ID_UNIVERSE,
+                    CREATED_AT
+                )
+                VALUES (@id, @universe, CURRENT_TIMESTAMP())
+                """,
+                {
+                    "id": source_id,
+                    "universe": values["universe_id"],
+                },
+            )
+
+        updated = True
+
+    return updated
+
 def delete_source(source_id: str) -> bool:
+
+    # ============================================================
+    # CHECK EXISTENCE
+    # ============================================================
 
     existing = query_bq(
         f"""
@@ -182,6 +246,22 @@ def delete_source(source_id: str) -> bool:
 
     if not existing:
         return False
+
+    # ============================================================
+    # DELETE UNIVERSE MAPPING
+    # ============================================================
+
+    query_bq(
+        f"""
+        DELETE FROM `{TABLE_SOURCE_UNIVERSE}`
+        WHERE ID_SOURCE = @id
+        """,
+        {"id": source_id},
+    )
+
+    # ============================================================
+    # DELETE SOURCE
+    # ============================================================
 
     query_bq(
         f"""
