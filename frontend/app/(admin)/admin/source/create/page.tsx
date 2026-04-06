@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import VisualSectionSource from "@/components/visuals/VisualSectionSource"; // ✅ CHANGE ICI
+import VisualSectionSource from "@/components/visuals/VisualSectionSource";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 const SOURCE_MEDIA_PATH = "sources";
@@ -17,10 +17,34 @@ export default function CreateSource() {
   const [author, setAuthor] = useState("");
   const [authorProfile, setAuthorProfile] = useState("");
 
+  const [universeId, setUniverseId] = useState("");
+  const [universes, setUniverses] = useState<any[]>([]);
+
   const [sourceId, setSourceId] = useState<string | null>(null);
   const [logoFilename, setLogoFilename] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
+
+  // =========================================================
+  // LOAD UNIVERS
+  // =========================================================
+
+  useEffect(() => {
+    async function loadUniverses() {
+      try {
+        const res = await api.get("/universe/list");
+        setUniverses(res.universes || []);
+      } catch (e) {
+        console.error("❌ load universes", e);
+      }
+    }
+
+    loadUniverses();
+  }, []);
+
+  // =========================================================
+  // SAVE
+  // =========================================================
 
   async function save() {
 
@@ -40,6 +64,7 @@ export default function CreateSource() {
         domain: domain || null,
         author: author || null,
         author_profile: authorProfile || null,
+        universe_id: universeId || null,
       });
 
       if (!res.source_id) {
@@ -62,6 +87,10 @@ export default function CreateSource() {
     }
   }
 
+  // =========================================================
+  // RELOAD
+  // =========================================================
+
   async function reloadSource() {
 
     if (!sourceId) return;
@@ -69,7 +98,6 @@ export default function CreateSource() {
     try {
 
       const s = await api.get(`/source/${sourceId}`);
-
       setLogoFilename(s.logo || null);
 
     } catch (e) {
@@ -78,7 +106,6 @@ export default function CreateSource() {
       alert("❌ Erreur rechargement source");
 
     }
-
   }
 
   const logoUrl = logoFilename
@@ -98,6 +125,7 @@ export default function CreateSource() {
         </Link>
       </div>
 
+      {/* NAME */}
       <div className="space-y-2 max-w-xl">
         <label className="block text-sm font-medium">
           Nom de la source
@@ -106,10 +134,10 @@ export default function CreateSource() {
           className="border p-2 w-full rounded"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="LinkedIn"
         />
       </div>
 
+      {/* TYPE */}
       <div className="space-y-2 max-w-md">
         <label className="block text-sm font-medium">
           Type de source
@@ -121,6 +149,28 @@ export default function CreateSource() {
         />
       </div>
 
+      {/* 🔥 UNIVERSE */}
+      <div className="space-y-2 max-w-md">
+        <label className="block text-sm font-medium">
+          Univers
+        </label>
+
+        <select
+          className="border p-2 w-full rounded"
+          value={universeId}
+          onChange={(e) => setUniverseId(e.target.value)}
+        >
+          <option value="">-- Sélectionner un univers --</option>
+
+          {universes.map((u) => (
+            <option key={u.id_universe} value={u.id_universe}>
+              {u.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* DOMAIN */}
       <div className="space-y-2 max-w-md">
         <label className="block text-sm font-medium">
           Domaine
@@ -129,10 +179,10 @@ export default function CreateSource() {
           className="border p-2 w-full rounded"
           value={domain}
           onChange={(e) => setDomain(e.target.value)}
-          placeholder="linkedin.com"
         />
       </div>
 
+      {/* AUTHOR */}
       <div className="space-y-2 max-w-md">
         <label className="block text-sm font-medium">
           Auteur par défaut
@@ -144,6 +194,7 @@ export default function CreateSource() {
         />
       </div>
 
+      {/* AUTHOR PROFILE */}
       <div className="space-y-2 max-w-xl">
         <label className="block text-sm font-medium">
           Profil auteur
@@ -155,6 +206,7 @@ export default function CreateSource() {
         />
       </div>
 
+      {/* DESCRIPTION */}
       <div className="space-y-2 max-w-3xl">
         <label className="block text-sm font-medium">
           Description
@@ -166,6 +218,7 @@ export default function CreateSource() {
         />
       </div>
 
+      {/* SAVE */}
       <button
         onClick={save}
         disabled={loading}
@@ -174,7 +227,7 @@ export default function CreateSource() {
         {loading ? "Création..." : "Créer la source"}
       </button>
 
-      {/* ✅ VERSION SIMPLE = EXACT COMPANY */}
+      {/* LOGO */}
       {sourceId && (
         <VisualSectionSource
           entityId={sourceId}
