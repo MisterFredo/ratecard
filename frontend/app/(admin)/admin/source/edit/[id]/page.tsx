@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import VisualSectionSource from "@/components/visuals/VisualSectionSource"; // ✅
+import VisualSectionSource from "@/components/visuals/VisualSectionSource";
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 const SOURCE_MEDIA_PATH = "sources";
@@ -21,14 +21,35 @@ export default function EditSource() {
   const [author, setAuthor] = useState("");
   const [authorProfile, setAuthorProfile] = useState("");
 
+  const [universeId, setUniverseId] = useState("");
+  const [universes, setUniverses] = useState<any[]>([]);
+
   const [logoFilename, setLogoFilename] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // ---------------------------------------------------------
-  // LOAD
-  // ---------------------------------------------------------
+  // =========================================================
+  // LOAD UNIVERS
+  // =========================================================
+
+  useEffect(() => {
+    async function loadUniverses() {
+      try {
+        const res = await api.get("/universe/list");
+        setUniverses(res.universes || []);
+      } catch (e) {
+        console.error("❌ load universes", e);
+      }
+    }
+
+    loadUniverses();
+  }, []);
+
+  // =========================================================
+  // LOAD SOURCE
+  // =========================================================
+
   useEffect(() => {
     async function load() {
       try {
@@ -41,6 +62,9 @@ export default function EditSource() {
         setAuthor(res.author || "");
         setAuthorProfile(res.author_profile || "");
         setLogoFilename(res.logo || null);
+
+        // 🔥 universe
+        setUniverseId(res.universe_id || "");
 
       } catch (e) {
         console.error(e);
@@ -55,9 +79,10 @@ export default function EditSource() {
     }
   }, [sourceId]);
 
-  // ---------------------------------------------------------
+  // =========================================================
   // SAVE
-  // ---------------------------------------------------------
+  // =========================================================
+
   async function save() {
 
     if (!name.trim()) {
@@ -76,6 +101,9 @@ export default function EditSource() {
         domain: domain || null,
         author: author || null,
         author_profile: authorProfile || null,
+
+        // 🔥 NEW
+        universe_id: universeId || null,
       });
 
       alert("Source mise à jour");
@@ -92,28 +120,24 @@ export default function EditSource() {
     }
   }
 
-  // ---------------------------------------------------------
+  // =========================================================
   // RELOAD
-  // ---------------------------------------------------------
+  // =========================================================
+
   async function reloadSource() {
-
     try {
-
       const s = await api.get(`/source/${sourceId}`);
       setLogoFilename(s.logo || null);
-
     } catch (e) {
-
       console.error(e);
       alert("❌ Erreur rechargement source");
-
     }
-
   }
 
-  // ---------------------------------------------------------
+  // =========================================================
   // DELETE
-  // ---------------------------------------------------------
+  // =========================================================
+
   async function remove() {
 
     if (!confirm("Supprimer cette source ?")) return;
@@ -141,9 +165,10 @@ export default function EditSource() {
     ? `${GCS_BASE_URL}/${SOURCE_MEDIA_PATH}/${logoFilename}`
     : null;
 
-  // ---------------------------------------------------------
+  // =========================================================
   // UI
-  // ---------------------------------------------------------
+  // =========================================================
+
   return (
     <div className="space-y-10">
 
@@ -157,6 +182,7 @@ export default function EditSource() {
         </Link>
       </div>
 
+      {/* NAME */}
       <div className="space-y-2 max-w-xl">
         <label className="block text-sm font-medium">Nom</label>
         <input
@@ -166,6 +192,7 @@ export default function EditSource() {
         />
       </div>
 
+      {/* TYPE */}
       <div className="space-y-2 max-w-md">
         <label className="block text-sm font-medium">Type</label>
         <input
@@ -175,6 +202,26 @@ export default function EditSource() {
         />
       </div>
 
+      {/* 🔥 UNIVERSE */}
+      <div className="space-y-2 max-w-md">
+        <label className="block text-sm font-medium">Univers</label>
+
+        <select
+          className="border p-2 w-full rounded"
+          value={universeId}
+          onChange={(e) => setUniverseId(e.target.value)}
+        >
+          <option value="">-- Aucun univers --</option>
+
+          {universes.map((u) => (
+            <option key={u.id_universe} value={u.id_universe}>
+              {u.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* DOMAIN */}
       <div className="space-y-2 max-w-md">
         <label className="block text-sm font-medium">Domaine</label>
         <input
@@ -184,6 +231,7 @@ export default function EditSource() {
         />
       </div>
 
+      {/* AUTHOR */}
       <div className="space-y-2 max-w-md">
         <label className="block text-sm font-medium">Auteur</label>
         <input
@@ -193,6 +241,7 @@ export default function EditSource() {
         />
       </div>
 
+      {/* AUTHOR PROFILE */}
       <div className="space-y-2 max-w-xl">
         <label className="block text-sm font-medium">Profil auteur</label>
         <input
@@ -202,6 +251,7 @@ export default function EditSource() {
         />
       </div>
 
+      {/* DESCRIPTION */}
       <div className="space-y-2 max-w-3xl">
         <label className="block text-sm font-medium">Description</label>
         <textarea
@@ -211,6 +261,7 @@ export default function EditSource() {
         />
       </div>
 
+      {/* ACTIONS */}
       <div className="flex gap-4">
         <button
           onClick={save}
@@ -228,7 +279,7 @@ export default function EditSource() {
         </button>
       </div>
 
-      {/* ✅ EXACT COMPANY PATTERN */}
+      {/* LOGO */}
       <VisualSectionSource
         entityId={sourceId}
         rectUrl={logoUrl}
