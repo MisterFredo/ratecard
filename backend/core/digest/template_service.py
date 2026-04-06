@@ -5,7 +5,12 @@ import json
 
 from config import BQ_PROJECT, BQ_DATASET
 from core.digest.service import search_digest
-from utils.bigquery_utils import query_bq, insert_bq, update_bq, get_bigquery_client
+from utils.bigquery_utils import (
+    query_bq,
+    update_bq,
+    insert_bq,
+    get_bigquery_client,
+)
 
 
 TABLE_TEMPLATE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_DIGEST_TEMPLATE"
