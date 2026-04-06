@@ -30,9 +30,14 @@ export default function TemplateEditPage() {
   const [companyOptions, setCompanyOptions] = useState<SelectOption[]>([]);
   const [typeOptions, setTypeOptions] = useState<SelectOption[]>([]);
 
-  const [limit, setLimit] = useState(10);
+  /* 🔥 LIMITS PAR BLOC */
+  const [limitNews, setLimitNews] = useState(10);
+  const [limitBreves, setLimitBreves] = useState(5);
+  const [limitAnalyses, setLimitAnalyses] = useState(0);
+
   const [period, setPeriod] = useState<"last_month" | "30d" | "7d">("last_month");
 
+  /* 🔥 HEADER FULL */
   const [headerConfig, setHeaderConfig] = useState<HeaderConfig>({
     title: "",
     subtitle: "",
@@ -116,7 +121,6 @@ export default function TemplateEditPage() {
 
         setName(tpl.name || "");
 
-        // 🔥 mapping vers SelectOption
         setTopics(
           (tpl.topics || []).map((id: string) => ({
             id,
@@ -138,14 +142,21 @@ export default function TemplateEditPage() {
           }))
         );
 
-        const blocks = tpl.header_config?.blocks || {};
+        /* 🔥 BLOCKS */
+        const blocks = tpl.blocks || tpl.header_config?.blocks || {};
 
-        const baseBlock =
-          blocks.news || blocks.analyses || blocks.breves || {};
+        setLimitNews(blocks.news?.limit ?? 10);
+        setLimitBreves(blocks.breves?.limit ?? 5);
+        setLimitAnalyses(blocks.analyses?.limit ?? 0);
 
-        setLimit(baseBlock.limit || 10);
-        setPeriod(baseBlock.period || "last_month");
+        setPeriod(
+          blocks.news?.period ||
+          blocks.breves?.period ||
+          blocks.analyses?.period ||
+          "last_month"
+        );
 
+        /* 🔥 HEADER */
         setHeaderConfig(tpl.header_config || {});
         setIntroText(tpl.intro_text || "");
 
@@ -168,35 +179,32 @@ export default function TemplateEditPage() {
       await api.put(`/admin/digest/template/${templateId}`, {
         name,
 
-        topics: topics.map((t) => t.id),
-        companies: companies.map((c) => c.id),
-        news_types: types.map((t) => t.id),
+        header_config: headerConfig,
+        intro_text: introText,
 
-        header_config: {
-          ...headerConfig,
-          blocks: {
-            news: {
-              topics: topics.map((t) => t.id),
-              companies: companies.map((c) => c.id),
-              limit,
-              period,
-            },
-            breves: {
-              topics: topics.map((t) => t.id),
-              companies: companies.map((c) => c.id),
-              limit,
-              period,
-            },
-            analyses: {
-              topics: topics.map((t) => t.id),
-              companies: companies.map((c) => c.id),
-              limit,
-              period,
-            },
+        blocks: {
+          news: {
+            topics: topics.map((t) => t.id),
+            companies: companies.map((c) => c.id),
+            news_types: types.map((t) => t.id),
+            limit: limitNews,
+            period,
+          },
+          breves: {
+            topics: topics.map((t) => t.id),
+            companies: companies.map((c) => c.id),
+            news_types: types.map((t) => t.id),
+            limit: limitBreves,
+            period,
+          },
+          analyses: {
+            topics: topics.map((t) => t.id),
+            companies: companies.map((c) => c.id),
+            news_types: types.map((t) => t.id),
+            limit: limitAnalyses, // 🔥 0 = OFF
+            period,
           },
         },
-
-        intro_text: introText,
       });
 
       router.push("/admin/digest/templates");
@@ -214,7 +222,7 @@ export default function TemplateEditPage() {
   ========================================================= */
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-4xl space-y-6">
 
       <h1 className="text-lg font-semibold">
         Modifier template
@@ -227,6 +235,15 @@ export default function TemplateEditPage() {
         onChange={(e) => setName(e.target.value)}
       />
 
+      {/* 🔥 HEADER COMPLET */}
+      <DigestHeaderConfig
+        headerConfig={headerConfig}
+        setHeaderConfig={setHeaderConfig}
+        introText={introText}
+        setIntroText={setIntroText}
+      />
+
+      {/* 🔥 FILTERS */}
       <SearchableMultiSelect
         label="Topics"
         options={topicOptions}
@@ -248,20 +265,42 @@ export default function TemplateEditPage() {
         onChange={setTypes}
       />
 
-      {/* LIMIT */}
-      <div>
-        <label className="text-xs text-gray-500 mb-1 block">
-          Nombre d’items
-        </label>
-        <input
-          type="number"
-          value={limit}
-          onChange={(e) => setLimit(Number(e.target.value))}
-          className="w-full border p-2 rounded"
-        />
+      {/* 🔥 LIMITS PAR BLOC */}
+      <div className="grid grid-cols-3 gap-4">
+
+        <div>
+          <label className="text-xs">News</label>
+          <input
+            type="number"
+            value={limitNews}
+            onChange={(e) => setLimitNews(Number(e.target.value))}
+            className="w-full border p-2 rounded"
+          />
+        </div>
+
+        <div>
+          <label className="text-xs">Brèves</label>
+          <input
+            type="number"
+            value={limitBreves}
+            onChange={(e) => setLimitBreves(Number(e.target.value))}
+            className="w-full border p-2 rounded"
+          />
+        </div>
+
+        <div>
+          <label className="text-xs">Analyses</label>
+          <input
+            type="number"
+            value={limitAnalyses}
+            onChange={(e) => setLimitAnalyses(Number(e.target.value))}
+            className="w-full border p-2 rounded"
+          />
+        </div>
+
       </div>
 
-      {/* PERIOD */}
+      {/* 🔥 PERIOD */}
       <div className="flex gap-2">
         {[
           { key: "last_month", label: "Mois précédent" },
@@ -284,13 +323,6 @@ export default function TemplateEditPage() {
           </button>
         ))}
       </div>
-
-      <DigestHeaderConfig
-        headerConfig={headerConfig}
-        setHeaderConfig={setHeaderConfig}
-        introText={introText}
-        setIntroText={setIntroText}
-      />
 
       <div className="flex gap-3">
         <button
