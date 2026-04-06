@@ -54,20 +54,23 @@ def create_template(data: Dict[str, Any]) -> str:
         raise ValueError("NAME obligatoire")
 
     template_id = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat()  # 🔥 important
+    now = datetime.utcnow().isoformat()
 
     row = [{
         "ID_TEMPLATE": template_id,
         "NAME": data["name"],
 
-        # 🔥 FILTRES
+        # 🔥 FILTRES (fallback uniquement)
         "TOPICS": _normalize_array(data.get("topics")),
         "COMPANIES": _normalize_array(data.get("companies")),
         "NEWS_TYPES": _normalize_array(data.get("news_types")),
 
-        # 🔥 JSON SAFE
-        "EDITORIAL_ORDER": json.dumps(data.get("editorial_order", [])),
+        # 🔥 NOUVEAU
+        "BLOCKS": json.dumps(data.get("blocks", {})),
+
+        # 🔥 HEADER CLEAN
         "HEADER_CONFIG": json.dumps(data.get("header_config", {})),
+        "EDITORIAL_ORDER": json.dumps(data.get("editorial_order", [])),
         "INTRO_TEXT": data.get("intro_text", ""),
 
         "CREATED_AT": now,
