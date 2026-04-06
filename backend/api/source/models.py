@@ -21,7 +21,10 @@ class SourceCreate(BaseModel):
     author: Optional[str] = None
     author_profile: Optional[str] = None
 
-    logo: Optional[str] = None  # ✅ NEW
+    logo: Optional[str] = None
+
+    # 🔥 NEW
+    universe_id: Optional[str] = None
 
     class Config:
         extra = "forbid"
@@ -45,7 +48,10 @@ class SourceUpdate(BaseModel):
     author: Optional[str] = None
     author_profile: Optional[str] = None
 
-    logo: Optional[str] = None  # ✅ NEW
+    logo: Optional[str] = None
+
+    # 🔥 NEW
+    universe_id: Optional[str] = None
 
     class Config:
         extra = "forbid"
@@ -71,13 +77,15 @@ class SourceOut(BaseModel):
     author: Optional[str] = None
     author_profile: Optional[str] = None
 
-    logo: Optional[str] = None  # ✅ NEW
+    logo: Optional[str] = None
 
     created_at: Optional[datetime] = None
 
+    # 🔥 NEW
+    universe_id: Optional[str] = None
+
     class Config:
         extra = "forbid"
-
 
 class SourceListOut(BaseModel):
     status: str
