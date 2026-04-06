@@ -32,69 +32,108 @@ def search_digest(
     period: Optional[str] = "total",
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
+    blocks_config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-
-    # =========================================================
-    # PRIORITÉ AUX DATES
-    # =========================================================
 
     use_period = period
     if date_from or date_to:
         use_period = None
 
-    # =========================
+    # =========================================================
+    # 🔥 BLOCK CONFIG (NEW)
+    # =========================================================
+
+    def get_block(name):
+        if not blocks_config:
+            return None
+        return blocks_config.get(name, {})
+
+    def resolve_limit(block):
+        if not block:
+            return limit
+        return block.get("limit", limit)
+
+    def resolve_topics(block):
+        return block.get("topics") if block else topics
+
+    def resolve_companies(block):
+        return block.get("companies") if block else companies
+
+    def resolve_types(block):
+        return block.get("news_types") if block else news_types
+
+    def resolve_period(block):
+        if not block:
+            return use_period
+        return block.get("period", use_period)
+
+    # =========================================================
     # NEWS
-    # =========================
-    news = _search_news_digest(
-        topics=topics,
-        companies=companies,
-        news_types=news_types,
-        limit=limit,
-        cursor=cursor,
-        news_kind="NEWS",
-        period=use_period,
-        date_from=date_from,
-        date_to=date_to,
-    )
+    # =========================================================
 
-    # =========================
-    # BRÈVES
-    # =========================
-    breves = _search_news_digest(
-        topics=topics,
-        companies=companies,
-        news_types=news_types,
-        limit=limit,
-        cursor=cursor,
-        news_kind="BRIEF",
-        period=use_period,
-        date_from=date_from,
-        date_to=date_to,
-    )
+    news_block = get_block("news")
 
-    # =========================
+    news = []
+    if not news_block or resolve_limit(news_block) > 0:
+        news = _search_news_digest(
+            topics=resolve_topics(news_block),
+            companies=resolve_companies(news_block),
+            news_types=resolve_types(news_block),
+            limit=resolve_limit(news_block),
+            cursor=cursor,
+            news_kind="NEWS",
+            period=resolve_period(news_block),
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+    # =========================================================
+    # BRÈVES
+    # =========================================================
+
+    breves_block = get_block("breves")
+
+    breves = []
+    if not breves_block or resolve_limit(breves_block) > 0:
+        breves = _search_news_digest(
+            topics=resolve_topics(breves_block),
+            companies=resolve_companies(breves_block),
+            news_types=resolve_types(breves_block),
+            limit=resolve_limit(breves_block),
+            cursor=cursor,
+            news_kind="BRIEF",
+            period=resolve_period(breves_block),
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+    # =========================================================
     # ANALYSES
-    # =========================
-    analyses = _search_analyses_digest(
-        topics=topics,
-        companies=companies,
-        limit=limit,
-        cursor=cursor,
-        period=use_period,
-        date_from=date_from,
-        date_to=date_to,
-    )
+    # =========================================================
 
-    # =========================
-    # NUMBERS
-    # =========================
+    analyses_block = get_block("analyses")
+
+    analyses = []
+    if not analyses_block or resolve_limit(analyses_block) > 0:
+        analyses = _search_analyses_digest(
+            topics=resolve_topics(analyses_block),
+            companies=resolve_companies(analyses_block),
+            limit=resolve_limit(analyses_block),
+            cursor=cursor,
+            period=resolve_period(analyses_block),
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+    # =========================================================
+    # NUMBERS (optionnel)
+    # =========================================================
+
     numbers = _search_numbers_digest(
         topics=topics,
         companies=companies,
         limit=limit,
         period=use_period,
-        date_from=date_from,
-        date_to=date_to,
     )
 
     return {
@@ -103,7 +142,6 @@ def search_digest(
         "analyses": analyses,
         "numbers": numbers,
     }
-
 
 # ============================================================
 # NEWS / BRÈVES
