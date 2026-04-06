@@ -31,6 +31,8 @@ type EditorialItem = {
 export default function DigestPage() {
   const [loading, setLoading] = useState(false);
 
+  const [isRunMode, setIsRunMode] = useState(false);
+
   const [news, setNews] = useState<NewsletterNewsItem[]>([]);
   const [breves, setBreves] = useState<NewsletterNewsItem[]>([]);
   const [analyses, setAnalyses] = useState<NewsletterAnalysisItem[]>([]);
@@ -41,7 +43,7 @@ export default function DigestPage() {
   const [selectedTypes, setSelectedTypes] = useState<SelectOption[]>([]);
 
   /* =========================================================
-     🔥 STORE GLOBAL DES ITEMS
+     STORE GLOBAL DES ITEMS
   ========================================================= */
 
   const [selectedItemsMap, setSelectedItemsMap] = useState<{
@@ -76,43 +78,23 @@ export default function DigestPage() {
 
   const [introText, setIntroText] = useState("");
 
-  const [editorialOrder, setEditorialOrder] = useState<EditorialItem[]>([]);
+  const [editorialOrder, setEditorialOrder] = useState<EditorialItem[]>(([]);
 
   const [topicStats, setTopicStats] = useState<TopicStat[]>([]);
 
   /* =========================================================
-     🔥 TEMPLATES
+     LOAD RUN (MODE PRODUCTION)
   ========================================================= */
 
-  const [templates, setTemplates] = useState<any[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
-
-  useEffect(() => {
-    async function loadTemplates() {
-      try {
-        const res = await api.get("/admin/digest/template");
-        setTemplates(res.templates || []);
-      } catch (e) {
-        console.error("Erreur templates", e);
-      }
-    }
-
-    loadTemplates();
-  }, []);
-
-  async function applyTemplate(templateId: string) {
-    if (!templateId) return;
-
+  async function loadRun(id: string) {
     setLoading(true);
 
     try {
-      const res = await api.post("/admin/digest/template/apply", {
-        template_id: templateId,
-      });
+      const res = await api.get(`/admin/digest/run/${id}`);
+      const run = res.run;
 
-      const data = res.result || res;
+      const data = run.data || {};
 
-      /* 🔥 hydrate DATA */
       setNews(data.news || []);
       setBreves(data.breves || []);
       setAnalyses(data.analyses || []);
@@ -125,28 +107,30 @@ export default function DigestPage() {
         ...(data.numbers || []),
       ]);
 
-      /* 🔥 hydrate EDITO */
-      setEditorialOrder(data.editorial_order || []);
-      setHeaderConfig(data.header_config || {});
-      setIntroText(data.intro_text || "");
-
-      /* 🔥 hydrate FILTERS (UI) */
-      setSelectedTopics(
-        (data.topics || []).map((id: string) => ({ id, label: id }))
-      );
-      setSelectedCompanies(
-        (data.companies || []).map((id: string) => ({ id, label: id }))
-      );
-      setSelectedTypes(
-        (data.news_types || []).map((id: string) => ({ id, label: id }))
-      );
+      setEditorialOrder(run.editorial_order || []);
+      setHeaderConfig(run.header_config || {});
+      setIntroText(run.intro_text || "");
 
     } catch (e) {
-      console.error("Erreur apply template", e);
+      console.error("Erreur load run", e);
     } finally {
       setLoading(false);
     }
   }
+
+  /* =========================================================
+     DETECT MODE (URL)
+  ========================================================= */
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const runId = params.get("run");
+
+    if (!runId) return;
+
+    setIsRunMode(true);
+    loadRun(runId);
+  }, []);
 
   /* =========================================================
      LOAD STATS
@@ -177,7 +161,7 @@ export default function DigestPage() {
   }, []);
 
   /* =========================================================
-     SEARCH
+     SEARCH (AD HOC)
   ========================================================= */
 
   async function handleSearch(filters: {
@@ -262,34 +246,16 @@ export default function DigestPage() {
   return (
     <div className="space-y-4">
 
-      <h1 className="text-lg font-semibold tracking-tight">
-        Digest
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold tracking-tight">
+          Digest
+        </h1>
 
-      {/* 🔥 TEMPLATE SELECTOR */}
-      <div className="flex gap-3 items-center">
-
-        <select
-          value={selectedTemplateId}
-          onChange={(e) => setSelectedTemplateId(e.target.value)}
-          className="border px-3 py-2 rounded text-sm"
-        >
-          <option value="">Choisir un template</option>
-          {templates.map((t) => (
-            <option key={t.id_template} value={t.id_template}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-
-        <button
-          onClick={() => applyTemplate(selectedTemplateId)}
-          disabled={!selectedTemplateId}
-          className="px-3 py-2 bg-black text-white text-xs rounded"
-        >
-          Appliquer
-        </button>
-
+        {isRunMode && (
+          <div className="text-xs bg-yellow-100 px-2 py-1 rounded">
+            Mode édition mensuelle
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_1.3fr] gap-6 items-start">
@@ -306,15 +272,17 @@ export default function DigestPage() {
 
           <DigestTopicStats period={30} />
 
-          <DigestEngine
-            selectedTopics={selectedTopics}
-            setSelectedTopics={setSelectedTopics}
-            selectedCompanies={selectedCompanies}
-            setSelectedCompanies={setSelectedCompanies}
-            selectedTypes={selectedTypes}
-            setSelectedTypes={setSelectedTypes}
-            onSearch={handleSearch}
-          />
+          {!isRunMode && (
+            <DigestEngine
+              selectedTopics={selectedTopics}
+              setSelectedTopics={setSelectedTopics}
+              selectedCompanies={selectedCompanies}
+              setSelectedCompanies={setSelectedCompanies}
+              selectedTypes={selectedTypes}
+              setSelectedTypes={setSelectedTypes}
+              onSearch={handleSearch}
+            />
+          )}
 
           <DigestSelectors
             news={news}
@@ -352,7 +320,6 @@ export default function DigestPage() {
         </div>
 
       </div>
-
     </div>
   );
 }
