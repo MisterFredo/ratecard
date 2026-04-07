@@ -10,7 +10,7 @@ from utils.bigquery_utils import (
     get_bigquery_client,
 )
 
-TABLE_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.UNIVERSE"
+TABLE_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE"
 
 
 # ============================================================
@@ -25,7 +25,7 @@ def list_universes():
             LABEL,
             DESCRIPTION,
             CREATED_AT
-        FROM `{TABLE_UNIVERSE}`
+        FROM `{TABLE_RATECARD_UNIVERSE}`
         WHERE IS_ACTIVE = TRUE
         ORDER BY LABEL ASC
     """
@@ -55,7 +55,7 @@ def get_universe(universe_id: str):
             LABEL,
             DESCRIPTION,
             CREATED_AT
-        FROM `{TABLE_UNIVERSE}`
+        FROM `{TABLE_RATECARD_UNIVERSE}`
         WHERE ID_UNIVERSE = @id
         LIMIT 1
     """
