@@ -30,6 +30,7 @@ from core.content.service import (
     destock_all_raw_contents,
     delete_raw_content,
     retry_raw_content,
+    get_source_monitoring,
     get_raw_stats,
     mark_content_ready,
     bulk_publish,
