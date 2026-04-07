@@ -344,7 +344,24 @@ def raw_stats_route():
         logger.exception("Erreur stats raw")
         raise HTTPException(400, str(e))
 
+# ============================================================
+# SOURCE MONITORING
+# ============================================================
+@router.get("/source/monitoring")
+def source_monitoring_route():
+    try:
+        from core.content.service import get_source_monitoring
 
+        rows = get_source_monitoring()
+
+        return {
+            "status": "ok",
+            "sources": rows
+        }
+
+    except Exception as e:
+        logger.exception("Erreur source monitoring")
+        raise HTTPException(400, str(e))
 
 
 # ============================================================
