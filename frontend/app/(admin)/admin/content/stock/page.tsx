@@ -7,10 +7,13 @@ import StockImportPanel from "@/components/admin/stock/StockImportPanel";
 import StockFilters from "@/components/admin/stock/StockFilters";
 import StockTable from "@/components/admin/stock/StockTable";
 import RawDrawer from "@/components/admin/stock/RawDrawer";
+import SourceMonitoringTable from "@/components/admin/stock/SourceMonitoringTable";
 
 const PAGE_SIZE = 50;
 
 export default function ContentStockPage() {
+
+  const [view, setView] = useState<"raw" | "sources">("raw");
 
   const [raws, setRaws] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
@@ -18,6 +21,8 @@ export default function ContentStockPage() {
 
   const [stats, setStats] = useState<any>(null);
   const [sources, setSources] = useState<any[]>([]);
+  const [sourcesMonitoring, setSourcesMonitoring] = useState<any[]>([]);
+
   const [selectedRaw, setSelectedRaw] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
 
@@ -28,7 +33,7 @@ export default function ContentStockPage() {
   });
 
   // =========================
-  // LOAD DATA
+  // LOAD RAW DATA
   // =========================
 
   async function load() {
@@ -59,7 +64,30 @@ export default function ContentStockPage() {
     }
   }
 
-  useEffect(() => { load(); }, [filters, page]);
+  // =========================
+  // LOAD SOURCE MONITORING
+  // =========================
+
+  async function loadSourcesMonitoring() {
+    try {
+      const res = await api.get("/content/source/monitoring");
+      setSourcesMonitoring(res.sources || []);
+    } catch (e) {
+      console.error("Erreur monitoring sources", e);
+    }
+  }
+
+  // =========================
+  // EFFECTS
+  // =========================
+
+  useEffect(() => {
+    if (view === "raw") {
+      load();
+    } else {
+      loadSourcesMonitoring();
+    }
+  }, [view, filters, page]);
 
   // reset page when filters change
   useEffect(() => {
@@ -146,60 +174,89 @@ export default function ContentStockPage() {
         </button>
       </div>
 
-      {/* IMPORT FULL WIDTH */}
-      <div className="border rounded-lg p-6 bg-white shadow-sm">
-        <StockImportPanel
-          sources={sources}
-          onImported={load}
-        />
+      {/* TOGGLE */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setView("raw")}
+          className={`px-3 py-1 rounded ${
+            view === "raw" ? "bg-black text-white" : "border"
+          }`}
+        >
+          RAW
+        </button>
+
+        <button
+          onClick={() => setView("sources")}
+          className={`px-3 py-1 rounded ${
+            view === "sources" ? "bg-black text-white" : "border"
+          }`}
+        >
+          SOURCES
+        </button>
       </div>
 
-      {/* STATS + FILTERS */}
-      <div className="flex flex-wrap justify-between items-center gap-6">
+      {/* IMPORT (only RAW view) */}
+      {view === "raw" && (
+        <div className="border rounded-lg p-6 bg-white shadow-sm">
+          <StockImportPanel
+            sources={sources}
+            onImported={load}
+          />
+        </div>
+      )}
 
-        {stats && (
-          <div className="flex gap-6 text-sm">
-            <span>Total: <strong>{stats.total}</strong></span>
-            <span>Stock: <strong>{stats.total_stored}</strong></span>
-            <span>Processing: <strong>{stats.total_processing}</strong></span>
-            <span>OK: <strong>{stats.total_processed}</strong></span>
-            <span className="text-red-600">
-              Error: <strong>{stats.total_error}</strong>
-            </span>
-          </div>
-        )}
+      {/* STATS + FILTERS (only RAW view) */}
+      {view === "raw" && (
+        <div className="flex flex-wrap justify-between items-center gap-6">
 
-        <StockFilters
-          sources={sources}
-          status={filters.status}
-          sourceId={filters.source_id}
-          importType={filters.import_type}
-          total={total}
-          onStatusChange={(v) =>
-            setFilters((prev) => ({ ...prev, status: v }))
-          }
-          onSourceChange={(v) =>
-            setFilters((prev) => ({ ...prev, source_id: v }))
-          }
-          onImportTypeChange={(v) =>
-            setFilters((prev) => ({ ...prev, import_type: v }))
-          }
-        />
-      </div>
+          {stats && (
+            <div className="flex gap-6 text-sm">
+              <span>Total: <strong>{stats.total}</strong></span>
+              <span>Stock: <strong>{stats.total_stored}</strong></span>
+              <span>Processing: <strong>{stats.total_processing}</strong></span>
+              <span>OK: <strong>{stats.total_processed}</strong></span>
+              <span className="text-red-600">
+                Error: <strong>{stats.total_error}</strong>
+              </span>
+            </div>
+          )}
+
+          <StockFilters
+            sources={sources}
+            status={filters.status}
+            sourceId={filters.source_id}
+            importType={filters.import_type}
+            total={total}
+            onStatusChange={(v) =>
+              setFilters((prev) => ({ ...prev, status: v }))
+            }
+            onSourceChange={(v) =>
+              setFilters((prev) => ({ ...prev, source_id: v }))
+            }
+            onImportTypeChange={(v) =>
+              setFilters((prev) => ({ ...prev, import_type: v }))
+            }
+          />
+        </div>
+      )}
 
       {/* TABLE */}
       <div className="border rounded-lg overflow-hidden">
-        <StockTable
-          raws={raws}
-          onDestock={handleDestock}
-          onRetry={handleRetry}
-          onDelete={handleDelete}
-          onOpen={(raw) => setSelectedRaw(raw)}
-        />
+        {view === "raw" ? (
+          <StockTable
+            raws={raws}
+            onDestock={handleDestock}
+            onRetry={handleRetry}
+            onDelete={handleDelete}
+            onOpen={(raw) => setSelectedRaw(raw)}
+          />
+        ) : (
+          <SourceMonitoringTable sources={sourcesMonitoring} />
+        )}
       </div>
 
-      {/* PAGINATION */}
-      {totalPages > 1 && (
+      {/* PAGINATION (only RAW) */}
+      {view === "raw" && totalPages > 1 && (
         <div className="flex justify-center gap-4 text-sm">
           <button
             disabled={page === 1}
@@ -224,11 +281,13 @@ export default function ContentStockPage() {
       )}
 
       {/* DRAWER */}
-      <RawDrawer
-        raw={selectedRaw}
-        onClose={() => setSelectedRaw(null)}
-        onSaved={load}
-      />
+      {view === "raw" && (
+        <RawDrawer
+          raw={selectedRaw}
+          onClose={() => setSelectedRaw(null)}
+          onSaved={load}
+        />
+      )}
 
     </div>
   );
