@@ -14,7 +14,7 @@ from api.source.models import SourceCreate, SourceUpdate
 
 
 TABLE_SOURCE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE"
-TABLE_SOURCE_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.SOURCE_UNIVERSE"
+TABLE_SOURCE_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE"
 
 
 # ============================================================
