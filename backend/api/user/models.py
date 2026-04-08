@@ -12,3 +12,7 @@ class CreateUserPayload(BaseModel):
 class AssignUniversePayload(BaseModel):
     user_id: str
     universes: List[str]
+
+class LoginPayload(BaseModel):
+    email: str
+    password: str
