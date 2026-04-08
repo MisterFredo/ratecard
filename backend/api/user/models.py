@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 
 
@@ -17,4 +17,8 @@ class AssignUniversePayload(BaseModel):
 
 class LoginPayload(BaseModel):
     email: str
+    password: str
+
+class CreateUserPayload(BaseModel):
+    email: EmailStr
     password: str
