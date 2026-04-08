@@ -20,6 +20,7 @@ import {
   BarChart3,
   Image,
   LayoutTemplate,
+  Users, // 🔥 AJOUT
 } from "lucide-react";
 
 export default function AdminShell({
@@ -57,12 +58,9 @@ export default function AdminShell({
     // =====================================================
 
     { href: "/admin/linkedin/compose", label: "LinkedIn", icon: Share2 },
-
-    // 🔥 DIGEST = SYSTEM COMPLET
     { href: "/admin/digest", label: "Digest (Adhoc)", icon: Mail },
     { href: "/admin/digest/runs", label: "Runs Digest", icon: Calendar },
     { href: "/admin/digest/templates", label: "Templates Digest", icon: LayoutTemplate },
-
     { href: "/admin/event", label: "Events (assets)", icon: Image },
 
     // =====================================================
@@ -75,6 +73,12 @@ export default function AdminShell({
     { href: "/admin/topic", label: "Topics", icon: Tags },
     { href: "/admin/concept", label: "Concepts", icon: BookOpen },
     { href: "/admin/source", label: "Sources", icon: LinkIcon },
+
+    // =====================================================
+    // USERS 🔥 NOUVEAU
+    // =====================================================
+
+    { href: "/admin/users", label: "Users", icon: Users },
   ];
 
   return (
