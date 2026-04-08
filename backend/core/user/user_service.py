@@ -1,4 +1,5 @@
 import uuid
+import bcrypt
 from datetime import datetime
 
 from google.cloud import bigquery
@@ -17,6 +18,13 @@ from utils.bigquery_utils import (
 TABLE_USER = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER"
 TABLE_USER_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE"
 TABLE_SOURCE_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE"
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
 # =========================================================
