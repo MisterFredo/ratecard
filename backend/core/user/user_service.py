@@ -183,6 +183,24 @@ def create_user(payload):
 
     return user_id
 
+def list_users():
+    query = f"""
+    SELECT
+        ID_USER,
+        EMAIL,
+        NAME,
+        COMPANY,
+        LANGUAGE,
+        IS_ACTIVE,
+        CREATED_AT
+    FROM `{TABLE_USER}`
+    ORDER BY CREATED_AT DESC
+    """
+
+    rows = query_bq(query)
+
+    return rows
+
 # =========================================================
 # ASSIGN UNIVERS (REPLACE ALL)
 # =========================================================
