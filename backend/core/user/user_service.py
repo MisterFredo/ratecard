@@ -1,6 +1,22 @@
-from utils.bigquery_utils import get_bigquery_client
-from google.cloud import bigquery
 import uuid
+from datetime import datetime
+
+from google.cloud import bigquery
+
+from config import BQ_PROJECT, BQ_DATASET
+from utils.bigquery_utils import (
+    query_bq,
+    update_bq,
+    get_bigquery_client,
+)
+
+# =========================================================
+# TABLES
+# =========================================================
+
+TABLE_USER = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER"
+TABLE_USER_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE"
+TABLE_SOURCE_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE"
 
 
 # =========================================================
@@ -8,24 +24,21 @@ import uuid
 # =========================================================
 
 def get_user_by_email(email: str):
-    query = """
+    query = f"""
     SELECT *
-    FROM `RATECARD_USER`
+    FROM `{TABLE_USER}`
     WHERE EMAIL = @email
     AND IS_ACTIVE = TRUE
     LIMIT 1
     """
 
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("email", "STRING", email),
-        ]
-    )
+    params = [
+        bigquery.ScalarQueryParameter("email", "STRING", email),
+    ]
 
-    rows = get_bigquery_client().query(query, job_config=job_config).result()
-    rows_list = list(rows)
+    rows = query_bq(query, params)
 
-    return rows_list[0] if rows_list else None
+    return rows[0] if rows else None
 
 
 # =========================================================
@@ -33,21 +46,19 @@ def get_user_by_email(email: str):
 # =========================================================
 
 def get_user_universes(user_id: str):
-    query = """
+    query = f"""
     SELECT ID_UNIVERSE
-    FROM `RATECARD_USER_UNIVERSE`
+    FROM `{TABLE_USER_UNIVERSE}`
     WHERE ID_USER = @user_id
     """
 
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
-        ]
-    )
+    params = [
+        bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
+    ]
 
-    rows = get_bigquery_client().query(query, job_config=job_config).result()
+    rows = query_bq(query, params)
 
-    return [row.ID_UNIVERSE for row in rows]
+    return [row["ID_UNIVERSE"] for row in rows]
 
 
 # =========================================================
@@ -58,21 +69,19 @@ def get_sources_from_universes(universes: list[str]):
     if not universes:
         return []
 
-    query = """
+    query = f"""
     SELECT DISTINCT ID_SOURCE
-    FROM `RATECARD_SOURCE_UNIVERSE`
+    FROM `{TABLE_SOURCE_UNIVERSE}`
     WHERE ID_UNIVERSE IN UNNEST(@universes)
     """
 
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ArrayQueryParameter("universes", "STRING", universes),
-        ]
-    )
+    params = [
+        bigquery.ArrayQueryParameter("universes", "STRING", universes),
+    ]
 
-    rows = get_bigquery_client().query(query, job_config=job_config).result()
+    rows = query_bq(query, params)
 
-    return [row.ID_SOURCE for row in rows]
+    return [row["ID_SOURCE"] for row in rows]
 
 
 # =========================================================
@@ -85,7 +94,7 @@ def get_user_context(email: str):
     if not user:
         return None
 
-    universes = get_user_universes(user.ID_USER)
+    universes = get_user_universes(user["ID_USER"])
     sources = get_sources_from_universes(universes)
 
     return {
@@ -100,31 +109,27 @@ def get_user_context(email: str):
 # =========================================================
 
 def create_user(payload):
-    client = get_bigquery_client()
-
-    # 🔎 Check if user exists
-    check_query = """
+    # 🔎 check existing
+    check_query = f"""
     SELECT ID_USER
-    FROM `RATECARD_USER`
+    FROM `{TABLE_USER}`
     WHERE EMAIL = @email
     LIMIT 1
     """
 
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("email", "STRING", payload.email),
-        ]
-    )
+    params = [
+        bigquery.ScalarQueryParameter("email", "STRING", payload.email),
+    ]
 
-    rows = list(client.query(check_query, job_config=job_config).result())
+    existing = query_bq(check_query, params)
 
-    if rows:
+    if existing:
         raise ValueError("User already exists")
 
     user_id = str(uuid.uuid4())
 
-    insert_query = """
-    INSERT INTO `RATECARD_USER` (
+    insert_query = f"""
+    INSERT INTO `{TABLE_USER}` (
         ID_USER,
         EMAIL,
         NAME,
@@ -144,17 +149,15 @@ def create_user(payload):
     )
     """
 
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("id_user", "STRING", user_id),
-            bigquery.ScalarQueryParameter("email", "STRING", payload.email),
-            bigquery.ScalarQueryParameter("name", "STRING", payload.name),
-            bigquery.ScalarQueryParameter("company", "STRING", payload.company),
-            bigquery.ScalarQueryParameter("language", "STRING", payload.language or "fr"),
-        ]
-    )
+    params = [
+        bigquery.ScalarQueryParameter("id_user", "STRING", user_id),
+        bigquery.ScalarQueryParameter("email", "STRING", payload.email),
+        bigquery.ScalarQueryParameter("name", "STRING", payload.name),
+        bigquery.ScalarQueryParameter("company", "STRING", payload.company),
+        bigquery.ScalarQueryParameter("language", "STRING", payload.language or "fr"),
+    ]
 
-    client.query(insert_query, job_config=job_config).result()
+    update_bq(insert_query, params)
 
     return user_id
 
@@ -164,26 +167,22 @@ def create_user(payload):
 # =========================================================
 
 def assign_universes(user_id: str, universes: list[str]):
-    client = get_bigquery_client()
-
     # 🔥 delete existing
-    delete_query = """
-    DELETE FROM `RATECARD_USER_UNIVERSE`
+    delete_query = f"""
+    DELETE FROM `{TABLE_USER_UNIVERSE}`
     WHERE ID_USER = @user_id
     """
 
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
-        ]
-    )
+    params = [
+        bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
+    ]
 
-    client.query(delete_query, job_config=job_config).result()
+    update_bq(delete_query, params)
 
     # ➕ insert new
     for u in universes:
-        insert_query = """
-        INSERT INTO `RATECARD_USER_UNIVERSE` (
+        insert_query = f"""
+        INSERT INTO `{TABLE_USER_UNIVERSE}` (
             ID_USER,
             ID_UNIVERSE,
             CREATED_AT
@@ -195,11 +194,9 @@ def assign_universes(user_id: str, universes: list[str]):
         )
         """
 
-        job_config = bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
-                bigquery.ScalarQueryParameter("universe", "STRING", u),
-            ]
-        )
+        params = [
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
+            bigquery.ScalarQueryParameter("universe", "STRING", u),
+        ]
 
-        client.query(insert_query, job_config=job_config).result()
+        update_bq(insert_query, params)
