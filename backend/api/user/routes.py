@@ -55,3 +55,18 @@ def get_context(email: str):
         raise HTTPException(status_code=404, detail="User not found or inactive")
 
     return context
+
+@router.post("/login")
+def login(payload: LoginPayload):
+    user = get_user_by_email(payload.email)
+
+    if not user:
+        raise HTTPException(401)
+
+    if not verify_password(payload.password, user["PASSWORD_HASH"]):
+        raise HTTPException(401)
+
+    return {
+        "status": "ok",
+        "email": user["EMAIL"]
+    }
