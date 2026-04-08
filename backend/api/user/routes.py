@@ -11,6 +11,7 @@ from core.user.user_service import (
     get_user_context,
     create_user,
     assign_universes,
+    list_users,
 )
 
 router = APIRouter()
@@ -29,6 +30,14 @@ def create_user_route(payload: CreateUserPayload):
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/list")
+def list_users_route():
+    users = list_users()
+
+    return {
+        "users": users
+    }
 
 
 # =========================================================
