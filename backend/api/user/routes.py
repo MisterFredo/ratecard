@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException
 from api.user.models import (
     CreateUserPayload,
     AssignUniversePayload,
+    LoginPayload,
 )
 
 from core.user.user_service import (
