@@ -20,12 +20,6 @@ TABLE_USER_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE"
 TABLE_SOURCE_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE"
 
 
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode(), hashed.encode())
-
 
 # =========================================================
 # GET USER BY EMAIL
@@ -116,6 +110,15 @@ def get_user_context(email: str):
 # CREATE USER
 # =========================================================
 
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
+
+
 def create_user(payload):
     # 🔎 check existing
     check_query = f"""
@@ -134,6 +137,12 @@ def create_user(payload):
     if existing:
         raise ValueError("User already exists")
 
+    # 🔐 hash password
+    if not payload.password:
+        raise ValueError("Password is required")
+
+    password_hash = hash_password(payload.password)
+
     user_id = str(uuid.uuid4())
 
     insert_query = f"""
@@ -143,8 +152,10 @@ def create_user(payload):
         NAME,
         COMPANY,
         LANGUAGE,
+        PASSWORD_HASH,
         IS_ACTIVE,
-        CREATED_AT
+        CREATED_AT,
+        UPDATED_AT
     )
     VALUES (
         @id_user,
@@ -152,7 +163,9 @@ def create_user(payload):
         @name,
         @company,
         @language,
+        @password_hash,
         TRUE,
+        CURRENT_TIMESTAMP(),
         CURRENT_TIMESTAMP()
     )
     """
@@ -163,12 +176,12 @@ def create_user(payload):
         bigquery.ScalarQueryParameter("name", "STRING", payload.name),
         bigquery.ScalarQueryParameter("company", "STRING", payload.company),
         bigquery.ScalarQueryParameter("language", "STRING", payload.language or "fr"),
+        bigquery.ScalarQueryParameter("password_hash", "STRING", password_hash),
     ]
 
     update_bq(insert_query, params)
 
     return user_id
-
 
 # =========================================================
 # ASSIGN UNIVERS (REPLACE ALL)
