@@ -49,3 +49,38 @@ def get_user_context(email: str):
         "user": user,
         "universes": universes,
     }
+
+def get_sources_from_universes(universes: list[str]):
+    if not universes:
+        return []
+
+    query = """
+    SELECT DISTINCT ID_SOURCE
+    FROM `RATECARD_SOURCE_UNIVERSE`
+    WHERE ID_UNIVERSE IN UNNEST(@universes)
+    """
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ArrayQueryParameter("universes", "STRING", universes),
+        ]
+    )
+
+    rows = get_bigquery_client().query(query, job_config=job_config).result()
+
+    return [row.ID_SOURCE for row in rows]
+
+def get_user_context(email: str):
+    user = get_user_by_email(email)
+
+    if not user:
+        return None
+
+    universes = get_user_universes(user.ID_USER)
+    sources = get_sources_from_universes(universes)
+
+    return {
+        "user": user,
+        "universes": universes,
+        "sources": sources,
+    }
