@@ -4,6 +4,7 @@ from api.user.models import (
     CreateUserPayload,
     AssignUniversePayload,
     LoginPayload,
+    CreateUserPayload,
 )
 
 from core.user.user_service import (
