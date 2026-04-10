@@ -20,6 +20,7 @@ export default function EditUser() {
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const [language, setLanguage] = useState("fr");
+  const [role, setRole] = useState("user");
 
   const [universes, setUniverses] = useState<string[]>([]);
   const [availableUniverses, setAvailableUniverses] = useState<Universe[]>([]);
@@ -39,36 +40,36 @@ export default function EditUser() {
           api.get("/universe/list"),
         ]);
 
-        console.log("USER RES 👉", userRes);
-        console.log("UNIVERSE RES 👉", universeRes);
+        const user = userRes?.user;
 
-        // ✅ SAFE USER
-        const user = userRes?.user || {};
+        if (!user) {
+          throw new Error("User not found");
+        }
 
+        // USER
         setEmail(user.EMAIL || "");
         setName(user.NAME || "");
         setCompany(user.COMPANY || "");
         setLanguage(user.LANGUAGE || "fr");
+        setRole(user.ROLE || "user");
 
-        // ✅ SAFE UNIVERS (normalisation)
-        const userUniverses =
-          userRes?.universes?.map((u: any) =>
-            typeof u === "string" ? u : u.ID_UNIVERSE
-          ) || [];
+        // UNIVERS → déjà format string[]
+        setUniverses(userRes?.universes ?? []);
 
-        setUniverses(userUniverses);
-
-        setAvailableUniverses(universeRes?.universes || []);
+        // AVAILABLE UNIVERS
+        setAvailableUniverses(universeRes?.universes ?? []);
 
       } catch (e) {
         console.error("❌ load error", e);
+        alert("Erreur chargement utilisateur");
+        router.push("/admin/users");
       } finally {
         setLoading(false);
       }
     }
 
     if (userId) load();
-  }, [userId]);
+  }, [userId, router]);
 
   // =====================================================
   // TOGGLE UNIVERS
@@ -90,13 +91,18 @@ export default function EditUser() {
     try {
       setSaving(true);
 
-      await api.post("/user/update", {
+      const res = await api.post("/user/update", {
         user_id: userId,
         name,
         company,
         language,
+        role,
         universes,
       });
+
+      if (res?.status !== "ok") {
+        throw new Error("Update failed");
+      }
 
       alert("Utilisateur mis à jour");
 
@@ -147,7 +153,6 @@ export default function EditUser() {
         <label className="text-sm text-gray-500">Nom</label>
         <input
           className="border p-2 w-full rounded"
-          placeholder="Nom"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -158,7 +163,6 @@ export default function EditUser() {
         <label className="text-sm text-gray-500">Société</label>
         <input
           className="border p-2 w-full rounded"
-          placeholder="Société"
           value={company}
           onChange={(e) => setCompany(e.target.value)}
         />
@@ -174,6 +178,19 @@ export default function EditUser() {
         >
           <option value="fr">Français</option>
           <option value="en">English</option>
+        </select>
+      </div>
+
+      {/* ROLE */}
+      <div className="space-y-1">
+        <label className="text-sm text-gray-500">Rôle</label>
+        <select
+          className="border p-2 rounded w-full max-w-xs"
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+        >
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
         </select>
       </div>
 
