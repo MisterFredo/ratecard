@@ -78,7 +78,7 @@ export default function AdminShell({
     // USERS 🔥 NOUVEAU
     // =====================================================
 
-    { href: "/admin/users", label: "Users", icon: Users },
+    { href: "/admin/user", label: "Users", icon: Users },
   ];
 
   return (
