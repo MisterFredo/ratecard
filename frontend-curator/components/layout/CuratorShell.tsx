@@ -12,8 +12,10 @@ import {
   Box,
   Hash,
   Radar,
-  Sparkles, // MCP
+  Sparkles,
 } from "lucide-react";
+
+import { useUniverse } from "@/contexts/UniverseContext"; // ✅ NEW
 
 const LOGO_URL = "/assets/brand/symbol_curator.jpeg";
 
@@ -24,6 +26,8 @@ export default function CuratorShell({
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const { universes, activeUniverse, setActiveUniverse } = useUniverse(); // ✅ NEW
 
   function isActive(path: string) {
     if (!pathname) return false;
@@ -76,7 +80,6 @@ export default function CuratorShell({
 
   const Sidebar = (
     <>
-      {/* LOGO */}
       <Link
         href="/"
         onClick={() => setMobileOpen(false)}
@@ -88,7 +91,6 @@ export default function CuratorShell({
         </span>
       </Link>
 
-      {/* DATA */}
       <div>
         <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
           Data
@@ -98,7 +100,6 @@ export default function CuratorShell({
         </nav>
       </div>
 
-      {/* ENTITIES */}
       <div className="mt-8">
         <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
           Entities
@@ -108,7 +109,6 @@ export default function CuratorShell({
         </nav>
       </div>
 
-      {/* MCP */}
       <div className="mt-10">
         <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
           AI
@@ -139,12 +139,12 @@ export default function CuratorShell({
   return (
     <div className="min-h-screen flex">
 
-      {/* Desktop */}
+      {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-56 bg-white border-r p-6 flex-col">
         {Sidebar}
       </aside>
 
-      {/* Mobile */}
+      {/* Mobile Sidebar */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div
@@ -165,22 +165,49 @@ export default function CuratorShell({
 
       {/* Main */}
       <main className="flex-1 bg-gray-50">
-        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-white">
-          <button onClick={() => setMobileOpen(true)}>
-            <Menu />
-          </button>
 
-          <div className="flex items-center gap-2">
-            <img src={LOGO_URL} className="w-6 h-6" />
-            <span className="font-semibold text-gray-900">
-              Curator
-            </span>
+        {/* 🔥 HEADER (desktop + mobile) */}
+        <div className="flex items-center justify-between px-4 py-3 border-b bg-white">
+
+          {/* LEFT */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="md:hidden"
+            >
+              <Menu />
+            </button>
+
+            <div className="flex items-center gap-2">
+              <img src={LOGO_URL} className="w-6 h-6" />
+              <span className="font-semibold text-gray-900">
+                Curator
+              </span>
+            </div>
           </div>
+
+          {/* 👉 UNIVERS SWITCHER */}
+          {universes.length > 0 && (
+            <select
+              value={activeUniverse || ""}
+              onChange={(e) => setActiveUniverse(e.target.value)}
+              className="border rounded px-3 py-1 text-sm bg-white"
+            >
+              {universes.map((u) => (
+                <option key={u.ID_UNIVERSE} value={u.ID_UNIVERSE}>
+                  {u.LABEL}
+                </option>
+              ))}
+            </select>
+          )}
+
         </div>
 
+        {/* CONTENT */}
         <div className="p-4 md:p-8 w-full">
           {children}
         </div>
+
       </main>
     </div>
   );
