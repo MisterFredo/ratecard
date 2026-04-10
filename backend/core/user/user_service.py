@@ -180,7 +180,7 @@ def create_user(payload):
         "password_hash": password_hash,
     }
 
-    update_bq(insert_query, params)
+    query_bq(insert_query, params)
 
     # =====================================================
     # 🔥 ASSIGN UNIVERS DIRECT
