@@ -592,6 +592,13 @@ def get_numbers_for_entity(
 def get_numbers_feed_service(limit: int = 50, query: Optional[str] = None):
 
     sql = f"""
+        WITH solution_company AS (
+          SELECT
+            ID_SOLUTION,
+            ID_COMPANY
+          FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION`
+        )
+
         SELECT
             n.*,
 
@@ -603,19 +610,17 @@ def get_numbers_feed_service(limit: int = 50, query: Optional[str] = None):
         -- 👉 UNNEST ENTITIES
         LEFT JOIN UNNEST(n.ENTITIES) e
 
-        -- 👉 COMPANY DIRECT
+        -- 👉 RESOLVE SOLUTION → COMPANY
+        LEFT JOIN solution_company sc
+          ON e.ENTITY_TYPE = 'solution'
+         AND sc.ID_SOLUTION = e.ENTITY_ID
+
+        -- 👉 MAP COMPANY → UNIVERS
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
           ON (
             (e.ENTITY_TYPE = 'company' AND cu.ID_COMPANY = e.ENTITY_ID)
-
             OR
-
-            (e.ENTITY_TYPE = 'solution' AND cu.ID_COMPANY = (
-                SELECT s.ID_COMPANY
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` s
-                WHERE s.ID_SOLUTION = e.ENTITY_ID
-                LIMIT 1
-            ))
+            (e.ENTITY_TYPE = 'solution' AND cu.ID_COMPANY = sc.ID_COMPANY)
           )
 
         { "WHERE LOWER(n.LABEL) LIKE LOWER(@query)" if query else "" }
@@ -641,7 +646,6 @@ def get_numbers_feed_service(limit: int = 50, query: Optional[str] = None):
         "limit": limit,
         "query": f"%{query}%" if query else None,
     })
-
 
 def search_numbers_service(
     id_number_type: Optional[str] = None,
