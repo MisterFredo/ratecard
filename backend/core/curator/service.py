@@ -296,10 +296,10 @@ def get_item_detail(item_id: str, item_type: str) -> Optional[Dict]:
 # STATS (CONTENT)
 # ============================================================
 
-def get_content_stats():
+def get_content_stats(user_id: Optional[str] = None):
 
     # =====================================================
-    # GLOBAL
+    # GLOBAL (non filtré volontairement)
     # =====================================================
 
     global_rows = query_bq(f"""
@@ -318,7 +318,7 @@ def get_content_stats():
         last_30 = 0
 
     # =====================================================
-    # TOPICS
+    # TOPICS (pas filtré volontairement)
     # =====================================================
 
     topics_rows = query_bq(f"""
@@ -340,14 +340,28 @@ def get_content_stats():
     ]
 
     # =====================================================
-    # COMPANIES
+    # COMPANIES (🔥 filtré par univers)
     # =====================================================
 
-    company_rows = query_bq(f"""
+    company_sql = f"""
         SELECT *
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY`
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY` c
+        WHERE TRUE
+        {"AND EXISTS (
+            SELECT 1
+            FROM `" + BQ_PROJECT + "." + BQ_DATASET + ".RATECARD_COMPANY_UNIVERSE` cu
+            JOIN `" + BQ_PROJECT + "." + BQ_DATASET + ".RATECARD_USER_UNIVERSE` uu
+              ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND cu.ID_COMPANY = c.id_company
+        )" if user_id else ""}
         ORDER BY total DESC
-    """)
+    """
+
+    company_rows = query_bq(
+        company_sql,
+        {"user_id": user_id} if user_id else {}
+    )
 
     top_companies = [
         {
@@ -362,14 +376,30 @@ def get_content_stats():
     ]
 
     # =====================================================
-    # SOLUTIONS
+    # SOLUTIONS (🔥 filtré via COMPANY)
     # =====================================================
 
-    solution_rows = query_bq(f"""
+    solution_sql = f"""
         SELECT *
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION`
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION` s
+        WHERE TRUE
+        {"AND EXISTS (
+            SELECT 1
+            FROM `" + BQ_PROJECT + "." + BQ_DATASET + ".RATECARD_SOLUTION` sol
+            JOIN `" + BQ_PROJECT + "." + BQ_DATASET + ".RATECARD_COMPANY_UNIVERSE` cu
+              ON cu.ID_COMPANY = sol.ID_COMPANY
+            JOIN `" + BQ_PROJECT + "." + BQ_DATASET + ".RATECARD_USER_UNIVERSE` uu
+              ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND sol.ID_SOLUTION = s.id_solution
+        )" if user_id else ""}
         ORDER BY total DESC
-    """)
+    """
+
+    solution_rows = query_bq(
+        solution_sql,
+        {"user_id": user_id} if user_id else {}
+    )
 
     top_solutions = [
         {
