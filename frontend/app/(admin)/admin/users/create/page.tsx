@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { api } from "@/lib/api";
 
 type Universe = {
@@ -9,8 +9,7 @@ type Universe = {
   LABEL: string;
 };
 
-export default function CreateUserPage() {
-  const router = useRouter();
+export default function CreateUser() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,153 +22,173 @@ export default function CreateUserPage() {
 
   const [loading, setLoading] = useState(false);
 
-  // =====================================================
-  // LOAD UNIVERS
-  // =====================================================
-
+  /* ---------------------------------------------------------
+     LOAD UNIVERS
+  --------------------------------------------------------- */
   useEffect(() => {
-    async function load() {
+
+    async function loadUniverses() {
       try {
         const res = await api.get("/universe/list");
         setAvailableUniverses(res.universes || []);
       } catch (e) {
-        console.error("❌ error loading universes", e);
+        console.error("Erreur chargement univers", e);
+        setAvailableUniverses([]);
       }
     }
 
-    load();
+    loadUniverses();
+
   }, []);
 
-  // =====================================================
-  // TOGGLE
-  // =====================================================
-
+  /* ---------------------------------------------------------
+     HANDLE MULTI SELECT
+  --------------------------------------------------------- */
   function toggleUniverse(id: string) {
     setUniverses((prev) =>
       prev.includes(id)
-        ? prev.filter((x) => x !== id)
+        ? prev.filter((u) => u !== id)
         : [...prev, id]
     );
   }
 
-  // =====================================================
-  // CREATE USER
-  // =====================================================
+  /* ---------------------------------------------------------
+     SAVE
+  --------------------------------------------------------- */
+  async function save() {
 
-  async function handleCreate() {
-    if (!email || !password) {
+    if (!email.trim() || !password.trim()) {
       alert("Email et mot de passe requis");
       return;
     }
 
-    setLoading(true);
-
     try {
-      await api.post("/user/create", {
+
+      setLoading(true);
+
+      const res = await api.post("/user/create", {
         email,
         password,
-        name,
-        company,
+        name: name || null,
+        company: company || null,
         language,
         universes,
       });
 
-      router.push("/admin/users");
+      if (!res.id_user) {
+        throw new Error("ID user manquant");
+      }
+
+      alert("Utilisateur créé");
+
+      // reset clean
+      setEmail("");
+      setPassword("");
+      setName("");
+      setCompany("");
+      setLanguage("fr");
+      setUniverses([]);
+
     } catch (e) {
-      console.error("❌ create user error", e);
-      alert("Erreur lors de la création");
+
+      console.error(e);
+      alert("❌ Erreur création");
+
     } finally {
+
       setLoading(false);
+
     }
   }
 
-  // =====================================================
-  // RENDER
-  // =====================================================
-
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="space-y-10">
 
-      <h1 className="text-xl font-semibold">
-        Create user
-      </h1>
+      <div className="flex justify-between">
+        <h1 className="text-2xl font-semibold">
+          Ajouter un utilisateur
+        </h1>
 
-      <div className="bg-white border rounded-xl p-6 space-y-4">
-
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 text-sm"
-        />
-
-        <input
-          type="password"
-          placeholder="Mot de passe"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 text-sm"
-        />
-
-        <input
-          type="text"
-          placeholder="Nom"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 text-sm"
-        />
-
-        <input
-          type="text"
-          placeholder="Société"
-          value={company}
-          onChange={(e) => setCompany(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 text-sm"
-        />
-
-        <select
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 text-sm"
-        >
-          <option value="fr">Français</option>
-          <option value="en">English</option>
-        </select>
-
-        {/* UNIVERS DYNAMIQUE */}
-        <div>
-          <p className="text-sm font-medium mb-2">
-            Univers
-          </p>
-
-          <div className="flex flex-wrap gap-2">
-            {availableUniverses.map((u) => (
-              <button
-                key={u.ID_UNIVERSE}
-                type="button"
-                onClick={() => toggleUniverse(u.ID_UNIVERSE)}
-                className={`px-3 py-1 rounded-full text-xs border ${
-                  universes.includes(u.ID_UNIVERSE)
-                    ? "bg-ratecard-blue text-white border-ratecard-blue"
-                    : "bg-gray-100 text-gray-600 border-gray-200"
-                }`}
-              >
-                {u.LABEL}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button
-          onClick={handleCreate}
-          disabled={loading}
-          className="w-full bg-ratecard-blue text-white rounded-lg py-2 text-sm font-medium"
-        >
-          {loading ? "Création…" : "Créer l’utilisateur"}
-        </button>
-
+        <Link href="/admin/users" className="underline">
+          ← Retour
+        </Link>
       </div>
+
+      {/* EMAIL */}
+      <input
+        className="border p-2 w-full rounded"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+
+      {/* PASSWORD */}
+      <input
+        type="password"
+        className="border p-2 w-full rounded"
+        placeholder="Mot de passe"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+
+      {/* NAME */}
+      <input
+        className="border p-2 w-full rounded"
+        placeholder="Nom"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+
+      {/* COMPANY */}
+      <input
+        className="border p-2 w-full rounded"
+        placeholder="Société"
+        value={company}
+        onChange={(e) => setCompany(e.target.value)}
+      />
+
+      {/* LANGUAGE */}
+      <select
+        className="border p-2 rounded w-full max-w-xs"
+        value={language}
+        onChange={(e) => setLanguage(e.target.value)}
+      >
+        <option value="fr">Français</option>
+        <option value="en">English</option>
+      </select>
+
+      {/* UNIVERS (MULTI SELECT SIMPLE) */}
+      <div className="space-y-2">
+        <label className="block font-medium">
+          Univers
+        </label>
+
+        <div className="flex flex-col gap-2">
+          {availableUniverses.map((u) => (
+            <label key={u.ID_UNIVERSE} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={universes.includes(u.ID_UNIVERSE)}
+                onChange={() => toggleUniverse(u.ID_UNIVERSE)}
+              />
+              {u.LABEL}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA */}
+      <button
+        onClick={save}
+        disabled={loading}
+        className="bg-ratecard-blue px-6 py-2 text-white rounded"
+      >
+        {loading ? "Création…" : "Créer"}
+      </button>
+
     </div>
   );
 }
