@@ -15,6 +15,11 @@ type CompanyType = {
   label: string;
 };
 
+type Universe = {
+  id_universe: string;
+  label: string;
+};
+
 export default function EditCompany({ params }: { params: { id: string } }) {
   const { id } = params;
 
@@ -31,26 +36,35 @@ export default function EditCompany({ params }: { params: { id: string } }) {
   const [wikiContent, setWikiContent] = useState("");
   const [logoFilename, setLogoFilename] = useState<string | null>(null);
 
-  // 🔥 NEW
   const [insightFrequency, setInsightFrequency] = useState("QUARTERLY");
 
   const [types, setTypes] = useState<CompanyType[]>([]);
 
+  // 🔥 UNIVERS
+  const [universes, setUniverses] = useState<string[]>([]);
+  const [availableUniverses, setAvailableUniverses] = useState<Universe[]>([]);
+
   /* ---------------------------------------------------------
-     LOAD TYPES
+     LOAD TYPES + UNIVERS
   --------------------------------------------------------- */
   useEffect(() => {
-    async function loadTypes() {
+    async function loadMeta() {
       try {
-        const res = await api.get("/company/types");
-        setTypes(res.types || []);
+        const [typesRes, universesRes] = await Promise.all([
+          api.get("/company/types"),
+          api.get("/universe/list"),
+        ]);
+
+        setTypes(typesRes.types || []);
+        setAvailableUniverses(universesRes.universes || []);
+
       } catch (e) {
         console.error(e);
-        alert("❌ Erreur chargement types");
+        alert("❌ Erreur chargement données");
       }
     }
 
-    loadTypes();
+    loadMeta();
   }, []);
 
   /* ---------------------------------------------------------
@@ -73,10 +87,10 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         setWikiContent(c.wiki_content || "");
         setLogoFilename(c.media_logo_rectangle_id || null);
 
-        // 🔥 NEW
-        setInsightFrequency(
-          c.insight_frequency || "QUARTERLY"
-        );
+        setInsightFrequency(c.insight_frequency || "QUARTERLY");
+
+        // 🔥 UNIVERS
+        setUniverses(c.universes || []);
 
       } catch (e) {
         console.error(e);
@@ -88,6 +102,17 @@ export default function EditCompany({ params }: { params: { id: string } }) {
 
     load();
   }, [id]);
+
+  /* ---------------------------------------------------------
+     TOGGLE UNIVERS
+  --------------------------------------------------------- */
+  function toggleUniverse(uid: string) {
+    setUniverses((prev) =>
+      prev.includes(uid)
+        ? prev.filter((u) => u !== uid)
+        : [...prev, uid]
+    );
+  }
 
   /* ---------------------------------------------------------
      SAVE
@@ -104,9 +129,10 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         website_url: websiteUrl || null,
         is_partner: isPartner,
         wiki_content: wikiContent || null,
+        insight_frequency: insightFrequency,
 
         // 🔥 NEW
-        insight_frequency: insightFrequency,
+        universes,
       });
 
       alert("Société modifiée");
@@ -176,7 +202,27 @@ export default function EditCompany({ params }: { params: { id: string } }) {
         </select>
       </div>
 
-      {/* 🔥 NEW : FREQUENCY */}
+      {/* 🔥 UNIVERS */}
+      <div className="space-y-2">
+        <label className="block font-medium">
+          Univers
+        </label>
+
+        <div className="flex flex-col gap-2">
+          {availableUniverses.map((u) => (
+            <label key={u.id_universe} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={universes.includes(u.id_universe)}
+                onChange={() => toggleUniverse(u.id_universe)}
+              />
+              {u.label}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* FREQUENCY */}
       <div className="space-y-2">
         <label className="block font-medium">
           Fréquence des insights
@@ -191,10 +237,6 @@ export default function EditCompany({ params }: { params: { id: string } }) {
           <option value="MONTHLY">Monthly</option>
           <option value="QUARTERLY">Quarterly</option>
         </select>
-
-        <p className="text-xs text-gray-500">
-          Définit la granularité des synthèses générées
-        </p>
       </div>
 
       {/* DESCRIPTION */}
@@ -211,7 +253,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
       {/* WIKI */}
       <div className="border-t pt-6 space-y-2">
         <h2 className="text-lg font-semibold">
-          Wiki (connaissance interne / éditoriale)
+          Wiki
         </h2>
 
         <HtmlEditor
