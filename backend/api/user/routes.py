@@ -37,20 +37,17 @@ def create_user_route(payload: CreateUserPayload):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/bootstrap-admin")
-def bootstrap_admin(secret: str = Query(...)):
+@router.get("/bootstrap-admin")
+def bootstrap_admin(secret: str):
 
-    # 🔐 sécurité minimale
     if secret != "INIT_123":
         raise HTTPException(status_code=403, detail="Forbidden")
 
-    # 🔎 check existant
     existing = get_user_by_email("mister.fredo@gmail.com")
 
     if existing:
         return {"status": "already_exists"}
 
-    # 🔥 création propre (avec hash bcrypt automatique)
     payload = CreateUserPayload(
         email="mister.fredo@gmail.com",
         password="felixmax55",
@@ -65,7 +62,6 @@ def bootstrap_admin(secret: str = Query(...)):
         "status": "created",
         "user_id": user_id
     }
-
 
 # =========================================================
 # LIST USERS
