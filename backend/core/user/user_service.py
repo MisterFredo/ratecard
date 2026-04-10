@@ -134,13 +134,17 @@ def create_user(payload):
     if existing:
         raise ValueError("User already exists")
 
-    # 🔐 hash password
+    # 🔐 password
     if not payload.password:
         raise ValueError("Password is required")
 
     password_hash = hash_password(payload.password)
 
     user_id = str(uuid.uuid4())
+
+    # =====================================================
+    # INSERT USER
+    # =====================================================
 
     insert_query = f"""
     INSERT INTO `{TABLE_USER}` (
@@ -178,8 +182,14 @@ def create_user(payload):
 
     update_bq(insert_query, params)
 
-    return user_id
+    # =====================================================
+    # 🔥 ASSIGN UNIVERS DIRECT
+    # =====================================================
 
+    if payload.universes:
+        assign_universes(user_id, payload.universes)
+
+    return user_id
 
 # =========================================================
 # LIST USERS
