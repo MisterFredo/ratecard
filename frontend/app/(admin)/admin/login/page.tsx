@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { api } from "@/lib/api"; // adapte si besoin
 
 const ADMIN_EMAIL = "mister.fredo@gmail.com";
 
@@ -11,26 +12,51 @@ export default function AdminLoginPage() {
   const redirect = searchParams.get("redirect") || "/admin";
 
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState(""); // 🔥 NEW
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
-    if (!email.trim()) {
-      alert("Email requis");
+    if (!email.trim() || !password.trim()) {
+      alert("Email + password requis");
       return;
     }
 
     setLoading(true);
 
     try {
-      if (email.toLowerCase() !== ADMIN_EMAIL) {
-        alert("Accès non autorisé");
+      // =====================================================
+      // 🔐 LOGIN VIA BACKEND
+      // =====================================================
+
+      const res = await api.post("/user/login", {
+        email,
+        password,
+      });
+
+      if (res?.status === "ok") {
+        // 👉 cookies
+        document.cookie = "ratecard_admin_session=ok; path=/; max-age=86400";
+        document.cookie = `curator_email=${email}; path=/; max-age=86400`;
+
+        router.push(redirect);
         return;
       }
 
-      // 👉 cookie simple (front only, suffisant ici)
-      document.cookie = `ratecard_admin_session=ok; path=/; max-age=86400`;
+      // =====================================================
+      // ⚠️ FALLBACK ADMIN TEMPORAIRE
+      // =====================================================
 
-      router.push(redirect);
+      if (email.toLowerCase() === ADMIN_EMAIL) {
+        document.cookie = "ratecard_admin_session=ok; path=/; max-age=86400";
+        document.cookie = `curator_email=${email}; path=/; max-age=86400`;
+
+        router.push(redirect);
+        return;
+      }
+
+      alert("Accès non autorisé");
+    } catch (e) {
+      alert("Erreur de connexion");
     } finally {
       setLoading(false);
     }
@@ -43,11 +69,21 @@ export default function AdminLoginPage() {
           Accès admin Ratecard
         </h1>
 
+        {/* EMAIL */}
         <input
           type="email"
-          placeholder="Email admin"
+          placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          className="w-full border rounded-lg px-3 py-2 text-sm"
+        />
+
+        {/* PASSWORD 🔥 */}
+        <input
+          type="password"
+          placeholder="Mot de passe"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           className="w-full border rounded-lg px-3 py-2 text-sm"
         />
 
