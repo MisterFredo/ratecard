@@ -21,7 +21,7 @@ def search(
     limit: int = 20,
     offset: int = 0,
     type: Optional[str] = None,
-    user_id: Optional[str] = None,  # 🔥 NEW
+    user_id: Optional[str] = None,
 ) -> List[Dict]:
 
     news_filter = ""
@@ -32,33 +32,56 @@ def search(
     elif type == "analysis":
         news_filter = "AND FALSE"
 
-    # 🔥 UNIVERS FILTER
+    # ============================================================
+    # 🔥 UNIVERS FILTER (SAFE)
+    # → ne filtre que si user a des univers
+    # ============================================================
+
     universe_filter_news = ""
     universe_filter_content = ""
 
     if user_id:
+
         universe_filter_news = f"""
-        AND EXISTS (
-            SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-              AND cu.ID_COMPANY = n.id_company
+        AND (
+            NOT EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
+                WHERE ID_USER = @user_id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                    ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+                  AND cu.ID_COMPANY = n.id_company
+            )
         )
         """
 
         universe_filter_content = f"""
-        AND EXISTS (
-            SELECT 1
-            FROM UNNEST(c.companies) comp
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                ON cu.ID_COMPANY = comp.id_company
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
+        AND (
+            NOT EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
+                WHERE ID_USER = @user_id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM UNNEST(c.companies) comp
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                    ON cu.ID_COMPANY = comp.id_company
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                    ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+            )
         )
         """
+
+    # ============================================================
+    # QUERY
+    # ============================================================
 
     sql = f"""
     -- NEWS
@@ -112,6 +135,10 @@ def search(
     OFFSET @offset
     """
 
+    # ============================================================
+    # PARAMS
+    # ============================================================
+
     params = {
         "query": q,
         "limit": limit,
@@ -133,7 +160,7 @@ def latest(
     limit: int = 20,
     offset: int = 0,
     type: Optional[str] = None,
-    user_id: Optional[str] = None,  # 🔥 NEW
+    user_id: Optional[str] = None,
 ) -> List[Dict]:
 
     news_filter = ""
@@ -144,36 +171,60 @@ def latest(
     elif type == "analysis":
         news_filter = "AND FALSE"
 
+    # ============================================================
+    # 🔥 UNIVERS FILTER (SAFE)
+    # ============================================================
+
     universe_filter_news = ""
     universe_filter_content = ""
 
     if user_id:
+
         universe_filter_news = f"""
-        AND EXISTS (
-            SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-              AND cu.ID_COMPANY = n.id_company
+        AND (
+            NOT EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
+                WHERE ID_USER = @user_id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                    ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+                  AND cu.ID_COMPANY = n.id_company
+            )
         )
         """
 
         universe_filter_content = f"""
-        AND EXISTS (
-            SELECT 1
-            FROM UNNEST(c.companies) comp
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                ON cu.ID_COMPANY = comp.id_company
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
+        AND (
+            NOT EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
+                WHERE ID_USER = @user_id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM UNNEST(c.companies) comp
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                    ON cu.ID_COMPANY = comp.id_company
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                    ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+            )
         )
         """
+
+    # ============================================================
+    # QUERY
+    # ============================================================
 
     sql = f"""
     SELECT * FROM (
 
+        -- NEWS
         SELECT
             n.id_news AS id,
             'news' AS type,
@@ -193,6 +244,7 @@ def latest(
 
         UNION ALL
 
+        -- CONTENT
         SELECT
             c.id_content AS id,
             'analysis' AS type,
@@ -225,7 +277,6 @@ def latest(
     rows = query_bq(sql, params)
 
     return [_map_feed_row(r) for r in rows]
-
 
 # ============================================================
 # ITEM (light)
