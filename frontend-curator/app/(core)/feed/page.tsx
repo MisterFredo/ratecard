@@ -11,10 +11,11 @@ import NewsDrawer from "@/components/drawers/NewsDrawer";
 
 import { getContentStats } from "@/lib/stats";
 import { searchCurator, getLatestCurator } from "@/lib/search";
-import { useUniverse } from "@/contexts/UniverseContext"; // ✅ NEW
 
 import type { FeedItem, FeedBadge } from "@/types/feed";
 import { api } from "@/lib/api";
+
+import { useUniverse } from "@/contexts/UniverseContext"; // 🔥 NEW
 
 /* ========================================================= */
 
@@ -24,6 +25,8 @@ export default function FeedPage() {
   const searchParams = useSearchParams();
   const analysisId = searchParams.get("analysis_id");
   const newsId = searchParams.get("news_id");
+
+  const { activeUniverse } = useUniverse(); // 🔥 NEW
 
   /* =========================================================
      USER CONTEXT
@@ -88,7 +91,7 @@ export default function FeedPage() {
   ========================================================= */
 
   async function load(reset = false, q?: string) {
-    if (!userId) return; // 🔥 important
+    if (!userId) return;
 
     const finalQuery = (q ?? query)?.trim();
 
@@ -104,12 +107,14 @@ export default function FeedPage() {
             query: finalQuery,
             limit: LIMIT,
             offset: currentOffset,
-            user_id: userId, // 🔥 NEW
+            user_id: userId,
+            universe_id: activeUniverse, // 🔥 NEW
           })
         : await getLatestCurator({
             limit: LIMIT,
             offset: currentOffset,
-            user_id: userId, // 🔥 NEW
+            user_id: userId,
+            universe_id: activeUniverse, // 🔥 NEW
           });
 
       if (reset) {
@@ -129,12 +134,14 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     INIT
+     INIT + UNIVERSE CHANGE
   ========================================================= */
 
   useEffect(() => {
-    if (userId) load(true);
-  }, [userId]);
+    if (userId && activeUniverse) {
+      load(true);
+    }
+  }, [userId, activeUniverse]);
 
   /* =========================================================
      DRAWER FROM URL
@@ -168,12 +175,16 @@ export default function FeedPage() {
     async function loadStats() {
       if (!userId) return;
 
-      const s = await getContentStats({ user_id: userId }); // 🔥 NEW
+      const s = await getContentStats({
+        user_id: userId,
+        universe_id: activeUniverse, // 🔥 NEW
+      });
+
       setStats(s);
     }
 
     loadStats();
-  }, [userId]);
+  }, [userId, activeUniverse]);
 
   /* =========================================================
      BADGES
