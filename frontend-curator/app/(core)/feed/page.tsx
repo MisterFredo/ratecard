@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation"; // ✅ AJOUT
+import { useSearchParams } from "next/navigation";
 
 import FeedExplorer from "@/components/feed/FeedExplorer";
 import SelectionPanel from "@/components/insight/SelectionPanel";
@@ -20,9 +20,24 @@ import { api } from "@/lib/api";
 export default function FeedPage() {
   const LIMIT = 20;
 
-  const searchParams = useSearchParams(); // ✅ AJOUT
-  const analysisId = searchParams.get("analysis_id"); // ✅ AJOUT
-  const newsId = searchParams.get("news_id"); // ✅ AJOUT
+  const searchParams = useSearchParams();
+  const analysisId = searchParams.get("analysis_id");
+  const newsId = searchParams.get("news_id");
+
+  /* =========================================================
+     USER CONTEXT
+  ========================================================= */
+
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const id = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("curator_user_id="))
+      ?.split("=")[1];
+
+    setUserId(id || null);
+  }, []);
 
   /* =========================================================
      DATA
@@ -52,7 +67,7 @@ export default function FeedPage() {
   const [loadingInsight, setLoadingInsight] = useState(false);
 
   /* =========================================================
-     PANEL STATE
+     PANEL
   ========================================================= */
 
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -72,6 +87,8 @@ export default function FeedPage() {
   ========================================================= */
 
   async function load(reset = false, q?: string) {
+    if (!userId) return; // 🔥 important
+
     const finalQuery = (q ?? query)?.trim();
 
     if (loading) return;
@@ -86,10 +103,12 @@ export default function FeedPage() {
             query: finalQuery,
             limit: LIMIT,
             offset: currentOffset,
+            user_id: userId, // 🔥 NEW
           })
         : await getLatestCurator({
             limit: LIMIT,
             offset: currentOffset,
+            user_id: userId, // 🔥 NEW
           });
 
       if (reset) {
@@ -113,11 +132,11 @@ export default function FeedPage() {
   ========================================================= */
 
   useEffect(() => {
-    load(true);
-  }, []);
+    if (userId) load(true);
+  }, [userId]);
 
   /* =========================================================
-     OPEN DRAWER FROM URL ✅ AJOUT
+     DRAWER FROM URL
   ========================================================= */
 
   useEffect(() => {
@@ -146,15 +165,17 @@ export default function FeedPage() {
 
   useEffect(() => {
     async function loadStats() {
-      const s = await getContentStats();
+      if (!userId) return;
+
+      const s = await getContentStats({ user_id: userId }); // 🔥 NEW
       setStats(s);
     }
 
     loadStats();
-  }, []);
+  }, [userId]);
 
   /* =========================================================
-     BADGES / STATS
+     BADGES
   ========================================================= */
 
   function handleBadgeClick(badge: FeedBadge) {
@@ -190,7 +211,7 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     TOGGLE SELECT
+     SELECTION
   ========================================================= */
 
   function toggleSelect(item: FeedItem) {
@@ -205,7 +226,7 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     ANALYSIS
+     INSIGHT
   ========================================================= */
 
   async function generateInsight() {
@@ -260,17 +281,12 @@ export default function FeedPage() {
       </div>
 
       {isPanelOpen && (
-        <div
-          id="selection-panel"
-          className="xl:col-span-1 sticky top-6 h-[calc(100vh-120px)]"
-        >
+        <div className="xl:col-span-1 sticky top-6 h-[calc(100vh-120px)]">
           <SelectionPanel
             items={items}
             selectedIds={selectedIds}
-
             analysis={analysis}
             loading={loadingInsight}
-
             onGenerateInsight={generateInsight}
             onClose={() => setIsPanelOpen(false)}
           />
