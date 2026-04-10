@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-
-const ACCESS_EMAIL = "mister.fredo@gmail.com";
+import { api } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +10,7 @@ export default function LoginPage() {
   const redirect = searchParams.get("redirect") || "/";
 
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState(""); // 🔥 NEW
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
@@ -19,17 +19,36 @@ export default function LoginPage() {
       return;
     }
 
+    if (!password.trim()) {
+      alert("Mot de passe requis");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      if (email.toLowerCase() !== ACCESS_EMAIL) {
-        alert("Accès non autorisé");
-        return;
+      const res = await api.post("/user/login", {
+        email,
+        password,
+      });
+
+      if (res?.status !== "ok") {
+        throw new Error("Login failed");
       }
 
+      // 🔥 COOKIE SESSION
       document.cookie = `curator_session=ok; path=/; max-age=86400`;
 
+      // 🔥 CONTEXTE USER
+      document.cookie = `curator_email=${email}; path=/; max-age=86400`;
+      document.cookie = `curator_user_id=${res.user_id}; path=/; max-age=86400`;
+      document.cookie = `curator_role=${res.role}; path=/; max-age=86400`;
+
       router.push(redirect);
+
+    } catch (e) {
+      console.error(e);
+      alert("Accès non autorisé");
     } finally {
       setLoading(false);
     }
@@ -38,10 +57,12 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-sm bg-white border rounded-xl p-6 space-y-4">
+        
         <h1 className="text-lg font-semibold text-gray-900">
-          Accès privé Curator
+          Accès Curator
         </h1>
 
+        {/* EMAIL */}
         <input
           type="email"
           placeholder="Email"
@@ -50,13 +71,23 @@ export default function LoginPage() {
           className="w-full border rounded-lg px-3 py-2 text-sm"
         />
 
+        {/* PASSWORD 🔥 */}
+        <input
+          type="password"
+          placeholder="Mot de passe"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full border rounded-lg px-3 py-2 text-sm"
+        />
+
         <button
           onClick={handleLogin}
           disabled={loading}
           className="w-full bg-black text-white rounded-lg py-2 text-sm font-medium"
         >
-          {loading ? "Connexion…" : "Accéder"}
+          {loading ? "Connexion…" : "Se connecter"}
         </button>
+
       </div>
     </div>
   );
