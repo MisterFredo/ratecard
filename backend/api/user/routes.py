@@ -5,14 +5,18 @@ from api.user.models import (
     AssignUniversePayload,
     LoginPayload,
     UpdateUserPayload,
-    CreateUserPayload,
 )
 
 from core.user.user_service import (
-    get_user_context,
     create_user,
+    update_user,
     assign_universes,
     list_users,
+    get_user_by_email,
+    get_user_by_id,
+    get_user_universes,
+    get_user_context,
+    verify_password,
 )
 
 router = APIRouter()
@@ -32,23 +36,90 @@ def create_user_route(payload: CreateUserPayload):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
+# =========================================================
+# LIST USERS
+# =========================================================
+
 @router.get("/list")
 def list_users_route():
     users = list_users()
-
-    return {
-        "users": users
-    }
-
-
-@router.post("/update")
-def update_user_route(payload: UpdateUserPayload):
-    update_user(payload)
-    return {"status": "ok"}
+    return {"users": users}
 
 
 # =========================================================
-# ASSIGN UNIVERS
+# UPDATE USER (SOURCE OF TRUTH)
+# =========================================================
+
+@router.post("/update")
+def update_user_route(payload: UpdateUserPayload):
+    try:
+        update_user(payload)
+        return {"status": "ok"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# =========================================================
+# LOGIN
+# =========================================================
+
+@router.post("/login")
+def login(payload: LoginPayload):
+    user = get_user_by_email(payload.email)
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    if not verify_password(payload.password, user["PASSWORD_HASH"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    if not user.get("IS_ACTIVE", True):
+        raise HTTPException(status_code=403, detail="User inactive")
+
+    return {
+        "status": "ok",
+        "user_id": user["ID_USER"],
+        "email": user["EMAIL"],
+        "role": user.get("ROLE", "user"),
+    }
+
+
+# =========================================================
+# GET USER
+# =========================================================
+
+@router.get("/{user_id}")
+def get_user(user_id: str):
+    user = get_user_by_id(user_id)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    universes = get_user_universes(user_id)
+
+    return {
+        "user": user,
+        "universes": universes,
+    }
+
+
+# =========================================================
+# USER CONTEXT (future feed)
+# =========================================================
+
+@router.get("/context/{user_id}")
+def get_context(user_id: str):
+    context = get_user_context(user_id)
+
+    if not context:
+        raise HTTPException(status_code=404, detail="User not found or inactive")
+
+    return context
+
+
+# =========================================================
+# ASSIGN UNIVERS (OPTIONNEL / INTERNE)
 # =========================================================
 
 @router.post("/assign-universes")
@@ -58,40 +129,4 @@ def assign_universes_route(payload: AssignUniversePayload):
     return {
         "status": "ok",
         "assigned": payload.universes,
-    }
-
-
-# =========================================================
-# GET CONTEXT (DEBUG)
-# =========================================================
-
-@router.get("/context")
-def get_context(email: str):
-    context = get_user_context(email)
-
-    if not context:
-        raise HTTPException(status_code=404, detail="User not found or inactive")
-
-    return context
-
-@router.post("/login")
-def login(payload: LoginPayload):
-    user = get_user_by_email(payload.email)
-
-    if not user:
-        raise HTTPException(401)
-
-    if not verify_password(payload.password, user["PASSWORD_HASH"]):
-        raise HTTPException(401)
-
-    return {
-        "status": "ok",
-        "email": user["EMAIL"]
-    }
-
-@router.get("/{user_id}")
-def get_user(user_id: str):
-    return {
-        "user": get_user_by_id(user_id),
-        "universes": get_user_universes(user_id),
     }
