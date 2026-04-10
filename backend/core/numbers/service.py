@@ -591,22 +591,46 @@ def get_numbers_for_entity(
 
 def get_numbers_feed_service(limit: int = 50, query: Optional[str] = None):
 
-    base_query = f"""
-        SELECT *
-        FROM `{VIEW_NUMBERS_CARDS}`
-    """
+    sql = f"""
+        SELECT
+            n.*,
 
-    if query:
-        base_query += """
-        WHERE LOWER(LABEL) LIKE LOWER(@query)
-        """
+            -- 🔥 UNIVERS
+            ARRAY_AGG(DISTINCT su.ID_UNIVERSE IGNORE NULLS) AS UNIVERSES
 
-    base_query += """
-        ORDER BY CREATED_AT DESC
+        FROM `{VIEW_NUMBERS_CARDS}` n
+
+        -- 👉 JOIN ENTITY → COMPANY
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_COMPANY` nc
+          ON nc.ID_NUMBER = n.ID_NUMBER
+
+        -- 👉 COMPANY → UNIVERSE
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` su
+          ON su.ID_COMPANY = nc.ID_COMPANY
+
+        {"WHERE LOWER(n.LABEL) LIKE LOWER(@query)" if query else ""}
+
+        GROUP BY
+            {", ".join([f"n.{col}" for col in [
+                "ID_NUMBER",
+                "LABEL",
+                "VALUE",
+                "UNIT",
+                "SCALE",
+                "TYPE",
+                "CATEGORY",
+                "ZONE",
+                "PERIOD",
+                "CREATED_AT",
+                "ENTITY_TYPE",
+                "ENTITY_ID"
+            ]])}
+
+        ORDER BY n.CREATED_AT DESC
         LIMIT @limit
     """
 
-    return query_bq(base_query, {
+    return query_bq(sql, {
         "limit": limit,
         "query": f"%{query}%" if query else None,
     })
