@@ -15,6 +15,11 @@ type CompanyType = {
   label: string;
 };
 
+type Universe = {
+  id_universe: string;
+  label: string;
+};
+
 export default function CreateCompany() {
 
   const [name, setName] = useState("");
@@ -26,7 +31,6 @@ export default function CreateCompany() {
 
   const [wikiContent, setWikiContent] = useState("");
 
-  // 🔥 NEW
   const [insightFrequency, setInsightFrequency] = useState("QUARTERLY");
 
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -35,26 +39,47 @@ export default function CreateCompany() {
 
   const [types, setTypes] = useState<CompanyType[]>([]);
 
+  // 🔥 NEW UNIVERS
+  const [universes, setUniverses] = useState<string[]>([]);
+  const [availableUniverses, setAvailableUniverses] = useState<Universe[]>([]);
+
   // ---------------------------------------------------------
-  // LOAD TYPES
+  // LOAD TYPES + UNIVERS
   // ---------------------------------------------------------
   useEffect(() => {
 
-    async function loadTypes() {
+    async function load() {
 
       try {
-        const res = await api.get("/company/types");
-        setTypes(res.types || []);
+        const [typesRes, universesRes] = await Promise.all([
+          api.get("/company/types"),
+          api.get("/universe/list"),
+        ]);
+
+        setTypes(typesRes.types || []);
+        setAvailableUniverses(universesRes.universes || []);
+
       } catch (e) {
         console.error(e);
-        alert("❌ Erreur chargement types");
+        alert("❌ Erreur chargement données");
       }
 
     }
 
-    loadTypes();
+    load();
 
   }, []);
+
+  // ---------------------------------------------------------
+  // TOGGLE UNIVERS
+  // ---------------------------------------------------------
+  function toggleUniverse(id: string) {
+    setUniverses((prev) =>
+      prev.includes(id)
+        ? prev.filter((u) => u !== id)
+        : [...prev, id]
+    );
+  }
 
   // ---------------------------------------------------------
   // CREATE
@@ -77,9 +102,10 @@ export default function CreateCompany() {
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
         is_partner: isPartner,
+        insight_frequency: insightFrequency,
 
         // 🔥 NEW
-        insight_frequency: insightFrequency,
+        universes,
       });
 
       if (!res.id_company) {
@@ -125,7 +151,6 @@ export default function CreateCompany() {
         c.media_logo_rectangle_id || null
       );
 
-      // 🔥 NEW (au cas où reload)
       if (c.insight_frequency) {
         setInsightFrequency(c.insight_frequency);
       }
@@ -191,7 +216,27 @@ export default function CreateCompany() {
         </select>
       </div>
 
-      {/* 🔥 NEW : FREQUENCY */}
+      {/* 🔥 UNIVERS */}
+      <div className="space-y-2">
+        <label className="block font-medium">
+          Univers
+        </label>
+
+        <div className="flex flex-col gap-2">
+          {availableUniverses.map((u) => (
+            <label key={u.id_universe} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={universes.includes(u.id_universe)}
+                onChange={() => toggleUniverse(u.id_universe)}
+              />
+              {u.label}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* FREQUENCY */}
       <div className="space-y-2">
         <label className="block font-medium">
           Fréquence des insights
@@ -206,10 +251,6 @@ export default function CreateCompany() {
           <option value="MONTHLY">Monthly</option>
           <option value="QUARTERLY">Quarterly</option>
         </select>
-
-        <p className="text-xs text-gray-500">
-          Définit la granularité des synthèses générées automatiquement
-        </p>
       </div>
 
       {/* DESCRIPTION */}
@@ -226,7 +267,7 @@ export default function CreateCompany() {
       {/* WIKI */}
       <div className="border-t pt-6 space-y-2">
         <h2 className="text-lg font-semibold">
-          Wiki (connaissance interne / éditoriale)
+          Wiki
         </h2>
 
         <HtmlEditor
