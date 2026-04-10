@@ -16,6 +16,7 @@ from api.company.models import CompanyCreate, CompanyUpdate
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_COMPANY_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_METRICS"
 TABLE_NUMBERS_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_COMPANY"
+TABLE_COMPANY_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE"
 
 
 ALLOWED_FREQUENCIES = ["WEEKLY", "MONTHLY", "QUARTERLY"]
@@ -58,8 +59,53 @@ def create_company(data: CompanyCreate) -> str:
     )
     job.result()
 
+    # 🔥 ASSIGN UNIVERS
+    if data.universes:
+        assign_company_universes(company_id, data.universes)
+
     return company_id
 
+def assign_company_universes(company_id: str, universes: list[str]):
+
+    # delete existing
+    delete_query = f"""
+    DELETE FROM `{TABLE_COMPANY_UNIVERSE}`
+    WHERE ID_COMPANY = @company_id
+    """
+
+    query_bq(delete_query, {"company_id": company_id})
+
+    # insert new
+    for u in universes:
+        insert_query = f"""
+        INSERT INTO `{TABLE_COMPANY_UNIVERSE}` (
+            ID_COMPANY,
+            ID_UNIVERSE,
+            CREATED_AT
+        )
+        VALUES (
+            @company_id,
+            @universe,
+            CURRENT_TIMESTAMP()
+        )
+        """
+
+        query_bq(insert_query, {
+            "company_id": company_id,
+            "universe": u,
+        })
+
+def get_company_universes(company_id: str):
+
+    query = f"""
+    SELECT ID_UNIVERSE
+    FROM `{TABLE_COMPANY_UNIVERSE}`
+    WHERE ID_COMPANY = @company_id
+    """
+
+    rows = query_bq(query, {"company_id": company_id})
+
+    return [r["ID_UNIVERSE"] for r in rows]
 
 # ============================================================
 # LIST COMPANIES — BQ BRUT
@@ -232,6 +278,7 @@ def get_company(company_id: str):
 
         # ✅ NEW
         "has_numbers": r.get("HAS_NUMBERS", False),
+        "universes": get_company_universes(company_id),
 
         # Dates
         "created_at": r.get("CREATED_AT"),
@@ -245,7 +292,10 @@ def get_company(company_id: str):
 def update_company(id_company: str, data: CompanyUpdate) -> bool:
     values = data.dict(exclude_unset=True)
 
-    if not values:
+    # 🔥 univers à part
+    universes = values.pop("universes", None)
+
+    if not values and universes is None:
         return False
 
     mapping = {
@@ -273,13 +323,20 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
         bq_values["WIKI_UPDATED_AT"] = datetime.utcnow().isoformat()
         bq_values["WIKI_VECTORISED"] = False
 
-    bq_values["UPDATED_AT"] = datetime.utcnow().isoformat()
+    if bq_values:
+        bq_values["UPDATED_AT"] = datetime.utcnow().isoformat()
 
-    return update_bq(
-        table=TABLE_COMPANY,
-        fields=bq_values,
-        where={"ID_COMPANY": id_company},
-    )
+        update_bq(
+            table=TABLE_COMPANY,
+            fields=bq_values,
+            where={"ID_COMPANY": id_company},
+        )
+
+    # 🔥 UPDATE UNIVERS
+    if universes is not None:
+        assign_company_universes(id_company, universes)
+
+    return True
 
 
 # ============================================================
