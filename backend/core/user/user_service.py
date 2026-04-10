@@ -1,14 +1,10 @@
 import uuid
 import bcrypt
-from datetime import datetime
-
-from google.cloud import bigquery
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import (
     query_bq,
     update_bq,
-    get_bigquery_client,
 )
 
 # =========================================================
@@ -19,6 +15,16 @@ TABLE_USER = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER"
 TABLE_USER_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE"
 TABLE_SOURCE_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE"
 
+
+# =========================================================
+# PASSWORD
+# =========================================================
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
 # =========================================================
@@ -34,9 +40,9 @@ def get_user_by_email(email: str):
     LIMIT 1
     """
 
-    params = [
-        bigquery.ScalarQueryParameter("email", "STRING", email),
-    ]
+    params = {
+        "email": email,
+    }
 
     rows = query_bq(query, params)
 
@@ -54,9 +60,9 @@ def get_user_universes(user_id: str):
     WHERE ID_USER = @user_id
     """
 
-    params = [
-        bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
-    ]
+    params = {
+        "user_id": user_id,
+    }
 
     rows = query_bq(query, params)
 
@@ -77,9 +83,9 @@ def get_sources_from_universes(universes: list[str]):
     WHERE ID_UNIVERSE IN UNNEST(@universes)
     """
 
-    params = [
-        bigquery.ArrayQueryParameter("universes", "STRING", universes),
-    ]
+    params = {
+        "universes": universes,
+    }
 
     rows = query_bq(query, params)
 
@@ -110,15 +116,6 @@ def get_user_context(email: str):
 # CREATE USER
 # =========================================================
 
-
-
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode(), hashed.encode())
-
-
 def create_user(payload):
     # 🔎 check existing
     check_query = f"""
@@ -128,9 +125,9 @@ def create_user(payload):
     LIMIT 1
     """
 
-    params = [
-        bigquery.ScalarQueryParameter("email", "STRING", payload.email),
-    ]
+    params = {
+        "email": payload.email,
+    }
 
     existing = query_bq(check_query, params)
 
@@ -170,18 +167,23 @@ def create_user(payload):
     )
     """
 
-    params = [
-        bigquery.ScalarQueryParameter("id_user", "STRING", user_id),
-        bigquery.ScalarQueryParameter("email", "STRING", payload.email),
-        bigquery.ScalarQueryParameter("name", "STRING", payload.name),
-        bigquery.ScalarQueryParameter("company", "STRING", payload.company),
-        bigquery.ScalarQueryParameter("language", "STRING", payload.language or "fr"),
-        bigquery.ScalarQueryParameter("password_hash", "STRING", password_hash),
-    ]
+    params = {
+        "id_user": user_id,
+        "email": payload.email,
+        "name": payload.name,
+        "company": payload.company,
+        "language": payload.language or "fr",
+        "password_hash": password_hash,
+    }
 
     update_bq(insert_query, params)
 
     return user_id
+
+
+# =========================================================
+# LIST USERS
+# =========================================================
 
 def list_users():
     query = f"""
@@ -201,6 +203,7 @@ def list_users():
 
     return rows
 
+
 # =========================================================
 # ASSIGN UNIVERS (REPLACE ALL)
 # =========================================================
@@ -212,9 +215,9 @@ def assign_universes(user_id: str, universes: list[str]):
     WHERE ID_USER = @user_id
     """
 
-    params = [
-        bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
-    ]
+    params = {
+        "user_id": user_id,
+    }
 
     update_bq(delete_query, params)
 
@@ -233,9 +236,9 @@ def assign_universes(user_id: str, universes: list[str]):
         )
         """
 
-        params = [
-            bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
-            bigquery.ScalarQueryParameter("universe", "STRING", u),
-        ]
+        params = {
+            "user_id": user_id,
+            "universe": u,
+        }
 
         update_bq(insert_query, params)
