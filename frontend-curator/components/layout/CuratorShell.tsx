@@ -194,8 +194,8 @@ export default function CuratorShell({
               className="border rounded px-3 py-1 text-sm bg-white"
             >
               {universes.map((u) => (
-                <option key={u.ID_UNIVERSE} value={u.ID_UNIVERSE}>
-                  {u.LABEL}
+                <option key={u.id_universe} value={u.id_universe}>
+                  {u.label}
                 </option>
               ))}
             </select>
