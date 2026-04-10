@@ -11,6 +11,7 @@ import NewsDrawer from "@/components/drawers/NewsDrawer";
 
 import { getContentStats } from "@/lib/stats";
 import { searchCurator, getLatestCurator } from "@/lib/search";
+import { useUniverse } from "@/contexts/UniverseContext"; // ✅ NEW
 
 import type { FeedItem, FeedBadge } from "@/types/feed";
 import { api } from "@/lib/api";
