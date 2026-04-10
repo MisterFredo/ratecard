@@ -6,8 +6,8 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 
 type Universe = {
-  ID_UNIVERSE: string;
-  LABEL: string;
+  id_universe: string;
+  label: string;
 };
 
 export default function EditUser() {
@@ -53,10 +53,10 @@ export default function EditUser() {
         setLanguage(user.LANGUAGE || "fr");
         setRole(user.ROLE || "user");
 
-        // UNIVERS → déjà format string[]
+        // UNIVERS (string[])
         setUniverses(userRes?.universes ?? []);
 
-        // AVAILABLE UNIVERS
+        // AVAILABLE UNIVERS (snake_case)
         setAvailableUniverses(universeRes?.universes ?? []);
 
       } catch (e) {
@@ -125,7 +125,7 @@ export default function EditUser() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-8">
+    <div className="space-y-10">
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
@@ -198,18 +198,18 @@ export default function EditUser() {
       <div className="space-y-2">
         <label className="font-medium">Univers</label>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="flex flex-col gap-2">
           {availableUniverses.map((u) => (
             <label
-              key={u.ID_UNIVERSE}
-              className="flex items-center gap-2 border p-2 rounded cursor-pointer hover:bg-gray-50"
+              key={u.id_universe}
+              className="flex items-center gap-2"
             >
               <input
                 type="checkbox"
-                checked={universes.includes(u.ID_UNIVERSE)}
-                onChange={() => toggleUniverse(u.ID_UNIVERSE)}
+                checked={universes.includes(u.id_universe)}
+                onChange={() => toggleUniverse(u.id_universe)}
               />
-              {u.LABEL}
+              {u.label}
             </label>
           ))}
         </div>
