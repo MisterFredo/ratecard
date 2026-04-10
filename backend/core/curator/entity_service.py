@@ -30,8 +30,46 @@ def _get_entity_feed(
     where_clause_content: str,
     params: Dict,
     limit: int = 50,
-    offset: int = 0
+    offset: int = 0,
+    user_id: Optional[str] = None,  # 🔥 NEW
 ) -> List[Dict]:
+
+    # ============================================================
+    # 🔥 USER FILTER (UNIVERSES)
+    # ============================================================
+
+    universe_filter_news = ""
+    universe_filter_content = ""
+
+    if user_id:
+        universe_filter_news = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND cu.ID_COMPANY = n.id_company
+        )
+        """
+
+        universe_filter_content = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM UNNEST(c.companies) comp
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                ON cu.ID_COMPANY = comp.id_company
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+        )
+        """
+
+        params["user_id"] = user_id
+
+    # ============================================================
+    # QUERY
+    # ============================================================
 
     sql = f"""
     -- NEWS
@@ -49,6 +87,7 @@ def _get_entity_feed(
         [] AS solutions
     FROM `{VIEW_NEWS}` n
     WHERE {where_clause_news}
+    {universe_filter_news}
 
     UNION ALL
 
@@ -65,6 +104,7 @@ def _get_entity_feed(
         c.solutions
     FROM `{VIEW_CONTENT}` c
     WHERE {where_clause_content}
+    {universe_filter_content}
 
     ORDER BY published_at DESC
     LIMIT @limit
@@ -80,7 +120,6 @@ def _get_entity_feed(
     rows = query_bq(sql, query_params)
 
     return [_map_feed_row(r) for r in rows]
-
 
 # ============================================================
 # COMPANY
