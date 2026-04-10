@@ -7,12 +7,68 @@ import NumberCard from "@/components/numbers/NumberCard";
 import NumbersSelectionPanel from "@/components/numbers/NumbersSelectionPanel";
 import NumbersHeader from "@/components/numbers/NumbersHeader";
 
+/* =========================================================
+   UTILS
+========================================================= */
+
+function getCookie(name: string) {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(
+    new RegExp("(^| )" + name + "=([^;]+)")
+  );
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
+async function fetchUserUniverses(userId: string): Promise<string[]> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/user/context/${userId}`,
+      { cache: "no-store" }
+    );
+
+    if (!res.ok) return [];
+
+    const json = await res.json();
+    return json?.universes || [];
+
+  } catch {
+    return [];
+  }
+}
+
+/* =========================================================
+   FILTER
+========================================================= */
+
+function filterNumbers(items: any[], userUniverses: string[]) {
+
+  // ADMIN / FULL ACCESS
+  if (!userUniverses || userUniverses.length === 0) {
+    return items;
+  }
+
+  return items.filter((item) => {
+
+    const universes = item.UNIVERSES || [];
+
+    // GLOBAL
+    if (universes.length === 0) {
+      return true;
+    }
+
+    return universes.some((u: string) =>
+      userUniverses.includes(u)
+    );
+  });
+}
+
 /* ========================================================= */
 
 export default function NumbersPage() {
   const LIMIT = 100;
 
   const [items, setItems] = useState<any[]>([]);
+  const [filteredItems, setFilteredItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [query, setQuery] = useState("");
@@ -36,11 +92,26 @@ export default function NumbersPage() {
       );
 
       const data = res?.items ?? [];
+
+      const userId = getCookie("curator_user_id");
+
+      if (!userId) {
+        setItems(data);
+        setFilteredItems(data);
+        return;
+      }
+
+      const userUniverses = await fetchUserUniverses(userId);
+
+      const filtered = filterNumbers(data, userUniverses);
+
       setItems(data);
+      setFilteredItems(filtered);
 
     } catch (e) {
       console.error("❌ Numbers load error", e);
       setItems([]);
+      setFilteredItems([]);
     } finally {
       setLoading(false);
     }
@@ -72,7 +143,7 @@ export default function NumbersPage() {
 
   const grouped: Record<string, any[]> = {};
 
-  items.forEach((item) => {
+  filteredItems.forEach((item) => {
     const key = item.TYPE || "Autres";
 
     if (!grouped[key]) grouped[key] = [];
@@ -96,7 +167,7 @@ export default function NumbersPage() {
 
         {/* COUNT */}
         <div className="text-xs text-gray-400">
-          {items.length} chiffres
+          {filteredItems.length} chiffres
         </div>
 
         {/* CONTENT */}
@@ -159,7 +230,7 @@ export default function NumbersPage() {
           "
         >
           <NumbersSelectionPanel
-            items={items}
+            items={filteredItems}
             selectedIds={selectedIds}
             onClose={() => setIsPanelOpen(false)}
           />
