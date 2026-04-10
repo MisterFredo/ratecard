@@ -5,19 +5,33 @@ import { useSearchParams } from "next/navigation";
 import { useDrawer } from "@/contexts/DrawerContext";
 import SolutionCard from "@/components/solutions/SolutionCard";
 
-// ✅ IMPORT TYPE GLOBAL
 import { Solution } from "@/types/feed";
 
 export const dynamic = "force-dynamic";
 
-/* ========================================================= */
+/* =========================================================
+   TYPES
+========================================================= */
 
 type SortMode = "alpha" | "activity" | "growth";
 
-function sortSolutions(
-  items: Solution[],
-  mode: SortMode
-) {
+/* =========================================================
+   UTILS
+========================================================= */
+
+function getCookie(name: string) {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(
+    new RegExp("(^| )" + name + "=([^;]+)")
+  );
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
+/* =========================================================
+   SORT
+========================================================= */
+
+function sortSolutions(items: Solution[], mode: SortMode) {
   const copy = [...items];
 
   switch (mode) {
@@ -40,7 +54,9 @@ function sortSolutions(
   }
 }
 
-/* ========================================================= */
+/* =========================================================
+   FETCH
+========================================================= */
 
 async function fetchSolutions(): Promise<Solution[]> {
   const res = await fetch(
@@ -57,12 +73,58 @@ async function fetchSolutions(): Promise<Solution[]> {
   return json.solutions || [];
 }
 
-/* ========================================================= */
+async function fetchUserUniverses(userId: string): Promise<string[]> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/user/context/${userId}`,
+      { cache: "no-store" }
+    );
+
+    if (!res.ok) return [];
+
+    const json = await res.json();
+
+    return json?.universes || [];
+  } catch {
+    return [];
+  }
+}
+
+/* =========================================================
+   FILTER 🔥
+========================================================= */
+
+function filterSolutionsByUniverses(
+  solutions: Solution[],
+  userUniverses: string[]
+): Solution[] {
+
+  // ADMIN / FULL ACCESS
+  if (!userUniverses || userUniverses.length === 0) {
+    return solutions;
+  }
+
+  return solutions.filter((s: any) => {
+
+    // GLOBAL
+    if (!s.universes || s.universes.length === 0) {
+      return true;
+    }
+
+    return s.universes.some((u: string) =>
+      userUniverses.includes(u)
+    );
+  });
+}
+
+/* =========================================================
+   PAGE
+========================================================= */
 
 export default function SolutionsPage() {
   const [solutions, setSolutions] = useState<Solution[]>([]);
-  const [sortMode, setSortMode] =
-    useState<SortMode>("alpha");
+  const [filteredSolutions, setFilteredSolutions] = useState<Solution[]>([]);
+  const [sortMode, setSortMode] = useState<SortMode>("alpha");
 
   const { openLeftDrawer } = useDrawer();
   const searchParams = useSearchParams();
@@ -71,7 +133,29 @@ export default function SolutionsPage() {
 
   /* LOAD */
   useEffect(() => {
-    fetchSolutions().then(setSolutions);
+    async function load() {
+      const allSolutions = await fetchSolutions();
+
+      const userId = getCookie("curator_user_id");
+
+      if (!userId) {
+        setSolutions(allSolutions);
+        setFilteredSolutions(allSolutions);
+        return;
+      }
+
+      const userUniverses = await fetchUserUniverses(userId);
+
+      const filtered = filterSolutionsByUniverses(
+        allSolutions,
+        userUniverses
+      );
+
+      setSolutions(allSolutions);
+      setFilteredSolutions(filtered);
+    }
+
+    load();
   }, []);
 
   /* DRAWER */
@@ -89,12 +173,13 @@ export default function SolutionsPage() {
     openLeftDrawer("solution", solutionId);
   }, [searchParams, openLeftDrawer]);
 
-  const sorted = sortSolutions(solutions, sortMode);
+  const sorted = sortSolutions(filteredSolutions, sortMode);
 
   /* ========================================================= */
 
   return (
     <div className="space-y-8">
+
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
@@ -136,7 +221,7 @@ export default function SolutionsPage() {
       {/* GRID */}
       {sorted.length === 0 ? (
         <p className="text-sm text-gray-400">
-          Aucune solution pour le moment.
+          Aucune solution disponible pour votre profil.
         </p>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
@@ -153,6 +238,7 @@ export default function SolutionsPage() {
           ))}
         </div>
       )}
+
     </div>
   );
 }
