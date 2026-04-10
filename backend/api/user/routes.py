@@ -59,6 +59,28 @@ def update_user_route(payload: UpdateUserPayload):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.post("/bootstrap-admin")
+def bootstrap_admin():
+    existing = get_user_by_email("mister.fredo@gmail.com")
+
+    if existing:
+        return {"status": "already_exists"}
+
+    payload = CreateUserPayload(
+        email="mister.fredo@gmail.com",
+        password="felixmax55",
+        name="Admin Fredo",
+        role="admin",
+        universes=[]
+    )
+
+    user_id = create_user(payload)
+
+    return {
+        "status": "created",
+        "user_id": user_id
+    }
+
 
 # =========================================================
 # LOGIN
