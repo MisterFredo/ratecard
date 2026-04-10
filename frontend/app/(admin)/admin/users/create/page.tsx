@@ -5,8 +5,8 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 
 type Universe = {
-  ID_UNIVERSE: string;
-  LABEL: string;
+  id_universe: string;
+  label: string;
 };
 
 export default function CreateUser() {
