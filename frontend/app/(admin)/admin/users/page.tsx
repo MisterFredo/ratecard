@@ -10,6 +10,7 @@ type User = {
   NAME?: string;
   COMPANY?: string;
   LANGUAGE?: string;
+  ROLE?: string;
   IS_ACTIVE?: boolean;
   CREATED_AT?: string;
 };
@@ -26,9 +27,10 @@ export default function UsersPage() {
     async function load() {
       try {
         const res = await api.get("/user/list");
-        setUsers(res.users || []);
+        setUsers(res?.users ?? []);
       } catch (e) {
         console.error("❌ error loading users", e);
+        setUsers([]);
       } finally {
         setLoading(false);
       }
@@ -76,6 +78,7 @@ export default function UsersPage() {
                 <th className="text-left p-3">Name</th>
                 <th className="text-left p-3">Company</th>
                 <th className="text-left p-3">Language</th>
+                <th className="text-left p-3">Role</th>
                 <th className="text-left p-3">Status</th>
                 <th className="text-left p-3">Actions</th>
               </tr>
@@ -84,11 +87,26 @@ export default function UsersPage() {
             <tbody>
               {users.map((u) => (
                 <tr key={u.ID_USER} className="border-b hover:bg-gray-50">
+
                   <td className="p-3">{u.EMAIL}</td>
                   <td className="p-3">{u.NAME || "-"}</td>
                   <td className="p-3">{u.COMPANY || "-"}</td>
                   <td className="p-3">{u.LANGUAGE || "fr"}</td>
 
+                  {/* ROLE */}
+                  <td className="p-3">
+                    {u.ROLE === "admin" ? (
+                      <span className="text-blue-600 font-medium">
+                        Admin
+                      </span>
+                    ) : (
+                      <span className="text-gray-600">
+                        User
+                      </span>
+                    )}
+                  </td>
+
+                  {/* STATUS */}
                   <td className="p-3">
                     {u.IS_ACTIVE ? (
                       <span className="text-green-600 font-medium">
@@ -101,14 +119,16 @@ export default function UsersPage() {
                     )}
                   </td>
 
+                  {/* ACTIONS */}
                   <td className="p-3">
                     <Link
-                      href={`/admin/users/${u.ID_USER}?email=${encodeURIComponent(u.EMAIL)}`}
+                      href={`/admin/users/${u.ID_USER}`}
                       className="text-ratecard-blue hover:underline"
                     >
                       Edit
                     </Link>
                   </td>
+
                 </tr>
               ))}
             </tbody>
