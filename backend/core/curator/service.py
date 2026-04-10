@@ -415,7 +415,7 @@ def get_item_detail(
 def get_content_stats(user_id: Optional[str] = None):
 
     # =====================================================
-    # GLOBAL (non filtré volontairement)
+    # GLOBAL
     # =====================================================
 
     global_rows = query_bq(f"""
@@ -434,7 +434,7 @@ def get_content_stats(user_id: Optional[str] = None):
         last_30 = 0
 
     # =====================================================
-    # TOPICS (pas filtré volontairement)
+    # TOPICS
     # =====================================================
 
     topics_rows = query_bq(f"""
@@ -456,21 +456,28 @@ def get_content_stats(user_id: Optional[str] = None):
     ]
 
     # =====================================================
-    # COMPANIES (🔥 filtré par univers)
+    # 🔥 COMPANY FILTER
     # =====================================================
+
+    company_filter = ""
+
+    if user_id:
+        company_filter = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+              ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND cu.ID_COMPANY = c.id_company
+        )
+        """
 
     company_sql = f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY` c
         WHERE TRUE
-        {"AND EXISTS (
-            SELECT 1
-            FROM `" + BQ_PROJECT + "." + BQ_DATASET + ".RATECARD_COMPANY_UNIVERSE` cu
-            JOIN `" + BQ_PROJECT + "." + BQ_DATASET + ".RATECARD_USER_UNIVERSE` uu
-              ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-              AND cu.ID_COMPANY = c.id_company
-        )" if user_id else ""}
+        {company_filter}
         ORDER BY total DESC
     """
 
@@ -492,23 +499,30 @@ def get_content_stats(user_id: Optional[str] = None):
     ]
 
     # =====================================================
-    # SOLUTIONS (🔥 filtré via COMPANY)
+    # 🔥 SOLUTION FILTER
     # =====================================================
+
+    solution_filter = ""
+
+    if user_id:
+        solution_filter = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` sol
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+              ON cu.ID_COMPANY = sol.ID_COMPANY
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+              ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND sol.ID_SOLUTION = s.id_solution
+        )
+        """
 
     solution_sql = f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION` s
         WHERE TRUE
-        {"AND EXISTS (
-            SELECT 1
-            FROM `" + BQ_PROJECT + "." + BQ_DATASET + ".RATECARD_SOLUTION` sol
-            JOIN `" + BQ_PROJECT + "." + BQ_DATASET + ".RATECARD_COMPANY_UNIVERSE` cu
-              ON cu.ID_COMPANY = sol.ID_COMPANY
-            JOIN `" + BQ_PROJECT + "." + BQ_DATASET + ".RATECARD_USER_UNIVERSE` uu
-              ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-              AND sol.ID_SOLUTION = s.id_solution
-        )" if user_id else ""}
+        {solution_filter}
         ORDER BY total DESC
     """
 
