@@ -140,21 +140,22 @@ def list_companies():
 
             -- 🔥 RADAR
             r.ID_INSIGHT,
-            r.KEY_POINTS
+            r.KEY_POINTS,
+
+            -- 🔥 UNIVERS (ARRAY)
+            ARRAY_AGG(DISTINCT cu.ID_UNIVERSE IGNORE NULLS) AS UNIVERSS
 
         FROM `{TABLE_COMPANY}` c
 
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY` m
           ON m.id_company = c.ID_COMPANY
 
-        -- ✅ NUMBERS JOIN (OPTIMIZED)
         LEFT JOIN (
             SELECT DISTINCT ID_COMPANY
             FROM `{TABLE_NUMBERS_COMPANY}`
         ) nc
           ON nc.ID_COMPANY = c.ID_COMPANY
 
-        -- 🔥 LATEST RADAR
         LEFT JOIN (
             SELECT *
             FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_RADAR`
@@ -168,7 +169,26 @@ def list_companies():
           ON r.ENTITY_ID = c.ID_COMPANY
           AND r.ENTITY_TYPE = "company"
 
+        -- 🔥 JOIN UNIVERS
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+          ON cu.ID_COMPANY = c.ID_COMPANY
+
         WHERE c.IS_ACTIVE = TRUE
+
+        GROUP BY
+            c.ID_COMPANY,
+            c.NAME,
+            c.TYPE,
+            c.IS_PARTNER,
+            c.MEDIA_LOGO_RECTANGLE_ID,
+            c.INSIGHT_FREQUENCY,
+            m.total,
+            m.last_30_days,
+            HAS_DESCRIPTION,
+            HAS_WIKI,
+            HAS_NUMBERS,
+            r.ID_INSIGHT,
+            r.KEY_POINTS
 
         ORDER BY UPPER(c.NAME) ASC
     """
@@ -188,18 +208,18 @@ def list_companies():
             "has_description": r["HAS_DESCRIPTION"],
             "has_wiki": r["HAS_WIKI"],
 
-            # ✅ NEW
             "has_numbers": r.get("HAS_NUMBERS", False),
 
-            # 🔥 RADAR
             "last_radar": {
                 "id_insight": r["ID_INSIGHT"],
                 "key_points": r["KEY_POINTS"],
             } if r.get("ID_INSIGHT") else None,
+
+            # 🔥 NEW
+            "universes": r.get("UNIVERSS") or [],
         }
         for r in rows
     ]
-
 
 def list_company_types():
 
