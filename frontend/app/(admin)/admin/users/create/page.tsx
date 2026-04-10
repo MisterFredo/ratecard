@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+
+type Universe = {
+  ID_UNIVERSE: string;
+  LABEL: string;
+};
 
 export default function CreateUserPage() {
   const router = useRouter();
@@ -13,7 +18,39 @@ export default function CreateUserPage() {
   const [company, setCompany] = useState("");
   const [language, setLanguage] = useState("fr");
 
+  const [universes, setUniverses] = useState<string[]>([]);
+  const [availableUniverses, setAvailableUniverses] = useState<Universe[]>([]);
+
   const [loading, setLoading] = useState(false);
+
+  // =====================================================
+  // LOAD UNIVERS
+  // =====================================================
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await api.get("/universe/list");
+        setAvailableUniverses(res.universes || []);
+      } catch (e) {
+        console.error("❌ error loading universes", e);
+      }
+    }
+
+    load();
+  }, []);
+
+  // =====================================================
+  // TOGGLE
+  // =====================================================
+
+  function toggleUniverse(id: string) {
+    setUniverses((prev) =>
+      prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : [...prev, id]
+    );
+  }
 
   // =====================================================
   // CREATE USER
@@ -34,6 +71,7 @@ export default function CreateUserPage() {
         name,
         company,
         language,
+        universes,
       });
 
       router.push("/admin/users");
@@ -58,7 +96,6 @@ export default function CreateUserPage() {
 
       <div className="bg-white border rounded-xl p-6 space-y-4">
 
-        {/* EMAIL */}
         <input
           type="email"
           placeholder="Email"
@@ -67,7 +104,6 @@ export default function CreateUserPage() {
           className="w-full border rounded-lg px-3 py-2 text-sm"
         />
 
-        {/* PASSWORD */}
         <input
           type="password"
           placeholder="Mot de passe"
@@ -76,7 +112,6 @@ export default function CreateUserPage() {
           className="w-full border rounded-lg px-3 py-2 text-sm"
         />
 
-        {/* NAME */}
         <input
           type="text"
           placeholder="Nom"
@@ -85,7 +120,6 @@ export default function CreateUserPage() {
           className="w-full border rounded-lg px-3 py-2 text-sm"
         />
 
-        {/* COMPANY */}
         <input
           type="text"
           placeholder="Société"
@@ -94,7 +128,6 @@ export default function CreateUserPage() {
           className="w-full border rounded-lg px-3 py-2 text-sm"
         />
 
-        {/* LANGUAGE */}
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
@@ -104,7 +137,30 @@ export default function CreateUserPage() {
           <option value="en">English</option>
         </select>
 
-        {/* ACTION */}
+        {/* UNIVERS DYNAMIQUE */}
+        <div>
+          <p className="text-sm font-medium mb-2">
+            Univers
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+            {availableUniverses.map((u) => (
+              <button
+                key={u.ID_UNIVERSE}
+                type="button"
+                onClick={() => toggleUniverse(u.ID_UNIVERSE)}
+                className={`px-3 py-1 rounded-full text-xs border ${
+                  universes.includes(u.ID_UNIVERSE)
+                    ? "bg-ratecard-blue text-white border-ratecard-blue"
+                    : "bg-gray-100 text-gray-600 border-gray-200"
+                }`}
+              >
+                {u.LABEL}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <button
           onClick={handleCreate}
           disabled={loading}
