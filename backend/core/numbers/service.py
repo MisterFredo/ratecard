@@ -596,35 +596,42 @@ def get_numbers_feed_service(limit: int = 50, query: Optional[str] = None):
             n.*,
 
             -- 🔥 UNIVERS
-            ARRAY_AGG(DISTINCT su.ID_UNIVERSE IGNORE NULLS) AS UNIVERSES
+            ARRAY_AGG(DISTINCT cu.ID_UNIVERSE IGNORE NULLS) AS UNIVERSes
 
         FROM `{VIEW_NUMBERS_CARDS}` n
 
-        -- 👉 JOIN ENTITY → COMPANY
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_COMPANY` nc
-          ON nc.ID_NUMBER = n.ID_NUMBER
+        -- 👉 UNNEST ENTITIES
+        LEFT JOIN UNNEST(n.ENTITIES) e
 
-        -- 👉 COMPANY → UNIVERSE
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` su
-          ON su.ID_COMPANY = nc.ID_COMPANY
+        -- 👉 COMPANY DIRECT
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+          ON (
+            (e.ENTITY_TYPE = 'company' AND cu.ID_COMPANY = e.ENTITY_ID)
 
-        {"WHERE LOWER(n.LABEL) LIKE LOWER(@query)" if query else ""}
+            OR
+
+            (e.ENTITY_TYPE = 'solution' AND cu.ID_COMPANY = (
+                SELECT s.ID_COMPANY
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` s
+                WHERE s.ID_SOLUTION = e.ENTITY_ID
+                LIMIT 1
+            ))
+          )
+
+        { "WHERE LOWER(n.LABEL) LIKE LOWER(@query)" if query else "" }
 
         GROUP BY
-            {", ".join([f"n.{col}" for col in [
-                "ID_NUMBER",
-                "LABEL",
-                "VALUE",
-                "UNIT",
-                "SCALE",
-                "TYPE",
-                "CATEGORY",
-                "ZONE",
-                "PERIOD",
-                "CREATED_AT",
-                "ENTITY_TYPE",
-                "ENTITY_ID"
-            ]])}
+            n.ID_NUMBER,
+            n.LABEL,
+            n.VALUE,
+            n.UNIT,
+            n.SCALE,
+            n.ZONE,
+            n.PERIOD,
+            n.CREATED_AT,
+            n.TYPE,
+            n.CATEGORY,
+            n.ENTITIES
 
         ORDER BY n.CREATED_AT DESC
         LIMIT @limit
