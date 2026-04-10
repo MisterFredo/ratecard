@@ -135,8 +135,14 @@ def get_user(user_id: str):
 # USER CONTEXT (future feed)
 # =========================================================
 
-@router.get("/context/{user_id}")
-def get_context(user_id: str):
+@router.get("/context")
+def get_context(request: Request):
+
+    user_id = request.cookies.get("curator_user_id")
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
     context = get_user_context(user_id)
 
     if not context:
