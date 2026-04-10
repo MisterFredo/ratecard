@@ -40,6 +40,12 @@ def list_users_route():
     }
 
 
+@router.post("/update")
+def update_user_route(payload: UpdateUserPayload):
+    update_user(payload)
+    return {"status": "ok"}
+
+
 # =========================================================
 # ASSIGN UNIVERS
 # =========================================================
@@ -80,4 +86,11 @@ def login(payload: LoginPayload):
     return {
         "status": "ok",
         "email": user["EMAIL"]
+    }
+
+@router.get("/{user_id}")
+def get_user(user_id: str):
+    return {
+        "user": get_user_by_id(user_id),
+        "universes": get_user_universes(user_id),
     }
