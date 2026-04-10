@@ -1,9 +1,12 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
+# =========================================================
 # CREATE
+# =========================================================
+
 class CompanyCreate(BaseModel):
 
     name: str
@@ -17,11 +20,17 @@ class CompanyCreate(BaseModel):
 
     is_partner: bool = False
 
+    # 🔥 NEW → univers assignés
+    universes: Optional[List[str]] = []
+
     class Config:
         extra = "forbid"
 
 
+# =========================================================
 # UPDATE
+# =========================================================
+
 class CompanyUpdate(BaseModel):
 
     name: Optional[str] = None
@@ -37,11 +46,17 @@ class CompanyUpdate(BaseModel):
 
     wiki_content: Optional[str] = None
 
+    # 🔥 NEW → univers assignés
+    universes: Optional[List[str]] = None
+
     class Config:
         extra = "forbid"
 
 
+# =========================================================
 # OUT
+# =========================================================
+
 class CompanyOut(BaseModel):
 
     id_company: str
@@ -68,8 +83,11 @@ class CompanyOut(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    # ✅ NEW
+    # ✅ EXISTING
     has_numbers: Optional[bool] = False
+
+    # 🔥 NEW → univers exposés
+    universes: Optional[List[str]] = []
 
     class Config:
         extra = "forbid"
