@@ -103,7 +103,7 @@ export default function UsersPage() {
 
                   <td className="p-3">
                     <Link
-                      href={`/admin/users/${u.ID_USER}`}
+                      href={`/admin/users/${u.ID_USER}?email=${encodeURIComponent(u.EMAIL)}`}
                       className="text-ratecard-blue hover:underline"
                     >
                       Edit
