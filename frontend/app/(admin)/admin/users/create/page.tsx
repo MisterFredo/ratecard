@@ -168,13 +168,13 @@ export default function CreateUser() {
 
         <div className="flex flex-col gap-2">
           {availableUniverses.map((u) => (
-            <label key={u.ID_UNIVERSE} className="flex items-center gap-2">
+            <label key={u.id_universe} className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={universes.includes(u.ID_UNIVERSE)}
-                onChange={() => toggleUniverse(u.ID_UNIVERSE)}
+                checked={universes.includes(u.id_universe)}
+                onChange={() => toggleUniverse(u.id_universe)}
               />
-              {u.LABEL}
+              {u.label}
             </label>
           ))}
         </div>
