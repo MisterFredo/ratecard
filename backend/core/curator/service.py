@@ -20,7 +20,8 @@ def search(
     q: str,
     limit: int = 20,
     offset: int = 0,
-    type: Optional[str] = None,  # 🔥 NEW
+    type: Optional[str] = None,
+    user_id: Optional[str] = None,  # 🔥 NEW
 ) -> List[Dict]:
 
     news_filter = ""
@@ -30,6 +31,34 @@ def search(
         content_filter = "AND FALSE"
     elif type == "analysis":
         news_filter = "AND FALSE"
+
+    # 🔥 UNIVERS FILTER
+    universe_filter_news = ""
+    universe_filter_content = ""
+
+    if user_id:
+        universe_filter_news = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND cu.ID_COMPANY = n.id_company
+        )
+        """
+
+        universe_filter_content = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM UNNEST(c.companies) comp
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                ON cu.ID_COMPANY = comp.id_company
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+        )
+        """
 
     sql = f"""
     -- NEWS
@@ -53,6 +82,7 @@ def search(
           OR LOWER(n.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
         )
         {news_filter}
+        {universe_filter_news}
 
     UNION ALL
 
@@ -75,17 +105,23 @@ def search(
           OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
         )
         {content_filter}
+        {universe_filter_content}
 
     ORDER BY published_at DESC
     LIMIT @limit
     OFFSET @offset
     """
 
-    rows = query_bq(sql, {
+    params = {
         "query": q,
         "limit": limit,
-        "offset": offset
-    })
+        "offset": offset,
+    }
+
+    if user_id:
+        params["user_id"] = user_id
+
+    rows = query_bq(sql, params)
 
     return [_map_feed_row(r) for r in rows]
 
@@ -96,7 +132,8 @@ def search(
 def latest(
     limit: int = 20,
     offset: int = 0,
-    type: Optional[str] = None,  # 🔥 NEW
+    type: Optional[str] = None,
+    user_id: Optional[str] = None,  # 🔥 NEW
 ) -> List[Dict]:
 
     news_filter = ""
@@ -107,54 +144,89 @@ def latest(
     elif type == "analysis":
         news_filter = "AND FALSE"
 
+    universe_filter_news = ""
+    universe_filter_content = ""
+
+    if user_id:
+        universe_filter_news = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND cu.ID_COMPANY = n.id_company
+        )
+        """
+
+        universe_filter_content = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM UNNEST(c.companies) comp
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                ON cu.ID_COMPANY = comp.id_company
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+        )
+        """
+
     sql = f"""
-    -- NEWS
-    SELECT
-        n.id_news AS id,
-        'news' AS type,
-        n.title,
-        n.excerpt,
-        n.published_at,
-        n.news_type,
-        n.topics,
-        ARRAY<STRUCT<id_company STRING, name STRING>>[
-          STRUCT(n.id_company, n.company_name)
-        ] AS companies,
-        [] AS solutions
+    SELECT * FROM (
 
-    FROM `{VIEW_NEWS}` n
-    WHERE n.published_at IS NOT NULL
-    {news_filter}
+        SELECT
+            n.id_news AS id,
+            'news' AS type,
+            n.title,
+            n.excerpt,
+            n.published_at,
+            n.news_type,
+            n.topics,
+            ARRAY<STRUCT<id_company STRING, name STRING>>[
+              STRUCT(n.id_company, n.company_name)
+            ] AS companies,
+            [] AS solutions
+        FROM `{VIEW_NEWS}` n
+        WHERE n.published_at IS NOT NULL
+        {news_filter}
+        {universe_filter_news}
 
-    UNION ALL
+        UNION ALL
 
-    -- CONTENT
-    SELECT
-        c.id_content AS id,
-        'analysis' AS type,
-        c.title,
-        c.excerpt,
-        c.published_at,
-        NULL AS news_type,
-        c.topics,
-        c.companies,
-        c.solutions
+        SELECT
+            c.id_content AS id,
+            'analysis' AS type,
+            c.title,
+            c.excerpt,
+            c.published_at,
+            NULL AS news_type,
+            c.topics,
+            c.companies,
+            c.solutions
+        FROM `{VIEW_CONTENT}` c
+        WHERE c.published_at IS NOT NULL
+        {content_filter}
+        {universe_filter_content}
 
-    FROM `{VIEW_CONTENT}` c
-    WHERE c.published_at IS NOT NULL
-    {content_filter}
-
+    )
     ORDER BY published_at DESC
     LIMIT @limit
     OFFSET @offset
     """
 
-    rows = query_bq(sql, {
+    params = {
         "limit": limit,
-        "offset": offset
-    })
+        "offset": offset,
+    }
+
+    if user_id:
+        params["user_id"] = user_id
+
+    rows = query_bq(sql, params)
 
     return [_map_feed_row(r) for r in rows]
+
+
 # ============================================================
 # ITEM (light)
 # ============================================================
