@@ -8,8 +8,12 @@ type Params = {
   limit?: number;
   offset?: number;
 
-  // 🔥 NEW
+  // 🔥 EXISTANT
   type?: "news" | "analysis";
+
+  // 🔥 NEW
+  user_id?: string;
+  universe_id?: string | null;
 };
 
 /* ========================================================= */
@@ -48,9 +52,19 @@ export async function searchCurator(
     query.append("limit", String(params.limit ?? 20));
     query.append("offset", String(params.offset ?? 0));
 
-    // 🔥 NEW
+    // 🔥 TYPE
     if (params.type) {
       query.append("type", params.type);
+    }
+
+    // 🔥 USER
+    if (params.user_id) {
+      query.append("user_id", params.user_id);
+    }
+
+    // 🔥 UNIVERSE
+    if (params.universe_id) {
+      query.append("universe_id", params.universe_id);
     }
 
     const res = await api.get(`/curator/search?${query.toString()}`);
@@ -84,9 +98,19 @@ export async function getLatestCurator(
     query.append("limit", String(params?.limit ?? 20));
     query.append("offset", String(params?.offset ?? 0));
 
-    // 🔥 NEW (important pour cohérence UX)
+    // 🔥 TYPE
     if (params?.type) {
       query.append("type", params.type);
+    }
+
+    // 🔥 USER
+    if (params?.user_id) {
+      query.append("user_id", params.user_id);
+    }
+
+    // 🔥 UNIVERSE
+    if (params?.universe_id) {
+      query.append("universe_id", params.universe_id);
     }
 
     const res = await api.get(`/curator/latest?${query.toString()}`);
