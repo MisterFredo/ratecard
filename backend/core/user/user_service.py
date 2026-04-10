@@ -111,6 +111,22 @@ def get_user_context(email: str):
         "sources": sources,
     }
 
+def get_user_by_id(user_id: str):
+    query = f"""
+    SELECT *
+    FROM `{TABLE_USER}`
+    WHERE ID_USER = @user_id
+    LIMIT 1
+    """
+
+    params = {
+        "user_id": user_id,
+    }
+
+    rows = query_bq(query, params)
+
+    return rows[0] if rows else None
+
 
 # =========================================================
 # CREATE USER
