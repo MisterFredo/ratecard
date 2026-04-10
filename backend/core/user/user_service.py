@@ -229,7 +229,7 @@ def assign_universes(user_id: str, universes: list[str]):
         "user_id": user_id,
     }
 
-    update_bq(delete_query, params)
+    query_bq(delete_query, params)  # ✅ FIX
 
     # ➕ insert new
     for u in universes:
