@@ -15,6 +15,9 @@ type CompanyRow = {
   is_partner?: boolean | null;
   has_description?: boolean;
   has_wiki?: boolean;
+
+  // 🔥 NEW
+  universes?: string[];
 };
 
 export default function CompanyList() {
@@ -86,7 +89,6 @@ export default function CompanyList() {
       </div>
 
       {/* SEARCH */}
-
       <div>
         <input
           type="text"
@@ -110,6 +112,7 @@ export default function CompanyList() {
             <tr className="bg-gray-100 border-b text-left">
               <th className="p-2">Nom</th>
               <th className="p-2">Type</th>
+              <th className="p-2">Univers</th> {/* 🔥 NEW */}
               <th className="p-2">Statut</th>
               <th className="p-2">Description</th>
               <th className="p-2">Wiki</th>
@@ -139,6 +142,26 @@ export default function CompanyList() {
 
                   <td className="p-2">
                     {c.type || <span className="text-gray-400">—</span>}
+                  </td>
+
+                  {/* 🔥 UNIVERS */}
+                  <td className="p-2">
+                    {c.universes && c.universes.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {c.universes.map((u) => (
+                          <span
+                            key={u}
+                            className="px-2 py-0.5 text-xs rounded bg-blue-100 text-blue-700"
+                          >
+                            {u}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-xs">
+                        Global
+                      </span>
+                    )}
                   </td>
 
                   <td className="p-2">
