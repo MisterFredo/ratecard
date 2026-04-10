@@ -33,3 +33,10 @@ class AssignUniversePayload(BaseModel):
 class LoginPayload(BaseModel):
     email: EmailStr
     password: str
+
+class UpdateUserPayload(BaseModel):
+    user_id: str
+    name: Optional[str] = None
+    company: Optional[str] = None
+    language: Optional[str] = "fr"
+    universes: List[str] = []
