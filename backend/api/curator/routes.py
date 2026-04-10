@@ -1,8 +1,5 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from typing import Optional
-
-from config import BQ_PROJECT, BQ_DATASET
-from utils.bigquery_utils import query_bq
 
 from core.curator.service import (
     search,
@@ -16,21 +13,11 @@ router = APIRouter()
 
 
 # ============================================================
-# 🔥 RESOLVE USER
+# 🔥 HELPER (ULTRA LIGHT)
 # ============================================================
 
-def resolve_user_id(email: Optional[str]) -> Optional[str]:
-    if not email:
-        return None
-
-    rows = query_bq(f"""
-        SELECT ID_USER
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER`
-        WHERE EMAIL = @email
-        LIMIT 1
-    """, {"email": email})
-
-    return rows[0]["ID_USER"] if rows else None
+def get_user_id(request: Request) -> Optional[str]:
+    return request.cookies.get("curator_user_id")
 
 
 # ============================================================
@@ -39,21 +26,21 @@ def resolve_user_id(email: Optional[str]) -> Optional[str]:
 
 @router.get("/search")
 def search_route(
+    request: Request,
     q: str = Query(...),
     limit: int = Query(20),
     offset: int = Query(0),
     type: Optional[str] = Query(None),
-    email: Optional[str] = Query(None),  # 🔥 NEW
 ):
     try:
-        user_id = resolve_user_id(email)
+        user_id = get_user_id(request)
 
         items = search(
             q=q,
             limit=limit,
             offset=offset,
             type=type,
-            user_id=user_id,  # ✅ FIX
+            user_id=user_id,  # ✅ AJOUT
         )
 
         return {"items": items, "count": len(items)}
@@ -68,19 +55,19 @@ def search_route(
 
 @router.get("/latest")
 def latest_route(
+    request: Request,
     limit: int = Query(20),
     offset: int = Query(0),
     type: Optional[str] = Query(None),
-    email: Optional[str] = Query(None),  # 🔥 NEW
 ):
     try:
-        user_id = resolve_user_id(email)
+        user_id = get_user_id(request)
 
         items = latest(
             limit=limit,
             offset=offset,
             type=type,
-            user_id=user_id,  # ✅ FIX
+            user_id=user_id,  # ✅ AJOUT
         )
 
         return {"items": items, "count": len(items)}
@@ -94,13 +81,11 @@ def latest_route(
 # ============================================================
 
 @router.get("/stats")
-def stats_route(
-    email: Optional[str] = Query(None),  # 🔥 NEW
-):
+def stats_route(request: Request):
     try:
-        user_id = resolve_user_id(email)
+        user_id = get_user_id(request)
 
-        stats = get_content_stats(user_id=user_id)  # ✅ FIX
+        stats = get_content_stats(user_id=user_id)  # ✅ AJOUT
 
         return {"status": "ok", "stats": stats}
 
@@ -113,13 +98,10 @@ def stats_route(
 # ============================================================
 
 @router.get("/item/{item_id}")
-def read_item(
-    item_id: str,
-    email: Optional[str] = Query(None),  # 🔥 NEW
-):
-    user_id = resolve_user_id(email)
+def read_item(request: Request, item_id: str):
+    user_id = get_user_id(request)
 
-    item = get_item_curator(item_id, user_id=user_id)  # ✅ FIX
+    item = get_item_curator(item_id, user_id=user_id)  # ✅ AJOUT
 
     if not item:
         raise HTTPException(404, "Item not found")
@@ -133,13 +115,13 @@ def read_item(
 
 @router.get("/item/{item_id}/detail")
 def read_item_detail(
+    request: Request,
     item_id: str,
-    type: str = Query(...),
-    email: Optional[str] = Query(None),  # 🔥 NEW
+    type: str = Query(...)
 ):
-    user_id = resolve_user_id(email)
+    user_id = get_user_id(request)
 
-    item = get_item_detail(item_id, type, user_id=user_id)  # ✅ FIX
+    item = get_item_detail(item_id, type, user_id=user_id)  # ✅ AJOUT
 
     if not item:
         raise HTTPException(404, "Item not found")
