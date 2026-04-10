@@ -282,10 +282,56 @@ def latest(
 # ITEM (light)
 # ============================================================
 
-def get_item_curator(item_id: str) -> Optional[Dict]:
+def get_item_curator(
+    item_id: str,
+    user_id: Optional[str] = None,
+) -> Optional[Dict]:
+
+    universe_filter_news = ""
+    universe_filter_content = ""
+
+    if user_id:
+
+        universe_filter_news = f"""
+        AND (
+            NOT EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
+                WHERE ID_USER = @user_id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                    ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+                  AND cu.ID_COMPANY = n.id_company
+            )
+        )
+        """
+
+        universe_filter_content = f"""
+        AND (
+            NOT EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
+                WHERE ID_USER = @user_id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM UNNEST(c.companies) comp
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                    ON cu.ID_COMPANY = comp.id_company
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                    ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+            )
+        )
+        """
 
     sql = f"""
     SELECT * FROM (
+
         SELECT
             n.id_news AS id,
             'news' AS type,
@@ -299,6 +345,8 @@ def get_item_curator(item_id: str) -> Optional[Dict]:
             ] AS companies,
             [] AS solutions
         FROM `{VIEW_NEWS}` n
+        WHERE 1=1
+        {universe_filter_news}
 
         UNION ALL
 
@@ -313,24 +361,41 @@ def get_item_curator(item_id: str) -> Optional[Dict]:
             c.companies,
             c.solutions
         FROM `{VIEW_CONTENT}` c
+        WHERE 1=1
+        {universe_filter_content}
+
     )
     WHERE id = @id
     LIMIT 1
     """
 
-    rows = query_bq(sql, {"id": item_id})
+    params = {"id": item_id}
+
+    if user_id:
+        params["user_id"] = user_id
+
+    rows = query_bq(sql, params)
 
     if not rows:
         return None
 
     return _map_feed_row(rows[0])
 
-
 # ============================================================
 # DETAIL (full)
 # ============================================================
 
-def get_item_detail(item_id: str, item_type: str) -> Optional[Dict]:
+def get_item_detail(
+    item_id: str,
+    item_type: str,
+    user_id: Optional[str] = None,
+) -> Optional[Dict]:
+
+    # 🔒 sécurité univers
+    item = get_item_curator(item_id, user_id=user_id)
+
+    if not item:
+        return None  # ❌ accès refusé
 
     if item_type == "analysis":
         from core.content.public_service import get_content
