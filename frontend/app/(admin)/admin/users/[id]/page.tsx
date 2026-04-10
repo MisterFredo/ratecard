@@ -11,7 +11,6 @@ type Universe = {
 };
 
 export default function EditUser() {
-
   const params = useParams();
   const router = useRouter();
 
@@ -33,7 +32,6 @@ export default function EditUser() {
   // =====================================================
 
   useEffect(() => {
-
     async function load() {
       try {
         const [userRes, universeRes] = await Promise.all([
@@ -41,15 +39,26 @@ export default function EditUser() {
           api.get("/universe/list"),
         ]);
 
-        const user = userRes.user;
+        console.log("USER RES 👉", userRes);
+        console.log("UNIVERSE RES 👉", universeRes);
 
-        setEmail(user.EMAIL);
+        // ✅ SAFE USER
+        const user = userRes?.user || {};
+
+        setEmail(user.EMAIL || "");
         setName(user.NAME || "");
         setCompany(user.COMPANY || "");
         setLanguage(user.LANGUAGE || "fr");
 
-        setUniverses(userRes.universes || []);
-        setAvailableUniverses(universeRes.universes || []);
+        // ✅ SAFE UNIVERS (normalisation)
+        const userUniverses =
+          userRes?.universes?.map((u: any) =>
+            typeof u === "string" ? u : u.ID_UNIVERSE
+          ) || [];
+
+        setUniverses(userUniverses);
+
+        setAvailableUniverses(universeRes?.universes || []);
 
       } catch (e) {
         console.error("❌ load error", e);
@@ -59,7 +68,6 @@ export default function EditUser() {
     }
 
     if (userId) load();
-
   }, [userId]);
 
   // =====================================================
@@ -79,9 +87,7 @@ export default function EditUser() {
   // =====================================================
 
   async function save() {
-
     try {
-
       setSaving(true);
 
       await api.post("/user/update", {
@@ -97,14 +103,10 @@ export default function EditUser() {
       router.push("/admin/users");
 
     } catch (e) {
-
       console.error(e);
       alert("❌ Erreur update");
-
     } finally {
-
       setSaving(false);
-
     }
   }
 
@@ -113,64 +115,78 @@ export default function EditUser() {
   // =====================================================
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="p-6">Loading...</div>;
   }
 
   return (
-    <div className="space-y-10">
+    <div className="max-w-2xl mx-auto p-6 space-y-8">
 
-      <div className="flex justify-between">
+      {/* HEADER */}
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">
           Modifier utilisateur
         </h1>
 
-        <Link href="/admin/users" className="underline">
+        <Link href="/admin/users" className="text-sm underline">
           ← Retour
         </Link>
       </div>
 
-      {/* EMAIL (read only) */}
-      <input
-        className="border p-2 w-full rounded bg-gray-100"
-        value={email}
-        disabled
-      />
+      {/* EMAIL */}
+      <div className="space-y-1">
+        <label className="text-sm text-gray-500">Email</label>
+        <input
+          className="border p-2 w-full rounded bg-gray-100"
+          value={email}
+          disabled
+        />
+      </div>
 
       {/* NAME */}
-      <input
-        className="border p-2 w-full rounded"
-        placeholder="Nom"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
+      <div className="space-y-1">
+        <label className="text-sm text-gray-500">Nom</label>
+        <input
+          className="border p-2 w-full rounded"
+          placeholder="Nom"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </div>
 
       {/* COMPANY */}
-      <input
-        className="border p-2 w-full rounded"
-        placeholder="Société"
-        value={company}
-        onChange={(e) => setCompany(e.target.value)}
-      />
+      <div className="space-y-1">
+        <label className="text-sm text-gray-500">Société</label>
+        <input
+          className="border p-2 w-full rounded"
+          placeholder="Société"
+          value={company}
+          onChange={(e) => setCompany(e.target.value)}
+        />
+      </div>
 
       {/* LANGUAGE */}
-      <select
-        className="border p-2 rounded w-full max-w-xs"
-        value={language}
-        onChange={(e) => setLanguage(e.target.value)}
-      >
-        <option value="fr">Français</option>
-        <option value="en">English</option>
-      </select>
+      <div className="space-y-1">
+        <label className="text-sm text-gray-500">Langue</label>
+        <select
+          className="border p-2 rounded w-full max-w-xs"
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+        >
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+        </select>
+      </div>
 
       {/* UNIVERS */}
       <div className="space-y-2">
-        <label className="block font-medium">
-          Univers
-        </label>
+        <label className="font-medium">Univers</label>
 
-        <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {availableUniverses.map((u) => (
-            <label key={u.ID_UNIVERSE} className="flex items-center gap-2">
+            <label
+              key={u.ID_UNIVERSE}
+              className="flex items-center gap-2 border p-2 rounded cursor-pointer hover:bg-gray-50"
+            >
               <input
                 type="checkbox"
                 checked={universes.includes(u.ID_UNIVERSE)}
