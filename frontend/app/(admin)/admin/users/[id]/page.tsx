@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { api } from "@/lib/api";
 
 type Universe = {
@@ -9,50 +10,64 @@ type Universe = {
   LABEL: string;
 };
 
-export default function EditUserPage() {
+export default function EditUser() {
+
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const userId = params.id as string;
-  const email = searchParams.get("email"); // 🔥 important
 
-  const [universes, setUniverses] = useState<Universe[]>([]);
-  const [selected, setSelected] = useState<string[]>([]);
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [company, setCompany] = useState("");
+  const [language, setLanguage] = useState("fr");
+
+  const [universes, setUniverses] = useState<string[]>([]);
+  const [availableUniverses, setAvailableUniverses] = useState<Universe[]>([]);
+
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // =====================================================
   // LOAD DATA
   // =====================================================
 
   useEffect(() => {
+
     async function load() {
       try {
-        // 🔹 univers
-        const u = await api.get("/universe/list");
-        setUniverses(u.universes || []);
+        const [userRes, universeRes] = await Promise.all([
+          api.get(`/user/${userId}`),
+          api.get("/universe/list"),
+        ]);
 
-        // 🔹 user context
-        if (email) {
-          const ctx = await api.get(`/user/context?email=${email}`);
-          setSelected(ctx.universes || []);
-        }
+        const user = userRes.user;
+
+        setEmail(user.EMAIL);
+        setName(user.NAME || "");
+        setCompany(user.COMPANY || "");
+        setLanguage(user.LANGUAGE || "fr");
+
+        setUniverses(userRes.universes || []);
+        setAvailableUniverses(universeRes.universes || []);
+
       } catch (e) {
-        console.error("❌ error loading edit page", e);
+        console.error("❌ load error", e);
       } finally {
         setLoading(false);
       }
     }
 
-    load();
-  }, [email]);
+    if (userId) load();
+
+  }, [userId]);
 
   // =====================================================
-  // TOGGLE
+  // TOGGLE UNIVERS
   // =====================================================
 
   function toggleUniverse(id: string) {
-    setSelected((prev) =>
+    setUniverses((prev) =>
       prev.includes(id)
         ? prev.filter((u) => u !== id)
         : [...prev, id]
@@ -63,23 +78,38 @@ export default function EditUserPage() {
   // SAVE
   // =====================================================
 
-  async function handleSave() {
+  async function save() {
+
     try {
-      await api.post("/user/assign-universes", {
+
+      setSaving(true);
+
+      await api.post("/user/update", {
         user_id: userId,
-        universes: selected,
+        name,
+        company,
+        language,
+        universes,
       });
 
-      alert("Univers mis à jour");
+      alert("Utilisateur mis à jour");
+
       router.push("/admin/users");
+
     } catch (e) {
-      console.error("❌ save error", e);
-      alert("Erreur lors de la sauvegarde");
+
+      console.error(e);
+      alert("❌ Erreur update");
+
+    } finally {
+
+      setSaving(false);
+
     }
   }
 
   // =====================================================
-  // RENDER
+  // UI
   // =====================================================
 
   if (loading) {
@@ -87,36 +117,80 @@ export default function EditUserPage() {
   }
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="space-y-10">
 
-      <h1 className="text-xl font-semibold">
-        Edit user universes
-      </h1>
+      <div className="flex justify-between">
+        <h1 className="text-2xl font-semibold">
+          Modifier utilisateur
+        </h1>
 
-      <div className="bg-white border rounded-xl p-6 space-y-4">
-
-        {universes.map((u) => (
-          <label
-            key={u.ID_UNIVERSE}
-            className="flex items-center gap-3"
-          >
-            <input
-              type="checkbox"
-              checked={selected.includes(u.ID_UNIVERSE)}
-              onChange={() => toggleUniverse(u.ID_UNIVERSE)}
-            />
-            <span>{u.LABEL}</span>
-          </label>
-        ))}
-
-        <button
-          onClick={handleSave}
-          className="w-full bg-ratecard-blue text-white rounded-lg py-2 text-sm font-medium"
-        >
-          Sauvegarder
-        </button>
-
+        <Link href="/admin/users" className="underline">
+          ← Retour
+        </Link>
       </div>
+
+      {/* EMAIL (read only) */}
+      <input
+        className="border p-2 w-full rounded bg-gray-100"
+        value={email}
+        disabled
+      />
+
+      {/* NAME */}
+      <input
+        className="border p-2 w-full rounded"
+        placeholder="Nom"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+
+      {/* COMPANY */}
+      <input
+        className="border p-2 w-full rounded"
+        placeholder="Société"
+        value={company}
+        onChange={(e) => setCompany(e.target.value)}
+      />
+
+      {/* LANGUAGE */}
+      <select
+        className="border p-2 rounded w-full max-w-xs"
+        value={language}
+        onChange={(e) => setLanguage(e.target.value)}
+      >
+        <option value="fr">Français</option>
+        <option value="en">English</option>
+      </select>
+
+      {/* UNIVERS */}
+      <div className="space-y-2">
+        <label className="block font-medium">
+          Univers
+        </label>
+
+        <div className="flex flex-col gap-2">
+          {availableUniverses.map((u) => (
+            <label key={u.ID_UNIVERSE} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={universes.includes(u.ID_UNIVERSE)}
+                onChange={() => toggleUniverse(u.ID_UNIVERSE)}
+              />
+              {u.LABEL}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA */}
+      <button
+        onClick={save}
+        disabled={saving}
+        className="bg-ratecard-blue px-6 py-2 text-white rounded"
+      >
+        {saving ? "Sauvegarde…" : "Sauvegarder"}
+      </button>
+
     </div>
   );
 }
