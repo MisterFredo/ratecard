@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 
 
@@ -14,16 +14,11 @@ class CreateUserPayload(BaseModel):
     company: Optional[str] = None
     language: Optional[str] = "fr"
 
-    universes: List[str] = []  # 🔥 clé ajout
+    # 🔥 important → éviter List = []
+    universes: List[str] = Field(default_factory=list)
 
-
-# =========================================================
-# ASSIGN UNIVERS (si besoin séparé)
-# =========================================================
-
-class AssignUniversePayload(BaseModel):
-    user_id: str
-    universes: List[str]
+    # 🔥 préparation future (admin / user)
+    role: Optional[str] = "user"
 
 
 # =========================================================
@@ -34,9 +29,28 @@ class LoginPayload(BaseModel):
     email: EmailStr
     password: str
 
+
+# =========================================================
+# UPDATE USER
+# =========================================================
+
 class UpdateUserPayload(BaseModel):
     user_id: str
+
     name: Optional[str] = None
     company: Optional[str] = None
     language: Optional[str] = "fr"
-    universes: List[str] = []
+
+    universes: List[str] = Field(default_factory=list)
+
+    # 🔥 permet de gérer admin plus tard
+    role: Optional[str] = None
+
+
+# =========================================================
+# ASSIGN UNIVERS (optionnel / interne)
+# =========================================================
+
+class AssignUniversePayload(BaseModel):
+    user_id: str
+    universes: List[str] = Field(default_factory=list)
