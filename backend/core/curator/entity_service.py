@@ -20,6 +20,9 @@ VIEW_STATS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION"
 TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
 TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
 
+TABLE_USER_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE"
+TABLE_COMPANY_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE"
+
 
 # ============================================================
 # INTERNAL — FEED BUILDER
@@ -31,45 +34,50 @@ def _get_entity_feed(
     params: Dict,
     limit: int = 50,
     offset: int = 0,
-    user_id: Optional[str] = None,  # 🔥 NEW
+    user_id: Optional[str] = None,
 ) -> List[Dict]:
-
-    # ============================================================
-    # 🔥 USER FILTER (UNIVERSES)
-    # ============================================================
 
     universe_filter_news = ""
     universe_filter_content = ""
 
     if user_id:
+
         universe_filter_news = f"""
-        AND EXISTS (
-            SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-              AND cu.ID_COMPANY = n.id_company
+        AND (
+            NOT EXISTS (
+                SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
+                WHERE ID_USER = @user_id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM `{TABLE_USER_UNIVERSE}` uu
+                JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+                    ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+                  AND cu.ID_COMPANY = n.id_company
+            )
         )
         """
 
         universe_filter_content = f"""
-        AND EXISTS (
-            SELECT 1
-            FROM UNNEST(c.companies) comp
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                ON cu.ID_COMPANY = comp.id_company
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
+        AND (
+            NOT EXISTS (
+                SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
+                WHERE ID_USER = @user_id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM UNNEST(c.companies) comp
+                JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+                    ON cu.ID_COMPANY = comp.id_company
+                JOIN `{TABLE_USER_UNIVERSE}` uu
+                    ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+            )
         )
         """
 
         params["user_id"] = user_id
-
-    # ============================================================
-    # QUERY
-    # ============================================================
 
     sql = f"""
     -- NEWS
@@ -121,6 +129,41 @@ def _get_entity_feed(
 
     return [_map_feed_row(r) for r in rows]
 
+
+# ============================================================
+# ACCESS CHECK
+# ============================================================
+
+def _check_company_access(company_id: str, user_id: Optional[str]) -> bool:
+
+    if not user_id:
+        return True
+
+    has_universe = query_bq(f"""
+        SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
+        WHERE ID_USER = @user_id
+        LIMIT 1
+    """, {"user_id": user_id})
+
+    if not has_universe:
+        return True  # admin
+
+    access = query_bq(f"""
+        SELECT 1
+        FROM `{TABLE_USER_UNIVERSE}` uu
+        JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+            ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
+        WHERE uu.ID_USER = @user_id
+          AND cu.ID_COMPANY = @company_id
+        LIMIT 1
+    """, {
+        "user_id": user_id,
+        "company_id": company_id
+    })
+
+    return bool(access)
+
+
 # ============================================================
 # COMPANY
 # ============================================================
@@ -128,7 +171,8 @@ def _get_entity_feed(
 def get_company_feed(
     company_id: str,
     limit: int = 50,
-    offset: int = 0
+    offset: int = 0,
+    user_id: Optional[str] = None,
 ) -> List[Dict]:
 
     return _get_entity_feed(
@@ -142,22 +186,26 @@ def get_company_feed(
         """,
         params={"company_id": company_id},
         limit=limit,
-        offset=offset
+        offset=offset,
+        user_id=user_id,
     )
 
 
 def get_company_view(
     company_id: str,
     limit: int = 50,
-    offset: int = 0
+    offset: int = 0,
+    user_id: Optional[str] = None,
 ) -> Optional[Dict]:
+
+    if not _check_company_access(company_id, user_id):
+        return None
 
     company = get_company(company_id)
 
     if not company:
         return None
 
-    # STATS
     stats_rows = query_bq(f"""
         SELECT
             COALESCE(total, 0) AS NB_ANALYSES,
@@ -169,7 +217,7 @@ def get_company_view(
 
     stats = stats_rows[0] if stats_rows else {}
 
-    items = get_company_feed(company_id, limit, offset)
+    items = get_company_feed(company_id, limit, offset, user_id=user_id)
 
     return {
         **company,
@@ -186,7 +234,8 @@ def get_company_view(
 def get_topic_feed(
     topic_id: str,
     limit: int = 50,
-    offset: int = 0
+    offset: int = 0,
+    user_id: Optional[str] = None,
 ) -> List[Dict]:
 
     return _get_entity_feed(
@@ -206,36 +255,26 @@ def get_topic_feed(
         """,
         params={"topic_id": topic_id},
         limit=limit,
-        offset=offset
+        offset=offset,
+        user_id=user_id,
     )
 
 
 def get_topic_view(
     topic_id: str,
     limit: int = 50,
-    offset: int = 0
+    offset: int = 0,
+    user_id: Optional[str] = None,
 ) -> Dict:
 
-    # ============================================================
-    # 🔥 TOPIC INFO (LABEL + AXIS + DESCRIPTION)
-    # ============================================================
-
     topic_rows = query_bq(f"""
-        SELECT
-            ID_TOPIC,
-            LABEL,
-            TOPIC_AXIS,
-            DESCRIPTION
+        SELECT ID_TOPIC, LABEL, TOPIC_AXIS, DESCRIPTION
         FROM `{TABLE_TOPIC}`
         WHERE ID_TOPIC = @topic_id
         LIMIT 1
     """, {"topic_id": topic_id})
 
     topic = topic_rows[0] if topic_rows else {}
-
-    # ============================================================
-    # STATS
-    # ============================================================
 
     stats_rows = query_bq(f"""
         SELECT
@@ -248,25 +287,19 @@ def get_topic_view(
 
     stats = stats_rows[0] if stats_rows else {}
 
-    # ============================================================
-    # FEED
-    # ============================================================
-
-    items = get_topic_feed(topic_id, limit, offset)
-
-    # ============================================================
-    # RETURN
-    # ============================================================
+    items = get_topic_feed(topic_id, limit, offset, user_id=user_id)
 
     return {
         "id_topic": topic_id,
         "label": topic.get("LABEL"),
         "topic_axis": topic.get("TOPIC_AXIS"),
-        "description": topic.get("DESCRIPTION"),  # 🔥 AJOUT
+        "description": topic.get("DESCRIPTION"),
         "nb_analyses": stats.get("NB_ANALYSES", 0),
         "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
     }
+
+
 # ============================================================
 # SOLUTION
 # ============================================================
@@ -274,7 +307,8 @@ def get_topic_view(
 def get_solution_feed(
     solution_id: str,
     limit: int = 50,
-    offset: int = 0
+    offset: int = 0,
+    user_id: Optional[str] = None,
 ) -> List[Dict]:
 
     return _get_entity_feed(
@@ -288,24 +322,23 @@ def get_solution_feed(
         """,
         params={"solution_id": solution_id},
         limit=limit,
-        offset=offset
+        offset=offset,
+        user_id=user_id,
     )
 
 
 def get_solution_view(
     solution_id: str,
     limit: int = 50,
-    offset: int = 0
+    offset: int = 0,
+    user_id: Optional[str] = None,
 ) -> Dict:
-
-    # ============================================================
-    # 🔥 SOLUTION INFO (NAME + COMPANY + LOGO)
-    # ============================================================
 
     solution_rows = query_bq(f"""
         SELECT
             s.ID_SOLUTION,
             s.NAME,
+            s.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
             c.MEDIA_LOGO_RECTANGLE_ID
         FROM `{TABLE_SOLUTION}` s
@@ -317,9 +350,8 @@ def get_solution_view(
 
     solution = solution_rows[0] if solution_rows else {}
 
-    # ============================================================
-    # STATS
-    # ============================================================
+    if not _check_company_access(solution.get("ID_COMPANY"), user_id):
+        return None
 
     stats_rows = query_bq(f"""
         SELECT
@@ -332,25 +364,18 @@ def get_solution_view(
 
     stats = stats_rows[0] if stats_rows else {}
 
-    # ============================================================
-    # FEED
-    # ============================================================
-
-    items = get_solution_feed(solution_id, limit, offset)
-
-    # ============================================================
-    # RETURN
-    # ============================================================
+    items = get_solution_feed(solution_id, limit, offset, user_id=user_id)
 
     return {
         "id_solution": solution_id,
-        "name": solution.get("NAME"),                         # 🔥 FIX
-        "company_name": solution.get("COMPANY_NAME"),         # 🔥 FIX
-        "media_logo_rectangle_id": solution.get("MEDIA_LOGO_RECTANGLE_ID"),  # 🔥 FIX
+        "name": solution.get("NAME"),
+        "company_name": solution.get("COMPANY_NAME"),
+        "media_logo_rectangle_id": solution.get("MEDIA_LOGO_RECTANGLE_ID"),
         "nb_analyses": stats.get("NB_ANALYSES", 0),
         "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
     }
+
 
 # ============================================================
 # MAPPER
