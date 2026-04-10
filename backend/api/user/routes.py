@@ -4,6 +4,7 @@ from api.user.models import (
     CreateUserPayload,
     AssignUniversePayload,
     LoginPayload,
+    UpdateUserPayload,
     CreateUserPayload,
 )
 
