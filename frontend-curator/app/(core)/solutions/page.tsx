@@ -16,18 +16,6 @@ export const dynamic = "force-dynamic";
 type SortMode = "alpha" | "activity" | "growth";
 
 /* =========================================================
-   UTILS
-========================================================= */
-
-function getCookie(name: string) {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(
-    new RegExp("(^| )" + name + "=([^;]+)")
-  );
-  return match ? decodeURIComponent(match[2]) : null;
-}
-
-/* =========================================================
    SORT
 ========================================================= */
 
@@ -60,7 +48,7 @@ function sortSolutions(items: Solution[], mode: SortMode) {
 
 async function fetchSolutions(): Promise<Solution[]> {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/solution/list`,
+    `${process.env.NEXT_PUBLIC_API_URL}/solution/list-curator`,
     { cache: "no-store" }
   );
 
@@ -73,57 +61,12 @@ async function fetchSolutions(): Promise<Solution[]> {
   return json.solutions || [];
 }
 
-async function fetchUserUniverses(userId: string): Promise<string[]> {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/user/context/${userId}`,
-      { cache: "no-store" }
-    );
-
-    if (!res.ok) return [];
-
-    const json = await res.json();
-
-    return json?.universes || [];
-  } catch {
-    return [];
-  }
-}
-
-/* =========================================================
-   FILTER 🔥
-========================================================= */
-
-function filterSolutionsByUniverses(
-  solutions: Solution[],
-  userUniverses: string[]
-): Solution[] {
-
-  // ADMIN / FULL ACCESS
-  if (!userUniverses || userUniverses.length === 0) {
-    return solutions;
-  }
-
-  return solutions.filter((s: any) => {
-
-    // GLOBAL
-    if (!s.universes || s.universes.length === 0) {
-      return true;
-    }
-
-    return s.universes.some((u: string) =>
-      userUniverses.includes(u)
-    );
-  });
-}
-
 /* =========================================================
    PAGE
 ========================================================= */
 
 export default function SolutionsPage() {
   const [solutions, setSolutions] = useState<Solution[]>([]);
-  const [filteredSolutions, setFilteredSolutions] = useState<Solution[]>([]);
   const [sortMode, setSortMode] = useState<SortMode>("alpha");
 
   const { openLeftDrawer } = useDrawer();
@@ -131,34 +74,21 @@ export default function SolutionsPage() {
 
   const lastOpenedId = useRef<string | null>(null);
 
-  /* LOAD */
+  /* ---------------------------------------------------------
+     LOAD
+  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
-      const allSolutions = await fetchSolutions();
-
-      const userId = getCookie("curator_user_id");
-
-      if (!userId) {
-        setSolutions(allSolutions);
-        setFilteredSolutions(allSolutions);
-        return;
-      }
-
-      const userUniverses = await fetchUserUniverses(userId);
-
-      const filtered = filterSolutionsByUniverses(
-        allSolutions,
-        userUniverses
-      );
-
-      setSolutions(allSolutions);
-      setFilteredSolutions(filtered);
+      const data = await fetchSolutions();
+      setSolutions(data);
     }
 
     load();
   }, []);
 
-  /* DRAWER */
+  /* ---------------------------------------------------------
+     DRAWER
+  --------------------------------------------------------- */
   useEffect(() => {
     const solutionId = searchParams.get("solution_id");
 
@@ -173,7 +103,11 @@ export default function SolutionsPage() {
     openLeftDrawer("solution", solutionId);
   }, [searchParams, openLeftDrawer]);
 
-  const sorted = sortSolutions(filteredSolutions, sortMode);
+  /* ---------------------------------------------------------
+     SORT
+  --------------------------------------------------------- */
+
+  const sorted = sortSolutions(solutions, sortMode);
 
   /* ========================================================= */
 
