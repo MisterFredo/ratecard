@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query, Request
 
 from api.solution.models import (
     SolutionCreate,
@@ -132,3 +132,15 @@ def delete_route(id_solution: str):
         raise
     except Exception as e:
         raise HTTPException(400, f"Erreur suppression solution : {e}")
+
+@router.get("/list-curator")
+def list_curator_solutions(request: Request):
+
+    user_id = request.cookies.get("curator_user_id")
+
+    solutions = list_solutions_for_user(user_id)
+
+    return {
+        "status": "ok",
+        "solutions": solutions
+    }
