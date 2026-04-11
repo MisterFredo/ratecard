@@ -244,6 +244,67 @@ def list_company_types():
     ]
 
 
+def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
+
+    sql = f"""
+    WITH company_universes AS (
+        SELECT
+            c.ID_COMPANY,
+            ARRAY_AGG(DISTINCT cu.ID_UNIVERSE IGNORE NULLS) AS universes
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+        LEFT JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+            ON cu.ID_COMPANY = c.ID_COMPANY
+        GROUP BY c.ID_COMPANY
+    )
+
+    SELECT
+        c.ID_COMPANY as id_company,
+        c.NAME as name,
+        c.MEDIA_LOGO_RECTANGLE_ID as media_logo_rectangle_id,
+        c.IS_PARTNER as is_partner,
+
+        COALESCE(stats.total, 0) as nb_analyses,
+        COALESCE(stats.last_30_days, 0) as delta_30d,
+
+        cu.universes
+
+    FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+
+    LEFT JOIN company_universes cu
+        ON cu.ID_COMPANY = c.ID_COMPANY
+
+    LEFT JOIN `{VIEW_STATS_COMPANY}` stats
+        ON stats.id_company = c.ID_COMPANY
+
+    WHERE TRUE
+
+    {f"""
+    AND (
+        NOT EXISTS (
+            SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
+            WHERE ID_USER = @user_id
+        )
+        OR cu.universes IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM UNNEST(cu.universes) u
+            JOIN `{TABLE_USER_UNIVERSE}` uu
+              ON uu.ID_UNIVERSE = u
+            WHERE uu.ID_USER = @user_id
+        )
+    )
+    """ if user_id else ""}
+
+    ORDER BY c.NAME
+    """
+
+    params = {}
+    if user_id:
+        params["user_id"] = user_id
+
+    return query_bq(sql, params)
+
+
 # ============================================================
 # GET ONE COMPANY — BQ BRUT
 # ============================================================
