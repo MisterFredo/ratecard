@@ -67,6 +67,7 @@ async function fetchSolutions(): Promise<Solution[]> {
 
 export default function SolutionsPage() {
   const [solutions, setSolutions] = useState<Solution[]>([]);
+  const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] = useState<SortMode>("alpha");
 
   const { openLeftDrawer } = useDrawer();
@@ -79,8 +80,12 @@ export default function SolutionsPage() {
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
+      setLoading(true);
+
       const data = await fetchSolutions();
       setSolutions(data);
+
+      setLoading(false);
     }
 
     load();
@@ -109,7 +114,9 @@ export default function SolutionsPage() {
 
   const sorted = sortSolutions(solutions, sortMode);
 
-  /* ========================================================= */
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <div className="space-y-8">
@@ -152,25 +159,36 @@ export default function SolutionsPage() {
         </div>
       </div>
 
-      {/* GRID */}
-      {sorted.length === 0 ? (
+      {/* LOADING */}
+      {loading && (
         <p className="text-sm text-gray-400">
-          Aucune solution disponible pour votre profil.
+          Chargement des solutions...
         </p>
-      ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
-          {sorted.map((s) => (
-            <SolutionCard
-              key={s.id_solution}
-              id={s.id_solution}
-              name={s.name}
-              visualRectId={s.media_logo_rectangle_id}
-              nbAnalyses={s.nb_analyses}
-              delta30d={s.delta_30d}
-              isPartner={s.is_partner}
-            />
-          ))}
-        </div>
+      )}
+
+      {/* CONTENT */}
+      {!loading && (
+        <>
+          {sorted.length === 0 ? (
+            <p className="text-sm text-gray-400">
+              Aucune solution disponible pour votre profil.
+            </p>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
+              {sorted.map((s) => (
+                <SolutionCard
+                  key={s.id_solution}
+                  id={s.id_solution}
+                  name={s.name}
+                  visualRectId={s.media_logo_rectangle_id}
+                  nbAnalyses={s.nb_analyses}
+                  delta30d={s.delta_30d}
+                  isPartner={s.is_partner}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
     </div>
