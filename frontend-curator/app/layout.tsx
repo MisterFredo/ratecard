@@ -12,15 +12,12 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body>
-
-        <UniverseProvider>
           <DrawerProvider>
             <CuratorShell>{children}</CuratorShell>
 
             {/* 🔥 DRAWERS */}
             <DrawerHost />
           </DrawerProvider>
-        </UniverseProvider>
 
       </body>
     </html>
