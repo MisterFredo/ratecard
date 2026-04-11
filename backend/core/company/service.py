@@ -250,16 +250,6 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
     user_universes = get_user_universes(user_id) if user_id else []
 
     sql = f"""
-    WITH company_universes AS (
-        SELECT
-            cu.ID_COMPANY,
-            ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
-        FROM `{TABLE_COMPANY_UNIVERSE}` cu
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
-            ON u.ID_UNIVERSE = cu.ID_UNIVERSE
-        GROUP BY cu.ID_COMPANY
-    )
-
     SELECT
         c.ID_COMPANY as id_company,
         c.NAME as name,
@@ -267,25 +257,31 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
         c.IS_PARTNER as is_partner,
         COALESCE(stats.total, 0) as nb_analyses,
         COALESCE(stats.last_30_days, 0) as delta_30d,
-        cu.universes
+        ARRAY_AGG(DISTINCT u.LABEL) as universes
 
-    FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+    FROM `{TABLE_COMPANY_UNIVERSE}` cu
 
-    LEFT JOIN company_universes cu
-        ON cu.ID_COMPANY = c.ID_COMPANY
+    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+        ON c.ID_COMPANY = cu.ID_COMPANY
+
+    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
+        ON u.ID_UNIVERSE = cu.ID_UNIVERSE
 
     LEFT JOIN `{VIEW_STATS_COMPANY}` stats
         ON stats.id_company = c.ID_COMPANY
 
     WHERE (
         ARRAY_LENGTH(@user_universes) = 0
-        OR EXISTS (
-            SELECT 1
-            FROM `{TABLE_COMPANY_UNIVERSE}` cu2
-            WHERE cu2.ID_COMPANY = c.ID_COMPANY
-              AND cu2.ID_UNIVERSE IN UNNEST(@user_universes)
-        )
+        OR cu.ID_UNIVERSE IN UNNEST(@user_universes)
     )
+
+    GROUP BY
+        c.ID_COMPANY,
+        c.NAME,
+        c.MEDIA_LOGO_RECTANGLE_ID,
+        c.IS_PARTNER,
+        stats.total,
+        stats.last_30_days
 
     ORDER BY c.NAME
     """
