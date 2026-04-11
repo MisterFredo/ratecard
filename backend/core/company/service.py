@@ -247,32 +247,13 @@ def list_company_types():
 
 def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
 
-    universe_filter = ""
-
-    if user_id:
-        universe_filter = f"""
-        AND (
-            NOT EXISTS (
-                SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
-                WHERE ID_USER = @user_id
-            )
-            OR EXISTS (
-                SELECT 1
-                FROM `{TABLE_COMPANY_UNIVERSE}` cu
-                JOIN `{TABLE_USER_UNIVERSE}` uu
-                  ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-                WHERE uu.ID_USER = @user_id
-                  AND cu.ID_COMPANY = c.ID_COMPANY
-            )
-        )
-        """
+    user_universes = get_user_universes(user_id) if user_id else []
 
     sql = f"""
     WITH company_universes AS (
         SELECT
             cu.ID_COMPANY,
-            ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes,
-            MIN(u.LABEL) AS universe_sort  -- 🔥 clé de tri
+            ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
         FROM `{TABLE_COMPANY_UNIVERSE}` cu
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
             ON u.ID_UNIVERSE = cu.ID_UNIVERSE
@@ -286,8 +267,7 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
         c.IS_PARTNER as is_partner,
         COALESCE(stats.total, 0) as nb_analyses,
         COALESCE(stats.last_30_days, 0) as delta_30d,
-        cu.universes,
-        cu.universe_sort
+        cu.universes
 
     FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
 
@@ -297,19 +277,22 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
     LEFT JOIN `{VIEW_STATS_COMPANY}` stats
         ON stats.id_company = c.ID_COMPANY
 
-    WHERE TRUE
-    {universe_filter}
+    WHERE (
+        ARRAY_LENGTH(@user_universes) = 0
+        OR EXISTS (
+            SELECT 1
+            FROM `{TABLE_COMPANY_UNIVERSE}` cu2
+            WHERE cu2.ID_COMPANY = c.ID_COMPANY
+              AND cu2.ID_UNIVERSE IN UNNEST(@user_universes)
+        )
+    )
 
-    ORDER BY 
-        cu.universe_sort NULLS LAST,  -- 🔥 tri univers
-        c.NAME
+    ORDER BY c.NAME
     """
 
-    params = {}
-    if user_id:
-        params["user_id"] = user_id
-
-    return query_bq(sql, params)
+    return query_bq(sql, {
+        "user_universes": user_universes
+    })
 
 # ============================================================
 # GET ONE COMPANY — BQ BRUT
