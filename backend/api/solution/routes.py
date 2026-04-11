@@ -44,12 +44,19 @@ def list_route():
     except Exception as e:
         raise HTTPException(400, f"Erreur liste solutions : {e}")
 
+
 @router.get("/list-curator")
-def list_solutions_curator(request: Request):
+def list_solutions_curator(
+    request: Request,
+    universe_id: Optional[str] = Query(None),  # ✅ NEW
+):
     try:
         user_id = request.cookies.get("curator_user_id")
 
-        solutions = list_solutions_for_user(user_id)
+        solutions = list_solutions_for_user(
+            user_id=user_id,
+            universe_id=universe_id if universe_id else None,  # ✅ FIX
+        )
 
         return {
             "status": "ok",
