@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,7 +14,16 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { api } from "@/lib/api";
+
 const LOGO_URL = "/assets/brand/symbol_curator.jpeg";
+
+/* ========================================================= */
+
+type Universe = {
+  id_universe: string;
+  label: string;
+};
 
 export default function CuratorShell({
   children,
@@ -24,7 +33,35 @@ export default function CuratorShell({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const { universes, activeUniverse, setActiveUniverse } = useUniverse();
+  /* =========================================================
+     UNIVERSE (LOCAL STATE ONLY)
+  ========================================================= */
+
+  const [universes, setUniverses] = useState<Universe[]>([]);
+  const [activeUniverse, setActiveUniverse] = useState<string | null>(null);
+
+  /* LOAD UNIVERS */
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await api.get("/universe/list");
+        const data = res?.universes || [];
+
+        setUniverses(data);
+
+        // 👉 default = premier univers
+        if (data.length > 0) {
+          setActiveUniverse(data[0].id_universe);
+        }
+      } catch (e) {
+        console.error("❌ universe load error", e);
+      }
+    }
+
+    load();
+  }, []);
+
+  /* ========================================================= */
 
   function isActive(path: string) {
     if (!pathname) return false;
@@ -34,13 +71,11 @@ export default function CuratorShell({
 
   /* ========================================================= */
 
-  // ✅ Radar supprimé
   const navData = [
     { href: "/feed", label: "Feed", icon: Home },
     { href: "/numbers", label: "Numbers", icon: Hash },
   ];
 
-  // ✅ Solutions → Produits
   const navEntities = [
     { href: "/companies", label: "Sociétés", icon: Building2 },
     { href: "/topics", label: "Topics", icon: Tag },
@@ -164,7 +199,7 @@ export default function CuratorShell({
         </div>
       )}
 
-      {/* Main */}
+      {/* MAIN */}
       <main className="flex-1 bg-gray-50">
 
         {/* HEADER */}
@@ -187,13 +222,17 @@ export default function CuratorShell({
             </div>
           </div>
 
-          {/* UNIVERS SWITCHER */}
+          {/* 🔥 UNIVERS SWITCHER */}
           {universes.length > 0 && (
             <select
               value={activeUniverse || ""}
-              onChange={(e) => setActiveUniverse(e.target.value)}
+              onChange={(e) =>
+                setActiveUniverse(e.target.value || null)
+              }
               className="border rounded px-3 py-1 text-sm bg-white"
             >
+              <option value="">Tous</option>
+
               {universes.map((u) => (
                 <option key={u.id_universe} value={u.id_universe}>
                   {u.label}
