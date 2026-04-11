@@ -15,8 +15,6 @@ import { searchCurator, getLatestCurator } from "@/lib/search";
 import type { FeedItem, FeedBadge } from "@/types/feed";
 import { api } from "@/lib/api";
 
-import { useUniverse } from "@/contexts/UniverseContext";
-
 /* ========================================================= */
 
 export default function FeedPage() {
@@ -25,8 +23,6 @@ export default function FeedPage() {
   const searchParams = useSearchParams();
   const analysisId = searchParams.get("analysis_id");
   const newsId = searchParams.get("news_id");
-
-  const { activeUniverse } = useUniverse();
 
   /* =========================================================
      DATA
@@ -89,12 +85,10 @@ export default function FeedPage() {
             query: finalQuery,
             limit: LIMIT,
             offset: currentOffset,
-            universe_id: activeUniverse, // OK
           })
         : await getLatestCurator({
             limit: LIMIT,
             offset: currentOffset,
-            universe_id: activeUniverse, // OK
           });
 
       if (reset) {
@@ -114,12 +108,12 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     INIT + UNIVERSE CHANGE
+     INIT
   ========================================================= */
 
   useEffect(() => {
     load(true);
-  }, [activeUniverse]);
+  }, []);
 
   /* =========================================================
      DRAWER FROM URL
@@ -151,15 +145,12 @@ export default function FeedPage() {
 
   useEffect(() => {
     async function loadStats() {
-      const s = await getContentStats({
-        universe_id: activeUniverse,
-      });
-
+      const s = await getContentStats();
       setStats(s);
     }
 
     loadStats();
-  }, [activeUniverse]);
+  }, []);
 
   /* =========================================================
      BADGES
