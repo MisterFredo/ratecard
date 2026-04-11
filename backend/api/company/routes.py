@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query, Request
 
 from api.company.models import CompanyCreate, CompanyUpdate, CompanyOut
 from core.company.service import (
@@ -118,3 +118,20 @@ def delete_route(id_company: str):
         raise
     except Exception as e:
         raise HTTPException(400, f"Erreur suppression société : {e}")
+
+from fastapi import Request
+
+@router.get("/list-curator")
+def list_curator_route(request: Request):
+    try:
+        user_id = request.cookies.get("curator_user_id")
+
+        companies = list_companies_for_user(user_id)
+
+        return {
+            "status": "ok",
+            "companies": companies
+        }
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur sociétés curator : {e}")
