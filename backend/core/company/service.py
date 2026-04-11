@@ -96,17 +96,17 @@ def assign_company_universes(company_id: str, universes: list[str]):
             "universe": u,
         })
 
-def get_company_universes(company_id: str):
+def get_company_universes(company_id: str) -> List[str]:
 
-    query = f"""
-    SELECT ID_UNIVERSE
+    sql = f"""
+    SELECT DISTINCT ID_UNIVERSE
     FROM `{TABLE_COMPANY_UNIVERSE}`
     WHERE ID_COMPANY = @company_id
     """
 
-    rows = query_bq(query, {"company_id": company_id})
+    rows = query_bq(sql, {"company_id": company_id})
 
-    return [r["ID_UNIVERSE"] for r in rows]
+    return [r.get("ID_UNIVERSE") for r in rows if r.get("ID_UNIVERSE")]
 
 # ============================================================
 # LIST COMPANIES — BQ BRUT
