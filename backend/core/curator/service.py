@@ -467,7 +467,10 @@ def get_item_detail(
 # STATS (CONTENT)
 # ============================================================
 
-def get_content_stats(user_id: Optional[str] = None):
+def get_content_stats(
+    user_id: Optional[str] = None,
+    universe_id: Optional[str] = None,
+):
 
     # =====================================================
     # GLOBAL
@@ -489,7 +492,7 @@ def get_content_stats(user_id: Optional[str] = None):
         last_30 = 0
 
     # =====================================================
-    # TOPICS
+    # TOPICS (pas filtré volontairement)
     # =====================================================
 
     topics_rows = query_bq(f"""
@@ -511,13 +514,13 @@ def get_content_stats(user_id: Optional[str] = None):
     ]
 
     # =====================================================
-    # 🔥 COMPANY FILTER
+    # 🔥 COMPANY FILTER (user + universe)
     # =====================================================
 
     company_filter = ""
 
     if user_id:
-        company_filter = f"""
+        company_filter += f"""
         AND EXISTS (
             SELECT 1
             FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
@@ -525,6 +528,16 @@ def get_content_stats(user_id: Optional[str] = None):
               ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
             WHERE uu.ID_USER = @user_id
               AND cu.ID_COMPANY = c.id_company
+        )
+        """
+
+    if universe_id:
+        company_filter += f"""
+        AND EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+            WHERE cu.ID_COMPANY = c.id_company
+              AND cu.ID_UNIVERSE = @universe_id
         )
         """
 
@@ -538,7 +551,12 @@ def get_content_stats(user_id: Optional[str] = None):
 
     company_rows = query_bq(
         company_sql,
-        {"user_id": user_id} if user_id else {}
+        {
+            "user_id": user_id,
+            "universe_id": universe_id,
+        }
+        if (user_id or universe_id)
+        else {}
     )
 
     top_companies = [
@@ -554,13 +572,13 @@ def get_content_stats(user_id: Optional[str] = None):
     ]
 
     # =====================================================
-    # 🔥 SOLUTION FILTER
+    # 🔥 SOLUTION FILTER (user + universe)
     # =====================================================
 
     solution_filter = ""
 
     if user_id:
-        solution_filter = f"""
+        solution_filter += f"""
         AND EXISTS (
             SELECT 1
             FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` sol
@@ -570,6 +588,18 @@ def get_content_stats(user_id: Optional[str] = None):
               ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
             WHERE uu.ID_USER = @user_id
               AND sol.ID_SOLUTION = s.id_solution
+        )
+        """
+
+    if universe_id:
+        solution_filter += f"""
+        AND EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` sol
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+              ON cu.ID_COMPANY = sol.ID_COMPANY
+            WHERE sol.ID_SOLUTION = s.id_solution
+              AND cu.ID_UNIVERSE = @universe_id
         )
         """
 
@@ -583,7 +613,12 @@ def get_content_stats(user_id: Optional[str] = None):
 
     solution_rows = query_bq(
         solution_sql,
-        {"user_id": user_id} if user_id else {}
+        {
+            "user_id": user_id,
+            "universe_id": universe_id,
+        }
+        if (user_id or universe_id)
+        else {}
     )
 
     top_solutions = [
@@ -610,7 +645,6 @@ def get_content_stats(user_id: Optional[str] = None):
         "top_companies": top_companies,
         "top_solutions": top_solutions,
     }
-
 # ============================================================
 # MAPPER
 # ============================================================
