@@ -1,20 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional, Literal
+from datetime import datetime
 
-
-# ============================================================
-# INPUT — SEARCH
-# ============================================================
-
-class SearchTextQuery(BaseModel):
-    query: str
-    limit: int = 20
-    offset: int = 0
-
-
-# ============================================================
-# BADGES STRUCTURÉS (ALIGNÉS BQ)
-# ============================================================
 
 class Topic(BaseModel):
     id_topic: str
@@ -32,39 +19,25 @@ class Solution(BaseModel):
     name: str
 
 
-# ============================================================
-# OUTPUT — FEED ITEM
-# ============================================================
-
 class FeedItem(BaseModel):
     id: str
     type: Literal["news", "analysis"]
 
     title: str
     excerpt: Optional[str] = None
-    published_at: Optional[str] = None
+    published_at: Optional[datetime] = None
 
-    # 🔥 BADGES STRUCTURÉS
-    topics: List[Topic] = []
-    companies: List[Company] = []
-    solutions: List[Solution] = []
+    topics: List[Topic] = Field(default_factory=list)
+    companies: List[Company] = Field(default_factory=list)
+    solutions: List[Solution] = Field(default_factory=list)
 
-    # spécifique news
     news_type: Optional[str] = None
 
-
-# ============================================================
-# OUTPUT — RESPONSE
-# ============================================================
 
 class FeedResponse(BaseModel):
     items: List[FeedItem]
     count: int
 
-
-# ============================================================
-# STATS — BASE
-# ============================================================
 
 class StatsItem(BaseModel):
     total: int
@@ -72,31 +45,20 @@ class StatsItem(BaseModel):
     last_30_days: int
 
 
-# ============================================================
-# STATS — TOPICS
-# ============================================================
-
 class TopicStats(StatsItem):
     id_topic: str
     label: str
 
 
-# ============================================================
-# STATS — COMPANIES
-# ============================================================
-
 class CompanyStats(StatsItem):
     id_company: str
     name: str
+
 
 class SolutionStats(StatsItem):
     id_solution: str
     name: str
 
-
-# ============================================================
-# STATS — RESPONSE
-# ============================================================
 
 class ContentStatsResponse(BaseModel):
     total_count: int
