@@ -14,8 +14,6 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { useUniverse } from "@/contexts/UniverseContext";
-
 const LOGO_URL = "/assets/brand/symbol_curator.jpeg";
 
 export default function CuratorShell({
