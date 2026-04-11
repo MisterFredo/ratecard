@@ -224,10 +224,50 @@ def get_topic_feed(topic_id, limit, offset, user_id, universe_id):
         universe_id,
     )
 
+def get_topic_view(
+    topic_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    user_id: Optional[str] = None,
+) -> Dict:
+
+    topic_rows = query_bq(f"""
+        SELECT ID_TOPIC, LABEL, TOPIC_AXIS, DESCRIPTION
+        FROM `{TABLE_TOPIC}`
+        WHERE ID_TOPIC = @topic_id
+        LIMIT 1
+    """, {"topic_id": topic_id})
+
+    topic = topic_rows[0] if topic_rows else {}
+
+    stats_rows = query_bq(f"""
+        SELECT
+            COALESCE(total, 0) AS NB_ANALYSES,
+            COALESCE(last_30_days, 0) AS DELTA_30D
+        FROM `{VIEW_STATS_TOPIC}`
+        WHERE id_topic = @topic_id
+        LIMIT 1
+    """, {"topic_id": topic_id})
+
+    stats = stats_rows[0] if stats_rows else {}
+
+    items = get_topic_feed(topic_id, limit, offset, user_id=user_id)
+
+    return {
+        "id_topic": topic_id,
+        "label": topic.get("LABEL"),
+        "topic_axis": topic.get("TOPIC_AXIS"),
+        "description": topic.get("DESCRIPTION"),
+        "nb_analyses": stats.get("NB_ANALYSES", 0),
+        "delta_30d": stats.get("DELTA_30D", 0),
+        "items": items
+    }
+
 
 # ============================================================
 # SOLUTION
 # ============================================================
+
 
 def get_solution_feed(solution_id, limit, offset, user_id, universe_id):
     return _get_entity_feed(
@@ -244,6 +284,61 @@ def get_solution_feed(solution_id, limit, offset, user_id, universe_id):
         user_id,
         universe_id,
     )
+
+
+def get_solution_view(
+    solution_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    user_id: Optional[str] = None,
+) -> Dict:
+
+    solution_rows = query_bq(f"""
+        SELECT
+            s.ID_SOLUTION,
+            s.NAME,
+            s.ID_COMPANY,
+            c.NAME AS COMPANY_NAME,
+            c.MEDIA_LOGO_RECTANGLE_ID
+        FROM `{TABLE_SOLUTION}` s
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+            ON c.ID_COMPANY = s.ID_COMPANY
+        WHERE s.ID_SOLUTION = @solution_id
+        LIMIT 1
+    """, {"solution_id": solution_id})
+
+    solution = solution_rows[0] if solution_rows else {}
+
+    if not _check_company_access(solution.get("ID_COMPANY"), user_id):
+        return None
+
+    stats_rows = query_bq(f"""
+        SELECT
+            COALESCE(total, 0) AS NB_ANALYSES,
+            COALESCE(last_30_days, 0) AS DELTA_30D
+        FROM `{VIEW_STATS_SOLUTION}`
+        WHERE id_solution = @solution_id
+        LIMIT 1
+    """, {"solution_id": solution_id})
+
+    stats = stats_rows[0] if stats_rows else {}
+
+    items = get_solution_feed(solution_id, limit, offset, user_id=user_id)
+
+    return {
+        "id_solution": solution_id,
+        "name": solution.get("NAME"),
+        "company_name": solution.get("COMPANY_NAME"),
+        "media_logo_rectangle_id": solution.get("MEDIA_LOGO_RECTANGLE_ID"),
+        "nb_analyses": stats.get("NB_ANALYSES", 0),
+        "delta_30d": stats.get("DELTA_30D", 0),
+        "items": items
+    }
+
+
+# ============================================================
+# SOLUTION
+# ============================================================
 
 
 # ============================================================
