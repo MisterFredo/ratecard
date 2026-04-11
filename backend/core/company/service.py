@@ -253,7 +253,13 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
     params = {}
 
     if user_universes:
-        where_clause = "WHERE cu.ID_UNIVERSE IN UNNEST(@user_universes)"
+        where_clause = f"""
+        WHERE c.ID_COMPANY IN (
+            SELECT DISTINCT cu2.ID_COMPANY
+            FROM `{TABLE_COMPANY_UNIVERSE}` cu2
+            WHERE cu2.ID_UNIVERSE IN UNNEST(@user_universes)
+        )
+        """
         params["user_universes"] = user_universes
 
     sql = f"""
@@ -264,7 +270,7 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
         c.IS_PARTNER as is_partner,
         COALESCE(stats.total, 0) as nb_analyses,
         COALESCE(stats.last_30_days, 0) as delta_30d,
-        ARRAY_AGG(DISTINCT u.LABEL) as universes
+        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) as universes
 
     FROM `{TABLE_COMPANY_UNIVERSE}` cu
 
@@ -291,6 +297,8 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
     """
 
     return query_bq(sql, params)
+
+
 # ============================================================
 # GET ONE COMPANY — BQ BRUT
 # ============================================================
