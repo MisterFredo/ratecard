@@ -387,17 +387,16 @@ def get_item_curator(
 
 def get_item_detail(
     item_id: str,
-    item_type: str,
+    item_type: str,  # (tu peux même le supprimer)
     user_id: Optional[str] = None,
 ) -> Optional[Dict]:
 
-    # 🔒 sécurité univers
     item = get_item_curator(item_id, user_id=user_id)
 
     if not item:
-        return None  # ❌ accès refusé
+        return None
 
-    # 👉 on est sûr que l'utilisateur a le droit
+    item_type = item.get("type")  # 🔥 source de vérité
 
     if item_type == "analysis":
         from core.content.public_service import get_content
@@ -406,7 +405,6 @@ def get_item_detail(
         if not content:
             return None
 
-        # 🔥 option safe : enrichir avec item
         return {
             **content,
             "topics": item.get("topics", []),
@@ -429,7 +427,6 @@ def get_item_detail(
         }
 
     return None
-
 
 # ============================================================
 # STATS (CONTENT)
