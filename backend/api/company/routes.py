@@ -8,6 +8,7 @@ from core.company.service import (
     update_company,
     delete_company,
     list_company_types,
+    list_companies_for_user,
 )
 
 from core.curator.entity_service import get_company_view
