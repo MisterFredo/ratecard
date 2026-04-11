@@ -10,7 +10,7 @@ from core.solution.service import (
     create_solution,
     list_solutions,
     get_solution,
-    list_solutions_for_user
+    list_solutions_for_user,
     update_solution,
     delete_solution,
 )
