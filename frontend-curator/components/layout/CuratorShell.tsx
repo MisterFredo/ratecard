@@ -11,11 +11,10 @@ import {
   Tag,
   Box,
   Hash,
-  Radar,
   Sparkles,
 } from "lucide-react";
 
-import { useUniverse } from "@/contexts/UniverseContext"; // ✅ NEW
+import { useUniverse } from "@/contexts/UniverseContext";
 
 const LOGO_URL = "/assets/brand/symbol_curator.jpeg";
 
@@ -27,7 +26,7 @@ export default function CuratorShell({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const { universes, activeUniverse, setActiveUniverse } = useUniverse(); // ✅ NEW
+  const { universes, activeUniverse, setActiveUniverse } = useUniverse();
 
   function isActive(path: string) {
     if (!pathname) return false;
@@ -37,16 +36,17 @@ export default function CuratorShell({
 
   /* ========================================================= */
 
+  // ✅ Radar supprimé
   const navData = [
     { href: "/feed", label: "Feed", icon: Home },
     { href: "/numbers", label: "Numbers", icon: Hash },
-    { href: "/radars", label: "Radar", icon: Radar },
   ];
 
+  // ✅ Solutions → Produits
   const navEntities = [
     { href: "/companies", label: "Sociétés", icon: Building2 },
     { href: "/topics", label: "Topics", icon: Tag },
-    { href: "/solutions", label: "Solutions", icon: Box },
+    { href: "/solutions", label: "Produits", icon: Box },
   ];
 
   /* ========================================================= */
@@ -91,6 +91,7 @@ export default function CuratorShell({
         </span>
       </Link>
 
+      {/* DATA */}
       <div>
         <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
           Data
@@ -100,6 +101,7 @@ export default function CuratorShell({
         </nav>
       </div>
 
+      {/* ENTITIES */}
       <div className="mt-8">
         <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
           Entities
@@ -109,6 +111,7 @@ export default function CuratorShell({
         </nav>
       </div>
 
+      {/* AI */}
       <div className="mt-10">
         <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
           AI
@@ -166,7 +169,7 @@ export default function CuratorShell({
       {/* Main */}
       <main className="flex-1 bg-gray-50">
 
-        {/* 🔥 HEADER (desktop + mobile) */}
+        {/* HEADER */}
         <div className="flex items-center justify-between px-4 py-3 border-b bg-white">
 
           {/* LEFT */}
@@ -186,7 +189,7 @@ export default function CuratorShell({
             </div>
           </div>
 
-          {/* 👉 UNIVERS SWITCHER */}
+          {/* UNIVERS SWITCHER */}
           {universes.length > 0 && (
             <select
               value={activeUniverse || ""}
