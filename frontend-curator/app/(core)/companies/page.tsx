@@ -7,22 +7,20 @@ import CompanyCard from "@/components/companies/CompanyCard";
 
 export const dynamic = "force-dynamic";
 
-/* =========================================================
-   TYPES
-========================================================= */
+/* ========================================================= */
 
 type Company = {
   id_company: string;
   name: string;
   media_logo_rectangle_id?: string | null;
-  is_partner: boolean;
   nb_analyses: number;
   delta_30d: number;
+  universes?: string[]; // 🔥 IMPORTANT
 };
 
-/* =========================================================
-   FETCH
-========================================================= */
+type SortMode = "alpha" | "activity" | "growth";
+
+/* ========================================================= */
 
 async function fetchCompanies(): Promise<Company[]> {
   const res = await fetch(
@@ -33,17 +31,10 @@ async function fetchCompanies(): Promise<Company[]> {
   if (!res.ok) return [];
 
   const json = await res.json();
-
-  if (json.status !== "ok") return [];
-
-  return json.companies || [];
+  return json?.companies || [];
 }
 
-/* =========================================================
-   SORT
-========================================================= */
-
-type SortMode = "alpha" | "activity" | "growth";
+/* ========================================================= */
 
 function sortCompanies(
   companies: Company[],
@@ -69,9 +60,33 @@ function sortCompanies(
   }
 }
 
-/* =========================================================
-   PAGE
-========================================================= */
+/* ========================================================= */
+
+function groupByUniverse(
+  companies: Company[],
+  mode: SortMode
+) {
+  const map: Record<string, Company[]> = {};
+
+  companies.forEach((c) => {
+    const universes = c.universes?.length
+      ? c.universes
+      : ["Autres"];
+
+    universes.forEach((u) => {
+      if (!map[u]) map[u] = [];
+      map[u].push(c);
+    });
+  });
+
+  Object.keys(map).forEach((u) => {
+    map[u] = sortCompanies(map[u], mode);
+  });
+
+  return map;
+}
+
+/* ========================================================= */
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -83,25 +98,19 @@ export default function CompaniesPage() {
 
   const lastOpenedId = useRef<string | null>(null);
 
-  /* ---------------------------------------------------------
-     LOAD
-  --------------------------------------------------------- */
+  /* LOAD */
   useEffect(() => {
     async function load() {
       setLoading(true);
-
       const data = await fetchCompanies();
       setCompanies(data);
-
       setLoading(false);
     }
 
     load();
   }, []);
 
-  /* ---------------------------------------------------------
-     DRAWER
-  --------------------------------------------------------- */
+  /* DRAWER */
   useEffect(() => {
     const companyId = searchParams.get("company_id");
 
@@ -116,26 +125,16 @@ export default function CompaniesPage() {
     openLeftDrawer("company", companyId);
   }, [searchParams, openLeftDrawer]);
 
-  /* ---------------------------------------------------------
-     SPLIT + SORT
-  --------------------------------------------------------- */
+  /* GROUP */
+  const grouped = groupByUniverse(companies, sortMode);
 
-  const partners = sortCompanies(
-    companies.filter((c) => c.is_partner),
-    sortMode
-  );
+  const hasContent = companies.length > 0;
 
-  const others = sortCompanies(
-    companies.filter((c) => !c.is_partner),
-    sortMode
-  );
-
-  /* =========================================================
-     RENDER
-  ========================================================= */
+  /* ========================================================= */
 
   return (
     <div className="space-y-8">
+
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
@@ -181,61 +180,47 @@ export default function CompaniesPage() {
         </p>
       )}
 
-      {/* CONTENT */}
-      {!loading && (
-        <>
-          {/* PARTENAIRES */}
-          {partners.length > 0 && (
-            <section className="space-y-4">
-              <h2 className="text-sm font-semibold uppercase text-gray-500">
-                Partenaires
-              </h2>
-
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
-                {partners.map((c) => (
-                  <CompanyCard
-                    key={c.id_company}
-                    id={c.id_company}
-                    name={c.name}
-                    visualRectId={c.media_logo_rectangle_id}
-                    totalAnalyses={c.nb_analyses}
-                    delta30d={c.delta_30d}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* AUTRES */}
-          {others.length > 0 && (
-            <section className="space-y-4">
-              <h2 className="text-sm font-semibold uppercase text-gray-500">
-                Sociétés
-              </h2>
-
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
-                {others.map((c) => (
-                  <CompanyCard
-                    key={c.id_company}
-                    id={c.id_company}
-                    name={c.name}
-                    visualRectId={c.media_logo_rectangle_id}
-                    totalAnalyses={c.nb_analyses}
-                    delta30d={c.delta_30d}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* EMPTY */}
-          {companies.length === 0 && (
-            <p className="text-sm text-gray-400">
-              Aucune société disponible pour votre profil.
-            </p>
-          )}
-        </>
+      {/* EMPTY */}
+      {!loading && !hasContent && (
+        <p className="text-sm text-gray-400">
+          Aucune société disponible pour votre profil.
+        </p>
       )}
+
+      {/* CONTENT */}
+      {!loading && hasContent && (
+        Object.entries(grouped).map(([universe, items]) => (
+          <section key={universe} className="space-y-4">
+
+            {/* UNIVERS HEADER */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold uppercase text-gray-400">
+                {universe}
+              </h2>
+
+              <span className="text-xs text-gray-300">
+                {items.length}
+              </span>
+            </div>
+
+            {/* GRID */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
+              {items.map((c) => (
+                <CompanyCard
+                  key={c.id_company}
+                  id={c.id_company}
+                  name={c.name}
+                  visualRectId={c.media_logo_rectangle_id}
+                  totalAnalyses={c.nb_analyses}
+                  delta30d={c.delta_30d}
+                />
+              ))}
+            </div>
+
+          </section>
+        ))
+      )}
+
     </div>
   );
 }
