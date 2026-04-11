@@ -271,7 +271,7 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
     WITH company_universes AS (
         SELECT
             cu.ID_COMPANY,
-            ARRAY_AGG(DISTINCT u.LABEL) AS universes,
+            ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes,
             MIN(u.LABEL) AS universe_sort  -- 🔥 clé de tri
         FROM `{TABLE_COMPANY_UNIVERSE}` cu
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
