@@ -22,6 +22,7 @@ def search(
     offset: int = 0,
     type: Optional[str] = None,
     user_id: Optional[str] = None,
+    universe_id: Optional[str] = None,
 ) -> List[Dict]:
 
     news_filter = ""
@@ -31,11 +32,6 @@ def search(
         content_filter = "AND FALSE"
     elif type == "analysis":
         news_filter = "AND FALSE"
-
-    # ============================================================
-    # 🔥 UNIVERS FILTER (SAFE)
-    # → ne filtre que si user a des univers
-    # ============================================================
 
     universe_filter_news = ""
     universe_filter_content = ""
@@ -79,70 +75,92 @@ def search(
         )
         """
 
-    # ============================================================
-    # QUERY
-    # ============================================================
+    # 🔥 NEW: universe UI filter
+    universe_ui_filter_news = """
+    AND (
+        @universe_id IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+            WHERE cu.ID_COMPANY = n.id_company
+              AND cu.ID_UNIVERSE = @universe_id
+        )
+    )
+    """
+
+    universe_ui_filter_content = """
+    AND (
+        @universe_id IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM UNNEST(c.companies) comp
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                ON cu.ID_COMPANY = comp.id_company
+            WHERE cu.ID_UNIVERSE = @universe_id
+        )
+    )
+    """
 
     sql = f"""
-    -- NEWS
-    SELECT
-        n.id_news AS id,
-        'news' AS type,
-        n.title,
-        n.excerpt,
-        n.published_at,
-        n.news_type,
-        n.topics,
-        ARRAY<STRUCT<id_company STRING, name STRING>>[
-          STRUCT(n.id_company, n.company_name)
-        ] AS companies,
-        [] AS solutions
+    SELECT * FROM (
 
-    FROM `{VIEW_NEWS}` n
-    WHERE
-        (
-          LOWER(n.title) LIKE LOWER(CONCAT('%', @query, '%'))
-          OR LOWER(n.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
-        )
-        {news_filter}
-        {universe_filter_news}
+        SELECT
+            n.id_news AS id,
+            'news' AS type,
+            n.title,
+            n.excerpt,
+            n.published_at,
+            n.news_type,
+            n.topics,
+            ARRAY<STRUCT<id_company STRING, name STRING>>[
+              STRUCT(n.id_company, n.company_name)
+            ] AS companies,
+            [] AS solutions
 
-    UNION ALL
+        FROM `{VIEW_NEWS}` n
+        WHERE
+            (
+              LOWER(n.title) LIKE LOWER(CONCAT('%', @query, '%'))
+              OR LOWER(n.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
+            )
+            {news_filter}
+            {universe_filter_news}
+            {universe_ui_filter_news}
 
-    -- CONTENT
-    SELECT
-        c.id_content AS id,
-        'analysis' AS type,
-        c.title,
-        c.excerpt,
-        c.published_at,
-        NULL AS news_type,
-        c.topics,
-        c.companies,
-        c.solutions
+        UNION ALL
 
-    FROM `{VIEW_CONTENT}` c
-    WHERE
-        (
-          LOWER(c.title) LIKE LOWER(CONCAT('%', @query, '%'))
-          OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
-        )
-        {content_filter}
-        {universe_filter_content}
+        SELECT
+            c.id_content AS id,
+            'analysis' AS type,
+            c.title,
+            c.excerpt,
+            c.published_at,
+            NULL AS news_type,
+            c.topics,
+            c.companies,
+            c.solutions
 
+        FROM `{VIEW_CONTENT}` c
+        WHERE
+            (
+              LOWER(c.title) LIKE LOWER(CONCAT('%', @query, '%'))
+              OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
+            )
+            {content_filter}
+            {universe_filter_content}
+            {universe_ui_filter_content}
+
+    )
     ORDER BY published_at DESC
     LIMIT @limit
     OFFSET @offset
     """
 
-    # ============================================================
-    # PARAMS
-    # ============================================================
-
     params = {
         "query": q,
         "limit": limit,
         "offset": offset,
+        "universe_id": universe_id,
     }
 
     if user_id:
@@ -161,6 +179,7 @@ def latest(
     offset: int = 0,
     type: Optional[str] = None,
     user_id: Optional[str] = None,
+    universe_id: Optional[str] = None,
 ) -> List[Dict]:
 
     news_filter = ""
@@ -171,10 +190,6 @@ def latest(
     elif type == "analysis":
         news_filter = "AND FALSE"
 
-    # ============================================================
-    # 🔥 UNIVERS FILTER (SAFE)
-    # ============================================================
-
     universe_filter_news = ""
     universe_filter_content = ""
 
@@ -183,8 +198,7 @@ def latest(
         universe_filter_news = f"""
         AND (
             NOT EXISTS (
-                SELECT 1
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
+                SELECT 1 FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
                 WHERE ID_USER = @user_id
             )
             OR EXISTS (
@@ -201,8 +215,7 @@ def latest(
         universe_filter_content = f"""
         AND (
             NOT EXISTS (
-                SELECT 1
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
+                SELECT 1 FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
                 WHERE ID_USER = @user_id
             )
             OR EXISTS (
@@ -217,14 +230,34 @@ def latest(
         )
         """
 
-    # ============================================================
-    # QUERY
-    # ============================================================
+    universe_ui_filter_news = """
+    AND (
+        @universe_id IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+            WHERE cu.ID_COMPANY = n.id_company
+              AND cu.ID_UNIVERSE = @universe_id
+        )
+    )
+    """
+
+    universe_ui_filter_content = """
+    AND (
+        @universe_id IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM UNNEST(c.companies) comp
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                ON cu.ID_COMPANY = comp.id_company
+            WHERE cu.ID_UNIVERSE = @universe_id
+        )
+    )
+    """
 
     sql = f"""
     SELECT * FROM (
 
-        -- NEWS
         SELECT
             n.id_news AS id,
             'news' AS type,
@@ -241,10 +274,10 @@ def latest(
         WHERE n.published_at IS NOT NULL
         {news_filter}
         {universe_filter_news}
+        {universe_ui_filter_news}
 
         UNION ALL
 
-        -- CONTENT
         SELECT
             c.id_content AS id,
             'analysis' AS type,
@@ -259,6 +292,7 @@ def latest(
         WHERE c.published_at IS NOT NULL
         {content_filter}
         {universe_filter_content}
+        {universe_ui_filter_content}
 
     )
     ORDER BY published_at DESC
@@ -269,6 +303,7 @@ def latest(
     params = {
         "limit": limit,
         "offset": offset,
+        "universe_id": universe_id,
     }
 
     if user_id:
