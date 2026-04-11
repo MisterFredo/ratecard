@@ -75,6 +75,7 @@ function sortCompanies(
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] = useState<SortMode>("alpha");
 
   const { openLeftDrawer } = useDrawer();
@@ -87,8 +88,12 @@ export default function CompaniesPage() {
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
+      setLoading(true);
+
       const data = await fetchCompanies();
       setCompanies(data);
+
+      setLoading(false);
     }
 
     load();
@@ -169,55 +174,67 @@ export default function CompaniesPage() {
         </div>
       </div>
 
-      {/* PARTENAIRES */}
-      {partners.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="text-sm font-semibold uppercase text-gray-500">
-            Partenaires
-          </h2>
-
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
-            {partners.map((c) => (
-              <CompanyCard
-                key={c.id_company}
-                id={c.id_company}
-                name={c.name}
-                visualRectId={c.media_logo_rectangle_id}
-                totalAnalyses={c.nb_analyses}
-                delta30d={c.delta_30d}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* AUTRES */}
-      {others.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="text-sm font-semibold uppercase text-gray-500">
-            Sociétés
-          </h2>
-
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
-            {others.map((c) => (
-              <CompanyCard
-                key={c.id_company}
-                id={c.id_company}
-                name={c.name}
-                visualRectId={c.media_logo_rectangle_id}
-                totalAnalyses={c.nb_analyses}
-                delta30d={c.delta_30d}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* EMPTY */}
-      {companies.length === 0 && (
+      {/* LOADING */}
+      {loading && (
         <p className="text-sm text-gray-400">
-          Aucune société disponible pour votre profil.
+          Chargement des sociétés...
         </p>
+      )}
+
+      {/* CONTENT */}
+      {!loading && (
+        <>
+          {/* PARTENAIRES */}
+          {partners.length > 0 && (
+            <section className="space-y-4">
+              <h2 className="text-sm font-semibold uppercase text-gray-500">
+                Partenaires
+              </h2>
+
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
+                {partners.map((c) => (
+                  <CompanyCard
+                    key={c.id_company}
+                    id={c.id_company}
+                    name={c.name}
+                    visualRectId={c.media_logo_rectangle_id}
+                    totalAnalyses={c.nb_analyses}
+                    delta30d={c.delta_30d}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* AUTRES */}
+          {others.length > 0 && (
+            <section className="space-y-4">
+              <h2 className="text-sm font-semibold uppercase text-gray-500">
+                Sociétés
+              </h2>
+
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
+                {others.map((c) => (
+                  <CompanyCard
+                    key={c.id_company}
+                    id={c.id_company}
+                    name={c.name}
+                    visualRectId={c.media_logo_rectangle_id}
+                    totalAnalyses={c.nb_analyses}
+                    delta30d={c.delta_30d}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* EMPTY */}
+          {companies.length === 0 && (
+            <p className="text-sm text-gray-400">
+              Aucune société disponible pour votre profil.
+            </p>
+          )}
+        </>
       )}
     </div>
   );
