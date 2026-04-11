@@ -45,6 +45,21 @@ def list_types_route():
     except Exception as e:
         raise HTTPException(400, f"Erreur récupération types sociétés : {e}")
 
+@router.get("/list-curator")
+def list_curator_route(request: Request):
+    try:
+        user_id = request.cookies.get("curator_user_id")
+
+        companies = list_companies_for_user(user_id)
+
+        return {
+            "status": "ok",
+            "companies": companies
+        }
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur sociétés curator : {e}")
+
 
 # GET ONE
 @router.get("/{id_company}", response_model=CompanyOut)
@@ -122,17 +137,4 @@ def delete_route(id_company: str):
 
 from fastapi import Request
 
-@router.get("/list-curator")
-def list_curator_route(request: Request):
-    try:
-        user_id = request.cookies.get("curator_user_id")
 
-        companies = list_companies_for_user(user_id)
-
-        return {
-            "status": "ok",
-            "companies": companies
-        }
-
-    except Exception as e:
-        raise HTTPException(400, f"Erreur sociétés curator : {e}")
