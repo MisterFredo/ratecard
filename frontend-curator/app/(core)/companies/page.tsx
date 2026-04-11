@@ -15,7 +15,7 @@ type Company = {
   media_logo_rectangle_id?: string | null;
   nb_analyses: number;
   delta_30d: number;
-  universes?: string[]; // 🔥 IMPORTANT
+  universes: string[]; // ✅ désormais toujours présent
 };
 
 type SortMode = "alpha" | "activity" | "growth";
@@ -69,11 +69,8 @@ function groupByUniverse(
   const map: Record<string, Company[]> = {};
 
   companies.forEach((c) => {
-    const universes = c.universes?.length
-      ? c.universes
-      : ["Autres"];
-
-    universes.forEach((u) => {
+    // ✅ plus de fallback "Autres"
+    c.universes.forEach((u) => {
       if (!map[u]) map[u] = [];
       map[u].push(c);
     });
