@@ -249,6 +249,13 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
 
     user_universes = get_user_universes(user_id) if user_id else []
 
+    where_clause = ""
+    params = {}
+
+    if user_universes:
+        where_clause = "WHERE cu.ID_UNIVERSE IN UNNEST(@user_universes)"
+        params["user_universes"] = user_universes
+
     sql = f"""
     SELECT
         c.ID_COMPANY as id_company,
@@ -270,10 +277,7 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
     LEFT JOIN `{VIEW_STATS_COMPANY}` stats
         ON stats.id_company = c.ID_COMPANY
 
-    WHERE (
-        ARRAY_LENGTH(@user_universes) = 0
-        OR cu.ID_UNIVERSE IN UNNEST(@user_universes)
-    )
+    {where_clause}
 
     GROUP BY
         c.ID_COMPANY,
@@ -286,10 +290,7 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
     ORDER BY c.NAME
     """
 
-    return query_bq(sql, {
-        "user_universes": user_universes
-    })
-
+    return query_bq(sql, params)
 # ============================================================
 # GET ONE COMPANY — BQ BRUT
 # ============================================================
