@@ -47,14 +47,20 @@ function sortTopics(items: Topic[], mode: SortMode) {
 
   switch (mode) {
     case "activity":
-      return copy.sort((a, b) => b.nb_analyses - a.nb_analyses);
+      return copy.sort(
+        (a, b) => (b.nb_analyses ?? 0) - (a.nb_analyses ?? 0)
+      );
 
     case "growth":
-      return copy.sort((a, b) => b.delta_30d - a.delta_30d);
+      return copy.sort(
+        (a, b) => (b.delta_30d ?? 0) - (a.delta_30d ?? 0)
+      );
 
     default:
       return copy.sort((a, b) =>
-        a.label.localeCompare(b.label)
+        a.label.localeCompare(b.label, "fr", {
+          sensitivity: "base",
+        })
       );
   }
 }
@@ -135,8 +141,9 @@ export default function TopicsPage() {
   const grouped = groupByAxis(topics, sortMode);
 
   const totalTopics = topics.length;
+
   const totalAnalyses = topics.reduce(
-    (sum, t) => sum + (t.nb_analyses || 0),
+    (sum, t) => sum + (t.nb_analyses ?? 0),
     0
   );
 
