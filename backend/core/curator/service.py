@@ -33,50 +33,43 @@ def search(
     elif type == "analysis":
         news_filter = "AND FALSE"
 
+    # ============================================================
+    # 🔥 USER FILTER (uniquement si PAS de universe sélectionné)
+    # ============================================================
+
     universe_filter_news = ""
     universe_filter_content = ""
 
-    if user_id:
+    if user_id and not universe_id:
 
         universe_filter_news = f"""
-        AND (
-            NOT EXISTS (
-                SELECT 1
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
-                WHERE ID_USER = @user_id
-            )
-            OR EXISTS (
-                SELECT 1
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                    ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
-                WHERE uu.ID_USER = @user_id
-                  AND cu.ID_COMPANY = n.id_company
-            )
+        AND EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND cu.ID_COMPANY = n.id_company
         )
         """
 
         universe_filter_content = f"""
-        AND (
-            NOT EXISTS (
-                SELECT 1
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
-                WHERE ID_USER = @user_id
-            )
-            OR EXISTS (
-                SELECT 1
-                FROM UNNEST(c.companies) comp
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                    ON cu.ID_COMPANY = comp.id_company
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                    ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-                WHERE uu.ID_USER = @user_id
-            )
+        AND EXISTS (
+            SELECT 1
+            FROM UNNEST(c.companies) comp
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                ON cu.ID_COMPANY = comp.id_company
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
         )
         """
 
-    # 🔥 NEW: universe UI filter
-    universe_ui_filter_news = """
+    # ============================================================
+    # 🔥 UI UNIVERSE FILTER
+    # ============================================================
+
+    universe_ui_filter_news = f"""
     AND (
         @universe_id IS NULL
         OR EXISTS (
@@ -88,7 +81,7 @@ def search(
     )
     """
 
-    universe_ui_filter_content = """
+    universe_ui_filter_content = f"""
     AND (
         @universe_id IS NULL
         OR EXISTS (
@@ -100,6 +93,10 @@ def search(
         )
     )
     """
+
+    # ============================================================
+    # QUERY
+    # ============================================================
 
     sql = f"""
     SELECT * FROM (
@@ -160,10 +157,10 @@ def search(
         "query": q,
         "limit": limit,
         "offset": offset,
-        "universe_id": universe_id,
+        "universe_id": universe_id if universe_id else None,
     }
 
-    if user_id:
+    if user_id and not universe_id:
         params["user_id"] = user_id
 
     rows = query_bq(sql, params)
@@ -190,47 +187,43 @@ def latest(
     elif type == "analysis":
         news_filter = "AND FALSE"
 
+    # ============================================================
+    # USER FILTER (uniquement si PAS de universe sélectionné)
+    # ============================================================
+
     universe_filter_news = ""
     universe_filter_content = ""
 
-    if user_id:
+    if user_id and not universe_id:
 
         universe_filter_news = f"""
-        AND (
-            NOT EXISTS (
-                SELECT 1 FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
-                WHERE ID_USER = @user_id
-            )
-            OR EXISTS (
-                SELECT 1
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                    ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
-                WHERE uu.ID_USER = @user_id
-                  AND cu.ID_COMPANY = n.id_company
-            )
+        AND EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND cu.ID_COMPANY = n.id_company
         )
         """
 
         universe_filter_content = f"""
-        AND (
-            NOT EXISTS (
-                SELECT 1 FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
-                WHERE ID_USER = @user_id
-            )
-            OR EXISTS (
-                SELECT 1
-                FROM UNNEST(c.companies) comp
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                    ON cu.ID_COMPANY = comp.id_company
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                    ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-                WHERE uu.ID_USER = @user_id
-            )
+        AND EXISTS (
+            SELECT 1
+            FROM UNNEST(c.companies) comp
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                ON cu.ID_COMPANY = comp.id_company
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
         )
         """
 
-    universe_ui_filter_news = """
+    # ============================================================
+    # UI FILTER
+    # ============================================================
+
+    universe_ui_filter_news = f"""
     AND (
         @universe_id IS NULL
         OR EXISTS (
@@ -242,7 +235,7 @@ def latest(
     )
     """
 
-    universe_ui_filter_content = """
+    universe_ui_filter_content = f"""
     AND (
         @universe_id IS NULL
         OR EXISTS (
@@ -254,6 +247,10 @@ def latest(
         )
     )
     """
+
+    # ============================================================
+    # QUERY
+    # ============================================================
 
     sql = f"""
     SELECT * FROM (
@@ -303,10 +300,10 @@ def latest(
     params = {
         "limit": limit,
         "offset": offset,
-        "universe_id": universe_id,
+        "universe_id": universe_id if universe_id else None,
     }
 
-    if user_id:
+    if user_id and not universe_id:
         params["user_id"] = user_id
 
     rows = query_bq(sql, params)
