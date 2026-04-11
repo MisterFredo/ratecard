@@ -178,7 +178,7 @@ def list_solutions_for_user(user_id: Optional[str]) -> List[Dict]:
         s.NAME as name,
         s.ID_COMPANY as id_company,
         c.NAME as company_name,
-        c.MEDIA_LOGO_RECTANGLE_ID
+        c.MEDIA_LOGO_RECTANGLE_ID as media_logo_rectangle_id
 
     FROM `{TABLE_SOLUTION}` s
 
