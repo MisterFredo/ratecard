@@ -135,6 +135,5 @@ def delete_route(id_company: str):
     except Exception as e:
         raise HTTPException(400, f"Erreur suppression société : {e}")
 
-from fastapi import Request
 
 
