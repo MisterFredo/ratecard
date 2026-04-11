@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, Request
+from typing import List, Dict, Optional
 
 from api.company.models import CompanyCreate, CompanyUpdate, CompanyOut
 from core.company.service import (
