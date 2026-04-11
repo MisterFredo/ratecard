@@ -13,11 +13,15 @@ router = APIRouter()
 
 
 # ============================================================
-# 🔥 HELPER (ULTRA LIGHT)
+# HELPERS
 # ============================================================
 
 def get_user_id(request: Request) -> Optional[str]:
     return request.cookies.get("curator_user_id")
+
+
+def get_universe_id(universe_id: Optional[str]) -> Optional[str]:
+    return universe_id if universe_id else None
 
 
 # ============================================================
@@ -31,6 +35,7 @@ def search_route(
     limit: int = Query(20),
     offset: int = Query(0),
     type: Optional[str] = Query(None),
+    universe_id: Optional[str] = Query(None),  # ✅ NEW
 ):
     try:
         user_id = get_user_id(request)
@@ -40,7 +45,8 @@ def search_route(
             limit=limit,
             offset=offset,
             type=type,
-            user_id=user_id,  # ✅ AJOUT
+            user_id=user_id,
+            universe_id=get_universe_id(universe_id),  # ✅ FIX
         )
 
         return {"items": items, "count": len(items)}
@@ -59,6 +65,7 @@ def latest_route(
     limit: int = Query(20),
     offset: int = Query(0),
     type: Optional[str] = Query(None),
+    universe_id: Optional[str] = Query(None),  # ✅ NEW
 ):
     try:
         user_id = get_user_id(request)
@@ -67,7 +74,8 @@ def latest_route(
             limit=limit,
             offset=offset,
             type=type,
-            user_id=user_id,  # ✅ AJOUT
+            user_id=user_id,
+            universe_id=get_universe_id(universe_id),  # ✅ FIX
         )
 
         return {"items": items, "count": len(items)}
@@ -81,27 +89,33 @@ def latest_route(
 # ============================================================
 
 @router.get("/stats")
-def stats_route(request: Request):
+def stats_route(
+    request: Request,
+    universe_id: Optional[str] = Query(None),  # ✅ NEW
+):
     try:
         user_id = get_user_id(request)
 
-        stats = get_content_stats(user_id=user_id)  # ✅ AJOUT
+        stats = get_content_stats(
+            user_id=user_id,
+            universe_id=get_universe_id(universe_id),  # ✅ FIX
+        )
 
         return {"status": "ok", "stats": stats}
 
-    except Exception:
-        raise HTTPException(400, "Erreur stats content")
+    except Exception as e:
+        raise HTTPException(400, f"Stats error: {e}")
 
 
 # ============================================================
-# ITEM
+# ITEM (PAS BESOIN D’UNIVERSE)
 # ============================================================
 
 @router.get("/item/{item_id}")
 def read_item(request: Request, item_id: str):
     user_id = get_user_id(request)
 
-    item = get_item_curator(item_id, user_id=user_id)  # ✅ AJOUT
+    item = get_item_curator(item_id, user_id=user_id)
 
     if not item:
         raise HTTPException(404, "Item not found")
@@ -110,7 +124,7 @@ def read_item(request: Request, item_id: str):
 
 
 # ============================================================
-# DETAIL
+# DETAIL (PAS BESOIN D’UNIVERSE)
 # ============================================================
 
 @router.get("/item/{item_id}/detail")
@@ -121,7 +135,7 @@ def read_item_detail(
 ):
     user_id = get_user_id(request)
 
-    item = get_item_detail(item_id, type, user_id=user_id)  # ✅ AJOUT
+    item = get_item_detail(item_id, type, user_id=user_id)
 
     if not item:
         raise HTTPException(404, "Item not found")
