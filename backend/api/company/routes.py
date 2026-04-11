@@ -46,7 +46,7 @@ def list_types_route():
         raise HTTPException(400, f"Erreur récupération types sociétés : {e}")
 
 @router.get("/list-curator")
-def list_curator_route(request: Request):
+def list_companies_curator(request: Request):
     try:
         user_id = request.cookies.get("curator_user_id")
 
@@ -54,11 +54,11 @@ def list_curator_route(request: Request):
 
         return {
             "status": "ok",
-            "companies": companies
+            "companies": companies,
         }
 
     except Exception as e:
-        raise HTTPException(400, f"Erreur sociétés curator : {e}")
+        raise HTTPException(400, f"Erreur liste sociétés curator : {e}")
 
 
 # GET ONE
