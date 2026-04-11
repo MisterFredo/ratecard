@@ -125,10 +125,10 @@ export default function SolutionsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-gray-900">
-            Solutions
+            Produits
           </h1>
           <p className="text-sm text-gray-500">
-            Explore les solutions du marché
+            Explore les produits du marché
           </p>
         </div>
 
