@@ -11,9 +11,11 @@ type Props = {
   visualRectId?: string | null;
 
   totalAnalyses?: number;
-  totalNews?: number; // ✅ NEW
+  totalNews?: number;
 
   delta30d?: number;
+
+  universes?: string[]; // ✅ NEW
 
   lastRadar?: {
     id_insight: string;
@@ -28,6 +30,7 @@ export default function CompanyCard({
   totalAnalyses,
   totalNews,
   delta30d,
+  universes,
   lastRadar,
 }: Props) {
   const router = useRouter();
@@ -38,7 +41,6 @@ export default function CompanyCard({
     ? `${GCS_BASE_URL}/companies/${visualRectId}`
     : null;
 
-  // ✅ total contenu (analyses + news)
   const totalContent =
     (totalAnalyses ?? 0) + (totalNews ?? 0);
 
@@ -56,6 +58,8 @@ export default function CompanyCard({
     openRightDrawer("radar", lastRadar!.id_insight);
   }
 
+  const mainUniverse = universes?.[0];
+
   return (
     <div
       onClick={handleClick}
@@ -68,11 +72,20 @@ export default function CompanyCard({
       "
     >
       {/* =====================================================
-          BADGE TREND
+          BADGES TOP
       ===================================================== */}
+
+      {/* DELTA */}
       {typeof delta30d === "number" && delta30d > 0 && (
         <div className="absolute top-2 right-2 text-[9px] px-2 py-0.5 rounded bg-green-100 text-green-600 z-10">
           +{delta30d}
+        </div>
+      )}
+
+      {/* UNIVERS */}
+      {mainUniverse && (
+        <div className="absolute top-2 left-2 text-[9px] px-2 py-0.5 rounded bg-gray-900 text-white z-10">
+          {mainUniverse}
         </div>
       )}
 
@@ -96,9 +109,7 @@ export default function CompanyCard({
           </div>
         )}
 
-        {/* =====================================================
-            RADAR OVERLAY
-        ===================================================== */}
+        {/* RADAR OVERLAY (on garde) */}
         {lastRadar?.key_points?.[0] && (
           <div
             onClick={handleRadarClick}
@@ -129,13 +140,8 @@ export default function CompanyCard({
           typeof totalNews === "number" ||
           typeof delta30d === "number") && (
           <div className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
-            {/* ✅ TOTAL CONTENT */}
-            {(typeof totalAnalyses === "number" ||
-              typeof totalNews === "number") && (
-              <span>{totalContent}</span>
-            )}
+            <span>{totalContent}</span>
 
-            {/* ✅ DELTA */}
             {typeof delta30d === "number" &&
               delta30d > 0 && (
                 <span className="text-green-600">
