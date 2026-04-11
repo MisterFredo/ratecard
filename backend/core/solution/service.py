@@ -152,6 +152,26 @@ def list_solutions():
 
 def list_solutions_for_user(user_id: Optional[str]) -> List[Dict]:
 
+    universe_filter = ""
+
+    if user_id:
+        universe_filter = f"""
+        AND (
+            NOT EXISTS (
+                SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
+                WHERE ID_USER = @user_id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM `{TABLE_COMPANY_UNIVERSE}` cu
+                JOIN `{TABLE_USER_UNIVERSE}` uu
+                  ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+                  AND cu.ID_COMPANY = s.ID_COMPANY
+            )
+        )
+        """
+
     sql = f"""
     SELECT
         s.ID_SOLUTION as id_solution,
@@ -166,23 +186,7 @@ def list_solutions_for_user(user_id: Optional[str]) -> List[Dict]:
         ON c.ID_COMPANY = s.ID_COMPANY
 
     WHERE TRUE
-
-    {f"""
-    AND (
-        NOT EXISTS (
-            SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
-            WHERE ID_USER = @user_id
-        )
-        OR EXISTS (
-            SELECT 1
-            FROM `{TABLE_COMPANY_UNIVERSE}` cu
-            JOIN `{TABLE_USER_UNIVERSE}` uu
-              ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-              AND cu.ID_COMPANY = s.ID_COMPANY
-        )
-    )
-    """ if user_id else ""}
+    {universe_filter}
 
     ORDER BY s.NAME
     """
