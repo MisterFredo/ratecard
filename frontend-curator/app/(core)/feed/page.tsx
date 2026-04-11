@@ -17,12 +17,26 @@ import { api } from "@/lib/api";
 
 /* ========================================================= */
 
+type Universe = {
+  id_universe: string;
+  label: string;
+};
+
+/* ========================================================= */
+
 export default function FeedPage() {
   const LIMIT = 20;
 
   const searchParams = useSearchParams();
   const analysisId = searchParams.get("analysis_id");
   const newsId = searchParams.get("news_id");
+
+  /* =========================================================
+     UNIVERSE (UI ONLY)
+  ========================================================= */
+
+  const [universes, setUniverses] = useState<Universe[]>([]);
+  const [activeUniverse, setActiveUniverse] = useState<string | null>(null);
 
   /* =========================================================
      DATA
@@ -68,7 +82,24 @@ export default function FeedPage() {
     useState<string | null>(null);
 
   /* =========================================================
-     LOAD
+     LOAD UNIVERS
+  ========================================================= */
+
+  useEffect(() => {
+    async function loadUniverses() {
+      try {
+        const res = await api.get("/universe/list");
+        setUniverses(res?.universes || []);
+      } catch (e) {
+        console.error("❌ universe load error", e);
+      }
+    }
+
+    loadUniverses();
+  }, []);
+
+  /* =========================================================
+     LOAD FEED
   ========================================================= */
 
   async function load(reset = false, q?: string) {
@@ -85,10 +116,12 @@ export default function FeedPage() {
             query: finalQuery,
             limit: LIMIT,
             offset: currentOffset,
+            universe_id: activeUniverse || undefined,
           })
         : await getLatestCurator({
             limit: LIMIT,
             offset: currentOffset,
+            universe_id: activeUniverse || undefined,
           });
 
       if (reset) {
@@ -108,12 +141,12 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     INIT
+     INIT + UNIVERSE CHANGE
   ========================================================= */
 
   useEffect(() => {
     load(true);
-  }, []);
+  }, [activeUniverse]);
 
   /* =========================================================
      DRAWER FROM URL
@@ -145,12 +178,14 @@ export default function FeedPage() {
 
   useEffect(() => {
     async function loadStats() {
-      const s = await getContentStats();
+      const s = await getContentStats({
+        universe_id: activeUniverse || undefined,
+      });
       setStats(s);
     }
 
     loadStats();
-  }, []);
+  }, [activeUniverse]);
 
   /* =========================================================
      BADGES
@@ -234,6 +269,35 @@ export default function FeedPage() {
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
 
       <div className="xl:col-span-2">
+
+        {/* 🔥 UNIVERSE SELECTOR */}
+        <div className="flex gap-2 flex-wrap mb-4">
+          <button
+            onClick={() => setActiveUniverse(null)}
+            className={`px-3 py-1 text-xs rounded border ${
+              activeUniverse === null
+                ? "bg-gray-900 text-white"
+                : "bg-white text-gray-600"
+            }`}
+          >
+            Tous
+          </button>
+
+          {universes.map((u) => (
+            <button
+              key={u.id_universe}
+              onClick={() => setActiveUniverse(u.id_universe)}
+              className={`px-3 py-1 text-xs rounded border ${
+                activeUniverse === u.id_universe
+                  ? "bg-gray-900 text-white"
+                  : "bg-white text-gray-600"
+              }`}
+            >
+              {u.label}
+            </button>
+          ))}
+        </div>
+
         <FeedExplorer
           query={query}
           setQuery={setQuery}
