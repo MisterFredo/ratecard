@@ -3,6 +3,7 @@
 import uuid
 from datetime import datetime
 from google.cloud import bigquery
+from typing import Optional, Dict, Any, List
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import (
