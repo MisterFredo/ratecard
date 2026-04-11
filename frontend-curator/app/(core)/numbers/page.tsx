@@ -9,10 +9,18 @@ import NumbersHeader from "@/components/numbers/NumbersHeader";
 
 /* ========================================================= */
 
+type NumberItem = {
+  ID_NUMBER: string;
+  TYPE?: string;
+  [key: string]: any;
+};
+
+/* ========================================================= */
+
 export default function NumbersPage() {
   const LIMIT = 100;
 
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<NumberItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [query, setQuery] = useState("");
@@ -21,7 +29,9 @@ export default function NumbersPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
-  /* ========================================================= */
+  /* =========================================================
+     LOAD
+  ========================================================= */
 
   async function load(q?: string) {
     const finalQuery = (q ?? query)?.trim();
@@ -31,14 +41,15 @@ export default function NumbersPage() {
     try {
       const res = await api.get(
         `/numbers/feed?limit=${LIMIT}${
-          finalQuery ? `&query=${encodeURIComponent(finalQuery)}` : ""
+          finalQuery
+            ? `&query=${encodeURIComponent(finalQuery)}`
+            : ""
         }`
       );
 
       const data = res?.items ?? [];
 
       setItems(data);
-
     } catch (e) {
       console.error("❌ Numbers load error", e);
       setItems([]);
@@ -55,7 +66,7 @@ export default function NumbersPage() {
      SELECTION
   ========================================================= */
 
-  function toggleSelect(item: any) {
+  function toggleSelect(item: NumberItem) {
     const id = item.ID_NUMBER;
 
     setSelectedIds((prev) =>
@@ -71,14 +82,25 @@ export default function NumbersPage() {
      GROUP BY TYPE
   ========================================================= */
 
-  const grouped: Record<string, any[]> = {};
+  function groupByType(items: NumberItem[]) {
+    const map: Record<string, NumberItem[]> = {};
 
-  items.forEach((item) => {
-    const key = item.TYPE || "Autres";
+    items.forEach((item) => {
+      const key = item.TYPE ?? "Autres"; // ⚠️ seul fallback toléré ici
 
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(item);
-  });
+      if (!map[key]) map[key] = [];
+      map[key].push(item);
+    });
+
+    // tri alphabétique des groupes
+    return Object.fromEntries(
+      Object.entries(map).sort(([a], [b]) =>
+        a.localeCompare(b, "fr", { sensitivity: "base" })
+      )
+    );
+  }
+
+  const grouped = groupByType(items);
 
   const hasContent = items.length > 0;
 
@@ -119,9 +141,8 @@ export default function NumbersPage() {
         )}
 
         {/* CONTENT */}
-        {!loading && hasContent && (
-          Object.entries(grouped).map(([type, items]) => (
-
+        {!loading && hasContent &&
+          Object.entries(grouped).map(([type, groupItems]) => (
             <section key={type} className="space-y-4">
 
               <div className="flex items-center justify-between">
@@ -130,7 +151,7 @@ export default function NumbersPage() {
                 </h2>
 
                 <span className="text-xs text-gray-300">
-                  {items.length}
+                  {groupItems.length}
                 </span>
               </div>
 
@@ -139,7 +160,7 @@ export default function NumbersPage() {
                 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
                 gap-3
               ">
-                {items.map((item: any) => {
+                {groupItems.map((item) => {
                   const selected = selectedIds.includes(item.ID_NUMBER);
 
                   return (
@@ -154,9 +175,7 @@ export default function NumbersPage() {
               </div>
 
             </section>
-
-          ))
-        )}
+          ))}
 
       </div>
 
