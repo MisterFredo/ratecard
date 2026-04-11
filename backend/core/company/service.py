@@ -247,34 +247,16 @@ def list_company_types():
 
 def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
 
-    universe_filter = ""
-
-    if user_id is not None:
-        universe_filter = f"""
-        AND (
-            NOT EXISTS (
-                SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
-                WHERE ID_USER = @user_id
-            )
-            OR ARRAY_LENGTH(IFNULL(cu.universes, [])) = 0
-            OR EXISTS (
-                SELECT 1
-                FROM UNNEST(IFNULL(cu.universes, [])) u
-                JOIN `{TABLE_USER_UNIVERSE}` uu
-                  ON uu.ID_UNIVERSE = u
-                WHERE uu.ID_USER = @user_id
-            )
-        )
-        """
-
-    sql = f"""
+    base_sql = f"""
     WITH company_universes AS (
         SELECT
             c.ID_COMPANY,
-            ARRAY_AGG(DISTINCT cu.ID_UNIVERSE IGNORE NULLS) AS universes
+            ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
         FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
         LEFT JOIN `{TABLE_COMPANY_UNIVERSE}` cu
             ON cu.ID_COMPANY = c.ID_COMPANY
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
+            ON u.ID_UNIVERSE = cu.ID_UNIVERSE
         GROUP BY c.ID_COMPANY
     )
 
@@ -283,31 +265,42 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
         c.NAME as name,
         c.MEDIA_LOGO_RECTANGLE_ID as media_logo_rectangle_id,
         c.IS_PARTNER as is_partner,
-
         COALESCE(stats.total, 0) as nb_analyses,
         COALESCE(stats.last_30_days, 0) as delta_30d,
-
         cu.universes
-
     FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
-
     LEFT JOIN company_universes cu
         ON cu.ID_COMPANY = c.ID_COMPANY
-
     LEFT JOIN `{VIEW_STATS_COMPANY}` stats
         ON stats.id_company = c.ID_COMPANY
+    """
 
-    WHERE TRUE
-    {universe_filter}
+    # 👉 CAS 1 : PAS DE USER → PAS DE FILTRE
+    if not user_id:
+        sql = base_sql + " ORDER BY c.NAME"
+        return query_bq(sql, {})
 
+    # 👉 CAS 2 : USER → FILTRE
+    sql = base_sql + f"""
+    WHERE (
+        NOT EXISTS (
+            SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
+            WHERE ID_USER = @user_id
+        )
+        OR ARRAY_LENGTH(IFNULL(cu.universes, [])) = 0
+        OR EXISTS (
+            SELECT 1
+            FROM `{TABLE_COMPANY_UNIVERSE}` cu2
+            JOIN `{TABLE_USER_UNIVERSE}` uu
+              ON uu.ID_UNIVERSE = cu2.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND cu2.ID_COMPANY = c.ID_COMPANY
+        )
+    )
     ORDER BY c.NAME
     """
 
-    params = {}
-    if user_id is not None:
-        params["user_id"] = user_id
-
-    return query_bq(sql, params)
+    return query_bq(sql, {"user_id": user_id})
 # ============================================================
 # GET ONE COMPANY — BQ BRUT
 # ============================================================
