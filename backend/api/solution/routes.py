@@ -68,16 +68,20 @@ def get_route(id_solution: str):
 # GET VIEW (CURATOR)
 # ============================================================
 @router.get("/{id_solution}/view")
-def get_view_route(
+def get_solution_view_route(
+    request: Request,
     id_solution: str,
     limit: int = 20,
     offset: int = 0
 ):
     try:
+        user_id = request.cookies.get("curator_user_id")
+
         solution = get_solution_view(
             id_solution,
             limit=limit,
-            offset=offset
+            offset=offset,
+            user_id=user_id,  # 🔥 CRUCIAL
         )
 
         if not solution:
