@@ -13,7 +13,7 @@ export default function NumbersPage() {
   const LIMIT = 100;
 
   const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [query, setQuery] = useState("");
 
@@ -80,6 +80,8 @@ export default function NumbersPage() {
     grouped[key].push(item);
   });
 
+  const hasContent = items.length > 0;
+
   /* ========================================================= */
 
   return (
@@ -96,14 +98,28 @@ export default function NumbersPage() {
         />
 
         {/* COUNT */}
-        <div className="text-xs text-gray-400">
-          {items.length} chiffres
-        </div>
+        {!loading && (
+          <div className="text-xs text-gray-400">
+            {items.length} chiffres
+          </div>
+        )}
+
+        {/* LOADING */}
+        {loading && (
+          <p className="text-sm text-gray-400">
+            Chargement des chiffres...
+          </p>
+        )}
+
+        {/* EMPTY */}
+        {!loading && !hasContent && (
+          <p className="text-sm text-gray-400">
+            Aucun chiffre disponible.
+          </p>
+        )}
 
         {/* CONTENT */}
-        {loading ? (
-          <p className="text-sm text-gray-400">Chargement...</p>
-        ) : (
+        {!loading && hasContent && (
           Object.entries(grouped).map(([type, items]) => (
 
             <section key={type} className="space-y-4">
