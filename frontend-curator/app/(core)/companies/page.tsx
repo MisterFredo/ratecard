@@ -18,20 +18,7 @@ type Company = {
   is_partner: boolean;
   nb_analyses: number;
   delta_30d: number;
-  universes?: string[];
 };
-
-/* =========================================================
-   UTILS
-========================================================= */
-
-function getCookie(name: string) {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(
-    new RegExp("(^| )" + name + "=([^;]+)")
-  );
-  return match ? decodeURIComponent(match[2]) : null;
-}
 
 /* =========================================================
    FETCH
@@ -39,7 +26,7 @@ function getCookie(name: string) {
 
 async function fetchCompanies(): Promise<Company[]> {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/company/list`,
+    `${process.env.NEXT_PUBLIC_API_URL}/company/list-curator`,
     { cache: "no-store" }
   );
 
@@ -50,24 +37,6 @@ async function fetchCompanies(): Promise<Company[]> {
   if (json.status !== "ok") return [];
 
   return json.companies || [];
-}
-
-async function fetchUserUniverses(userId: string): Promise<string[]> {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/user/context/${userId}`,
-      { cache: "no-store" }
-    );
-
-    if (!res.ok) return [];
-
-    const json = await res.json();
-
-    return json?.universes || [];
-
-  } catch {
-    return [];
-  }
 }
 
 /* =========================================================
@@ -101,39 +70,11 @@ function sortCompanies(
 }
 
 /* =========================================================
-   FILTER LOGIC 🔥
-========================================================= */
-
-function filterCompaniesByUniverses(
-  companies: Company[],
-  userUniverses: string[]
-): Company[] {
-
-  // 👉 ADMIN / FULL ACCESS
-  if (!userUniverses || userUniverses.length === 0) {
-    return companies;
-  }
-
-  return companies.filter((c) => {
-    // 👉 GLOBAL company (no universes)
-    if (!c.universes || c.universes.length === 0) {
-      return true;
-    }
-
-    // 👉 intersection
-    return c.universes.some((u) =>
-      userUniverses.includes(u)
-    );
-  });
-}
-
-/* =========================================================
    PAGE
 ========================================================= */
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [sortMode, setSortMode] = useState<SortMode>("alpha");
 
   const { openLeftDrawer } = useDrawer();
@@ -146,26 +87,8 @@ export default function CompaniesPage() {
   --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
-
-      const allCompanies = await fetchCompanies();
-
-      const userId = getCookie("curator_user_id");
-
-      if (!userId) {
-        setCompanies(allCompanies);
-        setFilteredCompanies(allCompanies);
-        return;
-      }
-
-      const userUniverses = await fetchUserUniverses(userId);
-
-      const filtered = filterCompaniesByUniverses(
-        allCompanies,
-        userUniverses
-      );
-
-      setCompanies(allCompanies);
-      setFilteredCompanies(filtered);
+      const data = await fetchCompanies();
+      setCompanies(data);
     }
 
     load();
@@ -193,12 +116,12 @@ export default function CompaniesPage() {
   --------------------------------------------------------- */
 
   const partners = sortCompanies(
-    filteredCompanies.filter((c) => c.is_partner),
+    companies.filter((c) => c.is_partner),
     sortMode
   );
 
   const others = sortCompanies(
-    filteredCompanies.filter((c) => !c.is_partner),
+    companies.filter((c) => !c.is_partner),
     sortMode
   );
 
@@ -291,7 +214,7 @@ export default function CompaniesPage() {
       )}
 
       {/* EMPTY */}
-      {filteredCompanies.length === 0 && (
+      {companies.length === 0 && (
         <p className="text-sm text-gray-400">
           Aucune société disponible pour votre profil.
         </p>
