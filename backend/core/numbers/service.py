@@ -589,7 +589,40 @@ def get_numbers_for_entity(
 
     return result
 
-def get_numbers_feed_service(limit: int = 50, query: Optional[str] = None):
+def get_numbers_feed_service(
+    limit: int = 50,
+    query: Optional[str] = None,
+    user_id: Optional[str] = None,
+):
+
+    universe_filter = ""
+
+    if user_id:
+        universe_filter = f"""
+        AND (
+            NOT EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
+                WHERE ID_USER = @user_id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM UNNEST(n.ENTITIES) e2
+                LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` s
+                    ON e2.ENTITY_TYPE = 'solution'
+                   AND s.ID_SOLUTION = e2.ENTITY_ID
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu2
+                    ON (
+                        (e2.ENTITY_TYPE = 'company' AND cu2.ID_COMPANY = e2.ENTITY_ID)
+                        OR
+                        (e2.ENTITY_TYPE = 'solution' AND cu2.ID_COMPANY = s.ID_COMPANY)
+                    )
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                    ON uu.ID_UNIVERSE = cu2.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+            )
+        )
+        """
 
     sql = f"""
         WITH solution_company AS (
@@ -602,20 +635,16 @@ def get_numbers_feed_service(limit: int = 50, query: Optional[str] = None):
         SELECT
             n.*,
 
-            -- 🔥 UNIVERS
             ARRAY_AGG(DISTINCT cu.ID_UNIVERSE IGNORE NULLS) AS UNIVERSes
 
         FROM `{VIEW_NUMBERS_CARDS}` n
 
-        -- 👉 UNNEST ENTITIES
         LEFT JOIN UNNEST(n.ENTITIES) e
 
-        -- 👉 RESOLVE SOLUTION → COMPANY
         LEFT JOIN solution_company sc
           ON e.ENTITY_TYPE = 'solution'
          AND sc.ID_SOLUTION = e.ENTITY_ID
 
-        -- 👉 MAP COMPANY → UNIVERS
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
           ON (
             (e.ENTITY_TYPE = 'company' AND cu.ID_COMPANY = e.ENTITY_ID)
@@ -623,7 +652,9 @@ def get_numbers_feed_service(limit: int = 50, query: Optional[str] = None):
             (e.ENTITY_TYPE = 'solution' AND cu.ID_COMPANY = sc.ID_COMPANY)
           )
 
-        { "WHERE LOWER(n.LABEL) LIKE LOWER(@query)" if query else "" }
+        WHERE 1=1
+        { "AND LOWER(n.LABEL) LIKE LOWER(@query)" if query else "" }
+        {universe_filter}
 
         GROUP BY
             n.ID_NUMBER,
@@ -642,10 +673,15 @@ def get_numbers_feed_service(limit: int = 50, query: Optional[str] = None):
         LIMIT @limit
     """
 
-    return query_bq(sql, {
+    params = {
         "limit": limit,
         "query": f"%{query}%" if query else None,
-    })
+    }
+
+    if user_id:
+        params["user_id"] = user_id
+
+    return query_bq(sql, params)
 
 def search_numbers_service(
     id_number_type: Optional[str] = None,
