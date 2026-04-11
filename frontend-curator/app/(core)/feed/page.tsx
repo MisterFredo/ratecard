@@ -15,7 +15,7 @@ import { searchCurator, getLatestCurator } from "@/lib/search";
 import type { FeedItem, FeedBadge } from "@/types/feed";
 import { api } from "@/lib/api";
 
-import { useUniverse } from "@/contexts/UniverseContext"; // 🔥 NEW
+import { useUniverse } from "@/contexts/UniverseContext";
 
 /* ========================================================= */
 
@@ -26,22 +26,7 @@ export default function FeedPage() {
   const analysisId = searchParams.get("analysis_id");
   const newsId = searchParams.get("news_id");
 
-  const { activeUniverse } = useUniverse(); // 🔥 NEW
-
-  /* =========================================================
-     USER CONTEXT
-  ========================================================= */
-
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const id = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("curator_user_id="))
-      ?.split("=")[1];
-
-    setUserId(id || null);
-  }, []);
+  const { activeUniverse } = useUniverse();
 
   /* =========================================================
      DATA
@@ -91,30 +76,25 @@ export default function FeedPage() {
   ========================================================= */
 
   async function load(reset = false, q?: string) {
-    if (!userId) return;
+    if (loading) return;
 
     const finalQuery = (q ?? query)?.trim();
-
-    if (loading) return;
+    const currentOffset = reset ? 0 : offset;
 
     setLoading(true);
 
     try {
-      const currentOffset = reset ? 0 : offset;
-
       const res = finalQuery
         ? await searchCurator({
             query: finalQuery,
             limit: LIMIT,
             offset: currentOffset,
-            user_id: userId,
-            universe_id: activeUniverse, // 🔥 NEW
+            universe_id: activeUniverse, // OK
           })
         : await getLatestCurator({
             limit: LIMIT,
             offset: currentOffset,
-            user_id: userId,
-            universe_id: activeUniverse, // 🔥 NEW
+            universe_id: activeUniverse, // OK
           });
 
       if (reset) {
@@ -138,10 +118,8 @@ export default function FeedPage() {
   ========================================================= */
 
   useEffect(() => {
-    if (userId) {
-      load(true);
-    }
-  }, [userId, activeUniverse]);
+    load(true);
+  }, [activeUniverse]);
 
   /* =========================================================
      DRAWER FROM URL
@@ -173,18 +151,15 @@ export default function FeedPage() {
 
   useEffect(() => {
     async function loadStats() {
-      if (!userId) return;
-
       const s = await getContentStats({
-        user_id: userId,
-        universe_id: activeUniverse, // 🔥 NEW
+        universe_id: activeUniverse,
       });
 
       setStats(s);
     }
 
     loadStats();
-  }, [userId, activeUniverse]);
+  }, [activeUniverse]);
 
   /* =========================================================
      BADGES
