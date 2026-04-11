@@ -246,6 +246,26 @@ def list_company_types():
 
 def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
 
+    universe_filter = ""
+
+    if user_id:
+        universe_filter = f"""
+        AND (
+            NOT EXISTS (
+                SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
+                WHERE ID_USER = @user_id
+            )
+            OR cu.universes IS NULL
+            OR EXISTS (
+                SELECT 1
+                FROM UNNEST(cu.universes) u
+                JOIN `{TABLE_USER_UNIVERSE}` uu
+                  ON uu.ID_UNIVERSE = u
+                WHERE uu.ID_USER = @user_id
+            )
+        )
+        """
+
     sql = f"""
     WITH company_universes AS (
         SELECT
@@ -277,23 +297,7 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
         ON stats.id_company = c.ID_COMPANY
 
     WHERE TRUE
-
-    {f"""
-    AND (
-        NOT EXISTS (
-            SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
-            WHERE ID_USER = @user_id
-        )
-        OR cu.universes IS NULL
-        OR EXISTS (
-            SELECT 1
-            FROM UNNEST(cu.universes) u
-            JOIN `{TABLE_USER_UNIVERSE}` uu
-              ON uu.ID_UNIVERSE = u
-            WHERE uu.ID_USER = @user_id
-        )
-    )
-    """ if user_id else ""}
+    {universe_filter}
 
     ORDER BY c.NAME
     """
@@ -303,7 +307,6 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
         params["user_id"] = user_id
 
     return query_bq(sql, params)
-
 
 # ============================================================
 # GET ONE COMPANY — BQ BRUT
