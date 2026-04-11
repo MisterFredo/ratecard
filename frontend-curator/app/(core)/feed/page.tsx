@@ -138,7 +138,7 @@ export default function FeedPage() {
   ========================================================= */
 
   useEffect(() => {
-    if (userId && activeUniverse) {
+    if (userId) {
       load(true);
     }
   }, [userId, activeUniverse]);
