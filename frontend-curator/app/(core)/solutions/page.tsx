@@ -5,13 +5,21 @@ import { useSearchParams } from "next/navigation";
 import { useDrawer } from "@/contexts/DrawerContext";
 import SolutionCard from "@/components/solutions/SolutionCard";
 
-import { Solution } from "@/types/feed";
-
 export const dynamic = "force-dynamic";
 
 /* =========================================================
    TYPES
 ========================================================= */
+
+type Solution = {
+  id_solution: string;
+  name: string;
+  media_logo_rectangle_id?: string | null;
+  nb_analyses: number;
+  delta_30d: number;
+  is_partner?: boolean;
+  universes: string[]; // 🔥 obligatoire
+};
 
 type SortMode = "alpha" | "activity" | "growth";
 
@@ -26,20 +34,46 @@ function sortSolutions(items: Solution[], mode: SortMode) {
     case "activity":
       return copy.sort(
         (a, b) =>
-          (b.nb_analyses || 0) - (a.nb_analyses || 0)
+          (b.nb_analyses ?? 0) - (a.nb_analyses ?? 0)
       );
 
     case "growth":
       return copy.sort(
         (a, b) =>
-          (b.delta_30d || 0) - (a.delta_30d || 0)
+          (b.delta_30d ?? 0) - (a.delta_30d ?? 0)
       );
 
     default:
       return copy.sort((a, b) =>
-        a.name.localeCompare(b.name)
+        a.name.localeCompare(b.name, "fr", {
+          sensitivity: "base",
+        })
       );
   }
+}
+
+/* =========================================================
+   GROUP BY UNIVERSE
+========================================================= */
+
+function groupByUniverse(
+  solutions: Solution[],
+  mode: SortMode
+) {
+  const map: Record<string, Solution[]> = {};
+
+  solutions.forEach((s) => {
+    s.universes.forEach((u) => {
+      if (!map[u]) map[u] = [];
+      map[u].push(s);
+    });
+  });
+
+  Object.keys(map).forEach((u) => {
+    map[u] = sortSolutions(map[u], mode);
+  });
+
+  return map;
 }
 
 /* =========================================================
@@ -109,10 +143,11 @@ export default function SolutionsPage() {
   }, [searchParams, openLeftDrawer]);
 
   /* ---------------------------------------------------------
-     SORT
+     GROUP
   --------------------------------------------------------- */
 
-  const sorted = sortSolutions(solutions, sortMode);
+  const grouped = groupByUniverse(solutions, sortMode);
+  const hasContent = solutions.length > 0;
 
   /* =========================================================
      RENDER
@@ -166,16 +201,32 @@ export default function SolutionsPage() {
         </p>
       )}
 
+      {/* EMPTY */}
+      {!loading && !hasContent && (
+        <p className="text-sm text-gray-400">
+          Aucune solution disponible pour votre profil.
+        </p>
+      )}
+
       {/* CONTENT */}
-      {!loading && (
-        <>
-          {sorted.length === 0 ? (
-            <p className="text-sm text-gray-400">
-              Aucune solution disponible pour votre profil.
-            </p>
-          ) : (
+      {!loading && hasContent && (
+        Object.entries(grouped).map(([universe, items]) => (
+          <section key={universe} className="space-y-4">
+
+            {/* UNIVERS HEADER */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold uppercase text-gray-400">
+                {universe}
+              </h2>
+
+              <span className="text-xs text-gray-300">
+                {items.length}
+              </span>
+            </div>
+
+            {/* GRID */}
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
-              {sorted.map((s) => (
+              {items.map((s) => (
                 <SolutionCard
                   key={s.id_solution}
                   id={s.id_solution}
@@ -187,8 +238,9 @@ export default function SolutionsPage() {
                 />
               ))}
             </div>
-          )}
-        </>
+
+          </section>
+        ))
       )}
 
     </div>
