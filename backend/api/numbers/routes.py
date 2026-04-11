@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query, Context
 from typing import Optional, List
 
 from api.numbers.models import NumberInput
@@ -17,7 +17,6 @@ from core.numbers.service import (
 )
 from core.numbers.insight_service import generate_numbers_insight
 from core.numbers.insight_service import get_numbers_by_ids
-
 
 router = APIRouter()
 
@@ -239,11 +238,18 @@ def numbers_by_entity(
 
 
 @router.get("/feed")
-def get_numbers_feed(limit: int = 50, query: Optional[str] = None):
+def get_numbers_feed(
+    request: Request,
+    limit: int = 50,
+    query: Optional[str] = None,
+):
+
+    user_id = request.cookies.get("curator_user_id")  # ✅ FIX
 
     items = get_numbers_feed_service(
         limit=limit,
         query=query,
+        user_id=user_id,  # ✅ FIX
     )
 
     return {
@@ -251,7 +257,7 @@ def get_numbers_feed(limit: int = 50, query: Optional[str] = None):
         "items": items,
     }
 
-from core.numbers.insight_service import generate_numbers_insight
+
 
 
 # ============================================================
