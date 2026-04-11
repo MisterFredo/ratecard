@@ -3,11 +3,10 @@ from typing import List, Dict, Optional
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 
-# 🔗 DATA LAYER
 from core.company.service import get_company
 
 # ============================================================
-# VIEWS
+# TABLES / VIEWS
 # ============================================================
 
 VIEW_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED"
@@ -25,30 +24,43 @@ TABLE_COMPANY_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE"
 
 
 # ============================================================
-# INTERNAL — FEED BUILDER
+# 🔥 CORE FILTER BUILDER (UNIQUE SOURCE OF TRUTH)
 # ============================================================
 
-def _get_entity_feed(
-    where_clause_news: str,
-    where_clause_content: str,
-    params: Dict,
-    limit: int = 50,
-    offset: int = 0,
-    user_id: Optional[str] = None,
-) -> List[Dict]:
+def _build_universe_filters(user_id: Optional[str], universe_id: Optional[str]):
 
-    universe_filter_news = ""
-    universe_filter_content = ""
-
-    if user_id:
-
-        universe_filter_news = f"""
-        AND (
-            NOT EXISTS (
-                SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
-                WHERE ID_USER = @user_id
+    # --------------------------------------------------------
+    # 🎯 PRIORITÉ 1 → UI universe
+    # --------------------------------------------------------
+    if universe_id:
+        return (
+            f"""
+            AND EXISTS (
+                SELECT 1
+                FROM `{TABLE_COMPANY_UNIVERSE}` cu
+                WHERE cu.ID_COMPANY = n.id_company
+                  AND cu.ID_UNIVERSE = @universe_id
             )
-            OR EXISTS (
+            """,
+            f"""
+            AND EXISTS (
+                SELECT 1
+                FROM UNNEST(c.companies) comp
+                JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+                    ON cu.ID_COMPANY = comp.id_company
+                WHERE cu.ID_UNIVERSE = @universe_id
+            )
+            """,
+            {"universe_id": universe_id}
+        )
+
+    # --------------------------------------------------------
+    # 🎯 PRIORITÉ 2 → USER universes
+    # --------------------------------------------------------
+    if user_id:
+        return (
+            f"""
+            AND EXISTS (
                 SELECT 1
                 FROM `{TABLE_USER_UNIVERSE}` uu
                 JOIN `{TABLE_COMPANY_UNIVERSE}` cu
@@ -56,16 +68,9 @@ def _get_entity_feed(
                 WHERE uu.ID_USER = @user_id
                   AND cu.ID_COMPANY = n.id_company
             )
-        )
-        """
-
-        universe_filter_content = f"""
-        AND (
-            NOT EXISTS (
-                SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
-                WHERE ID_USER = @user_id
-            )
-            OR EXISTS (
+            """,
+            f"""
+            AND EXISTS (
                 SELECT 1
                 FROM UNNEST(c.companies) comp
                 JOIN `{TABLE_COMPANY_UNIVERSE}` cu
@@ -74,156 +79,129 @@ def _get_entity_feed(
                     ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
                 WHERE uu.ID_USER = @user_id
             )
+            """,
+            {"user_id": user_id}
         )
-        """
 
-        params["user_id"] = user_id
+    # --------------------------------------------------------
+    # 🎯 PRIORITÉ 3 → PAS DE FILTRE
+    # --------------------------------------------------------
+    return "", "", {}
+
+
+# ============================================================
+# 🔥 GENERIC FEED BUILDER
+# ============================================================
+
+def _get_entity_feed(
+    where_news: str,
+    where_content: str,
+    params: Dict,
+    limit: int,
+    offset: int,
+    user_id: Optional[str],
+    universe_id: Optional[str],
+):
+
+    filter_news, filter_content, filter_params = _build_universe_filters(
+        user_id, universe_id
+    )
 
     sql = f"""
-    -- NEWS
-    SELECT
-        n.id_news AS id,
-        'news' AS type,
-        n.title,
-        n.excerpt,
-        n.published_at,
-        n.news_type,
-        n.topics,
-        ARRAY<STRUCT<id_company STRING, name STRING>>[
-          STRUCT(n.id_company, n.company_name)
-        ] AS companies,
-        [] AS solutions
-    FROM `{VIEW_NEWS}` n
-    WHERE {where_clause_news}
-    {universe_filter_news}
+    SELECT * FROM (
 
-    UNION ALL
+        -- NEWS
+        SELECT
+            n.id_news AS id,
+            'news' AS type,
+            n.title,
+            n.excerpt,
+            n.published_at,
+            n.news_type,
+            n.topics,
+            ARRAY<STRUCT<id_company STRING, name STRING>>[
+                STRUCT(n.id_company, n.company_name)
+            ] AS companies,
+            [] AS solutions
+        FROM `{VIEW_NEWS}` n
+        WHERE {where_news}
+        {filter_news}
 
-    -- CONTENT
-    SELECT
-        c.id_content AS id,
-        'analysis' AS type,
-        c.title,
-        c.excerpt,
-        c.published_at,
-        NULL AS news_type,
-        c.topics,
-        c.companies,
-        c.solutions
-    FROM `{VIEW_CONTENT}` c
-    WHERE {where_clause_content}
-    {universe_filter_content}
+        UNION ALL
 
+        -- CONTENT
+        SELECT
+            c.id_content AS id,
+            'analysis' AS type,
+            c.title,
+            c.excerpt,
+            c.published_at,
+            NULL AS news_type,
+            c.topics,
+            c.companies,
+            c.solutions
+        FROM `{VIEW_CONTENT}` c
+        WHERE {where_content}
+        {filter_content}
+
+    )
     ORDER BY published_at DESC
     LIMIT @limit
     OFFSET @offset
     """
 
-    query_params = {
+    final_params = {
         **params,
+        **filter_params,
         "limit": limit,
         "offset": offset,
     }
 
-    rows = query_bq(sql, query_params)
-
+    rows = query_bq(sql, final_params)
     return [_map_feed_row(r) for r in rows]
-
-
-# ============================================================
-# ACCESS CHECK
-# ============================================================
-
-def _check_company_access(company_id: str, user_id: Optional[str]) -> bool:
-
-    if not user_id:
-        return True
-
-    has_universe = query_bq(f"""
-        SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
-        WHERE ID_USER = @user_id
-        LIMIT 1
-    """, {"user_id": user_id})
-
-    if not has_universe:
-        return True  # admin
-
-    access = query_bq(f"""
-        SELECT 1
-        FROM `{TABLE_USER_UNIVERSE}` uu
-        JOIN `{TABLE_COMPANY_UNIVERSE}` cu
-            ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
-        WHERE uu.ID_USER = @user_id
-          AND cu.ID_COMPANY = @company_id
-        LIMIT 1
-    """, {
-        "user_id": user_id,
-        "company_id": company_id
-    })
-
-    return bool(access)
 
 
 # ============================================================
 # COMPANY
 # ============================================================
 
-def get_company_feed(
-    company_id: str,
-    limit: int = 50,
-    offset: int = 0,
-    user_id: Optional[str] = None,
-) -> List[Dict]:
-
+def get_company_feed(company_id, limit, offset, user_id, universe_id):
     return _get_entity_feed(
-        where_clause_news="n.id_company = @company_id",
-        where_clause_content="""
-            EXISTS (
-                SELECT 1
-                FROM UNNEST(c.companies) comp
-                WHERE comp.id_company = @company_id
-            )
+        "n.id_company = @company_id",
+        """
+        EXISTS (
+            SELECT 1 FROM UNNEST(c.companies) comp
+            WHERE comp.id_company = @company_id
+        )
         """,
-        params={"company_id": company_id},
-        limit=limit,
-        offset=offset,
-        user_id=user_id,
+        {"company_id": company_id},
+        limit,
+        offset,
+        user_id,
+        universe_id,
     )
 
 
-def get_company_view(
-    company_id: str,
-    limit: int = 50,
-    offset: int = 0,
-    user_id: Optional[str] = None,
-) -> Optional[Dict]:
-
-    if not _check_company_access(company_id, user_id):
-        return None
+def get_company_view(company_id, limit, offset, user_id, universe_id):
 
     company = get_company(company_id)
-
     if not company:
         return None
 
-    stats_rows = query_bq(f"""
-        SELECT
-            COALESCE(total, 0) AS NB_ANALYSES,
-            COALESCE(last_30_days, 0) AS DELTA_30D
+    stats = query_bq(f"""
+        SELECT total, last_30_days
         FROM `{VIEW_STATS_COMPANY}`
         WHERE id_company = @company_id
         LIMIT 1
     """, {"company_id": company_id})
 
-    stats = stats_rows[0] if stats_rows else {}
-
-    items = get_company_feed(company_id, limit, offset, user_id=user_id)
+    items = get_company_feed(company_id, limit, offset, user_id, universe_id)
 
     return {
         **company,
-        "nb_analyses": stats.get("NB_ANALYSES", 0),
-        "delta_30d": stats.get("DELTA_30D", 0),
-        "items": items
+        "nb_analyses": stats[0]["total"] if stats else 0,
+        "delta_30d": stats[0]["last_30_days"] if stats else 0,
+        "items": items,
     }
 
 
@@ -231,167 +209,58 @@ def get_company_view(
 # TOPIC
 # ============================================================
 
-def get_topic_feed(
-    topic_id: str,
-    limit: int = 50,
-    offset: int = 0,
-    user_id: Optional[str] = None,
-) -> List[Dict]:
-
+def get_topic_feed(topic_id, limit, offset, user_id, universe_id):
     return _get_entity_feed(
-        where_clause_news="""
-            EXISTS (
-                SELECT 1
-                FROM UNNEST(n.topics) t
-                WHERE t.id_topic = @topic_id
-            )
+        """
+        EXISTS (SELECT 1 FROM UNNEST(n.topics) t WHERE t.id_topic = @topic_id)
         """,
-        where_clause_content="""
-            EXISTS (
-                SELECT 1
-                FROM UNNEST(c.topics) t
-                WHERE t.id_topic = @topic_id
-            )
+        """
+        EXISTS (SELECT 1 FROM UNNEST(c.topics) t WHERE t.id_topic = @topic_id)
         """,
-        params={"topic_id": topic_id},
-        limit=limit,
-        offset=offset,
-        user_id=user_id,
+        {"topic_id": topic_id},
+        limit,
+        offset,
+        user_id,
+        universe_id,
     )
-
-
-def get_topic_view(
-    topic_id: str,
-    limit: int = 50,
-    offset: int = 0,
-    user_id: Optional[str] = None,
-) -> Dict:
-
-    topic_rows = query_bq(f"""
-        SELECT ID_TOPIC, LABEL, TOPIC_AXIS, DESCRIPTION
-        FROM `{TABLE_TOPIC}`
-        WHERE ID_TOPIC = @topic_id
-        LIMIT 1
-    """, {"topic_id": topic_id})
-
-    topic = topic_rows[0] if topic_rows else {}
-
-    stats_rows = query_bq(f"""
-        SELECT
-            COALESCE(total, 0) AS NB_ANALYSES,
-            COALESCE(last_30_days, 0) AS DELTA_30D
-        FROM `{VIEW_STATS_TOPIC}`
-        WHERE id_topic = @topic_id
-        LIMIT 1
-    """, {"topic_id": topic_id})
-
-    stats = stats_rows[0] if stats_rows else {}
-
-    items = get_topic_feed(topic_id, limit, offset, user_id=user_id)
-
-    return {
-        "id_topic": topic_id,
-        "label": topic.get("LABEL"),
-        "topic_axis": topic.get("TOPIC_AXIS"),
-        "description": topic.get("DESCRIPTION"),
-        "nb_analyses": stats.get("NB_ANALYSES", 0),
-        "delta_30d": stats.get("DELTA_30D", 0),
-        "items": items
-    }
 
 
 # ============================================================
 # SOLUTION
 # ============================================================
 
-def get_solution_feed(
-    solution_id: str,
-    limit: int = 50,
-    offset: int = 0,
-    user_id: Optional[str] = None,
-) -> List[Dict]:
-
+def get_solution_feed(solution_id, limit, offset, user_id, universe_id):
     return _get_entity_feed(
-        where_clause_news="FALSE",
-        where_clause_content="""
-            EXISTS (
-                SELECT 1
-                FROM UNNEST(c.solutions) s
-                WHERE s.id_solution = @solution_id
-            )
+        "FALSE",
+        """
+        EXISTS (
+            SELECT 1 FROM UNNEST(c.solutions) s
+            WHERE s.id_solution = @solution_id
+        )
         """,
-        params={"solution_id": solution_id},
-        limit=limit,
-        offset=offset,
-        user_id=user_id,
+        {"solution_id": solution_id},
+        limit,
+        offset,
+        user_id,
+        universe_id,
     )
-
-
-def get_solution_view(
-    solution_id: str,
-    limit: int = 50,
-    offset: int = 0,
-    user_id: Optional[str] = None,
-) -> Dict:
-
-    solution_rows = query_bq(f"""
-        SELECT
-            s.ID_SOLUTION,
-            s.NAME,
-            s.ID_COMPANY,
-            c.NAME AS COMPANY_NAME,
-            c.MEDIA_LOGO_RECTANGLE_ID
-        FROM `{TABLE_SOLUTION}` s
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
-            ON c.ID_COMPANY = s.ID_COMPANY
-        WHERE s.ID_SOLUTION = @solution_id
-        LIMIT 1
-    """, {"solution_id": solution_id})
-
-    solution = solution_rows[0] if solution_rows else {}
-
-    if not _check_company_access(solution.get("ID_COMPANY"), user_id):
-        return None
-
-    stats_rows = query_bq(f"""
-        SELECT
-            COALESCE(total, 0) AS NB_ANALYSES,
-            COALESCE(last_30_days, 0) AS DELTA_30D
-        FROM `{VIEW_STATS_SOLUTION}`
-        WHERE id_solution = @solution_id
-        LIMIT 1
-    """, {"solution_id": solution_id})
-
-    stats = stats_rows[0] if stats_rows else {}
-
-    items = get_solution_feed(solution_id, limit, offset, user_id=user_id)
-
-    return {
-        "id_solution": solution_id,
-        "name": solution.get("NAME"),
-        "company_name": solution.get("COMPANY_NAME"),
-        "media_logo_rectangle_id": solution.get("MEDIA_LOGO_RECTANGLE_ID"),
-        "nb_analyses": stats.get("NB_ANALYSES", 0),
-        "delta_30d": stats.get("DELTA_30D", 0),
-        "items": items
-    }
 
 
 # ============================================================
 # MAPPER
 # ============================================================
 
-def _map_feed_row(r: Dict) -> Dict:
+def _map_feed_row(r: Dict):
 
-    def map_dt(value):
-        return value.isoformat() if value else None
+    def fmt(dt):
+        return dt.isoformat() if dt else None
 
     return {
         "id": r.get("id"),
         "type": r.get("type"),
         "title": r.get("title"),
         "excerpt": r.get("excerpt"),
-        "published_at": map_dt(r.get("published_at")),
+        "published_at": fmt(r.get("published_at")),
         "news_type": r.get("news_type"),
         "topics": r.get("topics") or [],
         "companies": r.get("companies") or [],
