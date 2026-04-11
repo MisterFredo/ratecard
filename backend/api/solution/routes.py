@@ -44,6 +44,21 @@ def list_route():
     except Exception as e:
         raise HTTPException(400, f"Erreur liste solutions : {e}")
 
+@router.get("/list-curator")
+def list_solutions_curator(request: Request):
+    try:
+        user_id = request.cookies.get("curator_user_id")
+
+        solutions = list_solutions_for_user(user_id)
+
+        return {
+            "status": "ok",
+            "solutions": solutions,
+        }
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur liste solutions curator : {e}")
+
 
 # ============================================================
 # GET ONE (ADMIN / CRUD)
@@ -138,14 +153,4 @@ def delete_route(id_solution: str):
     except Exception as e:
         raise HTTPException(400, f"Erreur suppression solution : {e}")
 
-@router.get("/list-curator")
-def list_curator_solutions(request: Request):
 
-    user_id = request.cookies.get("curator_user_id")
-
-    solutions = list_solutions_for_user(user_id)
-
-    return {
-        "status": "ok",
-        "solutions": solutions
-    }
