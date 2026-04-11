@@ -249,7 +249,7 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
 
     universe_filter = ""
 
-    if user_id:
+    if user_id is not None:
         universe_filter = f"""
         AND (
             NOT EXISTS (
@@ -304,11 +304,10 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
     """
 
     params = {}
-    if user_id:
+    if user_id is not None:
         params["user_id"] = user_id
 
     return query_bq(sql, params)
-
 # ============================================================
 # GET ONE COMPANY — BQ BRUT
 # ============================================================
