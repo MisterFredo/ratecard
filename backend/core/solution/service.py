@@ -149,6 +149,49 @@ def list_solutions():
         for r in rows
     ]
 
+def list_solutions_for_user(user_id: Optional[str]) -> List[Dict]:
+
+    sql = f"""
+    SELECT
+        s.ID_SOLUTION as id_solution,
+        s.NAME as name,
+        s.ID_COMPANY as id_company,
+        c.NAME as company_name,
+        c.MEDIA_LOGO_RECTANGLE_ID
+
+    FROM `{TABLE_SOLUTION}` s
+
+    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+        ON c.ID_COMPANY = s.ID_COMPANY
+
+    WHERE TRUE
+
+    {f"""
+    AND (
+        NOT EXISTS (
+            SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
+            WHERE ID_USER = @user_id
+        )
+        OR EXISTS (
+            SELECT 1
+            FROM `{TABLE_COMPANY_UNIVERSE}` cu
+            JOIN `{TABLE_USER_UNIVERSE}` uu
+              ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND cu.ID_COMPANY = s.ID_COMPANY
+        )
+    )
+    """ if user_id else ""}
+
+    ORDER BY s.NAME
+    """
+
+    params = {}
+    if user_id:
+        params["user_id"] = user_id
+
+    return query_bq(sql, params)
+
 
 # ============================================================
 # GET ONE SOLUTION
