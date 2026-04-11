@@ -15,12 +15,14 @@ type Company = {
   media_logo_rectangle_id?: string | null;
   nb_analyses: number;
   delta_30d: number;
-  universes: string[]; // ✅ désormais toujours présent
+  universes: string[];
 };
 
 type SortMode = "alpha" | "activity" | "growth";
 
-/* ========================================================= */
+/* =========================================================
+   FETCH
+========================================================= */
 
 async function fetchCompanies(): Promise<Company[]> {
   const res = await fetch(
@@ -31,10 +33,17 @@ async function fetchCompanies(): Promise<Company[]> {
   if (!res.ok) return [];
 
   const json = await res.json();
-  return json?.companies || [];
+
+  // 🔥 SAFE universes
+  return (json?.companies || []).map((c: any) => ({
+    ...c,
+    universes: c.universes ?? [],
+  }));
 }
 
-/* ========================================================= */
+/* =========================================================
+   SORT
+========================================================= */
 
 function sortCompanies(
   companies: Company[],
@@ -60,7 +69,9 @@ function sortCompanies(
   }
 }
 
-/* ========================================================= */
+/* =========================================================
+   GROUP BY UNIVERSE
+========================================================= */
 
 function groupByUniverse(
   companies: Company[],
@@ -69,8 +80,9 @@ function groupByUniverse(
   const map: Record<string, Company[]> = {};
 
   companies.forEach((c) => {
-    // ✅ plus de fallback "Autres"
-    c.universes.forEach((u) => {
+    const universes = c.universes ?? [];
+
+    universes.forEach((u) => {
       if (!map[u]) map[u] = [];
       map[u].push(c);
     });
@@ -83,7 +95,9 @@ function groupByUniverse(
   return map;
 }
 
-/* ========================================================= */
+/* =========================================================
+   PAGE
+========================================================= */
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -95,19 +109,25 @@ export default function CompaniesPage() {
 
   const lastOpenedId = useRef<string | null>(null);
 
-  /* LOAD */
+  /* ---------------------------------------------------------
+     LOAD
+  --------------------------------------------------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
+
       const data = await fetchCompanies();
       setCompanies(data);
+
       setLoading(false);
     }
 
     load();
   }, []);
 
-  /* DRAWER */
+  /* ---------------------------------------------------------
+     DRAWER
+  --------------------------------------------------------- */
   useEffect(() => {
     const companyId = searchParams.get("company_id");
 
@@ -122,12 +142,16 @@ export default function CompaniesPage() {
     openLeftDrawer("company", companyId);
   }, [searchParams, openLeftDrawer]);
 
-  /* GROUP */
-  const grouped = groupByUniverse(companies, sortMode);
+  /* ---------------------------------------------------------
+     DATA
+  --------------------------------------------------------- */
 
+  const grouped = groupByUniverse(companies, sortMode);
   const hasContent = companies.length > 0;
 
-  /* ========================================================= */
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <div className="space-y-8">
@@ -156,7 +180,7 @@ export default function CompaniesPage() {
                 setSortMode(s.key as SortMode)
               }
               className={`
-                px-3 py-1 rounded border
+                px-3 py-1 rounded border transition
                 ${
                   sortMode === s.key
                     ? "bg-teal-600 text-white border-teal-600"
