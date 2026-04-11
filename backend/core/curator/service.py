@@ -397,13 +397,36 @@ def get_item_detail(
     if not item:
         return None  # ❌ accès refusé
 
+    # 👉 on est sûr que l'utilisateur a le droit
+
     if item_type == "analysis":
         from core.content.public_service import get_content
-        return get_content(item_id)
+        content = get_content(item_id)
+
+        if not content:
+            return None
+
+        # 🔥 option safe : enrichir avec item
+        return {
+            **content,
+            "topics": item.get("topics", []),
+            "companies": item.get("companies", []),
+            "solutions": item.get("solutions", []),
+        }
 
     elif item_type == "news":
         from core.news.service import get_news
-        return get_news(item_id)
+        news = get_news(item_id)
+
+        if not news:
+            return None
+
+        return {
+            **news,
+            "topics": item.get("topics", []),
+            "companies": item.get("companies", []),
+            "solutions": item.get("solutions", []),
+        }
 
     return None
 
