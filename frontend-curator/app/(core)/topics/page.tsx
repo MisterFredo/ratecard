@@ -13,14 +13,15 @@ type Topic = {
   id_topic: string;
   label: string;
   topic_axis: string;
-
   nb_analyses: number;
   delta_30d: number;
 };
 
 type SortMode = "alpha" | "activity" | "growth";
 
-/* ========================================================= */
+/* =========================================================
+   FETCH
+========================================================= */
 
 async function fetchTopics(): Promise<Topic[]> {
   const res = await fetch(
@@ -37,7 +38,9 @@ async function fetchTopics(): Promise<Topic[]> {
   return json.topics || [];
 }
 
-/* ========================================================= */
+/* =========================================================
+   SORT
+========================================================= */
 
 function sortTopics(items: Topic[], mode: SortMode) {
   const copy = [...items];
@@ -56,7 +59,9 @@ function sortTopics(items: Topic[], mode: SortMode) {
   }
 }
 
-/* ========================================================= */
+/* =========================================================
+   GROUP
+========================================================= */
 
 function groupByAxis(topics: Topic[], mode: SortMode) {
   const map: Record<string, Topic[]> = {};
@@ -75,10 +80,13 @@ function groupByAxis(topics: Topic[], mode: SortMode) {
   return map;
 }
 
-/* ========================================================= */
+/* =========================================================
+   PAGE
+========================================================= */
 
 export default function TopicsPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
+  const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] =
     useState<SortMode>("activity");
 
@@ -87,12 +95,25 @@ export default function TopicsPage() {
 
   const lastOpenedId = useRef<string | null>(null);
 
-  /* LOAD */
+  /* ---------------------------------------------------------
+     LOAD
+  --------------------------------------------------------- */
   useEffect(() => {
-    fetchTopics().then(setTopics);
+    async function load() {
+      setLoading(true);
+
+      const data = await fetchTopics();
+      setTopics(data);
+
+      setLoading(false);
+    }
+
+    load();
   }, []);
 
-  /* DRAWER */
+  /* ---------------------------------------------------------
+     DRAWER
+  --------------------------------------------------------- */
   useEffect(() => {
     const topicId = searchParams.get("topic_id");
 
@@ -107,6 +128,10 @@ export default function TopicsPage() {
     openLeftDrawer("topic", topicId);
   }, [searchParams, openLeftDrawer]);
 
+  /* ---------------------------------------------------------
+     DATA
+  --------------------------------------------------------- */
+
   const grouped = groupByAxis(topics, sortMode);
 
   const totalTopics = topics.length;
@@ -115,14 +140,14 @@ export default function TopicsPage() {
     0
   );
 
-  /* ========================================================= */
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <div className="space-y-12">
 
-      {/* =====================================================
-          HEADER PREMIUM
-      ===================================================== */}
+      {/* HEADER */}
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
 
         <div className="space-y-2">
@@ -168,51 +193,61 @@ export default function TopicsPage() {
         </div>
       </div>
 
-      {/* =====================================================
-          SECTIONS
-      ===================================================== */}
-      {Object.keys(grouped).length === 0 ? (
+      {/* LOADING */}
+      {loading && (
         <p className="text-sm text-gray-400">
-          Aucun topic pour le moment.
+          Chargement des topics...
         </p>
-      ) : (
-        Object.entries(grouped).map(([axis, items]) => (
-          <section key={axis} className="space-y-6">
-
-            {/* AXIS HEADER */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {axis}
-              </h2>
-
-              <span className="text-xs text-gray-300">
-                {items.length} topics
-              </span>
-            </div>
-
-            {/* GRID */}
-            <div className="
-              grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6
-              gap-5
-            ">
-              {items.map((t) => (
-                <div
-                  key={t.id_topic}
-                  className="transition-transform hover:-translate-y-0.5"
-                >
-                  <TopicCard
-                    id={t.id_topic}
-                    label={t.label}
-                    nbAnalyses={t.nb_analyses}
-                    delta30d={t.delta_30d}
-                  />
-                </div>
-              ))}
-            </div>
-
-          </section>
-        ))
       )}
+
+      {/* CONTENT */}
+      {!loading && (
+        <>
+          {Object.keys(grouped).length === 0 ? (
+            <p className="text-sm text-gray-400">
+              Aucun topic pour le moment.
+            </p>
+          ) : (
+            Object.entries(grouped).map(([axis, items]) => (
+              <section key={axis} className="space-y-6">
+
+                {/* AXIS HEADER */}
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    {axis}
+                  </h2>
+
+                  <span className="text-xs text-gray-300">
+                    {items.length} topics
+                  </span>
+                </div>
+
+                {/* GRID */}
+                <div className="
+                  grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6
+                  gap-5
+                ">
+                  {items.map((t) => (
+                    <div
+                      key={t.id_topic}
+                      className="transition-transform hover:-translate-y-0.5"
+                    >
+                      <TopicCard
+                        id={t.id_topic}
+                        label={t.label}
+                        nbAnalyses={t.nb_analyses}
+                        delta30d={t.delta_30d}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+              </section>
+            ))
+          )}
+        </>
+      )}
+
     </div>
   );
 }
