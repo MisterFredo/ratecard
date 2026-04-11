@@ -256,7 +256,7 @@ def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
                 SELECT 1 FROM `{TABLE_USER_UNIVERSE}`
                 WHERE ID_USER = @user_id
             )
-            OR ARRAY_LENGTH(cu.universes) = 0
+            OR ARRAY_LENGTH(IFNULL(cu.universes, [])) = 0
             OR EXISTS (
                 SELECT 1
                 FROM UNNEST(IFNULL(cu.universes, [])) u
