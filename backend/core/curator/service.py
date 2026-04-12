@@ -424,7 +424,7 @@ def get_content_stats():
     global_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_GLOBAL`
-    """, {})  # 🔥 FIX
+    """)
 
     if global_rows:
         g = global_rows[0]
@@ -444,7 +444,7 @@ def get_content_stats():
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_TOPIC`
         ORDER BY total DESC
-    """, {})  # 🔥 FIX
+    """)
 
     topics_stats = [
         {
@@ -459,14 +459,14 @@ def get_content_stats():
     ]
 
     # =====================================================
-    # COMPANIES
+    # COMPANIES (GLOBAL)
     # =====================================================
 
     company_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY`
         ORDER BY total DESC
-    """, {})  # 🔥 FIX
+    """)
 
     top_companies = [
         {
@@ -481,14 +481,14 @@ def get_content_stats():
     ]
 
     # =====================================================
-    # SOLUTIONS
+    # SOLUTIONS (GLOBAL)
     # =====================================================
 
     solution_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION`
         ORDER BY total DESC
-    """, {})  # 🔥 FIX
+    """)
 
     top_solutions = [
         {
