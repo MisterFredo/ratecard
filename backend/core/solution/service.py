@@ -99,7 +99,7 @@ def list_solutions() -> List[Dict]:
         r.KEY_POINTS,
 
         -- 🔥 UNIVERS (clé front)
-        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
+        ARRAY_AGG(DISTINCT u.LABEL) AS universes
 
     FROM `{TABLE_SOLUTION}` s
 
