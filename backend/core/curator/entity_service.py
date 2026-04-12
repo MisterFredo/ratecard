@@ -5,6 +5,7 @@ from utils.bigquery_utils import query_bq
 
 from core.company.service import get_company
 
+
 # ============================================================
 # TABLES / VIEWS
 # ============================================================
@@ -18,40 +19,7 @@ VIEW_STATS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION"
 
 TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
 TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
-
-TABLE_USER_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE"
 TABLE_COMPANY_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE"
-
-
-# ============================================================
-# 🔥 CORE FILTER BUILDER (UNIQUE SOURCE OF TRUTH)
-# ============================================================
-
-def _build_universe_filters(universe_id: Optional[str]):
-
-    if not universe_id:
-        return "", "", {}
-
-    return (
-        f"""
-        AND EXISTS (
-            SELECT 1
-            FROM `{TABLE_COMPANY_UNIVERSE}` cu
-            WHERE cu.ID_COMPANY = n.id_company
-              AND cu.ID_UNIVERSE = @universe_id
-        )
-        """,
-        f"""
-        AND EXISTS (
-            SELECT 1
-            FROM UNNEST(c.companies) comp
-            JOIN `{TABLE_COMPANY_UNIVERSE}` cu
-                ON cu.ID_COMPANY = comp.id_company
-            WHERE cu.ID_UNIVERSE = @universe_id
-        )
-        """,
-        {"universe_id": universe_id}
-    )
 
 
 # ============================================================
@@ -64,11 +32,11 @@ def _get_entity_feed(
     params: Dict,
     limit: int = 50,
     offset: int = 0,
-    universe_id: Optional[str] = None,  # ✅ NEW
+    universe_id: Optional[str] = None,
 ) -> List[Dict]:
 
     # ============================================================
-    # 🔥 UNIVERSE FILTER (UI ONLY)
+    # 🌍 UNIVERSE FILTER (UI ONLY)
     # ============================================================
 
     universe_filter_news = ""
@@ -79,7 +47,7 @@ def _get_entity_feed(
         universe_filter_news = f"""
         AND EXISTS (
             SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+            FROM `{TABLE_COMPANY_UNIVERSE}` cu
             WHERE cu.ID_COMPANY = n.id_company
               AND cu.ID_UNIVERSE = @universe_id
         )
@@ -89,7 +57,7 @@ def _get_entity_feed(
         AND EXISTS (
             SELECT 1
             FROM UNNEST(c.companies) comp
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+            JOIN `{TABLE_COMPANY_UNIVERSE}` cu
                 ON cu.ID_COMPANY = comp.id_company
             WHERE cu.ID_UNIVERSE = @universe_id
         )
@@ -179,6 +147,7 @@ def get_company_feed(
         universe_id=universe_id
     )
 
+
 def get_company_view(
     company_id: str,
     limit: int = 50,
@@ -187,7 +156,6 @@ def get_company_view(
 ) -> Optional[Dict]:
 
     company = get_company(company_id)
-
     if not company:
         return None
 
@@ -211,10 +179,6 @@ def get_company_view(
         "items": items
     }
 
-
-# ============================================================
-# TOPIC
-# ============================================================
 
 # ============================================================
 # TOPIC
@@ -256,26 +220,14 @@ def get_topic_view(
     universe_id: Optional[str] = None
 ) -> Dict:
 
-    # ============================================================
-    # INFO
-    # ============================================================
-
     topic_rows = query_bq(f"""
-        SELECT
-            ID_TOPIC,
-            LABEL,
-            TOPIC_AXIS,
-            DESCRIPTION
+        SELECT ID_TOPIC, LABEL, TOPIC_AXIS, DESCRIPTION
         FROM `{TABLE_TOPIC}`
         WHERE ID_TOPIC = @topic_id
         LIMIT 1
     """, {"topic_id": topic_id})
 
     topic = topic_rows[0] if topic_rows else {}
-
-    # ============================================================
-    # STATS
-    # ============================================================
 
     stats_rows = query_bq(f"""
         SELECT
@@ -288,20 +240,7 @@ def get_topic_view(
 
     stats = stats_rows[0] if stats_rows else {}
 
-    # ============================================================
-    # FEED
-    # ============================================================
-
-    items = get_topic_feed(
-        topic_id=topic_id,
-        limit=limit,
-        offset=offset,
-        universe_id=universe_id
-    )
-
-    # ============================================================
-    # RETURN
-    # ============================================================
+    items = get_topic_feed(topic_id, limit, offset, universe_id)
 
     return {
         "id_topic": topic_id,
@@ -312,9 +251,7 @@ def get_topic_view(
         "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
     }
-# ============================================================
-# SOLUTION
-# ============================================================
+
 
 # ============================================================
 # SOLUTION
@@ -350,10 +287,6 @@ def get_solution_view(
     universe_id: Optional[str] = None
 ) -> Dict:
 
-    # ============================================================
-    # INFO
-    # ============================================================
-
     solution_rows = query_bq(f"""
         SELECT
             s.ID_SOLUTION,
@@ -369,10 +302,6 @@ def get_solution_view(
 
     solution = solution_rows[0] if solution_rows else {}
 
-    # ============================================================
-    # STATS
-    # ============================================================
-
     stats_rows = query_bq(f"""
         SELECT
             COALESCE(total, 0) AS NB_ANALYSES,
@@ -384,20 +313,7 @@ def get_solution_view(
 
     stats = stats_rows[0] if stats_rows else {}
 
-    # ============================================================
-    # FEED
-    # ============================================================
-
-    items = get_solution_feed(
-        solution_id=solution_id,
-        limit=limit,
-        offset=offset,
-        universe_id=universe_id
-    )
-
-    # ============================================================
-    # RETURN
-    # ============================================================
+    items = get_solution_feed(solution_id, limit, offset, universe_id)
 
     return {
         "id_solution": solution_id,
@@ -408,6 +324,7 @@ def get_solution_view(
         "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
     }
+
 
 # ============================================================
 # MAPPER
