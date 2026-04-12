@@ -15,11 +15,13 @@ class SolutionCreate(BaseModel):
 
     name: str = Field(..., min_length=1)
 
-    id_company: Optional[str] = None
+    # 🔥 OBLIGATOIRE (sinon pas d'univers)
+    id_company: str
+
     description: Optional[str] = None
     insight_frequency: Optional[str] = "QUARTERLY"
 
-    content: Optional[str] = Field(None)
+    content: Optional[str] = None
 
     status: str = "DRAFT"
     vectorise: bool = False
@@ -35,11 +37,13 @@ class SolutionCreate(BaseModel):
 class SolutionUpdate(BaseModel):
     """
     Mise à jour partielle d'une solution.
-    Tous les champs sont optionnels.
     """
 
     name: Optional[str] = None
+
+    # 🔥 autorisé en update (changement de rattachement)
     id_company: Optional[str] = None
+
     description: Optional[str] = None
     insight_frequency: Optional[str] = None
     content: Optional[str] = None
@@ -60,7 +64,9 @@ class SolutionOut(BaseModel):
     id_solution: str
     name: str
 
-    id_company: Optional[str] = None
+    # 🔥 cohérent avec CREATE
+    id_company: str
+
     description: Optional[str] = None
     insight_frequency: Optional[str] = None
     content: Optional[str] = None
@@ -70,6 +76,7 @@ class SolutionOut(BaseModel):
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
     has_numbers: Optional[bool] = False
 
     class Config:
