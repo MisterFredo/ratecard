@@ -2,8 +2,9 @@
 
 import uuid
 from datetime import datetime
+from typing import Optional, Dict, List
+
 from google.cloud import bigquery
-from typing import Optional, Dict, Any, List
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import (
@@ -15,9 +16,9 @@ from api.company.models import CompanyCreate, CompanyUpdate
 
 
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
-TABLE_COMPANY_METRICS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_METRICS"
 TABLE_NUMBERS_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_COMPANY"
 TABLE_COMPANY_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE"
+
 VIEW_STATS_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY"
 
 ALLOWED_FREQUENCIES = ["WEEKLY", "MONTHLY", "QUARTERLY"]
@@ -26,7 +27,9 @@ ALLOWED_FREQUENCIES = ["WEEKLY", "MONTHLY", "QUARTERLY"]
 # ============================================================
 # CREATE COMPANY
 # ============================================================
+
 def create_company(data: CompanyCreate) -> str:
+
     company_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
 
@@ -51,147 +54,145 @@ def create_company(data: CompanyCreate) -> str:
     }]
 
     client = get_bigquery_client()
-    job = client.load_table_from_json(
+
+    client.load_table_from_json(
         row,
         TABLE_COMPANY,
         job_config=bigquery.LoadJobConfig(
             write_disposition="WRITE_APPEND"
         ),
-    )
-    job.result()
+    ).result()
 
-    # 🔥 ASSIGN UNIVERS
     if data.universes:
         assign_company_universes(company_id, data.universes)
 
     return company_id
 
-def assign_company_universes(company_id: str, universes: list[str]):
 
-    # delete existing
-    delete_query = f"""
-    DELETE FROM `{TABLE_COMPANY_UNIVERSE}`
-    WHERE ID_COMPANY = @company_id
-    """
+# ============================================================
+# UNIVERS
+# ============================================================
 
-    query_bq(delete_query, {"company_id": company_id})
+def assign_company_universes(company_id: str, universes: List[str]):
 
-    # insert new
+    # DELETE
+    query_bq(f"""
+        DELETE FROM `{TABLE_COMPANY_UNIVERSE}`
+        WHERE ID_COMPANY = @company_id
+    """, {"company_id": company_id})
+
+    # INSERT
     for u in universes:
-        insert_query = f"""
-        INSERT INTO `{TABLE_COMPANY_UNIVERSE}` (
-            ID_COMPANY,
-            ID_UNIVERSE,
-            CREATED_AT
-        )
-        VALUES (
-            @company_id,
-            @universe,
-            CURRENT_TIMESTAMP()
-        )
-        """
-
-        query_bq(insert_query, {
+        query_bq(f"""
+            INSERT INTO `{TABLE_COMPANY_UNIVERSE}` (
+                ID_COMPANY,
+                ID_UNIVERSE,
+                CREATED_AT
+            )
+            VALUES (
+                @company_id,
+                @universe,
+                CURRENT_TIMESTAMP()
+            )
+        """, {
             "company_id": company_id,
             "universe": u,
         })
 
+
 def get_company_universes(company_id: str) -> List[str]:
 
-    sql = f"""
-    SELECT DISTINCT ID_UNIVERSE
-    FROM `{TABLE_COMPANY_UNIVERSE}`
-    WHERE ID_COMPANY = @company_id
-    """
+    rows = query_bq(f"""
+        SELECT ID_UNIVERSE
+        FROM `{TABLE_COMPANY_UNIVERSE}`
+        WHERE ID_COMPANY = @company_id
+    """, {"company_id": company_id})
 
-    rows = query_bq(sql, {"company_id": company_id})
+    return [r["ID_UNIVERSE"] for r in rows]
 
-    return [r.get("ID_UNIVERSE") for r in rows if r.get("ID_UNIVERSE")]
 
 # ============================================================
-# LIST COMPANIES — BQ BRUT
+# LIST COMPANIES
 # ============================================================
-def list_companies():
+
+def list_companies() -> List[Dict]:
+
     sql = f"""
-        SELECT
-            c.ID_COMPANY,
-            c.NAME,
-            c.TYPE,
-            CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
-            c.MEDIA_LOGO_RECTANGLE_ID,
-            c.INSIGHT_FREQUENCY,
+    SELECT
+        c.ID_COMPANY,
+        c.NAME,
+        c.TYPE,
+        CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
+        c.MEDIA_LOGO_RECTANGLE_ID,
+        c.INSIGHT_FREQUENCY,
 
-            COALESCE(m.total, 0) AS NB_ANALYSES,
-            COALESCE(m.last_30_days, 0) AS DELTA_30D,
+        COALESCE(m.total, 0) AS NB_ANALYSES,
+        COALESCE(m.last_30_days, 0) AS DELTA_30D,
 
-            CASE
-                WHEN c.DESCRIPTION IS NOT NULL
-                     AND TRIM(c.DESCRIPTION) != ""
-                THEN TRUE ELSE FALSE
-            END AS HAS_DESCRIPTION,
+        CASE
+            WHEN c.DESCRIPTION IS NOT NULL AND TRIM(c.DESCRIPTION) != ""
+            THEN TRUE ELSE FALSE
+        END AS HAS_DESCRIPTION,
 
-            CASE
-                WHEN c.WIKI_CONTENT IS NOT NULL
-                     AND TRIM(c.WIKI_CONTENT) != ""
-                THEN TRUE ELSE FALSE
-            END AS HAS_WIKI,
+        CASE
+            WHEN c.WIKI_CONTENT IS NOT NULL AND TRIM(c.WIKI_CONTENT) != ""
+            THEN TRUE ELSE FALSE
+        END AS HAS_WIKI,
 
-            -- ✅ HAS NUMBERS
-            nc.ID_COMPANY IS NOT NULL AS HAS_NUMBERS,
+        nc.ID_COMPANY IS NOT NULL AS HAS_NUMBERS,
 
-            -- 🔥 RADAR
-            r.ID_INSIGHT,
-            r.KEY_POINTS,
+        r.ID_INSIGHT,
+        r.KEY_POINTS,
 
-            -- 🔥 UNIVERS (ARRAY)
-            ARRAY_AGG(DISTINCT cu.ID_UNIVERSE IGNORE NULLS) AS UNIVERSS
+        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
 
-        FROM `{TABLE_COMPANY}` c
+    FROM `{TABLE_COMPANY}` c
 
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY` m
-          ON m.id_company = c.ID_COMPANY
+    LEFT JOIN `{VIEW_STATS_COMPANY}` m
+      ON m.id_company = c.ID_COMPANY
 
-        LEFT JOIN (
-            SELECT DISTINCT ID_COMPANY
-            FROM `{TABLE_NUMBERS_COMPANY}`
-        ) nc
-          ON nc.ID_COMPANY = c.ID_COMPANY
+    LEFT JOIN (
+        SELECT DISTINCT ID_COMPANY
+        FROM `{TABLE_NUMBERS_COMPANY}`
+    ) nc
+      ON nc.ID_COMPANY = c.ID_COMPANY
 
-        LEFT JOIN (
-            SELECT *
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_RADAR`
-            WHERE STATUS = "GENERATED"
+    LEFT JOIN (
+        SELECT *
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_RADAR`
+        WHERE STATUS = "GENERATED"
+        QUALIFY ROW_NUMBER() OVER (
+            PARTITION BY ENTITY_ID
+            ORDER BY YEAR DESC, PERIOD DESC
+        ) = 1
+    ) r
+      ON r.ENTITY_ID = c.ID_COMPANY
+      AND r.ENTITY_TYPE = "company"
 
-            QUALIFY ROW_NUMBER() OVER (
-                PARTITION BY ENTITY_ID
-                ORDER BY YEAR DESC, PERIOD DESC
-            ) = 1
-        ) r
-          ON r.ENTITY_ID = c.ID_COMPANY
-          AND r.ENTITY_TYPE = "company"
+    LEFT JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+      ON cu.ID_COMPANY = c.ID_COMPANY
 
-        -- 🔥 JOIN UNIVERS
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-          ON cu.ID_COMPANY = c.ID_COMPANY
+    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
+      ON u.ID_UNIVERSE = cu.ID_UNIVERSE
 
-        WHERE c.IS_ACTIVE = TRUE
+    WHERE c.IS_ACTIVE = TRUE
 
-        GROUP BY
-            c.ID_COMPANY,
-            c.NAME,
-            c.TYPE,
-            c.IS_PARTNER,
-            c.MEDIA_LOGO_RECTANGLE_ID,
-            c.INSIGHT_FREQUENCY,
-            m.total,
-            m.last_30_days,
-            HAS_DESCRIPTION,
-            HAS_WIKI,
-            HAS_NUMBERS,
-            r.ID_INSIGHT,
-            r.KEY_POINTS
+    GROUP BY
+        c.ID_COMPANY,
+        c.NAME,
+        c.TYPE,
+        c.IS_PARTNER,
+        c.MEDIA_LOGO_RECTANGLE_ID,
+        c.INSIGHT_FREQUENCY,
+        m.total,
+        m.last_30_days,
+        HAS_DESCRIPTION,
+        HAS_WIKI,
+        HAS_NUMBERS,
+        r.ID_INSIGHT,
+        r.KEY_POINTS
 
-        ORDER BY UPPER(c.NAME) ASC
+    ORDER BY UPPER(c.NAME)
     """
 
     rows = query_bq(sql)
@@ -208,7 +209,6 @@ def list_companies():
             "delta_30d": r["DELTA_30D"],
             "has_description": r["HAS_DESCRIPTION"],
             "has_wiki": r["HAS_WIKI"],
-
             "has_numbers": r.get("HAS_NUMBERS", False),
 
             "last_radar": {
@@ -216,94 +216,19 @@ def list_companies():
                 "key_points": r["KEY_POINTS"],
             } if r.get("ID_INSIGHT") else None,
 
-            # 🔥 NEW
-            "universes": r.get("UNIVERSS") or [],
+            "universes": r.get("universes") or [],
         }
         for r in rows
     ]
 
-def list_company_types():
-
-    client = get_bigquery_client()
-
-    query = f"""
-        SELECT
-            ID_TYPE,
-            LABEL
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_TYPE`
-        ORDER BY LABEL
-    """
-
-    rows = client.query(query).result()
-
-    return [
-        {
-            "id_type": row["ID_TYPE"],
-            "label": row["LABEL"],
-        }
-        for row in rows
-    ]
-
-
-def list_companies_for_user(user_id: Optional[str]) -> List[Dict]:
-
-    user_universes = get_user_universes(user_id) if user_id else []
-
-    where_clause = ""
-    params = {}
-
-    if user_universes:
-        where_clause = f"""
-        WHERE c.ID_COMPANY IN (
-            SELECT DISTINCT cu2.ID_COMPANY
-            FROM `{TABLE_COMPANY_UNIVERSE}` cu2
-            WHERE cu2.ID_UNIVERSE IN UNNEST(@user_universes)
-        )
-        """
-        params["user_universes"] = user_universes
-
-    sql = f"""
-    SELECT
-        c.ID_COMPANY as id_company,
-        c.NAME as name,
-        c.MEDIA_LOGO_RECTANGLE_ID as media_logo_rectangle_id,
-        c.IS_PARTNER as is_partner,
-        COALESCE(stats.total, 0) as nb_analyses,
-        COALESCE(stats.last_30_days, 0) as delta_30d,
-        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) as universes
-
-    FROM `{TABLE_COMPANY}` c
-
-    LEFT JOIN `{TABLE_COMPANY_UNIVERSE}` cu
-        ON cu.ID_COMPANY = c.ID_COMPANY
-
-    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
-        ON u.ID_UNIVERSE = cu.ID_UNIVERSE
-
-    LEFT JOIN `{VIEW_STATS_COMPANY}` stats
-        ON stats.id_company = c.ID_COMPANY
-
-    {where_clause}
-
-    GROUP BY
-        c.ID_COMPANY,
-        c.NAME,
-        c.MEDIA_LOGO_RECTANGLE_ID,
-        c.IS_PARTNER,
-        stats.total,
-        stats.last_30_days
-
-    ORDER BY c.NAME
-    """
-
-    return query_bq(sql, params)
 
 # ============================================================
-# GET ONE COMPANY — BQ BRUT
+# GET ONE COMPANY
 # ============================================================
-def get_company(company_id: str):
 
-    sql = f"""
+def get_company(company_id: str) -> Optional[Dict]:
+
+    rows = query_bq(f"""
         SELECT
             c.*,
             nc.ID_COMPANY IS NOT NULL AS HAS_NUMBERS
@@ -315,9 +240,7 @@ def get_company(company_id: str):
         ON nc.ID_COMPANY = c.ID_COMPANY
         WHERE c.ID_COMPANY = @id
         LIMIT 1
-    """
-
-    rows = query_bq(sql, {"id": company_id})
+    """, {"id": company_id})
 
     if not rows:
         return None
@@ -330,43 +253,35 @@ def get_company(company_id: str):
         "type": r.get("TYPE"),
         "description": r.get("DESCRIPTION"),
 
-        # Wiki
         "wiki_content": r.get("WIKI_CONTENT"),
         "wiki_source_id": r.get("WIKI_SOURCE_ID"),
         "wiki_updated_at": r.get("WIKI_UPDATED_AT"),
         "wiki_vectorised": r.get("WIKI_VECTORISED", False),
 
-        # Media
         "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID"),
-
-        # Liens
         "linkedin_url": r.get("LINKEDIN_URL"),
         "website_url": r.get("WEBSITE_URL"),
 
-        # Statut
         "is_partner": r.get("IS_PARTNER", False),
         "is_active": r.get("IS_ACTIVE", True),
 
-        # 🔥 NEW
         "insight_frequency": r.get("INSIGHT_FREQUENCY"),
 
-        # ✅ NEW
         "has_numbers": r.get("HAS_NUMBERS", False),
         "universes": get_company_universes(company_id),
 
-        # Dates
         "created_at": r.get("CREATED_AT"),
         "updated_at": r.get("UPDATED_AT"),
     }
 
 
 # ============================================================
-# UPDATE COMPANY
+# UPDATE
 # ============================================================
-def update_company(id_company: str, data: CompanyUpdate) -> bool:
-    values = data.dict(exclude_unset=True)
 
-    # 🔥 univers à part
+def update_company(id_company: str, data: CompanyUpdate) -> bool:
+
+    values = data.dict(exclude_unset=True)
     universes = values.pop("universes", None)
 
     if not values and universes is None:
@@ -406,7 +321,6 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
             where={"ID_COMPANY": id_company},
         )
 
-    # 🔥 UPDATE UNIVERS
     if universes is not None:
         assign_company_universes(id_company, universes)
 
@@ -414,8 +328,9 @@ def update_company(id_company: str, data: CompanyUpdate) -> bool:
 
 
 # ============================================================
-# DELETE COMPANY (SOFT DELETE)
+# DELETE (SOFT)
 # ============================================================
+
 def delete_company(id_company: str) -> bool:
 
     return update_bq(
