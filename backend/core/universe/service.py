@@ -73,3 +73,39 @@ def get_universe(universe_id: str):
         "description": r.get("DESCRIPTION"),
         "created_at": r.get("CREATED_AT"),
     }
+
+# ============================================================
+# LIST FOR USER (🔥 NOUVELLE SOURCE DE VÉRITÉ)
+# ============================================================
+
+def list_universes_for_user(user_id: str):
+
+    sql = f"""
+        SELECT
+            u.ID_UNIVERSE,
+            u.LABEL,
+            u.DESCRIPTION,
+            u.CREATED_AT
+        FROM `{TABLE_UNIVERSE}` u
+
+        JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+          ON uu.ID_UNIVERSE = u.ID_UNIVERSE
+
+        WHERE
+            uu.ID_USER = @user_id
+            AND u.IS_ACTIVE = TRUE
+
+        ORDER BY u.LABEL ASC
+    """
+
+    rows = query_bq(sql, {"user_id": user_id})
+
+    return [
+        {
+            "id_universe": r["ID_UNIVERSE"],
+            "label": r["LABEL"],
+            "description": r.get("DESCRIPTION"),
+            "created_at": r.get("CREATED_AT"),
+        }
+        for r in rows
+    ]
