@@ -26,12 +26,11 @@ TABLE_COMPANY_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE"
 
 VIEW_STATS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION"
 
-
 DEFAULT_FREQUENCY = "QUARTERLY"
 
 
 # ============================================================
-# CREATE SOLUTION
+# CREATE
 # ============================================================
 
 def create_solution(data: SolutionCreate) -> str:
@@ -67,7 +66,7 @@ def create_solution(data: SolutionCreate) -> str:
 
 
 # ============================================================
-# LIST SOLUTIONS (🔥 VERSION CLEAN + UNIVERS FILTER)
+# LIST (ALIGNÉE COMPANY)
 # ============================================================
 
 def list_solutions() -> List[Dict]:
@@ -91,40 +90,34 @@ def list_solutions() -> List[Dict]:
         COALESCE(st.total, 0) AS NB_ANALYSES,
         COALESCE(st.last_30_days, 0) AS DELTA_30D,
 
-        -- ✅ HAS NUMBERS (safe)
         ns.ID_SOLUTION IS NOT NULL AS HAS_NUMBERS,
 
-        -- RADAR
         r.ID_INSIGHT,
         r.KEY_POINTS,
 
-        -- 🔥 UNIVERS (clé front)
-        ARRAY_AGG(DISTINCT u.LABEL) AS universes
+        -- 🔥 univers hérités via company
+        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
 
     FROM `{TABLE_SOLUTION}` s
 
     LEFT JOIN `{TABLE_COMPANY}` c
       ON s.ID_COMPANY = c.ID_COMPANY
 
-    -- 🔥 UNIVERS
-    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+    LEFT JOIN `{TABLE_COMPANY_UNIVERSE}` cu
       ON cu.ID_COMPANY = s.ID_COMPANY
 
     LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
       ON u.ID_UNIVERSE = cu.ID_UNIVERSE
 
-    -- STATS
     LEFT JOIN `{VIEW_STATS_SOLUTION}` st
       ON st.id_solution = s.ID_SOLUTION
 
-    -- NUMBERS FLAG
     LEFT JOIN (
         SELECT DISTINCT ID_SOLUTION
         FROM `{TABLE_NUMBERS_SOLUTION}`
     ) ns
       ON ns.ID_SOLUTION = s.ID_SOLUTION
 
-    -- RADAR
     LEFT JOIN (
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_RADAR`
@@ -160,7 +153,8 @@ def list_solutions() -> List[Dict]:
     ORDER BY UPPER(s.NAME)
     """
 
-    rows = query_bq(sql)
+    # 🔥 FIX CRITIQUE
+    rows = query_bq(sql, {})
 
     return [
         {
@@ -189,7 +183,7 @@ def list_solutions() -> List[Dict]:
                 "key_points": r["KEY_POINTS"],
             } if r.get("ID_INSIGHT") else None,
 
-            # 🔥 CRUCIAL FRONT
+            # 🔥 toujours safe
             "universes": r.get("universes") or [],
         }
         for r in rows
@@ -197,43 +191,27 @@ def list_solutions() -> List[Dict]:
 
 
 # ============================================================
-# GET ONE SOLUTION
+# GET ONE
 # ============================================================
 
 def get_solution(id_solution: str):
 
-    sql = f"""
-    SELECT
-        s.ID_SOLUTION,
-        s.NAME,
-        s.ID_COMPANY,
-        s.DESCRIPTION,
-        s.CONTENT,
-        s.STATUS,
-        s.VECTORISE,
-        s.INSIGHT_FREQUENCY,
-        s.CREATED_AT,
-        s.UPDATED_AT,
-        c.NAME AS COMPANY_NAME,
-
-        ns.ID_SOLUTION IS NOT NULL AS HAS_NUMBERS
-
-    FROM `{TABLE_SOLUTION}` s
-
-    LEFT JOIN `{TABLE_COMPANY}` c
-      ON s.ID_COMPANY = c.ID_COMPANY
-
-    LEFT JOIN (
-        SELECT DISTINCT ID_SOLUTION
-        FROM `{TABLE_NUMBERS_SOLUTION}`
-    ) ns
-      ON ns.ID_SOLUTION = s.ID_SOLUTION
-
-    WHERE s.ID_SOLUTION = @id
-    LIMIT 1
-    """
-
-    rows = query_bq(sql, {"id": id_solution})
+    rows = query_bq(f"""
+        SELECT
+            s.*,
+            c.NAME AS COMPANY_NAME,
+            ns.ID_SOLUTION IS NOT NULL AS HAS_NUMBERS
+        FROM `{TABLE_SOLUTION}` s
+        LEFT JOIN `{TABLE_COMPANY}` c
+          ON s.ID_COMPANY = c.ID_COMPANY
+        LEFT JOIN (
+            SELECT DISTINCT ID_SOLUTION
+            FROM `{TABLE_NUMBERS_SOLUTION}`
+        ) ns
+          ON ns.ID_SOLUTION = s.ID_SOLUTION
+        WHERE s.ID_SOLUTION = @id
+        LIMIT 1
+    """, {"id": id_solution})
 
     if not rows:
         return None
@@ -244,20 +222,20 @@ def get_solution(id_solution: str):
         "id_solution": r["ID_SOLUTION"],
         "name": r["NAME"],
         "id_company": r["ID_COMPANY"],
-        "company_name": r["COMPANY_NAME"],
-        "description": r["DESCRIPTION"],
-        "content": r["CONTENT"],
-        "status": r["STATUS"],
-        "vectorise": r["VECTORISE"],
+        "company_name": r.get("COMPANY_NAME"),
+        "description": r.get("DESCRIPTION"),
+        "content": r.get("CONTENT"),
+        "status": r.get("STATUS"),
+        "vectorise": r.get("VECTORISE"),
         "insight_frequency": r.get("INSIGHT_FREQUENCY"),
-        "created_at": r["CREATED_AT"],
-        "updated_at": r["UPDATED_AT"],
+        "created_at": r.get("CREATED_AT"),
+        "updated_at": r.get("UPDATED_AT"),
         "has_numbers": r.get("HAS_NUMBERS", False),
     }
 
 
 # ============================================================
-# UPDATE SOLUTION
+# UPDATE
 # ============================================================
 
 def update_solution(id_solution: str, data: SolutionUpdate) -> bool:
@@ -267,7 +245,7 @@ def update_solution(id_solution: str, data: SolutionUpdate) -> bool:
     if not values:
         return False
 
-    field_map = {
+    mapping = {
         "name": "NAME",
         "id_company": "ID_COMPANY",
         "description": "DESCRIPTION",
@@ -276,35 +254,32 @@ def update_solution(id_solution: str, data: SolutionUpdate) -> bool:
         "vectorise": "VECTORISE",
     }
 
-    mapped = {
-        field_map[k]: v
+    bq_values = {
+        mapping[k]: v
         for k, v in values.items()
-        if k in field_map
+        if k in mapping
     }
 
-    mapped["UPDATED_AT"] = datetime.utcnow().isoformat()
+    bq_values["UPDATED_AT"] = datetime.utcnow().isoformat()
 
     return update_bq(
         table=TABLE_SOLUTION,
-        fields=mapped,
+        fields=bq_values,
         where={"ID_SOLUTION": id_solution},
     )
 
 
 # ============================================================
-# DELETE SOLUTION (SOFT DELETE)
+# DELETE (SOFT)
 # ============================================================
 
 def delete_solution(id_solution: str) -> bool:
 
-    existing = query_bq(
-        f"""
+    existing = query_bq(f"""
         SELECT ID_SOLUTION
         FROM `{TABLE_SOLUTION}`
         WHERE ID_SOLUTION = @id
-        """,
-        {"id": id_solution},
-    )
+    """, {"id": id_solution})
 
     if not existing:
         return False
