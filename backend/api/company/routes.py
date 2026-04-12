@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, Query, Request
-from typing import List, Dict, Optional
+from fastapi import APIRouter, HTTPException, Query
+from typing import Optional
 
 from api.company.models import CompanyCreate, CompanyUpdate, CompanyOut
+
 from core.company.service import (
     create_company,
     list_companies,
@@ -9,7 +10,6 @@ from core.company.service import (
     update_company,
     delete_company,
     list_company_types,
-    list_companies_for_user,
 )
 
 from core.curator.entity_service import get_company_view
@@ -17,7 +17,10 @@ from core.curator.entity_service import get_company_view
 router = APIRouter()
 
 
+# ============================================================
 # CREATE
+# ============================================================
+
 @router.post("/create")
 def create_route(data: CompanyCreate):
     try:
@@ -27,7 +30,10 @@ def create_route(data: CompanyCreate):
         raise HTTPException(400, f"Erreur création société : {e}")
 
 
-# LIST
+# ============================================================
+# LIST (ADMIN / GLOBAL)
+# ============================================================
+
 @router.get("/list")
 def list_route():
     try:
@@ -37,7 +43,10 @@ def list_route():
         raise HTTPException(400, f"Erreur liste sociétés : {e}")
 
 
+# ============================================================
 # TYPES
+# ============================================================
+
 @router.get("/types")
 def list_types_route():
     try:
@@ -46,17 +55,18 @@ def list_types_route():
     except Exception as e:
         raise HTTPException(400, f"Erreur récupération types sociétés : {e}")
 
+
+# ============================================================
+# CURATOR LIST (FILTER BY UNIVERSE ONLY)
+# ============================================================
+
 @router.get("/list-curator")
 def list_companies_curator(
-    request: Request,
-    universe_id: Optional[str] = Query(None),  # ✅ NEW
+    universe_id: Optional[str] = Query(None),
 ):
     try:
-        user_id = request.cookies.get("curator_user_id")
-
-        companies = list_companies_for_user(
-            user_id=user_id,
-            universe_id=universe_id if universe_id else None,  # ✅ FIX
+        companies = list_companies(
+            universe_id=universe_id if universe_id else None
         )
 
         return {
@@ -68,7 +78,10 @@ def list_companies_curator(
         raise HTTPException(400, f"Erreur liste sociétés curator : {e}")
 
 
+# ============================================================
 # GET ONE
+# ============================================================
+
 @router.get("/{id_company}", response_model=CompanyOut)
 def get_route(id_company: str):
 
@@ -79,19 +92,24 @@ def get_route(id_company: str):
 
     return company
 
+
+# ============================================================
+# VIEW (CURATOR)
+# ============================================================
+
 @router.get("/{id_company}/view")
 def get_view_route(
     id_company: str,
     limit: int = 20,
     offset: int = 0,
-    universe_id: Optional[str] = None  # ✅ NEW
+    universe_id: Optional[str] = Query(None),
 ):
     try:
         company = get_company_view(
-            id_company,
+            company_id=id_company,
             limit=limit,
             offset=offset,
-            universe_id=universe_id  # ✅ PROPAGATION
+            universe_id=universe_id if universe_id else None,
         )
 
         if not company:
@@ -107,7 +125,11 @@ def get_view_route(
             f"Erreur récupération company view : {e}"
         )
 
+
+# ============================================================
 # UPDATE
+# ============================================================
+
 @router.put("/update/{id_company}")
 def update_route(id_company: str, data: CompanyUpdate):
     try:
@@ -127,7 +149,10 @@ def update_route(id_company: str, data: CompanyUpdate):
         raise HTTPException(400, f"Erreur mise à jour société : {e}")
 
 
-# DELETE (soft)
+# ============================================================
+# DELETE (SOFT)
+# ============================================================
+
 @router.delete("/{id_company}")
 def delete_route(id_company: str):
     try:
@@ -142,6 +167,3 @@ def delete_route(id_company: str):
         raise
     except Exception as e:
         raise HTTPException(400, f"Erreur suppression société : {e}")
-
-
-
