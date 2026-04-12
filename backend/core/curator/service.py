@@ -418,9 +418,7 @@ def get_item_detail(item_id: str) -> Optional[Dict]:
 # STATS (CONTENT)
 # ============================================================
 
-def get_content_stats(
-    universe_id: Optional[str] = None,
-):
+def get_content_stats():
 
     # =====================================================
     # GLOBAL
@@ -442,7 +440,7 @@ def get_content_stats(
         last_30 = 0
 
     # =====================================================
-    # TOPICS (pas filtré volontairement)
+    # TOPICS
     # =====================================================
 
     topics_rows = query_bq(f"""
@@ -464,26 +462,14 @@ def get_content_stats(
     ]
 
     # =====================================================
-    # COMPANY (filtré UNIQUEMENT par universe UI)
+    # COMPANIES (GLOBAL)
     # =====================================================
 
-    company_sql = f"""
+    company_rows = query_bq(f"""
         SELECT *
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY` c
-        WHERE
-            @universe_id IS NULL
-            OR EXISTS (
-                SELECT 1
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                WHERE cu.ID_COMPANY = c.id_company
-                  AND cu.ID_UNIVERSE = @universe_id
-            )
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY`
         ORDER BY total DESC
-    """
-
-    company_rows = query_bq(company_sql, {
-        "universe_id": universe_id
-    })
+    """)
 
     top_companies = [
         {
@@ -498,28 +484,14 @@ def get_content_stats(
     ]
 
     # =====================================================
-    # SOLUTION (filtré UNIQUEMENT par universe UI)
+    # SOLUTIONS (GLOBAL)
     # =====================================================
 
-    solution_sql = f"""
+    solution_rows = query_bq(f"""
         SELECT *
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION` s
-        WHERE
-            @universe_id IS NULL
-            OR EXISTS (
-                SELECT 1
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` sol
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                  ON cu.ID_COMPANY = sol.ID_COMPANY
-                WHERE sol.ID_SOLUTION = s.id_solution
-                  AND cu.ID_UNIVERSE = @universe_id
-            )
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION`
         ORDER BY total DESC
-    """
-
-    solution_rows = query_bq(solution_sql, {
-        "universe_id": universe_id
-    })
+    """)
 
     top_solutions = [
         {
