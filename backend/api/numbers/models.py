@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict
+from datetime import datetime
 
 
 # ============================================================
@@ -7,6 +8,7 @@ from typing import Optional, List
 # ============================================================
 
 class Number(BaseModel):
+
     id_number: str
     label: Optional[str] = None
     value: float
@@ -20,20 +22,20 @@ class Number(BaseModel):
     period: Optional[str] = None
 
     source_id: Optional[str] = None
-    type_news: Optional[str] = None
 
     confidence: Optional[str] = None
     notes: Optional[str] = None
 
-    created_at: str
-    updated_at: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
 
 
 # ============================================================
-# INPUT (CREATE MANUEL / GUIDÉ)
+# INPUT (CREATE)
 # ============================================================
 
 class NumberInput(BaseModel):
+
     label: Optional[str] = None
     value: float
 
@@ -46,7 +48,6 @@ class NumberInput(BaseModel):
     period: Optional[str] = None
 
     source_id: Optional[str] = None
-    type_news: Optional[str] = None
 
     confidence: Optional[str] = None
     notes: Optional[str] = None
@@ -55,15 +56,18 @@ class NumberInput(BaseModel):
     topic_ids: List[str] = []
     solution_ids: List[str] = []
 
+    class Config:
+        extra = "forbid"
+
 
 # ============================================================
-# OUTPUT (CREATE RESPONSE)
+# CREATE RESPONSE
 # ============================================================
 
 class NumberCreateResponse(BaseModel):
+
     id_number: str
-    quality_status: str
-    quality_reason: Optional[str] = None
+    quality: Dict  # 🔥 aligné avec ton service
 
 
 # ============================================================
@@ -71,6 +75,7 @@ class NumberCreateResponse(BaseModel):
 # ============================================================
 
 class ParsedNumber(BaseModel):
+
     label: str
     value: float
 
@@ -83,10 +88,11 @@ class ParsedNumber(BaseModel):
 
 
 # ============================================================
-# LIST RESPONSE
+# LIST ITEM
 # ============================================================
 
 class NumberListItem(BaseModel):
+
     id_number: str
     label: Optional[str] = None
     value: float
@@ -99,8 +105,33 @@ class NumberListItem(BaseModel):
     zone: Optional[str] = None
     period: Optional[str] = None
 
-    type_news: Optional[str] = None
     confidence: Optional[str] = None
 
-    created_at: str
-    updated_at: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+
+# ============================================================
+# FEED ITEM (CARDS / UI)
+# ============================================================
+
+class NumberFeedItem(BaseModel):
+
+    id_number: str
+    label: Optional[str] = None
+    value: Optional[float] = None
+
+    unit: Optional[str] = None
+    scale: Optional[str] = None
+
+    zone: Optional[str] = None
+    period: Optional[str] = None
+
+    type: Optional[str] = None
+    category: Optional[str] = None
+
+    entities: Optional[List[Dict]] = []
+
+    universes: Optional[List[str]] = []
+
+    created_at: Optional[datetime] = None
