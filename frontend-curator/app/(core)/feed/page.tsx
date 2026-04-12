@@ -116,12 +116,12 @@ export default function FeedPage() {
             query: finalQuery,
             limit: LIMIT,
             offset: currentOffset,
-            universe_id: activeUniverse || undefined,
+            universe_id: activeUniverse || undefined, // ✅ only here
           })
         : await getLatestCurator({
             limit: LIMIT,
             offset: currentOffset,
-            universe_id: activeUniverse || undefined,
+            universe_id: activeUniverse || undefined, // ✅ only here
           });
 
       if (reset) {
@@ -173,19 +173,17 @@ export default function FeedPage() {
   }, [analysisId, newsId]);
 
   /* =========================================================
-     STATS
+     STATS (🔥 GLOBAL ONLY)
   ========================================================= */
 
   useEffect(() => {
     async function loadStats() {
-      const s = await getContentStats({
-        universe_id: activeUniverse || undefined,
-      });
+      const s = await getContentStats(); // ✅ NO PARAMS
       setStats(s);
     }
 
     loadStats();
-  }, [activeUniverse]);
+  }, []); // ✅ no dependency on universe
 
   /* =========================================================
      BADGES
