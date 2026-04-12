@@ -234,6 +234,24 @@ def list_companies(universe_id: Optional[str] = None) -> List[Dict]:
         for r in rows
     ]
 
+def list_company_types():
+
+    rows = query_bq(f"""
+        SELECT
+            ID_TYPE,
+            LABEL
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_TYPE`
+        ORDER BY LABEL
+    """)
+
+    return [
+        {
+            "id_type": r["ID_TYPE"],
+            "label": r["LABEL"],
+        }
+        for r in rows
+    ]
+
 # ============================================================
 # GET ONE COMPANY
 # ============================================================
