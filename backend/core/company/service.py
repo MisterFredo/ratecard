@@ -30,6 +30,10 @@ ALLOWED_FREQUENCIES = ["WEEKLY", "MONTHLY", "QUARTERLY"]
 
 def create_company(data: CompanyCreate) -> str:
 
+    # 🔒 UNIVERS OBLIGATOIRE
+    if not data.universes or len(data.universes) == 0:
+        raise ValueError("Company must have at least one universe")
+
     company_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
 
@@ -63,11 +67,10 @@ def create_company(data: CompanyCreate) -> str:
         ),
     ).result()
 
-    if data.universes:
-        assign_company_universes(company_id, data.universes)
+    # 🔥 ASSIGN UNIVERS (OBLIGATOIRE)
+    assign_company_universes(company_id, data.universes)
 
     return company_id
-
 
 # ============================================================
 # UNIVERS
@@ -144,9 +147,17 @@ def list_companies() -> List[Dict]:
         r.ID_INSIGHT,
         r.KEY_POINTS,
 
-        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
+        -- 🔥 UNIVERS (OBLIGATOIRE)
+        ARRAY_AGG(DISTINCT u.LABEL) AS universes
 
     FROM `{TABLE_COMPANY}` c
+
+    -- 🔥 UNIVERS → JOIN (PAS LEFT JOIN)
+    JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+      ON cu.ID_COMPANY = c.ID_COMPANY
+
+    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
+      ON u.ID_UNIVERSE = cu.ID_UNIVERSE
 
     LEFT JOIN `{VIEW_STATS_COMPANY}` m
       ON m.id_company = c.ID_COMPANY
@@ -168,12 +179,6 @@ def list_companies() -> List[Dict]:
     ) r
       ON r.ENTITY_ID = c.ID_COMPANY
       AND r.ENTITY_TYPE = "company"
-
-    LEFT JOIN `{TABLE_COMPANY_UNIVERSE}` cu
-      ON cu.ID_COMPANY = c.ID_COMPANY
-
-    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
-      ON u.ID_UNIVERSE = cu.ID_UNIVERSE
 
     WHERE c.IS_ACTIVE = TRUE
 
@@ -216,11 +221,11 @@ def list_companies() -> List[Dict]:
                 "key_points": r["KEY_POINTS"],
             } if r.get("ID_INSIGHT") else None,
 
+            # 🔥 GARANTI NON VIDE
             "universes": r.get("universes") or [],
         }
         for r in rows
     ]
-
 
 # ============================================================
 # GET ONE COMPANY
