@@ -2,7 +2,7 @@
 
 type Props = {
   stats: any;
-  onClickStat?: (value: string) => void; // 🔥 prêt pour interaction
+  onClickStat?: (value: string) => void;
 };
 
 export default function StatsBar({ stats, onClickStat }: Props) {
@@ -25,14 +25,9 @@ export default function StatsBar({ stats, onClickStat }: Props) {
               <button
                 key={t.id_topic}
                 onClick={() => onClickStat?.(t.label)}
-                className="
-                  px-2 py-1
-                  bg-gray-100 text-gray-700
-                  text-xs rounded-full
-                  hover:bg-gray-200 transition
-                "
+                className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full hover:bg-gray-200 transition"
               >
-                {t.label} ({t.total})
+                {t.label} ({t.total_count})
               </button>
             ))}
           </div>
@@ -53,14 +48,9 @@ export default function StatsBar({ stats, onClickStat }: Props) {
               <button
                 key={c.id_company}
                 onClick={() => onClickStat?.(c.name)}
-                className="
-                  px-2 py-1
-                  bg-blue-50 text-blue-600
-                  text-xs rounded-full
-                  hover:bg-blue-100 transition
-                "
+                className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full hover:bg-blue-100 transition"
               >
-                {c.name} ({c.total})
+                {c.name} ({c.total_count})
               </button>
             ))}
           </div>
@@ -68,7 +58,7 @@ export default function StatsBar({ stats, onClickStat }: Props) {
       )}
 
       {/* =========================================================
-         SOLUTIONS 🔥 NEW
+         SOLUTIONS
       ========================================================= */}
       {stats.top_solutions?.length > 0 && (
         <div>
@@ -81,14 +71,9 @@ export default function StatsBar({ stats, onClickStat }: Props) {
               <button
                 key={s.id_solution}
                 onClick={() => onClickStat?.(s.name)}
-                className="
-                  px-2 py-1
-                  bg-purple-50 text-purple-600
-                  text-xs rounded-full
-                  hover:bg-purple-100 transition
-                "
+                className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded-full hover:bg-purple-100 transition"
               >
-                {s.name} ({s.total})
+                {s.name} ({s.total_count})
               </button>
             ))}
           </div>
