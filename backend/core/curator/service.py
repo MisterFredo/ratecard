@@ -375,18 +375,14 @@ def get_item_curator(item_id: str) -> Optional[Dict]:
 # DETAIL (full)
 # ============================================================
 
-def get_item_detail(
-    item_id: str,
-    item_type: str,  # (tu peux même le supprimer)
-    user_id: Optional[str] = None,
-) -> Optional[Dict]:
+def get_item_detail(item_id: str) -> Optional[Dict]:
 
-    item = get_item_curator(item_id, user_id=user_id)
+    item = get_item_curator(item_id)
 
     if not item:
         return None
 
-    item_type = item.get("type")  # 🔥 source de vérité
+    item_type = item.get("type")
 
     if item_type == "analysis":
         from core.content.public_service import get_content
