@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
@@ -20,8 +20,8 @@ class CompanyCreate(BaseModel):
 
     is_partner: bool = False
 
-    # 🔥 NEW → univers assignés
-    universes: Optional[List[str]] = []
+    # 🔥 IMPORTANT → PAS DE LIST MUTABLE PAR DÉFAUT
+    universes: List[str] = Field(default_factory=list)
 
     class Config:
         extra = "forbid"
@@ -46,7 +46,7 @@ class CompanyUpdate(BaseModel):
 
     wiki_content: Optional[str] = None
 
-    # 🔥 NEW → univers assignés
+    # 🔥 None = pas de modif / [] = reset
     universes: Optional[List[str]] = None
 
     class Config:
@@ -83,11 +83,11 @@ class CompanyOut(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    # ✅ EXISTING
+    # ✅ DATA
     has_numbers: Optional[bool] = False
 
-    # 🔥 NEW → univers exposés
-    universes: Optional[List[str]] = []
+    # 🔥 TOUJOURS UNE LISTE (important front)
+    universes: List[str] = Field(default_factory=list)
 
     class Config:
         extra = "forbid"
