@@ -25,7 +25,7 @@ class FeedItem(BaseModel):
 
     title: str
     excerpt: Optional[str] = None
-    published_at: Optional[datetime] = None
+    published_at: Optional[datetime] = None  # ✅ garde datetime
 
     topics: List[Topic] = Field(default_factory=list)
     companies: List[Company] = Field(default_factory=list)
@@ -39,8 +39,12 @@ class FeedResponse(BaseModel):
     count: int
 
 
+# ============================================================
+# STATS
+# ============================================================
+
 class StatsItem(BaseModel):
-    total: int
+    total_count: int
     last_7_days: int
     last_30_days: int
 
