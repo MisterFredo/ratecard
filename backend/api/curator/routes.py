@@ -35,7 +35,7 @@ def search_route(
     limit: int = Query(20),
     offset: int = Query(0),
     type: Optional[str] = Query(None),
-    universe_id: Optional[str] = Query(None),  # ✅ NEW
+    universe_id: Optional[str] = Query(None),
 ):
     try:
         user_id = get_user_id(request)
@@ -46,7 +46,7 @@ def search_route(
             offset=offset,
             type=type,
             user_id=user_id,
-            universe_id=get_universe_id(universe_id),  # ✅ FIX
+            universe_id=get_universe_id(universe_id),
         )
 
         return {"items": items, "count": len(items)}
@@ -65,7 +65,7 @@ def latest_route(
     limit: int = Query(20),
     offset: int = Query(0),
     type: Optional[str] = Query(None),
-    universe_id: Optional[str] = Query(None),  # ✅ NEW
+    universe_id: Optional[str] = Query(None),
 ):
     try:
         user_id = get_user_id(request)
@@ -75,7 +75,7 @@ def latest_route(
             offset=offset,
             type=type,
             user_id=user_id,
-            universe_id=get_universe_id(universe_id),  # ✅ FIX
+            universe_id=get_universe_id(universe_id),
         )
 
         return {"items": items, "count": len(items)}
@@ -85,21 +85,13 @@ def latest_route(
 
 
 # ============================================================
-# STATS
+# STATS (GLOBAL)
 # ============================================================
 
 @router.get("/stats")
-def stats_route(
-    request: Request,
-    universe_id: Optional[str] = Query(None),  # ✅ NEW
-):
+def stats_route():
     try:
-        user_id = get_user_id(request)
-
-        stats = get_content_stats(
-            user_id=user_id,
-            universe_id=get_universe_id(universe_id),  # ✅ FIX
-        )
+        stats = get_content_stats()
 
         return {"status": "ok", "stats": stats}
 
@@ -108,14 +100,13 @@ def stats_route(
 
 
 # ============================================================
-# ITEM (PAS BESOIN D’UNIVERSE)
+# ITEM
 # ============================================================
 
 @router.get("/item/{item_id}")
-def read_item(request: Request, item_id: str):
-    user_id = get_user_id(request)
+def read_item(item_id: str):
 
-    item = get_item_curator(item_id, user_id=user_id)
+    item = get_item_curator(item_id)
 
     if not item:
         raise HTTPException(404, "Item not found")
@@ -124,18 +115,16 @@ def read_item(request: Request, item_id: str):
 
 
 # ============================================================
-# DETAIL (PAS BESOIN D’UNIVERSE)
+# DETAIL
 # ============================================================
 
 @router.get("/item/{item_id}/detail")
 def read_item_detail(
-    request: Request,
     item_id: str,
     type: str = Query(...)
 ):
-    user_id = get_user_id(request)
 
-    item = get_item_detail(item_id, type, user_id=user_id)
+    item = get_item_detail(item_id, type)
 
     if not item:
         raise HTTPException(404, "Item not found")
