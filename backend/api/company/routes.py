@@ -9,7 +9,6 @@ from core.company.service import (
     get_company,
     update_company,
     delete_company,
-    list_company_types,
 )
 
 from core.curator.entity_service import get_company_view
