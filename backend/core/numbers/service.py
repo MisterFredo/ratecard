@@ -592,96 +592,86 @@ def get_numbers_for_entity(
 def get_numbers_feed_service(
     limit: int = 50,
     query: Optional[str] = None,
-    user_id: Optional[str] = None,
+    universe_id: Optional[str] = None,
 ):
 
-    universe_filter = ""
+    where_clauses = ["TRUE"]
 
-    if user_id:
-        universe_filter = f"""
-        AND (
-            NOT EXISTS (
-                SELECT 1
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE`
-                WHERE ID_USER = @user_id
-            )
-            OR EXISTS (
-                SELECT 1
-                FROM UNNEST(n.ENTITIES) e2
-                LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` s
-                    ON e2.ENTITY_TYPE = 'solution'
-                   AND s.ID_SOLUTION = e2.ENTITY_ID
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu2
-                    ON (
-                        (e2.ENTITY_TYPE = 'company' AND cu2.ID_COMPANY = e2.ENTITY_ID)
-                        OR
-                        (e2.ENTITY_TYPE = 'solution' AND cu2.ID_COMPANY = s.ID_COMPANY)
-                    )
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                    ON uu.ID_UNIVERSE = cu2.ID_UNIVERSE
-                WHERE uu.ID_USER = @user_id
-            )
+    if query:
+        where_clauses.append("LOWER(n.LABEL) LIKE LOWER(@query)")
+
+    if universe_id:
+        where_clauses.append("""
+        EXISTS (
+            SELECT 1
+            FROM UNNEST(n.ENTITIES) e2
+            LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` sc2
+              ON e2.ENTITY_TYPE = 'solution'
+             AND sc2.ID_SOLUTION = e2.ENTITY_ID
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu2
+              ON (
+                (e2.ENTITY_TYPE = 'company' AND cu2.ID_COMPANY = e2.ENTITY_ID)
+                OR
+                (e2.ENTITY_TYPE = 'solution' AND cu2.ID_COMPANY = sc2.ID_COMPANY)
+              )
+            WHERE cu2.ID_UNIVERSE = @universe_id
         )
-        """
+        """)
+
+    where_sql = " AND ".join(where_clauses)
 
     sql = f"""
-        WITH solution_company AS (
-          SELECT
-            ID_SOLUTION,
-            ID_COMPANY
-          FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION`
-        )
+    WITH solution_company AS (
+      SELECT
+        ID_SOLUTION,
+        ID_COMPANY
+      FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION`
+    )
 
-        SELECT
-            n.*,
+    SELECT
+        n.*,
 
-            ARRAY_AGG(DISTINCT cu.ID_UNIVERSE IGNORE NULLS) AS UNIVERSes
+        ARRAY_AGG(DISTINCT cu.ID_UNIVERSE IGNORE NULLS) AS universes
 
-        FROM `{VIEW_NUMBERS_CARDS}` n
+    FROM `{VIEW_NUMBERS_CARDS}` n
 
-        LEFT JOIN UNNEST(n.ENTITIES) e
+    LEFT JOIN UNNEST(n.ENTITIES) e
 
-        LEFT JOIN solution_company sc
-          ON e.ENTITY_TYPE = 'solution'
-         AND sc.ID_SOLUTION = e.ENTITY_ID
+    LEFT JOIN solution_company sc
+      ON e.ENTITY_TYPE = 'solution'
+     AND sc.ID_SOLUTION = e.ENTITY_ID
 
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-          ON (
-            (e.ENTITY_TYPE = 'company' AND cu.ID_COMPANY = e.ENTITY_ID)
-            OR
-            (e.ENTITY_TYPE = 'solution' AND cu.ID_COMPANY = sc.ID_COMPANY)
-          )
+    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+      ON (
+        (e.ENTITY_TYPE = 'company' AND cu.ID_COMPANY = e.ENTITY_ID)
+        OR
+        (e.ENTITY_TYPE = 'solution' AND cu.ID_COMPANY = sc.ID_COMPANY)
+      )
 
-        WHERE 1=1
-        { "AND LOWER(n.LABEL) LIKE LOWER(@query)" if query else "" }
-        {universe_filter}
+    WHERE {where_sql}
 
-        GROUP BY
-            n.ID_NUMBER,
-            n.LABEL,
-            n.VALUE,
-            n.UNIT,
-            n.SCALE,
-            n.ZONE,
-            n.PERIOD,
-            n.CREATED_AT,
-            n.TYPE,
-            n.CATEGORY,
-            n.ENTITIES
+    GROUP BY
+        n.ID_NUMBER,
+        n.LABEL,
+        n.VALUE,
+        n.UNIT,
+        n.SCALE,
+        n.ZONE,
+        n.PERIOD,
+        n.CREATED_AT,
+        n.TYPE,
+        n.CATEGORY,
+        n.ENTITIES
 
-        ORDER BY n.CREATED_AT DESC
-        LIMIT @limit
+    ORDER BY n.CREATED_AT DESC
+    LIMIT @limit
     """
 
-    params = {
+    return query_bq(sql, {
         "limit": limit,
         "query": f"%{query}%" if query else None,
-    }
-
-    if user_id:
-        params["user_id"] = user_id
-
-    return query_bq(sql, params)
+        "universe_id": universe_id,
+    })
 
 def search_numbers_service(
     id_number_type: Optional[str] = None,
