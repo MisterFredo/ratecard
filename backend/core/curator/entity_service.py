@@ -179,26 +179,36 @@ def get_company_feed(
         universe_id=universe_id
     )
 
-def get_company_view(company_id, limit, offset, user_id, universe_id):
+def get_company_view(
+    company_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    universe_id: Optional[str] = None
+) -> Optional[Dict]:
 
     company = get_company(company_id)
+
     if not company:
         return None
 
-    stats = query_bq(f"""
-        SELECT total, last_30_days
+    stats_rows = query_bq(f"""
+        SELECT
+            COALESCE(total, 0) AS NB_ANALYSES,
+            COALESCE(last_30_days, 0) AS DELTA_30D
         FROM `{VIEW_STATS_COMPANY}`
         WHERE id_company = @company_id
         LIMIT 1
     """, {"company_id": company_id})
 
-    items = get_company_feed(company_id, limit, offset, user_id, universe_id)
+    stats = stats_rows[0] if stats_rows else {}
+
+    items = get_company_feed(company_id, limit, offset, universe_id)
 
     return {
         **company,
-        "nb_analyses": stats[0]["total"] if stats else 0,
-        "delta_30d": stats[0]["last_30_days"] if stats else 0,
-        "items": items,
+        "nb_analyses": stats.get("NB_ANALYSES", 0),
+        "delta_30d": stats.get("DELTA_30D", 0),
+        "items": items
     }
 
 
@@ -206,35 +216,66 @@ def get_company_view(company_id, limit, offset, user_id, universe_id):
 # TOPIC
 # ============================================================
 
-def get_topic_feed(topic_id, limit, offset, universe_id):
+# ============================================================
+# TOPIC
+# ============================================================
+
+def get_topic_feed(
+    topic_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    universe_id: Optional[str] = None
+) -> List[Dict]:
+
     return _get_entity_feed(
-        """
-        EXISTS (SELECT 1 FROM UNNEST(n.topics) t WHERE t.id_topic = @topic_id)
+        where_clause_news="""
+            EXISTS (
+                SELECT 1
+                FROM UNNEST(n.topics) t
+                WHERE t.id_topic = @topic_id
+            )
         """,
-        """
-        EXISTS (SELECT 1 FROM UNNEST(c.topics) t WHERE t.id_topic = @topic_id)
+        where_clause_content="""
+            EXISTS (
+                SELECT 1
+                FROM UNNEST(c.topics) t
+                WHERE t.id_topic = @topic_id
+            )
         """,
-        {"topic_id": topic_id},
-        limit,
-        offset,
-        universe_id,
+        params={"topic_id": topic_id},
+        limit=limit,
+        offset=offset,
+        universe_id=universe_id
     )
+
 
 def get_topic_view(
     topic_id: str,
     limit: int = 50,
     offset: int = 0,
-    user_id: Optional[str] = None,
+    universe_id: Optional[str] = None
 ) -> Dict:
 
+    # ============================================================
+    # INFO
+    # ============================================================
+
     topic_rows = query_bq(f"""
-        SELECT ID_TOPIC, LABEL, TOPIC_AXIS, DESCRIPTION
+        SELECT
+            ID_TOPIC,
+            LABEL,
+            TOPIC_AXIS,
+            DESCRIPTION
         FROM `{TABLE_TOPIC}`
         WHERE ID_TOPIC = @topic_id
         LIMIT 1
     """, {"topic_id": topic_id})
 
     topic = topic_rows[0] if topic_rows else {}
+
+    # ============================================================
+    # STATS
+    # ============================================================
 
     stats_rows = query_bq(f"""
         SELECT
@@ -247,7 +288,20 @@ def get_topic_view(
 
     stats = stats_rows[0] if stats_rows else {}
 
-    items = get_topic_feed(topic_id, limit, offset, user_id=user_id)
+    # ============================================================
+    # FEED
+    # ============================================================
+
+    items = get_topic_feed(
+        topic_id=topic_id,
+        limit=limit,
+        offset=offset,
+        universe_id=universe_id
+    )
+
+    # ============================================================
+    # RETURN
+    # ============================================================
 
     return {
         "id_topic": topic_id,
@@ -258,26 +312,34 @@ def get_topic_view(
         "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
     }
-
+# ============================================================
+# SOLUTION
+# ============================================================
 
 # ============================================================
 # SOLUTION
 # ============================================================
 
+def get_solution_feed(
+    solution_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    universe_id: Optional[str] = None
+) -> List[Dict]:
 
-def get_solution_feed(solution_id, limit, offset, universe_id):
     return _get_entity_feed(
-        "FALSE",
-        """
-        EXISTS (
-            SELECT 1 FROM UNNEST(c.solutions) s
-            WHERE s.id_solution = @solution_id
-        )
+        where_clause_news="FALSE",
+        where_clause_content="""
+            EXISTS (
+                SELECT 1
+                FROM UNNEST(c.solutions) s
+                WHERE s.id_solution = @solution_id
+            )
         """,
-        {"solution_id": solution_id},
-        limit,
-        offset,
-        universe_id,
+        params={"solution_id": solution_id},
+        limit=limit,
+        offset=offset,
+        universe_id=universe_id
     )
 
 
@@ -285,14 +347,17 @@ def get_solution_view(
     solution_id: str,
     limit: int = 50,
     offset: int = 0,
-    user_id: Optional[str] = None,
+    universe_id: Optional[str] = None
 ) -> Dict:
+
+    # ============================================================
+    # INFO
+    # ============================================================
 
     solution_rows = query_bq(f"""
         SELECT
             s.ID_SOLUTION,
             s.NAME,
-            s.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
             c.MEDIA_LOGO_RECTANGLE_ID
         FROM `{TABLE_SOLUTION}` s
@@ -304,8 +369,9 @@ def get_solution_view(
 
     solution = solution_rows[0] if solution_rows else {}
 
-    if not _check_company_access(solution.get("ID_COMPANY"), user_id):
-        return None
+    # ============================================================
+    # STATS
+    # ============================================================
 
     stats_rows = query_bq(f"""
         SELECT
@@ -318,7 +384,20 @@ def get_solution_view(
 
     stats = stats_rows[0] if stats_rows else {}
 
-    items = get_solution_feed(solution_id, limit, offset, user_id=user_id)
+    # ============================================================
+    # FEED
+    # ============================================================
+
+    items = get_solution_feed(
+        solution_id=solution_id,
+        limit=limit,
+        offset=offset,
+        universe_id=universe_id
+    )
+
+    # ============================================================
+    # RETURN
+    # ============================================================
 
     return {
         "id_solution": solution_id,
@@ -329,12 +408,6 @@ def get_solution_view(
         "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
     }
-
-
-# ============================================================
-# SOLUTION
-# ============================================================
-
 
 # ============================================================
 # MAPPER
