@@ -18,7 +18,8 @@ type Solution = {
   nb_analyses: number;
   delta_30d: number;
   is_partner?: boolean;
-  universes: string[]; // 🔥 obligatoire
+
+  universes?: string[]; // ✅ SAFE
 };
 
 type SortMode = "alpha" | "activity" | "growth";
@@ -33,14 +34,12 @@ function sortSolutions(items: Solution[], mode: SortMode) {
   switch (mode) {
     case "activity":
       return copy.sort(
-        (a, b) =>
-          (b.nb_analyses ?? 0) - (a.nb_analyses ?? 0)
+        (a, b) => (b.nb_analyses ?? 0) - (a.nb_analyses ?? 0)
       );
 
     case "growth":
       return copy.sort(
-        (a, b) =>
-          (b.delta_30d ?? 0) - (a.delta_30d ?? 0)
+        (a, b) => (b.delta_30d ?? 0) - (a.delta_30d ?? 0)
       );
 
     default:
@@ -63,7 +62,7 @@ function groupByUniverse(
   const map: Record<string, Solution[]> = {};
 
   solutions.forEach((s) => {
-    s.universes.forEach((u) => {
+    (s.universes || []).forEach((u) => {
       if (!map[u]) map[u] = [];
       map[u].push(s);
     });
@@ -92,7 +91,11 @@ async function fetchSolutions(): Promise<Solution[]> {
 
   if (json.status !== "ok") return [];
 
-  return json.solutions || [];
+  // ✅ SAFE NORMALIZATION
+  return (json.solutions || []).map((s: any) => ({
+    ...s,
+    universes: s.universes || [],
+  }));
 }
 
 /* =========================================================
@@ -112,6 +115,7 @@ export default function SolutionsPage() {
   /* ---------------------------------------------------------
      LOAD
   --------------------------------------------------------- */
+
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -128,6 +132,7 @@ export default function SolutionsPage() {
   /* ---------------------------------------------------------
      DRAWER
   --------------------------------------------------------- */
+
   useEffect(() => {
     const solutionId = searchParams.get("solution_id");
 
@@ -176,9 +181,7 @@ export default function SolutionsPage() {
           ].map((s) => (
             <button
               key={s.key}
-              onClick={() =>
-                setSortMode(s.key as SortMode)
-              }
+              onClick={() => setSortMode(s.key as SortMode)}
               className={`
                 px-3 py-1 rounded border
                 ${
@@ -204,43 +207,45 @@ export default function SolutionsPage() {
       {/* EMPTY */}
       {!loading && !hasContent && (
         <p className="text-sm text-gray-400">
-          Aucune solution disponible pour votre profil.
+          Aucune solution disponible.
         </p>
       )}
 
       {/* CONTENT */}
       {!loading && hasContent && (
-        Object.entries(grouped).map(([universe, items]) => (
-          <section key={universe} className="space-y-4">
+        Object.entries(grouped)
+          .sort(([a], [b]) => a.localeCompare(b)) // ✅ ordre stable
+          .map(([universe, items]) => (
+            <section key={universe} className="space-y-4">
 
-            {/* UNIVERS HEADER */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-semibold uppercase text-gray-400">
-                {universe}
-              </h2>
+              {/* UNIVERS HEADER */}
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-semibold uppercase text-gray-400">
+                  {universe}
+                </h2>
 
-              <span className="text-xs text-gray-300">
-                {items.length}
-              </span>
-            </div>
+                <span className="text-xs text-gray-300">
+                  {items.length}
+                </span>
+              </div>
 
-            {/* GRID */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
-              {items.map((s) => (
-                <SolutionCard
-                  key={s.id_solution}
-                  id={s.id_solution}
-                  name={s.name}
-                  visualRectId={s.media_logo_rectangle_id}
-                  nbAnalyses={s.nb_analyses}
-                  delta30d={s.delta_30d}
-                  isPartner={s.is_partner}
-                />
-              ))}
-            </div>
+              {/* GRID */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
+                {items.map((s) => (
+                  <SolutionCard
+                    key={s.id_solution}
+                    id={s.id_solution}
+                    name={s.name}
+                    visualRectId={s.media_logo_rectangle_id}
+                    nbAnalyses={s.nb_analyses}
+                    delta30d={s.delta_30d}
+                    isPartner={s.is_partner}
+                  />
+                ))}
+              </div>
 
-          </section>
-        ))
+            </section>
+          ))
       )}
 
     </div>
