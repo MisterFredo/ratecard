@@ -70,7 +70,7 @@ def create_solution(data: SolutionCreate) -> str:
 # LIST SOLUTIONS (🔥 VERSION CLEAN + UNIVERS FILTER)
 # ============================================================
 
-def list_solutions(universe_id: Optional[str] = None) -> List[Dict]:
+def list_solutions() -> List[Dict]:
 
     sql = f"""
     SELECT
@@ -78,9 +78,11 @@ def list_solutions(universe_id: Optional[str] = None) -> List[Dict]:
         s.NAME,
         s.STATUS,
         s.ID_COMPANY,
+
         c.NAME AS COMPANY_NAME,
         c.MEDIA_LOGO_RECTANGLE_ID,
         CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
+
         s.VECTORISE,
         s.INSIGHT_FREQUENCY,
         s.CREATED_AT,
@@ -89,16 +91,27 @@ def list_solutions(universe_id: Optional[str] = None) -> List[Dict]:
         COALESCE(st.total, 0) AS NB_ANALYSES,
         COALESCE(st.last_30_days, 0) AS DELTA_30D,
 
+        -- HAS NUMBERS
         ns.ID_SOLUTION IS NOT NULL AS HAS_NUMBERS,
 
+        -- RADAR
         r.ID_INSIGHT,
-        r.KEY_POINTS
+        r.KEY_POINTS,
+
+        -- 🔥 UNIVERS (clé pour ton front)
+        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
 
     FROM `{TABLE_SOLUTION}` s
 
-    -- 🔥 JOIN (PAS LEFT)
-    JOIN `{TABLE_COMPANY}` c
+    LEFT JOIN `{TABLE_COMPANY}` c
       ON s.ID_COMPANY = c.ID_COMPANY
+
+    -- 🔥 UNIVERS JOIN (comme company)
+    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+      ON cu.ID_COMPANY = s.ID_COMPANY
+
+    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
+      ON u.ID_UNIVERSE = cu.ID_UNIVERSE
 
     LEFT JOIN `{VIEW_STATS_SOLUTION}` st
       ON st.id_solution = s.ID_SOLUTION
@@ -122,26 +135,63 @@ def list_solutions(universe_id: Optional[str] = None) -> List[Dict]:
       ON r.ENTITY_ID = s.ID_SOLUTION
       AND r.ENTITY_TYPE = "solution"
 
-    WHERE
-        s.IS_ACTIVE = TRUE
-        AND c.IS_ACTIVE = TRUE
+    WHERE s.IS_ACTIVE = TRUE
 
-        AND (
-            @universe_id IS NULL
-            OR EXISTS (
-                SELECT 1
-                FROM `{TABLE_COMPANY_UNIVERSE}` cu
-                WHERE cu.ID_COMPANY = s.ID_COMPANY
-                  AND cu.ID_UNIVERSE = @universe_id
-            )
-        )
+    GROUP BY
+        s.ID_SOLUTION,
+        s.NAME,
+        s.STATUS,
+        s.ID_COMPANY,
+        c.NAME,
+        c.MEDIA_LOGO_RECTANGLE_ID,
+        c.IS_PARTNER,
+        s.VECTORISE,
+        s.INSIGHT_FREQUENCY,
+        s.CREATED_AT,
+        s.UPDATED_AT,
+        st.total,
+        st.last_30_days,
+        HAS_NUMBERS,
+        r.ID_INSIGHT,
+        r.KEY_POINTS
 
     ORDER BY s.NAME ASC
     """
 
-    return query_bq(sql, {
-        "universe_id": universe_id
-    })
+    rows = query_bq(sql)
+
+    return [
+        {
+            "id_solution": r["ID_SOLUTION"],
+            "name": r["NAME"],
+            "id_company": r["ID_COMPANY"],
+            "company_name": r.get("COMPANY_NAME"),
+
+            "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID"),
+            "is_partner": r.get("IS_PARTNER", False),
+
+            "status": r.get("STATUS"),
+            "vectorise": r.get("VECTORISE", False),
+            "insight_frequency": r.get("INSIGHT_FREQUENCY"),
+
+            "created_at": r.get("CREATED_AT"),
+            "updated_at": r.get("UPDATED_AT"),
+
+            "nb_analyses": r.get("NB_ANALYSES", 0),
+            "delta_30d": r.get("DELTA_30D", 0),
+
+            "has_numbers": r.get("HAS_NUMBERS", False),
+
+            "last_radar": {
+                "id_insight": r["ID_INSIGHT"],
+                "key_points": r["KEY_POINTS"],
+            } if r.get("ID_INSIGHT") else None,
+
+            # 🔥 CRUCIAL POUR TON FRONT
+            "universes": r.get("universes") or [],
+        }
+        for r in rows
+    ]
 # ============================================================
 # GET ONE SOLUTION
 # ============================================================
