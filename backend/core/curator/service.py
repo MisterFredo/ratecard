@@ -660,15 +660,12 @@ def get_content_stats(
 
 def _map_feed_row(r: Dict) -> Dict:
 
-    def map_dt(value):
-        return value.isoformat() if value else None
-
     return {
         "id": r.get("id"),
         "type": r.get("type"),
         "title": r.get("title"),
         "excerpt": r.get("excerpt"),
-        "published_at": map_dt(r.get("published_at")),
+        "published_at": r.get("published_at"),  # ✅ PAS isoformat
         "news_type": r.get("news_type"),
         "topics": r.get("topics") or [],
         "companies": r.get("companies") or [],
