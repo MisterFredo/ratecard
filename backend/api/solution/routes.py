@@ -1,17 +1,15 @@
-from fastapi import APIRouter, HTTPException, Query, Request
-from typing import List, Dict, Optional
+from fastapi import APIRouter, HTTPException, Query
+from typing import Optional
 
 from api.solution.models import (
     SolutionCreate,
     SolutionUpdate,
-    SolutionOut,
 )
 
 from core.solution.service import (
     create_solution,
     list_solutions,
     get_solution,
-    list_solutions_for_user,
     update_solution,
     delete_solution,
 )
@@ -25,6 +23,7 @@ router = APIRouter()
 # ============================================================
 # CREATE
 # ============================================================
+
 @router.post("/create")
 def create_route(data: SolutionCreate):
     try:
@@ -35,8 +34,9 @@ def create_route(data: SolutionCreate):
 
 
 # ============================================================
-# LIST
+# LIST (ADMIN / GLOBAL)
 # ============================================================
+
 @router.get("/list")
 def list_route():
     try:
@@ -46,17 +46,17 @@ def list_route():
         raise HTTPException(400, f"Erreur liste solutions : {e}")
 
 
+# ============================================================
+# LIST CURATOR (UNIVERSE ONLY)
+# ============================================================
+
 @router.get("/list-curator")
 def list_solutions_curator(
-    request: Request,
-    universe_id: Optional[str] = Query(None),  # ✅ NEW
+    universe_id: Optional[str] = Query(None),
 ):
     try:
-        user_id = request.cookies.get("curator_user_id")
-
-        solutions = list_solutions_for_user(
-            user_id=user_id,
-            universe_id=universe_id if universe_id else None,  # ✅ FIX
+        solutions = list_solutions(
+            universe_id=universe_id if universe_id else None
         )
 
         return {
@@ -69,8 +69,9 @@ def list_solutions_curator(
 
 
 # ============================================================
-# GET ONE (ADMIN / CRUD)
+# GET ONE (ADMIN)
 # ============================================================
+
 @router.get("/{id_solution}")
 def get_route(id_solution: str):
     try:
@@ -88,23 +89,22 @@ def get_route(id_solution: str):
 
 
 # ============================================================
-# GET VIEW (CURATOR)
+# VIEW (CURATOR)
 # ============================================================
+
 @router.get("/{id_solution}/view")
 def get_solution_view_route(
-    request: Request,
     id_solution: str,
     limit: int = 20,
-    offset: int = 0
+    offset: int = 0,
+    universe_id: Optional[str] = Query(None),
 ):
     try:
-        user_id = request.cookies.get("curator_user_id")
-
         solution = get_solution_view(
-            id_solution,
+            solution_id=id_solution,
             limit=limit,
             offset=offset,
-            user_id=user_id,  # 🔥 CRUCIAL
+            universe_id=universe_id if universe_id else None,
         )
 
         if not solution:
@@ -124,6 +124,7 @@ def get_solution_view_route(
 # ============================================================
 # UPDATE
 # ============================================================
+
 @router.put("/update/{id_solution}")
 def update_route(id_solution: str, data: SolutionUpdate):
     try:
@@ -146,6 +147,7 @@ def update_route(id_solution: str, data: SolutionUpdate):
 # ============================================================
 # DELETE
 # ============================================================
+
 @router.delete("/{id_solution}")
 def delete_route(id_solution: str):
     try:
@@ -160,5 +162,3 @@ def delete_route(id_solution: str):
         raise
     except Exception as e:
         raise HTTPException(400, f"Erreur suppression solution : {e}")
-
-
