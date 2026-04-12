@@ -34,7 +34,7 @@ def search(
         news_filter = "AND FALSE"
 
     # ============================================================
-    # 🔥 USER FILTER (uniquement si PAS de universe sélectionné)
+    # 🔥 USER FILTER (UNIQUEMENT si PAS de universe sélectionné)
     # ============================================================
 
     universe_filter_news = ""
@@ -66,7 +66,7 @@ def search(
         """
 
     # ============================================================
-    # 🔥 UI UNIVERSE FILTER
+    # 🔥 UI UNIVERSE FILTER (toujours appliqué)
     # ============================================================
 
     universe_ui_filter_news = f"""
@@ -101,6 +101,7 @@ def search(
     sql = f"""
     SELECT * FROM (
 
+        -- NEWS
         SELECT
             n.id_news AS id,
             'news' AS type,
@@ -126,6 +127,7 @@ def search(
 
         UNION ALL
 
+        -- CONTENT
         SELECT
             c.id_content AS id,
             'analysis' AS type,
@@ -153,13 +155,18 @@ def search(
     OFFSET @offset
     """
 
+    # ============================================================
+    # PARAMS
+    # ============================================================
+
     params = {
         "query": q,
         "limit": limit,
         "offset": offset,
-        "universe_id": universe_id if universe_id else None,
+        "universe_id": universe_id,  # ✅ toujours présent (None OK)
     }
 
+    # ⚠️ IMPORTANT → uniquement si utilisé dans SQL
     if user_id and not universe_id:
         params["user_id"] = user_id
 
@@ -188,7 +195,7 @@ def latest(
         news_filter = "AND FALSE"
 
     # ============================================================
-    # USER FILTER (uniquement si PAS de universe sélectionné)
+    # 🔥 USER FILTER (UNIQUEMENT si PAS de universe sélectionné)
     # ============================================================
 
     universe_filter_news = ""
@@ -220,7 +227,7 @@ def latest(
         """
 
     # ============================================================
-    # UI FILTER
+    # 🔥 UI UNIVERSE FILTER (toujours actif)
     # ============================================================
 
     universe_ui_filter_news = f"""
@@ -255,6 +262,7 @@ def latest(
     sql = f"""
     SELECT * FROM (
 
+        -- NEWS
         SELECT
             n.id_news AS id,
             'news' AS type,
@@ -275,6 +283,7 @@ def latest(
 
         UNION ALL
 
+        -- CONTENT
         SELECT
             c.id_content AS id,
             'analysis' AS type,
@@ -297,10 +306,14 @@ def latest(
     OFFSET @offset
     """
 
+    # ============================================================
+    # PARAMS
+    # ============================================================
+
     params = {
         "limit": limit,
         "offset": offset,
-        "universe_id": universe_id if universe_id else None,
+        "universe_id": universe_id,  # ✅ toujours présent (None OK)
     }
 
     if user_id and not universe_id:
@@ -309,7 +322,6 @@ def latest(
     rows = query_bq(sql, params)
 
     return [_map_feed_row(r) for r in rows]
-
 # ============================================================
 # ITEM (light)
 # ============================================================
