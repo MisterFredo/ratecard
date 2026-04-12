@@ -27,66 +27,31 @@ TABLE_COMPANY_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE"
 # 🔥 CORE FILTER BUILDER (UNIQUE SOURCE OF TRUTH)
 # ============================================================
 
-def _build_universe_filters(user_id: Optional[str], universe_id: Optional[str]):
+def _build_universe_filters(universe_id: Optional[str]):
 
-    # --------------------------------------------------------
-    # 🎯 PRIORITÉ 1 → UI universe
-    # --------------------------------------------------------
-    if universe_id:
-        return (
-            f"""
-            AND EXISTS (
-                SELECT 1
-                FROM `{TABLE_COMPANY_UNIVERSE}` cu
-                WHERE cu.ID_COMPANY = n.id_company
-                  AND cu.ID_UNIVERSE = @universe_id
-            )
-            """,
-            f"""
-            AND EXISTS (
-                SELECT 1
-                FROM UNNEST(c.companies) comp
-                JOIN `{TABLE_COMPANY_UNIVERSE}` cu
-                    ON cu.ID_COMPANY = comp.id_company
-                WHERE cu.ID_UNIVERSE = @universe_id
-            )
-            """,
-            {"universe_id": universe_id}
+    if not universe_id:
+        return "", "", {}
+
+    return (
+        f"""
+        AND EXISTS (
+            SELECT 1
+            FROM `{TABLE_COMPANY_UNIVERSE}` cu
+            WHERE cu.ID_COMPANY = n.id_company
+              AND cu.ID_UNIVERSE = @universe_id
         )
-
-    # --------------------------------------------------------
-    # 🎯 PRIORITÉ 2 → USER universes
-    # --------------------------------------------------------
-    if user_id:
-        return (
-            f"""
-            AND EXISTS (
-                SELECT 1
-                FROM `{TABLE_USER_UNIVERSE}` uu
-                JOIN `{TABLE_COMPANY_UNIVERSE}` cu
-                    ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
-                WHERE uu.ID_USER = @user_id
-                  AND cu.ID_COMPANY = n.id_company
-            )
-            """,
-            f"""
-            AND EXISTS (
-                SELECT 1
-                FROM UNNEST(c.companies) comp
-                JOIN `{TABLE_COMPANY_UNIVERSE}` cu
-                    ON cu.ID_COMPANY = comp.id_company
-                JOIN `{TABLE_USER_UNIVERSE}` uu
-                    ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-                WHERE uu.ID_USER = @user_id
-            )
-            """,
-            {"user_id": user_id}
+        """,
+        f"""
+        AND EXISTS (
+            SELECT 1
+            FROM UNNEST(c.companies) comp
+            JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+                ON cu.ID_COMPANY = comp.id_company
+            WHERE cu.ID_UNIVERSE = @universe_id
         )
-
-    # --------------------------------------------------------
-    # 🎯 PRIORITÉ 3 → PAS DE FILTRE
-    # --------------------------------------------------------
-    return "", "", {}
+        """,
+        {"universe_id": universe_id}
+    )
 
 
 # ============================================================
@@ -99,18 +64,16 @@ def _get_entity_feed(
     params: Dict,
     limit: int,
     offset: int,
-    user_id: Optional[str],
     universe_id: Optional[str],
 ):
 
     filter_news, filter_content, filter_params = _build_universe_filters(
-        user_id, universe_id
+        universe_id
     )
 
     sql = f"""
     SELECT * FROM (
 
-        -- NEWS
         SELECT
             n.id_news AS id,
             'news' AS type,
@@ -129,7 +92,6 @@ def _get_entity_feed(
 
         UNION ALL
 
-        -- CONTENT
         SELECT
             c.id_content AS id,
             'analysis' AS type,
@@ -160,12 +122,11 @@ def _get_entity_feed(
     rows = query_bq(sql, final_params)
     return [_map_feed_row(r) for r in rows]
 
-
 # ============================================================
 # COMPANY
 # ============================================================
 
-def get_company_feed(company_id, limit, offset, user_id, universe_id):
+def get_company_feed(company_id, limit, offset, universe_id):
     return _get_entity_feed(
         "n.id_company = @company_id",
         """
@@ -177,10 +138,8 @@ def get_company_feed(company_id, limit, offset, user_id, universe_id):
         {"company_id": company_id},
         limit,
         offset,
-        user_id,
         universe_id,
     )
-
 
 def get_company_view(company_id, limit, offset, user_id, universe_id):
 
@@ -209,7 +168,7 @@ def get_company_view(company_id, limit, offset, user_id, universe_id):
 # TOPIC
 # ============================================================
 
-def get_topic_feed(topic_id, limit, offset, user_id, universe_id):
+def get_topic_feed(topic_id, limit, offset, universe_id):
     return _get_entity_feed(
         """
         EXISTS (SELECT 1 FROM UNNEST(n.topics) t WHERE t.id_topic = @topic_id)
@@ -220,7 +179,6 @@ def get_topic_feed(topic_id, limit, offset, user_id, universe_id):
         {"topic_id": topic_id},
         limit,
         offset,
-        user_id,
         universe_id,
     )
 
@@ -269,7 +227,7 @@ def get_topic_view(
 # ============================================================
 
 
-def get_solution_feed(solution_id, limit, offset, user_id, universe_id):
+def get_solution_feed(solution_id, limit, offset, universe_id):
     return _get_entity_feed(
         "FALSE",
         """
@@ -281,7 +239,6 @@ def get_solution_feed(solution_id, limit, offset, user_id, universe_id):
         {"solution_id": solution_id},
         limit,
         offset,
-        user_id,
         universe_id,
     )
 
