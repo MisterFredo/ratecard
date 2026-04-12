@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, Query, Request
-from typing import Optional, List
+from fastapi import APIRouter, HTTPException, Query
+from typing import Optional
 
 from api.numbers.models import NumberInput
+
 from core.numbers.service import (
     create_number,
     list_numbers,
@@ -11,25 +12,26 @@ from core.numbers.service import (
     get_number_types,
     get_raw_numbers,
     search_numbers_service,
-    delete_number_relations,
     get_numbers_feed_service,
     get_numbers_for_entity,
 )
-from core.numbers.insight_service import generate_numbers_insight
-from core.numbers.insight_service import get_numbers_by_ids
+
+from core.numbers.insight_service import (
+    generate_numbers_insight,
+    get_numbers_by_ids,
+)
 
 router = APIRouter()
 
 
 # ============================================================
-# CREATE (MANUEL + GUIDÉ)
+# CREATE
 # ============================================================
 
 @router.post("/")
 def create_route(payload: NumberInput):
 
     try:
-
         result = create_number(payload)
 
         return {
@@ -39,10 +41,7 @@ def create_route(payload: NumberInput):
         }
 
     except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur création number : {e}"
-        )
+        raise HTTPException(400, f"Erreur création number : {e}")
 
 
 # ============================================================
@@ -53,7 +52,6 @@ def create_route(payload: NumberInput):
 def list_route(limit: int = 100):
 
     try:
-
         items = list_numbers(limit=limit)
 
         return {
@@ -62,10 +60,7 @@ def list_route(limit: int = 100):
         }
 
     except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur list numbers : {e}"
-        )
+        raise HTTPException(400, f"Erreur list numbers : {e}")
 
 
 # ============================================================
@@ -76,7 +71,6 @@ def list_route(limit: int = 100):
 def delete_route(id_number: str):
 
     try:
-
         delete_number(id_number)
 
         return {
@@ -85,21 +79,17 @@ def delete_route(id_number: str):
         }
 
     except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur suppression number : {e}"
-        )
+        raise HTTPException(400, f"Erreur suppression number : {e}")
 
 
 # ============================================================
-# FLOW GUIDÉ (FROM CONTENT)
+# FROM CONTENT
 # ============================================================
 
 @router.get("/from-content/{id_content}")
 def from_content_route(id_content: str):
 
     try:
-
         items = get_numbers_from_content(id_content)
 
         return {
@@ -108,21 +98,17 @@ def from_content_route(id_content: str):
         }
 
     except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur parsing content : {e}"
-        )
+        raise HTTPException(400, f"Erreur parsing content : {e}")
 
 
 # ============================================================
-# COHERENCE CHECK (UI HELP)
+# COHERENCE CHECK
 # ============================================================
 
 @router.post("/check-coherence")
 def check_coherence_route(payload: dict):
 
     try:
-
         result = check_number_coherence(
             value=payload.get("value"),
             id_number_type=payload.get("id_number_type"),
@@ -139,38 +125,33 @@ def check_coherence_route(payload: dict):
         }
 
     except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur coherence check : {e}"
-        )
+        raise HTTPException(400, f"Erreur coherence check : {e}")
 
+
+# ============================================================
+# TYPES
+# ============================================================
 
 @router.get("/types")
 def get_types():
 
     try:
-
         items = get_number_types()
-
         return items
 
     except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur types numbers : {e}"
-        )
+        raise HTTPException(400, f"Erreur types numbers : {e}")
 
+
+# ============================================================
+# RAW
+# ============================================================
 
 @router.get("/raw")
 def raw_numbers(limit: int = 500):
 
     try:
-
-        print("➡️ CALL /numbers/raw")
-
         items = get_raw_numbers(limit=limit)
-
-        print("✅ SUCCESS RAW:", len(items))
 
         return {
             "status": "ok",
@@ -178,11 +159,12 @@ def raw_numbers(limit: int = 500):
         }
 
     except Exception as e:
-        print("❌ ERROR RAW:", str(e))
-        raise HTTPException(
-            400,
-            f"Erreur raw numbers : {e}"
-        )
+        raise HTTPException(400, f"Erreur raw numbers : {e}")
+
+
+# ============================================================
+# SEARCH
+# ============================================================
 
 @router.get("/search")
 def search_numbers(
@@ -206,8 +188,9 @@ def search_numbers(
         "items": items,
     }
 
+
 # ============================================================
-# NUMBERS BY ENTITY (DRAWER)
+# BY ENTITY
 # ============================================================
 
 @router.get("/entity")
@@ -218,7 +201,6 @@ def numbers_by_entity(
 ):
 
     try:
-
         items = get_numbers_for_entity(
             entity_type=entity_type,
             entity_id=entity_id,
@@ -231,44 +213,44 @@ def numbers_by_entity(
         }
 
     except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur numbers entity : {e}"
-        )
-
-
-@router.get("/feed")
-def get_numbers_feed(
-    request: Request,
-    limit: int = 50,
-    query: Optional[str] = None,
-):
-
-    user_id = request.cookies.get("curator_user_id")  # ✅ FIX
-
-    items = get_numbers_feed_service(
-        limit=limit,
-        query=query,
-        user_id=user_id,  # ✅ FIX
-    )
-
-    return {
-        "status": "ok",
-        "items": items,
-    }
-
-
+        raise HTTPException(400, f"Erreur numbers entity : {e}")
 
 
 # ============================================================
-# NUMBERS INSIGHT
+# FEED (🔥 UNIVERSE ONLY — CLEAN)
+# ============================================================
+
+@router.get("/feed")
+def get_numbers_feed(
+    limit: int = 50,
+    query: Optional[str] = None,
+    universe_id: Optional[str] = Query(None),
+):
+
+    try:
+        items = get_numbers_feed_service(
+            limit=limit,
+            query=query,
+            universe_id=universe_id if universe_id else None,
+        )
+
+        return {
+            "status": "ok",
+            "items": items,
+        }
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur numbers feed : {e}")
+
+
+# ============================================================
+# INSIGHT
 # ============================================================
 
 @router.post("/insight")
 def numbers_insight(payload: dict):
 
     try:
-
         ids = payload.get("ids", [])
 
         insight = generate_numbers_insight(ids)
@@ -279,8 +261,4 @@ def numbers_insight(payload: dict):
         }
 
     except Exception as e:
-        raise HTTPException(
-            400,
-            f"Erreur numbers insight : {e}"
-        )
-
+        raise HTTPException(400, f"Erreur numbers insight : {e}")
