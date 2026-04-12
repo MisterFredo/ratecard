@@ -118,7 +118,12 @@ def get_company_universes(company_id: str) -> List[str]:
 # LIST COMPANIES
 # ============================================================
 
-def list_companies() -> List[Dict]:
+def list_companies(universe_id: Optional[str] = None) -> List[Dict]:
+
+    universe_filter = ""
+
+    if universe_id:
+        universe_filter = "AND cu.ID_UNIVERSE = @universe_id"
 
     sql = f"""
     SELECT
@@ -147,12 +152,10 @@ def list_companies() -> List[Dict]:
         r.ID_INSIGHT,
         r.KEY_POINTS,
 
-        -- 🔥 UNIVERS (OBLIGATOIRE)
         ARRAY_AGG(DISTINCT u.LABEL) AS universes
 
     FROM `{TABLE_COMPANY}` c
 
-    -- 🔥 UNIVERS → JOIN (PAS LEFT JOIN)
     JOIN `{TABLE_COMPANY_UNIVERSE}` cu
       ON cu.ID_COMPANY = c.ID_COMPANY
 
@@ -181,6 +184,7 @@ def list_companies() -> List[Dict]:
       AND r.ENTITY_TYPE = "company"
 
     WHERE c.IS_ACTIVE = TRUE
+    {universe_filter}
 
     GROUP BY
         c.ID_COMPANY,
@@ -200,7 +204,11 @@ def list_companies() -> List[Dict]:
     ORDER BY UPPER(c.NAME)
     """
 
-    rows = query_bq(sql)
+    params = {}
+    if universe_id:
+        params["universe_id"] = universe_id
+
+    rows = query_bq(sql, params)
 
     return [
         {
@@ -221,7 +229,6 @@ def list_companies() -> List[Dict]:
                 "key_points": r["KEY_POINTS"],
             } if r.get("ID_INSIGHT") else None,
 
-            # 🔥 GARANTI NON VIDE
             "universes": r.get("universes") or [],
         }
         for r in rows
