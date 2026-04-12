@@ -596,12 +596,22 @@ def get_numbers_feed_service(
 ):
 
     where_clauses = ["TRUE"]
+    params = {"limit": limit}
+
+    # ============================================================
+    # 🔎 QUERY
+    # ============================================================
 
     if query:
         where_clauses.append("LOWER(n.LABEL) LIKE LOWER(@query)")
+        params["query"] = f"%{query}%"
+
+    # ============================================================
+    # 🌍 UNIVERSE FILTER (FIX CRITIQUE ICI)
+    # ============================================================
 
     if universe_id:
-        where_clauses.append("""
+        where_clauses.append(f"""
         EXISTS (
             SELECT 1
             FROM UNNEST(n.ENTITIES) e2
@@ -617,8 +627,13 @@ def get_numbers_feed_service(
             WHERE cu2.ID_UNIVERSE = @universe_id
         )
         """)
+        params["universe_id"] = universe_id
 
     where_sql = " AND ".join(where_clauses)
+
+    # ============================================================
+    # QUERY
+    # ============================================================
 
     sql = f"""
     WITH solution_company AS (
@@ -630,7 +645,6 @@ def get_numbers_feed_service(
 
     SELECT
         n.*,
-
         ARRAY_AGG(DISTINCT cu.ID_UNIVERSE IGNORE NULLS) AS universes
 
     FROM `{VIEW_NUMBERS_CARDS}` n
@@ -667,11 +681,7 @@ def get_numbers_feed_service(
     LIMIT @limit
     """
 
-    return query_bq(sql, {
-        "limit": limit,
-        "query": f"%{query}%" if query else None,
-        "universe_id": universe_id,
-    })
+    return query_bq(sql, params)
 
 def search_numbers_service(
     id_number_type: Optional[str] = None,
