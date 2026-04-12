@@ -83,13 +83,15 @@ def get_route(id_company: str):
 def get_view_route(
     id_company: str,
     limit: int = 20,
-    offset: int = 0
+    offset: int = 0,
+    universe_id: Optional[str] = None  # ✅ NEW
 ):
     try:
         company = get_company_view(
             id_company,
             limit=limit,
-            offset=offset
+            offset=offset,
+            universe_id=universe_id  # ✅ PROPAGATION
         )
 
         if not company:
@@ -104,7 +106,6 @@ def get_view_route(
             400,
             f"Erreur récupération company view : {e}"
         )
-
 
 # UPDATE
 @router.put("/update/{id_company}")
