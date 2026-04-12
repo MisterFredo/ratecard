@@ -51,13 +51,9 @@ def list_route():
 # ============================================================
 
 @router.get("/list-curator")
-def list_solutions_curator(
-    universe_id: Optional[str] = Query(None),
-):
+def list_solutions_curator():
     try:
-        solutions = list_solutions(
-            universe_id=universe_id if universe_id else None
-        )
+        solutions = list_solutions()
 
         return {
             "status": "ok",
@@ -65,7 +61,10 @@ def list_solutions_curator(
         }
 
     except Exception as e:
-        raise HTTPException(400, f"Erreur liste solutions curator : {e}")
+        raise HTTPException(
+            400,
+            f"Erreur liste solutions curator : {e}"
+        )
 
 
 # ============================================================
