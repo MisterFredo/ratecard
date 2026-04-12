@@ -34,62 +34,63 @@ def search(
         news_filter = "AND FALSE"
 
     # ============================================================
-    # 🔥 USER FILTER (UNIQUEMENT si PAS de universe sélectionné)
+    # 🔥 UNIVERSE FILTER (USER SCOPE + UI)
     # ============================================================
 
-    universe_filter_news = ""
-    universe_filter_content = ""
-
-    if user_id and not universe_id:
-
-        universe_filter_news = f"""
-        AND EXISTS (
-            SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-              AND cu.ID_COMPANY = n.id_company
-        )
-        """
-
-        universe_filter_content = f"""
-        AND EXISTS (
-            SELECT 1
-            FROM UNNEST(c.companies) comp
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                ON cu.ID_COMPANY = comp.id_company
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-        )
-        """
-
-    # ============================================================
-    # 🔥 UI UNIVERSE FILTER (toujours appliqué)
-    # ============================================================
-
-    universe_ui_filter_news = f"""
+    universe_filter_news = f"""
     AND (
-        @universe_id IS NULL
-        OR EXISTS (
-            SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-            WHERE cu.ID_COMPANY = n.id_company
-              AND cu.ID_UNIVERSE = @universe_id
+        -- USER SCOPE
+        (
+            @user_id IS NULL
+            OR EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                    ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+                  AND cu.ID_COMPANY = n.id_company
+            )
+        )
+
+        -- UI FILTER
+        AND (
+            @universe_id IS NULL
+            OR EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                WHERE cu.ID_COMPANY = n.id_company
+                  AND cu.ID_UNIVERSE = @universe_id
+            )
         )
     )
     """
 
-    universe_ui_filter_content = f"""
+    universe_filter_content = f"""
     AND (
-        @universe_id IS NULL
-        OR EXISTS (
-            SELECT 1
-            FROM UNNEST(c.companies) comp
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                ON cu.ID_COMPANY = comp.id_company
-            WHERE cu.ID_UNIVERSE = @universe_id
+        -- USER SCOPE
+        (
+            @user_id IS NULL
+            OR EXISTS (
+                SELECT 1
+                FROM UNNEST(c.companies) comp
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                    ON cu.ID_COMPANY = comp.id_company
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                    ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+            )
+        )
+
+        -- UI FILTER
+        AND (
+            @universe_id IS NULL
+            OR EXISTS (
+                SELECT 1
+                FROM UNNEST(c.companies) comp
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                    ON cu.ID_COMPANY = comp.id_company
+                WHERE cu.ID_UNIVERSE = @universe_id
+            )
         )
     )
     """
@@ -123,7 +124,6 @@ def search(
             )
             {news_filter}
             {universe_filter_news}
-            {universe_ui_filter_news}
 
         UNION ALL
 
@@ -147,7 +147,6 @@ def search(
             )
             {content_filter}
             {universe_filter_content}
-            {universe_ui_filter_content}
 
     )
     ORDER BY published_at DESC
@@ -163,12 +162,9 @@ def search(
         "query": q,
         "limit": limit,
         "offset": offset,
-        "universe_id": universe_id,  # ✅ toujours présent (None OK)
+        "user_id": user_id,
+        "universe_id": universe_id,
     }
-
-    # ⚠️ IMPORTANT → uniquement si utilisé dans SQL
-    if user_id and not universe_id:
-        params["user_id"] = user_id
 
     rows = query_bq(sql, params)
 
@@ -195,62 +191,63 @@ def latest(
         news_filter = "AND FALSE"
 
     # ============================================================
-    # 🔥 USER FILTER (UNIQUEMENT si PAS de universe sélectionné)
+    # 🔥 UNIVERSE FILTER (USER SCOPE + UI)
     # ============================================================
 
-    universe_filter_news = ""
-    universe_filter_content = ""
-
-    if user_id and not universe_id:
-
-        universe_filter_news = f"""
-        AND EXISTS (
-            SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-              AND cu.ID_COMPANY = n.id_company
-        )
-        """
-
-        universe_filter_content = f"""
-        AND EXISTS (
-            SELECT 1
-            FROM UNNEST(c.companies) comp
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                ON cu.ID_COMPANY = comp.id_company
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-        )
-        """
-
-    # ============================================================
-    # 🔥 UI UNIVERSE FILTER (toujours actif)
-    # ============================================================
-
-    universe_ui_filter_news = f"""
+    universe_filter_news = f"""
     AND (
-        @universe_id IS NULL
-        OR EXISTS (
-            SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-            WHERE cu.ID_COMPANY = n.id_company
-              AND cu.ID_UNIVERSE = @universe_id
+        -- USER SCOPE
+        (
+            @user_id IS NULL
+            OR EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                    ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+                  AND cu.ID_COMPANY = n.id_company
+            )
+        )
+
+        -- UI FILTER
+        AND (
+            @universe_id IS NULL
+            OR EXISTS (
+                SELECT 1
+                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                WHERE cu.ID_COMPANY = n.id_company
+                  AND cu.ID_UNIVERSE = @universe_id
+            )
         )
     )
     """
 
-    universe_ui_filter_content = f"""
+    universe_filter_content = f"""
     AND (
-        @universe_id IS NULL
-        OR EXISTS (
-            SELECT 1
-            FROM UNNEST(c.companies) comp
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                ON cu.ID_COMPANY = comp.id_company
-            WHERE cu.ID_UNIVERSE = @universe_id
+        -- USER SCOPE
+        (
+            @user_id IS NULL
+            OR EXISTS (
+                SELECT 1
+                FROM UNNEST(c.companies) comp
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                    ON cu.ID_COMPANY = comp.id_company
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+                    ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+                WHERE uu.ID_USER = @user_id
+            )
+        )
+
+        -- UI FILTER
+        AND (
+            @universe_id IS NULL
+            OR EXISTS (
+                SELECT 1
+                FROM UNNEST(c.companies) comp
+                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                    ON cu.ID_COMPANY = comp.id_company
+                WHERE cu.ID_UNIVERSE = @universe_id
+            )
         )
     )
     """
@@ -275,11 +272,11 @@ def latest(
               STRUCT(n.id_company, n.company_name)
             ] AS companies,
             [] AS solutions
+
         FROM `{VIEW_NEWS}` n
         WHERE n.published_at IS NOT NULL
         {news_filter}
         {universe_filter_news}
-        {universe_ui_filter_news}
 
         UNION ALL
 
@@ -294,11 +291,11 @@ def latest(
             c.topics,
             c.companies,
             c.solutions
+
         FROM `{VIEW_CONTENT}` c
         WHERE c.published_at IS NOT NULL
         {content_filter}
         {universe_filter_content}
-        {universe_ui_filter_content}
 
     )
     ORDER BY published_at DESC
@@ -313,15 +310,15 @@ def latest(
     params = {
         "limit": limit,
         "offset": offset,
-        "universe_id": universe_id,  # ✅ toujours présent (None OK)
+        "user_id": user_id,
+        "universe_id": universe_id,
     }
-
-    if user_id and not universe_id:
-        params["user_id"] = user_id
 
     rows = query_bq(sql, params)
 
     return [_map_feed_row(r) for r in rows]
+
+
 # ============================================================
 # ITEM (light)
 # ============================================================
