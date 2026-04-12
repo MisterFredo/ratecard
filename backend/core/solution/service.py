@@ -89,16 +89,15 @@ def list_solutions(universe_id: Optional[str] = None) -> List[Dict]:
         COALESCE(st.total, 0) AS NB_ANALYSES,
         COALESCE(st.last_30_days, 0) AS DELTA_30D,
 
-        -- HAS NUMBERS
         ns.ID_SOLUTION IS NOT NULL AS HAS_NUMBERS,
 
-        -- RADAR
         r.ID_INSIGHT,
         r.KEY_POINTS
 
     FROM `{TABLE_SOLUTION}` s
 
-    LEFT JOIN `{TABLE_COMPANY}` c
+    -- 🔥 JOIN (PAS LEFT)
+    JOIN `{TABLE_COMPANY}` c
       ON s.ID_COMPANY = c.ID_COMPANY
 
     LEFT JOIN `{VIEW_STATS_SOLUTION}` st
@@ -125,6 +124,7 @@ def list_solutions(universe_id: Optional[str] = None) -> List[Dict]:
 
     WHERE
         s.IS_ACTIVE = TRUE
+        AND c.IS_ACTIVE = TRUE
 
         AND (
             @universe_id IS NULL
@@ -142,8 +142,6 @@ def list_solutions(universe_id: Optional[str] = None) -> List[Dict]:
     return query_bq(sql, {
         "universe_id": universe_id
     })
-
-
 # ============================================================
 # GET ONE SOLUTION
 # ============================================================
