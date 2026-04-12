@@ -61,13 +61,9 @@ def list_types_route():
 # ============================================================
 
 @router.get("/list-curator")
-def list_companies_curator(
-    universe_id: Optional[str] = Query(None),
-):
+def list_companies_curator():
     try:
-        companies = list_companies(
-            universe_id=universe_id if universe_id else None
-        )
+        companies = list_companies()
 
         return {
             "status": "ok",
