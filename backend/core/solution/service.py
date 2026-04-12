@@ -91,14 +91,14 @@ def list_solutions() -> List[Dict]:
         COALESCE(st.total, 0) AS NB_ANALYSES,
         COALESCE(st.last_30_days, 0) AS DELTA_30D,
 
-        -- HAS NUMBERS
+        -- ✅ HAS NUMBERS (safe)
         ns.ID_SOLUTION IS NOT NULL AS HAS_NUMBERS,
 
         -- RADAR
         r.ID_INSIGHT,
         r.KEY_POINTS,
 
-        -- 🔥 UNIVERS (clé pour ton front)
+        -- 🔥 UNIVERS (clé front)
         ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
 
     FROM `{TABLE_SOLUTION}` s
@@ -106,27 +106,29 @@ def list_solutions() -> List[Dict]:
     LEFT JOIN `{TABLE_COMPANY}` c
       ON s.ID_COMPANY = c.ID_COMPANY
 
-    -- 🔥 UNIVERS JOIN (comme company)
+    -- 🔥 UNIVERS
     LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
       ON cu.ID_COMPANY = s.ID_COMPANY
 
     LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
       ON u.ID_UNIVERSE = cu.ID_UNIVERSE
 
+    -- STATS
     LEFT JOIN `{VIEW_STATS_SOLUTION}` st
       ON st.id_solution = s.ID_SOLUTION
 
+    -- NUMBERS FLAG
     LEFT JOIN (
         SELECT DISTINCT ID_SOLUTION
         FROM `{TABLE_NUMBERS_SOLUTION}`
     ) ns
       ON ns.ID_SOLUTION = s.ID_SOLUTION
 
+    -- RADAR
     LEFT JOIN (
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_RADAR`
         WHERE STATUS = "GENERATED"
-
         QUALIFY ROW_NUMBER() OVER (
             PARTITION BY ENTITY_TYPE, ENTITY_ID
             ORDER BY YEAR DESC, PERIOD DESC
@@ -151,11 +153,11 @@ def list_solutions() -> List[Dict]:
         s.UPDATED_AT,
         st.total,
         st.last_30_days,
-        HAS_NUMBERS,
+        ns.ID_SOLUTION,
         r.ID_INSIGHT,
         r.KEY_POINTS
 
-    ORDER BY s.NAME ASC
+    ORDER BY UPPER(s.NAME)
     """
 
     rows = query_bq(sql)
@@ -187,11 +189,13 @@ def list_solutions() -> List[Dict]:
                 "key_points": r["KEY_POINTS"],
             } if r.get("ID_INSIGHT") else None,
 
-            # 🔥 CRUCIAL POUR TON FRONT
+            # 🔥 CRUCIAL FRONT
             "universes": r.get("universes") or [],
         }
         for r in rows
     ]
+
+
 # ============================================================
 # GET ONE SOLUTION
 # ============================================================
