@@ -59,86 +59,124 @@ def _build_universe_filters(universe_id: Optional[str]):
 # ============================================================
 
 def _get_entity_feed(
-    where_news: str,
-    where_content: str,
+    where_clause_news: str,
+    where_clause_content: str,
     params: Dict,
-    limit: int,
-    offset: int,
-    universe_id: Optional[str],
-):
+    limit: int = 50,
+    offset: int = 0,
+    universe_id: Optional[str] = None,  # ✅ NEW
+) -> List[Dict]:
 
-    filter_news, filter_content, filter_params = _build_universe_filters(
-        universe_id
-    )
+    # ============================================================
+    # 🔥 UNIVERSE FILTER (UI ONLY)
+    # ============================================================
+
+    universe_filter_news = ""
+    universe_filter_content = ""
+
+    if universe_id:
+
+        universe_filter_news = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+            WHERE cu.ID_COMPANY = n.id_company
+              AND cu.ID_UNIVERSE = @universe_id
+        )
+        """
+
+        universe_filter_content = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM UNNEST(c.companies) comp
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+                ON cu.ID_COMPANY = comp.id_company
+            WHERE cu.ID_UNIVERSE = @universe_id
+        )
+        """
+
+    # ============================================================
+    # QUERY
+    # ============================================================
 
     sql = f"""
-    SELECT * FROM (
+    -- NEWS
+    SELECT
+        n.id_news AS id,
+        'news' AS type,
+        n.title,
+        n.excerpt,
+        n.published_at,
+        n.news_type,
+        n.topics,
+        ARRAY<STRUCT<id_company STRING, name STRING>>[
+          STRUCT(n.id_company, n.company_name)
+        ] AS companies,
+        [] AS solutions
+    FROM `{VIEW_NEWS}` n
+    WHERE {where_clause_news}
+    {universe_filter_news}
 
-        SELECT
-            n.id_news AS id,
-            'news' AS type,
-            n.title,
-            n.excerpt,
-            n.published_at,
-            n.news_type,
-            n.topics,
-            ARRAY<STRUCT<id_company STRING, name STRING>>[
-                STRUCT(n.id_company, n.company_name)
-            ] AS companies,
-            [] AS solutions
-        FROM `{VIEW_NEWS}` n
-        WHERE {where_news}
-        {filter_news}
+    UNION ALL
 
-        UNION ALL
+    -- CONTENT
+    SELECT
+        c.id_content AS id,
+        'analysis' AS type,
+        c.title,
+        c.excerpt,
+        c.published_at,
+        NULL AS news_type,
+        c.topics,
+        c.companies,
+        c.solutions
+    FROM `{VIEW_CONTENT}` c
+    WHERE {where_clause_content}
+    {universe_filter_content}
 
-        SELECT
-            c.id_content AS id,
-            'analysis' AS type,
-            c.title,
-            c.excerpt,
-            c.published_at,
-            NULL AS news_type,
-            c.topics,
-            c.companies,
-            c.solutions
-        FROM `{VIEW_CONTENT}` c
-        WHERE {where_content}
-        {filter_content}
-
-    )
     ORDER BY published_at DESC
     LIMIT @limit
     OFFSET @offset
     """
 
-    final_params = {
+    query_params = {
         **params,
-        **filter_params,
         "limit": limit,
         "offset": offset,
     }
 
-    rows = query_bq(sql, final_params)
+    if universe_id:
+        query_params["universe_id"] = universe_id
+
+    rows = query_bq(sql, query_params)
+
     return [_map_feed_row(r) for r in rows]
+
 
 # ============================================================
 # COMPANY
 # ============================================================
 
-def get_company_feed(company_id, limit, offset, universe_id):
+def get_company_feed(
+    company_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    universe_id: Optional[str] = None
+) -> List[Dict]:
+
     return _get_entity_feed(
-        "n.id_company = @company_id",
-        """
-        EXISTS (
-            SELECT 1 FROM UNNEST(c.companies) comp
-            WHERE comp.id_company = @company_id
-        )
+        where_clause_news="n.id_company = @company_id",
+        where_clause_content="""
+            EXISTS (
+                SELECT 1
+                FROM UNNEST(c.companies) comp
+                WHERE comp.id_company = @company_id
+            )
         """,
-        {"company_id": company_id},
-        limit,
-        offset,
-        universe_id,
+        params={"company_id": company_id},
+        limit=limit,
+        offset=offset,
+        universe_id=universe_id
     )
 
 def get_company_view(company_id, limit, offset, user_id, universe_id):
