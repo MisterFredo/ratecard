@@ -6,6 +6,7 @@ from api.company.models import CompanyCreate, CompanyUpdate, CompanyOut
 from core.company.service import (
     create_company,
     list_companies,
+    list_company_types,
     get_company,
     update_company,
     delete_company,
