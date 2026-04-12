@@ -607,7 +607,7 @@ def get_numbers_feed_service(
         params["query"] = f"%{query}%"
 
     # ============================================================
-    # 🌍 UNIVERSE FILTER (FIX CRITIQUE ICI)
+    # 🌍 UNIVERSE FILTER
     # ============================================================
 
     if universe_id:
@@ -615,15 +615,18 @@ def get_numbers_feed_service(
         EXISTS (
             SELECT 1
             FROM UNNEST(n.ENTITIES) e2
+
             LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` sc2
               ON e2.ENTITY_TYPE = 'solution'
              AND sc2.ID_SOLUTION = e2.ENTITY_ID
+
             JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu2
               ON (
                 (e2.ENTITY_TYPE = 'company' AND cu2.ID_COMPANY = e2.ENTITY_ID)
                 OR
                 (e2.ENTITY_TYPE = 'solution' AND cu2.ID_COMPANY = sc2.ID_COMPANY)
               )
+
             WHERE cu2.ID_UNIVERSE = @universe_id
         )
         """)
@@ -637,10 +640,8 @@ def get_numbers_feed_service(
 
     sql = f"""
     WITH solution_company AS (
-      SELECT
-        ID_SOLUTION,
-        ID_COMPANY
-      FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION`
+        SELECT ID_SOLUTION, ID_COMPANY
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION`
     )
 
     SELECT
@@ -695,7 +696,9 @@ def search_numbers_service(
     conditions = []
     params = {"limit": limit}
 
-    # ================= FILTERS =================
+    # ============================================================
+    # FILTERS
+    # ============================================================
 
     if id_number_type:
         conditions.append("n.ID_NUMBER_TYPE = @id_number_type")
@@ -704,7 +707,7 @@ def search_numbers_service(
     if company_id:
         joins.append(f"""
             JOIN `{TABLE_NUMBERS_COMPANY}` nc_filter
-            ON n.ID_NUMBER = nc_filter.ID_NUMBER
+              ON n.ID_NUMBER = nc_filter.ID_NUMBER
         """)
         conditions.append("nc_filter.ID_COMPANY = @company_id")
         params["company_id"] = company_id
@@ -712,7 +715,7 @@ def search_numbers_service(
     if topic_id:
         joins.append(f"""
             JOIN `{TABLE_NUMBERS_TOPIC}` nt_filter
-            ON n.ID_NUMBER = nt_filter.ID_NUMBER
+              ON n.ID_NUMBER = nt_filter.ID_NUMBER
         """)
         conditions.append("nt_filter.ID_TOPIC = @topic_id")
         params["topic_id"] = topic_id
@@ -720,7 +723,7 @@ def search_numbers_service(
     if solution_id:
         joins.append(f"""
             JOIN `{TABLE_NUMBERS_SOLUTION}` ns_filter
-            ON n.ID_NUMBER = ns_filter.ID_NUMBER
+              ON n.ID_NUMBER = ns_filter.ID_NUMBER
         """)
         conditions.append("ns_filter.ID_SOLUTION = @solution_id")
         params["solution_id"] = solution_id
@@ -729,61 +732,63 @@ def search_numbers_service(
     if conditions:
         where_clause = "WHERE " + " AND ".join(conditions)
 
-    # ================= QUERY =================
+    # ============================================================
+    # QUERY
+    # ============================================================
 
-    query = f"""
-        SELECT
-            n.ID_NUMBER AS id,
-            n.LABEL AS label,
-            n.VALUE AS value,
-            n.UNIT AS unit,
-            n.SCALE AS scale,
-            nt.TYPE AS type,
-            n.ZONE AS zone,
-            n.PERIOD AS period,
-            n.CREATED_AT AS created_at,
+    sql = f"""
+    SELECT
+        n.ID_NUMBER AS id,
+        n.LABEL AS label,
+        n.VALUE AS value,
+        n.UNIT AS unit,
+        n.SCALE AS scale,
+        nt.TYPE AS type,
+        n.ZONE AS zone,
+        n.PERIOD AS period,
+        n.CREATED_AT AS created_at,
 
-            ARRAY_AGG(DISTINCT t.LABEL IGNORE NULLS) AS topics,
-            ARRAY_AGG(DISTINCT c.NAME IGNORE NULLS) AS companies,
-            ARRAY_AGG(DISTINCT s.NAME IGNORE NULLS) AS solutions
+        ARRAY_AGG(DISTINCT t.LABEL IGNORE NULLS) AS topics,
+        ARRAY_AGG(DISTINCT c.NAME IGNORE NULLS) AS companies,
+        ARRAY_AGG(DISTINCT s.NAME IGNORE NULLS) AS solutions
 
-        FROM `{TABLE_NUMBERS}` n
+    FROM `{TABLE_NUMBERS}` n
 
-        LEFT JOIN `{TABLE_NUMBERS_TYPES}` nt
-            ON n.ID_NUMBER_TYPE = nt.ID_TYPE
+    LEFT JOIN `{TABLE_NUMBERS_TYPES}` nt
+      ON n.ID_NUMBER_TYPE = nt.ID_TYPE
 
-        LEFT JOIN `{TABLE_NUMBERS_TOPIC}` nt_rel
-            ON n.ID_NUMBER = nt_rel.ID_NUMBER
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC` t
-            ON nt_rel.ID_TOPIC = t.ID_TOPIC
+    LEFT JOIN `{TABLE_NUMBERS_TOPIC}` nt_rel
+      ON n.ID_NUMBER = nt_rel.ID_NUMBER
+    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC` t
+      ON nt_rel.ID_TOPIC = t.ID_TOPIC
 
-        LEFT JOIN `{TABLE_NUMBERS_COMPANY}` nc_rel
-            ON n.ID_NUMBER = nc_rel.ID_NUMBER
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
-            ON nc_rel.ID_COMPANY = c.ID_COMPANY
+    LEFT JOIN `{TABLE_NUMBERS_COMPANY}` nc_rel
+      ON n.ID_NUMBER = nc_rel.ID_NUMBER
+    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+      ON nc_rel.ID_COMPANY = c.ID_COMPANY
 
-        LEFT JOIN `{TABLE_NUMBERS_SOLUTION}` ns_rel
-            ON n.ID_NUMBER = ns_rel.ID_NUMBER
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` s
-            ON ns_rel.ID_SOLUTION = s.ID_SOLUTION
+    LEFT JOIN `{TABLE_NUMBERS_SOLUTION}` ns_rel
+      ON n.ID_NUMBER = ns_rel.ID_NUMBER
+    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` s
+      ON ns_rel.ID_SOLUTION = s.ID_SOLUTION
 
-        {" ".join(joins)}
+    {" ".join(joins)}
 
-        {where_clause}
+    {where_clause}
 
-        GROUP BY
-            n.ID_NUMBER,
-            n.LABEL,
-            n.VALUE,
-            n.UNIT,
-            n.SCALE,
-            nt.TYPE,
-            n.ZONE,
-            n.PERIOD,
-            n.CREATED_AT
+    GROUP BY
+        n.ID_NUMBER,
+        n.LABEL,
+        n.VALUE,
+        n.UNIT,
+        n.SCALE,
+        nt.TYPE,
+        n.ZONE,
+        n.PERIOD,
+        n.CREATED_AT
 
-        ORDER BY n.CREATED_AT DESC
-        LIMIT @limit
+    ORDER BY n.CREATED_AT DESC
+    LIMIT @limit
     """
 
-    return query_bq(query, params)
+    return query_bq(sql, params)
