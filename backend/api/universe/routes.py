@@ -1,7 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from api.universe.models import UniverseListOut, UniverseOut
-from core.universe.service import list_universes, get_universe
+from core.universe.service import (
+    list_universes,              # 🔥 on le garde (fallback/admin)
+    list_universes_for_user,     # 🔥 nouvelle fonction
+    get_universe,
+)
 
 router = APIRouter()
 
@@ -11,9 +15,17 @@ router = APIRouter()
 # ============================================================
 
 @router.get("/list", response_model=UniverseListOut)
-def universe_list():
+def universe_list(request: Request):
 
-    universes = list_universes()
+    user_id = request.cookies.get("curator_user_id")
+
+    # 🔥 CAS NORMAL → user connecté
+    if user_id:
+        universes = list_universes_for_user(user_id)
+
+    # 🔥 FALLBACK → admin / debug / pas de cookie
+    else:
+        universes = list_universes()
 
     return {
         "status": "ok",
