@@ -140,7 +140,6 @@ export default function FeedList({
       <div className="divide-y divide-gray-100 rounded-xl bg-white border border-gray-100 overflow-hidden">
         {safeItems.map((item) => {
           const isSelected = selectedIds.includes(item.id);
-          const isInsight = item.type === "analysis";
 
           return (
             <div
@@ -160,21 +159,22 @@ export default function FeedList({
 
               {/* CONTENT */}
               <div className="flex-1 space-y-1">
-                {/* BADGE INSIGHT */}
-                {isInsight && (
+
+                {/* 🔥 UNIVERS BADGE */}
+                {item.universe && (
                   <div className="flex items-center gap-2">
                     <span
                       className="
                         text-[10px]
                         px-2 py-0.5
                         rounded-full
-                        bg-purple-50
-                        text-purple-600
-                        border border-purple-100
+                        bg-emerald-50
+                        text-emerald-700
+                        border border-emerald-100
                         font-medium
                       "
                     >
-                      🧠 Insight
+                      {item.universe}
                     </span>
                   </div>
                 )}
