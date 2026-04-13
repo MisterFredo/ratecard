@@ -73,26 +73,25 @@ export type Solution = {
 export type FeedItem = {
   id: string;
 
-  // 🔥 aligné backend
   type: "news" | "analysis";
 
   title: string;
   excerpt?: string | null;
   published_at?: string | null;
 
-  // 🔥 entités structurées
+  // 🔥 NEW (univers)
+  universe?: string;
+  id_universe?: string;
+
   topics?: Topic[];
   companies?: Company[];
   solutions?: Solution[];
 
-  // 🔥 spécifique news
   news_type?: string | null;
 
-  // 🔻 FUTUR (non bloquant)
   has_visual?: boolean;
   media_id?: string | null;
 
-  // 🔻 couche UI optionnelle
   badges?: FeedBadge[];
 };
 
