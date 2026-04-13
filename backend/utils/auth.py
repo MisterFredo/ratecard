@@ -3,9 +3,14 @@ import jwt
 from datetime import datetime, timedelta
 from typing import Optional
 
-SECRET_KEY = os.environ["JWT_SECRET_KEY"]  # 🔥 obligatoire
+# 🔥 récupéré depuis Render
+SECRET_KEY = os.environ["JWT_SECRET_KEY"]
 ALGORITHM = "HS256"
 
+
+# =========================================================
+# CREATE TOKEN
+# =========================================================
 
 def create_token(user_id: str, email: str, role: str) -> str:
     payload = {
@@ -18,12 +23,20 @@ def create_token(user_id: str, email: str, role: str) -> str:
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
+# =========================================================
+# DECODE TOKEN
+# =========================================================
+
 def decode_token(token: str) -> Optional[dict]:
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except Exception:
         return None
 
+
+# =========================================================
+# GET USER FROM REQUEST
+# =========================================================
 
 def get_user_id_from_request(request) -> Optional[str]:
     auth = request.headers.get("Authorization")
