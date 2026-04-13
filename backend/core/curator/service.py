@@ -58,7 +58,7 @@ def search(
             JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
               ON uu.ID_UNIVERSE = su.ID_UNIVERSE
             WHERE uu.ID_USER = @user_id
-              AND su.ID_SOURCE = c.id_source
+              AND su.SOURCE_ID = c.id_source
         )
     )
 
@@ -122,7 +122,7 @@ def latest(
             JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
               ON uu.ID_UNIVERSE = su.ID_UNIVERSE
             WHERE uu.ID_USER = @user_id
-              AND su.ID_SOURCE = c.id_source
+              AND su.SOURCE_ID = c.id_source
         )
     )
 
