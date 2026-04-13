@@ -20,24 +20,36 @@ def search(
     q: str,
     limit: int = 20,
     offset: int = 0,
-    type: Optional[str] = None,
     user_id: Optional[str] = None,
     universe_id: Optional[str] = None,
 ) -> List[Dict]:
 
-    news_filter = ""
-    content_filter = ""
+    universe_filter = ""
+    if universe_id:
+        universe_filter = "AND c.id_universe = @universe_id"
 
-    if type == "news":
-        content_filter = "AND FALSE"
-    elif type == "analysis":
-        news_filter = "AND FALSE"
+    sql = f"""
+    SELECT
+        c.id_content AS id,
+        'analysis' AS type,
+        c.title,
+        c.excerpt,
+        c.published_at,
+        NULL AS news_type,
+        c.topics,
+        c.id_universe,
+        c.universe,
+        c.companies,
+        c.solutions
 
-    # ============================================================
-    # 🔥 USER FILTER (inchangé)
-    # ============================================================
+    FROM `{VIEW_CONTENT}` c
 
-    user_filter_content = f"""
+    WHERE
+        (
+          LOWER(c.title) LIKE LOWER(CONCAT('%', @query, '%'))
+          OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
+        )
+
     AND (
         @user_id IS NULL
         OR EXISTS (
@@ -49,93 +61,9 @@ def search(
               AND su.ID_SOURCE = c.id_source
         )
     )
-    """
 
-    user_filter_news = f"""
-    AND (
-        @user_id IS NULL
-        OR EXISTS (
-            SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-              ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-              AND cu.ID_COMPANY = n.id_company
-        )
-    )
-    """
+    {universe_filter}
 
-    # ============================================================
-    # 🌍 UI FILTER (SIMPLIFIÉ via champ déjà présent)
-    # ============================================================
-
-    universe_filter_news = ""
-    universe_filter_content = ""
-
-    if universe_id:
-        universe_filter_news = "AND n.id_universe = @universe_id"
-        universe_filter_content = "AND c.id_universe = @universe_id"
-
-    # ============================================================
-    # QUERY (⚠️ SEULE MODIF = ajout universe)
-    # ============================================================
-
-    sql = f"""
-    SELECT * FROM (
-
-        -- NEWS
-        SELECT
-            n.id_news AS id,
-            'news' AS type,
-            n.title,
-            n.excerpt,
-            n.published_at,
-            n.news_type,
-            n.topics,
-            n.id_universe,
-            n.universe,
-            ARRAY<STRUCT<id_company STRING, name STRING>>[
-              STRUCT(n.id_company, n.company_name)
-            ] AS companies,
-            [] AS solutions
-
-        FROM `{VIEW_NEWS}` n
-        WHERE
-            (
-              LOWER(n.title) LIKE LOWER(CONCAT('%', @query, '%'))
-              OR LOWER(n.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
-            )
-            {news_filter}
-            {user_filter_news}
-            {universe_filter_news}
-
-        UNION ALL
-
-        -- CONTENT
-        SELECT
-            c.id_content AS id,
-            'analysis' AS type,
-            c.title,
-            c.excerpt,
-            c.published_at,
-            NULL AS news_type,
-            c.topics,
-            c.id_universe,
-            c.universe,
-            c.companies,
-            c.solutions
-
-        FROM `{VIEW_CONTENT}` c
-        WHERE
-            (
-              LOWER(c.title) LIKE LOWER(CONCAT('%', @query, '%'))
-              OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
-            )
-            {content_filter}
-            {user_filter_content}
-            {universe_filter_content}
-
-    )
     ORDER BY published_at DESC
     LIMIT @limit
     OFFSET @offset
@@ -152,7 +80,6 @@ def search(
     rows = query_bq(sql, params)
 
     return [_map_feed_row(r) for r in rows]
-
 # ============================================================
 # LATEST (landing page)
 # ============================================================
