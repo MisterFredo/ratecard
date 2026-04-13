@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 
 import { api } from "@/lib/api";
+import Header from "./Header";
+import { useUser } from "@/hooks/useUser";
 
 const LOGO_URL = "/assets/brand/symbol_curator.jpeg";
 
@@ -31,44 +33,12 @@ export default function CuratorShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const user = useUser();
+
   const [mobileOpen, setMobileOpen] = useState(false);
 
   /* =========================================================
-     USER (JWT)
-  ========================================================= */
-
-  const [user, setUser] = useState<{
-    email?: string;
-    role?: string;
-  } | null>(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) return;
-
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-
-      setUser({
-        email: payload.email,
-        role: payload.role,
-      });
-    } catch (e) {
-      console.error("Invalid token");
-    }
-  }, []);
-
-  function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user_id");
-    localStorage.removeItem("role");
-
-    window.location.href = "/login";
-  }
-
-  /* =========================================================
-     UNIVERSE
+     UNIVERS
   ========================================================= */
 
   const [universes, setUniverses] = useState<Universe[]>([]);
@@ -101,8 +71,6 @@ export default function CuratorShell({
     return clean === path || clean.startsWith(path + "/");
   }
 
-  /* ========================================================= */
-
   const navData = [
     { href: "/feed", label: "Feed", icon: Home },
     { href: "/numbers", label: "Numbers", icon: Hash },
@@ -113,8 +81,6 @@ export default function CuratorShell({
     { href: "/topics", label: "Topics", icon: Tag },
     { href: "/solutions", label: "Produits", icon: Box },
   ];
-
-  /* ========================================================= */
 
   const renderNav = (items: any[]) =>
     items.map((item) => {
@@ -156,7 +122,6 @@ export default function CuratorShell({
         </span>
       </Link>
 
-      {/* DATA */}
       <div>
         <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
           Data
@@ -166,7 +131,6 @@ export default function CuratorShell({
         </nav>
       </div>
 
-      {/* ENTITIES */}
       <div className="mt-8">
         <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
           Entities
@@ -176,7 +140,6 @@ export default function CuratorShell({
         </nav>
       </div>
 
-      {/* AI */}
       <div className="mt-10">
         <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
           AI
@@ -186,18 +149,11 @@ export default function CuratorShell({
           href="https://chatgpt.com/g/g-69c5cc7fed548191a395a92fe0fe3dbd-get-curator"
           target="_blank"
           rel="noopener noreferrer"
-          className="
-            flex items-center gap-2 px-3 py-2 rounded-md transition
-            text-gray-700 hover:bg-emerald-50
-          "
+          className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-emerald-50"
         >
           <Sparkles size={18} />
           <span>MCP Assistant</span>
         </a>
-      </div>
-
-      <div className="text-xs text-gray-400 mt-10">
-        © {new Date().getFullYear()} Curator
       </div>
     </>
   );
@@ -207,19 +163,19 @@ export default function CuratorShell({
   return (
     <div className="min-h-screen flex">
 
-      {/* Desktop Sidebar */}
+      {/* Sidebar desktop */}
       <aside className="hidden md:flex w-56 bg-white border-r p-6 flex-col">
         {Sidebar}
       </aside>
 
-      {/* Mobile Sidebar */}
+      {/* Mobile */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="relative w-4/5 max-w-xs bg-white p-6 flex-col">
+          <aside className="relative w-4/5 max-w-xs bg-white p-6">
             <button
               onClick={() => setMobileOpen(false)}
               className="absolute top-4 right-4"
@@ -234,70 +190,14 @@ export default function CuratorShell({
       {/* MAIN */}
       <main className="flex-1 bg-gray-50">
 
-        {/* HEADER */}
-        <div className="flex items-center justify-between px-4 py-3 border-b bg-white">
+        <Header
+          user={user}
+          universes={universes}
+          activeUniverse={activeUniverse}
+          setActiveUniverse={setActiveUniverse}
+        />
 
-          {/* LEFT */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="md:hidden"
-            >
-              <Menu />
-            </button>
-
-            <div className="flex items-center gap-2">
-              <img src={LOGO_URL} className="w-6 h-6" />
-              <span className="font-semibold text-gray-900">
-                Curator
-              </span>
-            </div>
-          </div>
-
-          {/* RIGHT */}
-          <div className="flex items-center gap-4">
-
-            {/* USER */}
-            {user && (
-              <div className="text-sm text-gray-700 text-right">
-                <div className="font-medium">{user.email}</div>
-                <div className="text-xs text-gray-400">{user.role}</div>
-              </div>
-            )}
-
-            {/* UNIVERS */}
-            {universes.length > 0 && (
-              <select
-                value={activeUniverse || ""}
-                onChange={(e) =>
-                  setActiveUniverse(e.target.value || null)
-                }
-                className="border rounded px-3 py-1 text-sm bg-white"
-              >
-                <option value="">Tous</option>
-
-                {universes.map((u) => (
-                  <option key={u.id_universe} value={u.id_universe}>
-                    {u.label}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            {/* LOGOUT */}
-            <button
-              onClick={handleLogout}
-              className="text-sm text-red-600 hover:underline"
-            >
-              Logout
-            </button>
-
-          </div>
-
-        </div>
-
-        {/* CONTENT */}
-        <div className="p-4 md:p-8 w-full">
+        <div className="p-4 md:p-8">
           {children}
         </div>
 
