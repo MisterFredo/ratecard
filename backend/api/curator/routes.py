@@ -119,12 +119,9 @@ def read_item(item_id: str):
 # ============================================================
 
 @router.get("/item/{item_id}/detail")
-def read_item_detail(
-    item_id: str,
-    type: str = Query(...)
-):
+def read_item_detail(item_id: str):
 
-    item = get_item_detail(item_id, type)
+    item = get_item_detail(item_id)
 
     if not item:
         raise HTTPException(404, "Item not found")
