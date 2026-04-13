@@ -177,141 +177,47 @@ def search(
 def latest(
     limit: int = 20,
     offset: int = 0,
-    type: Optional[str] = None,
     user_id: Optional[str] = None,
-    universe_id: Optional[str] = None,
 ) -> List[Dict]:
 
-    news_filter = ""
-    content_filter = ""
-
-    if type == "news":
-        content_filter = "AND FALSE"
-    elif type == "analysis":
-        news_filter = "AND FALSE"
-
-    # ============================================================
-    # 🔥 UNIVERSE FILTER (USER SCOPE + UI)
-    # ============================================================
-
-    universe_filter_news = f"""
-    AND (
-        -- USER SCOPE
-        (
-            @user_id IS NULL
-            OR EXISTS (
-                SELECT 1
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                    ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
-                WHERE uu.ID_USER = @user_id
-                  AND cu.ID_COMPANY = n.id_company
-            )
-        )
-
-        -- UI FILTER
-        AND (
-            @universe_id IS NULL
-            OR EXISTS (
-                SELECT 1
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                WHERE cu.ID_COMPANY = n.id_company
-                  AND cu.ID_UNIVERSE = @universe_id
-            )
-        )
-    )
-    """
-
-    universe_filter_content = f"""
-    AND (
-        -- USER SCOPE
-        (
-            @user_id IS NULL
-            OR EXISTS (
-                SELECT 1
-                FROM UNNEST(c.companies) comp
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                    ON cu.ID_COMPANY = comp.id_company
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                    ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-                WHERE uu.ID_USER = @user_id
-            )
-        )
-
-        -- UI FILTER
-        AND (
-            @universe_id IS NULL
-            OR EXISTS (
-                SELECT 1
-                FROM UNNEST(c.companies) comp
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                    ON cu.ID_COMPANY = comp.id_company
-                WHERE cu.ID_UNIVERSE = @universe_id
-            )
-        )
-    )
-    """
-
-    # ============================================================
-    # QUERY
-    # ============================================================
-
     sql = f"""
-    SELECT * FROM (
+    SELECT
+        c.id_content AS id,
+        'analysis' AS type,
+        c.title,
+        c.excerpt,
+        c.published_at,
+        NULL AS news_type,
+        c.topics,
+        c.companies,
+        c.solutions
 
-        -- NEWS
-        SELECT
-            n.id_news AS id,
-            'news' AS type,
-            n.title,
-            n.excerpt,
-            n.published_at,
-            n.news_type,
-            n.topics,
-            ARRAY<STRUCT<id_company STRING, name STRING>>[
-              STRUCT(n.id_company, n.company_name)
-            ] AS companies,
-            [] AS solutions
+    FROM `{VIEW_CONTENT}` c
 
-        FROM `{VIEW_NEWS}` n
-        WHERE n.published_at IS NOT NULL
-        {news_filter}
-        {universe_filter_news}
+    WHERE c.published_at IS NOT NULL
 
-        UNION ALL
-
-        -- CONTENT
-        SELECT
-            c.id_content AS id,
-            'analysis' AS type,
-            c.title,
-            c.excerpt,
-            c.published_at,
-            NULL AS news_type,
-            c.topics,
-            c.companies,
-            c.solutions
-
-        FROM `{VIEW_CONTENT}` c
-        WHERE c.published_at IS NOT NULL
-        {content_filter}
-        {universe_filter_content}
-
+    -- 🔥 FILTRE USER (STRICT VIA SOURCE)
+    AND (
+        @user_id IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE` su
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+              ON uu.ID_UNIVERSE = su.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND su.ID_SOURCE = c.id_source
+        )
     )
+
     ORDER BY published_at DESC
     LIMIT @limit
     OFFSET @offset
     """
 
-    # ============================================================
-    # PARAMS
-    # ============================================================
-
     params = {
         "limit": limit,
         "offset": offset,
         "user_id": user_id,
-        "universe_id": universe_id,
     }
 
     rows = query_bq(sql, params)
