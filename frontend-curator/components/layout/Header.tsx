@@ -2,14 +2,10 @@
 
 type Props = {
   user: any;
-};;
+};
 
-export default function Header({
-  user,
-  universes,
-  activeUniverse,
-  setActiveUniverse,
-}: Props) {
+export default function Header({ user }: Props) {
+
   function handleLogout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user_id");
@@ -35,25 +31,6 @@ export default function Header({
             <div className="font-medium">{user.email}</div>
             <div className="text-xs text-gray-400">{user.role}</div>
           </div>
-        )}
-
-        {/* UNIVERS */}
-        {universes.length > 0 && (
-          <select
-            value={activeUniverse || ""}
-            onChange={(e) =>
-              setActiveUniverse(e.target.value || null)
-            }
-            className="border rounded px-3 py-1 text-sm"
-          >
-            <option value="">Tous</option>
-
-            {universes.map((u) => (
-              <option key={u.id_universe} value={u.id_universe}>
-                {u.label}
-              </option>
-            ))}
-          </select>
         )}
 
         {/* LOGOUT */}
