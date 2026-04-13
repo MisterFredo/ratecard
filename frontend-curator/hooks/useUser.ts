@@ -8,10 +8,9 @@ export function useUser() {
     }
   }
 
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("token")
-      : null;
+  if (typeof window === "undefined") return null;
+
+  const token = localStorage.getItem("token");
 
   if (!token) return null;
 
@@ -22,5 +21,6 @@ export function useUser() {
   return {
     email: payload.email,
     role: payload.role,
+    user_id: payload.user_id,
   };
 }
