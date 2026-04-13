@@ -19,8 +19,6 @@ export default function FeedRow({
   onClickBadge,
   loading = false,
 }: Props) {
-  const isNews = item.type === "news";
-
   const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL;
 
   /* =========================================================
@@ -38,22 +36,21 @@ export default function FeedRow({
   }
 
   /* =========================================================
-     🔥 SAFE ARRAYS (BACKEND STRUCTURE)
+     SAFE ARRAYS
   ========================================================= */
 
   const topics = Array.isArray(item.topics) ? item.topics : [];
   const companies = Array.isArray(item.companies) ? item.companies : [];
   const solutions = Array.isArray(item.solutions) ? item.solutions : [];
+  const universes = Array.isArray((item as any).universes)
+    ? (item as any).universes
+    : [];
 
   /* =========================================================
-     🔥 BADGES STRUCTURÉS (ALIGNÉS BACK)
+     BADGES
   ========================================================= */
 
   const badges: FeedBadge[] = [
-    ...(item.news_type
-      ? [{ label: item.news_type, type: "news_type" as const }]
-      : []),
-
     ...companies.map((c: any) => ({
       id: c.id_company,
       label: c.name,
@@ -79,8 +76,6 @@ export default function FeedRow({
 
   function getBadgeClass(type?: string) {
     switch (type) {
-      case "news_type":
-        return "bg-black text-white";
       case "company":
         return "bg-blue-50 text-blue-600 border border-blue-100";
       case "solution":
@@ -92,16 +87,10 @@ export default function FeedRow({
   }
 
   /* =========================================================
-     IMAGE
+     IMAGE (désactivé car analysis only)
   ========================================================= */
 
-  const imageUrl =
-    isNews &&
-    item.has_visual &&
-    item.media_id &&
-    GCS_BASE_URL
-      ? `${GCS_BASE_URL}/news/${item.media_id}`
-      : null;
+  const imageUrl = null;
 
   /* =========================================================
      RENDER
@@ -119,20 +108,6 @@ export default function FeedRow({
     >
       <div className="flex gap-4 items-start">
 
-        {/* IMAGE */}
-        {imageUrl && (
-          <div className="w-[140px] h-[80px] bg-gray-100 flex-shrink-0 overflow-hidden rounded-md">
-            <img
-              src={imageUrl}
-              alt={item.title}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = "none";
-              }}
-            />
-          </div>
-        )}
-
         {/* CONTENT */}
         <div className="flex-1 space-y-2">
 
@@ -147,29 +122,34 @@ export default function FeedRow({
                 </span>
               )}
             </div>
-
-            <span
-              className={`
-                text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide font-medium
-                ${
-                  isNews
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-green-100 text-green-700"
-                }
-              `}
-            >
-              {isNews ? "NEWS" : "ANALYSIS"}
-            </span>
           </div>
 
-          {/* BADGES */}
+          {/* 🔥 UNIVERS BADGES */}
+          {universes.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {universes.map((u: any) => (
+                <span
+                  key={u.id_universe}
+                  className="
+                    px-2 py-0.5 text-[10px] rounded-full
+                    bg-black text-white
+                    uppercase tracking-wide font-medium
+                  "
+                >
+                  {u.label}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* BADGES CLASSIQUES */}
           {badges.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {badges.map((b, i) => (
                 <button
                   key={`${b.type}-${b.id || b.label}-${i}`}
                   onClick={(e) => {
-                    e.stopPropagation(); // 🔥 critique
+                    e.stopPropagation();
                     onClickBadge?.(b);
                   }}
                   className={`
