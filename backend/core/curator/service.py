@@ -20,13 +20,20 @@ def search(
     q: str,
     limit: int = 20,
     offset: int = 0,
-    user_id: Optional[str] = None,
+    user_id: Optional[str] = None,      # 👈 conservé mais inutilisé
     universe_id: Optional[str] = None,
 ) -> List[Dict]:
 
     universe_filter = ""
+
     if universe_id:
-        universe_filter = "AND c.id_universe = @universe_id"
+        universe_filter = """
+        AND EXISTS (
+            SELECT 1
+            FROM UNNEST(c.universes) u
+            WHERE u.id_universe = @universe_id
+        )
+        """
 
     sql = f"""
     SELECT
@@ -37,8 +44,7 @@ def search(
         c.published_at,
         NULL AS news_type,
         c.topics,
-        c.id_universe,
-        c.universe,
+        c.universes,
         c.companies,
         c.solutions
 
@@ -49,18 +55,6 @@ def search(
           LOWER(c.title) LIKE LOWER(CONCAT('%', @query, '%'))
           OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
         )
-
-    AND (
-        @user_id IS NULL
-        OR EXISTS (
-            SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE` su
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-              ON uu.ID_UNIVERSE = su.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-              AND su.SOURCE_ID = c.id_source
-        )
-    )
 
     {universe_filter}
 
@@ -73,7 +67,6 @@ def search(
         "query": q,
         "limit": limit,
         "offset": offset,
-        "user_id": user_id,
         "universe_id": universe_id,
     }
 
