@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,18 +14,12 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { api } from "@/lib/api";
 import Header from "./Header";
 import { useUser } from "@/hooks/useUser";
 
 const LOGO_URL = "/assets/brand/symbol_curator.jpeg";
 
 /* ========================================================= */
-
-type Universe = {
-  id_universe: string;
-  label: string;
-};
 
 export default function CuratorShell({
   children,
@@ -36,32 +30,6 @@ export default function CuratorShell({
   const user = useUser();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  /* =========================================================
-     UNIVERS
-  ========================================================= */
-
-  const [universes, setUniverses] = useState<Universe[]>([]);
-  const [activeUniverse, setActiveUniverse] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await api.get("/universe/list");
-        const data = res?.universes || [];
-
-        setUniverses(data);
-
-        if (data.length > 0) {
-          setActiveUniverse(data[0].id_universe);
-        }
-      } catch (e) {
-        console.error("❌ universe load error", e);
-      }
-    }
-
-    load();
-  }, []);
 
   /* ========================================================= */
 
@@ -190,12 +158,8 @@ export default function CuratorShell({
       {/* MAIN */}
       <main className="flex-1 bg-gray-50">
 
-        <Header
-          user={user}
-          universes={universes}
-          activeUniverse={activeUniverse}
-          setActiveUniverse={setActiveUniverse}
-        />
+        {/* 🔥 HEADER SIMPLIFIÉ */}
+        <Header user={user} />
 
         <div className="p-4 md:p-8">
           {children}
