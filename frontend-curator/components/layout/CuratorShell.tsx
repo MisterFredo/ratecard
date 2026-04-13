@@ -34,13 +34,46 @@ export default function CuratorShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   /* =========================================================
-     UNIVERSE (LOCAL STATE ONLY)
+     USER (JWT)
+  ========================================================= */
+
+  const [user, setUser] = useState<{
+    email?: string;
+    role?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) return;
+
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+
+      setUser({
+        email: payload.email,
+        role: payload.role,
+      });
+    } catch (e) {
+      console.error("Invalid token");
+    }
+  }, []);
+
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("role");
+
+    window.location.href = "/login";
+  }
+
+  /* =========================================================
+     UNIVERSE
   ========================================================= */
 
   const [universes, setUniverses] = useState<Universe[]>([]);
   const [activeUniverse, setActiveUniverse] = useState<string | null>(null);
 
-  /* LOAD UNIVERS */
   useEffect(() => {
     async function load() {
       try {
@@ -49,7 +82,6 @@ export default function CuratorShell({
 
         setUniverses(data);
 
-        // 👉 default = premier univers
         if (data.length > 0) {
           setActiveUniverse(data[0].id_universe);
         }
@@ -222,24 +254,45 @@ export default function CuratorShell({
             </div>
           </div>
 
-          {/* 🔥 UNIVERS SWITCHER */}
-          {universes.length > 0 && (
-            <select
-              value={activeUniverse || ""}
-              onChange={(e) =>
-                setActiveUniverse(e.target.value || null)
-              }
-              className="border rounded px-3 py-1 text-sm bg-white"
-            >
-              <option value="">Tous</option>
+          {/* RIGHT */}
+          <div className="flex items-center gap-4">
 
-              {universes.map((u) => (
-                <option key={u.id_universe} value={u.id_universe}>
-                  {u.label}
-                </option>
-              ))}
-            </select>
-          )}
+            {/* USER */}
+            {user && (
+              <div className="text-sm text-gray-700 text-right">
+                <div className="font-medium">{user.email}</div>
+                <div className="text-xs text-gray-400">{user.role}</div>
+              </div>
+            )}
+
+            {/* UNIVERS */}
+            {universes.length > 0 && (
+              <select
+                value={activeUniverse || ""}
+                onChange={(e) =>
+                  setActiveUniverse(e.target.value || null)
+                }
+                className="border rounded px-3 py-1 text-sm bg-white"
+              >
+                <option value="">Tous</option>
+
+                {universes.map((u) => (
+                  <option key={u.id_universe} value={u.id_universe}>
+                    {u.label}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* LOGOUT */}
+            <button
+              onClick={handleLogout}
+              className="text-sm text-red-600 hover:underline"
+            >
+              Logout
+            </button>
+
+          </div>
 
         </div>
 
