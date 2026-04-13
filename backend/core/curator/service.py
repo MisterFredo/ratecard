@@ -34,66 +34,64 @@ def search(
         news_filter = "AND FALSE"
 
     # ============================================================
-    # 🔥 UNIVERSE FILTER (USER SCOPE + UI)
+    # 🔥 USER FILTER (ALIGNÉ AVEC latest)
     # ============================================================
 
-    universe_filter_news = f"""
+    user_filter_content = """
     AND (
-        -- USER SCOPE
-        (
-            @user_id IS NULL
-            OR EXISTS (
-                SELECT 1
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                    ON cu.ID_UNIVERSE = uu.ID_UNIVERSE
-                WHERE uu.ID_USER = @user_id
-                  AND cu.ID_COMPANY = n.id_company
-            )
-        )
-
-        -- UI FILTER
-        AND (
-            @universe_id IS NULL
-            OR EXISTS (
-                SELECT 1
-                FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                WHERE cu.ID_COMPANY = n.id_company
-                  AND cu.ID_UNIVERSE = @universe_id
-            )
+        @user_id IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE` su
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+              ON uu.ID_UNIVERSE = su.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND su.ID_SOURCE = c.id_source
         )
     )
     """
 
-    universe_filter_content = f"""
+    # 👉 news = via company (fallback logique)
+    user_filter_news = """
     AND (
-        -- USER SCOPE
-        (
-            @user_id IS NULL
-            OR EXISTS (
-                SELECT 1
-                FROM UNNEST(c.companies) comp
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                    ON cu.ID_COMPANY = comp.id_company
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-                    ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-                WHERE uu.ID_USER = @user_id
-            )
-        )
-
-        -- UI FILTER
-        AND (
-            @universe_id IS NULL
-            OR EXISTS (
-                SELECT 1
-                FROM UNNEST(c.companies) comp
-                JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-                    ON cu.ID_COMPANY = comp.id_company
-                WHERE cu.ID_UNIVERSE = @universe_id
-            )
+        @user_id IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+              ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND cu.ID_COMPANY = n.id_company
         )
     )
     """
+
+    # ============================================================
+    # 🌍 UI FILTER
+    # ============================================================
+
+    universe_filter_news = ""
+    universe_filter_content = ""
+
+    if universe_id:
+
+        universe_filter_news = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+            WHERE cu.ID_COMPANY = n.id_company
+              AND cu.ID_UNIVERSE = @universe_id
+        )
+        """
+
+        universe_filter_content = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE` su
+            WHERE su.ID_UNIVERSE = @universe_id
+              AND su.ID_SOURCE = c.id_source
+        )
+        """
 
     # ============================================================
     # QUERY
@@ -123,6 +121,7 @@ def search(
               OR LOWER(n.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
             )
             {news_filter}
+            {user_filter_news}
             {universe_filter_news}
 
         UNION ALL
@@ -146,6 +145,7 @@ def search(
               OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
             )
             {content_filter}
+            {user_filter_content}
             {universe_filter_content}
 
     )
@@ -153,10 +153,6 @@ def search(
     LIMIT @limit
     OFFSET @offset
     """
-
-    # ============================================================
-    # PARAMS
-    # ============================================================
 
     params = {
         "query": q,
