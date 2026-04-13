@@ -159,26 +159,6 @@ export default function FeedList({
 
               {/* CONTENT */}
               <div className="flex-1 space-y-1">
-
-                {/* 🔥 UNIVERS BADGE */}
-                {item.universe && (
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="
-                        text-[10px]
-                        px-2 py-0.5
-                        rounded-full
-                        bg-emerald-50
-                        text-emerald-700
-                        border border-emerald-100
-                        font-medium
-                      "
-                    >
-                      {item.universe}
-                    </span>
-                  </div>
-                )}
-
                 <FeedRow
                   item={item}
                   onClick={() => onSelectItem(item)}
