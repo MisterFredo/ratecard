@@ -20,12 +20,12 @@ def search(
     q: str,
     limit: int = 20,
     offset: int = 0,
-    user_id: Optional[str] = None,      # 👈 conservé mais inutilisé
+    user_id: Optional[str] = None,
     universe_id: Optional[str] = None,
 ) -> List[Dict]:
 
+    # 🔥 UI FILTER
     universe_filter = ""
-
     if universe_id:
         universe_filter = """
         AND EXISTS (
@@ -34,6 +34,21 @@ def search(
             WHERE u.id_universe = @universe_id
         )
         """
+
+    # 🔥 USER FILTER (SOURCE → UNIVERS → USER)
+    user_filter = """
+    AND (
+        @user_id IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE` su
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+              ON uu.ID_UNIVERSE = su.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND su.ID_SOURCE = c.id_source
+        )
+    )
+    """
 
     sql = f"""
     SELECT
@@ -56,6 +71,7 @@ def search(
           OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
         )
 
+    {user_filter}
     {universe_filter}
 
     ORDER BY published_at DESC
@@ -67,12 +83,15 @@ def search(
         "query": q,
         "limit": limit,
         "offset": offset,
+        "user_id": user_id,
         "universe_id": universe_id,
     }
 
     rows = query_bq(sql, params)
 
     return [_map_feed_row(r) for r in rows]
+
+
 # ============================================================
 # LATEST (landing page)
 # ============================================================
@@ -85,8 +104,8 @@ def latest(
     universe_id: Optional[str] = None,
 ) -> List[Dict]:
 
+    # 🔥 UI FILTER
     universe_filter = ""
-
     if universe_id:
         universe_filter = """
         AND EXISTS (
@@ -95,6 +114,21 @@ def latest(
             WHERE u.id_universe = @universe_id
         )
         """
+
+    # 🔥 USER FILTER
+    user_filter = """
+    AND (
+        @user_id IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE` su
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+              ON uu.ID_UNIVERSE = su.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND su.ID_SOURCE = c.id_source
+        )
+    )
+    """
 
     sql = f"""
     SELECT
@@ -113,6 +147,7 @@ def latest(
 
     WHERE c.published_at IS NOT NULL
 
+    {user_filter}
     {universe_filter}
 
     ORDER BY published_at DESC
@@ -123,12 +158,14 @@ def latest(
     params = {
         "limit": limit,
         "offset": offset,
+        "user_id": user_id,
         "universe_id": universe_id,
     }
 
     rows = query_bq(sql, params)
 
     return [_map_feed_row(r) for r in rows]
+
 
 # ============================================================
 # ITEM (light)
@@ -150,7 +187,9 @@ def get_item_curator(item_id: str) -> Optional[Dict]:
             ARRAY<STRUCT<id_company STRING, name STRING>>[
               STRUCT(n.id_company, n.company_name)
             ] AS companies,
-            [] AS solutions
+            [] AS solutions,
+            [] AS universes
+
         FROM `{VIEW_NEWS}` n
 
         UNION ALL
@@ -164,7 +203,9 @@ def get_item_curator(item_id: str) -> Optional[Dict]:
             NULL AS news_type,
             c.topics,
             c.companies,
-            c.solutions
+            c.solutions,
+            c.universes
+
         FROM `{VIEW_CONTENT}` c
 
     )
@@ -178,6 +219,7 @@ def get_item_curator(item_id: str) -> Optional[Dict]:
         return None
 
     return _map_feed_row(rows[0])
+
 
 # ============================================================
 # DETAIL (full)
@@ -204,6 +246,7 @@ def get_item_detail(item_id: str) -> Optional[Dict]:
             "topics": item.get("topics", []),
             "companies": item.get("companies", []),
             "solutions": item.get("solutions", []),
+            "universes": item.get("universes", []),
         }
 
     elif item_type == "news":
@@ -218,19 +261,17 @@ def get_item_detail(item_id: str) -> Optional[Dict]:
             "topics": item.get("topics", []),
             "companies": item.get("companies", []),
             "solutions": item.get("solutions", []),
+            "universes": item.get("universes", []),
         }
 
     return None
+
 
 # ============================================================
 # STATS (CONTENT)
 # ============================================================
 
 def get_content_stats():
-
-    # =====================================================
-    # GLOBAL
-    # =====================================================
 
     global_rows = query_bq(f"""
         SELECT *
@@ -246,10 +287,6 @@ def get_content_stats():
         total_count = 0
         last_7 = 0
         last_30 = 0
-
-    # =====================================================
-    # TOPICS
-    # =====================================================
 
     topics_rows = query_bq(f"""
         SELECT *
@@ -269,10 +306,6 @@ def get_content_stats():
         if r.get("id_topic") and r.get("label")
     ]
 
-    # =====================================================
-    # COMPANIES (GLOBAL)
-    # =====================================================
-
     company_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY`
@@ -290,10 +323,6 @@ def get_content_stats():
         for r in company_rows
         if r.get("id_company") and r.get("name")
     ]
-
-    # =====================================================
-    # SOLUTIONS (GLOBAL)
-    # =====================================================
 
     solution_rows = query_bq(f"""
         SELECT *
@@ -313,10 +342,6 @@ def get_content_stats():
         if r.get("id_solution") and r.get("name")
     ]
 
-    # =====================================================
-    # RETURN
-    # =====================================================
-
     return {
         "total_count": total_count,
         "last_7_days": last_7,
@@ -325,6 +350,8 @@ def get_content_stats():
         "top_companies": top_companies,
         "top_solutions": top_solutions,
     }
+
+
 # ============================================================
 # MAPPER
 # ============================================================
@@ -339,7 +366,7 @@ def _map_feed_row(r: Dict) -> Dict:
         "published_at": r.get("published_at"),
         "news_type": r.get("news_type"),
 
-        # 🔥 universes ARRAY (clé)
+        # 🔥 universes propre
         "universes": r.get("universes") or [],
 
         "topics": r.get("topics") or [],
