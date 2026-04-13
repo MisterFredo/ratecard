@@ -2,7 +2,8 @@
 
 import FeedHeader from "@/components/feed/FeedHeader";
 import FeedList from "@/components/feed/FeedList";
-import StatsBar from "@/components/feed/StatsBar";
+// ❌ import supprimé
+// import StatsBar from "@/components/feed/StatsBar";
 
 import type { FeedItem, FeedBadge } from "@/types/feed";
 
@@ -13,8 +14,9 @@ type Props = {
   setQuery: (q: string) => void;
   onSearch: () => void;
 
-  stats: any;
-  onClickStat: (value: string) => void;
+  // ❌ supprimé
+  // stats: any;
+  // onClickStat: (value: string) => void;
 
   items: FeedItem[];
   total: number;
@@ -38,8 +40,9 @@ export default function FeedExplorer({
   setQuery,
   onSearch,
 
-  stats,
-  onClickStat,
+  // ❌ supprimé
+  // stats,
+  // onClickStat,
 
   items,
   total,
@@ -65,11 +68,13 @@ export default function FeedExplorer({
         onSearch={onSearch}
       />
 
-      {/* STATS */}
+      {/* ❌ STATS supprimé */}
+      {/* 
       <StatsBar
         stats={stats}
         onClickStat={onClickStat}
       />
+      */}
 
       {/* LIST */}
       <FeedList
