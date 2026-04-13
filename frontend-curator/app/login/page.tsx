@@ -10,7 +10,7 @@ export default function LoginPage() {
   const redirect = searchParams.get("redirect") || "/";
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState(""); // 🔥 NEW
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
@@ -36,13 +36,12 @@ export default function LoginPage() {
         throw new Error("Login failed");
       }
 
-      // 🔥 COOKIE SESSION
-      document.cookie = `curator_session=ok; path=/; max-age=86400`;
+      // 🔥 NEW → stockage token
+      localStorage.setItem("token", res.token);
 
-      // 🔥 CONTEXTE USER
-      document.cookie = `curator_email=${email}; path=/; max-age=86400`;
-      document.cookie = `curator_user_id=${res.user_id}; path=/; max-age=86400`;
-      document.cookie = `curator_role=${res.role}; path=/; max-age=86400`;
+      // (optionnel mais pratique)
+      localStorage.setItem("user_id", res.user_id);
+      localStorage.setItem("role", res.role);
 
       router.push(redirect);
 
@@ -62,7 +61,6 @@ export default function LoginPage() {
           Accès Curator
         </h1>
 
-        {/* EMAIL */}
         <input
           type="email"
           placeholder="Email"
@@ -71,7 +69,6 @@ export default function LoginPage() {
           className="w-full border rounded-lg px-3 py-2 text-sm"
         />
 
-        {/* PASSWORD 🔥 */}
         <input
           type="password"
           placeholder="Mot de passe"
