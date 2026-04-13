@@ -328,6 +328,58 @@ def get_solution_feed(
         universe_id=universe_id
     )
 
+def get_solution_view(
+    solution_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    user_id: Optional[str] = None,
+    universe_id: Optional[str] = None
+) -> Dict:
+
+    solution_rows = query_bq(f"""
+        SELECT
+            s.ID_SOLUTION,
+            s.NAME,
+            c.NAME AS COMPANY_NAME,
+            c.MEDIA_LOGO_RECTANGLE_ID
+        FROM `{TABLE_SOLUTION}` s
+        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+            ON c.ID_COMPANY = s.ID_COMPANY
+        WHERE s.ID_SOLUTION = @solution_id
+        LIMIT 1
+    """, {"solution_id": solution_id})
+
+    solution = solution_rows[0] if solution_rows else {}
+
+    stats_rows = query_bq(f"""
+        SELECT
+            COALESCE(total, 0) AS NB_ANALYSES,
+            COALESCE(last_30_days, 0) AS DELTA_30D
+        FROM `{VIEW_STATS_SOLUTION}`
+        WHERE id_solution = @solution_id
+        LIMIT 1
+    """, {"solution_id": solution_id})
+
+    stats = stats_rows[0] if stats_rows else {}
+
+    items = get_solution_feed(
+        solution_id,
+        limit,
+        offset,
+        user_id,
+        universe_id
+    )
+
+    return {
+        "id_solution": solution_id,
+        "name": solution.get("NAME"),
+        "company_name": solution.get("COMPANY_NAME"),
+        "media_logo_rectangle_id": solution.get("MEDIA_LOGO_RECTANGLE_ID"),
+        "nb_analyses": stats.get("NB_ANALYSES", 0),
+        "delta_30d": stats.get("DELTA_30D", 0),
+        "items": items
+    }
+
 
 def _map_feed_row(r: Dict):
 
