@@ -339,9 +339,8 @@ def _map_feed_row(r: Dict) -> Dict:
         "published_at": r.get("published_at"),
         "news_type": r.get("news_type"),
 
-        # 🔥 NEW
-        "id_universe": r.get("id_universe"),
-        "universe": r.get("universe"),
+        # 🔥 universes ARRAY (clé)
+        "universes": r.get("universes") or [],
 
         "topics": r.get("topics") or [],
         "companies": r.get("companies") or [],
