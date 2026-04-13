@@ -9,16 +9,15 @@ from core.curator.service import (
     get_content_stats,
 )
 
+# 🔥 JWT
+from utils.auth import get_user_id_from_request
+
 router = APIRouter()
 
 
 # ============================================================
 # HELPERS
 # ============================================================
-
-def get_user_id(request: Request) -> Optional[str]:
-    return request.cookies.get("curator_user_id")
-
 
 def get_universe_id(universe_id: Optional[str]) -> Optional[str]:
     return universe_id if universe_id else None
@@ -38,7 +37,7 @@ def search_route(
     universe_id: Optional[str] = Query(None),
 ):
     try:
-        user_id = get_user_id(request)
+        user_id = get_user_id_from_request(request)
 
         items = search(
             q=q,
@@ -68,7 +67,7 @@ def latest_route(
     universe_id: Optional[str] = Query(None),
 ):
     try:
-        user_id = get_user_id(request)
+        user_id = get_user_id_from_request(request)
 
         items = latest(
             limit=limit,
@@ -85,16 +84,14 @@ def latest_route(
 
 
 # ============================================================
-# STATS (GLOBAL)
+# STATS
 # ============================================================
 
 @router.get("/stats")
 def stats_route():
     try:
         stats = get_content_stats()
-
         return {"status": "ok", "stats": stats}
-
     except Exception as e:
         raise HTTPException(400, f"Stats error: {e}")
 
