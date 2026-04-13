@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, Request
+from typing import Optional
 
 from api.user.models import (
     CreateUserPayload,
@@ -18,6 +19,9 @@ from core.user.user_service import (
     get_user_context,
     verify_password,
 )
+
+# 🔥 JWT
+from utils.auth import create_token, get_user_id_from_request
 
 router = APIRouter()
 
@@ -63,6 +67,7 @@ def bootstrap_admin(secret: str):
         "user_id": user_id
     }
 
+
 # =========================================================
 # LIST USERS
 # =========================================================
@@ -74,7 +79,7 @@ def list_users_route():
 
 
 # =========================================================
-# UPDATE USER (SOURCE OF TRUTH)
+# UPDATE USER
 # =========================================================
 
 @router.post("/update")
@@ -86,9 +91,8 @@ def update_user_route(payload: UpdateUserPayload):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-
 # =========================================================
-# LOGIN
+# LOGIN (🔥 FIX ICI)
 # =========================================================
 
 @router.post("/login")
@@ -104,11 +108,19 @@ def login(payload: LoginPayload):
     if not user.get("IS_ACTIVE", True):
         raise HTTPException(status_code=403, detail="User inactive")
 
+    # 🔥 TOKEN
+    token = create_token(
+        user_id=user["ID_USER"],
+        email=user["EMAIL"],
+        role=user.get("ROLE", "user"),
+    )
+
     return {
         "status": "ok",
         "user_id": user["ID_USER"],
         "email": user["EMAIL"],
         "role": user.get("ROLE", "user"),
+        "token": token,  # 🔥 IMPORTANT
     }
 
 
@@ -132,13 +144,13 @@ def get_user(user_id: str):
 
 
 # =========================================================
-# USER CONTEXT (future feed)
+# USER CONTEXT (🔥 PLUS DE COOKIES)
 # =========================================================
 
 @router.get("/context")
 def get_context(request: Request):
 
-    user_id = request.cookies.get("curator_user_id")
+    user_id = get_user_id_from_request(request)
 
     if not user_id:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -152,7 +164,7 @@ def get_context(request: Request):
 
 
 # =========================================================
-# ASSIGN UNIVERS (OPTIONNEL / INTERNE)
+# ASSIGN UNIVERS
 # =========================================================
 
 @router.post("/assign-universes")
