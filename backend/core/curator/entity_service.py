@@ -20,6 +20,7 @@ VIEW_STATS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION"
 TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
 TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
 TABLE_COMPANY_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE"
+TABLE_USER_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE"
 
 
 # ============================================================
@@ -32,8 +33,45 @@ def _get_entity_feed(
     params: Dict,
     limit: int = 50,
     offset: int = 0,
+    user_id: Optional[str] = None,
     universe_id: Optional[str] = None,
 ) -> List[Dict]:
+
+    # ============================================================
+    # 🔐 USER FILTER (OBLIGATOIRE)
+    # ============================================================
+
+    user_filter_news = ""
+    user_filter_content = ""
+
+    if user_id:
+
+        user_filter_news = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM `{TABLE_COMPANY_UNIVERSE}` cu
+            WHERE cu.ID_COMPANY = n.id_company
+              AND cu.ID_UNIVERSE IN (
+                  SELECT ID_UNIVERSE
+                  FROM `{TABLE_USER_UNIVERSE}`
+                  WHERE ID_USER = @user_id
+              )
+        )
+        """
+
+        user_filter_content = f"""
+        AND EXISTS (
+            SELECT 1
+            FROM UNNEST(c.companies) comp
+            JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+                ON cu.ID_COMPANY = comp.id_company
+            WHERE cu.ID_UNIVERSE IN (
+                SELECT ID_UNIVERSE
+                FROM `{TABLE_USER_UNIVERSE}`
+                WHERE ID_USER = @user_id
+            )
+        )
+        """
 
     # ============================================================
     # 🌍 UNIVERSE FILTER (UI ONLY)
@@ -83,6 +121,7 @@ def _get_entity_feed(
         [] AS solutions
     FROM `{VIEW_NEWS}` n
     WHERE {where_clause_news}
+    {user_filter_news}
     {universe_filter_news}
 
     UNION ALL
@@ -100,6 +139,7 @@ def _get_entity_feed(
         c.solutions
     FROM `{VIEW_CONTENT}` c
     WHERE {where_clause_content}
+    {user_filter_content}
     {universe_filter_content}
 
     ORDER BY published_at DESC
@@ -111,6 +151,7 @@ def _get_entity_feed(
         **params,
         "limit": limit,
         "offset": offset,
+        "user_id": user_id,
     }
 
     if universe_id:
@@ -129,6 +170,7 @@ def get_company_feed(
     company_id: str,
     limit: int = 50,
     offset: int = 0,
+    user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> List[Dict]:
 
@@ -144,6 +186,7 @@ def get_company_feed(
         params={"company_id": company_id},
         limit=limit,
         offset=offset,
+        user_id=user_id,
         universe_id=universe_id
     )
 
@@ -152,6 +195,7 @@ def get_company_view(
     company_id: str,
     limit: int = 50,
     offset: int = 0,
+    user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> Optional[Dict]:
 
@@ -170,7 +214,7 @@ def get_company_view(
 
     stats = stats_rows[0] if stats_rows else {}
 
-    items = get_company_feed(company_id, limit, offset, universe_id)
+    items = get_company_feed(company_id, limit, offset, user_id, universe_id)
 
     return {
         **company,
@@ -188,6 +232,7 @@ def get_topic_feed(
     topic_id: str,
     limit: int = 50,
     offset: int = 0,
+    user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> List[Dict]:
 
@@ -209,6 +254,7 @@ def get_topic_feed(
         params={"topic_id": topic_id},
         limit=limit,
         offset=offset,
+        user_id=user_id,
         universe_id=universe_id
     )
 
@@ -217,6 +263,7 @@ def get_topic_view(
     topic_id: str,
     limit: int = 50,
     offset: int = 0,
+    user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> Dict:
 
@@ -240,7 +287,7 @@ def get_topic_view(
 
     stats = stats_rows[0] if stats_rows else {}
 
-    items = get_topic_feed(topic_id, limit, offset, universe_id)
+    items = get_topic_feed(topic_id, limit, offset, user_id, universe_id)
 
     return {
         "id_topic": topic_id,
@@ -261,6 +308,7 @@ def get_solution_feed(
     solution_id: str,
     limit: int = 50,
     offset: int = 0,
+    user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> List[Dict]:
 
@@ -276,59 +324,10 @@ def get_solution_feed(
         params={"solution_id": solution_id},
         limit=limit,
         offset=offset,
+        user_id=user_id,
         universe_id=universe_id
     )
 
-
-def get_solution_view(
-    solution_id: str,
-    limit: int = 50,
-    offset: int = 0,
-    universe_id: Optional[str] = None
-) -> Dict:
-
-    solution_rows = query_bq(f"""
-        SELECT
-            s.ID_SOLUTION,
-            s.NAME,
-            c.NAME AS COMPANY_NAME,
-            c.MEDIA_LOGO_RECTANGLE_ID
-        FROM `{TABLE_SOLUTION}` s
-        LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
-            ON c.ID_COMPANY = s.ID_COMPANY
-        WHERE s.ID_SOLUTION = @solution_id
-        LIMIT 1
-    """, {"solution_id": solution_id})
-
-    solution = solution_rows[0] if solution_rows else {}
-
-    stats_rows = query_bq(f"""
-        SELECT
-            COALESCE(total, 0) AS NB_ANALYSES,
-            COALESCE(last_30_days, 0) AS DELTA_30D
-        FROM `{VIEW_STATS_SOLUTION}`
-        WHERE id_solution = @solution_id
-        LIMIT 1
-    """, {"solution_id": solution_id})
-
-    stats = stats_rows[0] if stats_rows else {}
-
-    items = get_solution_feed(solution_id, limit, offset, universe_id)
-
-    return {
-        "id_solution": solution_id,
-        "name": solution.get("NAME"),
-        "company_name": solution.get("COMPANY_NAME"),
-        "media_logo_rectangle_id": solution.get("MEDIA_LOGO_RECTANGLE_ID"),
-        "nb_analyses": stats.get("NB_ANALYSES", 0),
-        "delta_30d": stats.get("DELTA_30D", 0),
-        "items": items
-    }
-
-
-# ============================================================
-# MAPPER
-# ============================================================
 
 def _map_feed_row(r: Dict):
 
