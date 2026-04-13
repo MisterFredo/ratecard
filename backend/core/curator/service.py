@@ -177,7 +177,9 @@ def search(
 def latest(
     limit: int = 20,
     offset: int = 0,
+    type: Optional[str] = None,          # 👈 conservé pour compat API
     user_id: Optional[str] = None,
+    universe_id: Optional[str] = None,   # 👈 conservé pour compat API
 ) -> List[Dict]:
 
     sql = f"""
@@ -218,6 +220,9 @@ def latest(
         "limit": limit,
         "offset": offset,
         "user_id": user_id,
+        # 👇 volontairement ignorés
+        "type": type,
+        "universe_id": universe_id,
     }
 
     rows = query_bq(sql, params)
