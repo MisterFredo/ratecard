@@ -34,10 +34,10 @@ def search(
         news_filter = "AND FALSE"
 
     # ============================================================
-    # 🔥 USER FILTER (ALIGNÉ AVEC latest)
+    # 🔥 USER FILTER (inchangé)
     # ============================================================
 
-    user_filter_content = """
+    user_filter_content = f"""
     AND (
         @user_id IS NULL
         OR EXISTS (
@@ -51,8 +51,7 @@ def search(
     )
     """
 
-    # 👉 news = via company (fallback logique)
-    user_filter_news = """
+    user_filter_news = f"""
     AND (
         @user_id IS NULL
         OR EXISTS (
@@ -67,34 +66,18 @@ def search(
     """
 
     # ============================================================
-    # 🌍 UI FILTER
+    # 🌍 UI FILTER (SIMPLIFIÉ via champ déjà présent)
     # ============================================================
 
     universe_filter_news = ""
     universe_filter_content = ""
 
     if universe_id:
-
-        universe_filter_news = f"""
-        AND EXISTS (
-            SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-            WHERE cu.ID_COMPANY = n.id_company
-              AND cu.ID_UNIVERSE = @universe_id
-        )
-        """
-
-        universe_filter_content = f"""
-        AND EXISTS (
-            SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE` su
-            WHERE su.ID_UNIVERSE = @universe_id
-              AND su.ID_SOURCE = c.id_source
-        )
-        """
+        universe_filter_news = "AND n.id_universe = @universe_id"
+        universe_filter_content = "AND c.id_universe = @universe_id"
 
     # ============================================================
-    # QUERY
+    # QUERY (⚠️ SEULE MODIF = ajout universe)
     # ============================================================
 
     sql = f"""
@@ -109,6 +92,8 @@ def search(
             n.published_at,
             n.news_type,
             n.topics,
+            n.id_universe,
+            n.universe,
             ARRAY<STRUCT<id_company STRING, name STRING>>[
               STRUCT(n.id_company, n.company_name)
             ] AS companies,
@@ -135,6 +120,8 @@ def search(
             c.published_at,
             NULL AS news_type,
             c.topics,
+            c.id_universe,
+            c.universe,
             c.companies,
             c.solutions
 
@@ -173,10 +160,14 @@ def search(
 def latest(
     limit: int = 20,
     offset: int = 0,
-    type: Optional[str] = None,          # 👈 conservé pour compat API
+    type: Optional[str] = None,
     user_id: Optional[str] = None,
-    universe_id: Optional[str] = None,   # 👈 conservé pour compat API
+    universe_id: Optional[str] = None,
 ) -> List[Dict]:
+
+    universe_filter = ""
+    if universe_id:
+        universe_filter = "AND c.id_universe = @universe_id"
 
     sql = f"""
     SELECT
@@ -187,6 +178,8 @@ def latest(
         c.published_at,
         NULL AS news_type,
         c.topics,
+        c.id_universe,
+        c.universe,
         c.companies,
         c.solutions
 
@@ -194,7 +187,6 @@ def latest(
 
     WHERE c.published_at IS NOT NULL
 
-    -- 🔥 FILTRE USER (STRICT VIA SOURCE)
     AND (
         @user_id IS NULL
         OR EXISTS (
@@ -207,6 +199,8 @@ def latest(
         )
     )
 
+    {universe_filter}
+
     ORDER BY published_at DESC
     LIMIT @limit
     OFFSET @offset
@@ -216,15 +210,12 @@ def latest(
         "limit": limit,
         "offset": offset,
         "user_id": user_id,
-        # 👇 volontairement ignorés
-        "type": type,
         "universe_id": universe_id,
     }
 
     rows = query_bq(sql, params)
 
     return [_map_feed_row(r) for r in rows]
-
 
 # ============================================================
 # ITEM (light)
@@ -432,8 +423,13 @@ def _map_feed_row(r: Dict) -> Dict:
         "type": r.get("type"),
         "title": r.get("title"),
         "excerpt": r.get("excerpt"),
-        "published_at": r.get("published_at"),  # ✅ PAS isoformat
+        "published_at": r.get("published_at"),
         "news_type": r.get("news_type"),
+
+        # 🔥 NEW
+        "id_universe": r.get("id_universe"),
+        "universe": r.get("universe"),
+
         "topics": r.get("topics") or [],
         "companies": r.get("companies") or [],
         "solutions": r.get("solutions") or [],
