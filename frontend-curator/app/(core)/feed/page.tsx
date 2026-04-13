@@ -9,7 +9,6 @@ import SelectionPanel from "@/components/insight/SelectionPanel";
 import AnalysisDrawer from "@/components/drawers/AnalysisDrawer";
 import NewsDrawer from "@/components/drawers/NewsDrawer";
 
-import { getContentStats } from "@/lib/stats";
 import { searchCurator, getLatestCurator } from "@/lib/search";
 
 import type { FeedItem, FeedBadge } from "@/types/feed";
@@ -32,7 +31,7 @@ export default function FeedPage() {
   const newsId = searchParams.get("news_id");
 
   /* =========================================================
-     UNIVERSE (UI ONLY)
+     UNIVERSE
   ========================================================= */
 
   const [universes, setUniverses] = useState<Universe[]>([]);
@@ -50,7 +49,6 @@ export default function FeedPage() {
   const [offset, setOffset] = useState(0);
 
   const [hasMore, setHasMore] = useState(true);
-  const [stats, setStats] = useState<any>(null);
 
   /* =========================================================
      SELECTION
@@ -116,12 +114,12 @@ export default function FeedPage() {
             query: finalQuery,
             limit: LIMIT,
             offset: currentOffset,
-            universe_id: activeUniverse || undefined, // ✅ only here
+            universe_id: activeUniverse || undefined,
           })
         : await getLatestCurator({
             limit: LIMIT,
             offset: currentOffset,
-            universe_id: activeUniverse || undefined, // ✅ only here
+            universe_id: activeUniverse || undefined,
           });
 
       if (reset) {
@@ -173,33 +171,11 @@ export default function FeedPage() {
   }, [analysisId, newsId]);
 
   /* =========================================================
-     STATS (🔥 GLOBAL ONLY)
-  ========================================================= */
-
-  useEffect(() => {
-    async function loadStats() {
-      const s = await getContentStats(); // ✅ NO PARAMS
-      setStats(s);
-    }
-
-    loadStats();
-  }, []); // ✅ no dependency on universe
-
-  /* =========================================================
      BADGES
   ========================================================= */
 
   function handleBadgeClick(badge: FeedBadge) {
     const value = badge.label;
-    if (!value) return;
-
-    setQuery(value);
-    window.scrollTo({ top: 0 });
-
-    load(true, value);
-  }
-
-  function handleStatClick(value: string) {
     if (!value) return;
 
     setQuery(value);
@@ -268,7 +244,7 @@ export default function FeedPage() {
 
       <div className="xl:col-span-2">
 
-        {/* 🔥 UNIVERSE SELECTOR */}
+        {/* 🔥 UNIVERSE CHIPS (EXCLUSIVE FILTER) */}
         <div className="flex gap-2 flex-wrap mb-4">
           <button
             onClick={() => setActiveUniverse(null)}
@@ -300,9 +276,6 @@ export default function FeedPage() {
           query={query}
           setQuery={setQuery}
           onSearch={() => load(true, query)}
-
-          stats={stats}
-          onClickStat={handleStatClick}
 
           items={items}
           total={total}
