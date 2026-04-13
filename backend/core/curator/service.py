@@ -93,8 +93,15 @@ def latest(
 ) -> List[Dict]:
 
     universe_filter = ""
+
     if universe_id:
-        universe_filter = "AND c.id_universe = @universe_id"
+        universe_filter = """
+        AND EXISTS (
+            SELECT 1
+            FROM UNNEST(c.universes) u
+            WHERE u.id_universe = @universe_id
+        )
+        """
 
     sql = f"""
     SELECT
@@ -105,26 +112,13 @@ def latest(
         c.published_at,
         NULL AS news_type,
         c.topics,
-        c.id_universe,
-        c.universe,
+        c.universes,
         c.companies,
         c.solutions
 
     FROM `{VIEW_CONTENT}` c
 
     WHERE c.published_at IS NOT NULL
-
-    AND (
-        @user_id IS NULL
-        OR EXISTS (
-            SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE` su
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-              ON uu.ID_UNIVERSE = su.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-              AND su.SOURCE_ID = c.id_source
-        )
-    )
 
     {universe_filter}
 
@@ -136,7 +130,6 @@ def latest(
     params = {
         "limit": limit,
         "offset": offset,
-        "user_id": user_id,
         "universe_id": universe_id,
     }
 
