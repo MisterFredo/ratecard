@@ -13,10 +13,17 @@ async function request(method: string, path: string, body?: any) {
 
   console.log("API CALL →", method, url);
 
+  // 🔥 NEW → récupération token
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("token")
+      : null;
+
   const res = await fetch(url, {
     method,
     headers: {
       "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }), // 🔥 KEY
     },
     body: body ? JSON.stringify(body) : undefined,
     cache: "no-store",
