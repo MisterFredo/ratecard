@@ -2,10 +2,7 @@
 
 type Props = {
   user: any;
-  universes: any[];
-  activeUniverse: string | null;
-  setActiveUniverse: (v: string | null) => void;
-};
+};;
 
 export default function Header({
   user,
