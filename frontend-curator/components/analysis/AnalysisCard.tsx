@@ -6,9 +6,8 @@ type Props = {
   excerpt?: string;
   publishedAt: string;
 
-  // Accroches
-  topic?: string;
-  keyMetric?: string;
+  // 🔥 NEW
+  universe?: string;
 
   onOpen?: (id: string) => void;
 };
@@ -18,8 +17,7 @@ export default function AnalysisCard({
   title,
   excerpt,
   publishedAt,
-  topic,
-  keyMetric,
+  universe,
   onOpen,
 }: Props) {
   return (
@@ -38,10 +36,26 @@ export default function AnalysisCard({
       "
     >
       {/* =====================================================
-          META TOP — DATE
+          META TOP — DATE + UNIVERSE
       ===================================================== */}
-      <div className="mb-2 text-xs text-gray-400">
-        {new Date(publishedAt).toLocaleDateString("fr-FR")}
+      <div className="mb-2 flex items-center justify-between">
+
+        <div className="text-xs text-gray-400">
+          {new Date(publishedAt).toLocaleDateString("fr-FR")}
+        </div>
+
+        {universe && (
+          <span className="
+            text-[10px]
+            px-2 py-0.5
+            rounded
+            bg-gray-100
+            text-gray-600
+            border
+          ">
+            {universe}
+          </span>
+        )}
       </div>
 
       {/* =====================================================
@@ -60,26 +74,6 @@ export default function AnalysisCard({
         </p>
       )}
 
-      {/* =====================================================
-          META BOTTOM — ACCROCHES
-      ===================================================== */}
-      {(topic || keyMetric) && (
-        <div className="mt-auto pt-4 space-y-2 text-xs text-gray-600">
-          {keyMetric && (
-            <div className="font-medium">
-              • {keyMetric}
-            </div>
-          )}
-
-          {topic && (
-            <div>
-              <span className="inline-block px-2 py-0.5 rounded bg-ratecard-light text-gray-600">
-                {topic}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
     </article>
   );
 }
