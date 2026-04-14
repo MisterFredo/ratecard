@@ -3,6 +3,7 @@ import "./globals.css";
 import CuratorShell from "@/components/layout/CuratorShell";
 import { DrawerProvider } from "@/contexts/DrawerContext";
 import DrawerHost from "@/components/drawers/DrawerHost";
+import AuthGuard from "@/components/auth/AuthGuard"; // 👈 AJOUT
 
 export default function RootLayout({
   children,
@@ -12,13 +13,14 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body>
-          <DrawerProvider>
+        <DrawerProvider>
+
+          <AuthGuard> {/* 🔥 ICI */}
             <CuratorShell>{children}</CuratorShell>
+          </AuthGuard>
 
-            {/* 🔥 DRAWERS */}
-            <DrawerHost />
-          </DrawerProvider>
-
+          <DrawerHost />
+        </DrawerProvider>
       </body>
     </html>
   );
