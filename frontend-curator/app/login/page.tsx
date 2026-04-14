@@ -14,12 +14,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   // --------------------------------------------------
-  // 🔐 CLEAN SESSION (évite bugs)
+  // 🔐 CLEAN SESSION (simple)
   // --------------------------------------------------
   useEffect(() => {
     localStorage.removeItem("token");
-    localStorage.removeItem("user_id");
-    localStorage.removeItem("role");
   }, []);
 
   // --------------------------------------------------
@@ -44,16 +42,17 @@ export default function LoginPage() {
         password,
       });
 
-      if (!res || res.status !== "ok" || !res.token) {
+      // 🔥 VALIDATION SIMPLE
+      if (!res || !res.token || !res.user) {
         throw new Error("Login failed");
       }
 
-      // 🔥 STOCKAGE TOKEN
+      // 🔐 STOCKAGE TOKEN (SEULE SOURCE DE VÉRITÉ)
       localStorage.setItem("token", res.token);
-      localStorage.setItem("user_id", res.user_id);
-      localStorage.setItem("role", res.role);
 
-      // 🔥 REDIRECT PROPRE
+      console.log("✅ LOGIN SUCCESS", res.user);
+
+      // 🔥 REDIRECT
       router.push(redirect);
 
     } catch (e) {
