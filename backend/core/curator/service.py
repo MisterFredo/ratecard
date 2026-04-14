@@ -120,6 +120,18 @@ def latest(
 
     WHERE c.published_at IS NOT NULL
 
+    AND (
+        @user_id IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE` su
+            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+              ON uu.ID_UNIVERSE = su.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND su.SOURCE_ID = c.id_source
+        )
+    )
+
     {universe_filter}
 
     ORDER BY published_at DESC
@@ -131,6 +143,7 @@ def latest(
         "limit": limit,
         "offset": offset,
         "universe_id": universe_id,
+        "user_id": user_id,  # 🔥 AJOUT
     }
 
     rows = query_bq(sql, params)
