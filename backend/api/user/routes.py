@@ -100,29 +100,27 @@ def login(payload: LoginPayload):
     user = get_user_by_email(payload.email)
 
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(401, "Invalid credentials")
 
     if not verify_password(payload.password, user["PASSWORD_HASH"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(401, "Invalid credentials")
 
-    if not user.get("IS_ACTIVE", True):
-        raise HTTPException(status_code=403, detail="User inactive")
-
-    # 🔥 TOKEN
     token = create_token(
         user_id=user["ID_USER"],
         email=user["EMAIL"],
         role=user.get("ROLE", "user"),
     )
 
+    # 🔥 on met à jour mais sans bloquer ailleurs
+    update_user_active_token(user["ID_USER"], token)
+
     return {
         "status": "ok",
+        "token": token,
         "user_id": user["ID_USER"],
         "email": user["EMAIL"],
         "role": user.get("ROLE", "user"),
-        "token": token,  # 🔥 IMPORTANT
     }
-
 
 # =========================================================
 # GET USER
