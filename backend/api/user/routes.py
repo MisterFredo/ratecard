@@ -44,14 +44,10 @@ def create_user_route(payload: CreateUserPayload):
 @router.get("/bootstrap-admin")
 def bootstrap_admin(secret: str):
 
-    print("BOOTSTRAP START")
-
     if secret != "INIT_123":
-        print("BAD SECRET")
         raise HTTPException(status_code=403)
 
     existing = get_user_by_email("mister.fredo@gmail.com")
-    print("EXISTING:", existing)
 
     if existing:
         return {"status": "already_exists"}
@@ -60,15 +56,13 @@ def bootstrap_admin(secret: str):
         email="mister.fredo@gmail.com",
         password="felixmax55",
         name="Admin Fredo",
+        company="Curator",          # 🔥 AJOUT
+        language="fr",              # 🔥 AJOUT
         role="admin",
         universes=[]
     )
 
-    print("PAYLOAD OK")
-
     user_id = create_user(payload)
-
-    print("USER CREATED:", user_id)
 
     return {
         "status": "created",
