@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  Menu,
   X,
   Building2,
   Tag,
@@ -27,9 +26,14 @@ export default function CuratorShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const user = useUser();
+
+  // 🔥 FIX
+  const { user, loading } = useUser();
 
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // 🔥 évite flicker / incohérence
+  if (loading) return null;
 
   /* ========================================================= */
 
@@ -158,7 +162,7 @@ export default function CuratorShell({
       {/* MAIN */}
       <main className="flex-1 bg-gray-50">
 
-        {/* 🔥 HEADER SIMPLIFIÉ */}
+        {/* 🔥 Header safe (user peut être null) */}
         <Header user={user} />
 
         <div className="p-4 md:p-8">
