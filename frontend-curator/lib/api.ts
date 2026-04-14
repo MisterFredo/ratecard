@@ -5,11 +5,15 @@ const RAW_BASE_URL =
 // 🔥 toujours sans slash final
 const BASE_URL = RAW_BASE_URL.replace(/\/+$/, "");
 
+// =====================================================
+// CORE REQUEST
+// =====================================================
+
 async function request(method: string, path: string, body?: any) {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${BASE_URL}${cleanPath}`;
 
-  console.log("API CALL →", method, url);
+  console.log("🌐 API CALL →", method, url);
 
   // --------------------------------------------------
   // 🔐 TOKEN (client only)
@@ -19,6 +23,17 @@ async function request(method: string, path: string, body?: any) {
       ? localStorage.getItem("token")
       : null;
 
+  const authHeader =
+    token && token !== "null" && token !== "undefined"
+      ? { Authorization: `Bearer ${token}` }
+      : {};
+
+  if (token) {
+    console.log("🔐 TOKEN PRESENT");
+  } else {
+    console.log("⚠️ NO TOKEN");
+  }
+
   let res: Response;
 
   try {
@@ -26,7 +41,7 @@ async function request(method: string, path: string, body?: any) {
       method,
       headers: {
         "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
+        ...authHeader,
       },
       body: body ? JSON.stringify(body) : undefined,
       cache: "no-store",
@@ -51,15 +66,15 @@ async function request(method: string, path: string, body?: any) {
   if (!res.ok) {
     console.error("❌ API error:", json);
 
-    // 🔥 LOGOUT AUTOMATIQUE SI TOKEN INVALID
+    // 🔥 LOGOUT SI TOKEN INVALID
     if (res.status === 401 && typeof window !== "undefined") {
       const isLoginPage = window.location.pathname.startsWith("/login");
 
       // évite boucle infinie
       if (!isLoginPage) {
+        console.warn("🔒 SESSION EXPIRED → LOGOUT");
+
         localStorage.removeItem("token");
-        localStorage.removeItem("user_id");
-        localStorage.removeItem("role");
 
         const redirect = encodeURIComponent(
           window.location.pathname + window.location.search
