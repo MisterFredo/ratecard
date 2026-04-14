@@ -11,8 +11,9 @@ from utils.bigquery_utils import query_bq
 VIEW_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED"
 VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 
+
 # ============================================================
-# 🔥 USER FILTER FACTO
+# 🔥 USER FILTER FACTO (SOURCE_ID cohérent)
 # ============================================================
 
 def build_user_filter(alias: str = "c") -> str:
@@ -56,7 +57,8 @@ def search(
         c.id_universe,
         c.universe,
         c.companies,
-        c.solutions
+        c.solutions,
+        c.id_source
 
     FROM `{VIEW_CONTENT}` c
 
@@ -89,7 +91,7 @@ def search(
 
 
 # ============================================================
-# LATEST
+# LATEST (ALIGNÉ SUR SEARCH)
 # ============================================================
 
 def latest(
@@ -100,15 +102,8 @@ def latest(
 ) -> List[Dict]:
 
     universe_filter = ""
-
     if universe_id:
-        universe_filter = """
-        AND EXISTS (
-            SELECT 1
-            FROM UNNEST(c.universes) u
-            WHERE u.id_universe = @universe_id
-        )
-        """
+        universe_filter = "AND c.id_universe = @universe_id"
 
     sql = f"""
     SELECT
@@ -119,9 +114,11 @@ def latest(
         c.published_at,
         NULL AS news_type,
         c.topics,
-        c.universes,
+        c.id_universe,
+        c.universe,
         c.companies,
-        c.solutions
+        c.solutions,
+        c.id_source
 
     FROM `{VIEW_CONTENT}` c
 
@@ -149,7 +146,7 @@ def latest(
 
 
 # ============================================================
-# ITEM (light)
+# ITEM (SECURE + COHÉRENT)
 # ============================================================
 
 def get_item_curator(
@@ -203,7 +200,7 @@ def get_item_curator(
             JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
               ON uu.ID_UNIVERSE = su.ID_UNIVERSE
             WHERE uu.ID_USER = @user_id
-              AND su.SOURCE_ID = id_source
+              AND su.ID_SOURCE = id_source
         )
     )
 
@@ -269,14 +266,10 @@ def get_item_detail(
 
 
 # ============================================================
-# STATS (global)
+# STATS (inchangé)
 # ============================================================
 
 def get_content_stats():
-
-    # =====================================================
-    # GLOBAL
-    # =====================================================
 
     global_rows = query_bq(f"""
         SELECT *
@@ -292,10 +285,6 @@ def get_content_stats():
         total_count = 0
         last_7 = 0
         last_30 = 0
-
-    # =====================================================
-    # TOPICS
-    # =====================================================
 
     topics_rows = query_bq(f"""
         SELECT *
@@ -315,10 +304,6 @@ def get_content_stats():
         if r.get("id_topic") and r.get("label")
     ]
 
-    # =====================================================
-    # COMPANIES
-    # =====================================================
-
     company_rows = query_bq(f"""
         SELECT *
         FROM `{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY`
@@ -336,10 +321,6 @@ def get_content_stats():
         for r in company_rows
         if r.get("id_company") and r.get("name")
     ]
-
-    # =====================================================
-    # SOLUTIONS
-    # =====================================================
 
     solution_rows = query_bq(f"""
         SELECT *
@@ -368,12 +349,12 @@ def get_content_stats():
         "top_solutions": top_solutions,
     }
 
+
 # ============================================================
 # MAPPER
 # ============================================================
 
 def _map_feed_row(r: Dict) -> Dict:
-
     return {
         "id": r.get("id"),
         "type": r.get("type"),
