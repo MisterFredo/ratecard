@@ -18,32 +18,15 @@ export function middleware(request: NextRequest) {
   }
 
   // --------------------------------------------------
-  // 🔐 SESSION
+  // ⚠️ JWT MODE (NO COOKIE ACCESS)
   // --------------------------------------------------
-  const session =
-    request.cookies.get("curator_session")?.value === "ok";
-
-  const userId =
-    request.cookies.get("curator_user_id")?.value;
+  // Le middleware n’a pas accès au localStorage
+  // → impossible de vérifier le token ici
 
   // --------------------------------------------------
-  // 🔒 PROTECTION
+  // 🔁 REDIRECT LOGIQUE UNIQUEMENT
   // --------------------------------------------------
-  if (!session || !userId) {
-    const loginUrl = new URL("/login", request.url);
-
-    // 🔥 conserve redirect complet
-    loginUrl.searchParams.set(
-      "redirect",
-      pathname + search
-    );
-
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // --------------------------------------------------
-  // ✅ PASS
-  // --------------------------------------------------
+  // On laisse passer et la protection se fait côté client
   return NextResponse.next();
 }
 
