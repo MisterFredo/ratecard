@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 
@@ -13,6 +13,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // --------------------------------------------------
+  // 🔐 CLEAN SESSION (évite bugs)
+  // --------------------------------------------------
+  useEffect(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("role");
+  }, []);
+
+  // --------------------------------------------------
+  // LOGIN
+  // --------------------------------------------------
   async function handleLogin() {
     if (!email.trim()) {
       alert("Email requis");
@@ -32,17 +44,16 @@ export default function LoginPage() {
         password,
       });
 
-      if (res?.status !== "ok") {
+      if (!res || res.status !== "ok" || !res.token) {
         throw new Error("Login failed");
       }
 
-      // 🔥 NEW → stockage token
+      // 🔥 STOCKAGE TOKEN
       localStorage.setItem("token", res.token);
-
-      // (optionnel mais pratique)
       localStorage.setItem("user_id", res.user_id);
       localStorage.setItem("role", res.role);
 
+      // 🔥 REDIRECT PROPRE
       router.push(redirect);
 
     } catch (e) {
