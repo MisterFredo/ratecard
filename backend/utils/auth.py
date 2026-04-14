@@ -3,13 +3,27 @@ import jwt
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import Request
+from fastapi import Depends, HTTPException, Request
 
 from core.user.user_service import get_user_by_id
 
 # 🔥 récupéré depuis Render
 SECRET_KEY = os.environ["JWT_SECRET_KEY"]
 ALGORITHM = "HS256"
+
+
+# =========================================================
+# DEPENDENCY FASTAPI
+# =========================================================
+
+def get_current_user(request: Request) -> str:
+
+    user_id = get_user_id_from_request(request)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    return user_id
 
 
 # =========================================================
