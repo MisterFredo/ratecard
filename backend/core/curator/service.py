@@ -24,16 +24,13 @@ VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 
 def build_user_filter(alias: str = "c") -> str:
     return f"""
-    AND (
-        @user_id IS NULL
-        OR EXISTS (
-            SELECT 1
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE` su
-            JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-              ON uu.ID_UNIVERSE = su.ID_UNIVERSE
-            WHERE uu.ID_USER = @user_id
-              AND su.SOURCE_ID = {alias}.id_source
-        )
+    AND EXISTS (
+        SELECT 1
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE` su
+        JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+          ON uu.ID_UNIVERSE = su.ID_UNIVERSE
+        WHERE uu.ID_USER = @user_id
+          AND su.ID_SOURCE = {alias}.id_source
     )
     """
 
