@@ -68,6 +68,10 @@ def get_token_from_request(request: Request) -> Optional[str]:
 # GET USER ID FROM REQUEST (🔥 VERSION LIGHT)
 # =========================================================
 
+# =========================================================
+# GET USER ID FROM REQUEST (CLEAN)
+# =========================================================
+
 def get_user_id_from_request(request: Request) -> Optional[str]:
 
     token = get_token_from_request(request)
@@ -85,20 +89,10 @@ def get_user_id_from_request(request: Request) -> Optional[str]:
     if not user_id:
         return None
 
-    # 🔥 récupération user
+    # 🔥 simple check : user existe
     user = get_user_by_id(user_id)
 
     if not user:
         return None
-
-    # --------------------------------------------------
-    # 🔥 LIGHT SESSION CONTROL (NON BLOQUANT)
-    # --------------------------------------------------
-
-    db_token = user.get("ACTIVE_TOKEN")
-
-    if db_token and db_token != token:
-        print(f"⚠️ TOKEN MISMATCH (non bloquant) user={user_id}")
-        # 👉 on laisse passer (pas de blocage)
 
     return user_id
