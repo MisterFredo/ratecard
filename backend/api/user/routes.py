@@ -95,31 +95,39 @@ def update_user_route(payload: UpdateUserPayload):
 # LOGIN (🔥 FIX ICI)
 # =========================================================
 
+# =========================================================
+# LOGIN (FIX CLEAN)
+# =========================================================
+
 @router.post("/login")
 def login(payload: LoginPayload):
+
     user = get_user_by_email(payload.email)
 
     if not user:
-        raise HTTPException(401, "Invalid credentials")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
     if not verify_password(payload.password, user["PASSWORD_HASH"]):
-        raise HTTPException(401, "Invalid credentials")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
+    # 🔐 TOKEN
     token = create_token(
         user_id=user["ID_USER"],
         email=user["EMAIL"],
         role=user.get("ROLE", "user"),
     )
 
-    # 🔥 on met à jour mais sans bloquer ailleurs
-    update_user_active_token(user["ID_USER"], token)
+    # 🌍 UNIVERS (clé du produit)
+    universes = get_user_universes(user["ID_USER"])
 
     return {
-        "status": "ok",
         "token": token,
-        "user_id": user["ID_USER"],
-        "email": user["EMAIL"],
-        "role": user.get("ROLE", "user"),
+        "user": {
+            "id": user["ID_USER"],
+            "email": user["EMAIL"],
+            "role": user.get("ROLE", "user"),
+            "universes": universes,
+        }
     }
 
 # =========================================================
