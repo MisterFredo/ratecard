@@ -1,5 +1,6 @@
 const RAW_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://ratecard-backend-prod.onrender.com/api";
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://ratecard-backend-prod.onrender.com/api";
 
 // 🔥 toujours sans slash final
 const BASE_URL = RAW_BASE_URL.replace(/\/+$/, "");
@@ -10,21 +11,30 @@ async function request(method: string, path: string, body?: any) {
 
   console.log("API CALL →", method, url);
 
-  // 🔥 récupération du token (client only)
+  // --------------------------------------------------
+  // 🔐 TOKEN (client only)
+  // --------------------------------------------------
   const token =
     typeof window !== "undefined"
       ? localStorage.getItem("token")
       : null;
 
-  const res = await fetch(url, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }), // 🔥 JWT
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    cache: "no-store",
-  });
+  let res: Response;
+
+  try {
+    res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: "no-store",
+    });
+  } catch (e) {
+    console.error("❌ Network error:", e);
+    throw new Error("Impossible de contacter le serveur");
+  }
 
   let json: any = null;
 
@@ -41,14 +51,21 @@ async function request(method: string, path: string, body?: any) {
   if (!res.ok) {
     console.error("❌ API error:", json);
 
-    // 🔥 logout automatique si token invalide
-    if (res.status === 401) {
-      if (typeof window !== "undefined") {
+    // 🔥 LOGOUT AUTOMATIQUE SI TOKEN INVALID
+    if (res.status === 401 && typeof window !== "undefined") {
+      const isLoginPage = window.location.pathname.startsWith("/login");
+
+      // évite boucle infinie
+      if (!isLoginPage) {
         localStorage.removeItem("token");
         localStorage.removeItem("user_id");
         localStorage.removeItem("role");
 
-        window.location.href = "/login";
+        const redirect = encodeURIComponent(
+          window.location.pathname + window.location.search
+        );
+
+        window.location.href = `/login?redirect=${redirect}`;
       }
     }
 
