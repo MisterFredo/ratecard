@@ -13,9 +13,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // --------------------------------------------------
-  // LOGIN
-  // --------------------------------------------------
   async function handleLogin() {
     if (!email.trim()) {
       alert("Email requis");
@@ -35,18 +32,17 @@ export default function LoginPage() {
         password,
       });
 
-      // ✅ VALIDATION SIMPLE (alignée backend)
+      // ✅ VALIDATION
       if (!res || !res.user_id) {
         throw new Error("Login failed");
       }
 
-      // 🔐 STOCKAGE SIMPLE
+      // 🔐 SOURCE UNIQUE DE VÉRITÉ
       localStorage.setItem("user_id", res.user_id);
       localStorage.setItem("role", res.role || "user");
 
       console.log("✅ LOGIN SUCCESS", res);
 
-      // 🔥 REDIRECT
       router.push(redirect);
 
     } catch (e) {
