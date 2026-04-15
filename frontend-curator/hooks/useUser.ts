@@ -13,7 +13,8 @@ export function useUser() {
   function parseToken(token: string) {
     try {
       const base64Payload = token.split(".")[1];
-      return JSON.parse(atob(base64Payload));
+      const decoded = JSON.parse(atob(base64Payload));
+      return decoded;
     } catch {
       return null;
     }
@@ -31,18 +32,17 @@ export function useUser() {
     const payload = parseToken(token);
 
     if (!payload) {
+      localStorage.removeItem("token");
       setUser(null);
       setLoading(false);
       return;
     }
 
-    // --------------------------------------------------
-    // 🔥 CHECK EXPIRATION
-    // --------------------------------------------------
+    // 🔐 expiration check
     if (payload.exp && Date.now() >= payload.exp * 1000) {
+      console.warn("🔒 TOKEN EXPIRED");
+
       localStorage.removeItem("token");
-      localStorage.removeItem("user_id");
-      localStorage.removeItem("role");
 
       setUser(null);
       setLoading(false);
