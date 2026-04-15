@@ -12,6 +12,7 @@ from core.solution.service import (
     get_solution,
     update_solution,
     delete_solution,
+    get_user_id_from_request,
     list_solutions_for_user,
 )
 
