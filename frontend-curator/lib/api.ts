@@ -15,17 +15,15 @@ async function request(method: string, path: string, body?: any) {
 
   console.log("🌐 API CALL →", method, url);
 
-  const token =
+  // --------------------------------------------------
+  // 👤 USER ID (nouveau système)
+  // --------------------------------------------------
+  const userId =
     typeof window !== "undefined"
-      ? localStorage.getItem("token")
+      ? localStorage.getItem("user_id")
       : null;
 
-  const authHeader =
-    token && token !== "null" && token !== "undefined"
-      ? { Authorization: `Bearer ${token}` }
-      : {};
-
-  console.log("🔐 TOKEN:", token);
+  console.log("👤 USER_ID:", userId);
 
   let res: Response;
 
@@ -34,7 +32,7 @@ async function request(method: string, path: string, body?: any) {
       method,
       headers: {
         "Content-Type": "application/json",
-        ...authHeader,
+        ...(userId && { "x-user-id": userId }),
       },
       body: body ? JSON.stringify(body) : undefined,
       cache: "no-store",
@@ -59,9 +57,9 @@ async function request(method: string, path: string, body?: any) {
   if (!res.ok) {
     console.error("❌ API error:", json);
 
-    // 🔥 FIX CRITIQUE : NE PAS LOGOUT AUTOMATIQUEMENT
+    // ⚠️ on ne logout plus automatiquement
     if (res.status === 401) {
-      console.warn("⚠️ 401 reçu (ignoré pour éviter logout)");
+      console.warn("⚠️ 401 reçu (user_id manquant ou invalide)");
     }
 
     throw new Error(json?.detail || json?.message || "Erreur API");
