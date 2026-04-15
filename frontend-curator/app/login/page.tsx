@@ -43,7 +43,7 @@ export default function LoginPage() {
 
       console.log("✅ LOGIN SUCCESS", res);
 
-      router.push(redirect);
+      window.location.href = redirect;
 
     } catch (e) {
       console.error(e);
