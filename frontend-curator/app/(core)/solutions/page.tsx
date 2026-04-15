@@ -28,26 +28,49 @@ type SortMode = "alpha" | "activity" | "growth";
    SORT
 ========================================================= */
 
-function sortSolutions(items: Solution[], mode: SortMode) {
-  const copy = [...items];
+async function fetchSolutions(): Promise<Solution[]> {
+  try {
+    const userId = localStorage.getItem("user_id");
 
-  switch (mode) {
-    case "activity":
-      return copy.sort(
-        (a, b) => (b.nb_analyses ?? 0) - (a.nb_analyses ?? 0)
-      );
+    console.log("👤 USER_ID (solutions):", userId);
 
-    case "growth":
-      return copy.sort(
-        (a, b) => (b.delta_30d ?? 0) - (a.delta_30d ?? 0)
-      );
+    if (!userId) {
+      console.warn("❌ NO USER → redirect");
+      window.location.href = "/login";
+      return [];
+    }
 
-    default:
-      return copy.sort((a, b) =>
-        a.name.localeCompare(b.name, "fr", {
-          sensitivity: "base",
-        })
-      );
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/solution/list-curator`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": userId, // 🔥 CRITIQUE
+        },
+        cache: "no-store",
+      }
+    );
+
+    if (!res.ok) {
+      console.error("❌ API ERROR:", res.status);
+      return [];
+    }
+
+    const json = await res.json();
+
+    console.log("🔥 RAW SOLUTIONS:", json);
+
+    if (json.status !== "ok") return [];
+
+    return (json.solutions || []).map((s: any) => ({
+      ...s,
+      universes: s.universes || [],
+    }));
+
+  } catch (e) {
+    console.error("❌ fetchSolutions error:", e);
+    return [];
   }
 }
 
