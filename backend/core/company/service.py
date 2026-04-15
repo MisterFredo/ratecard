@@ -262,19 +262,19 @@ def list_companies_for_user(user_id: str):
 
     FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
 
-    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-        ON cu.ID_COMPANY = c.ID_COMPANY
-
-    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-        ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-
-    WHERE uu.ID_USER = @user_id
+    WHERE EXISTS (
+        SELECT 1
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+        JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+          ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+        WHERE cu.ID_COMPANY = c.ID_COMPANY
+          AND uu.ID_USER = @user_id
+    )
 
     ORDER BY c.NAME
     """
 
     return query_bq(query, {"user_id": user_id})
-
 # ============================================================
 # GET ONE COMPANY
 # ============================================================
