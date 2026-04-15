@@ -27,15 +27,15 @@ export default function AdminLoginPage() {
         password,
       });
 
-      if (!res || res.status !== "ok") {
+      // 🔥 NOUVELLE STRUCTURE
+      if (!res || !res.token || !res.user) {
         throw new Error("Login failed");
       }
 
-      // 🔐 SESSION PROPRE
-      document.cookie = `curator_session=${res.user_id}; path=/; max-age=86400`;
+      // 🔐 STOCKAGE TOKEN (SEULE SOURCE DE VÉRITÉ)
+      localStorage.setItem("token", res.token);
 
-      // 🔥 optionnel (utile debug / futur)
-      document.cookie = `curator_role=${res.role}; path=/; max-age=86400`;
+      console.log("✅ ADMIN LOGIN", res.user);
 
       router.push(redirect);
 
@@ -54,7 +54,6 @@ export default function AdminLoginPage() {
           Connexion admin
         </h1>
 
-        {/* EMAIL */}
         <input
           type="email"
           placeholder="Email"
@@ -63,7 +62,6 @@ export default function AdminLoginPage() {
           className="w-full border rounded-lg px-3 py-2 text-sm"
         />
 
-        {/* PASSWORD */}
         <input
           type="password"
           placeholder="Mot de passe"
