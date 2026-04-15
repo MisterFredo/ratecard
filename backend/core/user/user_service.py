@@ -1,5 +1,4 @@
 import uuid
-import bcrypt
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
@@ -15,18 +14,6 @@ TABLE_SOURCE_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE"
 
 
 # =========================================================
-# PASSWORD
-# =========================================================
-
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-
-def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode(), hashed.encode())
-
-
-# =========================================================
 # GET USER
 # =========================================================
 
@@ -35,7 +22,6 @@ def get_user_by_email(email: str):
     SELECT *
     FROM `{TABLE_USER}`
     WHERE EMAIL = @email
-    AND IS_ACTIVE = TRUE
     LIMIT 1
     """
 
@@ -48,7 +34,6 @@ def get_user_by_id(user_id: str):
     SELECT *
     FROM `{TABLE_USER}`
     WHERE ID_USER = @user_id
-    AND IS_ACTIVE = TRUE
     LIMIT 1
     """
 
@@ -86,7 +71,7 @@ def get_sources_from_universes(universes: list[str]):
 
 
 # =========================================================
-# USER CONTEXT (future feed)
+# USER CONTEXT
 # =========================================================
 
 def get_user_context(user_id: str):
@@ -106,11 +91,10 @@ def get_user_context(user_id: str):
 
 
 # =========================================================
-# CREATE USER
+# CREATE USER (SIMPLE)
 # =========================================================
 
 def create_user(payload):
-    # 🔎 check existing
     existing = query_bq(
         f"""
         SELECT ID_USER
@@ -127,52 +111,42 @@ def create_user(payload):
     if not payload.password:
         raise ValueError("Password is required")
 
-    password_hash = hash_password(payload.password)
     user_id = str(uuid.uuid4())
-
-    # =====================================================
-    # INSERT USER
-    # =====================================================
 
     query_bq(
         f"""
         INSERT INTO `{TABLE_USER}` (
             ID_USER,
             EMAIL,
+            PASSWORD,
             NAME,
             COMPANY,
             LANGUAGE,
-            PASSWORD_HASH,
             ROLE,
-            IS_ACTIVE,
-            CREATED_AT,
-            UPDATED_AT
+            CREATED_AT
         )
         VALUES (
             @id_user,
             @email,
+            @password,
             @name,
             @company,
             @language,
-            @password_hash,
             @role,
-            TRUE,
-            CURRENT_TIMESTAMP(),
             CURRENT_TIMESTAMP()
         )
         """,
         {
             "id_user": user_id,
             "email": payload.email,
+            "password": payload.password,
             "name": payload.name,
             "company": payload.company,
             "language": payload.language or "fr",
-            "password_hash": password_hash,
             "role": payload.role or "user",
         },
     )
 
-    # 🔥 univers
     assign_universes(user_id, payload.universes)
 
     return user_id
@@ -188,10 +162,6 @@ def update_user(payload):
     if not user:
         raise ValueError("User not found")
 
-    # =====================================================
-    # UPDATE CORE FIELDS
-    # =====================================================
-
     query_bq(
         f"""
         UPDATE `{TABLE_USER}`
@@ -199,8 +169,7 @@ def update_user(payload):
             NAME = @name,
             COMPANY = @company,
             LANGUAGE = @language,
-            ROLE = COALESCE(@role, ROLE),
-            UPDATED_AT = CURRENT_TIMESTAMP()
+            ROLE = COALESCE(@role, ROLE)
         WHERE ID_USER = @user_id
         """,
         {
@@ -211,10 +180,6 @@ def update_user(payload):
             "role": payload.role,
         },
     )
-
-    # =====================================================
-    # UPDATE UNIVERS (REPLACE ALL)
-    # =====================================================
 
     assign_universes(payload.user_id, payload.universes)
 
@@ -232,7 +197,6 @@ def list_users():
         COMPANY,
         LANGUAGE,
         ROLE,
-        IS_ACTIVE,
         CREATED_AT
     FROM `{TABLE_USER}`
     ORDER BY CREATED_AT DESC
@@ -242,11 +206,10 @@ def list_users():
 
 
 # =========================================================
-# ASSIGN UNIVERS (REPLACE ALL)
+# ASSIGN UNIVERS
 # =========================================================
 
 def assign_universes(user_id: str, universes: list[str]):
-    # 🔥 DELETE
     query_bq(
         f"""
         DELETE FROM `{TABLE_USER_UNIVERSE}`
@@ -255,7 +218,6 @@ def assign_universes(user_id: str, universes: list[str]):
         {"user_id": user_id},
     )
 
-    # 🔥 INSERT (simple loop ok pour volume faible)
     for u in universes:
         query_bq(
             f"""
