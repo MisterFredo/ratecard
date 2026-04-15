@@ -1,94 +1,10 @@
-import os
-import jwt
-from datetime import datetime, timedelta
-from typing import Optional
-
-from fastapi import Request
-
-from core.user.user_service import get_user_by_id
+from fastapi import Request, HTTPException
 
 
-# =========================================================
-# CONFIG
-# =========================================================
-
-SECRET_KEY = os.environ["JWT_SECRET_KEY"]
-ALGORITHM = "HS256"
-
-
-# =========================================================
-# CREATE TOKEN
-# =========================================================
-
-def create_token(user_id: str, email: str, role: str) -> str:
-    payload = {
-        "user_id": user_id,
-        "email": email,
-        "role": role,
-        "exp": datetime.utcnow() + timedelta(days=1),
-    }
-
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-
-
-# =========================================================
-# DECODE TOKEN
-# =========================================================
-
-def decode_token(token: str) -> Optional[dict]:
-    try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except Exception:
-        return None
-
-
-# =========================================================
-# EXTRACT TOKEN
-# =========================================================
-
-def get_token_from_request(request: Request) -> Optional[str]:
-    auth = request.headers.get("Authorization")
-
-    if not auth:
-        return None
-
-    try:
-        scheme, token = auth.split(" ")
-
-        if scheme.lower() != "bearer":
-            return None
-
-        return token
-
-    except Exception:
-        return None
-
-
-# =========================================================
-# GET USER ID
-# =========================================================
-
-def get_user_id_from_request(request: Request) -> Optional[str]:
-
-    token = get_token_from_request(request)
-
-    if not token:
-        return None
-
-    payload = decode_token(token)
-
-    if not payload:
-        return None
-
-    user_id = payload.get("user_id")
+def get_user_id_from_request(request: Request) -> str:
+    user_id = request.headers.get("x-user-id")
 
     if not user_id:
-        return None
-
-    # 🔥 check user existe
-    user = get_user_by_id(user_id)
-
-    if not user:
-        return None
+        raise HTTPException(status_code=401, detail="Not authenticated")
 
     return user_id
