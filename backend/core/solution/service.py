@@ -189,6 +189,32 @@ def list_solutions() -> List[Dict]:
         for r in rows
     ]
 
+def list_solutions_for_user(user_id: str):
+
+    query = f"""
+    SELECT DISTINCT
+        s.ID_SOLUTION,
+        s.NAME,
+        s.ID_COMPANY
+
+    FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` s
+
+    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+        ON c.ID_COMPANY = s.ID_COMPANY
+
+    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+        ON cu.ID_COMPANY = c.ID_COMPANY
+
+    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+        ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+
+    WHERE uu.ID_USER = @user_id
+
+    ORDER BY s.NAME
+    """
+
+    return query_bq(query, {"user_id": user_id})
+
 
 # ============================================================
 # GET ONE
