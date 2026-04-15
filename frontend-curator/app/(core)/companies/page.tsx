@@ -21,20 +21,34 @@ type Company = {
 type SortMode = "alpha" | "activity" | "growth";
 
 /* =========================================================
-   FETCH
+   FETCH (🔥 FIX ICI)
 ========================================================= */
 
 async function fetchCompanies(): Promise<Company[]> {
+  const userId = localStorage.getItem("user_id");
+
+  if (!userId) {
+    console.warn("⚠️ No user_id found");
+    return [];
+  }
+
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/company/list-curator`,
-    { cache: "no-store" }
+    {
+      cache: "no-store",
+      headers: {
+        "x-user-id": userId,
+      },
+    }
   );
 
-  if (!res.ok) return [];
+  if (!res.ok) {
+    console.error("❌ Failed to fetch companies:", res.status);
+    return [];
+  }
 
   const json = await res.json();
 
-  // 🔥 SAFE universes
   return (json?.companies || []).map((c: any) => ({
     ...c,
     universes: c.universes ?? [],
