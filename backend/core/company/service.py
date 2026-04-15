@@ -270,12 +270,10 @@ def list_companies_for_user(user_id: str):
     JOIN `adex-5555.RATECARD_PROD.RATECARD_USER_UNIVERSE` uu
       ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
 
-    WHERE uu.ID_USER = '{752ca474-97db-4569-8965-9a951118263d}'   -- 🔥 HARDCODE
+    WHERE uu.ID_USER = '752ca474-97db-4569-8965-9a951118263d'
     """
 
     return query_bq(query)
-
-
 # ============================================================
 # GET ONE COMPANY
 # ============================================================
