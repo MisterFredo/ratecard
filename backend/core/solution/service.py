@@ -191,31 +191,128 @@ def list_solutions() -> List[Dict]:
 
 def list_solutions_for_user(user_id: str):
 
-    query = f"""
-    SELECT DISTINCT
+    sql = f"""
+    SELECT
         s.ID_SOLUTION,
         s.NAME,
-        s.ID_COMPANY
+        s.STATUS,
+        s.ID_COMPANY,
 
-    FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` s
+        c.NAME AS COMPANY_NAME,
+        c.MEDIA_LOGO_RECTANGLE_ID,
+        CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
 
-    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
-        ON c.ID_COMPANY = s.ID_COMPANY
+        s.VECTORISE,
+        s.INSIGHT_FREQUENCY,
+        s.CREATED_AT,
+        s.UPDATED_AT,
 
-    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
-        ON cu.ID_COMPANY = c.ID_COMPANY
+        COALESCE(st.total, 0) AS NB_ANALYSES,
+        COALESCE(st.last_30_days, 0) AS DELTA_30D,
+
+        -- ✅ SAFE BOOL
+        IF(ns.ID_SOLUTION IS NOT NULL, TRUE, FALSE) AS HAS_NUMBERS,
+
+        r.ID_INSIGHT,
+        r.KEY_POINTS,
+
+        -- 🔥 CRITIQUE POUR LE FRONT
+        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
+
+    FROM `{TABLE_SOLUTION}` s
+
+    JOIN `{TABLE_COMPANY}` c
+      ON s.ID_COMPANY = c.ID_COMPANY
+
+    JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+      ON cu.ID_COMPANY = c.ID_COMPANY
+
+    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
+      ON u.ID_UNIVERSE = cu.ID_UNIVERSE
 
     JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-        ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+      ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
 
-    WHERE uu.ID_USER = @user_id
+    LEFT JOIN `{VIEW_STATS_SOLUTION}` st
+      ON st.id_solution = s.ID_SOLUTION
 
-    ORDER BY s.NAME
+    LEFT JOIN (
+        SELECT DISTINCT ID_SOLUTION
+        FROM `{TABLE_NUMBERS_SOLUTION}`
+    ) ns
+      ON ns.ID_SOLUTION = s.ID_SOLUTION
+
+    LEFT JOIN (
+        SELECT *
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_RADAR`
+        WHERE STATUS = "GENERATED"
+        QUALIFY ROW_NUMBER() OVER (
+            PARTITION BY ENTITY_TYPE, ENTITY_ID
+            ORDER BY YEAR DESC, PERIOD DESC
+        ) = 1
+    ) r
+      ON r.ENTITY_ID = s.ID_SOLUTION
+      AND r.ENTITY_TYPE = "solution"
+
+    WHERE
+        s.IS_ACTIVE = TRUE
+        AND uu.ID_USER = '{user_id}'
+
+    GROUP BY
+        s.ID_SOLUTION,
+        s.NAME,
+        s.STATUS,
+        s.ID_COMPANY,
+        c.NAME,
+        c.MEDIA_LOGO_RECTANGLE_ID,
+        c.IS_PARTNER,
+        s.VECTORISE,
+        s.INSIGHT_FREQUENCY,
+        s.CREATED_AT,
+        s.UPDATED_AT,
+        st.total,
+        st.last_30_days,
+        ns.ID_SOLUTION,
+        r.ID_INSIGHT,
+        r.KEY_POINTS
+
+    ORDER BY s.NAME ASC
     """
 
-    return query_bq(query, {"user_id": user_id})
+    rows = query_bq(sql)
 
+    return [
+        {
+            "id_solution": r["ID_SOLUTION"],
+            "name": r["NAME"],
+            "status": r["STATUS"],
+            "id_company": r["ID_COMPANY"],
+            "company_name": r["COMPANY_NAME"],
 
+            "media_logo_rectangle_id": r["MEDIA_LOGO_RECTANGLE_ID"],
+            "is_partner": r["IS_PARTNER"],
+
+            "vectorise": r["VECTORISE"],
+            "insight_frequency": r.get("INSIGHT_FREQUENCY"),
+
+            "created_at": r["CREATED_AT"],
+            "updated_at": r["UPDATED_AT"],
+
+            "nb_analyses": r["NB_ANALYSES"],
+            "delta_30d": r["DELTA_30D"],
+
+            "has_numbers": r.get("HAS_NUMBERS", False),
+
+            "last_radar": {
+                "id_insight": r["ID_INSIGHT"],
+                "key_points": r["KEY_POINTS"],
+            } if r.get("ID_INSIGHT") else None,
+
+            # 🔥 CRITIQUE POUR TON UI
+            "universes": r.get("universes") or [],
+        }
+        for r in rows
+    ]
 # ============================================================
 # GET ONE
 # ============================================================
