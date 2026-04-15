@@ -12,6 +12,7 @@ from core.solution.service import (
     get_solution,
     update_solution,
     delete_solution,
+    list_solutions_for_user,
 )
 
 # 🔥 CURATOR
@@ -51,9 +52,14 @@ def list_route():
 # ============================================================
 
 @router.get("/list-curator")
-def list_solutions_curator():
+def list_solutions_curator(request: Request):
     try:
-        solutions = list_solutions()
+        user_id = get_user_id_from_request(request)
+
+        if not user_id:
+            raise HTTPException(401, "Not authenticated")
+
+        solutions = list_solutions_for_user(user_id)
 
         return {
             "status": "ok",
