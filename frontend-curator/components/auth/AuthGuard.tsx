@@ -21,19 +21,22 @@ export default function AuthGuard({
     pathname === "/" ||
     pathname.startsWith("/login");
 
+  // --------------------------------------------------
+  // 🔁 REDIRECT
+  // --------------------------------------------------
   useEffect(() => {
     if (!loading && !user && !isPublic) {
       const redirect = encodeURIComponent(pathname);
       router.replace(`/login?redirect=${redirect}`);
     }
-  }, [user, loading, pathname, isPublic]);
+  }, [user, loading, pathname, isPublic, router]);
 
   // --------------------------------------------------
-  // ⏳ LOADING
+  // ⏳ LOADING → UI stable (CRITIQUE)
   // --------------------------------------------------
   if (loading) {
     return (
-      <div className="p-6 text-sm text-gray-500">
+      <div className="min-h-screen flex items-center justify-center text-sm text-gray-500">
         Chargement…
       </div>
     );
@@ -42,12 +45,20 @@ export default function AuthGuard({
   // --------------------------------------------------
   // 🔓 PUBLIC
   // --------------------------------------------------
-  if (isPublic) return <>{children}</>;
+  if (isPublic) {
+    return <>{children}</>;
+  }
 
   // --------------------------------------------------
-  // 🔒 NOT AUTH
+  // 🔒 NOT AUTH → éviter null (CRITIQUE)
   // --------------------------------------------------
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-gray-500">
+        Redirection…
+      </div>
+    );
+  }
 
   // --------------------------------------------------
   // ✅ AUTH
