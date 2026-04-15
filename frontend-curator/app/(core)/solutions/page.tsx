@@ -28,49 +28,26 @@ type SortMode = "alpha" | "activity" | "growth";
    SORT
 ========================================================= */
 
-async function fetchSolutions(): Promise<Solution[]> {
-  try {
-    const userId = localStorage.getItem("user_id");
+function sortSolutions(items: Solution[], mode: SortMode) {
+  const copy = [...items];
 
-    console.log("👤 USER_ID (solutions):", userId);
+  switch (mode) {
+    case "activity":
+      return copy.sort(
+        (a, b) => (b.nb_analyses ?? 0) - (a.nb_analyses ?? 0)
+      );
 
-    if (!userId) {
-      console.warn("❌ NO USER → redirect");
-      window.location.href = "/login";
-      return [];
-    }
+    case "growth":
+      return copy.sort(
+        (a, b) => (b.delta_30d ?? 0) - (a.delta_30d ?? 0)
+      );
 
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/solution/list-curator`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": userId, // 🔥 CRITIQUE
-        },
-        cache: "no-store",
-      }
-    );
-
-    if (!res.ok) {
-      console.error("❌ API ERROR:", res.status);
-      return [];
-    }
-
-    const json = await res.json();
-
-    console.log("🔥 RAW SOLUTIONS:", json);
-
-    if (json.status !== "ok") return [];
-
-    return (json.solutions || []).map((s: any) => ({
-      ...s,
-      universes: s.universes || [],
-    }));
-
-  } catch (e) {
-    console.error("❌ fetchSolutions error:", e);
-    return [];
+    default:
+      return copy.sort((a, b) =>
+        a.name.localeCompare(b.name, "fr", {
+          sensitivity: "base",
+        })
+      );
   }
 }
 
@@ -103,22 +80,48 @@ function groupByUniverse(
 ========================================================= */
 
 async function fetchSolutions(): Promise<Solution[]> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/solution/list-curator`,
-    { cache: "no-store" }
-  );
+  try {
+    const userId = localStorage.getItem("user_id");
 
-  if (!res.ok) return [];
+    console.log("👤 USER_ID (solutions):", userId);
 
-  const json = await res.json();
+    if (!userId) {
+      window.location.href = "/login";
+      return [];
+    }
 
-  if (json.status !== "ok") return [];
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/solution/list-curator`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": userId,
+        },
+        cache: "no-store",
+      }
+    );
 
-  // ✅ SAFE NORMALIZATION
-  return (json.solutions || []).map((s: any) => ({
-    ...s,
-    universes: s.universes || [],
-  }));
+    if (!res.ok) {
+      console.error("❌ API ERROR:", res.status);
+      return [];
+    }
+
+    const json = await res.json();
+
+    console.log("🔥 RAW SOLUTIONS:", json);
+
+    if (json.status !== "ok") return [];
+
+    return (json.solutions || []).map((s: any) => ({
+      ...s,
+      universes: s.universes || [],
+    }));
+
+  } catch (e) {
+    console.error("❌ fetchSolutions error:", e);
+    return [];
+  }
 }
 
 /* =========================================================
