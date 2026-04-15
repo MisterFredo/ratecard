@@ -99,6 +99,10 @@ def update_user_route(payload: UpdateUserPayload):
 # LOGIN (FIX CLEAN)
 # =========================================================
 
+# =========================================================
+# LOGIN (VERSION SIMPLE)
+# =========================================================
+
 @router.post("/login")
 def login(payload: LoginPayload):
 
@@ -107,7 +111,8 @@ def login(payload: LoginPayload):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if not verify_password(payload.password, user["PASSWORD_HASH"]):
+    # 🔥 SIMPLE PASSWORD CHECK
+    if payload.password != user["PASSWORD"]:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # 🔐 TOKEN
@@ -117,7 +122,7 @@ def login(payload: LoginPayload):
         role=user.get("ROLE", "user"),
     )
 
-    # 🌍 UNIVERS (clé du produit)
+    # 🌍 UNIVERS
     universes = get_user_universes(user["ID_USER"])
 
     return {
