@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useDrawer } from "@/contexts/DrawerContext";
 import CompanyCard from "@/components/companies/CompanyCard";
-import { api } from "@/lib/api"; // 🔥 IMPORTANT
+import { api } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,7 @@ type Company = {
 type SortMode = "alpha" | "activity" | "growth";
 
 /* =========================================================
-   FETCH (🔥 VIA API CENTRALISÉE)
+   FETCH
 ========================================================= */
 
 async function fetchCompanies(): Promise<Company[]> {
@@ -31,9 +31,13 @@ async function fetchCompanies(): Promise<Company[]> {
 
     console.log("🔥 RAW API RESPONSE:", json);
 
-    const data = Array.isArray(json)
-      ? json
-      : json?.companies || [];
+    // 🔥 on force le bon format
+    const data = json?.companies ?? [];
+
+    if (!Array.isArray(data)) {
+      console.error("❌ companies n'est pas un tableau :", data);
+      return [];
+    }
 
     return data.map((c: any) => ({
       id_company: c.ID_COMPANY,
@@ -44,8 +48,14 @@ async function fetchCompanies(): Promise<Company[]> {
       universes: c.universes ?? [],
     }));
 
-  } catch (e) {
+  } catch (e: any) {
     console.error("❌ fetchCompanies error:", e);
+
+    if (e?.message?.includes("401")) {
+      console.warn("⚠️ USER NON AUTHENTIFIÉ → redirect login");
+      window.location.href = "/login";
+    }
+
     return [];
   }
 }
@@ -119,6 +129,20 @@ export default function CompaniesPage() {
   const lastOpenedId = useRef<string | null>(null);
 
   /* ---------------------------------------------------------
+     AUTH CHECK (🔥 CRITIQUE)
+  --------------------------------------------------------- */
+  useEffect(() => {
+    const userId = localStorage.getItem("user_id");
+
+    console.log("👤 USER_ID:", userId);
+
+    if (!userId) {
+      console.warn("❌ PAS DE USER → redirect login");
+      window.location.href = "/login";
+    }
+  }, []);
+
+  /* ---------------------------------------------------------
      LOAD
   --------------------------------------------------------- */
   useEffect(() => {
@@ -126,8 +150,10 @@ export default function CompaniesPage() {
       setLoading(true);
 
       const data = await fetchCompanies();
-      setCompanies(data);
 
+      console.log("📊 COMPANIES LOADED:", data.length);
+
+      setCompanies(data);
       setLoading(false);
     }
 
@@ -222,7 +248,6 @@ export default function CompaniesPage() {
         Object.entries(grouped).map(([universe, items]) => (
           <section key={universe} className="space-y-4">
 
-            {/* UNIVERS HEADER */}
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-semibold uppercase text-gray-400">
                 {universe}
@@ -233,7 +258,6 @@ export default function CompaniesPage() {
               </span>
             </div>
 
-            {/* GRID */}
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
               {items.map((c) => (
                 <CompanyCard
