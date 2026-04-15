@@ -6,6 +6,7 @@ from api.company.models import CompanyCreate, CompanyUpdate, CompanyOut
 from core.company.service import (
     create_company,
     list_companies,
+    list_companies_for_user,
     list_company_types,
     get_company,
     update_company,
@@ -61,17 +62,16 @@ def list_types_route():
 # ============================================================
 
 @router.get("/list-curator")
-def list_companies_curator():
-    try:
-        companies = list_companies()
+def list_companies_curator(request: Request):
 
-        return {
-            "status": "ok",
-            "companies": companies,
-        }
+    user_id = get_user_id_from_request(request)
 
-    except Exception as e:
-        raise HTTPException(400, f"Erreur liste sociétés curator : {e}")
+    if not user_id:
+        raise HTTPException(401, "Not authenticated")
+
+    items = list_companies_for_user(user_id)
+
+    return {"items": items}
 
 
 # ============================================================
