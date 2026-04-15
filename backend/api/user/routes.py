@@ -19,9 +19,6 @@ from core.user.user_service import (
     get_user_context,
 )
 
-# 🔥 JWT
-from utils.auth import create_token, get_user_id_from_request
-
 router = APIRouter()
 
 # =========================================================
