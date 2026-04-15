@@ -91,15 +91,7 @@ def update_user_route(payload: UpdateUserPayload):
 
 
 # =========================================================
-# LOGIN (🔥 FIX ICI)
-# =========================================================
-
-# =========================================================
-# LOGIN (FIX CLEAN)
-# =========================================================
-
-# =========================================================
-# LOGIN (VERSION SIMPLE)
+# LOGIN (VERSION SIMPLE - SANS JWT)
 # =========================================================
 
 @router.post("/login")
@@ -110,30 +102,19 @@ def login(payload: LoginPayload):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # 🔥 SIMPLE PASSWORD CHECK
+    # 🔥 PASSWORD CHECK (garde ta logique actuelle)
     if payload.password != user["PASSWORD"]:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    # 🔐 TOKEN
-    token = create_token(
-        user_id=user["ID_USER"],
-        email=user["EMAIL"],
-        role=user.get("ROLE", "user"),
-    )
 
     # 🌍 UNIVERS
     universes = get_user_universes(user["ID_USER"])
 
     return {
-        "token": token,
-        "user": {
-            "id": user["ID_USER"],
-            "email": user["EMAIL"],
-            "role": user.get("ROLE", "user"),
-            "universes": universes,
-        }
+        "user_id": user["ID_USER"],
+        "email": user["EMAIL"],
+        "role": user.get("ROLE", "user"),
+        "universes": universes,
     }
-
 # =========================================================
 # GET USER
 # =========================================================
