@@ -26,14 +26,9 @@ export default function CuratorShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-
-  // 🔥 FIX
   const { user, loading } = useUser();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  // 🔥 évite flicker / incohérence
-  if (loading) return null;
 
   /* ========================================================= */
 
@@ -162,12 +157,19 @@ export default function CuratorShell({
       {/* MAIN */}
       <main className="flex-1 bg-gray-50">
 
-        {/* 🔥 Header safe (user peut être null) */}
+        {/* ✅ Header toujours stable */}
         <Header user={user} />
 
-        <div className="p-4 md:p-8">
-          {children}
-        </div>
+        {/* 🔥 FIX CRITIQUE : NE JAMAIS return null */}
+        {loading ? (
+          <div className="p-6 text-sm text-gray-500">
+            Chargement…
+          </div>
+        ) : (
+          <div className="p-4 md:p-8">
+            {children}
+          </div>
+        )}
 
       </main>
     </div>
