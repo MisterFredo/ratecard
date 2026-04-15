@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 
@@ -12,13 +12,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // --------------------------------------------------
-  // 🔐 CLEAN SESSION (simple)
-  // --------------------------------------------------
-  useEffect(() => {
-    localStorage.removeItem("token");
-  }, []);
 
   // --------------------------------------------------
   // LOGIN
@@ -42,15 +35,16 @@ export default function LoginPage() {
         password,
       });
 
-      // 🔥 VALIDATION SIMPLE
-      if (!res || !res.token || !res.user) {
+      // ✅ VALIDATION SIMPLE (alignée backend)
+      if (!res || !res.user_id) {
         throw new Error("Login failed");
       }
 
-      // 🔐 STOCKAGE TOKEN (SEULE SOURCE DE VÉRITÉ)
-      localStorage.setItem("token", res.token);
+      // 🔐 STOCKAGE SIMPLE
+      localStorage.setItem("user_id", res.user_id);
+      localStorage.setItem("role", res.role || "user");
 
-      console.log("✅ LOGIN SUCCESS", res.user);
+      console.log("✅ LOGIN SUCCESS", res);
 
       // 🔥 REDIRECT
       router.push(redirect);
