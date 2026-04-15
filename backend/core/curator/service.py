@@ -24,7 +24,7 @@ def build_user_filter(alias: str = "c") -> str:
         JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
           ON uu.ID_UNIVERSE = su.ID_UNIVERSE
         WHERE uu.ID_USER = @user_id
-          AND su.ID_SOURCE = {alias}.id_source
+          AND su.ID_SOURCE = SAFE_CAST({alias}.id_source AS STRING)
     )
     """
 
