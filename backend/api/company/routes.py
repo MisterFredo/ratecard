@@ -62,17 +62,28 @@ def list_types_route():
 # CURATOR LIST (FILTER BY UNIVERSE ONLY)
 # ============================================================
 
+
 @router.get("/list-curator")
 def list_companies_curator(request: Request):
 
-    user_id = get_user_id_from_request(request)
+    user_id = request.headers.get("x-user-id")
 
     if not user_id:
-        raise HTTPException(401, "Not authenticated")
+        raise HTTPException(401, "User ID missing")
 
-    items = list_companies_for_user(user_id)
+    try:
+        companies = list_companies_for_user(user_id)
 
-    return {"items": items}
+        return {
+            "status": "ok",
+            "companies": companies,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            400,
+            f"Erreur liste sociétés curator : {e}"
+        )
 
 
 # ============================================================
