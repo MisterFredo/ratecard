@@ -29,8 +29,14 @@ async function fetchCompanies(): Promise<Company[]> {
   try {
     const json = await api.get("/company/list-curator");
 
-    return (json?.companies || []).map((c: any) => ({
-      ...c,
+    console.log("🔥 RAW API RESPONSE:", json);
+
+    return (json || []).map((c: any) => ({
+      id_company: c.ID_COMPANY,
+      name: c.NAME,
+      media_logo_rectangle_id: c.MEDIA_LOGO_RECTANGLE_ID,
+      nb_analyses: c.nb_analyses ?? 0,
+      delta_30d: c.delta_30d ?? 0,
       universes: c.universes ?? [],
     }));
   } catch (e) {
