@@ -24,14 +24,20 @@ export default function AuthGuard({
   useEffect(() => {
     if (!loading && !user && !isPublic) {
       const redirect = encodeURIComponent(pathname);
-      router.push(`/login?redirect=${redirect}`);
+      router.replace(`/login?redirect=${redirect}`);
     }
-  }, [user, loading, pathname]);
+  }, [user, loading, pathname, isPublic]);
 
   // --------------------------------------------------
   // ⏳ LOADING
   // --------------------------------------------------
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="p-6 text-sm text-gray-500">
+        Chargement…
+      </div>
+    );
+  }
 
   // --------------------------------------------------
   // 🔓 PUBLIC
