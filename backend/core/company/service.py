@@ -252,6 +252,29 @@ def list_company_types():
         for r in rows
     ]
 
+def list_companies_for_user(user_id: str):
+
+    query = f"""
+    SELECT DISTINCT
+        c.ID_COMPANY,
+        c.NAME,
+        c.MEDIA_LOGO_RECTANGLE_ID
+
+    FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+
+    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE` cu
+        ON cu.ID_COMPANY = c.ID_COMPANY
+
+    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
+        ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+
+    WHERE uu.ID_USER = @user_id
+
+    ORDER BY c.NAME
+    """
+
+    return query_bq(query, {"user_id": user_id})
+
 # ============================================================
 # GET ONE COMPANY
 # ============================================================
