@@ -12,12 +12,12 @@ from core.solution.service import (
     get_solution,
     update_solution,
     delete_solution,
-    get_user_id_from_request,
     list_solutions_for_user,
 )
 
 # 🔥 CURATOR
 from core.curator.entity_service import get_solution_view
+from utils.auth import get_user_id_from_request
 
 router = APIRouter()
 
