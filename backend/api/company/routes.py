@@ -8,6 +8,7 @@ from core.company.service import (
     list_companies,
     list_companies_for_user,
     list_company_types,
+    get_user_id_from_request,
     get_company,
     update_company,
     delete_company,
