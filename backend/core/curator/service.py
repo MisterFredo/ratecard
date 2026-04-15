@@ -43,7 +43,13 @@ def search(
 
     universe_filter = ""
     if universe_id:
-        universe_filter = "AND c.id_universe = @universe_id"
+        universe_filter = """
+        AND EXISTS (
+            SELECT 1
+            FROM UNNEST(c.universes) u
+            WHERE u.id_universe = @universe_id
+        )
+        """
 
     sql = f"""
     SELECT
@@ -54,8 +60,10 @@ def search(
         c.published_at,
         NULL AS news_type,
         c.topics,
-        c.id_universe,
-        c.universe,
+
+        -- 🔥 FIX : plus de c.id_universe / c.universe
+        c.universes,
+
         c.companies,
         c.solutions,
         c.id_source
@@ -103,7 +111,13 @@ def latest(
 
     universe_filter = ""
     if universe_id:
-        universe_filter = "AND c.id_universe = @universe_id"
+        universe_filter = """
+        AND EXISTS (
+            SELECT 1
+            FROM UNNEST(c.universes) u
+            WHERE u.id_universe = @universe_id
+        )
+        """
 
     sql = f"""
     SELECT
@@ -114,8 +128,10 @@ def latest(
         c.published_at,
         NULL AS news_type,
         c.topics,
-        c.id_universe,
-        c.universe,
+
+        -- 🔥 FIX : universes = ARRAY
+        c.universes,
+
         c.companies,
         c.solutions,
         c.id_source
