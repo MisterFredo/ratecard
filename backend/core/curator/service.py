@@ -200,7 +200,7 @@ def get_item_curator(
             JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
               ON uu.ID_UNIVERSE = su.ID_UNIVERSE
             WHERE uu.ID_USER = @user_id
-              AND su.ID_SOURCE = id_source
+              su.ID_SOURCE = CAST(c.id_source AS STRING)
         )
     )
 
