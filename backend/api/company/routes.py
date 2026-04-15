@@ -14,9 +14,24 @@ from core.company.service import (
 )
 
 from core.curator.entity_service import get_company_view
+
+# 🔐 AUTH
 from utils.auth import get_user_id_from_request
 
 router = APIRouter()
+
+
+# ============================================================
+# AUTH HELPER (SAFE)
+# ============================================================
+
+def require_user(request: Request) -> str:
+    user_id = get_user_id_from_request(request)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    return user_id
 
 
 # ============================================================
@@ -59,19 +74,14 @@ def list_types_route():
 
 
 # ============================================================
-# CURATOR LIST (FILTER BY UNIVERSE ONLY)
+# CURATOR LIST (FILTER BY USER UNIVERS)
 # ============================================================
-
 
 @router.get("/list-curator")
 def list_companies_curator(request: Request):
-
-    user_id = request.headers.get("x-user-id")
-
-    if not user_id:
-        raise HTTPException(401, "User ID missing")
-
     try:
+        user_id = require_user(request)
+
         companies = list_companies_for_user(user_id)
 
         return {
@@ -80,9 +90,10 @@ def list_companies_curator(request: Request):
         }
 
     except Exception as e:
+        print(f"❌ Companies curator error: {e}")
         raise HTTPException(
-            400,
-            f"Erreur liste sociétés curator : {e}"
+            status_code=500,
+            detail="Internal error"
         )
 
 
@@ -107,17 +118,21 @@ def get_route(id_company: str):
 
 @router.get("/{id_company}/view")
 def get_view_route(
+    request: Request,
     id_company: str,
     limit: int = 20,
     offset: int = 0,
     universe_id: Optional[str] = Query(None),
 ):
     try:
+        user_id = require_user(request)
+
         company = get_company_view(
             company_id=id_company,
             limit=limit,
             offset=offset,
             universe_id=universe_id if universe_id else None,
+            user_id=user_id,  # 🔥 important si tu veux filtrer aussi ici
         )
 
         if not company:
@@ -128,9 +143,10 @@ def get_view_route(
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Company view error: {e}")
         raise HTTPException(
-            400,
-            f"Erreur récupération company view : {e}"
+            status_code=500,
+            detail="Internal error"
         )
 
 
