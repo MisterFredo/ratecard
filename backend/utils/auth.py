@@ -3,27 +3,17 @@ import jwt
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Request
 
 from core.user.user_service import get_user_by_id
 
-# 🔥 récupéré depuis Render
+
+# =========================================================
+# CONFIG
+# =========================================================
+
 SECRET_KEY = os.environ["JWT_SECRET_KEY"]
 ALGORITHM = "HS256"
-
-
-# =========================================================
-# DEPENDENCY FASTAPI
-# =========================================================
-
-def get_current_user(request: Request) -> str:
-
-    user_id = get_user_id_from_request(request)
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-    return user_id
 
 
 # =========================================================
@@ -48,16 +38,12 @@ def create_token(user_id: str, email: str, role: str) -> str:
 def decode_token(token: str) -> Optional[dict]:
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except jwt.ExpiredSignatureError:
-        return None
-    except jwt.InvalidTokenError:
-        return None
     except Exception:
         return None
 
 
 # =========================================================
-# EXTRACT TOKEN FROM REQUEST
+# EXTRACT TOKEN
 # =========================================================
 
 def get_token_from_request(request: Request) -> Optional[str]:
@@ -79,11 +65,7 @@ def get_token_from_request(request: Request) -> Optional[str]:
 
 
 # =========================================================
-# GET USER ID FROM REQUEST (🔥 VERSION LIGHT)
-# =========================================================
-
-# =========================================================
-# GET USER ID FROM REQUEST (CLEAN)
+# GET USER ID
 # =========================================================
 
 def get_user_id_from_request(request: Request) -> Optional[str]:
@@ -103,7 +85,7 @@ def get_user_id_from_request(request: Request) -> Optional[str]:
     if not user_id:
         return None
 
-    # 🔥 simple check : user existe
+    # 🔥 check user existe
     user = get_user_by_id(user_id)
 
     if not user:
