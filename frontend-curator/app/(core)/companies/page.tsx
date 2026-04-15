@@ -31,7 +31,11 @@ async function fetchCompanies(): Promise<Company[]> {
 
     console.log("🔥 RAW API RESPONSE:", json);
 
-    return (json || []).map((c: any) => ({
+    const data = Array.isArray(json)
+      ? json
+      : json?.companies || [];
+
+    return data.map((c: any) => ({
       id_company: c.ID_COMPANY,
       name: c.NAME,
       media_logo_rectangle_id: c.MEDIA_LOGO_RECTANGLE_ID,
@@ -39,6 +43,7 @@ async function fetchCompanies(): Promise<Company[]> {
       delta_30d: c.delta_30d ?? 0,
       universes: c.universes ?? [],
     }));
+
   } catch (e) {
     console.error("❌ fetchCompanies error:", e);
     return [];
