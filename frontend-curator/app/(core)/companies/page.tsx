@@ -7,6 +7,7 @@ import CompanyCard from "@/components/companies/CompanyCard";
 import { api } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 /* ========================================================= */
 
@@ -31,7 +32,6 @@ async function fetchCompanies(): Promise<Company[]> {
 
     console.log("🔥 RAW API RESPONSE:", json);
 
-    // 🔥 on force le bon format
     const data = json?.companies ?? [];
 
     if (!Array.isArray(data)) {
@@ -121,6 +121,7 @@ function groupByUniverse(
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("alpha");
 
   const { openLeftDrawer } = useDrawer();
@@ -139,13 +140,18 @@ export default function CompaniesPage() {
     if (!userId) {
       console.warn("❌ PAS DE USER → redirect login");
       window.location.href = "/login";
+      return;
     }
+
+    setReady(true);
   }, []);
 
   /* ---------------------------------------------------------
-     LOAD
+     LOAD DATA
   --------------------------------------------------------- */
   useEffect(() => {
+    if (!ready) return;
+
     async function load() {
       setLoading(true);
 
@@ -158,7 +164,7 @@ export default function CompaniesPage() {
     }
 
     load();
-  }, []);
+  }, [ready]);
 
   /* ---------------------------------------------------------
      DRAWER
@@ -187,6 +193,8 @@ export default function CompaniesPage() {
   /* =========================================================
      RENDER
   ========================================================= */
+
+  if (!ready) return null;
 
   return (
     <div className="space-y-8">
@@ -244,7 +252,7 @@ export default function CompaniesPage() {
       )}
 
       {/* CONTENT */}
-      {!loading && hasContent && (
+      {!loading && hasContent &&
         Object.entries(grouped).map(([universe, items]) => (
           <section key={universe} className="space-y-4">
 
@@ -272,8 +280,7 @@ export default function CompaniesPage() {
             </div>
 
           </section>
-        ))
-      )}
+        ))}
 
     </div>
   );
