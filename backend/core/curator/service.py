@@ -189,7 +189,8 @@ def get_item_curator(
 
         FROM `{VIEW_CONTENT}` c
 
-    )
+    ) AS items
+
     WHERE id = @id
 
     AND (
@@ -200,7 +201,7 @@ def get_item_curator(
             JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
               ON uu.ID_UNIVERSE = su.ID_UNIVERSE
             WHERE uu.ID_USER = @user_id
-              su.ID_SOURCE = CAST(c.id_source AS STRING)
+              AND su.ID_SOURCE = SAFE_CAST(items.id_source AS STRING)
         )
     )
 
