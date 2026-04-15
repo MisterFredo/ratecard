@@ -20,8 +20,10 @@ export function useUser() {
     }
   }
 
-  useEffect(() => {
+  function loadUser() {
     const token = localStorage.getItem("token");
+
+    console.log("🔐 TOKEN:", token);
 
     if (!token) {
       setUser(null);
@@ -32,6 +34,7 @@ export function useUser() {
     const payload = parseToken(token);
 
     if (!payload) {
+      console.warn("❌ TOKEN INVALID");
       localStorage.removeItem("token");
       setUser(null);
       setLoading(false);
@@ -41,9 +44,7 @@ export function useUser() {
     // 🔐 expiration check
     if (payload.exp && Date.now() >= payload.exp * 1000) {
       console.warn("🔒 TOKEN EXPIRED");
-
       localStorage.removeItem("token");
-
       setUser(null);
       setLoading(false);
       return;
@@ -56,6 +57,17 @@ export function useUser() {
     });
 
     setLoading(false);
+  }
+
+  useEffect(() => {
+    loadUser();
+
+    // 🔥 FIX CRITIQUE : recheck quand tu reviens sur l’onglet
+    window.addEventListener("focus", loadUser);
+
+    return () => {
+      window.removeEventListener("focus", loadUser);
+    };
   }, []);
 
   return { user, loading };
