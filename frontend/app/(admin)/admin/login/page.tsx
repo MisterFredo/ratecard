@@ -27,15 +27,16 @@ export default function AdminLoginPage() {
         password,
       });
 
-      // 🔥 NOUVELLE STRUCTURE
-      if (!res || !res.token || !res.user) {
+      // ✅ NOUVELLE STRUCTURE
+      if (!res || !res.user_id) {
         throw new Error("Login failed");
       }
 
-      // 🔐 STOCKAGE TOKEN (SEULE SOURCE DE VÉRITÉ)
-      localStorage.setItem("token", res.token);
+      // 🔐 STOCKAGE SIMPLE
+      localStorage.setItem("user_id", res.user_id);
+      localStorage.setItem("role", res.role || "user");
 
-      console.log("✅ ADMIN LOGIN", res.user);
+      console.log("✅ ADMIN LOGIN", res);
 
       router.push(redirect);
 
