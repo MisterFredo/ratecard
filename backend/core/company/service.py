@@ -254,26 +254,67 @@ def list_company_types():
 
 def list_companies_for_user(user_id: str):
 
-    query = f"""
-    SELECT DISTINCT
+    sql = f"""
+    SELECT
         c.ID_COMPANY,
         c.NAME,
-        c.MEDIA_LOGO_RECTANGLE_ID
+        c.TYPE,
+        CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
+        c.MEDIA_LOGO_RECTANGLE_ID,
+        c.INSIGHT_FREQUENCY,
 
-    FROM `adex-5555.RATECARD_PROD.RATECARD_COMPANY` c
+        COALESCE(m.total, 0) AS NB_ANALYSES,
+        COALESCE(m.last_30_days, 0) AS DELTA_30D,
 
-    JOIN `adex-5555.RATECARD_PROD.RATECARD_COMPANY_UNIVERSE` cu
+        ARRAY_AGG(DISTINCT u.LABEL) AS universes
+
+    FROM `{TABLE_COMPANY}` c
+
+    JOIN `{TABLE_COMPANY_UNIVERSE}` cu
       ON cu.ID_COMPANY = c.ID_COMPANY
 
-    JOIN `adex-5555.RATECARD_PROD.RATECARD_USER_UNIVERSE` uu
+    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
+      ON u.ID_UNIVERSE = cu.ID_UNIVERSE
+
+    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
       ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
 
-    WHERE uu.ID_USER = @user_id
+    LEFT JOIN `{VIEW_STATS_COMPANY}` m
+      ON m.id_company = c.ID_COMPANY
 
-    ORDER BY c.NAME
+    WHERE
+        c.IS_ACTIVE = TRUE
+        AND uu.ID_USER = '{user_id}'  -- 🔥 on reste en hardcode (fiable)
+
+    GROUP BY
+        c.ID_COMPANY,
+        c.NAME,
+        c.TYPE,
+        c.IS_PARTNER,
+        c.MEDIA_LOGO_RECTANGLE_ID,
+        c.INSIGHT_FREQUENCY,
+        m.total,
+        m.last_30_days
+
+    ORDER BY UPPER(c.NAME)
     """
 
-    return query_bq(query, {"user_id": user_id})
+    rows = query_bq(sql)
+
+    return [
+        {
+            "ID_COMPANY": r["ID_COMPANY"],
+            "NAME": r["NAME"],
+            "TYPE": r.get("TYPE"),
+            "IS_PARTNER": r["IS_PARTNER"],
+            "MEDIA_LOGO_RECTANGLE_ID": r["MEDIA_LOGO_RECTANGLE_ID"],
+            "INSIGHT_FREQUENCY": r.get("INSIGHT_FREQUENCY"),
+            "NB_ANALYSES": r["NB_ANALYSES"],
+            "DELTA_30D": r["DELTA_30D"],
+            "universes": r.get("universes") or [],
+        }
+        for r in rows
+    ]
 # ============================================================
 # GET ONE COMPANY
 # ============================================================
