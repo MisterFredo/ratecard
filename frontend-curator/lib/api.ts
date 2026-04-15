@@ -13,16 +13,15 @@ async function request(method: string, path: string, body?: any) {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${BASE_URL}${cleanPath}`;
 
-  console.log("🌐 API CALL →", method, url);
-
   // --------------------------------------------------
-  // 👤 USER ID (nouveau système)
+  // 👤 USER ID (SOURCE UNIQUE)
   // --------------------------------------------------
   const userId =
     typeof window !== "undefined"
       ? localStorage.getItem("user_id")
       : null;
 
+  console.log("🌐 API CALL →", method, url);
   console.log("👤 USER_ID:", userId);
 
   let res: Response;
@@ -32,7 +31,7 @@ async function request(method: string, path: string, body?: any) {
       method,
       headers: {
         "Content-Type": "application/json",
-        ...(userId && { "x-user-id": userId }),
+        ...(userId ? { "x-user-id": userId } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
       cache: "no-store",
@@ -46,23 +45,28 @@ async function request(method: string, path: string, body?: any) {
 
   try {
     json = await res.json();
-  } catch (e) {
+  } catch {
     throw new Error(`Réponse non JSON du backend (${res.status})`);
   }
 
   // =====================================================
-  // 🔥 GESTION ERREURS
+  // 🔥 GESTION ERREURS (SAFE)
   // =====================================================
 
   if (!res.ok) {
     console.error("❌ API error:", json);
 
-    // ⚠️ on ne logout plus automatiquement
     if (res.status === 401) {
-      console.warn("⚠️ 401 reçu (user_id manquant ou invalide)");
+      console.warn("⚠️ 401 → user_id absent ou invalide");
+      // ❌ on ne logout PAS
+      // ❌ on ne supprime PAS le localStorage
     }
 
-    throw new Error(json?.detail || json?.message || "Erreur API");
+    throw new Error(
+      json?.detail ||
+      json?.message ||
+      `Erreur API (${res.status})`
+    );
   }
 
   return json;
