@@ -54,13 +54,12 @@ def list_route():
 
 @router.get("/list-curator")
 def list_solutions_curator(request: Request):
-
-    user_id = request.headers.get("x-user-id")
-
-    if not user_id:
-        raise HTTPException(401, "User ID missing")
-
     try:
+        # 🔐 AUTH CENTRALISÉE (cohérente avec companies)
+        user_id = get_user_id_from_request(request)
+
+        print("🔥 SOLUTIONS CURATOR USER:", user_id)
+
         solutions = list_solutions_for_user(user_id)
 
         return {
@@ -68,10 +67,15 @@ def list_solutions_curator(request: Request):
             "solutions": solutions,
         }
 
+    except HTTPException:
+        raise
+
     except Exception as e:
+        print(f"❌ Solutions curator error: {e}")
+
         raise HTTPException(
-            400,
-            f"Erreur liste solutions curator : {e}"
+            status_code=500,
+            detail="Internal error"
         )
 # ============================================================
 # GET ONE (ADMIN)
