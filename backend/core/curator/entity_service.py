@@ -38,7 +38,7 @@ def _get_entity_feed(
 ) -> List[Dict]:
 
     # ============================================================
-    # 🔐 USER FILTER (OBLIGATOIRE)
+    # 🔐 USER FILTER (COMPANY → UNIVERS)
     # ============================================================
 
     user_filter_news = ""
@@ -50,12 +50,10 @@ def _get_entity_feed(
         AND EXISTS (
             SELECT 1
             FROM `{TABLE_COMPANY_UNIVERSE}` cu
-            WHERE cu.ID_COMPANY = n.id_company
-              AND cu.ID_UNIVERSE IN (
-                  SELECT ID_UNIVERSE
-                  FROM `{TABLE_USER_UNIVERSE}`
-                  WHERE ID_USER = @user_id
-              )
+            JOIN `{TABLE_USER_UNIVERSE}` uu
+              ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
+              AND cu.ID_COMPANY = n.id_company
         )
         """
 
@@ -64,17 +62,15 @@ def _get_entity_feed(
             SELECT 1
             FROM UNNEST(c.companies) comp
             JOIN `{TABLE_COMPANY_UNIVERSE}` cu
-                ON cu.ID_COMPANY = comp.id_company
-            WHERE cu.ID_UNIVERSE IN (
-                SELECT ID_UNIVERSE
-                FROM `{TABLE_USER_UNIVERSE}`
-                WHERE ID_USER = @user_id
-            )
+              ON cu.ID_COMPANY = comp.id_company
+            JOIN `{TABLE_USER_UNIVERSE}` uu
+              ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+            WHERE uu.ID_USER = @user_id
         )
         """
 
     # ============================================================
-    # 🌍 UNIVERSE FILTER (UI ONLY)
+    # 🌍 UNIVERSE FILTER (UI FILTER)
     # ============================================================
 
     universe_filter_news = ""
@@ -96,7 +92,7 @@ def _get_entity_feed(
             SELECT 1
             FROM UNNEST(c.companies) comp
             JOIN `{TABLE_COMPANY_UNIVERSE}` cu
-                ON cu.ID_COMPANY = comp.id_company
+              ON cu.ID_COMPANY = comp.id_company
             WHERE cu.ID_UNIVERSE = @universe_id
         )
         """
@@ -328,6 +324,7 @@ def get_solution_feed(
         universe_id=universe_id
     )
 
+
 def get_solution_view(
     solution_id: str,
     limit: int = 50,
@@ -380,6 +377,10 @@ def get_solution_view(
         "items": items
     }
 
+
+# ============================================================
+# MAPPER
+# ============================================================
 
 def _map_feed_row(r: Dict):
 
