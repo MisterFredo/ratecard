@@ -99,14 +99,13 @@ def login(payload: LoginPayload):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # 🔥 PASSWORD CHECK (garde ta logique actuelle)
     if payload.password != user["PASSWORD"]:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # 🌍 UNIVERS
     universes = get_user_universes(user["ID_USER"])
 
     return {
+        "token": user["ID_USER"],  # 👈 seule vraie modif utile
         "user_id": user["ID_USER"],
         "email": user["EMAIL"],
         "role": user.get("ROLE", "user"),
