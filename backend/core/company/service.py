@@ -254,6 +254,8 @@ def list_company_types():
 
 def list_companies_for_user(user_id: str):
 
+    print("🔥 USER_ID BACKEND:", user_id)
+
     query = f"""
     SELECT DISTINCT
         c.ID_COMPANY,
@@ -268,12 +270,12 @@ def list_companies_for_user(user_id: str):
     JOIN `adex-5555.RATECARD_PROD.RATECARD_USER_UNIVERSE` uu
       ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
 
-    WHERE uu.ID_USER = @user_id
-
-    ORDER BY c.NAME
+    WHERE uu.ID_USER = '{752ca474-97db-4569-8965-9a951118263d}'   -- 🔥 HARDCODE
     """
 
-    return query_bq(query, {"user_id": user_id})
+    return query_bq(query)
+
+
 # ============================================================
 # GET ONE COMPANY
 # ============================================================
