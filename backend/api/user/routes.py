@@ -17,7 +17,6 @@ from core.user.user_service import (
     get_user_by_id,
     get_user_universes,
     get_user_context,
-    verify_password,
 )
 
 # 🔥 JWT
