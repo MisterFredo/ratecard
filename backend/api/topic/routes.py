@@ -12,6 +12,7 @@ from core.topic.service import (
 
 # 🔥 CURATOR
 from core.curator.entity_service import get_topic_view
+from utils.auth import get_user_id_from_request
 
 router = APIRouter()
 
