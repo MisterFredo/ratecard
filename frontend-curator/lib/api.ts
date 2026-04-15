@@ -15,9 +15,6 @@ async function request(method: string, path: string, body?: any) {
 
   console.log("🌐 API CALL →", method, url);
 
-  // --------------------------------------------------
-  // 🔐 TOKEN (client only)
-  // --------------------------------------------------
   const token =
     typeof window !== "undefined"
       ? localStorage.getItem("token")
@@ -28,11 +25,7 @@ async function request(method: string, path: string, body?: any) {
       ? { Authorization: `Bearer ${token}` }
       : {};
 
-  if (token) {
-    console.log("🔐 TOKEN PRESENT");
-  } else {
-    console.log("⚠️ NO TOKEN");
-  }
+  console.log("🔐 TOKEN:", token);
 
   let res: Response;
 
@@ -60,28 +53,15 @@ async function request(method: string, path: string, body?: any) {
   }
 
   // =====================================================
-  // 🔥 GESTION ERREURS + SESSION
+  // 🔥 GESTION ERREURS
   // =====================================================
 
   if (!res.ok) {
     console.error("❌ API error:", json);
 
-    // 🔥 LOGOUT SI TOKEN INVALID
-    if (res.status === 401 && typeof window !== "undefined") {
-      const isLoginPage = window.location.pathname.startsWith("/login");
-
-      // évite boucle infinie
-      if (!isLoginPage) {
-        console.warn("🔒 SESSION EXPIRED → LOGOUT");
-
-        localStorage.removeItem("token");
-
-        const redirect = encodeURIComponent(
-          window.location.pathname + window.location.search
-        );
-
-        window.location.href = `/login?redirect=${redirect}`;
-      }
+    // 🔥 FIX CRITIQUE : NE PAS LOGOUT AUTOMATIQUEMENT
+    if (res.status === 401) {
+      console.warn("⚠️ 401 reçu (ignoré pour éviter logout)");
     }
 
     throw new Error(json?.detail || json?.message || "Erreur API");
