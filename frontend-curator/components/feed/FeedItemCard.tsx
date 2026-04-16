@@ -14,6 +14,8 @@ type FeedItem = {
   topics?: any[];
   companies?: any[];
   solutions?: any[];
+  universes?: any[]; // 🔥 AJOUT
+
   news_type?: string | null;
 };
 
@@ -30,10 +32,16 @@ function getBadgeClass(type?: string) {
   switch (type) {
     case "news_type":
       return "bg-black text-white";
+
     case "company":
       return "bg-blue-50 text-blue-600 border border-blue-100";
+
     case "solution":
       return "bg-purple-50 text-purple-600 border border-purple-100";
+
+    case "universe": // 🔥 NOUVEAU
+      return "bg-emerald-50 text-emerald-600 border border-emerald-100";
+
     case "topic":
     default:
       return "bg-gray-100 text-gray-600";
@@ -44,11 +52,19 @@ function buildBadges(item: FeedItem): FeedBadge[] {
   const topics = Array.isArray(item.topics) ? item.topics : [];
   const companies = Array.isArray(item.companies) ? item.companies : [];
   const solutions = Array.isArray(item.solutions) ? item.solutions : [];
+  const universes = Array.isArray(item.universes) ? item.universes : [];
 
   return [
     ...(item.news_type
       ? [{ label: item.news_type, type: "news_type" as const }]
       : []),
+
+    // 🔥 UNIVERS EN PREMIER (IMPORTANT UX)
+    ...universes.map((u: any) => ({
+      id: u.id_universe,
+      label: u.label,
+      type: "universe" as const,
+    })),
 
     ...companies.map((c: any) => ({
       id: c.id_company,
