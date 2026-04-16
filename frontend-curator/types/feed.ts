@@ -78,10 +78,12 @@ export type FeedItem = {
   title: string;
   excerpt?: string | null;
   published_at?: string | null;
-
-  // 🔥 NEW (univers)
-  universe?: string;
-  id_universe?: string;
+   
+  // 🔥 UNIVERS (aligné backend)
+   universes?: {
+     id_universe: string;
+     label: string;
+   }[];
 
   topics?: Topic[];
   companies?: Company[];
