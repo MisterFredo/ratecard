@@ -14,7 +14,7 @@ type Props = {
   setQuery: (q: string) => void;
   onSearch: () => void;
 
-  // 🔥 NOUVEAU
+  // 🔥 univers
   universes: Universe[];
   selectedUniverse: string | null;
   onSelectUniverse: (id: string | null) => void;
@@ -52,17 +52,18 @@ export default function FeedHeader({
       {/* =====================================================
          UNIVERS FILTER
       ===================================================== */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1">
 
         {/* TOUS */}
         <button
           onClick={() => onSelectUniverse(null)}
           className={`
-            px-3 py-1 rounded-md text-xs border
+            whitespace-nowrap
+            px-3 py-1 text-xs rounded border transition
             ${
               selectedUniverse === null
                 ? "bg-black text-white border-black"
-                : "bg-white text-gray-600 border-gray-200"
+                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
             }
           `}
         >
@@ -75,11 +76,12 @@ export default function FeedHeader({
             key={u.id}
             onClick={() => onSelectUniverse(u.id)}
             className={`
-              px-3 py-1 rounded-md text-xs border
+              whitespace-nowrap
+              px-3 py-1 text-xs rounded border transition
               ${
                 selectedUniverse === u.id
                   ? "bg-black text-white border-black"
-                  : "bg-white text-gray-600 border-gray-200"
+                  : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
               }
             `}
           >
@@ -98,7 +100,9 @@ export default function FeedHeader({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") triggerSearch();
+            if (e.key === "Enter") {
+              triggerSearch();
+            }
           }}
           placeholder="Ex : Amazon, CTV,…"
           className="
@@ -125,6 +129,7 @@ export default function FeedHeader({
         </button>
 
       </div>
+
     </div>
   );
 }
