@@ -244,38 +244,19 @@ export default function FeedPage() {
 
       <div className="xl:col-span-2">
 
-        {/* 🔥 UNIVERSE CHIPS (EXCLUSIVE FILTER) */}
-        <div className="flex gap-2 flex-wrap mb-4">
-          <button
-            onClick={() => setActiveUniverse(null)}
-            className={`px-3 py-1 text-xs rounded border ${
-              activeUniverse === null
-                ? "bg-gray-900 text-white"
-                : "bg-white text-gray-600"
-            }`}
-          >
-            Tous
-          </button>
-
-          {universes.map((u) => (
-            <button
-              key={u.id_universe}
-              onClick={() => setActiveUniverse(u.id_universe)}
-              className={`px-3 py-1 text-xs rounded border ${
-                activeUniverse === u.id_universe
-                  ? "bg-gray-900 text-white"
-                  : "bg-white text-gray-600"
-              }`}
-            >
-              {u.label}
-            </button>
-          ))}
-        </div>
-
+        
         <FeedExplorer
           query={query}
           setQuery={setQuery}
           onSearch={() => load(true, query)}
+
+          // 🔥 AJOUT
+          universes={universes.map(u => ({
+            id: u.id_universe,
+            label: u.label
+          }))}
+          selectedUniverse={activeUniverse}
+          onSelectUniverse={(id) => setActiveUniverse(id)}
 
           items={items}
           total={total}
