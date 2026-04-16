@@ -189,8 +189,8 @@ def get_item_curator(
 
             ARRAY<STRUCT<id_solution STRING, name STRING>>[] AS solutions,
 
-            -- 🔥 FIX CRITIQUE
-            SAFE_CAST(n.id_source AS STRING) AS id_source
+            -- 🔥 FIX ICI
+            NULL AS id_source
 
         FROM `{VIEW_NEWS}` n
 
@@ -213,7 +213,7 @@ def get_item_curator(
             c.companies,
             c.solutions,
 
-            -- 🔥 FIX CRITIQUE
+            -- 🔥 OK ici
             SAFE_CAST(c.id_source AS STRING) AS id_source
 
         FROM `{VIEW_CONTENT}` c
