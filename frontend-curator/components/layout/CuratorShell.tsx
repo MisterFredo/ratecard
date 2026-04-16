@@ -7,7 +7,6 @@ import {
   Home,
   X,
   Building2,
-  Tag,
   Box,
   Hash,
   Sparkles,
@@ -45,7 +44,6 @@ export default function CuratorShell({
 
   const navEntities = [
     { href: "/companies", label: "Sociétés", icon: Building2 },
-    { href: "/topics", label: "Topics", icon: Tag },
     { href: "/solutions", label: "Produits", icon: Box },
   ];
 
