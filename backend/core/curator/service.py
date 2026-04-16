@@ -173,6 +173,9 @@ def get_item_curator(
     sql = f"""
     SELECT * FROM (
 
+        -- =====================================================
+        -- NEWS
+        -- =====================================================
         SELECT
             n.id_news AS id,
             'news' AS type,
@@ -181,16 +184,25 @@ def get_item_curator(
             n.published_at,
             n.news_type,
             n.topics,
+
             ARRAY<STRUCT<id_company STRING, name STRING>>[
               STRUCT(n.id_company, n.company_name)
             ] AS companies,
-            [] AS solutions,
-            n.id_source
+
+            ARRAY<STRUCT<id_solution STRING, name STRING>>[] AS solutions,
+
+            -- 🔥 FIX CRITIQUE
+            SAFE_CAST(n.id_source AS STRING) AS id_source
 
         FROM `{VIEW_NEWS}` n
 
+
         UNION ALL
 
+
+        -- =====================================================
+        -- ANALYSIS
+        -- =====================================================
         SELECT
             c.id_content AS id,
             'analysis' AS type,
@@ -199,9 +211,12 @@ def get_item_curator(
             c.published_at,
             NULL AS news_type,
             c.topics,
+
             c.companies,
             c.solutions,
-            c.id_source
+
+            -- 🔥 FIX CRITIQUE
+            SAFE_CAST(c.id_source AS STRING) AS id_source
 
         FROM `{VIEW_CONTENT}` c
 
@@ -217,7 +232,7 @@ def get_item_curator(
             JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
               ON uu.ID_UNIVERSE = su.ID_UNIVERSE
             WHERE uu.ID_USER = @user_id
-              AND su.ID_SOURCE = SAFE_CAST(items.id_source AS STRING)
+              AND su.ID_SOURCE = items.id_source
         )
     )
 
@@ -233,7 +248,6 @@ def get_item_curator(
         return None
 
     return _map_feed_row(rows[0])
-
 
 # ============================================================
 # DETAIL
