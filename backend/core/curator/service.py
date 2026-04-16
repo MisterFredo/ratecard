@@ -384,6 +384,60 @@ def get_content_stats():
 # ============================================================
 
 def _map_feed_row(r: Dict) -> Dict:
+
+    topics = r.get("topics") or []
+    companies = r.get("companies") or []
+    solutions = r.get("solutions") or []
+    universes = r.get("universes") or []
+
+    badges = []
+
+    # =====================================================
+    # TOPICS
+    # =====================================================
+    for t in topics:
+        if isinstance(t, dict):
+            badges.append({
+                "type": "topic",
+                "label": t.get("label") or t.get("name"),
+                "id": t.get("id_topic"),
+            })
+        else:
+            badges.append({
+                "type": "topic",
+                "label": t,
+            })
+
+    # =====================================================
+    # COMPANIES
+    # =====================================================
+    for c in companies:
+        badges.append({
+            "type": "company",
+            "label": c.get("name"),
+            "id": c.get("id_company"),
+        })
+
+    # =====================================================
+    # SOLUTIONS
+    # =====================================================
+    for s in solutions:
+        badges.append({
+            "type": "solution",
+            "label": s.get("name"),
+            "id": s.get("id_solution"),
+        })
+
+    # =====================================================
+    # UNIVERS
+    # =====================================================
+    for u in universes:
+        badges.append({
+            "type": "universe",
+            "label": u.get("label"),
+            "id": u.get("id_universe"),
+        })
+
     return {
         "id": r.get("id"),
         "type": r.get("type"),
@@ -392,10 +446,12 @@ def _map_feed_row(r: Dict) -> Dict:
         "published_at": r.get("published_at"),
         "news_type": r.get("news_type"),
 
-        # 🔥 SOURCE DE VÉRITÉ UNIQUE
-        "universes": r.get("universes") or [],
+        # 🔥 DATA BRUTE (si besoin ailleurs)
+        "topics": topics,
+        "companies": companies,
+        "solutions": solutions,
+        "universes": universes,
 
-        "topics": r.get("topics") or [],
-        "companies": r.get("companies") or [],
-        "solutions": r.get("solutions") or [],
+        # 🔥 NOUVEAU CONTRAT
+        "badges": badges,
     }
