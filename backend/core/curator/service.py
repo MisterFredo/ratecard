@@ -391,8 +391,10 @@ def _map_feed_row(r: Dict) -> Dict:
         "excerpt": r.get("excerpt"),
         "published_at": r.get("published_at"),
         "news_type": r.get("news_type"),
-        "id_universe": r.get("id_universe"),
-        "universe": r.get("universe"),
+
+        # 🔥 SOURCE DE VÉRITÉ UNIQUE
+        "universes": r.get("universes") or [],
+
         "topics": r.get("topics") or [],
         "companies": r.get("companies") or [],
         "solutions": r.get("solutions") or [],
