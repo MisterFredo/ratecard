@@ -49,6 +49,15 @@ def list_universes_for_user_route(request: Request):
         "universes": universes
     }
 
+@router.get("/list", response_model=UniverseListOut)
+def universe_list():
+    universes = list_universes()
+
+    return {
+        "status": "ok",
+        "universes": universes,
+    }
+
 
 # ============================================================
 # GET ONE
