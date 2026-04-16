@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, Request
 
 from api.universe.models import UniverseListOut, UniverseOut
 from core.universe.service import (
-    list_universes,              # 🔥 on le garde (fallback/admin)
-    list_universes_for_user,     # 🔥 nouvelle fonction
+    list_universes,
+    list_universes_for_user,
     get_universe,
 )
 
@@ -11,25 +11,42 @@ router = APIRouter()
 
 
 # ============================================================
-# LIST
+# LIST (🔥 USER-AWARE)
 # ============================================================
 
 @router.get("/list", response_model=UniverseListOut)
 def universe_list(request: Request):
 
-    user_id = request.cookies.get("curator_user_id")
+    user_id = request.headers.get("x-user-id")
 
-    # 🔥 CAS NORMAL → user connecté
-    if user_id:
-        universes = list_universes_for_user(user_id)
+    if not user_id:
+        raise HTTPException(401, "User ID missing")
 
-    # 🔥 FALLBACK → admin / debug / pas de cookie
-    else:
-        universes = list_universes()
+    universes = list_universes_for_user(user_id)
 
     return {
         "status": "ok",
         "universes": universes,
+    }
+
+
+# ============================================================
+# LIST FOR USER (optionnel)
+# ============================================================
+
+@router.get("/list-for-user")
+def list_universes_for_user_route(request: Request):
+
+    user_id = request.headers.get("x-user-id")
+
+    if not user_id:
+        raise HTTPException(401, "User ID missing")
+
+    universes = list_universes_for_user(user_id)
+
+    return {
+        "status": "ok",
+        "universes": universes
     }
 
 
@@ -46,18 +63,3 @@ def universe_get(universe_id: str):
         raise HTTPException(404, "Universe not found")
 
     return u
-
-@router.get("/list-for-user")
-def list_universes_for_user_route(request: Request):
-
-    user_id = request.headers.get("x-user-id")
-
-    if not user_id:
-        raise HTTPException(401, "User ID missing")
-
-    universes = list_universes_for_user(user_id)
-
-    return {
-        "status": "ok",
-        "universes": universes
-    }
