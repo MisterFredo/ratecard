@@ -86,7 +86,7 @@ export default function FeedPage() {
   useEffect(() => {
     async function loadUniverses() {
       try {
-        const res = await api.get("/universe/list");
+        const res = await api.get("/universe/list-for-user");
         setUniverses(res?.universes || []);
       } catch (e) {
         console.error("❌ universe load error", e);
