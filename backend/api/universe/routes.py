@@ -11,18 +11,12 @@ router = APIRouter()
 
 
 # ============================================================
-# LIST (🔥 USER-AWARE)
+# LIST (ADMIN - GLOBAL)
 # ============================================================
 
 @router.get("/list", response_model=UniverseListOut)
-def universe_list(request: Request):
-
-    user_id = request.headers.get("x-user-id")
-
-    if not user_id:
-        raise HTTPException(401, "User ID missing")
-
-    universes = list_universes_for_user(user_id)
+def universe_list():
+    universes = list_universes()
 
     return {
         "status": "ok",
@@ -31,11 +25,11 @@ def universe_list(request: Request):
 
 
 # ============================================================
-# LIST FOR USER (optionnel)
+# LIST FOR USER (CURATOR)
 # ============================================================
 
-@router.get("/list-for-user")
-def list_universes_for_user_route(request: Request):
+@router.get("/list-for-user", response_model=UniverseListOut)
+def universe_list_for_user(request: Request):
 
     user_id = request.headers.get("x-user-id")
 
@@ -43,15 +37,6 @@ def list_universes_for_user_route(request: Request):
         raise HTTPException(401, "User ID missing")
 
     universes = list_universes_for_user(user_id)
-
-    return {
-        "status": "ok",
-        "universes": universes
-    }
-
-@router.get("/list", response_model=UniverseListOut)
-def universe_list():
-    universes = list_universes()
 
     return {
         "status": "ok",
