@@ -19,8 +19,6 @@ export default function FeedRow({
   onClickBadge,
   loading = false,
 }: Props) {
-  const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL;
-
   /* =========================================================
      DATE
   ========================================================= */
@@ -47,10 +45,17 @@ export default function FeedRow({
     : [];
 
   /* =========================================================
-     BADGES
+     BADGES (UNIFIÉ)
   ========================================================= */
 
   const badges: FeedBadge[] = [
+    // 🔥 UNIVERS EN PREMIER
+    ...universes.map((u: any) => ({
+      id: u.id_universe,
+      label: u.label,
+      type: "universe" as const,
+    })),
+
     ...companies.map((c: any) => ({
       id: c.id_company,
       label: c.name,
@@ -76,21 +81,20 @@ export default function FeedRow({
 
   function getBadgeClass(type?: string) {
     switch (type) {
+      case "universe":
+        return "bg-black text-white"; // 🔥 fort visuellement
+
       case "company":
         return "bg-blue-50 text-blue-600 border border-blue-100";
+
       case "solution":
         return "bg-purple-50 text-purple-600 border border-purple-100";
+
       case "topic":
       default:
         return "bg-gray-100 text-gray-600";
     }
   }
-
-  /* =========================================================
-     IMAGE (désactivé car analysis only)
-  ========================================================= */
-
-  const imageUrl = null;
 
   /* =========================================================
      RENDER
@@ -108,7 +112,6 @@ export default function FeedRow({
     >
       <div className="flex gap-4 items-start">
 
-        {/* CONTENT */}
         <div className="flex-1 space-y-2">
 
           {/* META */}
@@ -124,25 +127,7 @@ export default function FeedRow({
             </div>
           </div>
 
-          {/* 🔥 UNIVERS BADGES */}
-          {universes.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {universes.map((u: any) => (
-                <span
-                  key={u.id_universe}
-                  className="
-                    px-2 py-0.5 text-[10px] rounded-full
-                    bg-black text-white
-                    uppercase tracking-wide font-medium
-                  "
-                >
-                  {u.label}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* BADGES CLASSIQUES */}
+          {/* 🔥 BADGES UNIFIÉS */}
           {badges.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {badges.map((b, i) => (
