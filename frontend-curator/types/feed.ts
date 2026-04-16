@@ -6,7 +6,8 @@ export type FeedBadgeType =
   | "topic"
   | "company"
   | "solution"
-  | "news_type";
+  | "news_type"
+   | "universe";
 
 export type FeedBadge = {
   id?: string;
