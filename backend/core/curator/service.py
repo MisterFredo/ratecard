@@ -20,11 +20,10 @@ def build_user_filter(alias: str = "c") -> str:
     return f"""
     AND EXISTS (
         SELECT 1
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE` su
+        FROM UNNEST({alias}.universes) u
         JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-          ON uu.ID_UNIVERSE = su.ID_UNIVERSE
+          ON uu.ID_UNIVERSE = u.id_universe
         WHERE uu.ID_USER = @user_id
-          AND su.ID_SOURCE = SAFE_CAST({alias}.SOURCE_ID AS STRING)
     )
     """
 
