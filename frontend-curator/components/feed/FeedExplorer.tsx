@@ -2,21 +2,25 @@
 
 import FeedHeader from "@/components/feed/FeedHeader";
 import FeedList from "@/components/feed/FeedList";
-// ❌ import supprimé
-// import StatsBar from "@/components/feed/StatsBar";
 
 import type { FeedItem, FeedBadge } from "@/types/feed";
 
 /* ========================================================= */
+
+type Universe = {
+  id: string;
+  label: string;
+};
 
 type Props = {
   query: string;
   setQuery: (q: string) => void;
   onSearch: () => void;
 
-  // ❌ supprimé
-  // stats: any;
-  // onClickStat: (value: string) => void;
+  // 🔥 AJOUT
+  universes: Universe[];
+  selectedUniverse: string | null;
+  onSelectUniverse: (id: string | null) => void;
 
   items: FeedItem[];
   total: number;
@@ -40,9 +44,10 @@ export default function FeedExplorer({
   setQuery,
   onSearch,
 
-  // ❌ supprimé
-  // stats,
-  // onClickStat,
+  // 🔥 NEW
+  universes,
+  selectedUniverse,
+  onSelectUniverse,
 
   items,
   total,
@@ -66,15 +71,12 @@ export default function FeedExplorer({
         query={query}
         setQuery={setQuery}
         onSearch={onSearch}
-      />
 
-      {/* ❌ STATS supprimé */}
-      {/* 
-      <StatsBar
-        stats={stats}
-        onClickStat={onClickStat}
+        // 🔥 PASS THROUGH
+        universes={universes}
+        selectedUniverse={selectedUniverse}
+        onSelectUniverse={onSelectUniverse}
       />
-      */}
 
       {/* LIST */}
       <FeedList
