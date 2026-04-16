@@ -175,10 +175,21 @@ export default function FeedPage() {
   ========================================================= */
 
   function handleBadgeClick(badge: FeedBadge) {
+
+    // 🔥 CAS 1 : UNIVERS → filtre direct
+    if (badge.type === "universe") {
+      setActiveUniverse(badge.id || null);
+      setQuery(""); // reset recherche texte
+      window.scrollTo({ top: 0 });
+      return;
+    }
+
+    // 🔥 CAS 2 : AUTRES → recherche texte
     const value = badge.label;
     if (!value) return;
 
     setQuery(value);
+    setActiveUniverse(null); // reset univers
     window.scrollTo({ top: 0 });
 
     load(true, value);
