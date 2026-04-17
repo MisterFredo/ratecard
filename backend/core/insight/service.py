@@ -36,7 +36,6 @@ def get_analysis_details_by_ids(ids: List[str]) -> List[Dict]:
           POINT_DE_FRICTION,
           SIGNAL_ANALYTIQUE,
           CHIFFRES,
-          CITATIONS
         FROM `{TABLE_CONTENT}`
         WHERE ID_CONTENT IN UNNEST(@ids)
         """,
@@ -54,7 +53,6 @@ def get_analysis_details_by_ids(ids: List[str]) -> List[Dict]:
             "friction": r.get("POINT_DE_FRICTION"),
             "signal": r.get("SIGNAL_ANALYTIQUE"),
             "chiffres": r.get("CHIFFRES") or [],
-            "citations": r.get("CITATIONS") or [],
         }
         for r in rows
     ]
