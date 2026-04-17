@@ -268,14 +268,6 @@ export default function StepSummary(props: Props) {
           />
 
           <EditableList
-            label="Citations"
-            items={props.citations}
-            onChange={(items) =>
-              props.onChange({ citations: items })
-            }
-          />
-
-          <EditableList
             label="Chiffres clés"
             items={props.chiffres}
             onChange={(items) =>
