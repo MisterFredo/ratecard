@@ -12,24 +12,12 @@ from utils.bigquery_utils import query_bq
 # ============================================================
 
 def normalize_key(text: str) -> str:
-    """
-    Normalise un header :
-    - supprime accents
-    - supprime #
-    - supprime :
-    - uppercase
-    - trim
-    """
     text = unicodedata.normalize("NFD", text)
     text = text.encode("ascii", "ignore").decode("utf-8")
     text = text.replace("#", "")
     text = text.replace(":", "")
     return text.strip().upper()
 
-
-# ============================================================
-# GENERATE SUMMARY + ANALYSE FROM SOURCE
-# ============================================================
 
 # ============================================================
 # GENERATE SUMMARY + ANALYSE FROM SOURCE
@@ -63,7 +51,7 @@ def generate_summary(
     )
 
     # ============================================================
-    # PROMPT (AMÉLIORÉ)
+    # PROMPT
     # ============================================================
 
     prompt = f"""
@@ -87,8 +75,6 @@ Produire une analyse structurée permettant de comprendre :
 - comment cela fonctionne
 - quelles dynamiques sont à l’œuvre
 
-L’objectif est d’expliciter les logiques sous-jacentes, pas de prendre des décisions à la place du lecteur.
-
 ================ SOURCE ================
 Source : {source_id or "inconnue"}
 
@@ -107,21 +93,11 @@ POINTS CLES
 Exhaustif mais strictement basé sur le texte.
 Une ligne = une information.)
 
-CITATIONS
-(Liste exacte ou "Aucun")
-
 CHIFFRES
 Extraire uniquement les chiffres structurés présents dans la source.
 
 Chaque ligne doit respecter STRICTEMENT ce format :
 label | valeur | unité | acteur | marché | période
-
-Règles :
-
-- Une ligne = un seul chiffre
-- Ne JAMAIS concaténer plusieurs chiffres
-- Ne JAMAIS ajouter de texte autour
-- Le séparateur doit être exactement : " | "
 
 ACTEURS
 (Liste des entreprises citées ou "Aucun")
@@ -143,25 +119,15 @@ Ne jamais inventer.)
 
 MECANIQUE
 - Expliquer COMMENT cela fonctionne réellement
-- Décrire la logique business, opérationnelle ou de marché
-- Ne pas reformuler le texte
-- Mettre en évidence les relations (offre, demande, comportement, structure)
 
 ENJEU
-- Identifier ce que cela révèle comme logique ou tension
-- Répondre implicitement à : "qu’est-ce que cela change dans la manière de penser ce sujet"
-- Ne pas donner de recommandation
+- Identifier ce que cela révèle
 
 FRICTION
-- Identifier les limites, tensions ou incertitudes présentes dans la source
-- Si aucune, écrire "Aucun"
+- Identifier les limites ou écrire "Aucun"
 
 SIGNAL
-- Identifier la dynamique de marché sous-jacente
-- Aller au-delà des faits sans inventer
-- Mettre en évidence une transformation, un déplacement ou une tendance
-- Ne pas répéter le contenu
-- Ne pas être descriptif
+- Identifier la dynamique de marché
 """
 
     raw = run_llm(prompt)
@@ -170,14 +136,13 @@ SIGNAL
         raise ValueError("Réponse LLM vide")
 
     # ============================================================
-    # PARSING ROBUSTE (SEULE PARTIE MODIFIÉE)
+    # PARSING
     # ============================================================
 
     sections = {
         "TITLE": "",
         "EXCERPT": "",
         "POINTS CLES": "",
-        "CITATIONS": "",
         "CHIFFRES": "",
         "ACTEURS": "",
         "CONCEPTS": "",
@@ -199,7 +164,6 @@ SIGNAL
 
         normalized = normalize_key(clean)
 
-        # Header detection plus tolérant
         matched = False
         for key in sections.keys():
             if normalized.startswith(key):
@@ -214,7 +178,7 @@ SIGNAL
             sections[current] += clean + "\n"
 
     # ============================================================
-    # LIST PARSER ROBUSTE
+    # LIST PARSER
     # ============================================================
 
     def parse_list(block: str) -> List[str]:
@@ -230,11 +194,7 @@ SIGNAL
         for line in block.splitlines():
 
             line = line.strip()
-
-            # enlève bullets
             line = re.sub(r"^[-•]\s*", "", line)
-
-            # enlève numérotation 1. 2.
             line = re.sub(r"^\d+\.\s*", "", line)
 
             if line and line.lower() != "aucun":
@@ -243,7 +203,7 @@ SIGNAL
         return items
 
     # ============================================================
-    # CONCEPTS PARSER ROBUSTE MAIS STRICT
+    # CONCEPTS PARSER
     # ============================================================
 
     def parse_concepts(block: str) -> List[Dict[str, str]]:
@@ -277,7 +237,6 @@ SIGNAL
             label = match.group(1).strip()
             topic_label_raw = match.group(2).strip()
 
-            # mapping strict insensible à la casse
             topic_label = next(
                 (k for k in allowed_topics.keys()
                  if k.lower() == topic_label_raw.lower()),
@@ -304,7 +263,7 @@ SIGNAL
             body = "<ul>" + "".join(f"<li>{l}</li>" for l in lines) + "</ul>"
 
     # ============================================================
-    # TOPICS MAPPING STRICT MAIS CASE-INSENSITIVE
+    # TOPICS
     # ============================================================
 
     raw_topics = parse_list(sections["TOPICS"])
@@ -325,14 +284,13 @@ SIGNAL
     ]
 
     # ============================================================
-    # RETURN STRUCTURED DATA
+    # RETURN
     # ============================================================
 
     return {
         "title": sections["TITLE"].strip(),
         "excerpt": sections["EXCERPT"].strip(),
         "content_body": body,
-        "citations": parse_list(sections["CITATIONS"]),
         "chiffres": parse_list(sections["CHIFFRES"]),
         "acteurs_cites": parse_list(sections["ACTEURS"]),
         "concepts": parse_concepts(sections["CONCEPTS"]),
