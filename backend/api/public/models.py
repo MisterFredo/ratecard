@@ -28,7 +28,6 @@ class ContentDetailResponse(BaseModel):
     content_body: Optional[str]
 
     chiffres: List[str]
-    citations: List[str]
     acteurs_cites: List[str]
 
     concepts_llm: List[str]
