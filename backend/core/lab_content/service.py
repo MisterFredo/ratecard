@@ -40,9 +40,6 @@ EXCERPT
 POINTS CLES
 (Liste factuelle.)
 
-CITATIONS
-(Liste exacte ou "Aucun")
-
 CHIFFRES
 (Liste exacte ou "Aucun")
 
@@ -63,7 +60,6 @@ CONCEPTS
         "TITLE": "",
         "EXCERPT": "",
         "POINTS CLES": "",
-        "CITATIONS": "",
         "CHIFFRES": "",
         "ACTEURS": "",
         "CONCEPTS": "",
@@ -105,7 +101,6 @@ CONCEPTS
         "title": sections["TITLE"].strip(),
         "excerpt": sections["EXCERPT"].strip(),
         "content_body": sections["POINTS CLES"].strip(),
-        "citations": parse_list(sections["CITATIONS"]),
         "chiffres": parse_list(sections["CHIFFRES"]),
         "acteurs_cites": parse_list(sections["ACTEURS"]),
         "concepts": parse_list(sections["CONCEPTS"]),
