@@ -73,7 +73,6 @@ def list_candidate_contents(
       C.ANGLE_TITLE,
       C.EXCERPT,
       C.CHIFFRES,
-      C.CITATIONS,
       C.DATE_CREATION,
       C.PUBLISHED_AT
     FROM `{TABLE_CONTENT}` C
