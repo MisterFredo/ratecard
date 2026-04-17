@@ -22,15 +22,14 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        # --- RATECARD FRONT
         "https://ratecard-frontend.onrender.com",
         "https://ratecard-frontend-prod.onrender.com",
         "https://ratecard.fr",
 
-        # --- CURATOR FRONT
         "https://curator-frontend-zayd.onrender.com",
         "https://curator-frontend-prod.onrender.com",
         "https://getcurator.ai",
+        "https://www.getcurator.ai",  # 👈 IMPORTANT
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -108,13 +107,6 @@ def root():
             "visuals",
         ]
     }
-
-# -------------------------------------------------------
-# CORS PREFLIGHT HANDLER (OPTIONS)
-# -------------------------------------------------------
-@app.options("/{full_path:path}")
-def options_handler(full_path: str):
-    return {"status": "ok"}
 
 # -------------------------------------------------------
 # ROUTES DEBUG
