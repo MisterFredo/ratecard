@@ -318,7 +318,6 @@ def get_content(id_content: str):
         "excerpt": row.get("EXCERPT"),
         "content_body": row.get("CONTENT_BODY"),
 
-        "citations": row.get("CITATIONS") or [],
         "chiffres": row.get("CHIFFRES") or [],
         "acteurs_cites": row.get("ACTEURS_CITES") or [],
 
