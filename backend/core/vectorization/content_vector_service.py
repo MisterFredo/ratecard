@@ -124,7 +124,6 @@ def build_content_blocks(content: Dict[str, Any]) -> Dict[str, str]:
         "ENJEU": content.get("ENJEU_STRATEGIQUE"),
         "FRICTION": content.get("POINT_DE_FRICTION"),
         "BODY": clean_html(content.get("CONTENT_BODY", ""))[:2000],
-        "CITATIONS": " | ".join(content.get("CITATIONS", [])),
     }
 
     return blocs
