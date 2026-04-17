@@ -1426,19 +1426,21 @@ def publish_content(
     )
 
     # ============================================================
-    # 6️⃣ AUTO VECTORISATION (ONLY IF PUBLISHED)
+    # 6️⃣ AUTO VECTORISATION (ON HOLD)
     # ============================================================
 
     if status == "PUBLISHED":
-        try:
-            from core.vectorization.content_vector_service import vectorize_content
-
-            print("🚀 AUTO VECTORIZE CONTENT (PUBLISH):", id_content)
-
-            vectorize_content(id_content)
-
-        except Exception as e:
-            print("❌ VECTORISATION ERROR:", str(e))
+        # 🚧 ON HOLD — désactivé temporairement
+        # try:
+        #     from core.vectorization.content_vector_service import vectorize_content
+        #
+        #     print("🚀 AUTO VECTORIZE CONTENT (PUBLISH):", id_content)
+        #
+        #     vectorize_content(id_content)
+        #
+        # except Exception as e:
+        #     print("❌ VECTORISATION ERROR:", str(e))
+        pass
 
     # ============================================================
     # END
