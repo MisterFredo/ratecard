@@ -847,7 +847,6 @@ def destock_raw_contents(
                 title=summary.get("title"),
                 excerpt=summary.get("excerpt"),
                 content_body=summary.get("content_body"),
-                citations=summary.get("citations", []),
                 chiffres=summary.get("chiffres", []),
                 acteurs_cites=summary.get("acteurs_cites", []),
                 concepts_llm=concepts_llm,
