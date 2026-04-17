@@ -38,7 +38,7 @@ type AnalysisData = {
   concepts_llm?: string[];
 
   chiffres?: string[];
-  citations?: string[];
+  citations?: string[]; // conservé backend
   acteurs_cites?: string[];
 
   topics?: Topic[];
@@ -66,10 +66,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
   const [data, setData] = useState<AnalysisData | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  /* =========================================================
-     CLOSE
-  ========================================================= */
-
   function close() {
     setIsOpen(false);
     onClose?.();
@@ -82,10 +78,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
       router.replace(pathname, { scroll: false });
     }
   }
-
-  /* =========================================================
-     LOAD
-  ========================================================= */
 
   useEffect(() => {
     async function load() {
@@ -106,10 +98,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
     load();
   }, [id]);
 
-  /* =========================================================
-     LOADING
-  ========================================================= */
-
   if (!data) {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40">
@@ -119,10 +107,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
       </div>
     );
   }
-
-  /* =========================================================
-     BADGES
-  ========================================================= */
 
   const badges = [
     ...(data.companies ?? []).map((c) => ({
@@ -152,19 +136,10 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
     }
   }
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
-
   return (
     <div className="fixed inset-0 z-[100] flex">
-      {/* OVERLAY */}
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={close}
-      />
+      <div className="absolute inset-0 bg-black/40" onClick={close} />
 
-      {/* DRAWER */}
       <aside
         className={`
           relative ml-auto w-full md:w-[780px]
@@ -173,7 +148,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
           ${isOpen ? "translate-x-0" : "translate-x-full"}
         `}
       >
-        {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 space-y-3">
           <div className="flex justify-between items-start">
             <h1 className="text-xl font-semibold text-gray-900 max-w-xl">
@@ -185,7 +159,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
             </button>
           </div>
 
-          {/* BADGES */}
           {badges.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {badges.map((b, i) => (
@@ -203,17 +176,14 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
           )}
         </div>
 
-        {/* CONTENT */}
         <div className="px-5 py-6 space-y-8">
 
-          {/* EXCERPT */}
           {data.excerpt && (
             <p className="text-base font-medium text-gray-800 max-w-2xl">
               {data.excerpt}
             </p>
           )}
 
-          {/* SIGNAL */}
           {data.signal_analytique && (
             <div className="bg-teal-50 border border-teal-100 p-4 rounded">
               <h3 className="text-xs uppercase text-teal-600 mb-1">
@@ -225,7 +195,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
             </div>
           )}
 
-          {/* CONCEPTS */}
           {data.concepts_llm?.length > 0 && (
             <div>
               <h3 className="text-xs uppercase text-gray-500 mb-2">
@@ -245,7 +214,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
             </div>
           )}
 
-          {/* MECANIQUE */}
           {data.mecanique_expliquee && (
             <div>
               <h3 className="text-xs uppercase text-gray-500 mb-2">
@@ -257,7 +225,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
             </div>
           )}
 
-          {/* ENJEU */}
           {data.enjeu_strategique && (
             <div>
               <h3 className="text-xs uppercase text-gray-500 mb-2">
@@ -269,7 +236,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
             </div>
           )}
 
-          {/* FRICTION */}
           {data.point_de_friction && (
             <div>
               <h3 className="text-xs uppercase text-gray-500 mb-2">
@@ -281,7 +247,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
             </div>
           )}
 
-          {/* BODY */}
           {data.content_body && (
             <div
               className="prose prose-sm max-w-none"
@@ -291,7 +256,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
             />
           )}
 
-          {/* CHIFFRES */}
           {data.chiffres?.length > 0 && (
             <div>
               <h2 className="text-xs uppercase text-gray-500 mb-2">
@@ -310,26 +274,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
             </div>
           )}
 
-          {/* CITATIONS */}
-          {data.citations?.length > 0 && (
-            <div>
-              <h2 className="text-xs uppercase text-gray-500 mb-2">
-                Citations
-              </h2>
-              <ul className="space-y-3">
-                {data.citations.map((c, i) => (
-                  <li
-                    key={i}
-                    className="italic text-sm text-gray-700 border-l-2 pl-3"
-                  >
-                    “{c}”
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* ACTEURS */}
           {data.acteurs_cites?.length > 0 && (
             <div className="text-sm text-gray-600">
               <strong>Acteurs :</strong>{" "}
@@ -337,7 +281,6 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
             </div>
           )}
 
-          {/* DATE */}
           {data.published_at && (
             <div className="pt-4 border-t text-xs text-gray-400">
               Publié le{" "}
