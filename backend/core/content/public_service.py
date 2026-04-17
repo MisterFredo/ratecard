@@ -76,10 +76,6 @@ def list_contents(
 # READ CONTENT (DRAWER CURATOR)
 # ============================================================
 
-# ============================================================
-# READ CONTENT (DRAWER CURATOR)
-# ============================================================
-
 def get_content(id_content: str) -> Dict:
 
     rows = query_bq(
@@ -92,7 +88,6 @@ def get_content(id_content: str) -> Dict:
             CONCEPTS_LLM,
             CONTENT_BODY,
             CHIFFRES,
-            CITATIONS,
             ACTEURS_CITES,
             PUBLISHED_AT
         FROM {TABLE_CONTENT}
@@ -132,8 +127,8 @@ def get_content(id_content: str) -> Dict:
     company_rows = query_bq(
         f"""
         SELECT C.ID_COMPANY, C.NAME
-        FROM {BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY CC
-        JOIN {BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY C
+        FROM {TABLE_CONTENT_COMPANY} CC
+        JOIN {TABLE_COMPANY} C
           ON CC.ID_COMPANY = C.ID_COMPANY
         WHERE CC.ID_CONTENT = @id
         """,
@@ -147,8 +142,8 @@ def get_content(id_content: str) -> Dict:
     solution_rows = query_bq(
         f"""
         SELECT S.ID_SOLUTION, S.NAME
-        FROM {BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_SOLUTION CS
-        JOIN {BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION S
+        FROM {TABLE_CONTENT_SOLUTION} CS
+        JOIN {TABLE_SOLUTION} S
           ON CS.ID_SOLUTION = S.ID_SOLUTION
         WHERE CS.ID_CONTENT = @id
         """,
@@ -163,11 +158,10 @@ def get_content(id_content: str) -> Dict:
         "concepts": r.get("CONCEPTS_LLM"),
         "content_body": r.get("CONTENT_BODY"),
         "chiffres": r.get("CHIFFRES") or [],
-        "citations": r.get("CITATIONS") or [],
         "acteurs_cites": r.get("ACTEURS_CITES") or [],
         "published_at": r["PUBLISHED_AT"],
 
-        # 🔵 enrichissements
+        # enrichissements
         "topics": [
             {
                 "id_topic": t["ID_TOPIC"],
