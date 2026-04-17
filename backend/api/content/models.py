@@ -30,9 +30,10 @@ class ContentRawCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     source_id: str
-    source_title : str
+    source_title: str
     raw_text: str
     date_source: Optional[date] = None
+
 
 class ContentRawUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -40,6 +41,7 @@ class ContentRawUpdate(BaseModel):
     source_title: Optional[str] = None
     date_source: Optional[date] = None
     raw_text: Optional[str] = None
+
 
 class ContentRawOut(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -51,13 +53,16 @@ class ContentRawOut(BaseModel):
     status: str
     created_at: datetime
 
+
 class ContentRawDestockRequest(BaseModel):
     limit: Optional[int] = None
     id_raw: Optional[str] = None
     limit: int = 20
 
+
 class BulkIdsRequest(BaseModel):
     ids: List[str]
+
 
 class ImportUrlsRequest(BaseModel):
     urls_text: str
@@ -84,7 +89,6 @@ class ContentCreate(BaseModel):
     content_body: Optional[str] = None
 
     # EXTRACTIONS STRUCTURÉES
-    citations: List[str] = Field(default_factory=list)
     chiffres: List[str] = Field(default_factory=list)
     acteurs_cites: List[str] = Field(default_factory=list)
     concepts_llm: List[str] = Field(default_factory=list)
@@ -126,7 +130,7 @@ class ContentUpdate(BaseModel):
     source_text: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
-    source_published_at: Optional[date] = None   # ⬅️ NOUVEAU
+    source_published_at: Optional[date] = None
 
     # SUMMARY
     title: Optional[str] = None
@@ -134,7 +138,6 @@ class ContentUpdate(BaseModel):
     content_body: Optional[str] = None
 
     # EXTRACTIONS STRUCTURÉES
-    citations: Optional[List[str]] = None
     chiffres: Optional[List[str]] = None
     acteurs_cites: Optional[List[str]] = None
     concepts_llm: Optional[List[str]] = None
@@ -186,14 +189,13 @@ class ContentOut(BaseModel):
     source_id: Optional[str] = None
     source_url: Optional[str] = None
     source_author: Optional[str] = None
-    source_published_at: Optional[date] = None   # ⬅️ NOUVEAU
+    source_published_at: Optional[date] = None
 
     title: Optional[str] = None
     excerpt: Optional[str] = None
     content_body: Optional[str] = None
     source_date: Optional[date] = None
 
-    citations: List[str] = Field(default_factory=list)
     chiffres: List[str] = Field(default_factory=list)
     acteurs_cites: List[str] = Field(default_factory=list)
 
