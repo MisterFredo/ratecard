@@ -9,7 +9,6 @@ type AnalysisData = {
   concept?: string | null;
   content_body?: string | null;
   chiffres: string[];
-  citations: string[];
   acteurs_cites: string[];
   published_at: string;
 };
