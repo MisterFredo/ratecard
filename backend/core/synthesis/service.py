@@ -222,7 +222,6 @@ def extract_synthesis_data(
           C.EXCERPT,
           C.CONCEPT,        -- 👈 AJOUT
           C.CHIFFRES,
-          C.CITATIONS
         FROM `{TABLE_SYNTHESIS_CONTENT}` SC
         JOIN `{TABLE_CONTENT}` C
           ON SC.ID_CONTENT = C.ID_CONTENT
