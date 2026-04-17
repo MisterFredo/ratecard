@@ -21,7 +21,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://ratecard-frontend.onrender.com",
+        "https://ratecard-frontend-prod.onrender.com",
+        "https://ratecard.fr",
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
