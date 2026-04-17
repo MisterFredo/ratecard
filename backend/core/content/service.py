@@ -1195,9 +1195,6 @@ def update_content(id_content: str, data: ContentUpdate):
     # EXTRACTIONS STRUCTURÉES
     # ============================================================
 
-    if data.citations is not None:
-        fields["CITATIONS"] = normalize_array(data.citations)
-
     if data.chiffres is not None:
         fields["CHIFFRES"] = normalize_array(data.chiffres)
 
