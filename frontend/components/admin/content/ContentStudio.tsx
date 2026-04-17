@@ -62,7 +62,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
   const [excerpt, setExcerpt] = useState("");
   const [contentBody, setContentBody] = useState("");
-  const [citations, setCitations] = useState<string[]>([]);
   const [chiffres, setChiffres] = useState<string[]>([]);
 
   const [mecanique, setMecanique] = useState("");
@@ -94,7 +93,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
       setExcerpt(c.excerpt || "");
       setContentBody(c.content_body || "");
-      setCitations(c.citations || []);
       setChiffres(c.chiffres || []);
       setActeursRaw(c.acteurs_cites || []);
 
@@ -140,7 +138,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
       title: excerpt.slice(0, 120),
       excerpt,
       content_body: contentBody,
-      citations,
       chiffres,
       acteurs_cites: acteursRaw,
       concepts_llm: conceptsRaw.map(c => c.label),
@@ -234,7 +231,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
           sourceText={sourceText}
           excerpt={excerpt}
           contentBody={contentBody}
-          citations={citations}
           chiffres={chiffres}
           acteurs={acteursRaw}
           concepts={conceptsRaw}
@@ -248,7 +244,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
             if (d.excerpt !== undefined) setExcerpt(d.excerpt);
             if (d.contentBody !== undefined) setContentBody(d.contentBody);
-            if (d.citations !== undefined) setCitations(d.citations);
             if (d.chiffres !== undefined) setChiffres(d.chiffres);
             if (d.acteurs !== undefined) setActeursRaw(d.acteurs);
 
