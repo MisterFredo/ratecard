@@ -120,10 +120,12 @@ def get_company_universes(company_id: str) -> List[str]:
 
 def list_companies(universe_id: Optional[str] = None) -> List[Dict]:
 
-    universe_filter = ""
+    params = {}
 
+    universe_filter = ""
     if universe_id:
         universe_filter = "AND cu.ID_UNIVERSE = @universe_id"
+        params["universe_id"] = universe_id
 
     sql = f"""
     SELECT
@@ -152,14 +154,14 @@ def list_companies(universe_id: Optional[str] = None) -> List[Dict]:
         r.ID_INSIGHT,
         r.KEY_POINTS,
 
-        ARRAY_AGG(DISTINCT u.LABEL) AS universes
+        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
 
     FROM `{TABLE_COMPANY}` c
 
-    JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+    LEFT JOIN `{TABLE_COMPANY_UNIVERSE}` cu
       ON cu.ID_COMPANY = c.ID_COMPANY
 
-    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
+    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
       ON u.ID_UNIVERSE = cu.ID_UNIVERSE
 
     LEFT JOIN `{VIEW_STATS_COMPANY}` m
@@ -203,10 +205,6 @@ def list_companies(universe_id: Optional[str] = None) -> List[Dict]:
 
     ORDER BY UPPER(c.NAME)
     """
-
-    params = {}
-    if universe_id:
-        params["universe_id"] = universe_id
 
     rows = query_bq(sql, params)
 
