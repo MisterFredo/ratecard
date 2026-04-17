@@ -284,7 +284,6 @@ def get_content(id_content: str):
           TITLE,
           EXCERPT,
           CONTENT_BODY,
-          CITATIONS,
           CHIFFRES,
           ACTEURS_CITES,
           CONCEPTS_LLM,
