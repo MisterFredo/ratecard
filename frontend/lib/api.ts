@@ -3,7 +3,7 @@
 const RAW_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://ratecard.onrender.com/api";
 
-// 🔥 Normalisation (toujours finir par "/")
+// 🔥 Normalisation (toujours sans slash final)
 const BASE_URL = RAW_BASE_URL.replace(/\/+$/, "");
 
 async function request(method: string, path: string, body?: any) {
@@ -13,7 +13,9 @@ async function request(method: string, path: string, body?: any) {
     method,
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
-    cache: "no-store", // 🔥 important en admin
+    cache: "no-store",
+
+    credentials: "include", // ✅ FIX ICI
   });
 
   let json: any = null;
@@ -37,13 +39,3 @@ export const api = {
   put: (path: string, body: any) => request("PUT", path, body),
   delete: (path: string) => request("DELETE", path),
 };
-
-const res = await fetch(`${BASE_URL}${cleanPath}`, {
-  method,
-  headers: { "Content-Type": "application/json" },
-  body: body ? JSON.stringify(body) : undefined,
-  cache: "no-store",
-
-  credentials: "include", // 🔥 FIX CRITIQUE
-});
-
