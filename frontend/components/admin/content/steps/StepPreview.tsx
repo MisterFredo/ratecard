@@ -154,22 +154,6 @@ export default function StepPreview({
                 </div>
               )}
 
-              {/* CITATIONS */}
-              {content.citations?.length > 0 && (
-                <div>
-                  <h4 className="font-semibold text-sm mb-2">
-                    Citations
-                  </h4>
-                  <ul className="space-y-2 text-sm">
-                    {content.citations.map((c: string, i: number) => (
-                      <li key={i} className="italic">
-                        “{c}”
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               {/* ACTEURS */}
               {content.acteurs_cites?.length > 0 && (
                 <div>
