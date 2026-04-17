@@ -16,7 +16,6 @@ type Props = {
   excerpt: string;
   contentBody: string;
 
-  citations: string[];
   chiffres: string[];
 
   acteurs: string[];
@@ -133,7 +132,6 @@ export default function StepSummary(props: Props) {
         excerpt: res.excerpt || "",
         contentBody: stripHtmlList(res.content_body || ""),
 
-        citations: normalizeList(res.citations),
         chiffres: normalizeList(res.chiffres),
 
         acteurs: normalizeList(res.acteurs_cites),
