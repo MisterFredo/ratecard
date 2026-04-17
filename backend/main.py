@@ -22,15 +22,20 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        # --- RATECARD FRONT
+        "https://ratecard-frontend.onrender.com",
+        "https://ratecard-frontend-prod.onrender.com",
         "https://ratecard.fr",
+
+        # --- CURATOR FRONT
+        "https://curator-frontend-zayd.onrender.com",
+        "https://curator-frontend-prod.onrender.com",
         "https://getcurator.ai",
     ],
-    allow_origin_regex=r"https://.*\.onrender\.com",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # -------------------------------------------------------
 # ROUTER INCLUSION HELPER
 # -------------------------------------------------------
