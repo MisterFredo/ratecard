@@ -176,6 +176,7 @@ def match_solution(data: SolutionMatch):
     client.query(sql_alias, job_config=job_config_alias).result()
 
     # 2️⃣ créer relations contenu → solution
+    # 🔥 FIX : inclut ACTEURS_CITES en fallback
 
     sql_relation = f"""
     INSERT INTO `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_SOLUTION`
@@ -185,8 +186,13 @@ def match_solution(data: SolutionMatch):
         c.ID_CONTENT,
         @id_solution
     FROM `{TABLE_CONTENT}` c,
-    UNNEST(c.SOLUTIONS_LLM) AS solution
-    WHERE UPPER(TRIM(solution)) = UPPER(@alias)
+    UNNEST(ARRAY_CONCAT(
+        IFNULL(c.SOLUTIONS_LLM, []),
+        IFNULL(c.ACTEURS_CITES, [])
+    )) AS solution
+    WHERE solution IS NOT NULL
+    AND TRIM(solution) != ""
+    AND UPPER(TRIM(solution)) = UPPER(@alias)
     """
 
     job_config_relation = bigquery.QueryJobConfig(
