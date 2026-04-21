@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -26,6 +26,9 @@ class SolutionCreate(BaseModel):
     status: str = "DRAFT"
     vectorise: bool = False
 
+    # 🔥 NEW → alias produits / marques
+    aliases: List[str] = Field(default_factory=list)
+
     class Config:
         extra = "forbid"
 
@@ -50,6 +53,9 @@ class SolutionUpdate(BaseModel):
 
     status: Optional[str] = None
     vectorise: Optional[bool] = None
+
+    # 🔥 NEW → mise à jour possible des alias
+    aliases: Optional[List[str]] = None
 
     class Config:
         extra = "forbid"
