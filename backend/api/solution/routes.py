@@ -15,6 +15,8 @@ from core.solution.service import (
     list_solutions_for_user,
 )
 
+from core.solution.ai import suggest_solution_aliases
+
 # 🔥 CURATOR
 from core.curator.entity_service import get_solution_view
 from utils.auth import get_user_id_from_request
@@ -46,6 +48,25 @@ def list_route():
         return {"status": "ok", "solutions": solutions}
     except Exception as e:
         raise HTTPException(400, f"Erreur liste solutions : {e}")
+
+@router.post("/suggest-alias")
+def suggest_alias_route(data: Dict):
+
+    name = data.get("name")
+
+    if not name or not name.strip():
+        raise HTTPException(400, "name required")
+
+    try:
+        aliases = suggest_solution_aliases(name)
+
+        return {
+            "status": "ok",
+            "aliases": aliases
+        }
+
+    except Exception as e:
+        raise HTTPException(500, f"Erreur génération alias : {e}")
 
 
 # ============================================================
