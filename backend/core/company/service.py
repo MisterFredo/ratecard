@@ -18,6 +18,7 @@ from api.company.models import CompanyCreate, CompanyUpdate
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_NUMBERS_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_COMPANY"
 TABLE_COMPANY_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE"
+TABLE_COMPANY_ALIAS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_ALIAS"
 
 VIEW_STATS_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY"
 
@@ -70,8 +71,33 @@ def create_company(data: CompanyCreate) -> str:
     # 🔥 ASSIGN UNIVERS (OBLIGATOIRE)
     assign_company_universes(company_id, data.universes)
 
-    return company_id
+    # =====================================================
+    # 🔥 NEW → INSERT ALIASES
+    # =====================================================
 
+    aliases = list(set([
+        data.name.strip(),
+        *[a.strip() for a in data.aliases if a and a.strip()]
+    ]))
+
+    alias_rows = [{
+        "ALIAS": a,
+        "ID_COMPANY": company_id,
+        "MATCH_STATUS": "MATCH",
+        "CREATED_AT": now,
+        "UPDATED_AT": now,
+    } for a in aliases]
+
+    if alias_rows:
+        client.load_table_from_json(
+            alias_rows,
+            TABLE_COMPANY_ALIAS,
+            job_config=bigquery.LoadJobConfig(
+                write_disposition="WRITE_APPEND"
+            ),
+        ).result()
+
+    return company_id
 # ============================================================
 # UNIVERS
 # ============================================================
