@@ -14,6 +14,7 @@ from core.company.service import (
 )
 
 from core.curator.entity_service import get_company_view
+from core.company.ai import suggest_company_aliases
 
 # 🔐 AUTH
 from utils.auth import get_user_id_from_request
@@ -45,6 +46,23 @@ def create_route(data: CompanyCreate):
         return {"status": "ok", "id_company": company_id}
     except Exception as e:
         raise HTTPException(400, f"Erreur création société : {e}")
+
+@router.post("/suggest-alias")
+def suggest_alias_route(data: dict):
+
+    name = data.get("name")
+
+    if not name:
+        raise HTTPException(400, "name required")
+
+    from core.company.ai import suggest_company_aliases
+
+    aliases = suggest_company_aliases(name)
+
+    return {
+        "status": "ok",
+        "aliases": aliases
+    }
 
 
 # ============================================================
