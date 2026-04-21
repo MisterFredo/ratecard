@@ -23,6 +23,9 @@ class CompanyCreate(BaseModel):
     # 🔥 IMPORTANT → PAS DE LIST MUTABLE PAR DÉFAUT
     universes: List[str] = Field(default_factory=list)
 
+    # 🔥 NEW → alias proposés lors de la création
+    aliases: List[str] = Field(default_factory=list)
+
     class Config:
         extra = "forbid"
 
@@ -48,6 +51,9 @@ class CompanyUpdate(BaseModel):
 
     # 🔥 None = pas de modif / [] = reset
     universes: Optional[List[str]] = None
+
+    # 🔥 NEW → mise à jour possible des alias
+    aliases: Optional[List[str]] = None
 
     class Config:
         extra = "forbid"
