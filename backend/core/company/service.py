@@ -77,7 +77,7 @@ def create_company(data: CompanyCreate) -> str:
 
     aliases = list(set([
         data.name.strip(),
-        *[a.strip() for a in data.aliases if a and a.strip()]
+        *[a.strip() for a in data.aliases if a and len(a) < 100]
     ]))
 
     alias_rows = [{
