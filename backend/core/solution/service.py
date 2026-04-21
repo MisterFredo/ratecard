@@ -23,6 +23,7 @@ TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 TABLE_NUMBERS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_SOLUTION"
 TABLE_COMPANY_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE"
+TABLE_SOLUTION_ALIAS = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION_ALIAS"
 
 VIEW_STATS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION"
 
@@ -61,6 +62,32 @@ def create_solution(data: SolutionCreate) -> str:
             write_disposition="WRITE_APPEND"
         ),
     ).result()
+
+    # =====================================================
+    # 🔥 NEW → INSERT ALIASES
+    # =====================================================
+
+    aliases = list(set([
+        data.name.strip(),
+        *[a.strip() for a in getattr(data, "aliases", []) if a and a.strip()]
+    ]))
+
+    alias_rows = [{
+        "ALIAS": a,
+        "ID_SOLUTION": solution_id,
+        "MATCH_STATUS": "MATCH",
+        "CREATED_AT": now,
+        "UPDATED_AT": now,
+    } for a in aliases]
+
+    if alias_rows:
+        client.load_table_from_json(
+            alias_rows,
+            TABLE_SOLUTION_ALIAS,
+            job_config=bigquery.LoadJobConfig(
+                write_disposition="WRITE_APPEND"
+            ),
+        ).result()
 
     return solution_id
 
