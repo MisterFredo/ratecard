@@ -40,7 +40,7 @@ def normalize(text: str) -> str:
 def list_unmatched_companies() -> List[Dict]:
 
     # =====================================================
-    # FETCH RAW COMPANIES (UNNEST)
+    # FETCH RAW (ACTEURS)
     # =====================================================
 
     sql = f"""
@@ -94,10 +94,28 @@ def list_unmatched_companies() -> List[Dict]:
     }
 
     # =====================================================
+    # SOLUTIONS EXISTANTES (🔥 NOUVEAU)
+    # =====================================================
+
+    solution_query = f"""
+    SELECT NAME
+    FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION`
+    """
+
+    solution_rows = client.query(solution_query).result()
+
+    solution_set = {
+        normalize(row["NAME"])
+        for row in solution_rows
+        if row["NAME"]
+    }
+
+    # =====================================================
     # BUILD RESULTS
     # =====================================================
 
     results = []
+    seen = set()  # 🔥 déduplication forte
 
     for r in rows:
 
@@ -108,13 +126,23 @@ def list_unmatched_companies() -> List[Dict]:
 
         norm = normalize(raw)
 
-        # exclure alias déjà traités
+        # 🔴 déjà traité
         if norm in alias_set:
             continue
 
-        # exclure sociétés déjà existantes
+        # 🔴 déjà une company existante
         if norm in company_set:
             continue
+
+        # 🔴 fallback inverse → en réalité une solution
+        if norm in solution_set:
+            continue
+
+        # 🔴 déduplication
+        if norm in seen:
+            continue
+
+        seen.add(norm)
 
         results.append({
             "value": raw,
@@ -122,15 +150,14 @@ def list_unmatched_companies() -> List[Dict]:
         })
 
     # =====================================================
-    # TRI FINAL (ALPHA ROBUSTE)
+    # TRI FINAL (par volume puis alpha)
     # =====================================================
 
     results.sort(
-        key=lambda x: (x["value"] or "").upper()
+        key=lambda x: (-x["count"], x["value"].upper())
     )
 
     return results
-
 
 # ===============================================
 # MATCH COMPANY
