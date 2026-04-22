@@ -3,10 +3,15 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
+import MatchingTable from "@/components/admin/matching/MatchingTable";
+
 
 type LLMItem = {
   value: string;
   count: number;
+  type_hint?: "company" | "solution" | "unknown";
+  suggested_id?: string | null;
+  suggested_label?: string | null;
 };
 
 type Solution = {
@@ -34,8 +39,6 @@ export default function MatchingPage() {
 
   const [selected, setSelected] = useState<{ [key: string]: string }>({});
   const [processing, setProcessing] = useState<string | null>(null);
-
-  // ✅ NEW
   const [checked, setChecked] = useState<{ [key: string]: boolean }>({});
 
 
@@ -82,6 +85,27 @@ export default function MatchingPage() {
     load();
 
   }, []);
+
+
+  /* ---------------------------------------------------------
+     AUTO SELECT (🔥 clé UX)
+  --------------------------------------------------------- */
+
+  useEffect(() => {
+
+    const auto: any = {};
+
+    const data = tab === "solutions" ? llmSolutions : llmCompanies;
+
+    data.forEach((i) => {
+      if (i.suggested_id) {
+        auto[i.value] = i.suggested_id;
+      }
+    });
+
+    setSelected(auto);
+
+  }, [llmSolutions, llmCompanies, tab]);
 
 
   /* ---------------------------------------------------------
@@ -182,7 +206,7 @@ export default function MatchingPage() {
 
 
   /* ---------------------------------------------------------
-     BULK IGNORE (NEW)
+     BULK IGNORE
   --------------------------------------------------------- */
 
   async function ignoreBulk() {
@@ -234,6 +258,48 @@ export default function MatchingPage() {
 
       console.error(e);
       alert("Erreur ignore bulk");
+
+    } finally {
+
+      setProcessing(null);
+
+    }
+
+  }
+
+
+  /* ---------------------------------------------------------
+     BULK MATCH (🔥 nouveau)
+  --------------------------------------------------------- */
+
+  async function matchBulk() {
+
+    const values = Object.keys(checked).filter(k => checked[k]);
+
+    if (values.length === 0) {
+      alert("Aucune sélection");
+      return;
+    }
+
+    try {
+
+      setProcessing("bulk");
+
+      for (const value of values) {
+
+        const id = selected[value];
+        if (!id) continue;
+
+        await applyMatch(value);
+
+      }
+
+      setChecked({});
+
+    } catch (e) {
+
+      console.error(e);
+      alert("Erreur match bulk");
 
     } finally {
 
@@ -304,6 +370,15 @@ export default function MatchingPage() {
       {/* ---------------------------------- */}
 
       <div className="flex gap-2">
+
+        <button
+          onClick={matchBulk}
+          disabled={processing === "bulk"}
+          className="bg-green-700 text-white px-4 py-2 rounded"
+        >
+          MATCH sélection
+        </button>
+
         <button
           onClick={ignoreBulk}
           disabled={processing === "bulk"}
@@ -311,6 +386,7 @@ export default function MatchingPage() {
         >
           IGNORE sélection
         </button>
+
       </div>
 
 
@@ -318,154 +394,18 @@ export default function MatchingPage() {
       {/* TABLE */}
       {/* ---------------------------------- */}
 
-      <div className="border rounded overflow-hidden">
-
-        <table className="w-full text-sm">
-
-          <thead className="bg-gray-100 text-left">
-
-            <tr>
-
-              {/* NEW */}
-              <th className="p-3 w-10">
-                <input
-                  type="checkbox"
-                  onChange={(e) => {
-                    const checkedAll = e.target.checked;
-                    const newState: any = {};
-                    items.forEach(i => newState[i.value] = checkedAll);
-                    setChecked(newState);
-                  }}
-                />
-              </th>
-
-              <th className="p-3">Valeur LLM</th>
-              <th className="p-3">Nb contenus</th>
-              <th className="p-3">
-                {tab === "solutions" ? "Solution" : "Société"}
-              </th>
-              <th className="p-3 w-40 text-right">
-                Actions
-              </th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            {items.map((s) => (
-
-              <tr key={s.value} className="border-t">
-
-                {/* NEW */}
-                <td className="p-3">
-                  <input
-                    type="checkbox"
-                    checked={checked[s.value] || false}
-                    onChange={(e) =>
-                      setChecked({
-                        ...checked,
-                        [s.value]: e.target.checked
-                      })
-                    }
-                  />
-                </td>
-
-                <td className="p-3 font-medium">
-                  {s.value}
-                </td>
-
-                <td className="p-3 text-gray-500">
-                  {s.count}
-                </td>
-
-                <td className="p-3">
-
-                  <select
-                    className="border p-2 rounded w-full"
-                    value={selected[s.value] || ""}
-                    onChange={(e) =>
-                      setSelected({
-                        ...selected,
-                        [s.value]: e.target.value
-                      })
-                    }
-                  >
-
-                    <option value="">
-                      Sélectionner
-                    </option>
-
-                    {list.map((item: any) => (
-
-                      <option
-                        key={
-                          tab === "solutions"
-                            ? item.id_solution
-                            : item.id_company
-                        }
-                        value={
-                          tab === "solutions"
-                            ? item.id_solution
-                            : item.id_company
-                        }
-                      >
-                        {item.name}
-                      </option>
-
-                    ))}
-
-                  </select>
-
-                </td>
-
-                <td className="p-3 flex justify-end gap-2">
-
-                  <button
-                    onClick={() => applyMatch(s.value)}
-                    disabled={processing === s.value}
-                    className="bg-green-600 text-white px-3 py-1 rounded"
-                  >
-                    MATCH
-                  </button>
-
-                  <button
-                    onClick={() => ignore(s.value)}
-                    disabled={processing === s.value}
-                    className="bg-gray-400 text-white px-3 py-1 rounded"
-                  >
-                    IGNORE
-                  </button>
-
-                </td>
-
-              </tr>
-
-            ))}
-
-            {items.length === 0 && (
-
-              <tr>
-
-                <td
-                  colSpan={5}
-                  className="p-6 text-center text-gray-400"
-                >
-
-                  Rien à matcher
-
-                </td>
-
-              </tr>
-
-            )}
-
-          </tbody>
-
-        </table>
-
-      </div>
+      <MatchingTable
+        items={items}
+        list={list}
+        tab={tab}
+        selected={selected}
+        setSelected={setSelected}
+        checked={checked}
+        setChecked={setChecked}
+        processing={processing}
+        applyMatch={applyMatch}
+        ignore={ignore}
+      />
 
     </div>
 
