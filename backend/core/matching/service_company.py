@@ -222,7 +222,6 @@ def match_company(data: CompanyMatch):
         ).result()
 
         # 👉 2. MATCH côté solution (appel direct)
-        from core.matching.service_solution import match_solution
 
         match_solution(
             SolutionMatch(
