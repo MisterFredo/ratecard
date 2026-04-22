@@ -80,6 +80,27 @@ Source : {source_id or "inconnue"}
 
 {source_text}
 
+================ RÈGLES DE CLASSIFICATION IMPORTANTES ================
+
+Tu dois impérativement distinguer deux types d’entités :
+
+1) ACTEURS = ENTREPRISES UNIQUEMENT
+- sociétés, groupes, organisations
+- exemples : Google, Amazon, LiveRamp, TF1 Pub, Meta
+
+2) SOLUTIONS = PRODUITS / PLATEFORMES / OFFRES
+- produits commerciaux, marques, technologies, solutions marketing
+- exemples : DV360, RampID, Amazon DSP, TF1+, Johnnie Walker
+
+IMPORTANT :
+- Une entité ne doit apparaître QUE dans une seule catégorie
+- Si c’est un produit → SOLUTIONS (et PAS ACTEURS)
+- Si c’est une entreprise → ACTEURS (et PAS SOLUTIONS)
+- Ne jamais dupliquer une même entité dans les deux sections
+- Si tu hésites, privilégie :
+  → entreprise → ACTEURS
+  → produit / offre → SOLUTIONS
+
 ================ FORMAT OBLIGATOIRE ================
 
 TITLE
@@ -102,12 +123,12 @@ label | valeur | unité | acteur | marché | période
 ACTEURS
 (Liste des entreprises citées ou "Aucun")
 
+SOLUTIONS
+(Liste des produits, plateformes, marques ou offres citées ou "Aucun")
+
 CONCEPTS
 (Liste des notions métier identifiées dans la source.
 Chaque concept doit être associé à un topic existant.)
-
-SOLUTIONS
-(Noms de produits, plateformes ou offres ou "Aucun")
 
 TOPICS
 (Choisir 1 à 3 topics uniquement parmi la liste suivante.
