@@ -39,6 +39,8 @@ def search(
     universe_id: Optional[str] = None,
 ) -> List[Dict]:
 
+    q = (q or "").strip()
+
     universe_filter = ""
     if universe_id:
         universe_filter = """
@@ -58,27 +60,66 @@ def search(
         c.published_at,
         NULL AS news_type,
         c.topics,
-
-        -- 🔥 FIX : plus de c.id_universe / c.universe
         c.universes,
-
         c.companies,
         c.solutions,
-        c.id_source
+        c.id_source,
+
+        -- 🔥 SCORE (optionnel mais utile pour ranking)
+        (
+            CASE
+                WHEN LOWER(c.title) LIKE LOWER(CONCAT('%', @query, '%')) THEN 3
+                WHEN LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%')) THEN 2
+                ELSE 0
+            END
+            +
+            CASE
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM UNNEST(c.companies) co
+                    WHERE LOWER(co.name) LIKE LOWER(CONCAT('%', @query, '%'))
+                ) THEN 2 ELSE 0
+            END
+            +
+            CASE
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM UNNEST(c.solutions) s
+                    WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', @query, '%'))
+                ) THEN 2 ELSE 0
+            END
+        ) AS score
 
     FROM `{VIEW_CONTENT}` c
 
     WHERE
-        (
-          LOWER(c.title) LIKE LOWER(CONCAT('%', @query, '%'))
-          OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
+    (
+        -- 🔵 TEXTE
+        LOWER(c.title) LIKE LOWER(CONCAT('%', @query, '%'))
+        OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
+
+        -- 🟢 COMPANY
+        OR EXISTS (
+            SELECT 1
+            FROM UNNEST(c.companies) co
+            WHERE LOWER(co.name) LIKE LOWER(CONCAT('%', @query, '%'))
         )
 
-    {build_user_filter("c")}
+        -- 🔵 SOLUTION
+        OR EXISTS (
+            SELECT 1
+            FROM UNNEST(c.solutions) s
+            WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', @query, '%'))
+        )
+    )
 
+    {build_user_filter("c")}
     {universe_filter}
 
-    ORDER BY published_at DESC
+    ORDER BY
+        score DESC,
+        published_at DESC
+
     LIMIT @limit
     OFFSET @offset
     """
@@ -94,7 +135,6 @@ def search(
     rows = query_bq(sql, params)
 
     return [_map_feed_row(r) for r in rows]
-
 
 # ============================================================
 # LATEST (ALIGNÉ SUR SEARCH)
