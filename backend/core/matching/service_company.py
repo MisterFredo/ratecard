@@ -183,7 +183,7 @@ def match_company(data: CompanyMatch):
     fallback_sql = f"""
     SELECT ID_SOLUTION
     FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION`
-    WHERE {norm_expr("NAME")} = {norm_expr("@alias")}
+    WHERE {norm_expr("NAME")} = {norm_expr("CAST(@alias AS STRING)")}
     LIMIT 1
     """
 
@@ -208,7 +208,7 @@ def match_company(data: CompanyMatch):
         WHERE NOT EXISTS (
             SELECT 1
             FROM `{TABLE_ALIAS}`
-            WHERE {norm_expr("ALIAS")} = {norm_expr("@alias")}
+            WHERE {norm_expr("ALIAS")} = {norm_expr("CAST(@alias AS STRING)")}
         )
         """
 
@@ -246,7 +246,7 @@ def match_company(data: CompanyMatch):
         WHERE NOT EXISTS (
             SELECT 1
             FROM `{TABLE_ALIAS}`
-            WHERE {norm_expr("ALIAS")} = {norm_expr("@alias")}
+            WHERE {norm_expr("ALIAS")} = {norm_expr("CAST(@alias AS STRING)")}
         )
         """
 
@@ -282,7 +282,7 @@ def match_company(data: CompanyMatch):
     WHERE NOT EXISTS (
         SELECT 1
         FROM `{TABLE_ALIAS}`
-        WHERE {norm_expr("ALIAS")} = {norm_expr("@alias")}
+        WHERE {norm_expr("ALIAS")} = {norm_expr("CAST(@alias AS STRING)")}
     )
     """
 
@@ -313,7 +313,7 @@ def match_company(data: CompanyMatch):
 
     WHERE company IS NOT NULL
     AND TRIM(company) != ""
-    AND {norm_expr("company")} = {norm_expr("@alias")}
+    AND {norm_expr("company")} = {norm_expr("CAST(@alias AS STRING)")}
 
     AND NOT EXISTS (
         SELECT 1
