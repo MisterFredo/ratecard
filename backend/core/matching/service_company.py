@@ -198,7 +198,7 @@ def match_company(data: CompanyMatch):
 
     fallback_rows = list(fallback_job.result())
 
-    if fallback_rows:
+    if fallback_rows and not data.id_company:
         solution_id = fallback_rows[0]["ID_SOLUTION"]
 
         # 👉 1. NO_MATCH côté company
