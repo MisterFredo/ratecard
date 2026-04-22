@@ -33,6 +33,30 @@ def normalize(text: str) -> str:
 
     return text.strip()
 
+def find_match(name: str, company_map: Dict, solution_map: Dict):
+
+    norm = normalize(name)
+
+    if norm in company_map:
+        return {
+            "type_hint": "company",
+            "suggested_id": company_map[norm]["id"],
+            "suggested_label": company_map[norm]["label"]
+        }
+
+    if norm in solution_map:
+        return {
+            "type_hint": "solution",
+            "suggested_id": solution_map[norm]["id"],
+            "suggested_label": solution_map[norm]["label"]
+        }
+
+    return {
+        "type_hint": "unknown",
+        "suggested_id": None,
+        "suggested_label": None
+    }
+
 
 # ===============================================
 # LIST UNMATCHED COMPANIES
