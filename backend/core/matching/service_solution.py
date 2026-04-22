@@ -107,45 +107,77 @@ def list_unmatched_solutions() -> List[Dict]:
     }
 
     # =====================================================
-    # SOLUTIONS EXISTANTES
+    # LOAD SOLUTIONS (MAP)
     # =====================================================
 
-    solution_query = f"""
-    SELECT NAME
-    FROM `{TABLE_SOLUTION}`
-    """
+    solution_rows = client.query(f"""
+        SELECT ID_SOLUTION, NAME
+        FROM `{TABLE_SOLUTION}`
+    """).result()
 
-    solution_rows = client.query(solution_query).result()
-
-    solution_set = {
-        normalize(row["NAME"])
-        for row in solution_rows
-        if row["NAME"]
+    solution_map = {
+        normalize(r["NAME"]): {
+            "id": r["ID_SOLUTION"],
+            "label": r["NAME"]
+        }
+        for r in solution_rows
+        if r["NAME"]
     }
 
+    solution_set = set(solution_map.keys())
+
     # =====================================================
-    # COMPANY EXISTANTES (🔥 NOUVEAU)
+    # LOAD COMPANIES (MAP)
     # =====================================================
 
-    company_query = f"""
-    SELECT NAME
-    FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY`
-    """
+    company_rows = client.query(f"""
+        SELECT ID_COMPANY, NAME
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY`
+    """).result()
 
-    company_rows = client.query(company_query).result()
-
-    company_set = {
-        normalize(row["NAME"])
-        for row in company_rows
-        if row["NAME"]
+    company_map = {
+        normalize(r["NAME"]): {
+            "id": r["ID_COMPANY"],
+            "label": r["NAME"]
+        }
+        for r in company_rows
+        if r["NAME"]
     }
+
+    company_set = set(company_map.keys())
+
+    # =====================================================
+    # HELPER MATCH
+    # =====================================================
+
+    def find_match(norm: str):
+
+        if norm in solution_map:
+            return {
+                "type_hint": "solution",
+                "suggested_id": solution_map[norm]["id"],
+                "suggested_label": solution_map[norm]["label"]
+            }
+
+        if norm in company_map:
+            return {
+                "type_hint": "company",
+                "suggested_id": company_map[norm]["id"],
+                "suggested_label": company_map[norm]["label"]
+            }
+
+        return {
+            "type_hint": "unknown",
+            "suggested_id": None,
+            "suggested_label": None
+        }
 
     # =====================================================
     # BUILD RESULTS
     # =====================================================
 
     results = []
-    seen = set()  # 🔥 déduplication
+    seen = set()
 
     for r in rows:
 
@@ -156,27 +188,33 @@ def list_unmatched_solutions() -> List[Dict]:
 
         norm = normalize(raw)
 
-        # 🔴 déjà traité (MATCH ou NO_MATCH)
+        # 🔴 déjà traité
         if norm in alias_set:
             continue
 
-        # 🔴 déjà une solution existante
-        if norm in solution_set:
-            continue
-
-        # 🔴 fallback → en réalité une company
-        if norm in company_set:
-            continue
-
-        # 🔴 déduplication forte
+        # 🔴 déduplication
         if norm in seen:
             continue
 
         seen.add(norm)
 
+        # 🔥 suggestion AVANT filtrage
+        match = find_match(norm)
+
+        # 🔴 exclure si déjà solution existante
+        if norm in solution_set:
+            continue
+
+        # 🔴 exclure si en réalité une company
+        if norm in company_set:
+            continue
+
         results.append({
             "value": raw,
             "count": r["count"],
+            "type_hint": match["type_hint"],
+            "suggested_id": match["suggested_id"],
+            "suggested_label": match["suggested_label"],
         })
 
     # =====================================================
@@ -188,7 +226,6 @@ def list_unmatched_solutions() -> List[Dict]:
     )
 
     return results
-
 # ===============================================
 # MATCH SOLUTION
 # ===============================================
