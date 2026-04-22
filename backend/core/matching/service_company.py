@@ -169,6 +169,13 @@ def match_company(data: CompanyMatch):
 
     alias = data.alias.strip()
 
+    if not alias:
+        raise ValueError("alias vide")
+
+    # 🔥 normalisation BQ-friendly
+    def norm_expr(field: str) -> str:
+        return f"REGEXP_REPLACE(UPPER({field}), r'[^A-Z0-9 ]', '')"
+
     # ---------------------------------------
     # IGNORE
     # ---------------------------------------
@@ -176,9 +183,14 @@ def match_company(data: CompanyMatch):
     if data.action == "IGNORE":
 
         sql_ignore = f"""
-        INSERT INTO `{TABLE_ALIAS}`
-        (ALIAS, MATCH_STATUS)
-        VALUES (@alias, 'NO_MATCH')
+        INSERT INTO `{TABLE_ALIAS}` (ALIAS, MATCH_STATUS)
+
+        SELECT @alias, 'NO_MATCH'
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM `{TABLE_ALIAS}`
+            WHERE {norm_expr("ALIAS")} = {norm_expr("@alias")}
+        )
         """
 
         job_config_ignore = bigquery.QueryJobConfig(
@@ -188,9 +200,7 @@ def match_company(data: CompanyMatch):
         )
 
         client.query(sql_ignore, job_config=job_config_ignore).result()
-
         return
-
 
     # ---------------------------------------
     # MATCH
@@ -202,12 +212,19 @@ def match_company(data: CompanyMatch):
     if not data.id_company:
         raise ValueError("id_company obligatoire")
 
-    # 1️⃣ enregistrer alias
+    # ---------------------------------------
+    # 1️⃣ ALIAS (déduplication)
+    # ---------------------------------------
 
     sql_alias = f"""
-    INSERT INTO `{TABLE_ALIAS}`
-    (ALIAS, ID_COMPANY, MATCH_STATUS)
-    VALUES (@alias, @id_company, 'MATCH')
+    INSERT INTO `{TABLE_ALIAS}` (ALIAS, ID_COMPANY, MATCH_STATUS)
+
+    SELECT @alias, @id_company, 'MATCH'
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM `{TABLE_ALIAS}`
+        WHERE {norm_expr("ALIAS")} = {norm_expr("@alias")}
+    )
     """
 
     job_config_alias = bigquery.QueryJobConfig(
@@ -219,18 +236,31 @@ def match_company(data: CompanyMatch):
 
     client.query(sql_alias, job_config=job_config_alias).result()
 
-    # 2️⃣ créer relations contenu → company
+    # ---------------------------------------
+    # 2️⃣ RELATION CONTENT → COMPANY (dédup)
+    # ---------------------------------------
 
     sql_relation = f"""
     INSERT INTO `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY`
     (ID_CONTENT, ID_COMPANY)
 
-    SELECT
+    SELECT DISTINCT
         c.ID_CONTENT,
         @id_company
+
     FROM `{TABLE_CONTENT}` c,
     UNNEST(c.ACTEURS_CITES) AS company
-    WHERE UPPER(TRIM(company)) = UPPER(@alias)
+
+    WHERE company IS NOT NULL
+    AND TRIM(company) != ""
+    AND {norm_expr("company")} = {norm_expr("@alias")}
+
+    AND NOT EXISTS (
+        SELECT 1
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY` t
+        WHERE t.ID_CONTENT = c.ID_CONTENT
+        AND t.ID_COMPANY = @id_company
+    )
     """
 
     job_config_relation = bigquery.QueryJobConfig(
