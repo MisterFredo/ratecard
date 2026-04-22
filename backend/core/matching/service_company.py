@@ -5,7 +5,8 @@ import re
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq, get_bigquery_client
-from api.matching.models import CompanyMatch
+from api.matching.models import CompanyMatch, SolutionMatch
+from core.matching.service_solution import match_solution
 
 
 TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
