@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from typing import List, Dict, Optional
 
 from api.matching.models import SolutionMatch, CompanyMatch
 
