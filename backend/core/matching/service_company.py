@@ -172,13 +172,70 @@ def match_company(data: CompanyMatch):
     if not alias:
         raise ValueError("alias vide")
 
-    # 🔥 normalisation BQ-friendly
     def norm_expr(field: str) -> str:
         return f"REGEXP_REPLACE(UPPER({field}), r'[^A-Z0-9 ]', '')"
 
-    # ---------------------------------------
+    # =====================================================
+    # 🔥 STEP 0 — FALLBACK SOLUTION AUTO
+    # =====================================================
+
+    fallback_sql = f"""
+    SELECT ID_SOLUTION
+    FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION`
+    WHERE {norm_expr("NAME")} = {norm_expr("@alias")}
+    LIMIT 1
+    """
+
+    fallback_job = client.query(
+        fallback_sql,
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("alias", "STRING", alias),
+            ]
+        ),
+    )
+
+    fallback_rows = list(fallback_job.result())
+
+    if fallback_rows:
+        solution_id = fallback_rows[0]["ID_SOLUTION"]
+
+        # 👉 1. NO_MATCH côté company
+        sql_ignore = f"""
+        INSERT INTO `{TABLE_ALIAS}` (ALIAS, MATCH_STATUS)
+        SELECT @alias, 'NO_MATCH'
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM `{TABLE_ALIAS}`
+            WHERE {norm_expr("ALIAS")} = {norm_expr("@alias")}
+        )
+        """
+
+        client.query(
+            sql_ignore,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("alias", "STRING", alias),
+                ]
+            ),
+        ).result()
+
+        # 👉 2. MATCH côté solution (appel direct)
+        from core.matching.service_solution import match_solution
+
+        match_solution(
+            SolutionMatch(
+                alias=alias,
+                id_solution=solution_id,
+                action="MATCH"
+            )
+        )
+
+        return
+
+    # =====================================================
     # IGNORE
-    # ---------------------------------------
+    # =====================================================
 
     if data.action == "IGNORE":
 
@@ -193,18 +250,20 @@ def match_company(data: CompanyMatch):
         )
         """
 
-        job_config_ignore = bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ScalarQueryParameter("alias", "STRING", alias),
-            ]
-        )
+        client.query(
+            sql_ignore,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("alias", "STRING", alias),
+                ]
+            ),
+        ).result()
 
-        client.query(sql_ignore, job_config=job_config_ignore).result()
         return
 
-    # ---------------------------------------
-    # MATCH
-    # ---------------------------------------
+    # =====================================================
+    # MATCH NORMAL
+    # =====================================================
 
     if data.action != "MATCH":
         raise ValueError("Action inconnue")
@@ -213,7 +272,7 @@ def match_company(data: CompanyMatch):
         raise ValueError("id_company obligatoire")
 
     # ---------------------------------------
-    # 1️⃣ ALIAS (déduplication)
+    # ALIAS
     # ---------------------------------------
 
     sql_alias = f"""
@@ -227,17 +286,18 @@ def match_company(data: CompanyMatch):
     )
     """
 
-    job_config_alias = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("alias", "STRING", alias),
-            bigquery.ScalarQueryParameter("id_company", "STRING", data.id_company),
-        ]
-    )
-
-    client.query(sql_alias, job_config=job_config_alias).result()
+    client.query(
+        sql_alias,
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("alias", "STRING", alias),
+                bigquery.ScalarQueryParameter("id_company", "STRING", data.id_company),
+            ]
+        ),
+    ).result()
 
     # ---------------------------------------
-    # 2️⃣ RELATION CONTENT → COMPANY (dédup)
+    # RELATION
     # ---------------------------------------
 
     sql_relation = f"""
@@ -263,11 +323,12 @@ def match_company(data: CompanyMatch):
     )
     """
 
-    job_config_relation = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("alias", "STRING", alias),
-            bigquery.ScalarQueryParameter("id_company", "STRING", data.id_company),
-        ]
-    )
-
-    client.query(sql_relation, job_config=job_config_relation).result()
+    client.query(
+        sql_relation,
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("alias", "STRING", alias),
+                bigquery.ScalarQueryParameter("id_company", "STRING", data.id_company),
+            ]
+        ),
+    ).result()
