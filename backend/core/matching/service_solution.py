@@ -41,12 +41,19 @@ def normalize(text: str) -> str:
 
 def list_unmatched_solutions() -> List[Dict]:
 
+    # =====================================================
+    # FETCH RAW (SOLUTIONS + ACTEURS)
+    # =====================================================
+
     sql = f"""
     SELECT
         solution,
         COUNT(*) AS count
     FROM `{TABLE_CONTENT}`,
-    UNNEST(SOLUTIONS_LLM) AS solution
+    UNNEST(ARRAY_CONCAT(
+        IFNULL(SOLUTIONS_LLM, []),
+        IFNULL(ACTEURS_CITES, [])
+    )) AS solution
     WHERE solution IS NOT NULL
     AND TRIM(solution) != ""
     GROUP BY solution
@@ -57,7 +64,9 @@ def list_unmatched_solutions() -> List[Dict]:
 
     client = get_bigquery_client()
 
-    # récupérer alias déjà traités
+    # =====================================================
+    # ALIAS DÉJÀ TRAITÉS
+    # =====================================================
 
     alias_query = f"""
     SELECT ALIAS
@@ -73,7 +82,9 @@ def list_unmatched_solutions() -> List[Dict]:
         if row["ALIAS"]
     }
 
-    # récupérer solutions existantes
+    # =====================================================
+    # SOLUTIONS EXISTANTES
+    # =====================================================
 
     solution_query = f"""
     SELECT NAME
@@ -88,7 +99,29 @@ def list_unmatched_solutions() -> List[Dict]:
         if row["NAME"]
     }
 
+    # =====================================================
+    # COMPANY EXISTANTES (🔥 NOUVEAU)
+    # =====================================================
+
+    company_query = f"""
+    SELECT NAME
+    FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY`
+    """
+
+    company_rows = client.query(company_query).result()
+
+    company_set = {
+        normalize(row["NAME"])
+        for row in company_rows
+        if row["NAME"]
+    }
+
+    # =====================================================
+    # BUILD RESULTS
+    # =====================================================
+
     results = []
+    seen = set()  # 🔥 déduplication
 
     for r in rows:
 
@@ -99,21 +132,38 @@ def list_unmatched_solutions() -> List[Dict]:
 
         norm = normalize(raw)
 
-        # exclure alias déjà traités
+        # 🔴 déjà traité (MATCH ou NO_MATCH)
         if norm in alias_set:
             continue
 
-        # exclure solutions déjà existantes
+        # 🔴 déjà une solution existante
         if norm in solution_set:
             continue
+
+        # 🔴 fallback → en réalité une company
+        if norm in company_set:
+            continue
+
+        # 🔴 déduplication forte
+        if norm in seen:
+            continue
+
+        seen.add(norm)
 
         results.append({
             "value": raw,
             "count": r["count"],
         })
 
-    return results
+    # =====================================================
+    # TRI FINAL
+    # =====================================================
 
+    results.sort(
+        key=lambda x: (-x["count"], x["value"].upper())
+    )
+
+    return results
 
 # ===============================================
 # MATCH SOLUTION
