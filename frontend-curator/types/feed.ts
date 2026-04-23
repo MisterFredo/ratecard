@@ -32,12 +32,19 @@ export type Topic = {
   delta_30d?: number;
 };
 
+/* =========================================================
+   ENTITIES (ALIGNÉ BACKEND + EXTENSIBLE)
+========================================================= */
+
 export type Company = {
   id_company: string;
   name: string;
 
   // branding
   media_logo_rectangle_id?: string | null;
+
+  // 🔥 NEW
+  logo_type?: "company";
 
   // statut
   is_partner?: boolean;
@@ -55,8 +62,11 @@ export type Solution = {
   id_company?: string;
   company_name?: string;
 
-  // branding (hérité société)
+  // branding
   media_logo_rectangle_id?: string | null;
+
+  // 🔥 NEW (CRITIQUE)
+  logo_type?: "solution" | "company";
 
   // statut
   is_partner?: boolean;
