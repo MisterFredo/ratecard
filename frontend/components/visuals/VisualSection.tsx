@@ -3,18 +3,22 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 
+type EntityType = "company" | "solution";
+
 type Props = {
   entityId: string;
+  entityType: EntityType;
 
-  // 🔑 URL calculée par le parent (ou null)
+  // URL déjà construite côté parent
   rectUrl: string | null;
 
-  // 🔑 signal simple : “le visuel a changé”
+  // callback refresh
   onUpdated: () => void;
 };
 
 export default function VisualSection({
   entityId,
+  entityType,
   rectUrl,
   onUpdated,
 }: Props) {
@@ -36,7 +40,17 @@ export default function VisualSection({
   }
 
   /* ---------------------------------------------------------
-     UPLOAD — LOGO SOCIÉTÉ
+     LABELS UI
+  --------------------------------------------------------- */
+  const labels = {
+    company: "société",
+    solution: "solution",
+  };
+
+  const label = labels[entityType];
+
+  /* ---------------------------------------------------------
+     UPLOAD
   --------------------------------------------------------- */
   async function upload(file: File) {
     setLoading(true);
@@ -44,16 +58,19 @@ export default function VisualSection({
     try {
       const base64 = await fileToBase64(file);
 
-      const res = await api.post("/visuals/company/upload", {
-        id_company: entityId,
+      const payload: any = {
         base64_image: base64,
-      });
+      };
+
+      // 🔥 clé dynamique propre
+      payload[`id_${entityType}`] = entityId;
+
+      const res = await api.post(`/visuals/${entityType}/upload`, payload);
 
       if (res.status !== "ok") {
         throw new Error("Upload échoué");
       }
 
-      // ✅ on ne manipule PLUS d’URL ici
       onUpdated();
     } catch (e) {
       console.error(e);
@@ -69,7 +86,7 @@ export default function VisualSection({
   return (
     <div className="p-4 border rounded bg-white space-y-4">
       <h2 className="text-xl font-semibold text-ratecard-blue">
-        Logo de la société
+        Logo de la {label}
       </h2>
 
       <p className="text-sm text-gray-600">
@@ -79,16 +96,18 @@ export default function VisualSection({
       </p>
 
       {loading && (
-        <p className="text-sm text-gray-500">Traitement en cours…</p>
+        <p className="text-sm text-gray-500">
+          Traitement en cours…
+        </p>
       )}
 
-      {/* PREVIEW LOGO */}
+      {/* PREVIEW */}
       <div className="space-y-2">
         {rectUrl ? (
           <div className="max-w-xl border rounded bg-white p-8 flex items-center justify-center">
             <img
               src={rectUrl}
-              alt="Logo société"
+              alt={`Logo ${label}`}
               className="max-h-40 w-auto object-contain"
             />
           </div>
