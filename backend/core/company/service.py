@@ -257,14 +257,16 @@ def list_companies_for_user(user_id: str):
         c.ID_COMPANY,
         c.NAME,
         c.TYPE,
-        CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
-        c.MEDIA_LOGO_RECTANGLE_ID,
-        c.INSIGHT_FREQUENCY,
+
+        -- 🔥 SAFE (évite tout bug futur)
+        ANY_VALUE(CAST(c.IS_PARTNER AS BOOL)) AS IS_PARTNER,
+        ANY_VALUE(c.MEDIA_LOGO_RECTANGLE_ID) AS MEDIA_LOGO_RECTANGLE_ID,
+        ANY_VALUE(c.INSIGHT_FREQUENCY) AS INSIGHT_FREQUENCY,
 
         COALESCE(m.total, 0) AS NB_ANALYSES,
         COALESCE(m.last_30_days, 0) AS DELTA_30D,
 
-        ARRAY_AGG(DISTINCT u.LABEL) AS universes
+        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
 
     FROM `{TABLE_COMPANY}` c
 
@@ -282,15 +284,12 @@ def list_companies_for_user(user_id: str):
 
     WHERE
         c.IS_ACTIVE = TRUE
-        AND uu.ID_USER = '{user_id}'  -- 🔥 on reste en hardcode (fiable)
+        AND uu.ID_USER = '{user_id}'
 
     GROUP BY
         c.ID_COMPANY,
         c.NAME,
         c.TYPE,
-        c.IS_PARTNER,
-        c.MEDIA_LOGO_RECTANGLE_ID,
-        c.INSIGHT_FREQUENCY,
         m.total,
         m.last_30_days
 
@@ -304,15 +303,20 @@ def list_companies_for_user(user_id: str):
             "id_company": r["ID_COMPANY"],
             "name": r["NAME"],
             "type": r.get("TYPE"),
-            "is_partner": r["IS_PARTNER"],
-            "media_logo_rectangle_id": r["MEDIA_LOGO_RECTANGLE_ID"],
+
+            "is_partner": r.get("IS_PARTNER", False),
+            "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID"),
             "insight_frequency": r.get("INSIGHT_FREQUENCY"),
-            "nb_analyses": r["NB_ANALYSES"],
-            "delta_30d": r["DELTA_30D"],
+
+            "nb_analyses": r.get("NB_ANALYSES", 0),
+            "delta_30d": r.get("DELTA_30D", 0),
+
             "universes": r.get("universes") or [],
         }
         for r in rows
     ]
+
+
 # ============================================================
 # GET ONE COMPANY
 # ============================================================
