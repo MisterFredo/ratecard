@@ -203,7 +203,7 @@ def list_solutions_for_user(user_id: str):
         s.STATUS,
         s.ID_COMPANY,
 
-        -- ✅ FIX
+        -- 🔥 SAFE → pas dans GROUP BY
         ANY_VALUE(s.MEDIA_LOGO_RECTANGLE_ID) AS SOLUTION_LOGO,
 
         c.NAME AS COMPANY_NAME,
@@ -295,8 +295,13 @@ def list_solutions_for_user(user_id: str):
             "id_company": r["ID_COMPANY"],
             "company_name": r["COMPANY_NAME"],
 
-            "media_logo_rectangle_id": r.get("SOLUTION_LOGO") or r.get("MEDIA_LOGO_RECTANGLE_ID"),
-            "logo_type": "solution" if r.get("SOLUTION_LOGO") else "company",
+            # 🔥 LOGIQUE PROPRE
+            "media_logo_rectangle_id": (
+                r.get("SOLUTION_LOGO") or r.get("MEDIA_LOGO_RECTANGLE_ID")
+            ),
+            "logo_type": (
+                "solution" if r.get("SOLUTION_LOGO") else "company"
+            ),
 
             "is_partner": r["IS_PARTNER"],
 
