@@ -11,7 +11,7 @@ type Props = {
   subtitle?: string;
 
   logoId?: string | null;
-  logoType?: "company" | "solution"; // pour URL
+  logoType?: "company" | "solution";
 
   variant?: "company" | "solution" | "topic";
 
@@ -27,16 +27,26 @@ export default function DrawerHeader({
   title,
   subtitle,
   logoId,
-  logoType = "company",
+  logoType,
   variant = "topic",
   nbAnalyses,
   delta30d,
   onClose,
 }: Props) {
 
-  const logoUrl = logoId
-    ? `${GCS_BASE_URL}/companies/${logoId}`
-    : null;
+  // =====================================================
+  // 🔥 LOGO URL (SAFE + DYNAMIQUE)
+  // =====================================================
+  let logoUrl: string | null = null;
+
+  if (logoId) {
+    const folder =
+      logoType === "solution"
+        ? "solutions"
+        : "companies"; // fallback
+
+    logoUrl = `${GCS_BASE_URL}/${folder}/${logoId}`;
+  }
 
   return (
     <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-5 py-4 space-y-3">
@@ -59,8 +69,8 @@ export default function DrawerHeader({
           {subtitle && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
 
-              {/* LOGO (solution case) */}
-              {variant === "solution" && logoUrl && (
+              {/* 🔥 LOGO */}
+              {logoUrl && (
                 <img
                   src={logoUrl}
                   alt={subtitle}
