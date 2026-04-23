@@ -22,7 +22,6 @@ type FeedItem = {
 };
 
 type NumberCategory = any;
-
 type Radar = any;
 
 type SolutionData = {
@@ -30,7 +29,10 @@ type SolutionData = {
   name: string;
 
   company_name?: string;
+
+  // 🔥 logo + type
   media_logo_rectangle_id?: string | null;
+  logo_type?: "solution" | "company";
 
   nb_analyses?: number;
   delta_30d?: number;
@@ -41,6 +43,7 @@ type SolutionData = {
 /* ========================================================= */
 
 export default function SolutionDrawer({ id, onClose }: any) {
+
   const router = useRouter();
   const pathname = usePathname();
   const { leftDrawer, openRightDrawer, closeLeftDrawer } = useDrawer();
@@ -106,7 +109,11 @@ export default function SolutionDrawer({ id, onClose }: any) {
         <DrawerHeader
           title={data.name}
           subtitle={data.company_name}
+
+          // 🔥 IMPORTANT
           logoId={data.media_logo_rectangle_id}
+          logoType={data.logo_type}
+
           variant="solution"
           nbAnalyses={data.nb_analyses}
           delta30d={data.delta_30d}
