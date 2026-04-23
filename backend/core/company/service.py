@@ -71,32 +71,6 @@ def create_company(data: CompanyCreate) -> str:
     # 🔥 ASSIGN UNIVERS (OBLIGATOIRE)
     assign_company_universes(company_id, data.universes)
 
-    # =====================================================
-    # 🔥 NEW → INSERT ALIASES
-    # =====================================================
-
-    aliases = list(set([
-        data.name.strip(),
-        *[a.strip() for a in data.aliases if a and a.strip() and len(a.strip()) < 100]
-    ]))
-
-    alias_rows = [{
-        "ALIAS": a,
-        "ID_COMPANY": company_id,
-        "MATCH_STATUS": "MATCH",
-        "CREATED_AT": now,
-        "UPDATED_AT": now,
-    } for a in aliases]
-
-    if alias_rows:
-        client.load_table_from_json(
-            alias_rows,
-            TABLE_COMPANY_ALIAS,
-            job_config=bigquery.LoadJobConfig(
-                write_disposition="WRITE_APPEND"
-            ),
-        ).result()
-
     return company_id
 # ============================================================
 # UNIVERS
