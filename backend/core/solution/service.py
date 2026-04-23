@@ -79,6 +79,9 @@ def list_solutions() -> List[Dict]:
         s.STATUS,
         s.ID_COMPANY,
 
+        -- 🔥 NEW → logo solution
+        s.MEDIA_LOGO_RECTANGLE_ID AS SOLUTION_LOGO,
+
         c.NAME AS COMPANY_NAME,
         c.MEDIA_LOGO_RECTANGLE_ID,
         CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
@@ -96,7 +99,6 @@ def list_solutions() -> List[Dict]:
         r.ID_INSIGHT,
         r.KEY_POINTS,
 
-        -- 🔥 univers hérités via company
         ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
 
     FROM `{TABLE_SOLUTION}` s
@@ -138,6 +140,7 @@ def list_solutions() -> List[Dict]:
         s.NAME,
         s.STATUS,
         s.ID_COMPANY,
+        s.MEDIA_LOGO_RECTANGLE_ID,
         c.NAME,
         c.MEDIA_LOGO_RECTANGLE_ID,
         c.IS_PARTNER,
@@ -154,7 +157,6 @@ def list_solutions() -> List[Dict]:
     ORDER BY UPPER(s.NAME)
     """
 
-    # 🔥 FIX CRITIQUE
     rows = query_bq(sql, {})
 
     return [
@@ -164,7 +166,9 @@ def list_solutions() -> List[Dict]:
             "id_company": r["ID_COMPANY"],
             "company_name": r.get("COMPANY_NAME"),
 
-            "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID"),
+            # 🔥 fallback solution → company
+            "media_logo_rectangle_id": r.get("SOLUTION_LOGO") or r.get("MEDIA_LOGO_RECTANGLE_ID"),
+
             "is_partner": r.get("IS_PARTNER", False),
 
             "status": r.get("STATUS"),
@@ -184,7 +188,6 @@ def list_solutions() -> List[Dict]:
                 "key_points": r["KEY_POINTS"],
             } if r.get("ID_INSIGHT") else None,
 
-            # 🔥 toujours safe
             "universes": r.get("universes") or [],
         }
         for r in rows
@@ -199,6 +202,9 @@ def list_solutions_for_user(user_id: str):
         s.STATUS,
         s.ID_COMPANY,
 
+        -- 🔥 NEW
+        s.MEDIA_LOGO_RECTANGLE_ID AS SOLUTION_LOGO,
+
         c.NAME AS COMPANY_NAME,
         c.MEDIA_LOGO_RECTANGLE_ID,
         CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
@@ -211,13 +217,11 @@ def list_solutions_for_user(user_id: str):
         COALESCE(st.total, 0) AS NB_ANALYSES,
         COALESCE(st.last_30_days, 0) AS DELTA_30D,
 
-        -- ✅ SAFE BOOL
         IF(ns.ID_SOLUTION IS NOT NULL, TRUE, FALSE) AS HAS_NUMBERS,
 
         r.ID_INSIGHT,
         r.KEY_POINTS,
 
-        -- 🔥 CRITIQUE POUR LE FRONT
         ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
 
     FROM `{TABLE_SOLUTION}` s
@@ -264,6 +268,7 @@ def list_solutions_for_user(user_id: str):
         s.NAME,
         s.STATUS,
         s.ID_COMPANY,
+        s.MEDIA_LOGO_RECTANGLE_ID,
         c.NAME,
         c.MEDIA_LOGO_RECTANGLE_ID,
         c.IS_PARTNER,
@@ -290,7 +295,9 @@ def list_solutions_for_user(user_id: str):
             "id_company": r["ID_COMPANY"],
             "company_name": r["COMPANY_NAME"],
 
-            "media_logo_rectangle_id": r["MEDIA_LOGO_RECTANGLE_ID"],
+            # 🔥 fallback
+            "media_logo_rectangle_id": r.get("SOLUTION_LOGO") or r.get("MEDIA_LOGO_RECTANGLE_ID"),
+
             "is_partner": r["IS_PARTNER"],
 
             "vectorise": r["VECTORISE"],
@@ -309,11 +316,12 @@ def list_solutions_for_user(user_id: str):
                 "key_points": r["KEY_POINTS"],
             } if r.get("ID_INSIGHT") else None,
 
-            # 🔥 CRITIQUE POUR TON UI
             "universes": r.get("universes") or [],
         }
         for r in rows
     ]
+
+
 # ============================================================
 # GET ONE
 # ============================================================
@@ -324,6 +332,7 @@ def get_solution(id_solution: str):
         SELECT
             s.*,
             c.NAME AS COMPANY_NAME,
+            c.MEDIA_LOGO_RECTANGLE_ID AS COMPANY_LOGO,
             ns.ID_SOLUTION IS NOT NULL AS HAS_NUMBERS
         FROM `{TABLE_SOLUTION}` s
         LEFT JOIN `{TABLE_COMPANY}` c
@@ -347,16 +356,20 @@ def get_solution(id_solution: str):
         "name": r["NAME"],
         "id_company": r["ID_COMPANY"],
         "company_name": r.get("COMPANY_NAME"),
+
         "description": r.get("DESCRIPTION"),
         "content": r.get("CONTENT"),
         "status": r.get("STATUS"),
         "vectorise": r.get("VECTORISE"),
         "insight_frequency": r.get("INSIGHT_FREQUENCY"),
+
+        # 🔥 fallback solution → company
+        "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID") or r.get("COMPANY_LOGO"),
+
         "created_at": r.get("CREATED_AT"),
         "updated_at": r.get("UPDATED_AT"),
         "has_numbers": r.get("HAS_NUMBERS", False),
     }
-
 
 # ============================================================
 # UPDATE
