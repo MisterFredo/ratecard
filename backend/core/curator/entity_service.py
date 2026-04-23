@@ -337,16 +337,26 @@ def get_solution_view(
         SELECT
             s.ID_SOLUTION,
             s.NAME,
+
+            -- 🔥 NEW → logo solution
+            s.MEDIA_LOGO_RECTANGLE_ID AS SOLUTION_LOGO,
+
             c.NAME AS COMPANY_NAME,
-            c.MEDIA_LOGO_RECTANGLE_ID
+            c.MEDIA_LOGO_RECTANGLE_ID AS COMPANY_LOGO
+
         FROM `{TABLE_SOLUTION}` s
+
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
             ON c.ID_COMPANY = s.ID_COMPANY
+
         WHERE s.ID_SOLUTION = @solution_id
         LIMIT 1
     """, {"solution_id": solution_id})
 
     solution = solution_rows[0] if solution_rows else {}
+
+    # 🔥 fallback propre
+    logo = solution.get("SOLUTION_LOGO") or solution.get("COMPANY_LOGO")
 
     stats_rows = query_bq(f"""
         SELECT
@@ -371,7 +381,10 @@ def get_solution_view(
         "id_solution": solution_id,
         "name": solution.get("NAME"),
         "company_name": solution.get("COMPANY_NAME"),
-        "media_logo_rectangle_id": solution.get("MEDIA_LOGO_RECTANGLE_ID"),
+
+        # 🔥 IMPORTANT → logo final
+        "media_logo_rectangle_id": logo,
+
         "nb_analyses": stats.get("NB_ANALYSES", 0),
         "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
