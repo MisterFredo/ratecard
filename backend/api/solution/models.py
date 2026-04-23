@@ -70,7 +70,6 @@ class SolutionOut(BaseModel):
     id_solution: str
     name: str
 
-    # 🔥 cohérent avec CREATE
     id_company: str
 
     description: Optional[str] = None
@@ -79,6 +78,9 @@ class SolutionOut(BaseModel):
 
     status: str
     vectorise: bool
+
+    # 🔥 NEW → visuel
+    media_logo_rectangle_id: Optional[str] = None
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
