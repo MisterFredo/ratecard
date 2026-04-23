@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import HtmlEditor from "@/components/admin/HtmlEditor";
+import VisualSection from "@/components/visuals/VisualSection";
+
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+const SOLUTION_MEDIA_PATH = "solutions";
 
 type Company = {
   id_company: string;
@@ -22,12 +26,15 @@ export default function CreateSolution() {
   const [idCompany, setIdCompany] =
     useState<string | null>(null);
 
-  // 🔥 NEW
   const [insightFrequency, setInsightFrequency] =
     useState("QUARTERLY");
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // 🔥 NEW → pour visuel
+  const [solutionId, setSolutionId] = useState<string | null>(null);
+  const [logoFilename, setLogoFilename] = useState<string | null>(null);
 
   /* ---------------------------------------------------------
      LOAD COMPANIES
@@ -68,8 +75,6 @@ export default function CreateSolution() {
         content: content || null,
         status,
         id_company: idCompany || null,
-
-        // 🔥 NEW
         insight_frequency: insightFrequency,
       });
 
@@ -77,15 +82,10 @@ export default function CreateSolution() {
         throw new Error("ID solution manquant");
       }
 
-      alert("Solution créée");
+      // 🔥 IMPORTANT → on stocke l'id
+      setSolutionId(res.id_solution);
 
-      // reset clean
-      setName("");
-      setDescription("");
-      setContent("");
-      setStatus("DRAFT");
-      setIdCompany(null);
-      setInsightFrequency("QUARTERLY");
+      alert("Solution créée. Vous pouvez maintenant ajouter un logo.");
 
     } catch (e) {
 
@@ -98,6 +98,37 @@ export default function CreateSolution() {
 
     }
   }
+
+  /* ---------------------------------------------------------
+     RELOAD SOLUTION
+  --------------------------------------------------------- */
+  async function reloadSolution() {
+
+    if (!solutionId) return;
+
+    try {
+
+      const s = await api.get(`/solution/${solutionId}`);
+
+      setLogoFilename(
+        s.media_logo_rectangle_id || null
+      );
+
+      if (s.insight_frequency) {
+        setInsightFrequency(s.insight_frequency);
+      }
+
+    } catch (e) {
+
+      console.error(e);
+      alert("❌ Erreur rechargement solution");
+
+    }
+  }
+
+  const rectUrl = logoFilename
+    ? `${GCS_BASE_URL}/${SOLUTION_MEDIA_PATH}/${logoFilename}`
+    : null;
 
   /* ---------------------------------------------------------
      UI
@@ -158,7 +189,7 @@ export default function CreateSolution() {
         onChange={setContent}
       />
 
-      {/* 🔥 FREQUENCY */}
+      {/* FREQUENCY */}
       <div className="space-y-2">
         <label className="block font-medium">
           Fréquence des insights
@@ -173,10 +204,6 @@ export default function CreateSolution() {
           <option value="MONTHLY">Monthly</option>
           <option value="QUARTERLY">Quarterly</option>
         </select>
-
-        <p className="text-xs text-gray-500">
-          Par défaut quarterly — override possible si besoin spécifique
-        </p>
       </div>
 
       {/* STATUS */}
@@ -201,6 +228,16 @@ export default function CreateSolution() {
       >
         {loading ? "Création…" : "Créer"}
       </button>
+
+      {/* 🔥 VISUAL */}
+      {solutionId && (
+        <VisualSection
+          entityId={solutionId}
+          entityType="solution"
+          rectUrl={rectUrl}
+          onUpdated={reloadSolution}
+        />
+      )}
 
     </div>
   );
