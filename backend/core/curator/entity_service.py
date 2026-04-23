@@ -102,7 +102,9 @@ def _get_entity_feed(
     # ============================================================
 
     sql = f"""
+    -- =========================
     -- NEWS
+    -- =========================
     SELECT
         n.id_news AS id,
         'news' AS type,
@@ -111,10 +113,21 @@ def _get_entity_feed(
         n.published_at,
         n.news_type,
         n.topics,
-        ARRAY<STRUCT<id_company STRING, name STRING>>[
-          STRUCT(n.id_company, n.company_name)
+
+        ARRAY<STRUCT<
+            id_company STRING,
+            name STRING,
+            logo STRING
+        >>[
+            STRUCT(
+                n.id_company,
+                n.company_name,
+                n.media_logo_rectangle_id
+            )
         ] AS companies,
+
         [] AS solutions
+
     FROM `{VIEW_NEWS}` n
     WHERE {where_clause_news}
     {user_filter_news}
@@ -122,7 +135,9 @@ def _get_entity_feed(
 
     UNION ALL
 
-    -- CONTENT
+    -- =========================
+    -- CONTENT (ANALYSIS)
+    -- =========================
     SELECT
         c.id_content AS id,
         'analysis' AS type,
@@ -131,8 +146,33 @@ def _get_entity_feed(
         c.published_at,
         NULL AS news_type,
         c.topics,
-        c.companies,
-        c.solutions
+
+        -- 🔥 COMPANIES AVEC LOGO
+        ARRAY(
+            SELECT AS STRUCT
+                comp.id_company,
+                comp.name,
+                comp.media_logo_rectangle_id AS logo
+            FROM UNNEST(c.companies) comp
+        ) AS companies,
+
+        -- 🔥 SOLUTIONS AVEC FALLBACK
+        ARRAY(
+            SELECT AS STRUCT
+                sol.id_solution,
+                sol.name,
+
+                COALESCE(
+                    s.MEDIA_LOGO_RECTANGLE_ID,      -- logo solution BQ
+                    sol.media_logo_rectangle_id     -- fallback déjà présent dans view
+                ) AS logo
+
+            FROM UNNEST(c.solutions) sol
+
+            LEFT JOIN `{TABLE_SOLUTION}` s
+              ON s.ID_SOLUTION = sol.id_solution
+        ) AS solutions
+
     FROM `{VIEW_CONTENT}` c
     WHERE {where_clause_content}
     {user_filter_content}
@@ -156,7 +196,6 @@ def _get_entity_feed(
     rows = query_bq(sql, query_params)
 
     return [_map_feed_row(r) for r in rows]
-
 
 # ============================================================
 # COMPANY
@@ -408,6 +447,8 @@ def _map_feed_row(r: Dict):
         "published_at": fmt(r.get("published_at")),
         "news_type": r.get("news_type"),
         "topics": r.get("topics") or [],
+
+        # 🔥 enrichis
         "companies": r.get("companies") or [],
         "solutions": r.get("solutions") or [],
     }
