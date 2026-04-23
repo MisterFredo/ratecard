@@ -301,6 +301,7 @@ export default function CreateCompany() {
       {companyId && (
         <VisualSection
           entityId={companyId}
+          entityType="company"
           rectUrl={rectUrl}
           onUpdated={reloadCompany}
         />
