@@ -40,9 +40,9 @@ async function fetchCompanies(): Promise<Company[]> {
     }
 
     return data.map((c: any) => ({
-      id_company: c.ID_COMPANY,
-      name: c.NAME,
-      media_logo_rectangle_id: c.MEDIA_LOGO_RECTANGLE_ID,
+      id_company: c.id_company,
+      name: c.name,
+      media_logo_rectangle_id: c.media_logo_rectangle_id,
       nb_analyses: c.nb_analyses ?? 0,
       delta_30d: c.delta_30d ?? 0,
       universes: c.universes ?? [],
