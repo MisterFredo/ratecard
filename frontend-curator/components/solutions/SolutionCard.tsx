@@ -7,12 +7,17 @@ type Props = {
   id: string;
   name: string;
 
+  // 🔥 logo final (solution OU fallback company)
   visualRectId?: string | null;
+
+  // 🔥 NEW → permet de savoir d’où vient le logo
+  visualType?: "solution" | "company";
+
   nbAnalyses?: number;
   delta30d?: number;
   isPartner?: boolean;
 
-  hasNumbers?: boolean; // ✅ NEW
+  hasNumbers?: boolean;
 
   lastRadar?: {
     id_insight: string;
@@ -26,18 +31,21 @@ export default function SolutionCard({
   id,
   name,
   visualRectId,
+  visualType = "company", // 🔥 fallback par défaut
   nbAnalyses,
   delta30d,
   isPartner,
-  hasNumbers, // ✅ NEW
+  hasNumbers,
   lastRadar,
 }: Props) {
+
   const router = useRouter();
   const pathname = usePathname();
   const { openLeftDrawer, openRightDrawer } = useDrawer();
 
+  // 🔥 gestion dynamique du path
   const visualUrl = visualRectId
-    ? `${GCS_BASE_URL}/companies/${visualRectId}`
+    ? `${GCS_BASE_URL}/${visualType === "solution" ? "solutions" : "companies"}/${visualRectId}`
     : null;
 
   function handleClick() {
@@ -153,7 +161,6 @@ export default function SolutionCard({
           </p>
         )}
 
-        {/* CTA radar */}
         {lastRadar && (
           <div
             onClick={handleRadarClick}
