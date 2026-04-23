@@ -286,6 +286,7 @@ export default function EditCompany({ params }: { params: { id: string } }) {
       {/* VISUAL */}
       <VisualSection
         entityId={id}
+        entityType="company"
         rectUrl={rectUrl}
         onUpdated={async () => {
           try {
