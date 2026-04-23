@@ -114,9 +114,17 @@ async function fetchSolutions(): Promise<Solution[]> {
     if (json.status !== "ok") return [];
 
     return (json.solutions || []).map((s: any) => ({
-      ...s,
-      universes: s.universes || [],
-    }));
+     id_solution: s.id_solution ?? s.ID_SOLUTION,
+     name: s.name ?? s.NAME,
+     media_logo_rectangle_id:
+       s.media_logo_rectangle_id ?? s.MEDIA_LOGO_RECTANGLE_ID,
+
+     nb_analyses: s.nb_analyses ?? s.NB_ANALYSES ?? 0,
+     delta_30d: s.delta_30d ?? s.DELTA_30D ?? 0,
+     is_partner: s.is_partner ?? s.IS_PARTNER ?? false,
+
+     universes: s.universes ?? [],
+   }));
 
   } catch (e) {
     console.error("❌ fetchSolutions error:", e);
