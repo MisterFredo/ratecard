@@ -79,7 +79,6 @@ def list_solutions() -> List[Dict]:
         s.STATUS,
         s.ID_COMPANY,
 
-        -- 🔥 NEW → logo solution
         s.MEDIA_LOGO_RECTANGLE_ID AS SOLUTION_LOGO,
 
         c.NAME AS COMPANY_NAME,
@@ -166,8 +165,9 @@ def list_solutions() -> List[Dict]:
             "id_company": r["ID_COMPANY"],
             "company_name": r.get("COMPANY_NAME"),
 
-            # 🔥 fallback solution → company
+            # 🔥 LOGIQUE PROPRE
             "media_logo_rectangle_id": r.get("SOLUTION_LOGO") or r.get("MEDIA_LOGO_RECTANGLE_ID"),
+            "logo_type": "solution" if r.get("SOLUTION_LOGO") else "company",
 
             "is_partner": r.get("IS_PARTNER", False),
 
@@ -193,6 +193,7 @@ def list_solutions() -> List[Dict]:
         for r in rows
     ]
 
+
 def list_solutions_for_user(user_id: str):
 
     sql = f"""
@@ -202,7 +203,6 @@ def list_solutions_for_user(user_id: str):
         s.STATUS,
         s.ID_COMPANY,
 
-        -- 🔥 NEW
         s.MEDIA_LOGO_RECTANGLE_ID AS SOLUTION_LOGO,
 
         c.NAME AS COMPANY_NAME,
@@ -295,8 +295,8 @@ def list_solutions_for_user(user_id: str):
             "id_company": r["ID_COMPANY"],
             "company_name": r["COMPANY_NAME"],
 
-            # 🔥 fallback
             "media_logo_rectangle_id": r.get("SOLUTION_LOGO") or r.get("MEDIA_LOGO_RECTANGLE_ID"),
+            "logo_type": "solution" if r.get("SOLUTION_LOGO") else "company",
 
             "is_partner": r["IS_PARTNER"],
 
@@ -321,11 +321,9 @@ def list_solutions_for_user(user_id: str):
         for r in rows
     ]
 
-
 # ============================================================
 # GET ONE
 # ============================================================
-
 def get_solution(id_solution: str):
 
     rows = query_bq(f"""
@@ -351,6 +349,9 @@ def get_solution(id_solution: str):
 
     r = rows[0]
 
+    solution_logo = r.get("MEDIA_LOGO_RECTANGLE_ID")
+    company_logo = r.get("COMPANY_LOGO")
+
     return {
         "id_solution": r["ID_SOLUTION"],
         "name": r["NAME"],
@@ -363,8 +364,8 @@ def get_solution(id_solution: str):
         "vectorise": r.get("VECTORISE"),
         "insight_frequency": r.get("INSIGHT_FREQUENCY"),
 
-        # 🔥 fallback solution → company
-        "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID") or r.get("COMPANY_LOGO"),
+        "media_logo_rectangle_id": solution_logo or company_logo,
+        "logo_type": "solution" if solution_logo else "company",
 
         "created_at": r.get("CREATED_AT"),
         "updated_at": r.get("UPDATED_AT"),
