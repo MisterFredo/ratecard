@@ -477,27 +477,42 @@ def generate_linkedin_post_for_news(news_id: str):
         news_url = f"{site_url}/news?news_id={news_id}"
 
         prompt = f"""
-Tu es l’éditeur LinkedIn de Ratecard.
+Tu es l’éditeur LinkedIn de Ratecard, en mission pour valoriser une actualité client.
 
 MISSION :
-Rédiger un post analytique basé strictement sur l’actualité fournie.
+Rédiger un post LinkedIn qui met en valeur l’annonce, tout en conservant une lecture business crédible.
 
-RÈGLES :
-- Strictement basé sur les informations ci-dessous.
-- Aucun ajout.
+RÈGLES ABSOLUES :
+- Strictement basé sur les informations fournies.
+- Aucun ajout externe.
 - Aucun chiffre inventé.
 - Pas de hashtags.
 - Pas d’emojis.
-- Ton analytique et factuel.
+- Pas de ton publicitaire ou promotionnel excessif.
 
-STRUCTURE OBLIGATOIRE :
+OBJECTIF :
+Valoriser l’initiative sans surjouer.
+Montrer en quoi elle est pertinente, structurante ou révélatrice.
 
-1) Hook analytique court.
-2) Mention explicite de la société si présente.
-3) Décryptage du signal (2 à 4 phrases).
-4) Mise en perspective marché.
-5) Ligne finale obligatoire :
+STRUCTURE ATTENDUE :
+
+1) Hook engageant (angle clair, pas une reformulation)
+2) Mise en avant de la société et de son initiative
+3) Décryptage :
+   - ce que fait concrètement la société
+   - pourquoi c’est intéressant / pertinent
+4) Lecture business :
+   - ce que cela apporte (performance, usage, stratégie, différenciation…)
+5) Ouverture :
+   - ce que cela peut changer ou accélérer
+6) Ligne finale obligatoire :
 Lire la news complète : {news_url}
+
+STYLE :
+- Fluide, crédible, jamais “corporate creux”
+- Ton positif mais maîtrisé
+- Éviter les superlatifs (“révolutionnaire”, “unique”, etc.)
+- Pas de banalités
 
 Longueur cible : 700 à 1 100 caractères.
 
