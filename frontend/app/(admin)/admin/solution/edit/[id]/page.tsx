@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import HtmlEditor from "@/components/admin/HtmlEditor";
+import VisualSection from "@/components/visuals/VisualSection";
+
+const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
+const SOLUTION_MEDIA_PATH = "solutions";
 
 type Company = {
   id_company: string;
@@ -31,6 +35,12 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
   const [companies, setCompanies] = useState<Company[]>([]);
 
+  // 🔥 NEW → visuel
+  const [logoFilename, setLogoFilename] = useState<string | null>(null);
+
+  /* ---------------------------------------------------------
+     LOAD
+  --------------------------------------------------------- */
   useEffect(() => {
 
     async function load() {
@@ -46,6 +56,9 @@ export default function EditSolution({ params }: { params: { id: string } }) {
         setStatus(sol?.status || "DRAFT");
         setIdCompany(sol?.id_company || null);
         setInsightFrequency(sol?.insight_frequency || "QUARTERLY");
+
+        // 🔥 NEW
+        setLogoFilename(sol?.media_logo_rectangle_id || null);
 
         const compRes = await api.get("/company/list");
         setCompanies(compRes.companies || []);
@@ -67,6 +80,9 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
   }, [id]);
 
+  /* ---------------------------------------------------------
+     SAVE
+  --------------------------------------------------------- */
   async function save() {
 
     try {
@@ -97,8 +113,40 @@ export default function EditSolution({ params }: { params: { id: string } }) {
 
   }
 
+  /* ---------------------------------------------------------
+     RELOAD (après upload visuel)
+  --------------------------------------------------------- */
+  async function reloadSolution() {
+
+    try {
+
+      const res = await api.get(`/solution/${id}`);
+      const sol = res.solution;
+
+      setLogoFilename(sol?.media_logo_rectangle_id || null);
+
+      if (sol?.insight_frequency) {
+        setInsightFrequency(sol.insight_frequency);
+      }
+
+    } catch (e) {
+
+      console.error(e);
+      alert("❌ Erreur rechargement solution");
+
+    }
+
+  }
+
+  const rectUrl = logoFilename
+    ? `${GCS_BASE_URL}/${SOLUTION_MEDIA_PATH}/${logoFilename}`
+    : null;
+
   if (loading) return <p>Chargement…</p>;
 
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
   return (
     <div className="space-y-8">
 
@@ -180,6 +228,14 @@ export default function EditSolution({ params }: { params: { id: string } }) {
       >
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
+
+      {/* 🔥 VISUAL */}
+      <VisualSection
+        entityId={id}
+        entityType="solution"
+        rectUrl={rectUrl}
+        onUpdated={reloadSolution}
+      />
 
     </div>
   );
