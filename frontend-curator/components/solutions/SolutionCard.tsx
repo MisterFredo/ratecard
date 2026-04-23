@@ -7,10 +7,10 @@ type Props = {
   id: string;
   name: string;
 
-  // 🔥 logo final (solution OU fallback company)
+  // logo final (solution OU fallback company)
   visualRectId?: string | null;
 
-  // 🔥 NEW → permet de savoir d’où vient le logo
+  // source du logo
   visualType?: "solution" | "company";
 
   nbAnalyses?: number;
@@ -31,7 +31,7 @@ export default function SolutionCard({
   id,
   name,
   visualRectId,
-  visualType = "company", // 🔥 fallback par défaut
+  visualType,
   nbAnalyses,
   delta30d,
   isPartner,
@@ -43,11 +43,23 @@ export default function SolutionCard({
   const pathname = usePathname();
   const { openLeftDrawer, openRightDrawer } = useDrawer();
 
-  // 🔥 gestion dynamique du path
-  const visualUrl = visualRectId
-    ? `${GCS_BASE_URL}/${visualType === "solution" ? "solutions" : "companies"}/${visualRectId}`
-    : null;
+  // =====================================================
+  // 🔥 VISUAL URL (SAFE + ROBUST)
+  // =====================================================
+  let visualUrl: string | null = null;
 
+  if (visualRectId) {
+    const folder =
+      visualType === "solution"
+        ? "solutions"
+        : "companies"; // fallback par défaut
+
+    visualUrl = `${GCS_BASE_URL}/${folder}/${visualRectId}`;
+  }
+
+  // =====================================================
+  // HANDLERS
+  // =====================================================
   function handleClick() {
     openLeftDrawer("solution", id);
 
@@ -59,9 +71,14 @@ export default function SolutionCard({
 
   function handleRadarClick(e: React.MouseEvent) {
     e.stopPropagation();
-    openRightDrawer("radar", lastRadar!.id_insight);
+    if (lastRadar?.id_insight) {
+      openRightDrawer("radar", lastRadar.id_insight);
+    }
   }
 
+  // =====================================================
+  // UI
+  // =====================================================
   return (
     <div
       onClick={handleClick}
@@ -73,9 +90,7 @@ export default function SolutionCard({
         relative
       "
     >
-      {/* =====================================================
-          BADGE NUMBERS
-      ===================================================== */}
+      {/* BADGE NUMBERS */}
       {hasNumbers && (
         <div className="
           absolute top-2 left-2 z-10
@@ -87,9 +102,7 @@ export default function SolutionCard({
         </div>
       )}
 
-      {/* =====================================================
-          BADGES
-      ===================================================== */}
+      {/* BADGES */}
       <div className="absolute top-2 right-2 flex gap-1 z-10">
         {isPartner && (
           <span className="text-[9px] px-2 py-0.5 rounded bg-teal-600 text-white">
@@ -104,9 +117,7 @@ export default function SolutionCard({
         )}
       </div>
 
-      {/* =====================================================
-          VISUEL
-      ===================================================== */}
+      {/* VISUEL */}
       <div className="relative h-24 w-full bg-ratecard-light overflow-hidden">
         {visualUrl ? (
           <img
@@ -124,9 +135,7 @@ export default function SolutionCard({
           </div>
         )}
 
-        {/* =====================================================
-            RADAR OVERLAY
-        ===================================================== */}
+        {/* RADAR OVERLAY */}
         {lastRadar?.key_points?.[0] && (
           <div
             onClick={handleRadarClick}
@@ -147,9 +156,7 @@ export default function SolutionCard({
         )}
       </div>
 
-      {/* =====================================================
-          CONTENU
-      ===================================================== */}
+      {/* CONTENU */}
       <div className="p-3 space-y-1 text-center">
         <h3 className="text-xs font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:underline">
           {name}
