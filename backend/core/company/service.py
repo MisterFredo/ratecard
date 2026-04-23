@@ -301,14 +301,14 @@ def list_companies_for_user(user_id: str):
 
     return [
         {
-            "ID_COMPANY": r["ID_COMPANY"],
-            "NAME": r["NAME"],
-            "TYPE": r.get("TYPE"),
-            "IS_PARTNER": r["IS_PARTNER"],
-            "MEDIA_LOGO_RECTANGLE_ID": r["MEDIA_LOGO_RECTANGLE_ID"],
-            "INSIGHT_FREQUENCY": r.get("INSIGHT_FREQUENCY"),
-            "NB_ANALYSES": r["NB_ANALYSES"],
-            "DELTA_30D": r["DELTA_30D"],
+            "id_company": r["ID_COMPANY"],
+            "name": r["NAME"],
+            "type": r.get("TYPE"),
+            "is_partner": r["IS_PARTNER"],
+            "media_logo_rectangle_id": r["MEDIA_LOGO_RECTANGLE_ID"],
+            "insight_frequency": r.get("INSIGHT_FREQUENCY"),
+            "nb_analyses": r["NB_ANALYSES"],
+            "delta_30d": r["DELTA_30D"],
             "universes": r.get("universes") or [],
         }
         for r in rows
