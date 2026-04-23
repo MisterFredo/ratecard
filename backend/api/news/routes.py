@@ -466,9 +466,9 @@ def generate_linkedin_post_for_news(news_id: str):
         if not news:
             raise HTTPException(404, "News introuvable")
 
-        title = news.get("TITLE") or ""
-        excerpt = news.get("EXCERPT") or ""
-        company_name = news.get("COMPANY_NAME") or ""
+        title = news.get("title") or ""
+        excerpt = news.get("excerpt") or ""
+        company_name = news.get("company", {}).get("name") or ""
 
         if not title.strip():
             raise HTTPException(400, "Titre manquant")
