@@ -203,7 +203,8 @@ def list_solutions_for_user(user_id: str):
         s.STATUS,
         s.ID_COMPANY,
 
-        s.MEDIA_LOGO_RECTANGLE_ID AS SOLUTION_LOGO,
+        -- ✅ FIX
+        ANY_VALUE(s.MEDIA_LOGO_RECTANGLE_ID) AS SOLUTION_LOGO,
 
         c.NAME AS COMPANY_NAME,
         c.MEDIA_LOGO_RECTANGLE_ID,
@@ -268,7 +269,6 @@ def list_solutions_for_user(user_id: str):
         s.NAME,
         s.STATUS,
         s.ID_COMPANY,
-        s.MEDIA_LOGO_RECTANGLE_ID,
         c.NAME,
         c.MEDIA_LOGO_RECTANGLE_ID,
         c.IS_PARTNER,
