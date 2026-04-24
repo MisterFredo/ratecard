@@ -30,14 +30,9 @@ async function fetchCompanies(): Promise<Company[]> {
   try {
     const json = await api.get("/company/list-curator");
 
-    console.log("🔥 RAW API RESPONSE:", json);
-
     const data = json?.companies ?? [];
 
-    if (!Array.isArray(data)) {
-      console.error("❌ companies n'est pas un tableau :", data);
-      return [];
-    }
+    if (!Array.isArray(data)) return [];
 
     return data.map((c: any) => ({
       id_company: c.id_company,
@@ -52,7 +47,6 @@ async function fetchCompanies(): Promise<Company[]> {
     console.error("❌ fetchCompanies error:", e);
 
     if (e?.message?.includes("401")) {
-      console.warn("⚠️ USER NON AUTHENTIFIÉ → redirect login");
       window.location.href = "/login";
     }
 
@@ -64,27 +58,16 @@ async function fetchCompanies(): Promise<Company[]> {
    SORT
 ========================================================= */
 
-function sortCompanies(
-  companies: Company[],
-  mode: SortMode
-): Company[] {
+function sortCompanies(companies: Company[], mode: SortMode): Company[] {
   const copy = [...companies];
 
   switch (mode) {
     case "activity":
-      return copy.sort(
-        (a, b) => (b.nb_analyses ?? 0) - (a.nb_analyses ?? 0)
-      );
-
+      return copy.sort((a, b) => b.nb_analyses - a.nb_analyses);
     case "growth":
-      return copy.sort(
-        (a, b) => (b.delta_30d ?? 0) - (a.delta_30d ?? 0)
-      );
-
+      return copy.sort((a, b) => b.delta_30d - a.delta_30d);
     default:
-      return copy.sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
+      return copy.sort((a, b) => a.name.localeCompare(b.name));
   }
 }
 
@@ -92,16 +75,11 @@ function sortCompanies(
    GROUP BY UNIVERSE
 ========================================================= */
 
-function groupByUniverse(
-  companies: Company[],
-  mode: SortMode
-) {
+function groupByUniverse(companies: Company[], mode: SortMode) {
   const map: Record<string, Company[]> = {};
 
   companies.forEach((c) => {
-    const universes = c.universes ?? [];
-
-    universes.forEach((u) => {
+    (c.universes || []).forEach((u) => {
       if (!map[u]) map[u] = [];
       map[u].push(c);
     });
@@ -124,21 +102,21 @@ export default function CompaniesPage() {
   const [ready, setReady] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("alpha");
 
+  // 🔥 ACCORDÉON
+  const [openUniverses, setOpenUniverses] = useState<Record<string, boolean>>({});
+
   const { openLeftDrawer } = useDrawer();
   const searchParams = useSearchParams();
-
   const lastOpenedId = useRef<string | null>(null);
 
   /* ---------------------------------------------------------
-     AUTH CHECK (🔥 CRITIQUE)
+     AUTH
   --------------------------------------------------------- */
+
   useEffect(() => {
     const userId = localStorage.getItem("user_id");
 
-    console.log("👤 USER_ID:", userId);
-
     if (!userId) {
-      console.warn("❌ PAS DE USER → redirect login");
       window.location.href = "/login";
       return;
     }
@@ -147,18 +125,15 @@ export default function CompaniesPage() {
   }, []);
 
   /* ---------------------------------------------------------
-     LOAD DATA
+     LOAD
   --------------------------------------------------------- */
+
   useEffect(() => {
     if (!ready) return;
 
     async function load() {
       setLoading(true);
-
       const data = await fetchCompanies();
-
-      console.log("📊 COMPANIES LOADED:", data.length);
-
       setCompanies(data);
       setLoading(false);
     }
@@ -169,6 +144,7 @@ export default function CompaniesPage() {
   /* ---------------------------------------------------------
      DRAWER
   --------------------------------------------------------- */
+
   useEffect(() => {
     const companyId = searchParams.get("company_id");
 
@@ -184,17 +160,48 @@ export default function CompaniesPage() {
   }, [searchParams, openLeftDrawer]);
 
   /* ---------------------------------------------------------
+     AUTO OPEN UNIVERSE
+  --------------------------------------------------------- */
+
+  useEffect(() => {
+    const companyId = searchParams.get("company_id");
+    if (!companyId) return;
+
+    const comp = companies.find((c) => c.id_company === companyId);
+    if (!comp) return;
+
+    const universe = comp.universes?.[0];
+    if (!universe) return;
+
+    setOpenUniverses((prev) => ({
+      ...prev,
+      [universe]: true,
+    }));
+  }, [companies, searchParams]);
+
+  /* ---------------------------------------------------------
+     HELPERS
+  --------------------------------------------------------- */
+
+  function toggleUniverse(u: string) {
+    setOpenUniverses((prev) => ({
+      ...prev,
+      [u]: !prev[u],
+    }));
+  }
+
+  /* ---------------------------------------------------------
      DATA
   --------------------------------------------------------- */
 
   const grouped = groupByUniverse(companies, sortMode);
   const hasContent = companies.length > 0;
 
+  if (!ready) return null;
+
   /* =========================================================
      RENDER
   ========================================================= */
-
-  if (!ready) return null;
 
   return (
     <div className="space-y-8">
@@ -219,11 +226,9 @@ export default function CompaniesPage() {
           ].map((s) => (
             <button
               key={s.key}
-              onClick={() =>
-                setSortMode(s.key as SortMode)
-              }
+              onClick={() => setSortMode(s.key as SortMode)}
               className={`
-                px-3 py-1 rounded border transition
+                px-3 py-1 rounded border
                 ${
                   sortMode === s.key
                     ? "bg-teal-600 text-white border-teal-600"
@@ -253,34 +258,59 @@ export default function CompaniesPage() {
 
       {/* CONTENT */}
       {!loading && hasContent &&
-        Object.entries(grouped).map(([universe, items]) => (
-          <section key={universe} className="space-y-4">
+        Object.entries(grouped)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([universe, items]) => (
+            <section key={universe} className="space-y-2">
 
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-semibold uppercase text-gray-400">
-                {universe}
-              </h2>
+              {/* HEADER ACCORDÉON */}
+              <div
+                onClick={() => toggleUniverse(universe)}
+                className="
+                  flex items-center justify-between
+                  cursor-pointer
+                  py-2 px-1
+                  border-b border-gray-100
+                  hover:bg-gray-50
+                "
+              >
+                <h2 className="text-xs font-semibold uppercase text-gray-500">
+                  {universe}
+                </h2>
 
-              <span className="text-xs text-gray-300">
-                {items.length}
-              </span>
-            </div>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span>{items.length}</span>
+                  <span
+                    className={`
+                      transition-transform
+                      ${openUniverses[universe] ? "rotate-90" : ""}
+                    `}
+                  >
+                    ▶
+                  </span>
+                </div>
+              </div>
 
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
-              {items.map((c) => (
-                <CompanyCard
-                  key={c.id_company}
-                  id={c.id_company}
-                  name={c.name}
-                  visualRectId={c.media_logo_rectangle_id}
-                  totalAnalyses={c.nb_analyses}
-                  delta30d={c.delta_30d}
-                />
-              ))}
-            </div>
+              {/* CONTENT */}
+              {openUniverses[universe] && (
+                <div className="pt-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
+                    {items.map((c) => (
+                      <CompanyCard
+                        key={c.id_company}
+                        id={c.id_company}
+                        name={c.name}
+                        visualRectId={c.media_logo_rectangle_id}
+                        totalAnalyses={c.nb_analyses}
+                        delta30d={c.delta_30d}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          </section>
-        ))}
+            </section>
+          ))}
 
     </div>
   );
