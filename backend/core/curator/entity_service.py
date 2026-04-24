@@ -156,21 +156,13 @@ def _get_entity_feed(
             FROM UNNEST(c.companies) comp
         ) AS companies,
 
-        -- 🔥 SOLUTIONS AVEC FALLBACK
+        -- 🔥 SOLUTIONS SAFE (SANS JOIN)
         ARRAY(
             SELECT AS STRUCT
                 sol.id_solution,
                 sol.name,
-
-                COALESCE(
-                    s.MEDIA_LOGO_RECTANGLE_ID,      -- logo solution BQ
-                    sol.media_logo_rectangle_id     -- fallback déjà présent dans view
-                ) AS logo
-
+                sol.media_logo_rectangle_id AS logo
             FROM UNNEST(c.solutions) sol
-
-            LEFT JOIN `{TABLE_SOLUTION}` s
-              ON s.ID_SOLUTION = sol.id_solution
         ) AS solutions
 
     FROM `{VIEW_CONTENT}` c
