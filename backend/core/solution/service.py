@@ -204,8 +204,8 @@ def list_solutions_for_user(user_id: str):
         s.ID_COMPANY,
 
         c.NAME AS COMPANY_NAME,
-        c.MEDIA_LOGO_RECTANGLE_ID,
-        CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
+        ANY_VALUE(c.MEDIA_LOGO_RECTANGLE_ID) AS MEDIA_LOGO_RECTANGLE_ID,
+        ANY_VALUE(CAST(c.IS_PARTNER AS BOOL)) AS IS_PARTNER,
 
         s.VECTORISE,
         s.INSIGHT_FREQUENCY,
@@ -224,17 +224,14 @@ def list_solutions_for_user(user_id: str):
 
     FROM `{TABLE_SOLUTION}` s
 
-    JOIN `{TABLE_COMPANY}` c
+    LEFT JOIN `{TABLE_COMPANY}` c
       ON s.ID_COMPANY = c.ID_COMPANY
 
-    JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+    LEFT JOIN `{TABLE_COMPANY_UNIVERSE}` cu
       ON cu.ID_COMPANY = c.ID_COMPANY
 
-    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
+    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
       ON u.ID_UNIVERSE = cu.ID_UNIVERSE
-
-    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-      ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
 
     LEFT JOIN `{VIEW_STATS_SOLUTION}` st
       ON st.id_solution = s.ID_SOLUTION
@@ -259,16 +256,22 @@ def list_solutions_for_user(user_id: str):
 
     WHERE
         s.IS_ACTIVE = TRUE
-        AND uu.ID_USER = '{user_id}'
+
+        -- 🔥 FILTRE USER CORRECT
+        AND EXISTS (
+            SELECT 1
+            FROM `{TABLE_COMPANY_UNIVERSE}` cu2
+            JOIN `{TABLE_USER_UNIVERSE}` uu
+              ON uu.ID_UNIVERSE = cu2.ID_UNIVERSE
+            WHERE cu2.ID_COMPANY = s.ID_COMPANY
+              AND uu.ID_USER = @user_id
+        )
 
     GROUP BY
         s.ID_SOLUTION,
         s.NAME,
         s.STATUS,
         s.ID_COMPANY,
-        c.NAME,
-        c.MEDIA_LOGO_RECTANGLE_ID,
-        c.IS_PARTNER,
         s.VECTORISE,
         s.INSIGHT_FREQUENCY,
         s.CREATED_AT,
@@ -282,7 +285,7 @@ def list_solutions_for_user(user_id: str):
     ORDER BY s.NAME ASC
     """
 
-    rows = query_bq(sql)
+    rows = query_bq(sql, {"user_id": user_id})
 
     return [
         {
@@ -290,20 +293,19 @@ def list_solutions_for_user(user_id: str):
             "name": r["NAME"],
             "status": r["STATUS"],
             "id_company": r["ID_COMPANY"],
-            "company_name": r["COMPANY_NAME"],
+            "company_name": r.get("COMPANY_NAME"),
 
-            # 🔥 ON RESTE SIMPLE
-            "media_logo_rectangle_id": r["MEDIA_LOGO_RECTANGLE_ID"],
-            "is_partner": r["IS_PARTNER"],
+            "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID"),
+            "is_partner": r.get("IS_PARTNER", False),
 
-            "vectorise": r["VECTORISE"],
+            "vectorise": r.get("VECTORISE"),
             "insight_frequency": r.get("INSIGHT_FREQUENCY"),
 
-            "created_at": r["CREATED_AT"],
-            "updated_at": r["UPDATED_AT"],
+            "created_at": r.get("CREATED_AT"),
+            "updated_at": r.get("UPDATED_AT"),
 
-            "nb_analyses": r["NB_ANALYSES"],
-            "delta_30d": r["DELTA_30D"],
+            "nb_analyses": r.get("NB_ANALYSES", 0),
+            "delta_30d": r.get("DELTA_30D", 0),
 
             "has_numbers": r.get("HAS_NUMBERS", False),
 
