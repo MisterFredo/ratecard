@@ -102,9 +102,7 @@ def _get_entity_feed(
     # ============================================================
 
     sql = f"""
-    -- =========================
     -- NEWS
-    -- =========================
     SELECT
         n.id_news AS id,
         'news' AS type,
@@ -113,21 +111,10 @@ def _get_entity_feed(
         n.published_at,
         n.news_type,
         n.topics,
-
-        ARRAY<STRUCT<
-            id_company STRING,
-            name STRING,
-            logo STRING
-        >>[
-            STRUCT(
-                n.id_company,
-                n.company_name,
-                n.media_logo_rectangle_id
-            )
+        ARRAY<STRUCT<id_company STRING, name STRING>>[
+          STRUCT(n.id_company, n.company_name)
         ] AS companies,
-
         [] AS solutions
-
     FROM `{VIEW_NEWS}` n
     WHERE {where_clause_news}
     {user_filter_news}
@@ -135,9 +122,7 @@ def _get_entity_feed(
 
     UNION ALL
 
-    -- =========================
-    -- CONTENT (ANALYSIS)
-    -- =========================
+    -- CONTENT
     SELECT
         c.id_content AS id,
         'analysis' AS type,
@@ -146,25 +131,8 @@ def _get_entity_feed(
         c.published_at,
         NULL AS news_type,
         c.topics,
-
-        -- 🔥 COMPANIES AVEC LOGO
-        ARRAY(
-            SELECT AS STRUCT
-                comp.id_company,
-                comp.name,
-                comp.media_logo_rectangle_id AS logo
-            FROM UNNEST(c.companies) comp
-        ) AS companies,
-
-        -- 🔥 SOLUTIONS SAFE (SANS JOIN)
-        ARRAY(
-            SELECT AS STRUCT
-                sol.id_solution,
-                sol.name,
-                sol.media_logo_rectangle_id AS logo
-            FROM UNNEST(c.solutions) sol
-        ) AS solutions
-
+        c.companies,
+        c.solutions
     FROM `{VIEW_CONTENT}` c
     WHERE {where_clause_content}
     {user_filter_content}
@@ -188,6 +156,7 @@ def _get_entity_feed(
     rows = query_bq(sql, query_params)
 
     return [_map_feed_row(r) for r in rows]
+
 
 # ============================================================
 # COMPANY
@@ -368,26 +337,16 @@ def get_solution_view(
         SELECT
             s.ID_SOLUTION,
             s.NAME,
-
-            -- 🔥 NEW → logo solution
-            s.MEDIA_LOGO_RECTANGLE_ID AS SOLUTION_LOGO,
-
             c.NAME AS COMPANY_NAME,
-            c.MEDIA_LOGO_RECTANGLE_ID AS COMPANY_LOGO
-
+            c.MEDIA_LOGO_RECTANGLE_ID
         FROM `{TABLE_SOLUTION}` s
-
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
             ON c.ID_COMPANY = s.ID_COMPANY
-
         WHERE s.ID_SOLUTION = @solution_id
         LIMIT 1
     """, {"solution_id": solution_id})
 
     solution = solution_rows[0] if solution_rows else {}
-
-    # 🔥 fallback propre
-    logo = solution.get("SOLUTION_LOGO") or solution.get("COMPANY_LOGO")
 
     stats_rows = query_bq(f"""
         SELECT
@@ -412,10 +371,7 @@ def get_solution_view(
         "id_solution": solution_id,
         "name": solution.get("NAME"),
         "company_name": solution.get("COMPANY_NAME"),
-
-        # 🔥 IMPORTANT → logo final
-        "media_logo_rectangle_id": logo,
-
+        "media_logo_rectangle_id": solution.get("MEDIA_LOGO_RECTANGLE_ID"),
         "nb_analyses": stats.get("NB_ANALYSES", 0),
         "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
@@ -439,8 +395,6 @@ def _map_feed_row(r: Dict):
         "published_at": fmt(r.get("published_at")),
         "news_type": r.get("news_type"),
         "topics": r.get("topics") or [],
-
-        # 🔥 enrichis
         "companies": r.get("companies") or [],
         "solutions": r.get("solutions") or [],
     }
