@@ -257,16 +257,14 @@ def list_companies_for_user(user_id: str):
         c.ID_COMPANY,
         c.NAME,
         c.TYPE,
-
-        -- 🔥 SAFE (évite tout bug futur)
-        ANY_VALUE(CAST(c.IS_PARTNER AS BOOL)) AS IS_PARTNER,
-        ANY_VALUE(c.MEDIA_LOGO_RECTANGLE_ID) AS MEDIA_LOGO_RECTANGLE_ID,
-        ANY_VALUE(c.INSIGHT_FREQUENCY) AS INSIGHT_FREQUENCY,
+        CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
+        c.MEDIA_LOGO_RECTANGLE_ID,
+        c.INSIGHT_FREQUENCY,
 
         COALESCE(m.total, 0) AS NB_ANALYSES,
         COALESCE(m.last_30_days, 0) AS DELTA_30D,
 
-        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
+        ARRAY_AGG(DISTINCT u.LABEL) AS universes
 
     FROM `{TABLE_COMPANY}` c
 
@@ -290,6 +288,9 @@ def list_companies_for_user(user_id: str):
         c.ID_COMPANY,
         c.NAME,
         c.TYPE,
+        c.IS_PARTNER,
+        c.MEDIA_LOGO_RECTANGLE_ID,
+        c.INSIGHT_FREQUENCY,
         m.total,
         m.last_30_days
 
@@ -300,22 +301,18 @@ def list_companies_for_user(user_id: str):
 
     return [
         {
-            "id_company": r["ID_COMPANY"],
-            "name": r["NAME"],
-            "type": r.get("TYPE"),
-
-            "is_partner": r.get("IS_PARTNER", False),
-            "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID"),
-            "insight_frequency": r.get("INSIGHT_FREQUENCY"),
-
-            "nb_analyses": r.get("NB_ANALYSES", 0),
-            "delta_30d": r.get("DELTA_30D", 0),
-
+            "ID_COMPANY": r["ID_COMPANY"],
+            "NAME": r["NAME"],
+            "TYPE": r.get("TYPE"),
+            "IS_PARTNER": r["IS_PARTNER"],
+            "MEDIA_LOGO_RECTANGLE_ID": r["MEDIA_LOGO_RECTANGLE_ID"],
+            "INSIGHT_FREQUENCY": r.get("INSIGHT_FREQUENCY"),
+            "NB_ANALYSES": r["NB_ANALYSES"],
+            "DELTA_30D": r["DELTA_30D"],
             "universes": r.get("universes") or [],
         }
         for r in rows
     ]
-
 
 # ============================================================
 # GET ONE COMPANY
