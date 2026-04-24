@@ -18,8 +18,7 @@ type Solution = {
   nb_analyses: number;
   delta_30d: number;
   is_partner?: boolean;
-
-  universes?: string[]; // ✅ SAFE
+  universes?: string[];
 };
 
 type SortMode = "alpha" | "activity" | "growth";
@@ -83,8 +82,6 @@ async function fetchSolutions(): Promise<Solution[]> {
   try {
     const userId = localStorage.getItem("user_id");
 
-    console.log("👤 USER_ID (solutions):", userId);
-
     if (!userId) {
       window.location.href = "/login";
       return [];
@@ -109,22 +106,18 @@ async function fetchSolutions(): Promise<Solution[]> {
 
     const json = await res.json();
 
-    console.log("🔥 RAW SOLUTIONS:", json);
-
     if (json.status !== "ok") return [];
 
     return (json.solutions || []).map((s: any) => ({
-     id_solution: s.id_solution ?? s.ID_SOLUTION,
-     name: s.name ?? s.NAME,
-     media_logo_rectangle_id:
-       s.media_logo_rectangle_id ?? s.MEDIA_LOGO_RECTANGLE_ID,
-
-     nb_analyses: s.nb_analyses ?? s.NB_ANALYSES ?? 0,
-     delta_30d: s.delta_30d ?? s.DELTA_30D ?? 0,
-     is_partner: s.is_partner ?? s.IS_PARTNER ?? false,
-
-     universes: s.universes ?? [],
-   }));
+      id_solution: s.id_solution ?? s.ID_SOLUTION,
+      name: s.name ?? s.NAME,
+      media_logo_rectangle_id:
+        s.media_logo_rectangle_id ?? s.MEDIA_LOGO_RECTANGLE_ID,
+      nb_analyses: s.nb_analyses ?? s.NB_ANALYSES ?? 0,
+      delta_30d: s.delta_30d ?? s.DELTA_30D ?? 0,
+      is_partner: s.is_partner ?? s.IS_PARTNER ?? false,
+      universes: s.universes ?? [],
+    }));
 
   } catch (e) {
     console.error("❌ fetchSolutions error:", e);
@@ -141,6 +134,9 @@ export default function SolutionsPage() {
   const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] = useState<SortMode>("alpha");
 
+  // 🔥 ACCORDÉON
+  const [openUniverses, setOpenUniverses] = useState<Record<string, boolean>>({});
+
   const { openLeftDrawer } = useDrawer();
   const searchParams = useSearchParams();
 
@@ -153,10 +149,8 @@ export default function SolutionsPage() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-
       const data = await fetchSolutions();
       setSolutions(data);
-
       setLoading(false);
     }
 
@@ -182,7 +176,38 @@ export default function SolutionsPage() {
   }, [searchParams, openLeftDrawer]);
 
   /* ---------------------------------------------------------
-     GROUP
+     AUTO OPEN UNIVERSE (deep link)
+  --------------------------------------------------------- */
+
+  useEffect(() => {
+    const solutionId = searchParams.get("solution_id");
+    if (!solutionId) return;
+
+    const sol = solutions.find((s) => s.id_solution === solutionId);
+    if (!sol) return;
+
+    const universe = sol.universes?.[0];
+    if (!universe) return;
+
+    setOpenUniverses((prev) => ({
+      ...prev,
+      [universe]: true,
+    }));
+  }, [solutions, searchParams]);
+
+  /* ---------------------------------------------------------
+     HELPERS
+  --------------------------------------------------------- */
+
+  function toggleUniverse(u: string) {
+    setOpenUniverses((prev) => ({
+      ...prev,
+      [u]: !prev[u],
+    }));
+  }
+
+  /* ---------------------------------------------------------
+     DATA
   --------------------------------------------------------- */
 
   const grouped = groupByUniverse(solutions, sortMode);
@@ -246,41 +271,61 @@ export default function SolutionsPage() {
       )}
 
       {/* CONTENT */}
-      {!loading && hasContent && (
+      {!loading && hasContent &&
         Object.entries(grouped)
-          .sort(([a], [b]) => a.localeCompare(b)) // ✅ ordre stable
+          .sort(([a], [b]) => a.localeCompare(b))
           .map(([universe, items]) => (
-            <section key={universe} className="space-y-4">
+            <section key={universe} className="space-y-2">
 
-              {/* UNIVERS HEADER */}
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-semibold uppercase text-gray-400">
+              {/* HEADER ACCORDÉON */}
+              <div
+                onClick={() => toggleUniverse(universe)}
+                className="
+                  flex items-center justify-between
+                  cursor-pointer
+                  py-2 px-1
+                  border-b border-gray-100
+                  hover:bg-gray-50
+                "
+              >
+                <h2 className="text-xs font-semibold uppercase text-gray-500">
                   {universe}
                 </h2>
 
-                <span className="text-xs text-gray-300">
-                  {items.length}
-                </span>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span>{items.length}</span>
+                  <span
+                    className={`
+                      transition-transform
+                      ${openUniverses[universe] ? "rotate-90" : ""}
+                    `}
+                  >
+                    ▶
+                  </span>
+                </div>
               </div>
 
-              {/* GRID */}
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
-                {items.map((s) => (
-                  <SolutionCard
-                    key={s.id_solution}
-                    id={s.id_solution}
-                    name={s.name}
-                    visualRectId={s.media_logo_rectangle_id}
-                    nbAnalyses={s.nb_analyses}
-                    delta30d={s.delta_30d}
-                    isPartner={s.is_partner}
-                  />
-                ))}
-              </div>
+              {/* CONTENU */}
+              {openUniverses[universe] && (
+                <div className="pt-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
+                    {items.map((s) => (
+                      <SolutionCard
+                        key={s.id_solution}
+                        id={s.id_solution}
+                        name={s.name}
+                        visualRectId={s.media_logo_rectangle_id}
+                        nbAnalyses={s.nb_analyses}
+                        delta30d={s.delta_30d}
+                        isPartner={s.is_partner}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
             </section>
-          ))
-      )}
+          ))}
 
     </div>
   );
