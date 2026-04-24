@@ -279,6 +279,8 @@ def list_solutions_for_user(user_id: str):
         r.ID_INSIGHT,
         r.KEY_POINTS
 
+    HAVING COALESCE(st.total, 0) >= 1
+
     ORDER BY s.NAME ASC
     """
 
