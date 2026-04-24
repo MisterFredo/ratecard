@@ -258,6 +258,7 @@ def list_companies_for_user(user_id: str):
         c.NAME,
         c.TYPE,
 
+        -- 🔥 SAFE (évite duplication / group by issues)
         ANY_VALUE(CAST(c.IS_PARTNER AS BOOL)) AS IS_PARTNER,
         ANY_VALUE(c.MEDIA_LOGO_RECTANGLE_ID) AS MEDIA_LOGO_RECTANGLE_ID,
         ANY_VALUE(c.INSIGHT_FREQUENCY) AS INSIGHT_FREQUENCY,
@@ -265,14 +266,12 @@ def list_companies_for_user(user_id: str):
         COALESCE(m.total, 0) AS NB_ANALYSES,
         COALESCE(m.last_30_days, 0) AS DELTA_30D,
 
-        -- 🔥 FIX CRITIQUE
-        IFNULL(
-            ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS),
-            ["Global"]
-        ) AS universes
+        -- 🔥 univers propres (peuvent être vides → géré en Python)
+        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
 
     FROM `{TABLE_COMPANY}` c
 
+    -- 🔥 LEFT JOIN uniquement (jamais bloquant)
     LEFT JOIN `{TABLE_COMPANY_UNIVERSE}` cu
       ON cu.ID_COMPANY = c.ID_COMPANY
 
@@ -282,7 +281,18 @@ def list_companies_for_user(user_id: str):
     LEFT JOIN `{VIEW_STATS_COMPANY}` m
       ON m.id_company = c.ID_COMPANY
 
-    WHERE c.IS_ACTIVE = TRUE
+    WHERE
+        c.IS_ACTIVE = TRUE
+
+        -- 🔥 FILTRE USER SAFE (CRITIQUE)
+        AND EXISTS (
+            SELECT 1
+            FROM `{TABLE_COMPANY_UNIVERSE}` cu2
+            JOIN `{TABLE_USER_UNIVERSE}` uu
+              ON uu.ID_UNIVERSE = cu2.ID_UNIVERSE
+            WHERE cu2.ID_COMPANY = c.ID_COMPANY
+              AND uu.ID_USER = @user_id
+        )
 
     GROUP BY
         c.ID_COMPANY,
@@ -294,24 +304,28 @@ def list_companies_for_user(user_id: str):
     ORDER BY UPPER(c.NAME)
     """
 
-    rows = query_bq(sql)
+    rows = query_bq(sql, {"user_id": user_id})
 
     return [
         {
             "id_company": r["ID_COMPANY"],
             "name": r["NAME"],
             "type": r.get("TYPE"),
+
             "is_partner": r.get("IS_PARTNER", False),
             "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID"),
             "insight_frequency": r.get("INSIGHT_FREQUENCY"),
+
             "nb_analyses": r.get("NB_ANALYSES", 0),
             "delta_30d": r.get("DELTA_30D", 0),
 
-            # 🔥 SAFE
-            "universes": r.get("universes") or ["Global"],
+            # 🔥 SAFE FRONT
+            "universes": r.get("universes") or [],
         }
         for r in rows
     ]
+
+
 # ============================================================
 # GET ONE COMPANY
 # ============================================================
