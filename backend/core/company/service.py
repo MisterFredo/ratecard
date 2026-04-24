@@ -257,6 +257,7 @@ def list_companies_for_user(user_id: str):
         c.ID_COMPANY,
         c.NAME,
         c.TYPE,
+
         ANY_VALUE(CAST(c.IS_PARTNER AS BOOL)) AS IS_PARTNER,
         ANY_VALUE(c.MEDIA_LOGO_RECTANGLE_ID) AS MEDIA_LOGO_RECTANGLE_ID,
         ANY_VALUE(c.INSIGHT_FREQUENCY) AS INSIGHT_FREQUENCY,
@@ -264,7 +265,11 @@ def list_companies_for_user(user_id: str):
         COALESCE(m.total, 0) AS NB_ANALYSES,
         COALESCE(m.last_30_days, 0) AS DELTA_30D,
 
-        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
+        -- 🔥 FIX CRITIQUE
+        IFNULL(
+            ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS),
+            ["Global"]
+        ) AS universes
 
     FROM `{TABLE_COMPANY}` c
 
@@ -291,8 +296,22 @@ def list_companies_for_user(user_id: str):
 
     rows = query_bq(sql)
 
-    return rows
+    return [
+        {
+            "id_company": r["ID_COMPANY"],
+            "name": r["NAME"],
+            "type": r.get("TYPE"),
+            "is_partner": r.get("IS_PARTNER", False),
+            "media_logo_rectangle_id": r.get("MEDIA_LOGO_RECTANGLE_ID"),
+            "insight_frequency": r.get("INSIGHT_FREQUENCY"),
+            "nb_analyses": r.get("NB_ANALYSES", 0),
+            "delta_30d": r.get("DELTA_30D", 0),
 
+            # 🔥 SAFE
+            "universes": r.get("universes") or ["Global"],
+        }
+        for r in rows
+    ]
 # ============================================================
 # GET ONE COMPANY
 # ============================================================
