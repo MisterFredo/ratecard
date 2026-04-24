@@ -295,6 +295,8 @@ def list_companies_for_user(user_id: str):
         m.total,
         m.last_30_days
 
+    HAVING COALESCE(m.total, 0) >= 1
+
     ORDER BY UPPER(c.NAME)
     """
 
