@@ -257,40 +257,32 @@ def list_companies_for_user(user_id: str):
         c.ID_COMPANY,
         c.NAME,
         c.TYPE,
-        CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
-        c.MEDIA_LOGO_RECTANGLE_ID,
-        c.INSIGHT_FREQUENCY,
+        ANY_VALUE(CAST(c.IS_PARTNER AS BOOL)) AS IS_PARTNER,
+        ANY_VALUE(c.MEDIA_LOGO_RECTANGLE_ID) AS MEDIA_LOGO_RECTANGLE_ID,
+        ANY_VALUE(c.INSIGHT_FREQUENCY) AS INSIGHT_FREQUENCY,
 
         COALESCE(m.total, 0) AS NB_ANALYSES,
         COALESCE(m.last_30_days, 0) AS DELTA_30D,
 
-        ARRAY_AGG(DISTINCT u.LABEL) AS universes
+        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
 
     FROM `{TABLE_COMPANY}` c
 
-    JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+    LEFT JOIN `{TABLE_COMPANY_UNIVERSE}` cu
       ON cu.ID_COMPANY = c.ID_COMPANY
 
-    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
+    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
       ON u.ID_UNIVERSE = cu.ID_UNIVERSE
-
-    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-      ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
 
     LEFT JOIN `{VIEW_STATS_COMPANY}` m
       ON m.id_company = c.ID_COMPANY
 
-    WHERE
-        c.IS_ACTIVE = TRUE
-        AND uu.ID_USER = '{user_id}'
+    WHERE c.IS_ACTIVE = TRUE
 
     GROUP BY
         c.ID_COMPANY,
         c.NAME,
         c.TYPE,
-        c.IS_PARTNER,
-        c.MEDIA_LOGO_RECTANGLE_ID,
-        c.INSIGHT_FREQUENCY,
         m.total,
         m.last_30_days
 
@@ -299,20 +291,7 @@ def list_companies_for_user(user_id: str):
 
     rows = query_bq(sql)
 
-    return [
-        {
-            "ID_COMPANY": r["ID_COMPANY"],
-            "NAME": r["NAME"],
-            "TYPE": r.get("TYPE"),
-            "IS_PARTNER": r["IS_PARTNER"],
-            "MEDIA_LOGO_RECTANGLE_ID": r["MEDIA_LOGO_RECTANGLE_ID"],
-            "INSIGHT_FREQUENCY": r.get("INSIGHT_FREQUENCY"),
-            "NB_ANALYSES": r["NB_ANALYSES"],
-            "DELTA_30D": r["DELTA_30D"],
-            "universes": r.get("universes") or [],
-        }
-        for r in rows
-    ]
+    return rows
 
 # ============================================================
 # GET ONE COMPANY
