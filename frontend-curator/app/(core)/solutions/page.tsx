@@ -259,7 +259,7 @@ export default function SolutionsPage() {
       {/* LOADING */}
       {loading && (
         <p className="text-sm text-gray-400">
-          Chargement des solutions...
+          Chargement des produits...
         </p>
       )}
 
