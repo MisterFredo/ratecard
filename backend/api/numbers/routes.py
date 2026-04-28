@@ -20,6 +20,8 @@ from core.numbers.insight_service import (
     generate_numbers_insight,
 )
 
+from core.numbers.backlog_pipeline import run_backlog_pipeline
+
 from utils.bigquery_utils import query_bq
 from config import BQ_PROJECT, BQ_DATASET
 
@@ -127,6 +129,20 @@ def backlog_processed(limit: int = 200):
 
     except Exception as e:
         raise HTTPException(400, f"Erreur backlog processed : {e}")
+
+# ============================================================
+# RUN BACKLOG PIPELINE
+# ============================================================
+
+@router.post("/backlog/run")
+def run_backlog(limit: int = 100):
+
+    try:
+        result = run_backlog_pipeline(limit=limit)
+        return result
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur backlog pipeline : {e}")
 
 
 # ============================================================
