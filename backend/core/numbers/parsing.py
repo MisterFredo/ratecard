@@ -2,12 +2,14 @@ from typing import List, Dict
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 
+
 # ============================================================
 # UNIT / SCALE
 # ============================================================
 
 def _extract_unit_scale(unit_raw: str):
-    u = (unit_raw or "").lower()
+
+    u = (unit_raw or "").lower().strip()
 
     if "%" in u:
         return "PERCENT", None
@@ -21,7 +23,8 @@ def _extract_unit_scale(unit_raw: str):
             return "EUR", "thousand"
         return "EUR", None
 
-    return unit_raw.upper() if unit_raw else None, None
+    # 🔥 fallback propre
+    return (u.upper() if u else None), None
 
 
 # ============================================================
@@ -49,22 +52,41 @@ def parse_chiffres(chiffres: List[str]) -> List[Dict]:
         else:
             continue
 
+        # ============================================================
+        # VALUE (robuste)
+        # ============================================================
+
         try:
+            value = str(value).replace(",", ".").replace(" ", "")
             value = float(value)
         except:
             continue
 
+        # ============================================================
+        # UNIT
+        # ============================================================
+
         unit, scale = _extract_unit_scale(unit_raw)
 
+        # ============================================================
+        # TYPE CLEAN
+        # ============================================================
+
+        type_clean = type_.strip() if isinstance(type_, str) else None
+
+        # ============================================================
+        # RESULT
+        # ============================================================
+
         results.append({
-            "label": label,
+            "label": label.strip() if label else None,
             "value": value,
             "unit": unit,
             "scale": scale,
-            "actor": actor,
-            "zone": market,
-            "period": period,
-            "type": type_,
+            "actor": actor.strip() if actor else None,
+            "zone": market.strip() if market else None,
+            "period": period.strip() if period else None,
+            "type": type_clean,
         })
 
     return results
@@ -94,7 +116,9 @@ def get_raw_numbers(limit: int = 200):
         if isinstance(chiffres, str):
             chiffres = chiffres.split("\n")
 
-        for parsed in parse_chiffres(chiffres):
+        parsed_list = parse_chiffres(chiffres)
+
+        for parsed in parsed_list:
             parsed["id_content"] = r["ID_CONTENT"]
             results.append(parsed)
 
