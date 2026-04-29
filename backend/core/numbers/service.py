@@ -373,6 +373,36 @@ def create_number(data) -> Dict:
     payload = normalize_number_payload(data)
 
     # ============================================================
+    # 🔥 TYPE MAPPING (AJOUT)
+    # ============================================================
+
+    if not payload.get("id_number_type") and payload.get("type"):
+
+        type_rows = query_bq(f"""
+            SELECT ID_TYPE, TYPE
+            FROM `{TABLE_NUMBERS_TYPES}`
+            WHERE IS_ACTIVE = TRUE
+        """)
+
+        type_map = {
+            r["TYPE"].lower(): r["ID_TYPE"]
+            for r in type_rows
+        }
+
+        mapped_id = type_map.get(payload["type"].lower())
+
+        if mapped_id:
+            payload["id_number_type"] = mapped_id
+        else:
+            return {
+                "id_number": None,
+                "quality": {
+                    "status": "invalid_type",
+                    "type": payload.get("type")
+                }
+            }
+
+    # ============================================================
     # 🔍 MATCH EXISTING NUMBERS
     # ============================================================
 
@@ -400,7 +430,7 @@ def create_number(data) -> Dict:
             }
 
     # ============================================================
-    # 📊 BASIC QUALITY CHECK (existant)
+    # 📊 BASIC QUALITY CHECK
     # ============================================================
 
     quality = check_basic_quality(
@@ -412,7 +442,7 @@ def create_number(data) -> Dict:
     )
 
     # ============================================================
-    # 📈 COHERENCE CHECK (existant)
+    # 📈 COHERENCE CHECK
     # ============================================================
 
     coherence = check_number_coherence(
@@ -487,7 +517,6 @@ def create_number(data) -> Dict:
         },
         "existing": existing
     }
-
 # ============================================================
 # RELATIONS
 # ============================================================
