@@ -88,6 +88,32 @@ def list_route(limit: int = 100):
     except Exception as e:
         raise HTTPException(400, f"Erreur list numbers : {e}")
 
+@router.get("/admin")
+def get_numbers_admin(
+    limit: int = 200,
+    offset: int = 0,
+    query: Optional[str] = None,
+    type_id: Optional[str] = None,
+    source_id: Optional[str] = None,
+):
+
+    try:
+        items = get_numbers_admin_service(
+            limit=limit,
+            offset=offset,
+            query=query,
+            type_id=type_id,
+            source_id=source_id,
+        )
+
+        return {
+            "status": "ok",
+            "items": items,
+        }
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur admin numbers : {e}")
+
 
 # ============================================================
 # DELETE (🔥 CONTROL PANEL CORE)
