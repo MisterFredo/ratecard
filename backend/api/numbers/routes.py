@@ -8,15 +8,19 @@ from api.numbers.models import NumberInput
 # ============================================================
 
 from core.numbers.create import create_number
-from core.numbers.service import list_numbers, delete_number
+from core.numbers.service import (
+    list_numbers,
+    delete_number,
+    delete_numbers_by_source,   # 🔥 AJOUT
+    get_number_types,
+)
 from core.numbers.parsing import get_numbers_from_content
 from core.numbers.search import (
     search_numbers_service,
     get_numbers_feed_service,
     get_numbers_for_entity,
-    get_numbers_admin_service,  # 🔥 FIX
+    get_numbers_admin_service,
 )
-from core.numbers.service import get_number_types
 from core.numbers.insight_service import generate_numbers_insight
 
 router = APIRouter()
@@ -43,7 +47,7 @@ def create_route(payload: NumberInput):
 
 
 # ============================================================
-# ADMIN (🔥 CONTROL PANEL PRINCIPAL)
+# ADMIN (CONTROL PANEL)
 # ============================================================
 
 @router.get("/admin")
@@ -92,12 +96,25 @@ def delete_route(id_number: str):
     except Exception as e:
         raise HTTPException(400, f"Erreur suppression number : {e}")
 
+
 @router.delete("/by-source/{source_id}")
-def delete_numbers_by_source(source_id: str):
+def delete_by_source_route(source_id: str):
+
+    try:
+        delete_numbers_by_source(source_id)
+
+        return {
+            "status": "ok",
+            "deleted": True,
+            "source_id": source_id,
+        }
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur suppression par source : {e}")
 
 
 # ============================================================
-# FROM CONTENT (DEBUG / ANALYSE)
+# FROM CONTENT (DEBUG)
 # ============================================================
 
 @router.get("/from-content/{id_content}")
@@ -130,7 +147,7 @@ def get_types():
 
 
 # ============================================================
-# SEARCH (ADMIN SEARCH SIMPLE)
+# SEARCH (ADMIN SIMPLE)
 # ============================================================
 
 @router.get("/search")
