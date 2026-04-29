@@ -3,50 +3,23 @@ from typing import Optional
 
 from api.numbers.models import NumberInput
 
-from core.numbers.service import (
-    create_number,
-    list_numbers,
-    delete_number,
-    get_numbers_from_content,
-    check_number_coherence,
-    get_number_types,
-    get_raw_numbers,
+# ============================================================
+# CORE SERVICES
+# ============================================================
+
+from core.numbers.create import create_number
+from core.numbers.service import list_numbers, delete_number
+from core.numbers.parsing import get_numbers_from_content
+from core.numbers.search import (
     search_numbers_service,
     get_numbers_feed_service,
     get_numbers_for_entity,
+    get_numbers_admin_service,  # 🔥 FIX
 )
-
-from core.numbers.insight_service import (
-    generate_numbers_insight,
-)
-
-from utils.bigquery_utils import query_bq
-from config import BQ_PROJECT, BQ_DATASET
+from core.numbers.service import get_number_types
+from core.numbers.insight_service import generate_numbers_insight
 
 router = APIRouter()
-
-
-# ============================================================
-# 🔧 HELPER — TYPE MAPPING
-# ============================================================
-
-def _map_type_to_id(type_value: Optional[str]):
-
-    if not type_value:
-        return None
-
-    rows = query_bq(f"""
-        SELECT ID_TYPE, TYPE
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_TYPE`
-        WHERE IS_ACTIVE = TRUE
-    """)
-
-    mapping = {
-        r["TYPE"].lower(): r["ID_TYPE"]
-        for r in rows
-    }
-
-    return mapping.get(type_value.lower())
 
 
 # ============================================================
@@ -63,7 +36,6 @@ def create_route(payload: NumberInput):
             "status": "ok",
             "id_number": result["id_number"],
             "quality": result.get("quality"),
-            "existing": result.get("existing"),
         }
 
     except Exception as e:
@@ -71,22 +43,8 @@ def create_route(payload: NumberInput):
 
 
 # ============================================================
-# LIST (simple)
+# ADMIN (🔥 CONTROL PANEL PRINCIPAL)
 # ============================================================
-
-@router.get("/")
-def list_route(limit: int = 100):
-
-    try:
-        items = list_numbers(limit=limit)
-
-        return {
-            "status": "ok",
-            "items": items,
-        }
-
-    except Exception as e:
-        raise HTTPException(400, f"Erreur list numbers : {e}")
 
 @router.get("/admin")
 def get_numbers_admin(
@@ -116,7 +74,7 @@ def get_numbers_admin(
 
 
 # ============================================================
-# DELETE (🔥 CONTROL PANEL CORE)
+# DELETE
 # ============================================================
 
 @router.delete("/{id_number}")
@@ -136,7 +94,7 @@ def delete_route(id_number: str):
 
 
 # ============================================================
-# FROM CONTENT
+# FROM CONTENT (DEBUG / ANALYSE)
 # ============================================================
 
 @router.get("/from-content/{id_content}")
@@ -155,25 +113,6 @@ def from_content_route(id_content: str):
 
 
 # ============================================================
-# RAW (🔥 EXPLORATION LLM)
-# ============================================================
-
-@router.get("/raw")
-def raw_numbers(limit: int = 500):
-
-    try:
-        items = get_raw_numbers(limit=limit)
-
-        return {
-            "status": "ok",
-            "items": items,
-        }
-
-    except Exception as e:
-        raise HTTPException(400, f"Erreur raw numbers : {e}")
-
-
-# ============================================================
 # TYPES
 # ============================================================
 
@@ -188,41 +127,7 @@ def get_types():
 
 
 # ============================================================
-# COHERENCE CHECK
-# ============================================================
-
-@router.post("/check-coherence")
-def check_coherence_route(payload: dict):
-
-    try:
-
-        type_id = payload.get("id_number_type")
-
-        # 🔥 support LLM
-        if not type_id and payload.get("type"):
-            type_id = _map_type_to_id(payload.get("type"))
-
-        result = check_number_coherence(
-            value=payload.get("value"),
-            id_number_type=type_id,
-            zone=payload.get("zone"),
-            period=payload.get("period"),
-            company_id=payload.get("company_id"),
-            topic_id=payload.get("topic_id"),
-            solution_id=payload.get("solution_id"),
-        )
-
-        return {
-            "status": "ok",
-            "result": result,
-        }
-
-    except Exception as e:
-        raise HTTPException(400, f"Erreur coherence check : {e}")
-
-
-# ============================================================
-# SEARCH (🔥 CONTROL PANEL ENTRY POINT)
+# SEARCH (ADMIN SEARCH SIMPLE)
 # ============================================================
 
 @router.get("/search")
@@ -249,7 +154,34 @@ def search_numbers(
 
 
 # ============================================================
-# BY ENTITY
+# CURATOR — FEED
+# ============================================================
+
+@router.get("/feed")
+def get_numbers_feed(
+    limit: int = 50,
+    query: Optional[str] = None,
+    universe_id: Optional[str] = Query(None),
+):
+
+    try:
+        items = get_numbers_feed_service(
+            limit=limit,
+            query=query,
+            universe_id=universe_id,
+        )
+
+        return {
+            "status": "ok",
+            "items": items,
+        }
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur numbers feed : {e}")
+
+
+# ============================================================
+# CURATOR — ENTITY
 # ============================================================
 
 @router.get("/entity")
@@ -276,34 +208,7 @@ def numbers_by_entity(
 
 
 # ============================================================
-# FEED
-# ============================================================
-
-@router.get("/feed")
-def get_numbers_feed(
-    limit: int = 50,
-    query: Optional[str] = None,
-    universe_id: Optional[str] = Query(None),
-):
-
-    try:
-        items = get_numbers_feed_service(
-            limit=limit,
-            query=query,
-            universe_id=universe_id if universe_id else None,
-        )
-
-        return {
-            "status": "ok",
-            "items": items,
-        }
-
-    except Exception as e:
-        raise HTTPException(400, f"Erreur numbers feed : {e}")
-
-
-# ============================================================
-# INSIGHT
+# CURATOR — INSIGHT
 # ============================================================
 
 @router.post("/insight")
