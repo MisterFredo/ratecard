@@ -6,22 +6,41 @@ from config import BQ_PROJECT, BQ_DATASET
 
 
 # ============================================================
-# MAP ACTOR → COMPANY_ID
+# MAP ACTOR → ENTITIES (COMPANY + SOLUTION)
 # ============================================================
 
-def _map_actor_to_company_ids(actor: str) -> List[str]:
+def _map_actor_entities(actor: str) -> Dict[str, List[str]]:
 
     if not actor or actor.lower() == "non précisé":
-        return []
+        return {
+            "company_ids": [],
+            "solution_ids": [],
+        }
 
-    rows = query_bq(f"""
-        SELECT ID_COMPANY
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY`
-        WHERE LOWER(NAME) = LOWER(@name)
-        LIMIT 3
-    """, {"name": actor})
+    # ============================================================
+    # COMPANY ALIAS
+    # ============================================================
 
-    return [r["ID_COMPANY"] for r in rows]
+    companies = query_bq(f"""
+        SELECT DISTINCT ID_COMPANY
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_ALIAS`
+        WHERE LOWER(ALIAS) = LOWER(@actor)
+    """, {"actor": actor})
+
+    # ============================================================
+    # SOLUTION ALIAS
+    # ============================================================
+
+    solutions = query_bq(f"""
+        SELECT DISTINCT ID_SOLUTION
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION_ALIAS`
+        WHERE LOWER(ALIAS) = LOWER(@actor)
+    """, {"actor": actor})
+
+    return {
+        "company_ids": [r["ID_COMPANY"] for r in companies],
+        "solution_ids": [r["ID_SOLUTION"] for r in solutions],
+    }
 
 
 # ============================================================
@@ -37,6 +56,23 @@ def ingest_numbers_from_content(
 
     for c in chiffres:
 
+        # ============================================================
+        # MINIMUM VALIDATION
+        # ============================================================
+
+        if c.get("value") is None:
+            continue
+
+        # ============================================================
+        # ENTITY MAPPING
+        # ============================================================
+
+        entities = _map_actor_entities(c.get("actor"))
+
+        # ============================================================
+        # PAYLOAD
+        # ============================================================
+
         payload = {
             "label": c.get("label"),
             "value": c.get("value"),
@@ -44,12 +80,25 @@ def ingest_numbers_from_content(
             "scale": c.get("scale"),
             "zone": c.get("zone"),
             "period": c.get("period"),
-            "type": c.get("type"),  # 🔥 clé
+            "type": c.get("type"),
             "source_id": source_id,
-            "company_ids": _map_actor_to_company_ids(c.get("actor")),
+            "company_ids": entities["company_ids"],
+            "solution_ids": entities["solution_ids"],
         }
 
-        result = create_number(payload)
+        # ============================================================
+        # CREATE NUMBER
+        # ============================================================
+
+        try:
+            result = create_number(payload)
+
+        except Exception as e:
+            result = {
+                "id_number": None,
+                "error": str(e),
+                "payload": payload,
+            }
 
         results.append(result)
 
