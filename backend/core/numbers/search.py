@@ -14,7 +14,7 @@ VIEW_NUMBERS_CARDS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NUMBERS_CARDS"
 
 
 # ============================================================
-# SEARCH
+# SEARCH (ADMIN / EXPLORATION)
 # ============================================================
 
 def search_numbers_service(
@@ -34,7 +34,7 @@ def search_numbers_service(
         params["id_number_type"] = id_number_type
 
     if company_id:
-        joins.append("""
+        joins.append(f"""
             JOIN `{TABLE_NUMBERS_COMPANY}` nc_filter
               ON n.ID_NUMBER = nc_filter.ID_NUMBER
         """)
@@ -42,7 +42,7 @@ def search_numbers_service(
         params["company_id"] = company_id
 
     if topic_id:
-        joins.append("""
+        joins.append(f"""
             JOIN `{TABLE_NUMBERS_TOPIC}` nt_filter
               ON n.ID_NUMBER = nt_filter.ID_NUMBER
         """)
@@ -50,7 +50,7 @@ def search_numbers_service(
         params["topic_id"] = topic_id
 
     if solution_id:
-        joins.append("""
+        joins.append(f"""
             JOIN `{TABLE_NUMBERS_SOLUTION}` ns_filter
               ON n.ID_NUMBER = ns_filter.ID_NUMBER
         """)
@@ -63,7 +63,7 @@ def search_numbers_service(
 
     sql = f"""
     SELECT
-        n.ID_NUMBER AS id,
+        n.ID_NUMBER AS id_number,
         n.LABEL AS label,
         n.VALUE AS value,
         n.UNIT AS unit,
@@ -90,7 +90,7 @@ def search_numbers_service(
 
 
 # ============================================================
-# FEED
+# FEED (CURATOR)
 # ============================================================
 
 def get_numbers_feed_service(
@@ -131,7 +131,19 @@ def get_numbers_feed_service(
     where_sql = " AND ".join(where_clauses)
 
     sql = f"""
-    SELECT *
+    SELECT
+        n.ID_NUMBER,
+        n.LABEL,
+        n.VALUE,
+        n.UNIT,
+        n.SCALE,
+        n.TYPE,
+        n.CATEGORY,
+        n.ZONE,
+        n.PERIOD,
+        n.ENTITIES,
+        n.CREATED_AT
+
     FROM `{VIEW_NUMBERS_CARDS}` n
     WHERE {where_sql}
     ORDER BY n.CREATED_AT DESC
@@ -140,6 +152,11 @@ def get_numbers_feed_service(
 
     return query_bq(sql, params)
 
+
+# ============================================================
+# ADMIN (🔥 CONTROL PANEL)
+# ============================================================
+
 def get_numbers_admin_service(
     limit: int = 200,
     offset: int = 0,
@@ -147,6 +164,7 @@ def get_numbers_admin_service(
     type_id: Optional[str] = None,
     source_id: Optional[str] = None,
 ):
+
     conditions = []
     params = {
         "limit": limit,
@@ -177,6 +195,7 @@ def get_numbers_admin_service(
         n.UNIT,
         n.SCALE,
         nt.TYPE,
+        nt.CATEGORY,
         n.ZONE,
         n.PERIOD,
         n.ID_SOURCE,
@@ -198,7 +217,7 @@ def get_numbers_admin_service(
 
 
 # ============================================================
-# BY ENTITY
+# BY ENTITY (CURATOR DRAWER)
 # ============================================================
 
 def get_numbers_for_entity(
