@@ -230,6 +230,9 @@ def get_numbers_from_content(id_content: str):
 
     chiffres = rows[0].get("CHIFFRES") or []
 
+    if isinstance(chiffres, str):
+        chiffres = chiffres.split("\n")
+
     return parse_chiffres(chiffres)
 
 
