@@ -51,6 +51,21 @@ def generate_summary(
     )
 
     # ============================================================
+    # 🔥 LOAD NUMBER TYPES (AJOUT)
+    # ============================================================
+
+    types_rows = query_bq(f"""
+        SELECT TYPE, DESCRIPTION
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_TYPE`
+        WHERE IS_ACTIVE = TRUE
+    """)
+
+    types_list_text = "\n".join(
+        f"- {row['TYPE']} : {row['DESCRIPTION']}"
+        for row in types_rows
+    )
+
+    # ============================================================
     # PROMPT
     # ============================================================
 
@@ -118,7 +133,14 @@ CHIFFRES
 Extraire uniquement les chiffres structurés présents dans la source.
 
 Chaque ligne doit respecter STRICTEMENT ce format :
-label | valeur | unité | acteur | marché | période
+label | valeur | unité | acteur | marché | période | type
+
+IMPORTANT :
+- Le type doit être choisi STRICTEMENT dans la liste suivante
+- Ne jamais inventer
+
+LISTE DES TYPES AUTORISÉS :
+{types_list_text}
 
 ACTEURS
 (Liste des entreprises citées ou "Aucun")
@@ -157,7 +179,7 @@ SIGNAL
         raise ValueError("Réponse LLM vide")
 
     # ============================================================
-    # PARSING
+    # PARSING (INCHANGÉ)
     # ============================================================
 
     sections = {
@@ -199,7 +221,7 @@ SIGNAL
             sections[current] += clean + "\n"
 
     # ============================================================
-    # LIST PARSER
+    # LIST PARSER (INCHANGÉ)
     # ============================================================
 
     def parse_list(block: str) -> List[str]:
@@ -224,7 +246,7 @@ SIGNAL
         return items
 
     # ============================================================
-    # CONCEPTS PARSER
+    # CONCEPTS PARSER (INCHANGÉ)
     # ============================================================
 
     def parse_concepts(block: str) -> List[Dict[str, str]]:
@@ -273,7 +295,7 @@ SIGNAL
         return results
 
     # ============================================================
-    # CLEAN BODY
+    # CLEAN BODY (INCHANGÉ)
     # ============================================================
 
     body = sections["POINTS CLES"].strip()
@@ -284,7 +306,7 @@ SIGNAL
             body = "<ul>" + "".join(f"<li>{l}</li>" for l in lines) + "</ul>"
 
     # ============================================================
-    # TOPICS
+    # TOPICS (INCHANGÉ)
     # ============================================================
 
     raw_topics = parse_list(sections["TOPICS"])
@@ -305,7 +327,7 @@ SIGNAL
     ]
 
     # ============================================================
-    # RETURN
+    # RETURN (INCHANGÉ)
     # ============================================================
 
     return {
