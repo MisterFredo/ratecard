@@ -214,13 +214,14 @@ def parse_raw_blocks(text: str) -> List[Dict]:
                 date_str = date_match.group(1).strip()
 
                 # 🔥 FIX : tentative générique + fallback FR
-                    date_source = parse_date(date_str)
+                date_source = parse_date(date_str)
 
-                    if not date_source:
-                        date_source = parse_date_fr(date_str)
+                if not date_source:
+                    date_source = parse_date_fr(date_str)
 
-                    if not date_source:
-                        print("[RAW_IMPORT] date non parsée:", date_str)
+                if not date_source:
+                    print("[RAW_IMPORT] date non parsée:", date_str)
+
             # --------------------------------
             # RAW TEXT
             # --------------------------------
@@ -254,6 +255,7 @@ def parse_raw_blocks(text: str) -> List[Dict]:
     print(f"[RAW_IMPORT] Blocs valides : {len(results)}")
 
     return results
+
 
 # ============================================================
 # INSERT BIGQUERY
