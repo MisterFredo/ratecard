@@ -6,10 +6,6 @@ from config import BQ_PROJECT, BQ_DATASET
 from utils.llm import run_llm
 from utils.bigquery_utils import query_bq
 
-# 🔥 NEW IMPORTS (MINIMAUX)
-from core.numbers.parsing import parse_chiffres
-from core.numbers.ingest import ingest_numbers_from_content
-
 
 # ============================================================
 # UTILS — NORMALISATION HEADER
@@ -55,21 +51,6 @@ def generate_summary(
     )
 
     # ============================================================
-    # 🔥 LOAD NUMBER TYPES
-    # ============================================================
-
-    types_rows = query_bq(f"""
-        SELECT TYPE, DESCRIPTION
-        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_TYPE`
-        WHERE IS_ACTIVE = TRUE
-    """)
-
-    types_list_text = "\n".join(
-        f"- {row['TYPE']} : {row['DESCRIPTION']}"
-        for row in types_rows
-    )
-
-    # ============================================================
     # PROMPT
     # ============================================================
 
@@ -105,43 +86,69 @@ Tu dois impérativement distinguer deux types d’entités :
 
 1) ACTEURS = ENTREPRISES UNIQUEMENT
 - sociétés, groupes, organisations
+- exemples : Google, Amazon, LiveRamp, TF1 Pub, Meta
 
 2) SOLUTIONS = PRODUITS / PLATEFORMES / OFFRES
+- produits commerciaux, marques, technologies, solutions marketing
+- exemples : DV360, RampID, Amazon DSP, TF1+, Johnnie Walker
+
+IMPORTANT :
+- Une entité ne doit apparaître QUE dans une seule catégorie
+- Si c’est un produit → SOLUTIONS (et PAS ACTEURS)
+- Si c’est une entreprise → ACTEURS (et PAS SOLUTIONS)
+- Ne jamais dupliquer une même entité dans les deux sections
+- Si tu hésites, privilégie :
+  → entreprise → ACTEURS
+  → produit / offre → SOLUTIONS
 
 ================ FORMAT OBLIGATOIRE ================
 
 TITLE
+(Titre factuel et informatif.)
 
 EXCERPT
+(3 phrases synthétiques permettant de comprendre rapidement le sujet et son intérêt.)
 
 POINTS CLES
+(Liste factuelle des éléments importants présents dans la source.
+Exhaustif mais strictement basé sur le texte.
+Une ligne = une information.)
 
 CHIFFRES
+Extraire uniquement les chiffres structurés présents dans la source.
 
 Chaque ligne doit respecter STRICTEMENT ce format :
-label | valeur | unité | acteur | marché | période | type
-
-IMPORTANT :
-- Le type doit être choisi STRICTEMENT dans la liste suivante
-
-{types_list_text}
+label | valeur | unité | acteur | marché | période
 
 ACTEURS
+(Liste des entreprises citées ou "Aucun")
 
 SOLUTIONS
+(Liste des produits, plateformes, marques ou offres citées ou "Aucun")
 
 CONCEPTS
+(Liste des notions métier identifiées dans la source.
+Chaque concept doit être associé à un topic existant.)
 
 TOPICS
+(Choisir 1 à 3 topics uniquement parmi la liste suivante.
+Ne jamais inventer.)
 
 {topics_list_text}
 
 ================ ANALYSE STRATEGIQUE ================
 
 MECANIQUE
+- Expliquer COMMENT cela fonctionne réellement
+
 ENJEU
+- Identifier ce que cela révèle
+
 FRICTION
+- Identifier les limites ou écrire "Aucun"
+
 SIGNAL
+- Identifier la dynamique de marché
 """
 
     raw = run_llm(prompt)
@@ -298,18 +305,6 @@ SIGNAL
     ]
 
     # ============================================================
-    # 🔥 INGEST NUMBERS (NOUVEAU — SANS IMPACT FRONT)
-    # ============================================================
-
-    raw_chiffres = parse_list(sections["CHIFFRES"])
-
-    try:
-        parsed = parse_chiffres(raw_chiffres)
-        ingest_numbers_from_content(parsed, source_id)
-    except Exception as e:
-        print("⚠️ numbers ingest error:", e)
-
-    # ============================================================
     # RETURN
     # ============================================================
 
@@ -317,7 +312,7 @@ SIGNAL
         "title": sections["TITLE"].strip(),
         "excerpt": sections["EXCERPT"].strip(),
         "content_body": body,
-        "chiffres": raw_chiffres,  # 🔥 inchangé côté front
+        "chiffres": parse_list(sections["CHIFFRES"]),
         "acteurs_cites": parse_list(sections["ACTEURS"]),
         "concepts": parse_concepts(sections["CONCEPTS"]),
         "solutions": parse_list(sections["SOLUTIONS"]),
