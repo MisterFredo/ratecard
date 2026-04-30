@@ -5,7 +5,10 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import HtmlEditor from "@/components/admin/HtmlEditor";
 
-type TopicAxis = "MEDIA" | "RETAIL" | "FOUNDATIONS";
+type Universe = {
+  id_universe: string;
+  label: string;
+};
 
 export default function EditTopic({ params }: { params: { id: string } }) {
 
@@ -15,8 +18,9 @@ export default function EditTopic({ params }: { params: { id: string } }) {
   const [saving, setSaving] = useState(false);
 
   const [label, setLabel] = useState("");
-  const [topicAxis, setTopicAxis] =
-    useState<TopicAxis>("MEDIA");
+
+  const [universes, setUniverses] = useState<Universe[]>([]);
+  const [selectedUniverses, setSelectedUniverses] = useState<string[]>([]);
 
   const [description, setDescription] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
@@ -25,29 +29,37 @@ export default function EditTopic({ params }: { params: { id: string } }) {
   const [insightFrequency, setInsightFrequency] =
     useState("QUARTERLY");
 
+  // ============================================================
+  // LOAD DATA
+  // ============================================================
+
   useEffect(() => {
 
     async function load() {
 
       try {
 
-        const t = await api.get(`/topic/${id}`);
+        const [t, u] = await Promise.all([
+          api.get(`/topic/${id}`),
+          api.get("/universe/list"),
+        ]);
 
         setLabel(t.label || "");
-
-        const axis: TopicAxis =
-          t.topic_axis === "RETAIL" ||
-          t.topic_axis === "FOUNDATIONS"
-            ? t.topic_axis
-            : "MEDIA";
-
-        setTopicAxis(axis);
 
         setDescription(t.description || "");
         setSeoTitle(t.seo_title || "");
         setSeoDescription(t.seo_description || "");
 
         setInsightFrequency(t.insight_frequency || "QUARTERLY");
+
+        setUniverses(u?.universes || []);
+
+        // 🔥 récupération univers existants
+        const existing = (t.universes || []).map(
+          (x: any) => x.id_universe
+        );
+
+        setSelectedUniverses(existing);
 
       } catch (e) {
 
@@ -66,10 +78,31 @@ export default function EditTopic({ params }: { params: { id: string } }) {
 
   }, [id]);
 
+  // ============================================================
+  // TOGGLE UNIVERS
+  // ============================================================
+
+  function toggleUniverse(id: string) {
+    setSelectedUniverses((prev) =>
+      prev.includes(id)
+        ? prev.filter((u) => u !== id)
+        : [...prev, id]
+    );
+  }
+
+  // ============================================================
+  // SAVE
+  // ============================================================
+
   async function save() {
 
     if (!label.trim()) {
       alert("Label requis");
+      return;
+    }
+
+    if (selectedUniverses.length === 0) {
+      alert("Sélectionner au moins un univers");
       return;
     }
 
@@ -79,11 +112,11 @@ export default function EditTopic({ params }: { params: { id: string } }) {
 
       await api.put(`/topic/update/${id}`, {
         label,
-        topic_axis: topicAxis,
         description: description || null,
         seo_title: seoTitle || null,
         seo_description: seoDescription || null,
         insight_frequency: insightFrequency,
+        universe_ids: selectedUniverses,
       });
 
       alert("Topic modifié");
@@ -116,6 +149,7 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         </Link>
       </div>
 
+      {/* LABEL */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium">
           Label
@@ -128,32 +162,31 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         />
       </div>
 
+      {/* UNIVERS */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium">
-          Axe du topic
+          Univers
         </label>
 
-        <select
-          className="border p-2 rounded w-full"
-          value={topicAxis}
-          onChange={(e) =>
-            setTopicAxis(e.target.value as TopicAxis)
-          }
-        >
-          <option value="MEDIA">
-            MEDIA — canaux, formats, environnements publicitaires
-          </option>
-
-          <option value="RETAIL">
-            RETAIL — e-commerce, marketplaces, retail media
-          </option>
-
-          <option value="FOUNDATIONS">
-            FOUNDATIONS — data, mesure, stratégie, IA
-          </option>
-        </select>
+        <div className="flex flex-wrap gap-2">
+          {universes.map((u) => (
+            <button
+              key={u.id_universe}
+              type="button"
+              onClick={() => toggleUniverse(u.id_universe)}
+              className={`px-3 py-1 rounded border ${
+                selectedUniverses.includes(u.id_universe)
+                  ? "bg-blue-600 text-white"
+                  : "bg-white"
+              }`}
+            >
+              {u.label}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {/* DESCRIPTION */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium">
           Description éditoriale
@@ -165,6 +198,7 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         />
       </div>
 
+      {/* FREQUENCE */}
       <div className="space-y-2 max-w-2xl">
         <label className="block text-sm font-medium">
           Fréquence des insights
@@ -181,6 +215,7 @@ export default function EditTopic({ params }: { params: { id: string } }) {
         </select>
       </div>
 
+      {/* SEO */}
       <div className="space-y-4 max-w-2xl">
 
         <div>
