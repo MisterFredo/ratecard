@@ -1,13 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional, List
 from datetime import datetime
-
-
-# ============================================================
-# TYPE CENTRALISÉ
-# ============================================================
-
-TopicAxis = Literal["MEDIA", "RETAIL", "FOUNDATIONS"]
 
 
 # ============================================================
@@ -17,18 +10,19 @@ TopicAxis = Literal["MEDIA", "RETAIL", "FOUNDATIONS"]
 class TopicCreate(BaseModel):
     """
     Création d'un topic (DATA ONLY).
-    Aucun champ média ici.
+    Les univers sont passés séparément.
     """
 
     label: str = Field(..., min_length=1)
-
-    topic_axis: TopicAxis
 
     description: Optional[str] = None
     insight_frequency: Optional[str] = "QUARTERLY"
 
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
+
+    # 🔥 NOUVEAU
+    universe_ids: Optional[List[str]] = []
 
     class Config:
         extra = "forbid"
@@ -44,7 +38,6 @@ class TopicUpdate(BaseModel):
     """
 
     label: Optional[str] = None
-    topic_axis: Optional[TopicAxis] = None
 
     description: Optional[str] = None
     insight_frequency: Optional[str] = None
@@ -54,6 +47,9 @@ class TopicUpdate(BaseModel):
 
     media_square_id: Optional[str] = None
     media_rectangle_id: Optional[str] = None
+
+    # 🔥 NOUVEAU
+    universe_ids: Optional[List[str]] = None
 
     class Config:
         extra = "forbid"
@@ -66,12 +62,10 @@ class TopicUpdate(BaseModel):
 class TopicOut(BaseModel):
     """
     Représentation retournée par l’API.
-    Snake_case strict.
     """
 
     id_topic: str
     label: str
-    topic_axis: Optional[TopicAxis] = None
 
     description: Optional[str] = None
     insight_frequency: Optional[str] = None
@@ -86,6 +80,10 @@ class TopicOut(BaseModel):
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    # 🔥 NOUVEAU
+    universes: Optional[List[dict]] = []
+
     has_numbers: Optional[bool] = False
 
     class Config:
