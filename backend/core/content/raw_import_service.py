@@ -213,17 +213,9 @@ def parse_raw_blocks(text: str) -> List[Dict]:
 
                 date_str = date_match.group(1).strip()
 
-                # 🔥 PRIORITÉ au comportement historique (FR)
-                date_source = parse_date_fr(date_str)
-
-                # fallback si format non FR
-                if not date_source:
-                    try:
-                        date_source = parse(date_str, dayfirst=True, fuzzy=True).date()
-                    except Exception:
-                        pass
-
-                if not date_source:
+                try:
+                    date_source = parse_date_fr(date_str)
+                except Exception:
                     print("[RAW_IMPORT] date non parsée:", date_str)
 
             # --------------------------------
@@ -259,7 +251,6 @@ def parse_raw_blocks(text: str) -> List[Dict]:
     print(f"[RAW_IMPORT] Blocs valides : {len(results)}")
 
     return results
-
 
 # ============================================================
 # INSERT BIGQUERY
@@ -372,13 +363,12 @@ def parse_article_from_url(url: str) -> Dict[str, Any]:
 
     soup = BeautifulSoup(resp.text, "html.parser")
 
-    # TITLE (inchangé)
+    # TITLE
     title = soup.title.string.strip() if soup.title else "NO TITLE"
 
-    # DATE (amélioration minimale)
+    # DATE (tentative)
     date_source = None
 
-    # 1️⃣ meta classique (comportement historique)
     meta_date = soup.find("meta", {"property": "article:published_time"})
     if meta_date and meta_date.get("content"):
         try:
@@ -386,16 +376,7 @@ def parse_article_from_url(url: str) -> Dict[str, Any]:
         except Exception:
             pass
 
-    # 2️⃣ fallback <time> (uniquement si meta absent)
-    if not date_source:
-        time_tag = soup.find("time")
-        if time_tag:
-            try:
-                date_source = parse(time_tag.get_text(), dayfirst=True, fuzzy=True).date()
-            except Exception:
-                pass
-
-    # RAW TEXT (STRICTEMENT inchangé)
+    # RAW TEXT
     paragraphs = soup.find_all("p")
     raw_text = "\n".join(p.get_text() for p in paragraphs).strip()
 
