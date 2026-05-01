@@ -102,10 +102,10 @@ export default function ContentStudio({ mode, contentId }: Props) {
       setSourcePublishedAt(c.source_published_at || null);
 
       // STRUCTURED IDS
-      setTopics((c.topics || []).map((x: any) => x.ID_TOPIC));
-      setCompanies((c.companies || []).map((x: any) => x.ID_COMPANY));
-      setConcepts((c.concepts || []).map((x: any) => x.ID_CONCEPT));
-      setSolutions((c.solutions || []).map((x: any) => x.ID_SOLUTION));
+      setTopics((c.topics || []).map((x: any) => x.id_topic));
+      setCompanies((c.companies || []).map((x: any) => x.id_company));
+      setSolutions((c.solutions || []).map((x: any) => x.id_solution));
+      setConcepts((c.concepts || []).map((x: any) => x.id_concept));
 
       setStatus(c.status || "DRAFT");
     }
