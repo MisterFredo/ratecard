@@ -8,19 +8,12 @@ from datetime import datetime
 # ============================================================
 class ConceptCreate(BaseModel):
     """
-    Création d'un concept métier.
-    Contrat API 100% snake_case.
+    Création d'un concept = axe d’analyse métier.
+    Léger, gouverné, réutilisable.
     """
 
-    title: str = Field(..., min_length=1)
+    label: str = Field(..., min_length=1)
     description: Optional[str] = None
-    content: Optional[str] = None
-
-    status: str = "DRAFT"
-    vectorise: bool = False
-
-    # Mono-topic
-    id_topic: Optional[str] = None
 
     class Config:
         extra = "forbid"
@@ -34,13 +27,9 @@ class ConceptUpdate(BaseModel):
     Mise à jour partielle d'un concept.
     """
 
-    title: Optional[str] = None
+    label: Optional[str] = None
     description: Optional[str] = None
-    content: Optional[str] = None
-
-    status: Optional[str] = None
-    vectorise: Optional[bool] = None
-    id_topic: Optional[str] = None
+    is_active: Optional[bool] = None
 
     class Config:
         extra = "forbid"
@@ -55,15 +44,10 @@ class ConceptOut(BaseModel):
     """
 
     id_concept: str
-    title: str
+    label: str
 
     description: Optional[str] = None
-    content: Optional[str] = None
-
-    status: str
-    vectorise: bool
-
-    id_topic: Optional[str] = None
+    is_active: bool = True
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
