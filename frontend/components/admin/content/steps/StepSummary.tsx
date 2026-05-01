@@ -1,13 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { api } from "@/lib/api";
 import EditableList from "@/components/admin/content/steps/EditableList";
-
-type ConceptItem = {
-  label: string;
-  topic_id: string;
-};
 
 type Props = {
   sourceId: string | null;
@@ -19,7 +14,7 @@ type Props = {
   chiffres: string[];
 
   acteurs: string[];
-  concepts: ConceptItem[];
+  concepts: string[];
   solutions: string[];
   topics: string[];
 
@@ -35,34 +30,6 @@ type Props = {
 export default function StepSummary(props: Props) {
 
   const [loading, setLoading] = useState(false);
-  const [topicsMap, setTopicsMap] = useState<Record<string, string>>({});
-
-  // =====================================================
-  // LOAD TOPIC LABELS (snake_case)
-  // =====================================================
-
-  useEffect(() => {
-
-    async function loadTopics() {
-      try {
-
-        const res = await api.get("/topic/list");
-        const map: Record<string, string> = {};
-
-        (res.topics || []).forEach((t: any) => {
-          map[t.id_topic] = t.label;
-        });
-
-        setTopicsMap(map);
-
-      } catch (e) {
-        console.error("Erreur chargement topics", e);
-      }
-    }
-
-    loadTopics();
-
-  }, []);
 
   // =====================================================
   // HELPERS
@@ -73,22 +40,14 @@ export default function StepSummary(props: Props) {
     if (!input) return [];
 
     if (Array.isArray(input)) {
-
       return input
         .flatMap((item) => {
-
           if (typeof item === "string") {
             return item.split(/[,;\n]/);
           }
-
-          if (typeof item === "object" && item !== null) {
-            return item.label || item.name || item.title || "";
-          }
-
           return [];
-
         })
-        .map((x) => String(x).trim())
+        .map((x) => x.trim())
         .filter(Boolean);
     }
 
@@ -136,7 +95,9 @@ export default function StepSummary(props: Props) {
 
         acteurs: normalizeList(res.acteurs_cites),
 
-        concepts: res.concepts || [],
+        // 🔥 ALIGNÉ
+        concepts: normalizeList(res.concepts),
+
         solutions: normalizeList(res.solutions),
         topics: res.topics || [],
 
@@ -148,21 +109,14 @@ export default function StepSummary(props: Props) {
       });
 
     } catch (e) {
+
       console.error(e);
       alert("Erreur génération");
+
     }
 
     setLoading(false);
   }
-
-  // =====================================================
-  // DISPLAY HELPERS
-  // =====================================================
-
-  const conceptLabels = props.concepts.map((c) => {
-    const topicLabel = topicsMap[c.topic_id] || c.topic_id;
-    return `${c.label} (${topicLabel})`;
-  });
 
   // =====================================================
   // RENDER
@@ -232,7 +186,7 @@ export default function StepSummary(props: Props) {
 
           <EditableList
             label="Topics suggérés"
-            items={props.topics.map(t => topicsMap[t] || t)}
+            items={props.topics}
             onChange={(items) =>
               props.onChange({ topics: items })
             }
@@ -248,14 +202,9 @@ export default function StepSummary(props: Props) {
 
           <EditableList
             label="Concepts"
-            items={conceptLabels}
+            items={props.concepts}
             onChange={(items) =>
-              props.onChange({
-                concepts: items.map((label: string) => ({
-                  label,
-                  topic_id: "",
-                })),
-              })
+              props.onChange({ concepts: items })
             }
           />
 
@@ -351,7 +300,5 @@ export default function StepSummary(props: Props) {
       </button>
 
     </div>
-
   );
-
 }
