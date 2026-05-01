@@ -7,10 +7,16 @@ from utils.bigquery_utils import query_bq
 TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
 TABLE_CONTENT_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_TOPIC"
 TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
+
 TABLE_CONTENT_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY"
 TABLE_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
+
 TABLE_CONTENT_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_SOLUTION"
 TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
+
+# 🔥 NEW
+TABLE_CONTENT_CONCEPT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_CONCEPT"
+TABLE_CONCEPT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONCEPT"
 
 
 # ============================================================
@@ -45,7 +51,6 @@ def list_contents(
             c.TITLE,
             c.EXCERPT,
             c.SIGNAL_ANALYTIQUE,
-            c.CONCEPT,
             c.PUBLISHED_AT
         FROM {TABLE_CONTENT} c
         {join}
@@ -65,7 +70,6 @@ def list_contents(
             "title": r["TITLE"],
             "excerpt": r.get("EXCERPT"),
             "signal": r.get("SIGNAL_ANALYTIQUE"),
-            "concept": r.get("CONCEPT"),
             "published_at": r["PUBLISHED_AT"],
         }
         for r in rows
@@ -150,18 +154,39 @@ def get_content(id_content: str) -> Dict:
         {"id": id_content},
     )
 
+    # ============================================================
+    # 🔥 CONCEPTS STRUCTURÉS (NOUVEAU)
+    # ============================================================
+
+    concept_rows = query_bq(
+        f"""
+        SELECT C.ID_CONCEPT, C.TITLE
+        FROM {TABLE_CONTENT_CONCEPT} CC
+        JOIN {TABLE_CONCEPT} C
+          ON CC.ID_CONCEPT = C.ID_CONCEPT
+        WHERE CC.ID_CONTENT = @id
+        """,
+        {"id": id_content},
+    )
+
     return {
         "id_content": r["ID_CONTENT"],
         "title": r["TITLE"],
         "signal": r.get("SIGNAL_ANALYTIQUE"),
         "excerpt": r.get("EXCERPT"),
-        "concepts": r.get("CONCEPTS_LLM"),
+
+        # 🔥 LLM (suggestion)
+        "concepts_llm": r.get("CONCEPTS_LLM") or [],
+
         "content_body": r.get("CONTENT_BODY"),
         "chiffres": r.get("CHIFFRES") or [],
         "acteurs_cites": r.get("ACTEURS_CITES") or [],
         "published_at": r["PUBLISHED_AT"],
 
-        # enrichissements
+        # ========================================================
+        # ENRICHISSEMENTS
+        # ========================================================
+
         "topics": [
             {
                 "id_topic": t["ID_TOPIC"],
@@ -176,6 +201,15 @@ def get_content(id_content: str) -> Dict:
                 "name": c["NAME"],
             }
             for c in company_rows
+        ],
+
+        # 🔥 STRUCTURÉ = vérité métier
+        "concepts": [
+            {
+                "id_concept": c["ID_CONCEPT"],
+                "title": c["TITLE"],
+            }
+            for c in concept_rows
         ],
 
         "solutions": [
