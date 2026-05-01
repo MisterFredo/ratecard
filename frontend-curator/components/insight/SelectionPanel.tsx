@@ -69,7 +69,7 @@ export default function SelectionPanel({
 
     try {
       navigator.clipboard.writeText(el.innerText);
-    } catch (e) {
+    } catch {
       console.warn("copy failed");
     }
   }
@@ -93,7 +93,7 @@ export default function SelectionPanel({
   }
 
   /* =========================================================
-     RENDER ANALYSIS (FINAL)
+     RENDER ANALYSIS
   ========================================================= */
 
   function renderAnalysis(text: string) {
@@ -105,7 +105,6 @@ export default function SelectionPanel({
     lines.forEach((line, i) => {
       if (!line) return;
 
-      // TITLE
       if (line.includes("POINTS CLÉS")) {
         blocks.push(
           <div key={i} className="mb-4">
@@ -117,7 +116,6 @@ export default function SelectionPanel({
         return;
       }
 
-      // SECTION
       if (line === "TOP 5" || line === "À NOTER") {
         blocks.push(
           <div key={i} className="mt-6 mb-3">
@@ -129,7 +127,6 @@ export default function SelectionPanel({
         return;
       }
 
-      // BULLET
       if (line.startsWith("-") || line.startsWith("•")) {
         const clean = line.replace(/^[-•]\s*/, "");
 
@@ -161,7 +158,6 @@ export default function SelectionPanel({
         return;
       }
 
-      // fallback
       blocks.push(
         <div key={i} className="text-sm text-gray-700 mb-2">
           {line}
@@ -171,10 +167,6 @@ export default function SelectionPanel({
 
     return <div>{blocks}</div>;
   }
-
-  /* =========================================================
-     ACTION
-  ========================================================= */
 
   function handleGenerate() {
     setTab("analysis");
@@ -275,7 +267,9 @@ export default function SelectionPanel({
                   {item.title}
                 </div>
 
+                {/* 🔥 BADGES COMPLETS */}
                 <div className="flex flex-wrap gap-1">
+
                   {item.companies?.map((c: any) => (
                     <span
                       key={c.id_company}
@@ -302,6 +296,17 @@ export default function SelectionPanel({
                       {t.label}
                     </span>
                   ))}
+
+                  {/* 🔥 AJOUT CONCEPTS */}
+                  {item.concepts?.map((c: any) => (
+                    <span
+                      key={c.id_concept}
+                      className="text-[10px] px-2 py-0.5 bg-gray-200 text-gray-800 rounded"
+                    >
+                      {c.title}
+                    </span>
+                  ))}
+
                 </div>
 
                 {item.excerpt && (
