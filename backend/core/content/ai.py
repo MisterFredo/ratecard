@@ -67,6 +67,25 @@ def generate_summary(
     )
 
     # ============================================================
+    # LOAD CONCEPTS (GLOBAL)
+    # ============================================================
+
+    concepts_rows = query_bq(f"""
+        SELECT ID_CONCEPT, TITLE
+        FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONCEPT`
+        WHERE STATUS = "PUBLISHED"
+    """)
+
+    allowed_concepts = {
+        row["TITLE"]: row["ID_CONCEPT"]
+        for row in concepts_rows
+    }
+
+    concepts_list_text = "\n".join(
+        f"- {label}" for label in allowed_concepts.keys()
+    )
+
+    # ============================================================
     # PROMPT
     # ============================================================
 
@@ -190,8 +209,10 @@ SOLUTIONS
 (Liste des produits, plateformes, marques ou offres citées ou "Aucun")
 
 CONCEPTS
-(Liste des notions métier identifiées dans la source.
-Chaque concept doit être associé à un topic existant.)
+(Choisir 1 à 3 concepts uniquement parmi la liste suivante.
+Ne jamais inventer.)
+
+{concepts_list_text}
 
 TOPICS
 (Choisir 1 à 3 topics uniquement parmi la liste suivante.
@@ -285,7 +306,7 @@ SIGNAL
 
         return items
 
-    def parse_concepts(block: str) -> List[Dict[str, str]]:
+    def parse_concepts(block: str) -> List[str]:
 
         if not block:
             return []
@@ -293,42 +314,17 @@ SIGNAL
         if block.strip().lower().startswith("aucun"):
             return []
 
-        results = []
+        items = []
 
         for line in block.splitlines():
-
             line = line.strip()
             line = re.sub(r"^[-•]\s*", "", line)
             line = re.sub(r"^\d+\.\s*", "", line)
 
-            if not line:
-                continue
+            if line and line.lower() != "aucun":
+                items.append(line)
 
-            match = re.match(
-                r"(.+?)\s*\(\s*Topic\s*:\s*(.+?)\s*\)",
-                line,
-                re.IGNORECASE,
-            )
-
-            if not match:
-                continue
-
-            label = match.group(1).strip()
-            topic_label_raw = match.group(2).strip()
-
-            topic_label = next(
-                (k for k in allowed_topics.keys()
-                 if k.lower() == topic_label_raw.lower()),
-                None
-            )
-
-            if topic_label:
-                results.append({
-                    "label": label,
-                    "topic_id": allowed_topics[topic_label],
-                })
-
-        return results
+        return items
 
     # ============================================================
     # BODY
@@ -359,6 +355,16 @@ SIGNAL
         for t in valid_topics
     ]
 
+    raw_concepts = parse_concepts(sections["CONCEPTS"])
+
+    concept_ids = [
+        allowed_concepts[
+            next(k for k in allowed_concepts if k.lower() == c.lower())
+        ]
+        for c in raw_concepts
+        if any(k.lower() == c.lower() for k in allowed_concepts.keys())
+    ]
+
     # ============================================================
     # RETURN
     # ============================================================
@@ -369,7 +375,7 @@ SIGNAL
         "content_body": body,
         "chiffres": parse_list(sections["CHIFFRES"]),
         "acteurs_cites": parse_list(sections["ACTEURS"]),
-        "concepts": parse_concepts(sections["CONCEPTS"]),
+        "concepts": concept_ids,
         "solutions": parse_list(sections["SOLUTIONS"]),
         "topics": topic_ids,
         "mecanique_expliquee": sections["MECANIQUE"].strip(),
