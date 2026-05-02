@@ -3,6 +3,10 @@ from typing import List, Optional, Literal
 from datetime import datetime
 
 
+# ============================================================
+# CORE ENTITIES
+# ============================================================
+
 class Topic(BaseModel):
     id_topic: str
     label: str
@@ -19,11 +23,14 @@ class Solution(BaseModel):
     name: str
 
 
-# 🔥 NEW
 class Concept(BaseModel):
     id_concept: str
     title: str
 
+
+# ============================================================
+# FEED (CONTENT)
+# ============================================================
 
 class FeedItem(BaseModel):
     id: str
@@ -37,7 +44,6 @@ class FeedItem(BaseModel):
     companies: List[Company] = Field(default_factory=list)
     solutions: List[Solution] = Field(default_factory=list)
 
-    # 🔥 NEW
     concepts: List[Concept] = Field(default_factory=list)
 
     news_type: Optional[str] = None
@@ -45,6 +51,34 @@ class FeedItem(BaseModel):
 
 class FeedResponse(BaseModel):
     items: List[FeedItem]
+    count: int
+
+
+# ============================================================
+# 🔥 NUMBERS (V1 — BACKLOG)
+# ============================================================
+
+class CuratorNumberItem(BaseModel):
+
+    id: str
+    type: Literal["number_backlog"]
+
+    # 🔢 NUMBER
+    label: Optional[str] = None
+    value: Optional[float] = None
+    unit: Optional[str] = None
+
+    zone: Optional[str] = None
+    period: Optional[str] = None
+    actor: Optional[str] = None
+
+    # 🧠 CONTEXT
+    context_title: Optional[str] = None
+    published_at: Optional[datetime] = None
+
+
+class CuratorNumbersResponse(BaseModel):
+    items: List[CuratorNumberItem]
     count: int
 
 
