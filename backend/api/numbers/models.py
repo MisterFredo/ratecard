@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 # ============================================================
-# NUMBER (CORE OBJECT)
+# NUMBER (V2 — OFFICIAL)
 # ============================================================
 
 class Number(BaseModel):
@@ -16,7 +16,7 @@ class Number(BaseModel):
     unit: Optional[str] = None
     scale: Optional[str] = None
 
-    id_number_type: Optional[str] = None  # 🔥 devient optionnel
+    id_number_type: Optional[str] = None
 
     zone: Optional[str] = None
     period: Optional[str] = None
@@ -31,7 +31,7 @@ class Number(BaseModel):
 
 
 # ============================================================
-# INPUT (CREATE)
+# INPUT (CREATE — V2)
 # ============================================================
 
 class NumberInput(BaseModel):
@@ -44,7 +44,7 @@ class NumberInput(BaseModel):
 
     # 🔥 DOUBLE SUPPORT
     id_number_type: Optional[str] = None
-    type: Optional[str] = None  # 🔥 LLM
+    type: Optional[str] = None  # LLM
 
     zone: Optional[str] = None
     period: Optional[str] = None
@@ -63,17 +63,17 @@ class NumberInput(BaseModel):
 
 
 # ============================================================
-# CREATE RESPONSE
+# CREATE RESPONSE (V2)
 # ============================================================
 
 class NumberCreateResponse(BaseModel):
 
-    id_number: Optional[str] = None  # 🔥 peut être None (duplicate / reject)
+    id_number: Optional[str] = None
     quality: Dict
 
 
 # ============================================================
-# PARSED NUMBER (FROM CONTENT)
+# PARSED NUMBER (TECH — V1 INTERMEDIATE)
 # ============================================================
 
 class ParsedNumber(BaseModel):
@@ -88,11 +88,49 @@ class ParsedNumber(BaseModel):
     zone: Optional[str] = None
     period: Optional[str] = None
 
-    type: Optional[str] = None  # 🔥 NOUVEAU
+    type: Optional[str] = None
 
 
 # ============================================================
-# LIST ITEM
+# BACKLOG (V1 — CORE OBJECT)
+# ============================================================
+
+class NumberBacklogItem(BaseModel):
+
+    id_backlog: str
+
+    id_content: str
+    context_title: Optional[str] = None  # 🔥 utilisé en UI
+
+    label: Optional[str] = None
+    value: Optional[float] = None
+
+    unit: Optional[str] = None
+
+    actor: Optional[str] = None
+    market: Optional[str] = None
+    period: Optional[str] = None
+
+    decision: Optional[str] = None  # IGNORE / NULL
+    confidence: Optional[str] = None
+
+    created_at: Optional[datetime] = None
+
+
+# ============================================================
+# BACKLOG UPDATE (ADMIN — V1)
+# ============================================================
+
+class NumberBacklogUpdate(BaseModel):
+
+    decision: Optional[str] = None  # IGNORE / KEEP
+
+    class Config:
+        extra = "forbid"
+
+
+# ============================================================
+# LIST ITEM (V2)
 # ============================================================
 
 class NumberListItem(BaseModel):
@@ -116,12 +154,13 @@ class NumberListItem(BaseModel):
 
 
 # ============================================================
-# FEED ITEM (CARDS / UI)
+# FEED ITEM (UNIFIED READY — V1 + V2)
 # ============================================================
 
 class NumberFeedItem(BaseModel):
 
-    id_number: str
+    id: str  # 🔥 unifié (id_backlog ou id_number)
+
     label: Optional[str] = None
     value: Optional[float] = None
 
@@ -131,10 +170,15 @@ class NumberFeedItem(BaseModel):
     zone: Optional[str] = None
     period: Optional[str] = None
 
+    # V2 uniquement
     type: Optional[str] = None
     category: Optional[str] = None
-
     entities: Optional[List[Dict]] = []
-    universes: Optional[List[str]] = []
+
+    # V1 uniquement
+    context_title: Optional[str] = None
+
+    # commun
+    source_type: Optional[str] = None  # "content" | "official"
 
     created_at: Optional[datetime] = None
