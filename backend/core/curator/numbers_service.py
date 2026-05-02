@@ -91,7 +91,7 @@ def search_curator_numbers(
             OR EXISTS (
                 SELECT 1
                 FROM UNNEST(c.concepts) con
-                WHERE LOWER(con.title) LIKE LOWER(CONCAT('%', @query, '%'))
+                WHERE LOWER(con.label) LIKE LOWER(CONCAT('%', @query, '%'))
             )
         )
         """
