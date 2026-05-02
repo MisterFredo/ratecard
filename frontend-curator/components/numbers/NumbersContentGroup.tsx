@@ -4,6 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import NumberRow from "./NumberRow";
 
+type Concept = {
+  id_concept: string;
+  title: string;
+};
+
 type NumberItem = {
   id: string;
   label?: string;
@@ -13,6 +18,7 @@ type NumberItem = {
   period?: string;
   actor?: string;
   context_title?: string;
+  concepts?: Concept[];
 };
 
 type Props = {
@@ -20,6 +26,7 @@ type Props = {
   items: NumberItem[];
   selectedIds: string[];
   onToggleSelect: (item: NumberItem) => void;
+  onSelectConcept?: (concept: string) => void;
 };
 
 export default function NumbersContentGroup({
@@ -27,10 +34,12 @@ export default function NumbersContentGroup({
   items,
   selectedIds,
   onToggleSelect,
+  onSelectConcept,
 }: Props) {
-
   const router = useRouter();
   const [open, setOpen] = useState(true);
+
+  const concepts = items[0]?.concepts || [];
 
   return (
     <section className="space-y-3">
@@ -49,18 +58,39 @@ export default function NumbersContentGroup({
         </div>
       </div>
 
-      {/* ACTIONS */}
-      <div className="flex gap-3 text-xs text-blue-600">
+      {/* CONCEPTS */}
+      {concepts.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {concepts.map((c) => (
+            <button
+              key={c.id_concept}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectConcept?.(c.title);
+              }}
+              className="
+                text-xs px-2 py-1 rounded
+                bg-gray-100 hover:bg-gray-200
+              "
+            >
+              {c.title}
+            </button>
+          ))}
+        </div>
+      )}
 
+      {/* ACTION */}
+      <div className="flex gap-3 text-xs text-blue-600">
         <button
           onClick={(e) => {
             e.stopPropagation();
-            router.push(`/item/${items[0]?.id}`);
+            const first = items[0];
+            if (!first) return;
+            router.push(`/item/${first.id}`);
           }}
         >
           Voir le contenu
         </button>
-
       </div>
 
       {/* LIST */}
