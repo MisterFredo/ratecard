@@ -16,7 +16,7 @@ export default function NumbersBacklogExplorer() {
 
   // 🔥 FILTERS
   const [query, setQuery] = useState("");
-  const [decision, setDecision] = useState("NULL"); // default = à traiter
+  const [decision, setDecision] = useState("NULL");
 
   /* ========================================================= */
 
@@ -59,7 +59,8 @@ export default function NumbersBacklogExplorer() {
         decision: "IGNORE",
       });
 
-      setItems(prev => prev.filter(i => i.id_backlog !== id));
+      // 🔥 FIX UX (pas de reload)
+      setItems(prev => prev.filter(i => i.ID_BACKLOG !== id));
 
     } catch (e) {
       console.error(e);
@@ -78,15 +79,15 @@ export default function NumbersBacklogExplorer() {
     try {
 
       await api.post("/numbers/", {
-        label: item.label,
-        value: item.value,
-        unit: item.unit,
+        label: item.LABEL,
+        value: item.VALUE,
+        unit: item.UNIT,
         id_number_type: typeId,
-        zone: item.zone,
-        period: item.period,
+        zone: item.MARKET,
+        period: item.PERIOD,
       });
 
-      setItems(prev => prev.filter(i => i.id_backlog !== item.id_backlog));
+      setItems(prev => prev.filter(i => i.ID_BACKLOG !== item.ID_BACKLOG));
       setSelectedId(null);
       setTypeId("");
 
@@ -134,8 +135,10 @@ export default function NumbersBacklogExplorer() {
 
       </div>
 
+      {/* LOADING */}
       {loading && <div>Loading...</div>}
 
+      {/* LIST */}
       {!loading && (
 
         <div className="border rounded">
@@ -143,8 +146,8 @@ export default function NumbersBacklogExplorer() {
           {items.map((item) => (
 
             <div
-              key={item.id_backlog}
-              className="border-t p-3 text-sm space-y-1"
+              key={item.ID_BACKLOG}
+              className="border-t p-3 text-sm space-y-2"
             >
 
               {/* 🔹 CONTEXT */}
@@ -152,29 +155,43 @@ export default function NumbersBacklogExplorer() {
                 {item.context_title}
               </div>
 
-              {/* 🔹 DATA */}
-              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_2fr_auto] gap-2 items-center">
+              {/* 🔹 NUMBER DATA */}
+              <div className="flex flex-wrap gap-4 items-center">
 
-                <div>{item.label}</div>
-                <div>{item.value}</div>
-                <div>{item.unit}</div>
-                <div>{item.zone}</div>
-                <div>{item.period}</div>
-                <div>{item.actor}</div>
+                <div className="font-medium">
+                  {item.LABEL}
+                </div>
 
-                <div className="flex gap-2">
+                <div>
+                  {item.VALUE} {item.UNIT}
+                </div>
 
-                  {/* IGNORE */}
+                <div className="text-gray-500">
+                  {item.MARKET}
+                </div>
+
+                <div className="text-gray-500">
+                  {item.PERIOD}
+                </div>
+
+                {item.ACTOR && (
+                  <div className="text-gray-400">
+                    {item.ACTOR}
+                  </div>
+                )}
+
+                {/* ACTIONS */}
+                <div className="ml-auto flex gap-2">
+
                   <button
-                    onClick={() => handleIgnore(item.id_backlog)}
+                    onClick={() => handleIgnore(item.ID_BACKLOG)}
                     className="text-red-600 text-xs"
                   >
                     Ignore
                   </button>
 
-                  {/* CREATE */}
                   <button
-                    onClick={() => setSelectedId(item.id_backlog)}
+                    onClick={() => setSelectedId(item.ID_BACKLOG)}
                     className="text-blue-600 text-xs"
                   >
                     Create
@@ -185,7 +202,7 @@ export default function NumbersBacklogExplorer() {
               </div>
 
               {/* 🔹 CREATE PANEL */}
-              {selectedId === item.id_backlog && (
+              {selectedId === item.ID_BACKLOG && (
 
                 <div className="flex gap-2 mt-2">
 
