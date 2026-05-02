@@ -1365,12 +1365,12 @@ def publish_content(
     now_dt = datetime.now(timezone.utc)
 
     # ============================================================
-    # 1️⃣ CHECK STATUS + SOURCE_DATE
+    # 1️⃣ CHECK STATUS + SOURCE_DATE + NUMBERS_PARSED
     # ============================================================
 
     rows = query_bq(
         f"""
-        SELECT STATUS, SOURCE_DATE
+        SELECT STATUS, SOURCE_DATE, NUMBERS_PARSED
         FROM `{TABLE_CONTENT}`
         WHERE ID_CONTENT = @id_content
         """,
@@ -1382,6 +1382,7 @@ def publish_content(
 
     current_status = rows[0]["STATUS"]
     source_date = rows[0]["SOURCE_DATE"]
+    numbers_parsed = rows[0].get("NUMBERS_PARSED")
 
     if current_status != "READY":
         raise ValueError("Content must be READY before publish")
@@ -1432,28 +1433,42 @@ def publish_content(
     )
 
     # ============================================================
-    # 6️⃣ BACKLOG NUMBERS (🔥 KEY FEATURE)
+    # 6️⃣ BACKLOG NUMBERS (🔥 AVEC GARDE-FOU)
     # ============================================================
 
     if status == "PUBLISHED":
 
-        try:
-            print("📊 Parsing numbers for content:", id_content)
+        # 🔥 SKIP SI DÉJÀ PARSÉ
+        if numbers_parsed:
+            print("⏭️ Numbers already parsed → skip:", id_content)
+        else:
+            try:
+                print("📊 Parsing numbers for content:", id_content)
 
-            chiffres = get_numbers_from_content(id_content)
+                chiffres = get_numbers_from_content(id_content)
 
-            if chiffres:
-                insert_backlog_numbers(
-                    parsed_numbers=chiffres,
-                    id_content=id_content
+                if chiffres:
+                    insert_backlog_numbers(
+                        parsed_numbers=chiffres,
+                        id_content=id_content
+                    )
+                    print(f"✅ {len(chiffres)} numbers inserted into backlog")
+
+                else:
+                    print("ℹ️ No numbers found in content")
+
+                # 🔥 MARQUER COMME PARSÉ
+                update_bq(
+                    table=TABLE_CONTENT,
+                    fields={
+                        "NUMBERS_PARSED": True,
+                        "UPDATED_AT": now_dt,
+                    },
+                    where={"ID_CONTENT": id_content},
                 )
-                print(f"✅ {len(chiffres)} numbers inserted into backlog")
 
-            else:
-                print("ℹ️ No numbers found in content")
-
-        except Exception as e:
-            print("❌ BACKLOG INSERT ERROR:", str(e))
+            except Exception as e:
+                print("❌ BACKLOG INSERT ERROR:", str(e))
 
     # ============================================================
     # 7️⃣ VECTORISATION (ON HOLD)
