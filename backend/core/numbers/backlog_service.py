@@ -3,6 +3,7 @@
 # ============================================================
 
 from typing import List, Dict, Optional
+import uuid
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq, get_bigquery_client
@@ -156,7 +157,7 @@ def insert_backlog_numbers(parsed_numbers, id_content):
 
     client = get_bigquery_client()
 
-    # 🔥 CLEAN AVANT INSERT
+    # 🔥 CLEAN AVANT INSERT (évite doublons)
     client.query(f"""
         DELETE FROM `{TABLE_BACKLOG}`
         WHERE ID_CONTENT = @id_content
@@ -170,7 +171,8 @@ def insert_backlog_numbers(parsed_numbers, id_content):
             continue
 
         rows.append({
-            "ID_BACKLOG": None,
+            "ID_BACKLOG": str(uuid.uuid4()),  # 🔥 ICI
+
             "ID_CONTENT": id_content,
             "RAW_LINE": None,
 
@@ -191,7 +193,6 @@ def insert_backlog_numbers(parsed_numbers, id_content):
 
     if rows:
         client.load_table_from_json(rows, TABLE_BACKLOG).result()
-
 # ============================================================
 # UPDATE DECISION (ADMIN ACTION)
 # ============================================================
