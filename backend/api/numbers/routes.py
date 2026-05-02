@@ -12,12 +12,10 @@ from api.numbers.models import (
 
 from core.numbers.create import create_number
 from core.numbers.service import (
-    list_numbers,
     delete_number,
     delete_numbers_by_source,
     get_number_types,
 )
-from core.numbers.parsing import get_numbers_from_content
 from core.numbers.search import (
     search_numbers_service,
     get_numbers_feed_service,
@@ -27,7 +25,7 @@ from core.numbers.search import (
 from core.numbers.insight_service import generate_numbers_insight
 
 # ============================================================
-# V1 SERVICES (BACKLOG) — 🔥 À CRÉER
+# V1 SERVICES (BACKLOG)
 # ============================================================
 
 from core.numbers.backlog_service import (
@@ -40,6 +38,79 @@ from core.numbers.backlog_service import (
 router = APIRouter()
 
 # ============================================================
+# TYPES (V2)
+# ============================================================
+
+@router.get("/types")
+def get_types():
+    try:
+        return get_number_types()
+    except Exception as e:
+        raise HTTPException(400, f"Erreur types numbers : {e}")
+
+
+# ============================================================
+# ADMIN V1 (BACKLOG)
+# ============================================================
+
+@router.get("/backlog")
+def get_numbers_backlog(
+    limit: int = 200,
+    offset: int = 0,
+    query: Optional[str] = None,
+    decision: Optional[str] = None,
+):
+    try:
+        items = get_backlog_admin(
+            limit=limit,
+            offset=offset,
+            query=query,
+            decision=decision,
+        )
+
+        return {"status": "ok", "items": items}
+
+    except Exception as e:
+        raise HTTPException(400, f"Erreur backlog numbers : {e}")
+
+
+@router.post("/backlog/update/{id_backlog}")
+def update_backlog(id_backlog: str, payload: NumberBacklogUpdate):
+    try:
+        update_backlog_decision(id_backlog, payload.decision)
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur update backlog : {e}")
+
+
+# ============================================================
+# CURATOR — FEED V1 (BACKLOG)
+# ============================================================
+
+@router.get("/feed/backlog")
+def get_numbers_feed_backlog(limit: int = 50):
+    try:
+        items = get_backlog_feed(limit=limit)
+        return {"status": "ok", "items": items}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur backlog feed : {e}")
+
+
+# ============================================================
+# INSIGHT V1 (BACKLOG)
+# ============================================================
+
+@router.post("/backlog/insight")
+def numbers_backlog_insight(payload: dict):
+    try:
+        ids = payload.get("ids", [])
+        insight = generate_backlog_insight(ids)
+        return {"status": "ok", "insight": insight}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur backlog insight : {e}")
+
+
+# ============================================================
 # CREATE (V2)
 # ============================================================
 
@@ -47,15 +118,14 @@ router = APIRouter()
 def create_route(payload: NumberInput):
     try:
         result = create_number(payload)
-
         return {
             "status": "ok",
             "id_number": result["id_number"],
             "quality": result.get("quality"),
         }
-
     except Exception as e:
         raise HTTPException(400, f"Erreur création number : {e}")
+
 
 # ============================================================
 # ADMIN V2 (OFFICIAL)
@@ -77,57 +147,33 @@ def get_numbers_admin(
             type_id=type_id,
             source_id=source_id,
         )
-
         return {"status": "ok", "items": items}
-
     except Exception as e:
         raise HTTPException(400, f"Erreur admin numbers : {e}")
 
+
 # ============================================================
-# ADMIN V1 (BACKLOG)
+# SEARCH (V2)
 # ============================================================
 
-@router.get("/backlog")
-def get_numbers_backlog(
+@router.get("/search")
+def search_numbers(
+    id_number_type: Optional[str] = None,
+    topic_id: Optional[str] = None,
+    company_id: Optional[str] = None,
+    solution_id: Optional[str] = None,
     limit: int = 200,
-    offset: int = 0,
-    query: Optional[str] = None,
 ):
-    try:
-        items = get_backlog_admin(
-            limit=limit,
-            offset=offset,
-            query=query,
-        )
+    items = search_numbers_service(
+        id_number_type=id_number_type,
+        topic_id=topic_id,
+        company_id=company_id,
+        solution_id=solution_id,
+        limit=limit,
+    )
 
-        return {"status": "ok", "items": items}
+    return {"status": "ok", "items": items}
 
-    except Exception as e:
-        raise HTTPException(400, f"Erreur backlog numbers : {e}")
-
-@router.post("/backlog/update/{id_backlog}")
-def update_backlog(id_backlog: str, payload: NumberBacklogUpdate):
-    try:
-        update_backlog_decision(id_backlog, payload.decision)
-
-        return {"status": "ok"}
-
-    except Exception as e:
-        raise HTTPException(400, f"Erreur update backlog : {e}")
-
-# ============================================================
-# DELETE (V2)
-# ============================================================
-
-@router.delete("/{id_number}")
-def delete_route(id_number: str):
-    try:
-        delete_number(id_number)
-
-        return {"status": "ok", "deleted": True}
-
-    except Exception as e:
-        raise HTTPException(400, f"Erreur suppression number : {e}")
 
 # ============================================================
 # CURATOR — FEED V2 (OFFICIAL)
@@ -145,27 +191,10 @@ def get_numbers_feed(
             query=query,
             universe_id=universe_id,
         )
-
         return {"status": "ok", "items": items}
-
     except Exception as e:
         raise HTTPException(400, f"Erreur numbers feed : {e}")
 
-# ============================================================
-# CURATOR — FEED V1 (BACKLOG)
-# ============================================================
-
-@router.get("/feed/backlog")
-def get_numbers_feed_backlog(
-    limit: int = 50,
-):
-    try:
-        items = get_backlog_feed(limit=limit)
-
-        return {"status": "ok", "items": items}
-
-    except Exception as e:
-        raise HTTPException(400, f"Erreur backlog feed : {e}")
 
 # ============================================================
 # CURATOR — ENTITY (V2 ONLY)
@@ -183,11 +212,10 @@ def numbers_by_entity(
             entity_id=entity_id,
             limit=limit,
         )
-
         return {"status": "ok", "items": items}
-
     except Exception as e:
         raise HTTPException(400, f"Erreur numbers entity : {e}")
+
 
 # ============================================================
 # INSIGHT V2
@@ -198,23 +226,28 @@ def numbers_insight(payload: dict):
     try:
         ids = payload.get("ids", [])
         insight = generate_numbers_insight(ids)
-
         return {"status": "ok", "insight": insight}
-
     except Exception as e:
         raise HTTPException(400, f"Erreur numbers insight : {e}")
 
+
 # ============================================================
-# INSIGHT V1 (BACKLOG)
+# DELETE (V2) — 🔥 TOUT EN BAS
 # ============================================================
 
-@router.post("/backlog/insight")
-def numbers_backlog_insight(payload: dict):
+@router.delete("/by-source/{source_id}")
+def delete_by_source_route(source_id: str):
     try:
-        ids = payload.get("ids", [])
-        insight = generate_backlog_insight(ids)
-
-        return {"status": "ok", "insight": insight}
-
+        delete_numbers_by_source(source_id)
+        return {"status": "ok", "deleted": True}
     except Exception as e:
-        raise HTTPException(400, f"Erreur backlog insight : {e}")
+        raise HTTPException(400, f"Erreur suppression par source : {e}")
+
+
+@router.delete("/{id_number}")
+def delete_route(id_number: str):
+    try:
+        delete_number(id_number)
+        return {"status": "ok", "deleted": True}
+    except Exception as e:
+        raise HTTPException(400, f"Erreur suppression number : {e}")
