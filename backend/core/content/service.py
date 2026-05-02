@@ -1357,6 +1357,9 @@ def archive_content(id_content: str):
 # PUBLISH CONTENT
 # ============================================================
 
+from datetime import datetime, date, timezone
+from typing import Optional
+
 def publish_content(
     id_content: str,
     published_at: Optional[datetime] = None,
@@ -1419,7 +1422,7 @@ def publish_content(
         status = "SCHEDULED"
 
     # ============================================================
-    # 5️⃣ UPDATE CONTENT
+    # 5️⃣ UPDATE CONTENT (STATUT)
     # ============================================================
 
     update_bq(
@@ -1433,42 +1436,42 @@ def publish_content(
     )
 
     # ============================================================
-    # 6️⃣ BACKLOG NUMBERS (🔥 AVEC GARDE-FOU)
+    # 6️⃣ BACKLOG NUMBERS (🔥 SÉCURISÉ)
     # ============================================================
 
     if status == "PUBLISHED":
 
-        # 🔥 SKIP SI DÉJÀ PARSÉ
+        # 🔒 GARDE-FOU ABSOLU
         if numbers_parsed:
-            print("⏭️ Numbers already parsed → skip:", id_content)
-        else:
-            try:
-                print("📊 Parsing numbers for content:", id_content)
+            print("⏭️ Skip parsing (already processed):", id_content)
+            return status
 
-                chiffres = get_numbers_from_content(id_content)
+        try:
+            print("📊 Parsing numbers for content:", id_content)
 
-                if chiffres:
-                    insert_backlog_numbers(
-                        parsed_numbers=chiffres,
-                        id_content=id_content
-                    )
-                    print(f"✅ {len(chiffres)} numbers inserted into backlog")
+            chiffres = get_numbers_from_content(id_content)
 
-                else:
-                    print("ℹ️ No numbers found in content")
-
-                # 🔥 MARQUER COMME PARSÉ
-                update_bq(
-                    table=TABLE_CONTENT,
-                    fields={
-                        "NUMBERS_PARSED": True,
-                        "UPDATED_AT": now_dt,
-                    },
-                    where={"ID_CONTENT": id_content},
+            if chiffres:
+                insert_backlog_numbers(
+                    parsed_numbers=chiffres,
+                    id_content=id_content
                 )
+                print(f"✅ {len(chiffres)} numbers inserted into backlog")
+            else:
+                print("ℹ️ No numbers found in content")
 
-            except Exception as e:
-                print("❌ BACKLOG INSERT ERROR:", str(e))
+            # 🔒 MARQUER COMME TRAITÉ → CRITIQUE POUR TON POINT 6
+            update_bq(
+                table=TABLE_CONTENT,
+                fields={
+                    "NUMBERS_PARSED": True,
+                    "UPDATED_AT": now_dt,
+                },
+                where={"ID_CONTENT": id_content},
+            )
+
+        except Exception as e:
+            print("❌ BACKLOG INSERT ERROR:", str(e))
 
     # ============================================================
     # 7️⃣ VECTORISATION (ON HOLD)
