@@ -19,6 +19,8 @@ from utils.llm import run_llm
 
 TABLE_BACKLOG = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_BACKLOG"
 TABLE_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT"
+TABLE_CONTENT_CONCEPT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_CONCEPT"
+TABLE_CONCEPT = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONCEPT"
 
 
 
@@ -35,12 +37,13 @@ def get_backlog_feed(
     limit: int = 50,
     query: Optional[str] = None,
     universe_id: Optional[str] = None,
+    concept_ids: Optional[List[str]] = None,
 ) -> List[Dict]:
 
     conditions = ["TRUE"]
     params = {"limit": limit}
 
-    # 🔍 SEARCH (label + actor + contenu)
+    # 🔍 SEARCH
     if query:
         conditions.append("""
             (
@@ -51,7 +54,7 @@ def get_backlog_feed(
         """)
         params["query"] = f"%{query}%"
 
-    # 🌍 UNIVERSE FILTER (comme feed)
+    # 🌍 UNIVERSE
     if universe_id:
         conditions.append(f"""
         EXISTS (
@@ -63,7 +66,19 @@ def get_backlog_feed(
         """)
         params["universe_id"] = universe_id
 
-    # 🔥 IGNORE FILTER
+    # 🧠 CONCEPT FILTER
+    if concept_ids:
+        conditions.append(f"""
+        EXISTS (
+            SELECT 1
+            FROM `{TABLE_CONTENT_CONCEPT}` cc
+            WHERE cc.ID_CONTENT = c.ID_CONTENT
+              AND cc.ID_CONCEPT IN UNNEST(@concept_ids)
+        )
+        """)
+        params["concept_ids"] = concept_ids
+
+    # 🚫 IGNORE
     conditions.append("(b.DECISION IS NULL OR b.DECISION != 'IGNORE')")
 
     where_clause = " AND ".join(conditions)
@@ -98,10 +113,8 @@ def get_backlog_feed(
 
     return [
         {
-            # 🔥 IMPORTANT → compat NumberCard / selection
             "ID_NUMBER": r["ID_BACKLOG"],
 
-            # 🔹 DATA
             "LABEL": r.get("LABEL"),
             "VALUE": r.get("VALUE"),
             "UNIT": r.get("UNIT"),
@@ -110,7 +123,6 @@ def get_backlog_feed(
             "ZONE": r.get("ZONE"),
             "PERIOD": r.get("PERIOD"),
 
-            # 🔹 ENTITIES (fallback ACTOR)
             "ENTITIES": [
                 {
                     "ENTITY_TYPE": "actor",
@@ -118,16 +130,35 @@ def get_backlog_feed(
                 }
             ] if r.get("ACTOR") else [],
 
-            # 🔹 TYPE / CATEGORY (pas dispo en V1)
             "TYPE": None,
             "CATEGORY": None,
 
-            # 🔹 CONTEXT
             "context_title": r.get("context_title"),
             "ID_CONTENT": r.get("ID_CONTENT"),
             "source_type": "content",
 
             "CREATED_AT": r.get("CREATED_AT"),
+        }
+        for r in rows
+    ]
+
+def get_concepts():
+
+    rows = query_bq(f"""
+        SELECT
+            ID_CONCEPT,
+            LABEL,
+            CATEGORY
+        FROM `{TABLE_CONCEPT}`
+        WHERE IS_ACTIVE = TRUE
+        ORDER BY CATEGORY, LABEL
+    """)
+
+    return [
+        {
+            "id": r["ID_CONCEPT"],
+            "label": r["LABEL"],
+            "category": r["CATEGORY"],
         }
         for r in rows
     ]
