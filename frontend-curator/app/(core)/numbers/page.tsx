@@ -5,8 +5,14 @@ import { api } from "@/lib/api";
 
 import NumbersSelectionPanel from "@/components/numbers/NumbersSelectionPanel";
 import NumbersHeader from "@/components/numbers/NumbersHeader";
+import NumbersContentGroup from "@/components/numbers/NumbersContentGroup";
 
 /* ========================================================= */
+
+type Concept = {
+  id_concept: string;
+  title: string;
+};
 
 type NumberItem = {
   id: string;
@@ -19,6 +25,9 @@ type NumberItem = {
   actor?: string;
 
   context_title?: string;
+  published_at?: string;
+
+  concepts?: Concept[];
 };
 
 /* ========================================================= */
@@ -30,8 +39,8 @@ export default function NumbersPage() {
   const [loading, setLoading] = useState(true);
 
   const [query, setQuery] = useState("");
+  const [conceptFilter, setConceptFilter] = useState("");
 
-  /* SELECTION */
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
@@ -42,13 +51,17 @@ export default function NumbersPage() {
   async function load(q?: string) {
     const finalQuery = (q ?? query)?.trim();
 
+    const mergedQuery = [finalQuery, conceptFilter]
+      .filter(Boolean)
+      .join(" ");
+
     setLoading(true);
 
     try {
       const res = await api.get(
         `/curator/numbers?limit=${LIMIT}${
-          finalQuery
-            ? `&q=${encodeURIComponent(finalQuery)}`
+          mergedQuery
+            ? `&q=${encodeURIComponent(mergedQuery)}`
             : ""
         }`
       );
@@ -83,7 +96,7 @@ export default function NumbersPage() {
   }
 
   /* =========================================================
-     GROUP BY CONTENT
+     GROUPING
   ========================================================= */
 
   function groupByContent(items: NumberItem[]) {
@@ -100,7 +113,6 @@ export default function NumbersPage() {
   }
 
   const grouped = groupByContent(items);
-
   const hasContent = items.length > 0;
 
   /* ========================================================= */
@@ -117,6 +129,19 @@ export default function NumbersPage() {
           setQuery={setQuery}
           onSearch={(q) => load(q)}
         />
+
+        {/* CONCEPT FILTER */}
+        {conceptFilter && (
+          <div className="text-xs text-blue-600">
+            Filtre : {conceptFilter}
+            <button
+              className="ml-2"
+              onClick={() => setConceptFilter("")}
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* COUNT */}
         {!loading && (
@@ -142,52 +167,14 @@ export default function NumbersPage() {
         {/* CONTENT */}
         {!loading && hasContent &&
           grouped.map(([title, groupItems]) => (
-
-            <section key={title} className="space-y-4">
-
-              {/* 🔹 CONTENT TITLE */}
-              <div className="text-sm font-semibold text-gray-800">
-                {title}
-              </div>
-
-              {/* 🔹 NUMBERS LIST */}
-              <div className="space-y-2">
-
-                {groupItems.map((item) => {
-
-                  const selected = selectedIds.includes(item.id);
-
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => toggleSelect(item)}
-                      className={`
-                        border rounded p-3 cursor-pointer
-                        ${selected ? "border-blue-500 bg-blue-50" : "hover:bg-gray-50"}
-                      `}
-                    >
-
-                      <div className="text-sm font-medium">
-                        {item.label}
-                      </div>
-
-                      <div className="text-xs text-gray-500">
-                        {item.value} {item.unit} • {item.zone} • {item.period}
-                      </div>
-
-                      {item.actor && (
-                        <div className="text-xs text-gray-400">
-                          {item.actor}
-                        </div>
-                      )}
-
-                    </div>
-                  );
-                })}
-
-              </div>
-
-            </section>
+            <NumbersContentGroup
+              key={title}
+              title={title}
+              items={groupItems}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
+              onSelectConcept={(c) => setConceptFilter(c)}
+            />
           ))}
 
       </div>
