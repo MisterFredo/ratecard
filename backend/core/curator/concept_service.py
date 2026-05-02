@@ -17,7 +17,7 @@ VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 # LIST CONCEPTS (USER-AWARE)
 # ============================================================
 
-def get_curator_concepts(
+def get_concepts(
     user_id: Optional[str] = None,
     universe_id: Optional[str] = None,
 ) -> List[Dict]:
