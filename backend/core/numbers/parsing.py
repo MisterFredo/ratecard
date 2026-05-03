@@ -28,6 +28,55 @@ def _extract_unit_scale(unit_raw: str):
 
 
 # ============================================================
+# SPLIT ROBUSTE
+# ============================================================
+
+def _safe_split(line: str) -> List[str]:
+    """
+    Split robuste en 6 champs :
+    LABEL | VALUE | UNIT | ACTOR | MARKET | PERIOD
+    """
+
+    parts = [p.strip() for p in line.replace('"', '').split("|")]
+
+    # 🔥 on force 6 champs
+    while len(parts) < 6:
+        parts.append(None)
+
+    return parts[:6]
+
+
+# ============================================================
+# VALUE CLEAN
+# ============================================================
+
+def _clean_value(value_raw: str):
+    """
+    Nettoyage robuste des valeurs :
+    - convertit FR → float
+    - ignore ranges et textes
+    """
+
+    if not value_raw:
+        return None
+
+    v = value_raw.strip().lower()
+
+    # ❌ cas non exploitables
+    if any(x in v for x in [" à ", "-", "entre", "from", "to"]):
+        return None
+
+    # 🔥 normalisation
+    v = v.replace(",", ".")
+    v = v.replace(" ", "")
+
+    try:
+        return float(v)
+    except:
+        return None
+
+
+# ============================================================
 # PARSE CHIFFRES
 # ============================================================
 
@@ -40,26 +89,20 @@ def parse_chiffres(chiffres: List[str]) -> List[Dict]:
         if not line or "|" not in line:
             continue
 
-        parts = [p.strip() for p in line.split("|")]
-
-        if len(parts) == 6:
-            label, value, unit_raw, actor, market, period = parts
-            type_ = None
-
-        elif len(parts) == 7:
-            label, value, unit_raw, actor, market, period, type_ = parts
-
-        else:
-            continue
-
         # ============================================================
-        # VALUE (robuste)
+        # SPLIT
         # ============================================================
 
-        try:
-            value = str(value).replace(",", ".").replace(" ", "")
-            value = float(value)
-        except:
+        label, value_raw, unit_raw, actor, market, period = _safe_split(line)
+
+        # ============================================================
+        # VALUE
+        # ============================================================
+
+        value = _clean_value(value_raw)
+
+        # 🔥 skip si non exploitable
+        if value is None:
             continue
 
         # ============================================================
@@ -67,12 +110,6 @@ def parse_chiffres(chiffres: List[str]) -> List[Dict]:
         # ============================================================
 
         unit, scale = _extract_unit_scale(unit_raw)
-
-        # ============================================================
-        # TYPE CLEAN
-        # ============================================================
-
-        type_clean = type_.strip() if isinstance(type_, str) else None
 
         # ============================================================
         # RESULT
@@ -86,7 +123,7 @@ def parse_chiffres(chiffres: List[str]) -> List[Dict]:
             "actor": actor.strip() if actor else None,
             "zone": market.strip() if market else None,
             "period": period.strip() if period else None,
-            "type": type_clean,
+            "type": None,
         })
 
     return results
