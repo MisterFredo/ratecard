@@ -35,6 +35,11 @@ from core.numbers.backlog_service import (
     generate_backlog_insight,
 )
 
+from utils.bigquery_utils import query_bq
+from config import BQ_PROJECT, BQ_DATASET
+
+TABLE_BACKLOG = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_BACKLOG"
+
 router = APIRouter()
 
 # ============================================================
@@ -84,14 +89,68 @@ def update_backlog(id_backlog: str, payload: NumberBacklogUpdate):
 
 
 # ============================================================
+# 🔥 BULK ACTIONS (NOUVEAU)
+# ============================================================
+
+@router.post("/bulk/validate")
+def bulk_validate_numbers(payload: dict):
+    try:
+        ids = payload.get("ids", [])
+
+        if not ids:
+            return {"status": "ok"}
+
+        query_bq(f"""
+            UPDATE `{TABLE_BACKLOG}`
+            SET DECISION = 'VALIDATED'
+            WHERE ID_BACKLOG IN UNNEST(@ids)
+        """, {"ids": ids})
+
+        return {"status": "ok"}
+
+    except Exception as e:
+        print("❌ bulk validate error:", e)
+        raise HTTPException(500, "Internal error")
+
+
+@router.post("/bulk/ignore")
+def bulk_ignore_numbers(payload: dict):
+    try:
+        ids = payload.get("ids", [])
+
+        if not ids:
+            return {"status": "ok"}
+
+        query_bq(f"""
+            UPDATE `{TABLE_BACKLOG}`
+            SET DECISION = 'IGNORE'
+            WHERE ID_BACKLOG IN UNNEST(@ids)
+        """, {"ids": ids})
+
+        return {"status": "ok"}
+
+    except Exception as e:
+        print("❌ bulk ignore error:", e)
+        raise HTTPException(500, "Internal error")
+
+
+# ============================================================
 # CURATOR — FEED V1 (BACKLOG)
 # ============================================================
 
 @router.get("/feed/backlog")
-def get_numbers_feed_backlog(limit: int = 50):
+def get_numbers_feed_backlog(
+    limit: int = 50,
+    offset: int = 0,
+):
     try:
         items = get_backlog_feed(limit=limit)
+
+        # 🔥 TEMP (si ta fonction ne gère pas encore offset)
+        items = items[offset: offset + limit]
+
         return {"status": "ok", "items": items}
+
     except Exception as e:
         raise HTTPException(400, f"Erreur backlog feed : {e}")
 
@@ -232,7 +291,7 @@ def numbers_insight(payload: dict):
 
 
 # ============================================================
-# DELETE (V2) — 🔥 TOUT EN BAS
+# DELETE (V2)
 # ============================================================
 
 @router.delete("/by-source/{source_id}")
