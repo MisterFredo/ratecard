@@ -230,8 +230,8 @@ export default function NumbersPage() {
                 onClick={() => toggleConcept(c.id_concept)}
                 className={`px-3 py-1 text-xs rounded border ${
                   active
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-600 border-gray-200"
+                    ? "bg-orange-500 text-white border-orange-500"
+                    : "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100"
                 }`}
               >
                 {c.title}
