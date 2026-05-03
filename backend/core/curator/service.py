@@ -8,7 +8,6 @@ from utils.bigquery_utils import query_bq
 # VIEWS
 # ============================================================
 
-VIEW_NEWS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NEWS_ENRICHED"
 VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
 
 
