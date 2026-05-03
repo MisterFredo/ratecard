@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import NumberCard from "@/components/numbers/NumberCard";
 import NumbersSelectionPanel from "@/components/numbers/NumbersSelectionPanel";
 import NumbersHeader from "@/components/numbers/NumbersHeader";
+import AnalysisDrawer from "@/components/drawers/AnalysisDrawer"; // 🔥 NEW
 
 /* ========================================================= */
 
@@ -41,6 +42,9 @@ export default function NumbersPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
+  /* 🔥 NEW : drawer */
+  const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
+
   /* =========================================================
      LOAD NUMBERS
   ========================================================= */
@@ -64,7 +68,6 @@ export default function NumbersPage() {
         );
       }
 
-      // ✅ NEW ROUTE (curator)
       const res = finalQuery
         ? await api.get(`/curator/numbers?${params}`)
         : await api.get(`/curator/numbers/latest?${params}`);
@@ -97,7 +100,7 @@ export default function NumbersPage() {
   }, []);
 
   /* =========================================================
-     LOAD CONCEPTS (NEW)
+     LOAD CONCEPTS
   ========================================================= */
 
   useEffect(() => {
@@ -183,9 +186,7 @@ export default function NumbersPage() {
           onSearch={(q) => load(q)}
         />
 
-        {/* =====================================================
-            UNIVERS FILTER
-        ===================================================== */}
+        {/* UNIVERS */}
         <div className="flex gap-2 flex-wrap">
 
           <button
@@ -215,9 +216,7 @@ export default function NumbersPage() {
 
         </div>
 
-        {/* =====================================================
-            CONCEPTS FILTER (NEW)
-        ===================================================== */}
+        {/* CONCEPTS */}
         <div className="flex gap-2 flex-wrap">
 
           {concepts.map((c) => {
@@ -228,7 +227,7 @@ export default function NumbersPage() {
               <button
                 key={c.id_concept}
                 onClick={() => toggleConcept(c.id_concept)}
-                className={`px-3 py-1 text-xs rounded border ${
+                className={`px-3 py-1 text-xs rounded border transition ${
                   active
                     ? "bg-orange-500 text-white border-orange-500"
                     : "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100"
@@ -255,13 +254,35 @@ export default function NumbersPage() {
             <section key={title} className="space-y-2">
 
               <div className="flex justify-between items-center">
-                <div className="text-sm font-semibold">
-                  {title}
+
+                {/* 🔥 TITRE CLIQUABLE */}
+                <div
+                  className="
+                    flex items-center gap-2
+                    text-sm font-semibold
+                    cursor-pointer
+                    group
+                  "
+                  onClick={() => {
+                    const firstItem = groupItems[0];
+                    if (firstItem?.context_id) {
+                      setSelectedContentId(firstItem.context_id);
+                    }
+                  }}
+                >
+                  <span className="group-hover:underline">
+                    {title}
+                  </span>
+
+                  <span className="text-gray-400 group-hover:text-gray-700 transition">
+                    →
+                  </span>
                 </div>
 
                 <div className="text-xs text-gray-400">
                   {groupItems.length}
                 </div>
+
               </div>
 
               <div className="
@@ -298,6 +319,14 @@ export default function NumbersPage() {
             onClose={() => setIsPanelOpen(false)}
           />
         </div>
+      )}
+
+      {/* 🔥 DRAWER */}
+      {selectedContentId && (
+        <AnalysisDrawer
+          id={selectedContentId}
+          onClose={() => setSelectedContentId(null)}
+        />
       )}
 
     </div>
