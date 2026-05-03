@@ -7,10 +7,7 @@ type Props = {
   id: string;
   name: string;
 
-  // logo final (solution OU fallback company)
   visualRectId?: string | null;
-
-  // source du logo
   visualType?: "solution" | "company";
 
   nbAnalyses?: number;
@@ -23,6 +20,10 @@ type Props = {
     id_insight: string;
     key_points: string[];
   };
+
+  // 🔥 NEW
+  isLoading?: boolean;
+  onClick?: () => void;
 };
 
 const GCS_BASE_URL = process.env.NEXT_PUBLIC_GCS_BASE_URL!;
@@ -37,30 +38,38 @@ export default function SolutionCard({
   isPartner,
   hasNumbers,
   lastRadar,
+  isLoading,
+  onClick,
 }: Props) {
 
   const router = useRouter();
   const pathname = usePathname();
   const { openLeftDrawer, openRightDrawer } = useDrawer();
 
-  // =====================================================
-  // 🔥 VISUAL URL (SAFE + ROBUST)
-  // =====================================================
+  /* =====================================================
+     VISUAL URL
+  ===================================================== */
+
   let visualUrl: string | null = null;
 
   if (visualRectId) {
     const folder =
       visualType === "solution"
         ? "solutions"
-        : "companies"; // fallback par défaut
+        : "companies";
 
     visualUrl = `${GCS_BASE_URL}/${folder}/${visualRectId}`;
   }
 
-  // =====================================================
-  // HANDLERS
-  // =====================================================
+  /* =====================================================
+     HANDLERS
+  ===================================================== */
+
   function handleClick() {
+    if (isLoading) return; // 🔥 évite spam click
+
+    if (onClick) onClick(); // 🔥 trigger loader parent
+
     openLeftDrawer("solution", id);
 
     router.replace(
@@ -71,14 +80,16 @@ export default function SolutionCard({
 
   function handleRadarClick(e: React.MouseEvent) {
     e.stopPropagation();
+
     if (lastRadar?.id_insight) {
       openRightDrawer("radar", lastRadar.id_insight);
     }
   }
 
-  // =====================================================
-  // UI
-  // =====================================================
+  /* =====================================================
+     RENDER
+  ===================================================== */
+
   return (
     <div
       onClick={handleClick}
@@ -90,6 +101,20 @@ export default function SolutionCard({
         relative
       "
     >
+
+      {/* 🔥 LOADING OVERLAY */}
+      {isLoading && (
+        <div className="
+          absolute inset-0 z-20
+          bg-white/70 backdrop-blur-sm
+          flex items-center justify-center
+        ">
+          <div className="text-xs text-gray-500 animate-pulse">
+            Chargement...
+          </div>
+        </div>
+      )}
+
       {/* BADGE NUMBERS */}
       {hasNumbers && (
         <div className="
@@ -147,16 +172,14 @@ export default function SolutionCard({
               opacity-0 group-hover:opacity-100
             "
           >
-            <p className="
-              text-[11px] text-white leading-snug line-clamp-3
-            ">
+            <p className="text-[11px] text-white leading-snug line-clamp-3">
               {lastRadar.key_points[0]}
             </p>
           </div>
         )}
       </div>
 
-      {/* CONTENU */}
+      {/* CONTENT */}
       <div className="p-3 space-y-1 text-center">
         <h3 className="text-xs font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:underline">
           {name}
