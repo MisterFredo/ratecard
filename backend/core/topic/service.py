@@ -191,18 +191,8 @@ def list_topics_for_user(user_id: str):
     ORDER BY t.LABEL
     """
 
-    rows = query_bq(sql, {"user_id": user_id})
+    return query_bq(sql, {"user_id": user_id})
 
-    return [
-        {
-            "id_topic": r["ID_TOPIC"],
-            "label": r["LABEL"],
-            "nb_analyses": r["NB_ANALYSES"],
-            "delta_30d": r["DELTA_30D"],
-            "universes": r.get("universes") or [],
-        }
-        for r in rows
-    ]
 # ============================================================
 # GET ONE TOPIC
 # ============================================================
