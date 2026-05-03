@@ -30,24 +30,18 @@ export default function NumbersPage() {
 
   const [query, setQuery] = useState("");
 
-  /* UNIVERS */
   const [universes, setUniverses] = useState<Universe[]>([]);
   const [activeUniverse, setActiveUniverse] = useState<string | null>(null);
 
-  /* CONCEPTS */
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [activeConcepts, setActiveConcepts] = useState<string[]>([]);
 
-  /* SELECTION */
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
-  /* DRAWER */
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
 
-  /* =========================================================
-     LOAD
-  ========================================================= */
+  /* ========================================================= */
 
   async function load(q?: string) {
     const finalQuery = (q ?? query)?.trim();
@@ -82,9 +76,7 @@ export default function NumbersPage() {
     }
   }
 
-  /* =========================================================
-     LOAD UNIVERS
-  ========================================================= */
+  /* ========================================================= */
 
   useEffect(() => {
     api.get("/universe/list-for-user")
@@ -92,27 +84,17 @@ export default function NumbersPage() {
       .catch(() => {});
   }, []);
 
-  /* =========================================================
-     LOAD CONCEPTS
-  ========================================================= */
-
   useEffect(() => {
     api.get("/curator/concepts")
       .then((res) => setConcepts(res?.items || []))
       .catch(() => {});
   }, []);
 
-  /* =========================================================
-     RELOAD
-  ========================================================= */
-
   useEffect(() => {
     load();
   }, [activeUniverse, activeConcepts]);
 
-  /* =========================================================
-     SELECTION
-  ========================================================= */
+  /* ========================================================= */
 
   function toggleSelect(item: any) {
     const id = item.ID_NUMBER;
@@ -126,10 +108,6 @@ export default function NumbersPage() {
     setIsPanelOpen(true);
   }
 
-  /* =========================================================
-     CONCEPT TOGGLE
-  ========================================================= */
-
   function toggleConcept(id: string) {
     setActiveConcepts((prev) =>
       prev.includes(id)
@@ -137,10 +115,6 @@ export default function NumbersPage() {
         : [...prev, id]
     );
   }
-
-  /* =========================================================
-     GROUP
-  ========================================================= */
 
   function groupByContent(items: any[]) {
     const map: Record<string, any[]> = {};
@@ -162,24 +136,17 @@ export default function NumbersPage() {
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
       {/* LEFT */}
-      <div className="xl:col-span-2 space-y-6">
+      <div className="xl:col-span-2 space-y-8">
 
-        {/* =====================================================
-            UNIVERS (style feed)
-        ===================================================== */}
+        {/* UNIVERS */}
         <div className="flex gap-2 overflow-x-auto scrollbar-none px-1">
-
           <button
             onClick={() => setActiveUniverse(null)}
-            className={`
-              flex items-center gap-1 whitespace-nowrap
-              px-3 py-1.5 rounded-full text-xs border transition-all
-              ${
-                activeUniverse === null
-                  ? "bg-black text-white border-black shadow-sm"
-                  : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-              }
-            `}
+            className={`px-3 py-1.5 rounded-full text-xs border ${
+              activeUniverse === null
+                ? "bg-black text-white border-black"
+                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+            }`}
           >
             Tous
           </button>
@@ -191,15 +158,11 @@ export default function NumbersPage() {
               <button
                 key={u.id_universe}
                 onClick={() => setActiveUniverse(u.id_universe)}
-                className={`
-                  flex items-center gap-1 whitespace-nowrap
-                  px-3 py-1.5 rounded-full text-xs border transition-all
-                  ${
-                    active
-                      ? "bg-black text-white border-black shadow-sm scale-[1.02]"
-                      : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-                  }
-                `}
+                className={`px-3 py-1.5 rounded-full text-xs border ${
+                  active
+                    ? "bg-black text-white border-black"
+                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                }`}
               >
                 {u.label}
               </button>
@@ -214,9 +177,7 @@ export default function NumbersPage() {
           onSearch={(q) => load(q)}
         />
 
-        {/* =====================================================
-            CONCEPTS (sobre)
-        ===================================================== */}
+        {/* CONCEPTS */}
         <div className="flex gap-2 flex-wrap">
           {concepts.map((c) => {
             const active = activeConcepts.includes(c.id_concept);
@@ -225,14 +186,11 @@ export default function NumbersPage() {
               <button
                 key={c.id_concept}
                 onClick={() => toggleConcept(c.id_concept)}
-                className={`
-                  px-3 py-1 text-xs rounded-full border transition
-                  ${
-                    active
-                      ? "bg-gray-800 text-white border-gray-800"
-                      : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
-                  }
-                `}
+                className={`px-3 py-1 text-xs rounded-full border ${
+                  active
+                    ? "bg-gray-800 text-white border-gray-800"
+                    : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                }`}
               >
                 {c.title}
               </button>
@@ -245,64 +203,47 @@ export default function NumbersPage() {
           <p className="text-sm text-gray-400">Chargement...</p>
         )}
 
-        {/* =====================================================
-            CONTENT
-        ===================================================== */}
+        {/* CONTENT */}
         {!loading &&
           grouped.map(([title, groupItems]) => {
 
             const firstItem = groupItems[0];
 
             return (
-              <section key={title} className="space-y-3">
+              <section
+                key={title}
+                className="space-y-3 pb-6 border-b border-gray-100"
+              >
 
-                {/* HEADER CLIQUABLE */}
+                {/* HEADER LIGHT */}
                 <div
                   onClick={() => {
-                    console.log("CLICK HEADER", firstItem);
-
-                    if (!firstItem?.ID_CONTENT) {   // 🔥 inversion ici
-                      console.warn("NO CONTEXT ID", firstItem);
-                      return;
-                    }
+                    if (!firstItem?.ID_CONTENT) return;
 
                     setSelectedItem({
                       id: firstItem.ID_CONTENT,
                       type: "analysis",
                     });
                   }}
-                  className="
-                    group cursor-pointer
-                    px-4 py-3
-                    rounded-xl
-                    border border-gray-200
-                    bg-white
-                    hover:bg-gray-50
-                    hover:border-gray-300
-                    transition
-                  "
+                  className="cursor-pointer group flex items-center justify-between"
                 >
-                  <div className="flex items-center justify-between">
-
+                  <div>
                     <div className="text-sm font-semibold text-gray-900 group-hover:underline">
                       {title}
                     </div>
-
-                    <div className="text-xs text-gray-400 group-hover:text-gray-700">
-                      Voir →
+                    <div className="text-xs text-gray-400">
+                      {groupItems.length} chiffre(s)
                     </div>
-
                   </div>
 
-                  <div className="text-xs text-gray-400 mt-1">
-                    {groupItems.length} chiffre(s)
+                  <div className="text-xs text-gray-400 group-hover:text-gray-600">
+                    Voir →
                   </div>
                 </div>
 
                 {/* GRID */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                   {groupItems.map((item) => {
-
                     const selected = selectedIds.includes(item.ID_NUMBER);
 
                     return (
