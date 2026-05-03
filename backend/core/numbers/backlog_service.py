@@ -239,7 +239,25 @@ def insert_backlog_numbers(parsed_numbers, id_content):
     """, job_config=job_config).result()
 
     # ============================================================
-    # 2️⃣ DEDUP LOCAL (IMPORTANT)
+    # 2️⃣ RÉCUPÉRER LES NUMBERS IGNORÉS (ANTI-RETOUR DU BRUIT)
+    # ============================================================
+
+    ignored_rows = query_bq(f"""
+        SELECT LABEL, VALUE
+        FROM `{TABLE_BACKLOG}`
+        WHERE DECISION = 'IGNORE'
+    """)
+
+    ignored_set = {
+        (
+            (r.get("LABEL") or "").strip().lower(),
+            str(r.get("VALUE"))
+        )
+        for r in ignored_rows
+    }
+
+    # ============================================================
+    # 3️⃣ DEDUP LOCAL + FILTRE IGNORE
     # ============================================================
 
     seen = set()
@@ -247,16 +265,22 @@ def insert_backlog_numbers(parsed_numbers, id_content):
 
     for p in parsed_numbers:
 
+        label = (p.get("label") or "").strip()
         value = p.get("value")
-        label = p.get("label")
 
         if value is None or not label:
             continue
 
-        # 🔥 clé simple de dédup
-        key = (label.strip().lower(), str(value))
+        value_str = str(value)
 
+        key = (label.lower(), value_str)
+
+        # 🔥 dédup local
         if key in seen:
+            continue
+
+        # 🔥 skip bruit déjà ignoré
+        if key in ignored_set:
             continue
 
         seen.add(key)
@@ -268,7 +292,7 @@ def insert_backlog_numbers(parsed_numbers, id_content):
             "RAW_LINE": None,
 
             "LABEL": label,
-            "VALUE": str(value),
+            "VALUE": value_str,
             "UNIT": p.get("unit"),
 
             "ACTOR": p.get("actor"),
@@ -283,13 +307,11 @@ def insert_backlog_numbers(parsed_numbers, id_content):
         })
 
     # ============================================================
-    # 3️⃣ INSERT
+    # 4️⃣ INSERT
     # ============================================================
 
     if rows:
         client.load_table_from_json(rows, TABLE_BACKLOG).result()
-
-
 # ============================================================
 # UPDATE DECISION (ADMIN ACTION)
 # ============================================================
