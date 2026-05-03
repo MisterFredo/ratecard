@@ -12,7 +12,9 @@ export const dynamic = "force-dynamic";
 type Topic = {
   id_topic: string;
   label: string;
-  universes: string[];   // 🔥 NEW
+
+  universe: string; // 🔥 1:1 simplifié
+
   nb_analyses: number;
   delta_30d: number;
 };
@@ -60,10 +62,13 @@ async function fetchTopics(): Promise<Topic[]> {
       id_topic: t.id_topic ?? t.ID_TOPIC,
       label: t.label ?? t.LABEL,
 
-      // 🔥 univers simplifiés en labels
-      universes: (t.universes || []).map((u: any) =>
-        typeof u === "string" ? u : u.label
-      ),
+      // 🔥 1:1 → on prend direct le premier
+      universe:
+        (t.universes?.[0] &&
+          (typeof t.universes[0] === "string"
+            ? t.universes[0]
+            : t.universes[0].label)) ||
+        "Autres",
 
       nb_analyses: t.nb_analyses ?? t.NB_ANALYSES ?? 0,
       delta_30d: t.delta_30d ?? t.DELTA_30D ?? 0,
@@ -84,10 +89,10 @@ function sortTopics(items: Topic[], mode: SortMode) {
 
   switch (mode) {
     case "activity":
-      return copy.sort((a, b) => (b.nb_analyses ?? 0) - (a.nb_analyses ?? 0));
+      return copy.sort((a, b) => b.nb_analyses - a.nb_analyses);
 
     case "growth":
-      return copy.sort((a, b) => (b.delta_30d ?? 0) - (a.delta_30d ?? 0));
+      return copy.sort((a, b) => b.delta_30d - a.delta_30d);
 
     default:
       return copy.sort((a, b) =>
@@ -97,19 +102,17 @@ function sortTopics(items: Topic[], mode: SortMode) {
 }
 
 /* =========================================================
-   GROUP BY UNIVERSE (🔥 FIX MAJEUR)
+   GROUP (1:1 SIMPLE)
 ========================================================= */
 
 function groupByUniverse(topics: Topic[], mode: SortMode) {
   const map: Record<string, Topic[]> = {};
 
   topics.forEach((t) => {
-    const universes = t.universes?.length ? t.universes : ["Autres"];
+    const u = t.universe;
 
-    universes.forEach((u) => {
-      if (!map[u]) map[u] = [];
-      map[u].push(t);
-    });
+    if (!map[u]) map[u] = [];
+    map[u].push(t);
   });
 
   Object.keys(map).forEach((u) => {
@@ -128,8 +131,8 @@ export default function TopicsPage() {
   const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] = useState<SortMode>("activity");
 
-  // 🔥 ACCORDÉON
   const [openUniverses, setOpenUniverses] = useState<Record<string, boolean>>({});
+  const [loadingId, setLoadingId] = useState<string | null>(null); // 🔥 UX loading
 
   const { openLeftDrawer } = useDrawer();
   const searchParams = useSearchParams();
@@ -170,7 +173,7 @@ export default function TopicsPage() {
   }, [searchParams, openLeftDrawer]);
 
   /* ---------------------------------------------------------
-     AUTO OPEN UNIVERSE
+     AUTO OPEN
   --------------------------------------------------------- */
 
   useEffect(() => {
@@ -180,12 +183,9 @@ export default function TopicsPage() {
     const topic = topics.find((t) => t.id_topic === topicId);
     if (!topic) return;
 
-    const universe = topic.universes?.[0];
-    if (!universe) return;
-
     setOpenUniverses((prev) => ({
       ...prev,
-      [universe]: true,
+      [topic.universe]: true,
     }));
   }, [topics, searchParams]);
 
@@ -267,7 +267,11 @@ export default function TopicsPage() {
       {/* CONTENT */}
       {!loading && hasContent &&
         Object.entries(grouped)
-          .sort(([a], [b]) => a.localeCompare(b))
+          .sort(([a], [b]) => {
+            if (a === "Autres") return 1;
+            if (b === "Autres") return -1;
+            return a.localeCompare(b);
+          })
           .map(([universe, items]) => (
 
             <section key={universe} className="space-y-2">
@@ -312,6 +316,8 @@ export default function TopicsPage() {
                         label={t.label}
                         nbAnalyses={t.nb_analyses}
                         delta30d={t.delta_30d}
+                        isLoading={loadingId === t.id_topic}
+                        onClick={() => setLoadingId(t.id_topic)}
                       />
                     ))}
                   </div>
