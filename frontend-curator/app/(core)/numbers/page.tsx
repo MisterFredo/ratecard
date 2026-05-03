@@ -142,7 +142,7 @@ export default function NumbersPage() {
         <div className="flex gap-2 overflow-x-auto scrollbar-none px-1">
           <button
             onClick={() => setActiveUniverse(null)}
-            className={`px-3 py-1.5 rounded-full text-xs border ${
+            className={`px-2.5 py-1 rounded-full text-[11px] border ${
               activeUniverse === null
                 ? "bg-black text-white border-black"
                 : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
@@ -158,7 +158,7 @@ export default function NumbersPage() {
               <button
                 key={u.id_universe}
                 onClick={() => setActiveUniverse(u.id_universe)}
-                className={`px-3 py-1.5 rounded-full text-xs border ${
+                className={`px-2.5 py-1 rounded-full text-[11px] border ${
                   active
                     ? "bg-black text-white border-black"
                     : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
