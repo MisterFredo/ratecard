@@ -106,15 +106,19 @@ export default function TopicCard({
       )}
 
       {/* =====================================================
-          VISUAL (NEUTRE / NON REDONDANT)
+          VISUAL DATA BLOCK (🔥 REMPLACE "TOPIC")
       ===================================================== */}
       <div className="
         h-20 w-full
         bg-gradient-to-br from-gray-50 to-gray-100
-        flex items-center justify-center
-        text-[10px] text-gray-400 uppercase tracking-wide
+        flex flex-col items-center justify-center
       ">
-        Topic
+        <div className="text-lg font-semibold text-gray-800">
+          {nbAnalyses ?? 0}
+        </div>
+        <div className="text-[10px] text-gray-400">
+          analyses
+        </div>
       </div>
 
       {/* =====================================================
@@ -122,7 +126,7 @@ export default function TopicCard({
       ===================================================== */}
       <div className="p-3 text-center space-y-1">
 
-        {/* LABEL (UNIQUE) */}
+        {/* LABEL */}
         <h3 className="
           text-xs font-semibold text-gray-900
           line-clamp-2
@@ -131,16 +135,10 @@ export default function TopicCard({
           {label}
         </h3>
 
-        {/* STATS */}
-        {typeof nbAnalyses === "number" && (
-          <div className="text-[11px] text-gray-600">
-            <span className="font-medium">{nbAnalyses}</span>
-
-            {isTrending && (
-              <span className="ml-1 text-orange-600">
-                +{delta30d}
-              </span>
-            )}
+        {/* DELTA */}
+        {isTrending && (
+          <div className="text-[11px] text-orange-600 font-medium">
+            +{delta30d} (30j)
           </div>
         )}
 
