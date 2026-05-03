@@ -30,24 +30,18 @@ export default function NumbersPage() {
 
   const [query, setQuery] = useState("");
 
-  /* UNIVERS */
   const [universes, setUniverses] = useState<Universe[]>([]);
   const [activeUniverse, setActiveUniverse] = useState<string | null>(null);
 
-  /* CONCEPTS */
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [activeConcepts, setActiveConcepts] = useState<string[]>([]);
 
-  /* SELECTION */
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
-  /* 🔥 DRAWER (aligné feed) */
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
 
-  /* =========================================================
-     LOAD
-  ========================================================= */
+  /* ========================================================= */
 
   async function load(q?: string) {
     const finalQuery = (q ?? query)?.trim();
@@ -82,51 +76,25 @@ export default function NumbersPage() {
     }
   }
 
-  /* =========================================================
-     LOAD UNIVERS
-  ========================================================= */
-
-  useEffect(() => {
-    async function loadUniverses() {
-      try {
-        const res = await api.get("/universe/list-for-user");
-        setUniverses(res?.universes || []);
-      } catch (e) {
-        console.error("❌ universe load error", e);
-      }
-    }
-
-    loadUniverses();
-  }, []);
-
-  /* =========================================================
-     LOAD CONCEPTS
-  ========================================================= */
-
-  useEffect(() => {
-    async function loadConcepts() {
-      try {
-        const res = await api.get("/curator/concepts");
-        setConcepts(res?.items || []);
-      } catch (e) {
-        console.error("❌ concepts load error", e);
-      }
-    }
-
-    loadConcepts();
-  }, []);
-
-  /* =========================================================
-     RELOAD
-  ========================================================= */
+  /* ========================================================= */
 
   useEffect(() => {
     load();
   }, [activeUniverse, activeConcepts]);
 
-  /* =========================================================
-     SELECTION
-  ========================================================= */
+  useEffect(() => {
+    api.get("/universe/list-for-user").then((res) =>
+      setUniverses(res?.universes || [])
+    );
+  }, []);
+
+  useEffect(() => {
+    api.get("/curator/concepts").then((res) =>
+      setConcepts(res?.items || [])
+    );
+  }, []);
+
+  /* ========================================================= */
 
   function toggleSelect(item: any) {
     const id = item.ID_NUMBER;
@@ -140,10 +108,6 @@ export default function NumbersPage() {
     setIsPanelOpen(true);
   }
 
-  /* =========================================================
-     CONCEPT TOGGLE
-  ========================================================= */
-
   function toggleConcept(id: string) {
     setActiveConcepts((prev) =>
       prev.includes(id)
@@ -151,10 +115,6 @@ export default function NumbersPage() {
         : [...prev, id]
     );
   }
-
-  /* =========================================================
-     GROUP
-  ========================================================= */
 
   function groupByContent(items: any[]) {
     const map: Record<string, any[]> = {};
@@ -175,19 +135,15 @@ export default function NumbersPage() {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
-      {/* LEFT */}
       <div className="xl:col-span-2 space-y-6">
 
-        {/* =====================================================
-            UNIVERS (style feed)
-        ===================================================== */}
+        {/* UNIVERS */}
         <div className="flex gap-2 overflow-x-auto scrollbar-none px-1">
 
           <button
             onClick={() => setActiveUniverse(null)}
             className={`
-              flex items-center gap-1
-              whitespace-nowrap
+              flex items-center gap-1 whitespace-nowrap
               px-3 py-1.5 rounded-full text-xs border transition-all
               ${
                 activeUniverse === null
@@ -207,8 +163,7 @@ export default function NumbersPage() {
                 key={u.id_universe}
                 onClick={() => setActiveUniverse(u.id_universe)}
                 className={`
-                  flex items-center gap-1
-                  whitespace-nowrap
+                  flex items-center gap-1 whitespace-nowrap
                   px-3 py-1.5 rounded-full text-xs border transition-all
                   ${
                     active
@@ -230,11 +185,8 @@ export default function NumbersPage() {
           onSearch={(q) => load(q)}
         />
 
-        {/* =====================================================
-            CONCEPTS (sobre)
-        ===================================================== */}
+        {/* CONCEPTS */}
         <div className="flex gap-2 flex-wrap">
-
           {concepts.map((c) => {
             const active = activeConcepts.includes(c.id_concept);
 
@@ -264,62 +216,70 @@ export default function NumbersPage() {
 
         {/* CONTENT */}
         {!loading &&
-          grouped.map(([title, groupItems]) => (
+          grouped.map(([title, groupItems]) => {
 
-            <section key={title} className="space-y-2">
+            const firstItem = groupItems[0];
 
-              <div className="flex justify-between items-center">
+            return (
+              <section key={title} className="space-y-3">
 
-                {/* 🔥 TITRE CLIQUABLE */}
-                <div
-                  className="text-sm font-semibold cursor-pointer group flex items-center gap-2"
-                  onClick={() => {
-                    const firstItem = groupItems[0];
-                    if (firstItem?.context_id) {
-                      setSelectedItem({
-                        id: firstItem.context_id,
-                        type: "analysis",
-                      });
-                    }
-                  }}
-                >
-                  <span className="group-hover:underline">
-                    {title}
-                  </span>
+                <div className="flex justify-between items-center">
 
-                  <span className="text-gray-400 group-hover:text-gray-700">
-                    →
-                  </span>
+                  {/* 🔥 FIX ICI */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log("CLICK TITLE");
+
+                      if (firstItem?.context_id) {
+                        setSelectedItem({
+                          id: firstItem.context_id,
+                          type: "analysis",
+                        });
+                      }
+                    }}
+                    className="flex items-center gap-2 text-sm font-semibold cursor-pointer group"
+                  >
+                    <span className="group-hover:underline">
+                      {title}
+                    </span>
+                    <span className="text-gray-400 group-hover:text-gray-700">
+                      →
+                    </span>
+                  </button>
+
+                  <div className="text-xs text-gray-400">
+                    {groupItems.length}
+                  </div>
+
                 </div>
 
-                <div className="text-xs text-gray-400">
-                  {groupItems.length}
+                <div className="mt-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {groupItems.map((item) => {
+
+                      const selected = selectedIds.includes(item.ID_NUMBER);
+
+                      return (
+                        <NumberCard
+                          key={item.ID_NUMBER}
+                          item={item}
+                          selected={selected}
+                          onClick={() => toggleSelect(item)}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
 
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {groupItems.map((item) => {
-
-                  const selected = selectedIds.includes(item.ID_NUMBER);
-
-                  return (
-                    <NumberCard
-                      key={item.ID_NUMBER}
-                      item={item}
-                      selected={selected}
-                      onClick={() => toggleSelect(item)}
-                    />
-                  );
-                })}
-              </div>
-
-            </section>
-          ))}
+              </section>
+            );
+          })}
 
       </div>
 
-      {/* RIGHT PANEL */}
+      {/* RIGHT */}
       {isPanelOpen && (
         <div className="xl:col-span-1 sticky top-6">
           <NumbersSelectionPanel
@@ -330,7 +290,7 @@ export default function NumbersPage() {
         </div>
       )}
 
-      {/* 🔥 DRAWER */}
+      {/* DRAWER */}
       {selectedItem && (
         <AnalysisDrawer
           id={selectedItem.id}
