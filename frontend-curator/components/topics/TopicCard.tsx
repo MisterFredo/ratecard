@@ -41,7 +41,7 @@ export default function TopicCard({
   ========================================================= */
 
   function handleClick() {
-    if (isLoading) return; // 🔥 bloque double click
+    if (isLoading) return;
 
     onClick?.();
 
@@ -106,15 +106,15 @@ export default function TopicCard({
       )}
 
       {/* =====================================================
-          VISUAL
+          VISUAL (NEUTRE / NON REDONDANT)
       ===================================================== */}
       <div className="
         h-20 w-full
-        bg-gray-50 flex items-center justify-center
-        text-[11px] text-gray-500
-        px-2 text-center
+        bg-gradient-to-br from-gray-50 to-gray-100
+        flex items-center justify-center
+        text-[10px] text-gray-400 uppercase tracking-wide
       ">
-        {label}
+        Topic
       </div>
 
       {/* =====================================================
@@ -122,13 +122,20 @@ export default function TopicCard({
       ===================================================== */}
       <div className="p-3 text-center space-y-1">
 
-        <h3 className="text-xs font-semibold text-gray-900 line-clamp-2">
+        {/* LABEL (UNIQUE) */}
+        <h3 className="
+          text-xs font-semibold text-gray-900
+          line-clamp-2
+          group-hover:underline
+        ">
           {label}
         </h3>
 
+        {/* STATS */}
         {typeof nbAnalyses === "number" && (
-          <div className="text-[10px] text-gray-500">
-            {nbAnalyses}
+          <div className="text-[11px] text-gray-600">
+            <span className="font-medium">{nbAnalyses}</span>
+
             {isTrending && (
               <span className="ml-1 text-orange-600">
                 +{delta30d}
