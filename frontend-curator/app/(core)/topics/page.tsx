@@ -25,21 +25,42 @@ type SortMode = "alpha" | "activity" | "growth";
 
 async function fetchTopics(): Promise<Topic[]> {
   try {
+    const userId = localStorage.getItem("user_id");
+
+    if (!userId) {
+      console.warn("❌ No user_id");
+      return [];
+    }
+
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/topic/list`,
-      { cache: "no-store" }
+      `${process.env.NEXT_PUBLIC_API_URL}/topic/list-for-user`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": userId,
+        },
+        cache: "no-store",
+      }
     );
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error("❌ API ERROR:", res.status);
+      return [];
+    }
 
     const json = await res.json();
-    if (json.status !== "ok") return [];
+
+    if (json.status !== "ok") {
+      console.error("❌ API BAD STATUS:", json);
+      return [];
+    }
 
     return (json.topics || []).map((t: any) => ({
       id_topic: t.id_topic ?? t.ID_TOPIC,
       label: t.label ?? t.LABEL,
 
-      // 🔥 CRITIQUE
+      // 🔥 univers simplifiés en labels
       universes: (t.universes || []).map((u: any) =>
         typeof u === "string" ? u : u.label
       ),
