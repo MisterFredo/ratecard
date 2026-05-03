@@ -211,7 +211,13 @@ export default function CompaniesPage() {
   const grouped = groupByUniverse(companies, sortMode);
   const hasContent = companies.length > 0;
 
-  if (!ready) return null;
+  if (!ready) {
+    return (
+      <div className="p-6 text-sm text-gray-400">
+        Chargement…
+      </div>
+    );
+  }
 
   /* =========================================================
      RENDER
