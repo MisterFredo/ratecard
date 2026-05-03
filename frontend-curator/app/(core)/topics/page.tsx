@@ -178,16 +178,14 @@ export default function TopicsPage() {
 
   useEffect(() => {
     const topicId = searchParams.get("topic_id");
-    if (!topicId) return;
 
-    const topic = topics.find((t) => t.id_topic === topicId);
-    if (!topic) return;
-
-    setOpenUniverses((prev) => ({
-      ...prev,
-      [topic.universe]: true,
-    }));
-  }, [topics, searchParams]);
+    // 🔥 reset loader si :
+    // - plus de topic_id (drawer fermé)
+    // - topic chargé différent
+    if (!topicId || topicId !== loadingId) {
+      setLoadingId(null);
+    }
+  }, [searchParams, loadingId]);
 
   /* ---------------------------------------------------------
      HELPERS
