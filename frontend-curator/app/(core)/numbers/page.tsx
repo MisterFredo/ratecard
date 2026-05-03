@@ -181,15 +181,17 @@ export default function NumbersPage() {
         {/* =====================================================
             UNIVERS (style feed)
         ===================================================== */}
-        <div className="flex gap-2 overflow-x-auto px-1">
+        <div className="flex gap-2 overflow-x-auto scrollbar-none px-1">
 
           <button
             onClick={() => setActiveUniverse(null)}
             className={`
-              px-3 py-1.5 rounded-full text-xs border
+              flex items-center gap-1
+              whitespace-nowrap
+              px-3 py-1.5 rounded-full text-xs border transition-all
               ${
                 activeUniverse === null
-                  ? "bg-black text-white border-black"
+                  ? "bg-black text-white border-black shadow-sm"
                   : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
               }
             `}
@@ -205,10 +207,12 @@ export default function NumbersPage() {
                 key={u.id_universe}
                 onClick={() => setActiveUniverse(u.id_universe)}
                 className={`
-                  px-3 py-1.5 rounded-full text-xs border
+                  flex items-center gap-1
+                  whitespace-nowrap
+                  px-3 py-1.5 rounded-full text-xs border transition-all
                   ${
                     active
-                      ? "bg-black text-white border-black"
+                      ? "bg-black text-white border-black shadow-sm scale-[1.02]"
                       : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
                   }
                 `}
