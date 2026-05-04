@@ -280,7 +280,9 @@ export default function FeedPage() {
           setQuery={setQuery}
 
           // 🔥 FIX SEARCH
-          onSearch={(q) => load(true, q)}
+          onSearch={(q) => {
+            load(true, q);
+          }}
 
           universes={universes.map(u => ({
             id: u.id_universe,
