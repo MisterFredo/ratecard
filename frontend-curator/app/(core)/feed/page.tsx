@@ -51,13 +51,11 @@ export default function FeedPage() {
   const [hasMore, setHasMore] = useState(true);
 
   /* =========================================================
-     SELECTION
+     SELECTION (FIX PROPRE)
   ========================================================= */
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedItems, setSelectedItems] = useState<FeedItem[]>([]);
-
-  // 🔥 IMPORTANT → dérivé (remplace ton ancien selectedIds)
-  const selectedIds = selectedItems.map((i) => i.id);
 
   /* =========================================================
      ANALYSIS
@@ -100,15 +98,13 @@ export default function FeedPage() {
   }, []);
 
   /* =========================================================
-     LOAD FEED
+     LOAD FEED (FIX SEARCH DOUBLE CLICK)
   ========================================================= */
 
   async function load(reset = false, q?: string) {
     if (loading && !reset) return;
 
-    const finalQuery =
-      q !== undefined ? q.trim() : query.trim();
-
+    const finalQuery = q !== undefined ? q.trim() : query.trim();
     const currentOffset = reset ? 0 : offset;
 
     if (reset) {
@@ -188,7 +184,6 @@ export default function FeedPage() {
   ========================================================= */
 
   function handleBadgeClick(badge: FeedBadge) {
-
     if (badge.type === "universe") {
       setActiveUniverse(badge.id || null);
       setQuery("");
@@ -204,7 +199,7 @@ export default function FeedPage() {
 
     window.scrollTo({ top: 0 });
 
-    load(true, value);
+    load(true, value); // 🔥 FIX search direct
   }
 
   /* =========================================================
@@ -221,21 +216,30 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     SELECTION
+     SELECTION (FIX COMPLET)
   ========================================================= */
 
   function toggleSelect(item: FeedItem) {
-    setSelectedItems((prev) => {
-      const exists = prev.some((i) => i.id === item.id);
+    setSelectedIds((prev) => {
+      const exists = prev.includes(item.id);
 
       if (exists) {
-        return prev.filter((i) => i.id !== item.id);
+        // REMOVE
+        setSelectedItems((items) =>
+          items.filter((i) => i.id !== item.id)
+        );
+        return prev.filter((id) => id !== item.id);
       }
 
-      return [...prev, item];
+      // ADD
+      setSelectedItems((items) => {
+        if (items.find((i) => i.id === item.id)) return items;
+        return [...items, item];
+      });
+
+      return [...prev, item.id];
     });
 
-    // 🔥 IMPORTANT → garde comportement panel
     setIsPanelOpen(true);
   }
 
@@ -274,7 +278,9 @@ export default function FeedPage() {
         <FeedExplorer
           query={query}
           setQuery={setQuery}
-          onSearch={() => load(true, query)}
+
+          // 🔥 FIX SEARCH
+          onSearch={(q) => load(true, q)}
 
           universes={universes.map(u => ({
             id: u.id_universe,
