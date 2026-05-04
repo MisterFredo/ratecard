@@ -49,6 +49,9 @@ export default function CompanyDrawer({ id, onClose }: any) {
   const [numbers, setNumbers] = useState<any[]>([]);
   const [radar, setRadar] = useState<any>(null);
 
+  // 🔥 NEW
+  const [expanded, setExpanded] = useState(false);
+
   function close() {
     onClose?.();
     closeLeftDrawer();
@@ -124,12 +127,23 @@ export default function CompanyDrawer({ id, onClose }: any) {
 
       {/* DESCRIPTION */}
       {data.description && (
-        <div
-          className="prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{
-            __html: data.description,
-          }}
-        />
+        <div className="border-b border-gray-200 py-4">
+          <div
+            className={`prose prose-sm max-w-none transition-all ${
+              expanded ? "" : "line-clamp-5"
+            }`}
+            dangerouslySetInnerHTML={{
+              __html: data.description,
+            }}
+          />
+
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="mt-2 text-xs font-medium text-gray-500 hover:text-gray-700"
+          >
+            {expanded ? "Voir moins" : "Voir plus"}
+          </button>
+        </div>
       )}
 
       <NumbersBlock
