@@ -226,14 +226,15 @@ export default function FeedPage() {
   ========================================================= */
 
   function toggleSelect(item: FeedItem) {
-    setSelectedIds((prev) =>
-      prev.includes(item.id)
-        ? prev.filter((i) => i !== item.id)
-        : [...prev, item.id]
-    );
+    setSelectedItems((prev) => {
+      const exists = prev.find((i) => i.id === item.id);
 
-    setIsPanelOpen(true);
-    setAnalysis("");
+      if (exists) {
+        return prev.filter((i) => i.id !== item.id);
+      }
+
+      return [...prev, item];
+    });
   }
 
   /* =========================================================
