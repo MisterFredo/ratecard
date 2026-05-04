@@ -5,27 +5,23 @@ import { useDrawer } from "@/contexts/DrawerContext";
 /* ========================================================= */
 
 type NumberItem = {
-  id_number: string;
-  label?: string;
-  value?: number;
-  unit?: string;
-  scale?: string;
-  zone?: string;
-  period?: string;
+  ID_NUMBER: string;
+  LABEL?: string;
+  VALUE?: number;
+  UNIT?: string;
+  SCALE?: string;
+
+  TYPE?: string;
+  CATEGORY?: string;
+
+  ZONE?: string;
+  PERIOD?: string;
 };
 
-type NumberType = {
-  type: string;
-  numbers: NumberItem[];
-};
-
-type NumberCategory = {
-  category: string;
-  types: NumberType[];
-};
+/* ========================================================= */
 
 type Props = {
-  numbers: NumberCategory[];
+  numbers: NumberItem[];
   entityId: string;
   entityType: "company" | "solution" | "topic";
 };
@@ -33,7 +29,7 @@ type Props = {
 /* ========================================================= */
 
 function formatValue(n: NumberItem) {
-  if (n.value === undefined || n.value === null) return "";
+  if (n.VALUE === undefined || n.VALUE === null) return "";
 
   const scaleMap: any = {
     millions: "M",
@@ -41,10 +37,10 @@ function formatValue(n: NumberItem) {
     billions: "Md",
   };
 
-  const scale = scaleMap[n.scale || ""] || "";
-  const unit = n.unit || "";
+  const scale = scaleMap[n.SCALE || ""] || "";
+  const unit = n.UNIT || "";
 
-  return [n.value, scale, unit]
+  return [n.VALUE, scale, unit]
     .filter(Boolean)
     .join(" ");
 }
@@ -58,56 +54,73 @@ export default function NumbersBlock({
 }: Props) {
   const { openRightDrawer } = useDrawer();
 
-  // 🔥 FIX CRITIQUE
   if (!Array.isArray(numbers) || numbers.length === 0) return null;
 
   return (
     <section className="space-y-3">
-      <h2 className="text-xs font-semibold uppercase text-gray-400">
-        Chiffres clés
-      </h2>
 
-      <div className="grid grid-cols-2 gap-3">
-        {numbers.map((cat) =>
-          cat.types.map((t) =>
-            t.numbers.map((n) => (
-              <div
-                key={n.id_number}
-                className="p-3 border rounded"
-              >
-                {(n.zone || n.period) && (
-                  <div className="text-[10px] text-gray-400 mb-1">
-                    {[n.zone, n.period]
-                      .filter(Boolean)
-                      .join(" — ")}
-                  </div>
-                )}
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs font-semibold uppercase text-gray-400">
+          Chiffres clés
+        </h2>
 
-                <div className="text-sm font-semibold text-gray-900">
-                  {formatValue(n)}
-                </div>
-
-                {n.label && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    {n.label}
-                  </div>
-                )}
-              </div>
-            ))
-          )
-        )}
+        <button
+          onClick={() =>
+            openRightDrawer("numbers", entityId, "silent", {
+              entityType,
+            })
+          }
+          className="text-xs text-gray-400 hover:text-black"
+        >
+          Voir →
+        </button>
       </div>
 
-      <button
-        onClick={() =>
-          openRightDrawer("numbers", entityId, "silent", {
-            entityType,
-          })
-        }
-        className="text-xs text-gray-400 hover:text-black"
-      >
-        Voir tous les chiffres →
-      </button>
+      {/* GRID */}
+      <div className="grid grid-cols-2 gap-3">
+
+        {numbers.map((n) => (
+          <div
+            key={n.ID_NUMBER}
+            className="p-3 border rounded space-y-1"
+          >
+
+            {/* CONTEXTE */}
+            {(n.CATEGORY || n.TYPE) && (
+              <div className="text-[10px] text-gray-400 uppercase">
+                {[n.CATEGORY, n.TYPE]
+                  .filter(Boolean)
+                  .join(" • ")}
+              </div>
+            )}
+
+            {/* VALUE */}
+            <div className="text-sm font-semibold text-gray-900">
+              {formatValue(n)}
+            </div>
+
+            {/* LABEL */}
+            {n.LABEL && (
+              <div className="text-xs text-gray-500">
+                {n.LABEL}
+              </div>
+            )}
+
+            {/* META */}
+            {(n.ZONE || n.PERIOD) && (
+              <div className="text-[10px] text-gray-400">
+                {[n.ZONE, n.PERIOD]
+                  .filter(Boolean)
+                  .join(" — ")}
+              </div>
+            )}
+
+          </div>
+        ))}
+
+      </div>
+
     </section>
   );
 }
