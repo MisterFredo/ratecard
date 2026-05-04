@@ -51,7 +51,7 @@ export default function FeedPage() {
   const [hasMore, setHasMore] = useState(true);
 
   /* =========================================================
-     SELECTION (FIX PROPRE)
+     SELECTION
   ========================================================= */
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -98,7 +98,7 @@ export default function FeedPage() {
   }, []);
 
   /* =========================================================
-     LOAD FEED (FIX SEARCH DOUBLE CLICK)
+     LOAD FEED
   ========================================================= */
 
   async function load(reset = false, q?: string) {
@@ -148,7 +148,7 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     INIT + UNIVERSE CHANGE
+     INIT
   ========================================================= */
 
   useEffect(() => {
@@ -199,7 +199,7 @@ export default function FeedPage() {
 
     window.scrollTo({ top: 0 });
 
-    load(true, value); // 🔥 FIX search direct
+    load(true, value);
   }
 
   /* =========================================================
@@ -216,7 +216,7 @@ export default function FeedPage() {
   }
 
   /* =========================================================
-     SELECTION (FIX COMPLET)
+     SELECTION (SYNC PROPRE)
   ========================================================= */
 
   function toggleSelect(item: FeedItem) {
@@ -241,6 +241,20 @@ export default function FeedPage() {
     });
 
     setIsPanelOpen(true);
+  }
+
+  /* =========================================================
+     REMOVE FROM PANEL (🔥 NEW)
+  ========================================================= */
+
+  function removeFromSelection(id: string) {
+    setSelectedItems((prev) =>
+      prev.filter((item) => item.id !== id)
+    );
+
+    setSelectedIds((prev) =>
+      prev.filter((i) => i !== id)
+    );
   }
 
   /* =========================================================
@@ -279,7 +293,6 @@ export default function FeedPage() {
           query={query}
           setQuery={setQuery}
 
-          // 🔥 FIX SEARCH
           onSearch={(q) => {
             load(true, q);
           }}
@@ -316,6 +329,9 @@ export default function FeedPage() {
             loading={loadingInsight}
             onGenerateInsight={generateInsight}
             onClose={() => setIsPanelOpen(false)}
+
+            // 🔥 NEW
+            onRemove={removeFromSelection}
           />
         </div>
       )}
