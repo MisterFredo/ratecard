@@ -13,13 +13,15 @@ type Universe = {
 type Props = {
   query: string;
   setQuery: (q: string) => void;
-  onSearch: () => void;
+
+  // 🔥 FIX → accepte query
+  onSearch: (q: string) => void;
 
   universes: Universe[];
   selectedUniverse: string | null;
   onSelectUniverse: (id: string | null) => void;
 
-  loading?: boolean; // ✅ AJOUT
+  loading?: boolean;
 };
 
 /* ========================================================= */
@@ -31,29 +33,35 @@ export default function FeedHeader({
   universes,
   selectedUniverse,
   onSelectUniverse,
-  loading = false, // ✅ default safe
+  loading = false,
 }: Props) {
   const [input, setInput] = useState(query);
 
-  // 🔥 sync input quand query change (important UX)
   useEffect(() => {
     setInput(query);
   }, [query]);
 
+  /* =========================================================
+     🔥 FIX CRITIQUE
+  ========================================================= */
+
   function triggerSearch() {
-    if (loading) return; // ✅ bloque double clic
+    if (loading) return;
 
     const value = input.trim();
+
     setQuery(value);
-    onSearch();
+
+    // 🔥 FIX → on passe la valeur DIRECTEMENT
+    onSearch(value);
   }
+
+  /* ========================================================= */
 
   return (
     <div className="sticky top-0 z-20 bg-white/80 backdrop-blur border-b border-gray-100 pb-4 pt-2 space-y-3">
 
-      {/* =====================================================
-         UNIVERS FILTER
-      ===================================================== */}
+      {/* UNIVERS */}
       <div className="flex gap-2 overflow-x-auto scrollbar-none px-1">
 
         <button
@@ -113,14 +121,12 @@ export default function FeedHeader({
         })}
       </div>
 
-      {/* =====================================================
-         SEARCH
-      ===================================================== */}
+      {/* SEARCH */}
       <div className="flex items-center gap-3 px-1">
 
         <input
           value={input}
-          disabled={loading} // ✅ important
+          disabled={loading}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") triggerSearch();
@@ -140,7 +146,7 @@ export default function FeedHeader({
 
         <button
           onClick={triggerSearch}
-          disabled={loading} // ✅ clé
+          disabled={loading}
           className="
             px-4 py-2
             rounded-lg
@@ -150,7 +156,7 @@ export default function FeedHeader({
             disabled:opacity-50 disabled:cursor-not-allowed
           "
         >
-          {loading ? "..." : "Rechercher"} {/* ✅ feedback simple */}
+          {loading ? "..." : "Rechercher"}
         </button>
 
       </div>
