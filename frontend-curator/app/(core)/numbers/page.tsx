@@ -220,7 +220,7 @@ export default function NumbersPage() {
                 className="space-y-3 pb-6 border-b border-gray-100"
               >
 
-                {/* HEADER */}
+                {/* HEADER INLINE */}
                 <div
                   onClick={() => {
                     if (!firstItem?.ID_CONTENT) return;
@@ -232,26 +232,26 @@ export default function NumbersPage() {
                   }}
                   className="cursor-pointer group flex items-center justify-between"
                 >
-                  <div>
-                    {/* TITLE */}
-                    <div className="text-sm font-semibold text-gray-900 group-hover:underline">
-                      {title}
-                    </div>
+                  <div className="flex items-center gap-2 flex-wrap">
 
-                    {/* META */}
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                      <span>{groupItems.length} chiffre(s)</span>
+                    <span className="text-sm font-semibold text-gray-900 group-hover:underline">
+                      {title}
+                    </span>
+
+                    <span className="text-xs text-gray-400 flex items-center gap-2">
+                      <span>• {groupItems.length} chiffre(s)</span>
 
                       {contentDate && (
                         <span>
                           • {new Date(contentDate).toLocaleDateString("fr-FR")}
                         </span>
                       )}
-                    </div>
+                    </span>
+
                   </div>
 
                   <div className="text-xs text-gray-400 group-hover:text-gray-600">
-                      Voir →
+                    Voir →
                   </div>
                 </div>
 
