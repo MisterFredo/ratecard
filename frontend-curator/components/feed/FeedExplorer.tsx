@@ -16,6 +16,7 @@ type Props = {
   query: string;
   setQuery: (q: string) => void;
 
+  // ✅ signature finale propre
   onSearch: (q: string) => void;
 
   universes: Universe[];
@@ -65,13 +66,15 @@ export default function FeedExplorer({
   return (
     <div className="space-y-8">
 
-      {/* HEADER */}
+      {/* =====================================================
+         HEADER
+      ===================================================== */}
       <FeedHeader
         query={query}
         setQuery={setQuery}
 
-        // ✅ FIX FINAL → on passe DIRECTEMENT
-        onSearch={onSearch}
+        // 🔥 IMPORTANT → on passe bien une fonction avec paramètre
+        onSearch={(q) => onSearch(q)}
 
         universes={universes}
         selectedUniverse={selectedUniverse}
@@ -80,7 +83,9 @@ export default function FeedExplorer({
         loading={loading}
       />
 
-      {/* LIST */}
+      {/* =====================================================
+         LIST
+      ===================================================== */}
       <FeedList
         title="Results"
         items={items}
@@ -88,6 +93,7 @@ export default function FeedExplorer({
         loading={loading}
         hasMore={hasMore}
 
+        // 🔥 évite double call pendant loading
         onLoadMore={!loading ? onLoadMore : () => {}}
 
         onSelectItem={onSelectItem}
