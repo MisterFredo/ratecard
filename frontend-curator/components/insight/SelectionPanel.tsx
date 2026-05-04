@@ -13,6 +13,9 @@ type Props = {
 
   onGenerateInsight: () => void;
   onClose: () => void;
+
+  // 🔥 NEW → suppression
+  onRemove: (id: string) => void;
 };
 
 /* ========================================================= */
@@ -23,6 +26,7 @@ export default function SelectionPanel({
   loading,
   onGenerateInsight,
   onClose,
+  onRemove,
 }: Props) {
 
   const [tab, setTab] = useState<"selection" | "analysis">("selection");
@@ -250,7 +254,15 @@ export default function SelectionPanel({
           <div id="selection-content" className="space-y-8">
 
             {selectedItems.map((item, index) => (
-              <div key={item.id} className="space-y-3">
+              <div key={item.id} className="space-y-3 relative">
+
+                {/* 🔥 REMOVE BUTTON */}
+                <button
+                  onClick={() => onRemove(item.id)}
+                  className="absolute top-0 right-0 text-xs text-gray-400 hover:text-red-500"
+                >
+                  ✕
+                </button>
 
                 <div className="text-xs text-gray-400">
                   {formatDate(item.published_at)}
