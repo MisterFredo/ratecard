@@ -99,13 +99,11 @@ def list_topics():
             t.LABEL,
             t.INSIGHT_FREQUENCY,
 
-            -- STATS
             COALESCE(s.total, 0) AS NB_ANALYSES,
             COALESCE(s.last_30_days, 0) AS DELTA_30D,
 
-            -- UNIVERS (SAFE)
             ARRAY_AGG(
-                DISTINCT STRUCT(
+                STRUCT(
                     tu.ID_UNIVERSE,
                     u.LABEL
                 )
@@ -113,7 +111,10 @@ def list_topics():
 
         FROM `{TABLE_TOPIC}` t
 
-        LEFT JOIN `{TABLE_TOPIC_UNIVERSE}` tu
+        LEFT JOIN (
+            SELECT DISTINCT ID_TOPIC, ID_UNIVERSE
+            FROM `{TABLE_TOPIC_UNIVERSE}`
+        ) tu
           ON tu.ID_TOPIC = t.ID_TOPIC
 
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
@@ -156,7 +157,6 @@ def list_topics():
         }
         for r in rows
     ]
-
 def list_topics_for_user(user_id: str):
 
     sql = f"""
