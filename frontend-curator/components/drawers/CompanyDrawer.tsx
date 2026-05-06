@@ -111,22 +111,13 @@ export default function CompanyDrawer({ id, onClose }: any) {
   /* ========================================================= */
 
   useEffect(() => {
-    if (!descRef.current) return;
-
-    const el = descRef.current;
-
-    // 🔥 reset clamp pour mesurer correctement
-    el.classList.remove("line-clamp-5");
-
-    const isOverflowing = el.scrollHeight > el.clientHeight;
-
-    // 🔥 remettre clamp si non expanded
-    if (!expanded) {
-      el.classList.add("line-clamp-5");
+    if (!data?.description) {
+      setShowToggle(false);
+      return;
     }
 
-    setShowToggle(isOverflowing);
-  }, [data?.description, expanded]);
+    setShowToggle(data.description.length > 350);
+  }, [data?.description]);
 
   /* ========================================================= */
 
@@ -166,8 +157,8 @@ export default function CompanyDrawer({ id, onClose }: any) {
         <div className="border-b border-gray-200 py-4">
           <div
             ref={descRef}
-            className={`prose prose-sm max-w-none transition-all ${
-              expanded ? "" : "line-clamp-5"
+            className={`prose prose-sm max-w-none transition-all duration-300 ${
+              expanded ? "" : "max-h-32 overflow-hidden"
             }`}
             dangerouslySetInnerHTML={{
               __html: data.description,
@@ -177,7 +168,7 @@ export default function CompanyDrawer({ id, onClose }: any) {
           {showToggle && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className="mt-2 text-xs font-medium text-gray-500 hover:text-gray-700"
+              className="mt-3 text-xs font-medium text-ratecard-blue hover:underline"
             >
               {expanded ? "Voir moins" : "Voir plus"}
             </button>
