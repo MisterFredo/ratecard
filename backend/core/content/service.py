@@ -748,7 +748,7 @@ def destock_raw_contents(
             SELECT *
             FROM `{TABLE_CONTENT_RAW}`
             WHERE STATUS = 'STORED'
-            ORDER BY CREATED_AT ASC
+            ORDER BY CREATED_AT DESC
             LIMIT {limit}
             """
         )
