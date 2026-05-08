@@ -216,7 +216,7 @@ def numbers_insight_route(
 @router.get("/latest")
 def latest_route(
     request: Request,
-    limit: int = Query(20),
+    limit: int = Query(50),
     offset: int = Query(0),
     type: Optional[str] = Query(None),
     universe_id: Optional[str] = Query(None),
