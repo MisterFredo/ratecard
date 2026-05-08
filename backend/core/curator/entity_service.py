@@ -147,6 +147,17 @@ def get_company_feed(
 ) -> List[Dict]:
 
     # ============================================================
+    # 🔥 DEFAULT = CURRENT MONTH
+    # ============================================================
+
+    if year is None or month is None:
+
+        now = datetime.utcnow()
+
+        year = now.year
+        month = now.month
+
+    # ============================================================
     # 🔐 USER FILTER
     # ============================================================
 
@@ -318,6 +329,17 @@ def get_topic_feed(
     universe_id: Optional[str] = None
 ) -> List[Dict]:
 
+    # ============================================================
+    # 🔥 DEFAULT = CURRENT MONTH
+    # ============================================================
+
+    if year is None or month is None:
+
+        now = datetime.utcnow()
+
+        year = now.year
+        month = now.month
+
     date_filter = ""
 
     if year is not None:
@@ -426,6 +448,17 @@ def get_solution_feed(
     user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> List[Dict]:
+
+    # ============================================================
+    # 🔥 DEFAULT = CURRENT MONTH
+    # ============================================================
+
+    if year is None or month is None:
+
+        now = datetime.utcnow()
+
+        year = now.year
+        month = now.month
 
     date_filter = ""
 
