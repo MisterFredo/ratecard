@@ -6,27 +6,47 @@ from google.oauth2 import service_account
 
 
 # ---------------------------------------------------------
-# Client BigQuery (version minimaliste pour Ratecard)
+# CLIENT CACHE GLOBAL
+# ---------------------------------------------------------
+_bq_client = None
+
+
+# ---------------------------------------------------------
+# Client BigQuery
 # ---------------------------------------------------------
 def get_bigquery_client() -> bigquery.Client:
     """
-    Crée un client BigQuery dans la région correcte.
+    Singleton BigQuery client.
     """
+
+    global _bq_client
+
+    # 🔥 réutilise le client existant
+    if _bq_client is not None:
+        return _bq_client
+
     credentials_path = os.environ.get("GOOGLE_CREDENTIALS_FILE")
 
     if credentials_path:
+
         with open(credentials_path, "r") as f:
             info = json.load(f)
+
         credentials = service_account.Credentials.from_service_account_info(info)
+
         project_id = info.get("project_id")
-        return bigquery.Client(
+
+        _bq_client = bigquery.Client(
             credentials=credentials,
             project=project_id,
-            location="EU"   # 🔥 FORCE LA RÉGION CORRECTE
+            location="EU"
         )
 
-    # Local dev ou ADC
-    return bigquery.Client(location="EU")
+    else:
+
+        _bq_client = bigquery.Client(location="EU")
+
+    return _bq_client
 
 
 # ---------------------------------------------------------
