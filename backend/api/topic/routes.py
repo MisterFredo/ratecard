@@ -75,7 +75,7 @@ def get_route(id_topic: str):
 @router.get("/{id_topic}/view")
 def get_view_route(
     id_topic: str,
-    limit: int = 20,
+    limit: int = 50,
     offset: int = 0
 ):
     try:
