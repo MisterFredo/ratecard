@@ -141,18 +141,11 @@ def _get_entity_feed(
 
 def get_company_feed(
     company_id: str,
+    year: Optional[int] = None,
+    month: Optional[int] = None,
     user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> List[Dict]:
-
-    # ============================================================
-    # 🔥 CURRENT MONTH
-    # ============================================================
-
-    now = datetime.utcnow()
-
-    current_year = now.year
-    current_month = now.month
 
     # ============================================================
     # 🔐 USER FILTER
@@ -191,6 +184,24 @@ def get_company_feed(
         """
 
     # ============================================================
+    # 📅 DATE FILTER
+    # ============================================================
+
+    date_filter = ""
+
+    if year is not None:
+
+        date_filter += """
+        AND EXTRACT(YEAR FROM e.published_at) = @year
+        """
+
+    if month is not None:
+
+        date_filter += """
+        AND EXTRACT(MONTH FROM e.published_at) = @month
+        """
+
+    # ============================================================
     # QUERY
     # ============================================================
 
@@ -219,8 +230,7 @@ def get_company_feed(
     WHERE
         cc.ID_COMPANY = @company_id
 
-        AND EXTRACT(YEAR FROM e.published_at) = @year
-        AND EXTRACT(MONTH FROM e.published_at) = @month
+        {date_filter}
 
         {user_filter}
 
@@ -231,8 +241,8 @@ def get_company_feed(
 
     query_params = {
         "company_id": company_id,
-        "year": current_year,
-        "month": current_month,
+        "year": year,
+        "month": month,
         "user_id": user_id,
     }
 
@@ -242,6 +252,7 @@ def get_company_feed(
     rows = query_bq(sql, query_params)
 
     return [_map_feed_row(r) for r in rows]
+
 
 def get_company_view(
     company_id: str,
@@ -293,20 +304,11 @@ def get_company_view(
 
 def get_topic_feed(
     topic_id: str,
+    year: Optional[int] = None,
+    month: Optional[int] = None,
     user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> List[Dict]:
-
-    # ============================================================
-    # 🔥 DEFAULT = CURRENT MONTH
-    # ============================================================
-
-    if year is None or month is None:
-
-        now = datetime.utcnow()
-
-        year = now.year
-        month = now.month
 
     date_filter = ""
 
@@ -334,10 +336,13 @@ def get_topic_feed(
         """,
         params={
             "topic_id": topic_id,
+            "year": year,
+            "month": month,
         },
         user_id=user_id,
         universe_id=universe_id
     )
+
 
 
 def get_topic_view(
@@ -407,20 +412,11 @@ def get_topic_view(
 
 def get_solution_feed(
     solution_id: str,
+    year: Optional[int] = None,
+    month: Optional[int] = None,
     user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> List[Dict]:
-
-    # ============================================================
-    # 🔥 DEFAULT = CURRENT MONTH
-    # ============================================================
-
-    if year is None or month is None:
-
-        now = datetime.utcnow()
-
-        year = now.year
-        month = now.month
 
     date_filter = ""
 
@@ -448,6 +444,8 @@ def get_solution_feed(
         """,
         params={
             "solution_id": solution_id,
+            "year": year,
+            "month": month,
         },
         user_id=user_id,
         universe_id=universe_id
