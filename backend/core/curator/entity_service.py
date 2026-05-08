@@ -10,16 +10,35 @@ from core.company.service import get_company
 # TABLES / VIEWS
 # ============================================================
 
-VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
+TABLE_CONTENT_ENRICHED = (
+    f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_ENRICHED"
+)
 
-VIEW_STATS_COMPANY = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY"
-VIEW_STATS_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_TOPIC"
-VIEW_STATS_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION"
+VIEW_STATS_COMPANY = (
+    f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_COMPANY"
+)
+
+VIEW_STATS_TOPIC = (
+    f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_TOPIC"
+)
+
+VIEW_STATS_SOLUTION = (
+    f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION"
+)
 
 TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
-TABLE_SOLUTION = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
-TABLE_COMPANY_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE"
-TABLE_USER_UNIVERSE = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE"
+
+TABLE_SOLUTION = (
+    f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
+)
+
+TABLE_COMPANY_UNIVERSE = (
+    f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY_UNIVERSE"
+)
+
+TABLE_USER_UNIVERSE = (
+    f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE"
+)
 
 
 # ============================================================
@@ -42,6 +61,7 @@ def _get_entity_feed(
     user_filter = ""
 
     if user_id:
+
         user_filter = f"""
         AND EXISTS (
             SELECT 1
@@ -61,6 +81,7 @@ def _get_entity_feed(
     universe_filter = ""
 
     if universe_id:
+
         universe_filter = f"""
         AND EXISTS (
             SELECT 1
@@ -79,21 +100,26 @@ def _get_entity_feed(
     SELECT
         c.id_content AS id,
         'analysis' AS type,
+
         c.title,
         c.excerpt,
+
         c.published_at,
+
         NULL AS news_type,
+
         c.topics,
         c.companies,
         c.solutions
 
-    FROM `{VIEW_CONTENT}` c
+    FROM `{TABLE_CONTENT_ENRICHED}` c
 
     WHERE {where_clause_content}
     {user_filter}
     {universe_filter}
 
     ORDER BY c.published_at DESC
+
     LIMIT @limit
     OFFSET @offset
     """
@@ -132,6 +158,7 @@ def get_company_feed(
     user_filter = ""
 
     if user_id:
+
         user_filter = f"""
         AND EXISTS (
             SELECT 1
@@ -150,6 +177,7 @@ def get_company_feed(
     universe_filter = ""
 
     if universe_id:
+
         universe_filter = f"""
         AND EXISTS (
             SELECT 1
@@ -166,12 +194,15 @@ def get_company_feed(
     sql_ids = f"""
     SELECT
         c.ID_CONTENT
+
     FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT` c
+
     JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY` cc
         ON cc.ID_CONTENT = c.ID_CONTENT
 
     WHERE
         cc.ID_COMPANY = @company_id
+
         AND c.STATUS = 'PUBLISHED'
         AND c.IS_ACTIVE = TRUE
         AND c.PUBLISHED_AT IS NOT NULL
@@ -213,25 +244,33 @@ def get_company_feed(
     sql_feed = f"""
     SELECT
         c.id_content AS id,
+
         'analysis' AS type,
+
         c.title,
         c.excerpt,
+
         c.published_at,
+
         NULL AS news_type,
+
         c.topics,
         c.companies,
         c.solutions
 
-    FROM `{VIEW_CONTENT}` c
+    FROM `{TABLE_CONTENT_ENRICHED}` c
 
     WHERE c.id_content IN UNNEST(@content_ids)
 
     ORDER BY c.published_at DESC
     """
 
-    rows = query_bq(sql_feed, {
-        "content_ids": content_ids
-    })
+    rows = query_bq(
+        sql_feed,
+        {
+            "content_ids": content_ids
+        }
+    )
 
     return [_map_feed_row(r) for r in rows]
 
@@ -245,21 +284,34 @@ def get_company_view(
 ) -> Optional[Dict]:
 
     company = get_company(company_id)
+
     if not company:
         return None
 
-    stats_rows = query_bq(f"""
+    stats_rows = query_bq(
+        f"""
         SELECT
             COALESCE(total, 0) AS NB_ANALYSES,
             COALESCE(last_30_days, 0) AS DELTA_30D
+
         FROM `{VIEW_STATS_COMPANY}`
+
         WHERE id_company = @company_id
+
         LIMIT 1
-    """, {"company_id": company_id})
+        """,
+        {"company_id": company_id}
+    )
 
     stats = stats_rows[0] if stats_rows else {}
 
-    items = get_company_feed(company_id, limit, offset, user_id, universe_id)
+    items = get_company_feed(
+        company_id,
+        limit,
+        offset,
+        user_id,
+        universe_id
+    )
 
     return {
         **company,
@@ -305,27 +357,49 @@ def get_topic_view(
     universe_id: Optional[str] = None
 ) -> Dict:
 
-    topic_rows = query_bq(f"""
-        SELECT ID_TOPIC, LABEL, TOPIC_AXIS, DESCRIPTION
+    topic_rows = query_bq(
+        f"""
+        SELECT
+            ID_TOPIC,
+            LABEL,
+            TOPIC_AXIS,
+            DESCRIPTION
+
         FROM `{TABLE_TOPIC}`
+
         WHERE ID_TOPIC = @topic_id
+
         LIMIT 1
-    """, {"topic_id": topic_id})
+        """,
+        {"topic_id": topic_id}
+    )
 
     topic = topic_rows[0] if topic_rows else {}
 
-    stats_rows = query_bq(f"""
+    stats_rows = query_bq(
+        f"""
         SELECT
             COALESCE(total, 0) AS NB_ANALYSES,
             COALESCE(last_30_days, 0) AS DELTA_30D
+
         FROM `{VIEW_STATS_TOPIC}`
+
         WHERE id_topic = @topic_id
+
         LIMIT 1
-    """, {"topic_id": topic_id})
+        """,
+        {"topic_id": topic_id}
+    )
 
     stats = stats_rows[0] if stats_rows else {}
 
-    items = get_topic_feed(topic_id, limit, offset, user_id, universe_id)
+    items = get_topic_feed(
+        topic_id,
+        limit,
+        offset,
+        user_id,
+        universe_id
+    )
 
     return {
         "id_topic": topic_id,
@@ -374,29 +448,43 @@ def get_solution_view(
     universe_id: Optional[str] = None
 ) -> Dict:
 
-    solution_rows = query_bq(f"""
+    solution_rows = query_bq(
+        f"""
         SELECT
             s.ID_SOLUTION,
             s.NAME,
+
             c.NAME AS COMPANY_NAME,
             c.MEDIA_LOGO_RECTANGLE_ID
+
         FROM `{TABLE_SOLUTION}` s
+
         LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
             ON c.ID_COMPANY = s.ID_COMPANY
+
         WHERE s.ID_SOLUTION = @solution_id
+
         LIMIT 1
-    """, {"solution_id": solution_id})
+        """,
+        {"solution_id": solution_id}
+    )
 
     solution = solution_rows[0] if solution_rows else {}
 
-    stats_rows = query_bq(f"""
+    stats_rows = query_bq(
+        f"""
         SELECT
             COALESCE(total, 0) AS NB_ANALYSES,
             COALESCE(last_30_days, 0) AS DELTA_30D
+
         FROM `{VIEW_STATS_SOLUTION}`
+
         WHERE id_solution = @solution_id
+
         LIMIT 1
-    """, {"solution_id": solution_id})
+        """,
+        {"solution_id": solution_id}
+    )
 
     stats = stats_rows[0] if stats_rows else {}
 
@@ -412,7 +500,9 @@ def get_solution_view(
         "id_solution": solution_id,
         "name": solution.get("NAME"),
         "company_name": solution.get("COMPANY_NAME"),
-        "media_logo_rectangle_id": solution.get("MEDIA_LOGO_RECTANGLE_ID"),
+        "media_logo_rectangle_id": solution.get(
+            "MEDIA_LOGO_RECTANGLE_ID"
+        ),
         "nb_analyses": stats.get("NB_ANALYSES", 0),
         "delta_30d": stats.get("DELTA_30D", 0),
         "items": items
