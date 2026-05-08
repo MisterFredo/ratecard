@@ -88,7 +88,7 @@ def search(
             END
         ) AS score
 
-    FROM `{VIEW_CONTENT}` c
+    FROM `{TABLE_CONTENT_ENRICHED}` c
 
     WHERE
     (
@@ -173,7 +173,7 @@ def latest(
         c.concepts,  
         c.id_source
 
-    FROM `{VIEW_CONTENT}` c
+    FROM `{TABLE_CONTENT_ENRICHED}` c
 
     WHERE c.published_at IS NOT NULL
 
@@ -225,7 +225,7 @@ def get_item_curator(
 
         SAFE_CAST(c.id_source AS STRING) AS id_source
 
-    FROM `{VIEW_CONTENT}` c
+    FROM `{TABLE_CONTENT_ENRICHED}` c
 
     WHERE c.id_content = @id
 
