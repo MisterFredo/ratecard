@@ -48,8 +48,6 @@ TABLE_USER_UNIVERSE = (
 def _get_entity_feed(
     where_clause_content: str,
     params: Dict,
-    limit: int = 50,
-    offset: int = 0,
     user_id: Optional[str] = None,
     universe_id: Optional[str] = None,
 ) -> List[Dict]:
@@ -99,6 +97,7 @@ def _get_entity_feed(
     sql = f"""
     SELECT
         c.id_content AS id,
+
         'analysis' AS type,
 
         c.title,
@@ -115,19 +114,16 @@ def _get_entity_feed(
     FROM `{TABLE_CONTENT_ENRICHED}` c
 
     WHERE {where_clause_content}
+
     {user_filter}
+
     {universe_filter}
 
     ORDER BY c.published_at DESC
-
-    LIMIT @limit
-    OFFSET @offset
     """
 
     query_params = {
         **params,
-        "limit": limit,
-        "offset": offset,
         "user_id": user_id,
     }
 
@@ -137,7 +133,6 @@ def _get_entity_feed(
     rows = query_bq(sql, query_params)
 
     return [_map_feed_row(r) for r in rows]
-
 
 # ============================================================
 # COMPANY
@@ -317,23 +312,41 @@ def get_company_view(
 
 def get_topic_feed(
     topic_id: str,
-    limit: int = 50,
-    offset: int = 0,
+    year: Optional[int] = None,
+    month: Optional[int] = None,
     user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> List[Dict]:
 
+    date_filter = ""
+
+    if year is not None:
+
+        date_filter += """
+        AND EXTRACT(YEAR FROM c.published_at) = @year
+        """
+
+    if month is not None:
+
+        date_filter += """
+        AND EXTRACT(MONTH FROM c.published_at) = @month
+        """
+
     return _get_entity_feed(
-        where_clause_content="""
+        where_clause_content=f"""
             EXISTS (
                 SELECT 1
                 FROM UNNEST(c.topics) t
                 WHERE t.id_topic = @topic_id
             )
+
+            {date_filter}
         """,
-        params={"topic_id": topic_id},
-        limit=limit,
-        offset=offset,
+        params={
+            "topic_id": topic_id,
+            "year": year,
+            "month": month,
+        },
         user_id=user_id,
         universe_id=universe_id
     )
@@ -408,23 +421,41 @@ def get_topic_view(
 
 def get_solution_feed(
     solution_id: str,
-    limit: int = 50,
-    offset: int = 0,
+    year: Optional[int] = None,
+    month: Optional[int] = None,
     user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> List[Dict]:
 
+    date_filter = ""
+
+    if year is not None:
+
+        date_filter += """
+        AND EXTRACT(YEAR FROM c.published_at) = @year
+        """
+
+    if month is not None:
+
+        date_filter += """
+        AND EXTRACT(MONTH FROM c.published_at) = @month
+        """
+
     return _get_entity_feed(
-        where_clause_content="""
+        where_clause_content=f"""
             EXISTS (
                 SELECT 1
                 FROM UNNEST(c.solutions) s
                 WHERE s.id_solution = @solution_id
             )
+
+            {date_filter}
         """,
-        params={"solution_id": solution_id},
-        limit=limit,
-        offset=offset,
+        params={
+            "solution_id": solution_id,
+            "year": year,
+            "month": month,
+        },
         user_id=user_id,
         universe_id=universe_id
     )
