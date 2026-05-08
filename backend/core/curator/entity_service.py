@@ -328,7 +328,10 @@ def get_company_view(
             {
                 "year": r["year"],
                 "month": r["month"],
-                "total": r["total"],
+
+                "label": f"{int(r['month']):02d}/{r['year']}",
+
+                "count": r["total"],
             }
             for r in archive_rows
         ],
