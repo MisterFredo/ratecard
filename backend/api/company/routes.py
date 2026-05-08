@@ -138,7 +138,7 @@ def get_route(id_company: str):
 def get_view_route(
     request: Request,
     id_company: str,
-    limit: int = 20,
+    limit: int = 50,
     offset: int = 0,
     universe_id: Optional[str] = Query(None),
 ):
