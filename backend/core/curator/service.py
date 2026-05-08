@@ -61,7 +61,7 @@ def search(
         c.companies,
         c.solutions,
         c.concepts,  
-        c.id_source,
+        c.source_id,
 
         -- 🔥 SCORE (optionnel mais utile pour ranking)
         (
@@ -171,7 +171,7 @@ def latest(
         c.companies,
         c.solutions,
         c.concepts,  
-        c.id_source
+        c.source_id
 
     FROM `{TABLE_CONTENT_ENRICHED}` c
 
@@ -223,7 +223,7 @@ def get_item_curator(
         c.solutions,
         c.concepts,
 
-        SAFE_CAST(c.id_source AS STRING) AS id_source
+        SAFE_CAST(c.source_id AS STRING) AS id_source
 
     FROM `{TABLE_CONTENT_ENRICHED}` c
 
@@ -237,7 +237,7 @@ def get_item_curator(
             JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
               ON uu.ID_UNIVERSE = su.ID_UNIVERSE
             WHERE uu.ID_USER = @user_id
-              AND su.ID_SOURCE = c.id_source
+              AND su.ID_SOURCE = c.source_id
         )
     )
 
