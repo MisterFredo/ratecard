@@ -1,5 +1,4 @@
 from typing import List, Dict, Optional
-from datetime import datetime
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
@@ -27,7 +26,9 @@ VIEW_STATS_SOLUTION = (
     f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_STATS_SOLUTION"
 )
 
-TABLE_TOPIC = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
+TABLE_TOPIC = (
+    f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_TOPIC"
+)
 
 TABLE_SOLUTION = (
     f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION"
@@ -43,7 +44,7 @@ TABLE_USER_UNIVERSE = (
 
 
 # ============================================================
-# 🔥 GENERIC FEED BUILDER (CONTENT ONLY)
+# 🔥 GENERIC FEED BUILDER
 # ============================================================
 
 def _get_entity_feed(
@@ -65,10 +66,13 @@ def _get_entity_feed(
         AND EXISTS (
             SELECT 1
             FROM UNNEST(c.companies) comp
+
             JOIN `{TABLE_COMPANY_UNIVERSE}` cu
               ON cu.ID_COMPANY = comp.id_company
+
             JOIN `{TABLE_USER_UNIVERSE}` uu
               ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+
             WHERE uu.ID_USER = @user_id
         )
         """
@@ -85,8 +89,10 @@ def _get_entity_feed(
         AND EXISTS (
             SELECT 1
             FROM UNNEST(c.companies) comp
+
             JOIN `{TABLE_COMPANY_UNIVERSE}` cu
               ON cu.ID_COMPANY = comp.id_company
+
             WHERE cu.ID_UNIVERSE = @universe_id
         )
         """
@@ -135,8 +141,9 @@ def _get_entity_feed(
 
     return [_map_feed_row(r) for r in rows]
 
+
 # ============================================================
-# COMPANY
+# COMPANY FEED
 # ============================================================
 
 def get_company_feed(
@@ -158,11 +165,15 @@ def get_company_feed(
         user_filter = f"""
         AND EXISTS (
             SELECT 1
-            FROM `{TABLE_COMPANY_UNIVERSE}` cu
+            FROM UNNEST(e.companies) comp
+
+            JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+              ON cu.ID_COMPANY = comp.id_company
+
             JOIN `{TABLE_USER_UNIVERSE}` uu
               ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
-            WHERE cu.ID_COMPANY = cc.ID_COMPANY
-              AND uu.ID_USER = @user_id
+
+            WHERE uu.ID_USER = @user_id
         )
         """
 
@@ -177,9 +188,12 @@ def get_company_feed(
         universe_filter = f"""
         AND EXISTS (
             SELECT 1
-            FROM `{TABLE_COMPANY_UNIVERSE}` cu
-            WHERE cu.ID_COMPANY = cc.ID_COMPANY
-              AND cu.ID_UNIVERSE = @universe_id
+            FROM UNNEST(e.companies) comp
+
+            JOIN `{TABLE_COMPANY_UNIVERSE}` cu
+              ON cu.ID_COMPANY = comp.id_company
+
+            WHERE cu.ID_UNIVERSE = @universe_id
         )
         """
 
@@ -224,17 +238,17 @@ def get_company_feed(
 
     FROM `{TABLE_CONTENT_ENRICHED}` e
 
-    JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY` cc
-        ON cc.ID_CONTENT = e.id_content
+    WHERE EXISTS (
+        SELECT 1
+        FROM UNNEST(e.companies) c
+        WHERE c.id_company = @company_id
+    )
 
-    WHERE
-        cc.ID_COMPANY = @company_id
+    {date_filter}
 
-        {date_filter}
+    {user_filter}
 
-        {user_filter}
-
-        {universe_filter}
+    {universe_filter}
 
     ORDER BY e.published_at DESC
     """
@@ -254,10 +268,12 @@ def get_company_feed(
     return [_map_feed_row(r) for r in rows]
 
 
+# ============================================================
+# COMPANY VIEW
+# ============================================================
+
 def get_company_view(
     company_id: str,
-    limit: int = 50,
-    offset: int = 0,
     user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> Optional[Dict]:
@@ -283,13 +299,15 @@ def get_company_view(
 
         LIMIT 1
         """,
-        {"company_id": company_id}
+        {
+            "company_id": company_id
+        }
     )
 
     stats = stats_rows[0] if stats_rows else {}
 
     # ============================================================
-    # 📅 MONTH ARCHIVES
+    # ARCHIVES
     # ============================================================
 
     archive_rows = query_bq(
@@ -297,25 +315,25 @@ def get_company_view(
         SELECT
             EXTRACT(YEAR FROM e.published_at) AS year,
             EXTRACT(MONTH FROM e.published_at) AS month,
-            COUNT(*) AS total
+
+            COUNT(DISTINCT e.id_content) AS total
 
         FROM `{TABLE_CONTENT_ENRICHED}` e
 
-        JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_CONTENT_COMPANY` cc
-            ON cc.ID_CONTENT = e.id_content
-
-        WHERE cc.ID_COMPANY = @company_id
+        WHERE EXISTS (
+            SELECT 1
+            FROM UNNEST(e.companies) c
+            WHERE c.id_company = @company_id
+        )
 
         GROUP BY year, month
 
         ORDER BY year DESC, month DESC
         """,
-        {"company_id": company_id}
+        {
+            "company_id": company_id
+        }
     )
-
-    # ============================================================
-    # RETURN
-    # ============================================================
 
     return {
         **company,
@@ -337,8 +355,9 @@ def get_company_view(
         ],
     }
 
+
 # ============================================================
-# TOPIC
+# TOPIC FEED
 # ============================================================
 
 def get_topic_feed(
@@ -383,11 +402,12 @@ def get_topic_feed(
     )
 
 
+# ============================================================
+# TOPIC VIEW
+# ============================================================
 
 def get_topic_view(
     topic_id: str,
-    limit: int = 50,
-    offset: int = 0,
     user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> Dict:
@@ -406,7 +426,9 @@ def get_topic_view(
 
         LIMIT 1
         """,
-        {"topic_id": topic_id}
+        {
+            "topic_id": topic_id
+        }
     )
 
     topic = topic_rows[0] if topic_rows else {}
@@ -423,16 +445,12 @@ def get_topic_view(
 
         LIMIT 1
         """,
-        {"topic_id": topic_id}
+        {
+            "topic_id": topic_id
+        }
     )
 
     stats = stats_rows[0] if stats_rows else {}
-
-    items = get_topic_feed(
-        topic_id=topic_id,
-        user_id=user_id,
-        universe_id=universe_id
-    )
 
     return {
         "id_topic": topic_id,
@@ -441,12 +459,11 @@ def get_topic_view(
         "description": topic.get("DESCRIPTION"),
         "nb_analyses": stats.get("NB_ANALYSES", 0),
         "delta_30d": stats.get("DELTA_30D", 0),
-        "items": items
     }
 
 
 # ============================================================
-# SOLUTION
+# SOLUTION FEED
 # ============================================================
 
 def get_solution_feed(
@@ -491,10 +508,12 @@ def get_solution_feed(
     )
 
 
+# ============================================================
+# SOLUTION VIEW
+# ============================================================
+
 def get_solution_view(
     solution_id: str,
-    limit: int = 50,
-    offset: int = 0,
     user_id: Optional[str] = None,
     universe_id: Optional[str] = None
 ) -> Dict:
@@ -517,7 +536,9 @@ def get_solution_view(
 
         LIMIT 1
         """,
-        {"solution_id": solution_id}
+        {
+            "solution_id": solution_id
+        }
     )
 
     solution = solution_rows[0] if solution_rows else {}
@@ -534,16 +555,12 @@ def get_solution_view(
 
         LIMIT 1
         """,
-        {"solution_id": solution_id}
+        {
+            "solution_id": solution_id
+        }
     )
 
     stats = stats_rows[0] if stats_rows else {}
-
-    items = get_topic_feed(
-        solution_id=solution_id,
-        user_id=user_id,
-        universe_id=universe_id
-    )
 
     return {
         "id_solution": solution_id,
@@ -554,7 +571,6 @@ def get_solution_view(
         ),
         "nb_analyses": stats.get("NB_ANALYSES", 0),
         "delta_30d": stats.get("DELTA_30D", 0),
-        "items": items
     }
 
 
