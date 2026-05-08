@@ -4,17 +4,16 @@ from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
 from utils.llm import run_llm
 
+TABLE_NUMBERS = f"{BQ_PROJECT}.{BQ_DATASET}.V_NUMBERS_ENRICHED"
+
 
 # ============================================================
 # FETCH NUMBERS BY IDS
 # ============================================================
 
-TABLE_BACKLOG = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_NUMBERS_BACKLOG"
-VIEW_CONTENT = f"{BQ_PROJECT}.{BQ_DATASET}.V_CONTENT_ENRICHED"
-
-
 def get_numbers_by_ids(ids: List[str]) -> List[Dict]:
 
+    # 🔥 sécurité totale
     if isinstance(ids, str):
         ids = [ids]
 
@@ -24,46 +23,50 @@ def get_numbers_by_ids(ids: List[str]) -> List[Dict]:
     rows = query_bq(
         f"""
         SELECT
-            b.ID_BACKLOG,
-            b.LABEL,
-            SAFE_CAST(b.VALUE AS FLOAT64) AS VALUE,
-            b.UNIT,
-            b.MARKET AS ZONE,
-            b.PERIOD,
-            b.ACTOR,
+            ID_NUMBER,
+            ENTITY_TYPE,
+            ENTITY_ID,
+            ENTITY_LABEL,
 
-            c.title AS context_title,
-            c.published_at
+            LABEL,
+            VALUE,
+            UNIT,
+            SCALE,
 
-        FROM `{TABLE_BACKLOG}` b
-        LEFT JOIN `{VIEW_CONTENT}` c
-          ON b.ID_CONTENT = c.id_content
+            TYPE,
+            CATEGORY,
 
-        WHERE b.ID_BACKLOG IN UNNEST(@ids)
+            ZONE,
+            PERIOD,
+            CREATED_AT
+
+        FROM `{TABLE_NUMBERS}`
+        WHERE ID_NUMBER IN UNNEST(@ids)
         """,
         {"ids": ids}
     )
 
     return [
         {
-            "id": r.get("ID_BACKLOG"),
+            "id": r.get("ID_NUMBER"),
             "label": r.get("LABEL"),
             "value": r.get("VALUE"),
             "unit": r.get("UNIT"),
-            "scale": None,
+            "scale": r.get("SCALE"),
 
-            "type": None,
-            "category": None,
+            "type": r.get("TYPE"),
+            "category": r.get("CATEGORY"),
 
             "zone": r.get("ZONE"),
             "period": r.get("PERIOD"),
 
-            "entity_label": r.get("ACTOR"),
-
-            "context_title": r.get("context_title"),
+            "entity_type": r.get("ENTITY_TYPE"),
+            "entity_id": r.get("ENTITY_ID"),
+            "entity_label": r.get("ENTITY_LABEL"),
         }
         for r in rows
     ]
+
 # ============================================================
 # BUILD PROMPT
 # ============================================================
