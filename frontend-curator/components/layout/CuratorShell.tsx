@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import {
   Home,
   X,
@@ -13,9 +15,15 @@ import {
 } from "lucide-react";
 
 import Header from "./Header";
+
+import WorkspacePanel from "@/components/workspace/WorkspacePanel";
+
 import { useUser } from "@/hooks/useUser";
 
-const LOGO_URL = "/assets/brand/symbol_curator.jpeg";
+/* ========================================================= */
+
+const LOGO_URL =
+  "/assets/brand/symbol_curator.jpeg";
 
 /* ========================================================= */
 
@@ -24,42 +32,89 @@ export default function CuratorShell({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const { user, loading } = useUser();
 
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname =
+    usePathname();
+
+  const {
+    user,
+    loading,
+  } = useUser();
+
+  const [mobileOpen, setMobileOpen] =
+    useState(false);
 
   /* ========================================================= */
 
   function isActive(path: string) {
+
     if (!pathname) return false;
-    const clean = pathname.split("?")[0];
-    return clean === path || clean.startsWith(path + "/");
+
+    const clean =
+      pathname.split("?")[0];
+
+    return (
+      clean === path ||
+      clean.startsWith(path + "/")
+    );
   }
 
+  /* ========================================================= */
+
   const navData = [
-    { href: "/feed", label: "Feed", icon: Home },
-    { href: "/numbers", label: "Numbers", icon: Hash },
+    {
+      href: "/feed",
+      label: "Feed",
+      icon: Home,
+    },
+    {
+      href: "/numbers",
+      label: "Numbers",
+      icon: Hash,
+    },
   ];
+
+  /* ========================================================= */
 
   const navEntities = [
-    { href: "/companies", label: "Sociétés", icon: Building2 },
-    { href: "/solutions", label: "Produits", icon: Box },
+    {
+      href: "/companies",
+      label: "Sociétés",
+      icon: Building2,
+    },
+    {
+      href: "/solutions",
+      label: "Produits",
+      icon: Box,
+    },
 
     // 🔥 TOPICS RÉACTIVÉ
-    { href: "/topics", label: "Topics", icon: Hash },
+    {
+      href: "/topics",
+      label: "Topics",
+      icon: Hash,
+    },
   ];
 
-  const renderNav = (items: any[]) =>
+  /* ========================================================= */
+
+  const renderNav = (
+    items: any[]
+  ) =>
     items.map((item) => {
+
       const Icon = item.icon;
-      const active = isActive(item.href);
+
+      const active =
+        isActive(item.href);
 
       return (
         <Link
           key={item.href}
           href={item.href}
-          onClick={() => setMobileOpen(false)}
+          onClick={() =>
+            setMobileOpen(false)
+          }
           className={`
             flex items-center gap-2 px-3 py-2 rounded-md transition
             ${
@@ -70,7 +125,11 @@ export default function CuratorShell({
           `}
         >
           <Icon size={18} />
-          <span>{item.label}</span>
+
+          <span>
+            {item.label}
+          </span>
+
         </Link>
       );
     });
@@ -79,33 +138,79 @@ export default function CuratorShell({
 
   const Sidebar = (
     <>
+
       <Link
         href="/"
-        onClick={() => setMobileOpen(false)}
-        className="mb-10 flex items-center gap-3"
+        onClick={() =>
+          setMobileOpen(false)
+        }
+        className="
+          mb-10
+          flex
+          items-center
+          gap-3
+        "
       >
-        <img src={LOGO_URL} className="w-8 h-8" />
-        <span className="text-lg font-semibold text-gray-900">
+
+        <img
+          src={LOGO_URL}
+          className="w-8 h-8"
+        />
+
+        <span className="
+          text-lg
+          font-semibold
+          text-gray-900
+        ">
           GetCurator
         </span>
+
       </Link>
 
+      {/* DATA */}
       <div>
-        <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
+
+        <div className="
+          text-xs
+          font-semibold
+          text-gray-400
+          uppercase
+          mb-2
+          px-3
+        ">
           Data
         </div>
-        <nav className="space-y-2 text-sm">
+
+        <nav className="
+          space-y-2
+          text-sm
+        ">
           {renderNav(navData)}
         </nav>
+
       </div>
 
+      {/* ENTITIES */}
       <div className="mt-8">
-        <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
+
+        <div className="
+          text-xs
+          font-semibold
+          text-gray-400
+          uppercase
+          mb-2
+          px-3
+        ">
           Entities
         </div>
-        <nav className="space-y-2 text-sm">
+
+        <nav className="
+          space-y-2
+          text-sm
+        ">
           {renderNav(navEntities)}
         </nav>
+
       </div>
 
       {/* =====================================================
@@ -114,7 +219,15 @@ export default function CuratorShell({
 
       {/*
       <div className="mt-10">
-        <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-3">
+
+        <div className="
+          text-xs
+          font-semibold
+          text-gray-400
+          uppercase
+          mb-2
+          px-3
+        ">
           AI
         </div>
 
@@ -122,61 +235,158 @@ export default function CuratorShell({
           href="https://chatgpt.com/g/g-69c5cc7fed548191a395a92fe0fe3dbd-get-curator"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-emerald-50"
+          className="
+            flex
+            items-center
+            gap-2
+            px-3
+            py-2
+            text-gray-700
+            hover:bg-emerald-50
+          "
         >
           <Sparkles size={18} />
-          <span>MCP Assistant</span>
+
+          <span>
+            MCP Assistant
+          </span>
+
         </a>
+
       </div>
       */}
+
     </>
   );
 
-  /* ========================================================= */
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <div className="min-h-screen flex">
 
-      {/* Sidebar desktop */}
-      <aside className="hidden md:flex w-56 bg-white border-r p-6 flex-col">
+      {/* SIDEBAR DESKTOP */}
+      <aside className="
+        hidden
+        md:flex
+        w-56
+        bg-white
+        border-r
+        p-6
+        flex-col
+      ">
         {Sidebar}
       </aside>
 
-      {/* Mobile */}
+      {/* MOBILE */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
+        <div className="
+          fixed
+          inset-0
+          z-50
+          flex
+          md:hidden
+        ">
+
           <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setMobileOpen(false)}
+            className="
+              absolute
+              inset-0
+              bg-black/40
+            "
+            onClick={() =>
+              setMobileOpen(false)
+            }
           />
-          <aside className="relative w-4/5 max-w-xs bg-white p-6">
+
+          <aside className="
+            relative
+            w-4/5
+            max-w-xs
+            bg-white
+            p-6
+          ">
+
             <button
-              onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4"
+              onClick={() =>
+                setMobileOpen(false)
+              }
+              className="
+                absolute
+                top-4
+                right-4
+              "
             >
               <X />
             </button>
+
             {Sidebar}
+
           </aside>
+
         </div>
       )}
 
       {/* MAIN */}
-      <main className="flex-1 bg-gray-50">
+      <main className="
+        flex-1
+        bg-gray-50
+      ">
 
         <Header user={user} />
 
         {loading ? (
-          <div className="p-6 text-sm text-gray-500">
+
+          <div className="
+            p-6
+            text-sm
+            text-gray-500
+          ">
             Chargement…
           </div>
+
         ) : (
-          <div className="p-4 md:p-8">
-            {children}
+
+          <div className="
+            p-4
+            md:p-8
+            h-[calc(100vh-72px)]
+          ">
+
+            <div className="
+              flex
+              gap-8
+              h-full
+            ">
+
+              {/* CONTENT */}
+              <div className="
+                flex-1
+                min-w-0
+                overflow-auto
+              ">
+                {children}
+              </div>
+
+              {/* WORKSPACE */}
+              <aside className="
+                hidden
+                xl:block
+                w-[380px]
+                shrink-0
+              ">
+                <WorkspacePanel />
+              </aside>
+
+            </div>
+
           </div>
+
         )}
 
       </main>
+
     </div>
   );
 }
