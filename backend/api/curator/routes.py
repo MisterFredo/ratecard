@@ -42,7 +42,6 @@ def require_user(request: Request) -> str:
 
     return user_id
 
-
 # ============================================================
 # 🔍 SEARCH CONTENT
 # ============================================================
@@ -53,7 +52,10 @@ def search_route(
     q: str = Query(...),
     limit: int = Query(50),
     offset: int = Query(0),
-    type: Optional[str] = Query(None),
+
+    # 🔥 NEW
+    content_type: Optional[str] = Query(None),
+
     universe_id: Optional[str] = Query(None),
 ):
     try:
@@ -65,6 +67,9 @@ def search_route(
             offset=offset,
             user_id=user_id,
             universe_id=universe_id,
+
+            # 🔥 NEW
+            content_type=content_type,
         )
 
         return {"items": items, "count": len(items)}
@@ -218,7 +223,10 @@ def latest_route(
     request: Request,
     limit: int = Query(50),
     offset: int = Query(0),
-    type: Optional[str] = Query(None),
+
+    # 🔥 NEW
+    content_type: Optional[str] = Query(None),
+
     universe_id: Optional[str] = Query(None),
 ):
     try:
@@ -229,6 +237,9 @@ def latest_route(
             offset=offset,
             user_id=user_id,
             universe_id=universe_id,
+
+            # 🔥 NEW
+            content_type=content_type,
         )
 
         return {"items": items, "count": len(items)}
