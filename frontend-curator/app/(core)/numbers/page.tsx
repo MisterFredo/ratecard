@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
 import { api } from "@/lib/api";
 
 import NumberCard from "@/components/numbers/NumberCard";
-import NumbersSelectionPanel from "@/components/insight/NumbersSelectionPanel";
 import NumbersHeader from "@/components/numbers/NumbersHeader";
+
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 /* ========================================================= */
 
@@ -20,56 +22,78 @@ type NumberItem = {
 export default function NumbersPage() {
   const LIMIT = 100;
 
-  const [items, setItems] = useState<NumberItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const [query, setQuery] = useState("");
-
   /* =========================================================
-     SELECTION
+     WORKSPACE
   ========================================================= */
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [selectedItems, setSelectedItems] = useState<NumberItem[]>([]);
+  const {
+    selectedNumberItems,
+    toggleNumber,
+  } = useWorkspace();
 
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const selectedIds =
+    selectedNumberItems.map(
+      (i) => i.ID_NUMBER
+    );
 
   /* =========================================================
-     ANALYSIS
+     DATA
   ========================================================= */
 
-  const [analysis, setAnalysis] = useState("");
-  const [loadingInsight, setLoadingInsight] = useState(false);
+  const [items, setItems] =
+    useState<NumberItem[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [query, setQuery] =
+    useState("");
 
   /* =========================================================
      LOAD
   ========================================================= */
 
   async function load(q?: string) {
-    const finalQuery = (q ?? query)?.trim();
+
+    const finalQuery =
+      (q ?? query)?.trim();
 
     setLoading(true);
 
     try {
+
       const res = await api.get(
         `/numbers/feed?limit=${LIMIT}${
           finalQuery
-            ? `&query=${encodeURIComponent(finalQuery)}`
+            ? `&query=${encodeURIComponent(
+                finalQuery
+              )}`
             : ""
         }`
       );
 
-      const data = res?.items ?? [];
+      const data =
+        res?.items ?? [];
 
       setItems(data);
 
     } catch (e) {
-      console.error("❌ Numbers load error", e);
+
+      console.error(
+        "❌ Numbers load error",
+        e
+      );
+
       setItems([]);
+
     } finally {
+
       setLoading(false);
+
     }
   }
+
+  /* ========================================================= */
 
   useEffect(() => {
     load();
@@ -79,112 +103,77 @@ export default function NumbersPage() {
      SELECTION
   ========================================================= */
 
-  function toggleSelect(item: NumberItem) {
-    const id = item.ID_NUMBER;
-
-    setSelectedIds((prev) => {
-      const exists = prev.includes(id);
-
-      if (exists) {
-
-        // REMOVE
-        setSelectedItems((items) =>
-          items.filter((i) => i.ID_NUMBER !== id)
-        );
-
-        return prev.filter((i) => i !== id);
-      }
-
-      // ADD
-      setSelectedItems((items) => {
-        if (items.find((i) => i.ID_NUMBER === id)) {
-          return items;
-        }
-
-        return [...items, item];
-      });
-
-      return [...prev, id];
-    });
-
-    setIsPanelOpen(true);
-  }
-
-  /* =========================================================
-     REMOVE FROM PANEL
-  ========================================================= */
-
-  function removeFromSelection(id: string) {
-    setSelectedItems((prev) =>
-      prev.filter((item) => item.ID_NUMBER !== id)
-    );
-
-    setSelectedIds((prev) =>
-      prev.filter((i) => i !== id)
-    );
-  }
-
-  /* =========================================================
-     INSIGHT
-  ========================================================= */
-
-  async function generateInsight() {
-    if (!selectedIds.length) return;
-
-    setLoadingInsight(true);
-
-    try {
-      const res: any = await api.post("/numbers/insight", {
-        ids: selectedIds,
-      });
-
-      setAnalysis(res.insight || "");
-
-    } catch (e) {
-      console.error("❌ numbers insight error", e);
-    } finally {
-      setLoadingInsight(false);
-    }
+  function toggleSelect(
+    item: NumberItem
+  ) {
+    toggleNumber(item);
   }
 
   /* =========================================================
      GROUP BY TYPE
   ========================================================= */
 
-  function groupByType(items: NumberItem[]) {
-    const map: Record<string, NumberItem[]> = {};
+  function groupByType(
+    items: NumberItem[]
+  ) {
+
+    const map:
+      Record<
+        string,
+        NumberItem[]
+      > = {};
 
     items.forEach((item) => {
-      const key = item.TYPE ?? "Autres";
 
-      if (!map[key]) map[key] = [];
+      const key =
+        item.TYPE ?? "Autres";
+
+      if (!map[key]) {
+        map[key] = [];
+      }
+
       map[key].push(item);
     });
 
     return Object.fromEntries(
-      Object.entries(map).sort(([a], [b]) =>
-        a.localeCompare(b, "fr", { sensitivity: "base" })
+      Object.entries(map).sort(
+        ([a], [b]) =>
+          a.localeCompare(
+            b,
+            "fr",
+            {
+              sensitivity:
+                "base",
+            }
+          )
       )
     );
   }
 
-  const grouped = groupByType(items);
-
-  const hasContent = items.length > 0;
-
   /* ========================================================= */
 
-  return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+  const grouped =
+    groupByType(items);
 
-      {/* LEFT */}
-      <div className="xl:col-span-2 space-y-10">
+  const hasContent =
+    items.length > 0;
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
+
+  return (
+    <div className="grid grid-cols-1 gap-8">
+
+      <div className="space-y-10">
 
         {/* HEADER */}
         <NumbersHeader
           query={query}
           setQuery={setQuery}
-          onSearch={(q) => load(q)}
+          onSearch={(q) =>
+            load(q)
+          }
         />
 
         {/* COUNT */}
@@ -202,67 +191,102 @@ export default function NumbersPage() {
         )}
 
         {/* EMPTY */}
-        {!loading && !hasContent && (
-          <p className="text-sm text-gray-400">
-            Aucun chiffre disponible.
-          </p>
-        )}
+        {!loading &&
+          !hasContent && (
+            <p className="text-sm text-gray-400">
+              Aucun chiffre
+              disponible.
+            </p>
+          )}
 
         {/* CONTENT */}
-        {!loading && hasContent &&
-          Object.entries(grouped).map(([type, groupItems]) => (
-            <section key={type} className="space-y-4">
-
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  {type}
-                </h2>
-
-                <span className="text-xs text-gray-300">
-                  {groupItems.length}
-                </span>
-              </div>
-
-              <div
-                className="
-                  grid
-                  grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
-                  gap-3
-                "
+        {!loading &&
+          hasContent &&
+          Object.entries(
+            grouped
+          ).map(
+            ([
+              type,
+              groupItems,
+            ]) => (
+              <section
+                key={type}
+                className="space-y-4"
               >
-                {groupItems.map((item) => {
-                  const selected =
-                    selectedIds.includes(item.ID_NUMBER);
 
-                  return (
-                    <NumberCard
-                      key={item.ID_NUMBER}
-                      item={item}
-                      selected={selected}
-                      onClick={() => toggleSelect(item)}
-                    />
-                  );
-                })}
-              </div>
+                <div className="
+                  flex
+                  items-center
+                  justify-between
+                ">
+                  <h2 className="
+                    text-xs
+                    font-semibold
+                    uppercase
+                    tracking-wide
+                    text-gray-400
+                  ">
+                    {type}
+                  </h2>
 
-            </section>
-          ))}
+                  <span className="
+                    text-xs
+                    text-gray-300
+                  ">
+                    {
+                      groupItems.length
+                    }
+                  </span>
+                </div>
+
+                <div
+                  className="
+                    grid
+                    grid-cols-2
+                    sm:grid-cols-3
+                    md:grid-cols-4
+                    lg:grid-cols-5
+                    gap-3
+                  "
+                >
+
+                  {groupItems.map(
+                    (item) => {
+
+                      const selected =
+                        selectedIds.includes(
+                          item.ID_NUMBER
+                        );
+
+                      return (
+                        <NumberCard
+                          key={
+                            item.ID_NUMBER
+                          }
+
+                          item={item}
+
+                          selected={
+                            selected
+                          }
+
+                          onClick={() =>
+                            toggleSelect(
+                              item
+                            )
+                          }
+                        />
+                      );
+                    }
+                  )}
+
+                </div>
+
+              </section>
+            )
+          )}
 
       </div>
-
-      {/* RIGHT PANEL */}
-      {isPanelOpen && (
-        <div className="xl:col-span-1 sticky top-6 h-[calc(100vh-120px)]">
-          <NumbersSelectionPanel
-            selectedItems={selectedItems}
-            analysis={analysis}
-            loading={loadingInsight}
-            onGenerateInsight={generateInsight}
-            onClose={() => setIsPanelOpen(false)}
-            onRemove={removeFromSelection}
-          />
-        </div>
-      )}
 
     </div>
   );
