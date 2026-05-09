@@ -23,6 +23,7 @@ class ContentSummaryRequest(BaseModel):
 
     source_id: Optional[str] = None
     source_text: str
+    content_type: Literal["ANALYSIS", "NEWS"] = "ANALYSIS"
 
 
 # ============================================================
