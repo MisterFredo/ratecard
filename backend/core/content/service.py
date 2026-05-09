@@ -1421,7 +1421,8 @@ def get_source_monitoring():
 
     LEFT JOIN agg
       ON s.SOURCE_ID = agg.SOURCE_ID
-      AND la.CONTENT_TYPE = agg.CONTENT_TYPE
+      AND COALESCE(la.CONTENT_TYPE, 'ANALYSIS')
+          = COALESCE(agg.CONTENT_TYPE, 'ANALYSIS')
 
     ORDER BY agg.LAST_IMPORT_AT DESC
     """
