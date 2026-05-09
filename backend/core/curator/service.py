@@ -24,6 +24,7 @@ def build_user_filter(alias: str = "c") -> str:
     )
     """
 
+
 # ============================================================
 # SEARCH
 # ============================================================
@@ -39,6 +40,7 @@ def search(
     q = (q or "").strip()
 
     universe_filter = ""
+
     if universe_id:
         universe_filter = """
         AND EXISTS (
@@ -50,41 +52,64 @@ def search(
 
     sql = f"""
     SELECT
+
         c.id_content AS id,
-        'analysis' AS type,
+
+        -- 🔥 NEW
+        LOWER(
+            COALESCE(c.content_type, 'ANALYSIS')
+        ) AS type,
+
         c.title,
         c.excerpt,
         c.published_at,
-        NULL AS news_type,
+
         c.topics,
         c.universes,
         c.companies,
         c.solutions,
-        c.concepts,  
+        c.concepts,
         c.source_id,
 
-        -- 🔥 SCORE (optionnel mais utile pour ranking)
         (
             CASE
-                WHEN LOWER(c.title) LIKE LOWER(CONCAT('%', @query, '%')) THEN 3
-                WHEN LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%')) THEN 2
+                WHEN LOWER(c.title)
+                    LIKE LOWER(CONCAT('%', @query, '%'))
+                THEN 3
+
+                WHEN LOWER(c.excerpt)
+                    LIKE LOWER(CONCAT('%', @query, '%'))
+                THEN 2
+
                 ELSE 0
             END
+
             +
+
             CASE
                 WHEN EXISTS (
                     SELECT 1
                     FROM UNNEST(c.companies) co
-                    WHERE LOWER(co.name) LIKE LOWER(CONCAT('%', @query, '%'))
-                ) THEN 2 ELSE 0
+                    WHERE LOWER(co.name)
+                        LIKE LOWER(CONCAT('%', @query, '%'))
+                )
+                THEN 2
+
+                ELSE 0
             END
+
             +
+
             CASE
                 WHEN EXISTS (
                     SELECT 1
                     FROM UNNEST(c.solutions) s
-                    WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', @query, '%'))
-                ) THEN 2 ELSE 0
+                    WHERE LOWER(s.name)
+                        LIKE LOWER(CONCAT('%', @query, '%'))
+                )
+                THEN 2
+
+                ELSE 0
             END
         ) AS score
 
@@ -92,26 +117,29 @@ def search(
 
     WHERE
     (
-        -- 🔵 TEXTE
-        LOWER(c.title) LIKE LOWER(CONCAT('%', @query, '%'))
-        OR LOWER(c.excerpt) LIKE LOWER(CONCAT('%', @query, '%'))
+        LOWER(c.title)
+            LIKE LOWER(CONCAT('%', @query, '%'))
 
-        -- 🟢 COMPANY
+        OR LOWER(c.excerpt)
+            LIKE LOWER(CONCAT('%', @query, '%'))
+
         OR EXISTS (
             SELECT 1
             FROM UNNEST(c.companies) co
-            WHERE LOWER(co.name) LIKE LOWER(CONCAT('%', @query, '%'))
+            WHERE LOWER(co.name)
+                LIKE LOWER(CONCAT('%', @query, '%'))
         )
 
-        -- 🔵 SOLUTION
         OR EXISTS (
             SELECT 1
             FROM UNNEST(c.solutions) s
-            WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', @query, '%'))
+            WHERE LOWER(s.name)
+                LIKE LOWER(CONCAT('%', @query, '%'))
         )
     )
 
     {build_user_filter("c")}
+
     {universe_filter}
 
     ORDER BY
@@ -134,8 +162,9 @@ def search(
 
     return [_map_feed_row(r) for r in rows]
 
+
 # ============================================================
-# LATEST (ALIGNÉ SUR SEARCH)
+# LATEST
 # ============================================================
 
 def latest(
@@ -146,6 +175,7 @@ def latest(
 ) -> List[Dict]:
 
     universe_filter = ""
+
     if universe_id:
         universe_filter = """
         AND EXISTS (
@@ -157,20 +187,23 @@ def latest(
 
     sql = f"""
     SELECT
+
         c.id_content AS id,
-        'analysis' AS type,
+
+        -- 🔥 NEW
+        LOWER(
+            COALESCE(c.content_type, 'ANALYSIS')
+        ) AS type,
+
         c.title,
         c.excerpt,
         c.published_at,
-        NULL AS news_type,
+
         c.topics,
-
-        -- 🔥 FIX : universes = ARRAY
         c.universes,
-
         c.companies,
         c.solutions,
-        c.concepts,  
+        c.concepts,
         c.source_id
 
     FROM `{TABLE_CONTENT_ENRICHED}` c
@@ -182,6 +215,7 @@ def latest(
     {universe_filter}
 
     ORDER BY published_at DESC
+
     LIMIT @limit
     OFFSET @offset
     """
@@ -199,7 +233,7 @@ def latest(
 
 
 # ============================================================
-# ITEM (SECURE + COHÉRENT)
+# ITEM
 # ============================================================
 
 def get_item_curator(
@@ -209,14 +243,17 @@ def get_item_curator(
 
     sql = f"""
     SELECT
+
         c.id_content AS id,
-        'analysis' AS type,
+
+        -- 🔥 NEW
+        LOWER(
+            COALESCE(c.content_type, 'ANALYSIS')
+        ) AS type,
+
         c.title,
         c.excerpt,
         c.published_at,
-
-        -- compat ancien modèle
-        NULL AS news_type,
 
         c.topics,
         c.companies,
@@ -231,11 +268,15 @@ def get_item_curator(
 
     AND (
         @user_id IS NULL
+
         OR EXISTS (
             SELECT 1
+
             FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOURCE_UNIVERSE` su
+
             JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
               ON uu.ID_UNIVERSE = su.ID_UNIVERSE
+
             WHERE uu.ID_USER = @user_id
               AND su.ID_SOURCE = c.source_id
         )
@@ -254,6 +295,7 @@ def get_item_curator(
 
     return _map_feed_row(rows[0])
 
+
 # ============================================================
 # DETAIL
 # ============================================================
@@ -263,12 +305,14 @@ def get_item_detail(
     user_id: Optional[str] = None
 ) -> Optional[Dict]:
 
-    item = get_item_curator(item_id, user_id=user_id)
+    item = get_item_curator(
+        item_id,
+        user_id=user_id
+    )
 
     if not item:
         return None
 
-    # 🔥 ON NE GÈRE PLUS QUE LES ANALYSES
     from core.content.public_service import get_content
 
     content = get_content(item_id)
@@ -285,7 +329,7 @@ def get_item_detail(
 
 
 # ============================================================
-# STATS (inchangé)
+# STATS
 # ============================================================
 
 def get_content_stats():
@@ -296,11 +340,15 @@ def get_content_stats():
     """)
 
     if global_rows:
+
         g = global_rows[0]
+
         total_count = g.get("total", 0) or 0
         last_7 = g.get("last_7_days", 0) or 0
         last_30 = g.get("last_30_days", 0) or 0
+
     else:
+
         total_count = 0
         last_7 = 0
         last_30 = 0
@@ -386,14 +434,19 @@ def _map_feed_row(r: Dict) -> Dict:
     # =====================================================
     # TOPICS
     # =====================================================
+
     for t in topics:
+
         if isinstance(t, dict):
+
             badges.append({
                 "type": "topic",
                 "label": t.get("label") or t.get("name"),
                 "id": t.get("id_topic"),
             })
+
         else:
+
             badges.append({
                 "type": "topic",
                 "label": t,
@@ -402,14 +455,19 @@ def _map_feed_row(r: Dict) -> Dict:
     # =====================================================
     # CONCEPTS
     # =====================================================
+
     for c in concepts:
+
         if isinstance(c, dict):
+
             badges.append({
                 "type": "concept",
-                "label": c.get("label"),        # ✅ FIX
-                "id": c.get("id_concept"),      # ✅ OK
+                "label": c.get("label"),
+                "id": c.get("id_concept"),
             })
+
         else:
+
             badges.append({
                 "type": "concept",
                 "label": c,
@@ -418,7 +476,9 @@ def _map_feed_row(r: Dict) -> Dict:
     # =====================================================
     # COMPANIES
     # =====================================================
+
     for c in companies:
+
         badges.append({
             "type": "company",
             "label": c.get("name"),
@@ -428,7 +488,9 @@ def _map_feed_row(r: Dict) -> Dict:
     # =====================================================
     # SOLUTIONS
     # =====================================================
+
     for s in solutions:
+
         badges.append({
             "type": "solution",
             "label": s.get("name"),
@@ -438,7 +500,9 @@ def _map_feed_row(r: Dict) -> Dict:
     # =====================================================
     # UNIVERS
     # =====================================================
+
     for u in universes:
+
         badges.append({
             "type": "universe",
             "label": u.get("label"),
@@ -451,15 +515,12 @@ def _map_feed_row(r: Dict) -> Dict:
         "title": r.get("title"),
         "excerpt": r.get("excerpt"),
         "published_at": r.get("published_at"),
-        "news_type": r.get("news_type"),
 
-        # 🔥 DATA BRUTE (si besoin ailleurs)
         "topics": topics,
         "companies": companies,
         "solutions": solutions,
         "concepts": concepts,
         "universes": universes,
 
-        # 🔥 NOUVEAU CONTRAT
         "badges": badges,
     }
