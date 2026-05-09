@@ -285,6 +285,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
         <StepSummary
           sourceId={sourceId}
           sourceText={sourceText}
+          contentType={contentType}
 
           excerpt={excerpt}
           contentBody={contentBody}
