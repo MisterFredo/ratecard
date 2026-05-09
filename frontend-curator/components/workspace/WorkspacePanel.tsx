@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { api } from "@/lib/api";
 
 import { useWorkspace } from "@/contexts/WorkspaceContext";
@@ -35,6 +37,15 @@ export default function WorkspacePanel() {
     setLoading,
   } = useWorkspace();
 
+  /* =========================================================
+     TABS
+  ========================================================= */
+
+  const [tab, setTab] =
+    useState<
+      "context" | "output"
+    >("context");
+
   /* ========================================================= */
 
   if (!panelOpen) {
@@ -47,7 +58,9 @@ export default function WorkspacePanel() {
     selectedContentItems.length +
     selectedNumberItems.length;
 
-  /* ========================================================= */
+  /* =========================================================
+     GENERATE OUTPUT
+  ========================================================= */
 
   async function generateOutput(
     outputType:
@@ -89,6 +102,9 @@ export default function WorkspacePanel() {
       setAnalysis(
         res.result || ""
       );
+
+      // 🔥 AUTO SWITCH
+      setTab("output");
 
     } catch (e) {
 
@@ -148,41 +164,107 @@ export default function WorkspacePanel() {
           }
         />
 
+        {/* TABS */}
+        <div
+          className="
+            flex
+            border-b
+          "
+        >
+
+          <button
+            onClick={() =>
+              setTab("context")
+            }
+            className={`
+              flex-1
+              py-2
+              text-xs
+              font-medium
+              ${
+                tab === "context"
+                  ? "border-b-2 border-black text-black"
+                  : "text-gray-400"
+              }
+            `}
+          >
+            Contexte
+          </button>
+
+          <button
+            onClick={() =>
+              setTab("output")
+            }
+            className={`
+              flex-1
+              py-2
+              text-xs
+              font-medium
+              ${
+                tab === "output"
+                  ? "border-b-2 border-black text-black"
+                  : "text-gray-400"
+              }
+            `}
+          >
+            Output
+          </button>
+
+        </div>
+
         {/* CONTENT */}
         <div
           className="
             flex-1
             overflow-auto
             p-4
-            space-y-6
           "
         >
 
-          {/* CONTENTS */}
-          <WorkspaceContentList
-            items={
-              selectedContentItems
-            }
-            onRemove={
-              removeContent
-            }
-          />
+          {/* =================================================
+             CONTEXT
+          ================================================= */}
 
-          {/* NUMBERS */}
-          <WorkspaceNumbersList
-            items={
-              selectedNumberItems
-            }
-            onRemove={
-              removeNumber
-            }
-          />
+          {tab === "context" && (
+            <div
+              className="
+                space-y-6
+              "
+            >
 
-          {/* ANALYSIS */}
-          <WorkspaceAnalysis
-            loading={loading}
-            analysis={analysis}
-          />
+              {/* CONTENTS */}
+              <WorkspaceContentList
+                items={
+                  selectedContentItems
+                }
+                onRemove={
+                  removeContent
+                }
+              />
+
+              {/* NUMBERS */}
+              <WorkspaceNumbersList
+                items={
+                  selectedNumberItems
+                }
+                onRemove={
+                  removeNumber
+                }
+              />
+
+            </div>
+          )}
+
+          {/* =================================================
+             OUTPUT
+          ================================================= */}
+
+          {tab === "output" && (
+            <WorkspaceAnalysis
+              loading={loading}
+              analysis={analysis}
+            />
+          )}
 
         </div>
 
