@@ -34,7 +34,9 @@ class Concept(BaseModel):
 
 class FeedItem(BaseModel):
     id: str
-    type: Literal["news", "analysis"]
+
+    # 🔥 NEW
+    type: Literal["NEWS", "ANALYSIS"]
 
     title: str
     excerpt: Optional[str] = None
@@ -45,8 +47,6 @@ class FeedItem(BaseModel):
     solutions: List[Solution] = Field(default_factory=list)
 
     concepts: List[Concept] = Field(default_factory=list)
-
-    news_type: Optional[str] = None
 
 
 class FeedResponse(BaseModel):
