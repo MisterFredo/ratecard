@@ -35,6 +35,13 @@ export default function NumbersPage() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   /* =========================================================
+     ANALYSIS
+  ========================================================= */
+
+  const [analysis, setAnalysis] = useState("");
+  const [loadingInsight, setLoadingInsight] = useState(false);
+
+  /* =========================================================
      LOAD
   ========================================================= */
 
@@ -115,6 +122,29 @@ export default function NumbersPage() {
     setSelectedIds((prev) =>
       prev.filter((i) => i !== id)
     );
+  }
+
+  /* =========================================================
+     INSIGHT
+  ========================================================= */
+
+  async function generateInsight() {
+    if (!selectedIds.length) return;
+
+    setLoadingInsight(true);
+
+    try {
+      const res: any = await api.post("/numbers/insight", {
+        ids: selectedIds,
+      });
+
+      setAnalysis(res.insight || "");
+
+    } catch (e) {
+      console.error("❌ numbers insight error", e);
+    } finally {
+      setLoadingInsight(false);
+    }
   }
 
   /* =========================================================
@@ -225,6 +255,9 @@ export default function NumbersPage() {
         <div className="xl:col-span-1 sticky top-6 h-[calc(100vh-120px)]">
           <NumbersSelectionPanel
             selectedItems={selectedItems}
+            analysis={analysis}
+            loading={loadingInsight}
+            onGenerateInsight={generateInsight}
             onClose={() => setIsPanelOpen(false)}
             onRemove={removeFromSelection}
           />
