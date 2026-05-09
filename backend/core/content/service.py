@@ -1475,6 +1475,13 @@ def update_content(id_content: str, data: ContentUpdate):
     fields = {}
 
     # ============================================================
+    # CONTENT TYPE
+    # ============================================================
+
+    if data.content_type is not None:
+        fields["CONTENT_TYPE"] = data.content_type
+
+    # ============================================================
     # SOURCE
     # ============================================================
 
@@ -1560,6 +1567,7 @@ def update_content(id_content: str, data: ContentUpdate):
     # ============================================================
 
     if fields:
+
         update_bq(
             table=TABLE_CONTENT,
             fields=fields,
@@ -1619,13 +1627,16 @@ def update_content(id_content: str, data: ContentUpdate):
         job_config=bigquery.QueryJobConfig(
             query_parameters=[
                 bigquery.ScalarQueryParameter(
-                    "id", "STRING", id_content
+                    "id",
+                    "STRING",
+                    id_content
                 )
             ]
         ),
     ).result()
 
     if data.persons:
+
         insert_bq(
             TABLE_CONTENT_PERSON,
             [
