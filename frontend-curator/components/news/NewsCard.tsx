@@ -73,7 +73,7 @@ export default function NewsCard({
   const logoUrl =
     primaryCompany
       ?.media_logo_rectangle_id
-      ? `${GCS_BASE_URL}/${primaryCompany.media_logo_rectangle_id}`
+      ? `${GCS_BASE_URL}/companies/${primaryCompany.media_logo_rectangle_id}`
       : null;
 
   /* =========================================================
