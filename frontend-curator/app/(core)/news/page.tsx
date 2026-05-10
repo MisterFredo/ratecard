@@ -1,259 +1,96 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 import {
-  searchCurator,
-  getLatestCurator,
-} from "@/lib/search";
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
 import type {
   FeedItem,
   FeedBadge,
 } from "@/types/feed";
 
-import { api } from "@/lib/api";
+/* ========================================================= */
 
-import { useWorkspace } from "@/contexts/WorkspaceContext";
-
-import NewsList from "@/components/news/NewsList";
+const GCS_BASE_URL =
+  process.env
+    .NEXT_PUBLIC_GCS_BASE_URL || "";
 
 /* ========================================================= */
 
-type Universe = {
-  id_universe: string;
-  label: string;
+type Props = {
+  item: FeedItem;
+
+  selected?: boolean;
+
+  onToggleSelect: (
+    item: FeedItem
+  ) => void;
+
+  onClickBadge?: (
+    badge: FeedBadge
+  ) => void;
 };
 
 /* ========================================================= */
 
-export default function NewsPage() {
+export default function NewsCard({
+  item,
+  selected = false,
+  onToggleSelect,
+  onClickBadge,
+}: Props) {
 
-  const LIMIT = 20;
+  const [open, setOpen] =
+    useState(false);
 
   /* =========================================================
-     WORKSPACE
+     TOPIC BADGES ONLY
   ========================================================= */
 
-  const {
-    selectedContentItems,
-    toggleContent,
-  } = useWorkspace();
-
-  const selectedIds =
-    selectedContentItems.map(
-      (i) => i.id
+  const topicBadges =
+    (item.badges || []).filter(
+      (b) => b.type === "topic"
     );
 
   /* =========================================================
-     UNIVERSE
+     LOGO
   ========================================================= */
 
-  const [universes, setUniverses] =
-    useState<Universe[]>([]);
+  const primaryCompany =
+    item.companies?.[0];
 
-  const [activeUniverse, setActiveUniverse] =
-    useState<string | null>(null);
+  const logoUrl =
+    primaryCompany
+      ?.media_logo_rectangle_id
+
+      ? `${GCS_BASE_URL}/companies/${primaryCompany.media_logo_rectangle_id}`
+
+      : null;
 
   /* =========================================================
-     DATA
+     COMPANY
   ========================================================= */
 
-  const [items, setItems] =
-    useState<FeedItem[]>([]);
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [total, setTotal] =
-    useState(0);
-
-  const [query, setQuery] =
-    useState("");
-
-  const [offset, setOffset] =
-    useState(0);
-
-  const [hasMore, setHasMore] =
-    useState(true);
+  const companyName =
+    primaryCompany?.name ||
+    item.primary_company_name ||
+    "Unknown company";
 
   /* =========================================================
-     LOAD UNIVERS
+     DATE
   ========================================================= */
 
-  useEffect(() => {
-
-    async function loadUniverses() {
-
-      try {
-
-        const res = await api.get(
-          "/universe/list-for-user"
-        );
-
-        setUniverses(
-          res?.universes || []
-        );
-
-      } catch (e) {
-
-        console.error(
-          "❌ universe load error",
-          e
-        );
-      }
-    }
-
-    loadUniverses();
-
-  }, []);
-
-  /* =========================================================
-     LOAD NEWS
-  ========================================================= */
-
-  async function load(
-    reset = false,
-    q?: string
-  ) {
-
-    if (loading && !reset) return;
-
-    const finalQuery =
-      q !== undefined
-        ? q.trim()
-        : query.trim();
-
-    const currentOffset =
-      reset
-        ? 0
-        : offset;
-
-    if (reset) {
-
-      setItems([]);
-      setOffset(0);
-      setHasMore(true);
-
-    }
-
-    setLoading(true);
-
-    try {
-
-      const res = finalQuery
-
-        ? await searchCurator({
-
-            query: finalQuery,
-
-            limit: LIMIT,
-
-            offset: currentOffset,
-
-            universe_id:
-              activeUniverse || undefined,
-
-            content_type: "NEWS",
-          })
-
-        : await getLatestCurator({
-
-            limit: LIMIT,
-
-            offset: currentOffset,
-
-            universe_id:
-              activeUniverse || undefined,
-
-            content_type: "NEWS",
-          });
-
-      if (reset) {
-
-        setItems(res.items);
-
-        setOffset(
-          res.items.length
-        );
-
-      } else {
-
-        setItems((prev) => [
-          ...prev,
-          ...res.items,
-        ]);
-
-        setOffset(
-          (prev) =>
-            prev + res.items.length
-        );
-      }
-
-      setTotal(
-        res.count ?? 0
-      );
-
-      setHasMore(
-        res.items.length === LIMIT
-      );
-
-    } catch (e) {
-
-      console.error(
-        "❌ news load error",
-        e
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-  }
-
-  /* =========================================================
-     INIT
-  ========================================================= */
-
-  useEffect(() => {
-
-    load(true);
-
-  }, [activeUniverse]);
-
-  /* =========================================================
-     BADGES
-  ========================================================= */
-
-  function handleBadgeClick(
-    badge: FeedBadge
-  ) {
-
-    const value =
-      badge.label;
-
-    if (!value) return;
-
-    setQuery(value);
-
-    window.scrollTo({
-      top: 0,
-    });
-
-    load(true, value);
-  }
-
-  /* =========================================================
-     SELECTION
-  ========================================================= */
-
-  function toggleSelect(
-    item: FeedItem
-  ) {
-
-    toggleContent(item);
-  }
+  const formattedDate =
+    item.published_at
+      ? new Date(
+          item.published_at
+        ).toLocaleDateString(
+          "fr-FR"
+        )
+      : null;
 
   /* =========================================================
      RENDER
@@ -261,230 +98,303 @@ export default function NewsPage() {
 
   return (
 
-    <div className="max-w-6xl mx-auto">
+    <div
+      className="
+        border-b
+        border-gray-100
+        py-5
+      "
+    >
 
-      {/* =====================================================
-          HERO
-      ===================================================== */}
-
-      <div className="
-        mb-8
-        pt-2
-      ">
-
-        <div className="
+      <div
+        className="
           flex
           items-start
-          justify-between
-          gap-6
-          mb-5
-        ">
+          gap-4
+        "
+      >
 
-          <div>
+        {/* =====================================================
+            LEFT COLUMN
+        ===================================================== */}
 
-            <h1 className="
-              text-3xl
-              font-semibold
-              text-gray-900
-              tracking-tight
-            ">
-              News
-            </h1>
-
-            <p className="
-              mt-2
-              text-sm
-              text-gray-500
-              max-w-2xl
-              leading-relaxed
-            ">
-              Latest market movements,
-              launches, partnerships,
-              product updates and strategic
-              signals across adtech,
-              retail media, AI and media.
-            </p>
-
-          </div>
-
-          <div className="
-            shrink-0
-            text-right
-          ">
-
-            <div className="
-              text-3xl
-              font-semibold
-              text-gray-900
-            ">
-              {total}
-            </div>
-
-            <div className="
-              text-xs
-              uppercase
-              tracking-wide
-              text-gray-400
-              mt-1
-            ">
-              News tracked
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* ===================================================
-            UNIVERSE FILTERS
-        =================================================== */}
-
-        {universes.length > 0 && (
-
-          <div className="
+        <div
+          className="
             flex
-            flex-wrap
+            flex-col
+            items-center
             gap-2
-            mb-5
-          ">
+            shrink-0
+          "
+        >
 
-            <button
-              onClick={() =>
-                setActiveUniverse(null)
-              }
-              className={`
-                px-3
-                py-1.5
-                rounded-full
-                text-xs
-                font-medium
-                transition
+          {/* LOGO */}
 
-                ${
-                  !activeUniverse
-                    ? `
-                      bg-gray-900
-                      text-white
-                    `
-                    : `
-                      bg-gray-100
-                      text-gray-600
-                      hover:bg-gray-200
-                    `
-                }
-              `}
-            >
-              All
-            </button>
-
-            {universes.map((u) => (
-
-              <button
-                key={u.id_universe}
-                onClick={() =>
-                  setActiveUniverse(
-                    u.id_universe
-                  )
-                }
-                className={`
-                  px-3
-                  py-1.5
-                  rounded-full
-                  text-xs
-                  font-medium
-                  transition
-
-                  ${
-                    activeUniverse ===
-                    u.id_universe
-
-                      ? `
-                        bg-gray-900
-                        text-white
-                      `
-
-                      : `
-                        bg-gray-100
-                        text-gray-600
-                        hover:bg-gray-200
-                      `
-                  }
-                `}
-              >
-                {u.label}
-              </button>
-
-            ))}
-
-          </div>
-
-        )}
-
-        {/* ===================================================
-            SEARCH
-        =================================================== */}
-
-        <div className="relative">
-
-          <input
-            value={query}
-            onChange={(e) =>
-              setQuery(
-                e.target.value
-              )
-            }
-            onKeyDown={(e) => {
-
-              if (e.key === "Enter") {
-
-                load(
-                  true,
-                  query
-                );
-              }
-            }}
-            placeholder="
-              Search companies, topics,
-              products, concepts...
-            "
+          <div
             className="
-              w-full
+              w-12
               h-12
+              rounded-xl
               border
               border-gray-200
-              rounded-xl
-              px-4
-              text-sm
               bg-white
-              shadow-sm
-              focus:outline-none
-              focus:ring-2
-              focus:ring-gray-200
+              overflow-hidden
+              flex
+              items-center
+              justify-center
+            "
+          >
+
+            {logoUrl ? (
+
+              <img
+                src={logoUrl}
+                alt={companyName}
+                className="
+                  w-full
+                  h-full
+                  object-contain
+                "
+              />
+
+            ) : (
+
+              <div
+                className="
+                  text-[10px]
+                  text-gray-300
+                "
+              >
+                —
+              </div>
+
+            )}
+
+          </div>
+
+          {/* SELECT */}
+
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={() =>
+              onToggleSelect(item)
+            }
+            className="
+              w-4
+              h-4
+              cursor-pointer
             "
           />
 
         </div>
 
+        {/* =====================================================
+            CONTENT
+        ===================================================== */}
+
+        <div className="
+          flex-1
+          min-w-0
+        ">
+
+          {/* ===================================================
+              TOP ROW
+          =================================================== */}
+
+          <div
+            className="
+              flex
+              items-start
+              justify-between
+              gap-4
+            "
+          >
+
+            <div className="min-w-0">
+
+              {/* META */}
+
+              <div
+                className="
+                  flex
+                  flex-wrap
+                  items-center
+                  gap-2
+                  mb-2
+                "
+              >
+
+                {/* DATE */}
+
+                {formattedDate && (
+
+                  <span
+                    className="
+                      text-[11px]
+                      text-gray-400
+                      shrink-0
+                    "
+                  >
+                    {formattedDate}
+                  </span>
+
+                )}
+
+                {/* TOPICS */}
+
+                {topicBadges.map(
+                  (badge, idx) => (
+
+                    <button
+                      key={`${badge.label}-${idx}`}
+                      onClick={() =>
+                        onClickBadge?.(
+                          badge
+                        )
+                      }
+                      className="
+                        px-2
+                        py-[3px]
+                        rounded-full
+                        text-[10px]
+                        uppercase
+                        tracking-wide
+                        bg-gray-100
+                        text-gray-600
+                        hover:bg-gray-200
+                        transition
+                      "
+                    >
+                      {badge.label}
+                    </button>
+
+                  )
+                )}
+
+              </div>
+
+              {/* TITLE */}
+
+              <h2
+                className="
+                  text-[15px]
+                  font-semibold
+                  text-gray-900
+                  leading-snug
+                "
+              >
+                {item.title}
+              </h2>
+
+              {/* COMPANY */}
+
+              <div
+                className="
+                  text-sm
+                  text-gray-500
+                  mt-1
+                "
+              >
+                {companyName}
+              </div>
+
+            </div>
+
+            {/* =================================================
+                EXPAND
+            ================================================= */}
+
+            <button
+              onClick={() =>
+                setOpen(!open)
+              }
+              className="
+                w-8
+                h-8
+                rounded-lg
+                border
+                border-gray-200
+                flex
+                items-center
+                justify-center
+                bg-white
+                hover:bg-gray-50
+                transition
+                shrink-0
+              "
+            >
+
+              {open ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
+
+            </button>
+
+          </div>
+
+          {/* ===================================================
+              EXCERPT PREVIEW
+          =================================================== */}
+
+          {item.excerpt && (
+
+            <p
+              className={`
+                mt-3
+                text-sm
+                text-gray-600
+                leading-relaxed
+                transition-all
+
+                ${
+                  open
+                    ? ""
+                    : "line-clamp-2"
+                }
+              `}
+            >
+              {item.excerpt}
+            </p>
+
+          )}
+
+          {/* ===================================================
+              EXPANDED BODY
+          =================================================== */}
+
+          {open &&
+            item.content_body && (
+
+            <div
+              className="
+                mt-4
+                pt-4
+                border-t
+                border-gray-100
+              "
+            >
+
+              <div
+                className="
+                  text-sm
+                  text-gray-700
+                  leading-7
+                  whitespace-pre-wrap
+                "
+              >
+                {item.content_body}
+              </div>
+
+            </div>
+
+          )}
+
+        </div>
+
       </div>
-
-      {/* =====================================================
-          NEWS LIST
-      ===================================================== */}
-
-      <NewsList
-        items={items}
-        loading={loading}
-        hasMore={hasMore}
-        selectedIds={selectedIds}
-        onToggleSelect={
-          toggleSelect
-        }
-        onClickBadge={
-          handleBadgeClick
-        }
-        onLoadMore={() =>
-          load(false)
-        }
-      />
 
     </div>
   );
