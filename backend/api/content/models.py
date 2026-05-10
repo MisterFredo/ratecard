@@ -111,6 +111,8 @@ class ImportUrlsRequest(BaseModel):
         "NEWS"
     ] = "ANALYSIS"
 
+    id_primary_company: Optional[str] = None
+
 
 # ============================================================
 # CREATE
