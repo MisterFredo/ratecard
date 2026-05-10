@@ -10,19 +10,23 @@ export default function StockFilters({
   status,
   sourceId,
   importType,
+  contentType,
   total,
   onStatusChange,
   onSourceChange,
   onImportTypeChange,
+  onContentTypeChange,
 }: {
   sources: SourceItem[];
   status: string;
   sourceId: string;
   importType: string;
+  contentType: string;
   total: number;
   onStatusChange: (v: string) => void;
   onSourceChange: (v: string) => void;
   onImportTypeChange: (v: string) => void;
+  onContentTypeChange: (v: string) => void;
 }) {
   return (
     <div className="flex flex-wrap gap-4 items-center">
@@ -63,6 +67,17 @@ export default function StockFilters({
         <option value="">Tous imports</option>
         <option value="FILE">Fichier</option>
         <option value="URL">URL</option>
+      </select>
+
+      {/* CONTENT TYPE */}
+      <select
+        value={contentType}
+        onChange={(e) => onContentTypeChange(e.target.value)}
+        className="border rounded p-2 text-sm"
+      >
+        <option value="">Tous contenus</option>
+        <option value="ANALYSIS">Analysis</option>
+        <option value="NEWS">News</option>
       </select>
 
       {/* TOTAL */}
