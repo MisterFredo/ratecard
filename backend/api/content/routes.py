@@ -323,7 +323,8 @@ def import_urls_route(payload: ImportUrlsRequest):
 
         result = import_urls_batch(
             urls_text=payload.urls_text,
-            id_source=payload.id_source
+            id_source=payload.id_source,
+            content_type=payload.content_type,
         )
 
         return {
