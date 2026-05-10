@@ -2,9 +2,15 @@
 
 import { useState, useEffect } from "react";
 
-import { searchCurator, getLatestCurator } from "@/lib/search";
+import {
+  searchCurator,
+  getLatestCurator,
+} from "@/lib/search";
 
-import type { FeedItem, FeedBadge } from "@/types/feed";
+import type {
+  FeedItem,
+  FeedBadge,
+} from "@/types/feed";
 
 import { api } from "@/lib/api";
 
@@ -35,7 +41,9 @@ export default function NewsPage() {
   } = useWorkspace();
 
   const selectedIds =
-    selectedContentItems.map((i) => i.id);
+    selectedContentItems.map(
+      (i) => i.id
+    );
 
   /* =========================================================
      UNIVERSE
@@ -253,58 +261,214 @@ export default function NewsPage() {
 
   return (
 
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto">
 
-      {/* HEADER */}
+      {/* =====================================================
+          HERO
+      ===================================================== */}
 
-      <div className="flex items-center justify-between">
+      <div className="
+        mb-8
+        pt-2
+      ">
 
-        <div>
+        <div className="
+          flex
+          items-start
+          justify-between
+          gap-6
+          mb-5
+        ">
 
-          <h1 className="text-2xl font-semibold text-gray-900">
-            News
-          </h1>
+          <div>
 
-          <div className="text-sm text-gray-500 mt-1">
-            {total} news
+            <h1 className="
+              text-3xl
+              font-semibold
+              text-gray-900
+              tracking-tight
+            ">
+              News
+            </h1>
+
+            <p className="
+              mt-2
+              text-sm
+              text-gray-500
+              max-w-2xl
+              leading-relaxed
+            ">
+              Latest market movements,
+              launches, partnerships,
+              product updates and strategic
+              signals across adtech,
+              retail media, AI and media.
+            </p>
+
           </div>
+
+          <div className="
+            shrink-0
+            text-right
+          ">
+
+            <div className="
+              text-3xl
+              font-semibold
+              text-gray-900
+            ">
+              {total}
+            </div>
+
+            <div className="
+              text-xs
+              uppercase
+              tracking-wide
+              text-gray-400
+              mt-1
+            ">
+              News tracked
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* ===================================================
+            UNIVERSE FILTERS
+        =================================================== */}
+
+        {universes.length > 0 && (
+
+          <div className="
+            flex
+            flex-wrap
+            gap-2
+            mb-5
+          ">
+
+            <button
+              onClick={() =>
+                setActiveUniverse(null)
+              }
+              className={`
+                px-3
+                py-1.5
+                rounded-full
+                text-xs
+                font-medium
+                transition
+
+                ${
+                  !activeUniverse
+                    ? `
+                      bg-gray-900
+                      text-white
+                    `
+                    : `
+                      bg-gray-100
+                      text-gray-600
+                      hover:bg-gray-200
+                    `
+                }
+              `}
+            >
+              All
+            </button>
+
+            {universes.map((u) => (
+
+              <button
+                key={u.id_universe}
+                onClick={() =>
+                  setActiveUniverse(
+                    u.id_universe
+                  )
+                }
+                className={`
+                  px-3
+                  py-1.5
+                  rounded-full
+                  text-xs
+                  font-medium
+                  transition
+
+                  ${
+                    activeUniverse ===
+                    u.id_universe
+
+                      ? `
+                        bg-gray-900
+                        text-white
+                      `
+
+                      : `
+                        bg-gray-100
+                        text-gray-600
+                        hover:bg-gray-200
+                      `
+                  }
+                `}
+              >
+                {u.label}
+              </button>
+
+            ))}
+
+          </div>
+
+        )}
+
+        {/* ===================================================
+            SEARCH
+        =================================================== */}
+
+        <div className="relative">
+
+          <input
+            value={query}
+            onChange={(e) =>
+              setQuery(
+                e.target.value
+              )
+            }
+            onKeyDown={(e) => {
+
+              if (e.key === "Enter") {
+
+                load(
+                  true,
+                  query
+                );
+              }
+            }}
+            placeholder="
+              Search companies, topics,
+              products, concepts...
+            "
+            className="
+              w-full
+              h-12
+              border
+              border-gray-200
+              rounded-xl
+              px-4
+              text-sm
+              bg-white
+              shadow-sm
+              focus:outline-none
+              focus:ring-2
+              focus:ring-gray-200
+            "
+          />
 
         </div>
 
       </div>
 
-      {/* SEARCH */}
-
-      <input
-        value={query}
-        onChange={(e) =>
-          setQuery(
-            e.target.value
-          )
-        }
-        onKeyDown={(e) => {
-
-          if (e.key === "Enter") {
-
-            load(
-              true,
-              query
-            );
-          }
-        }}
-        placeholder="Search news..."
-        className="
-          w-full
-          border
-          rounded-lg
-          px-4
-          py-3
-          text-sm
-          bg-white
-        "
-      />
-
-      {/* NEWS LIST */}
+      {/* =====================================================
+          NEWS LIST
+      ===================================================== */}
 
       <NewsList
         items={items}
