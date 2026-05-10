@@ -63,9 +63,14 @@ export default function CuratorShell({
 
   const navData = [
     {
-      href: "/feed",
-      label: "Feed",
+      href: "/news",
+      label: "News",
       icon: Home,
+    },
+    {
+      href: "/feed",
+      label: "Analysis",
+      icon: Sparkles,
     },
     {
       href: "/numbers",
