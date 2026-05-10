@@ -42,7 +42,7 @@ def list_contents(
     offset: int = 0,
     topic_id: Optional[str] = None,
     content_type: Optional[str] = None,
-    primary_company_id: Optional[str] = None,
+    id_primary_company: Optional[str] = None,
 ):
 
     params = {
@@ -87,13 +87,13 @@ def list_contents(
     # PRIMARY COMPANY FILTER
     # ============================================================
 
-    if primary_company_id:
+    if id_primary_company:
 
         where_primary_company = """
-            AND c.PRIMARY_COMPANY_ID = @primary_company_id
+            AND c.ID_PRIMARY_COMPANY = @id_primary_company
         """
 
-        params["primary_company_id"] = primary_company_id
+        params["id_primary_company"] = id_primary_company
 
     # ============================================================
     # QUERY
@@ -110,7 +110,7 @@ def list_contents(
             c.CONTENT_TYPE,
 
             -- 🔥 NEW
-            c.PRIMARY_COMPANY_ID,
+            c.ID_PRIMARY_COMPANY,
 
             pc.NAME AS PRIMARY_COMPANY_NAME,
 
@@ -122,7 +122,7 @@ def list_contents(
 
         -- 🔥 NEW
         LEFT JOIN `{TABLE_COMPANY}` pc
-          ON c.PRIMARY_COMPANY_ID = pc.ID_COMPANY
+          ON c.ID_PRIMARY_COMPANY = pc.ID_COMPANY
 
         {join}
 
@@ -162,8 +162,8 @@ def list_contents(
             ),
 
             # 🔥 NEW
-            "primary_company_id": r.get(
-                "PRIMARY_COMPANY_ID"
+            "id_primary_company": r.get(
+                "ID_PRIMARY_COMPANY"
             ),
 
             "primary_company_name": r.get(
@@ -221,20 +221,20 @@ def get_content(id_content: str) -> Dict:
 
     primary_company = None
 
-    primary_company_id = r.get(
-        "primary_company_id"
+    id_primary_company = r.get(
+        "id_primary_company"
     )
 
     companies = r.get("companies") or []
 
-    if primary_company_id:
+    if id_primary_company:
 
         primary_company = next(
             (
                 c for c in companies
                 if (
                     c.get("id_company")
-                    == primary_company_id
+                    == id_primary_company
                 )
             ),
             None
@@ -275,7 +275,7 @@ def get_content(id_content: str) -> Dict:
         # PRIMARY COMPANY
         # ========================================================
 
-        "primary_company_id": primary_company_id,
+        "id_primary_company": id_primary_company,
 
         "primary_company": primary_company,
 
