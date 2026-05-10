@@ -12,6 +12,9 @@ type Props = {
   // 🔥 NEW
   contentType: "ANALYSIS" | "NEWS";
 
+  // 🔥 NEW
+  primaryCompanyId?: string | null;
+
   onCreate: (data: {
     source_id: string;
     text: string;
@@ -24,6 +27,9 @@ export default function StepSource({
 
   // 🔥 NEW
   contentType,
+
+  // 🔥 NEW
+  primaryCompanyId,
 }: Props) {
 
   const [sources, setSources] = useState<Source[]>([]);
@@ -115,6 +121,9 @@ export default function StepSource({
 
         // 🔥 NEW
         content_type: contentType,
+
+        // 🔥 NEW
+        id_primary_company: primaryCompanyId,
       });
 
       alert("Source stockée avec succès");
