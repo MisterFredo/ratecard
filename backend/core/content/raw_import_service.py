@@ -265,15 +265,14 @@ def parse_raw_blocks(text: str) -> List[Dict]:
 # INSERT BIGQUERY
 # ============================================================
 
-# ============================================================
-# INSERT BIGQUERY
-# ============================================================
-
 def insert_raw_rows(
     rows: List[Dict],
     id_source: str,
     import_type: str = "FILE",
     content_type: str = "ANALYSIS",
+
+    # 🔥 NEW
+    id_primary_company: Optional[str] = None,
 ):
 
     print("[RAW_IMPORT] Début insertion BigQuery")
@@ -297,6 +296,9 @@ def insert_raw_rows(
                 # 🔥 NEW
                 "CONTENT_TYPE": content_type,
 
+                # 🔥 NEW
+                "PRIMARY_COMPANY_ID": id_primary_company,
+
                 "SOURCE_TITLE": r["TITLE"],
 
                 "IMPORT_TYPE": import_type,
@@ -310,6 +312,9 @@ def insert_raw_rows(
                 "RAW_TEXT": r["RAW_TEXT"],
 
                 "SOURCE_ID": id_source,
+
+                # 🔥 IMPORTANT
+                "SOURCE_URL": r.get("SOURCE_URL"),
             }
         )
 
@@ -337,14 +342,11 @@ def insert_raw_rows(
 # MAIN SERVICE
 # ============================================================
 
-# ============================================================
-# MAIN SERVICE
-# ============================================================
-
 def import_raw_content(
     text: str,
     id_source: str,
     content_type: str = "ANALYSIS",
+    id_primary_company: Optional[str] = None,
 ):
 
     # 1️⃣ nettoyage
@@ -358,6 +360,7 @@ def import_raw_content(
         rows,
         id_source,
         content_type=content_type,
+        id_primary_company=id_primary_company,
     )
 
     return inserted
@@ -465,6 +468,7 @@ def import_urls_batch(
     urls_text: str,
     id_source: str,
     content_type: str = "ANALYSIS",
+    id_primary_company: Optional[str] = None,
 ):
 
     import time
@@ -552,6 +556,7 @@ def import_urls_batch(
 
             # 🔥 NEW
             content_type=content_type,
+            id_primary_company=id_primary_company,
         )
 
     # ----------------------------------------------------------
