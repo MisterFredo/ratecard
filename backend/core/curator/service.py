@@ -76,7 +76,6 @@ def search(
         ) AS type,
 
         c.primary_company_id,
-        c.primary_company_name,
 
         c.title,
         c.excerpt,
@@ -221,8 +220,6 @@ def latest(
         ) AS type,
 
         c.primary_company_id,
-        c.primary_company_name,
-
         c.title,
         c.excerpt,
         c.published_at,
@@ -284,7 +281,6 @@ def get_item_curator(
         ) AS type,
 
         c.primary_company_id,
-        c.primary_company_name,
 
         c.title,
         c.excerpt,
@@ -531,10 +527,6 @@ def _map_feed_row(r: Dict) -> Dict:
 
         "primary_company_id": r.get(
             "primary_company_id"
-        ),
-
-        "primary_company_name": r.get(
-            "primary_company_name"
         ),
 
         "title": r.get("title"),
