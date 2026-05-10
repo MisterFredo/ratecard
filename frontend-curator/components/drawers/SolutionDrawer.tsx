@@ -138,7 +138,7 @@ export default function SolutionDrawer({ id, onClose }: any) {
           items={items}
           onClickItem={(item) =>
             openRightDrawer(
-              item.type === "news" ? "news" : "analysis",
+              "analysis",
               item.id,
               "silent"
             )
