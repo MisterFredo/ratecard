@@ -114,7 +114,7 @@ def _get_entity_feed(
         ) AS type,
 
         -- 🔥 NEW
-        c.primary_company_id,
+        c.id_primary_company,
         c.title,
         c.excerpt,
 
@@ -196,7 +196,7 @@ def get_company_feed(
                 (
                     c.content_type = 'NEWS'
 
-                    AND c.primary_company_id = @company_id
+                    AND c.id_primary_company = @company_id
                 )
             )
         """,
