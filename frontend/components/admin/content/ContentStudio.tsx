@@ -29,6 +29,14 @@ export default function ContentStudio({ mode, contentId }: Props) {
   const [contentType, setContentType] =
     useState<"ANALYSIS" | "NEWS">("ANALYSIS");
 
+  // 🔥 NEW
+  const [primaryCompanyId, setPrimaryCompanyId] =
+    useState<string | null>(null);
+
+  // 🔥 NEW
+  const [allCompanies, setAllCompanies] =
+    useState<any[]>([]);
+
   // =========================
   // SOURCE
   // =========================
@@ -52,11 +60,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
   const [topics, setTopics] = useState<string[]>([]);
   const [companies, setCompanies] = useState<string[]>([]);
-
-  // 🔥 NEW
-  const [primaryCompanyId, setPrimaryCompanyId] =
-    useState<string | null>(null);
-
   const [concepts, setConcepts] = useState<string[]>([]);
   const [solutions, setSolutions] = useState<string[]>([]);
 
@@ -82,7 +85,38 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
   const [publishMode, setPublishMode] =
     useState<"NOW" | "SCHEDULE">("NOW");
+
   const [publishAt, setPublishAt] = useState("");
+
+  // ============================================================
+  // LOAD COMPANIES
+  // ============================================================
+
+  useEffect(() => {
+
+    async function loadCompanies() {
+
+      try {
+
+        const res = await api.get("/company/list");
+
+        setAllCompanies(
+          res.items || res.companies || []
+        );
+
+      } catch (e) {
+
+        console.error(
+          "Erreur chargement companies",
+          e
+        );
+
+      }
+    }
+
+    loadCompanies();
+
+  }, []);
 
   // ============================================================
   // LOAD EXISTING CONTENT
@@ -97,9 +131,13 @@ export default function ContentStudio({ mode, contentId }: Props) {
       const res = await api.get(`/content/${contentId}`);
       const c = res.content;
 
-      // 🔥 NEW
       setContentType(
         c.content_type || "ANALYSIS"
+      );
+
+      // 🔥 NEW
+      setPrimaryCompanyId(
+        c.id_primary_company || null
       );
 
       setExcerpt(c.excerpt || "");
@@ -121,12 +159,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
       // STRUCTURED IDS
       setTopics((c.topics || []).map((x: any) => x.id_topic));
       setCompanies((c.companies || []).map((x: any) => x.id_company));
-
-      // 🔥 NEW
-      setPrimaryCompanyId(
-        c.id_primary_company || null
-      );
-
       setSolutions((c.solutions || []).map((x: any) => x.id_solution));
       setConcepts((c.concepts || []).map((x: any) => x.id_concept));
 
@@ -145,7 +177,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
     const payload = {
 
-      // 🔥 NEW
       content_type: contentType,
 
       // 🔥 NEW
@@ -196,7 +227,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
     await api.put(`/content/update/${internalContentId}`, {
 
-      // 🔥 NEW
       content_type: contentType,
 
       // 🔥 NEW
@@ -257,8 +287,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
 
       <div className="col-span-2 space-y-8">
 
-        {/* 🔥 NEW */}
-
         <div className="bg-white border rounded p-4">
 
           <div className="text-sm font-medium mb-3">
@@ -284,6 +312,43 @@ export default function ContentStudio({ mode, contentId }: Props) {
               />
               News
             </label>
+
+          </div>
+
+          {/* 🔥 NEW */}
+
+          <div className="mt-4">
+
+            <label className="block text-sm font-medium mb-2">
+              Primary company
+            </label>
+
+            <select
+              value={primaryCompanyId || ""}
+              onChange={(e) =>
+                setPrimaryCompanyId(
+                  e.target.value || null
+                )
+              }
+              className="border rounded px-3 py-2 w-full text-sm"
+            >
+
+              <option value="">
+                Aucune
+              </option>
+
+              {allCompanies.map((c) => (
+
+                <option
+                  key={c.id_company}
+                  value={c.id_company}
+                >
+                  {c.name}
+                </option>
+
+              ))}
+
+            </select>
 
           </div>
 
@@ -377,10 +442,6 @@ export default function ContentStudio({ mode, contentId }: Props) {
               companies={companies}
               concepts={concepts}
               solutions={solutions}
-
-              // 🔥 NEW
-              primaryCompanyId={primaryCompanyId}
-              onPrimaryCompanyChange={setPrimaryCompanyId}
 
               onChange={(d) => {
                 if (d.topics !== undefined) setTopics(d.topics);
