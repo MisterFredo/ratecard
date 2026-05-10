@@ -11,6 +11,14 @@ type RawItem = {
 
   // 🔥 NEW
   content_type?: string | null;
+
+  // 🔥 NEW
+  id_primary_company?: string | null;
+};
+
+type CompanyItem = {
+  id_company: string;
+  name: string;
 };
 
 export default function RawDrawer({
@@ -31,9 +39,38 @@ export default function RawDrawer({
   const [contentType, setContentType] =
     useState<"ANALYSIS" | "NEWS">("ANALYSIS");
 
+  // 🔥 NEW
+  const [primaryCompanyId, setPrimaryCompanyId] =
+    useState("");
+
+  // 🔥 NEW
+  const [companies, setCompanies] = useState<
+    CompanyItem[]
+  >([]);
+
   const [loading, setLoading] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [error, setError] = useState("");
+
+  // 🔥 NEW
+  useEffect(() => {
+
+    async function loadCompanies() {
+      try {
+
+        const res = await api.get("/company/list");
+
+        setCompanies(res.companies || []);
+
+      } catch (e) {
+
+        console.error(e);
+      }
+    }
+
+    loadCompanies();
+
+  }, []);
 
   useEffect(() => {
     if (!raw) return;
@@ -47,13 +84,26 @@ export default function RawDrawer({
       (raw.content_type as "ANALYSIS" | "NEWS") || "ANALYSIS"
     );
 
+    // 🔥 NEW
+    setPrimaryCompanyId(
+      raw.id_primary_company || ""
+    );
+
     setError("");
 
     async function loadDetail() {
       try {
         setLoadingDetail(true);
+
         const res = await api.get(`/content/raw/detail/${raw.id_raw}`);
+
         setRawText(res.raw_text || "");
+
+        // 🔥 NEW
+        setPrimaryCompanyId(
+          res.id_primary_company || ""
+        );
+
       } catch (e) {
         console.error(e);
         setError("Erreur chargement détail");
@@ -78,6 +128,10 @@ export default function RawDrawer({
 
         // 🔥 NEW
         content_type: contentType,
+
+        // 🔥 NEW
+        id_primary_company:
+          primaryCompanyId || null,
       });
 
       onSaved();
@@ -152,6 +206,34 @@ export default function RawDrawer({
           >
             <option value="ANALYSIS">Analysis</option>
             <option value="NEWS">News</option>
+          </select>
+        </div>
+
+        {/* 🔥 PRIMARY COMPANY */}
+        <div className="space-y-2">
+          <label className="text-sm">
+            Primary company
+          </label>
+
+          <select
+            value={primaryCompanyId}
+            onChange={(e) =>
+              setPrimaryCompanyId(e.target.value)
+            }
+            className="w-full border rounded p-2"
+          >
+            <option value="">
+              —
+            </option>
+
+            {companies.map((c) => (
+              <option
+                key={c.id_company}
+                value={c.id_company}
+              >
+                {c.name}
+              </option>
+            ))}
           </select>
         </div>
 
