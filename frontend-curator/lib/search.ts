@@ -21,17 +21,42 @@ type Params = {
 function mapItem(row: any): FeedItem {
   return {
     id: row.id,
+
     type: row.type,
 
+    // 🔥 PRIMARY COMPANY
+    id_primary_company:
+      row.id_primary_company,
+
+    primary_company_name:
+      row.primary_company_name,
+
+    primary_company_logo:
+      row.primary_company_logo,
+
     title: row.title,
+
     excerpt: row.excerpt,
-    published_at: row.published_at,
+
+    // 🔥 NEW
+    content_body:
+      row.content_body,
+
+    published_at:
+      row.published_at,
 
     topics: row.topics,
+
     companies: row.companies,
+
     solutions: row.solutions,
 
-    news_type: row.news_type,
+    concepts: row.concepts,
+
+    badges: row.badges,
+
+    news_type:
+      row.news_type,
   };
 }
 
