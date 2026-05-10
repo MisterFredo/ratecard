@@ -1,0 +1,354 @@
+"use client";
+
+import { useState } from "react";
+
+import {
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Check,
+} from "lucide-react";
+
+import type {
+  FeedItem,
+  FeedBadge,
+} from "@/types/feed";
+
+/* ========================================================= */
+
+const GCS_BASE_URL =
+  process.env
+    .NEXT_PUBLIC_GCS_BASE_URL || "";
+
+/* ========================================================= */
+
+type Props = {
+  item: FeedItem;
+
+  selected?: boolean;
+
+  onToggleSelect: (
+    item: FeedItem
+  ) => void;
+
+  onClickBadge?: (
+    badge: FeedBadge
+  ) => void;
+};
+
+/* ========================================================= */
+
+export default function NewsCard({
+  item,
+  selected = false,
+  onToggleSelect,
+  onClickBadge,
+}: Props) {
+
+  const [open, setOpen] =
+    useState(false);
+
+  /* =========================================================
+     TOPIC BADGES ONLY
+  ========================================================= */
+
+  const topicBadges =
+    (item.badges || []).filter(
+      (b) => b.type === "topic"
+    );
+
+  /* =========================================================
+     LOGO
+  ========================================================= */
+
+  const logoUrl =
+    item.primary_company_logo
+      ? `${GCS_BASE_URL}/${item.primary_company_logo}`
+      : null;
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
+
+  return (
+
+    <div
+      className="
+        bg-white
+        border
+        rounded-xl
+        overflow-hidden
+      "
+    >
+
+      {/* HEADER */}
+
+      <div
+        className="
+          px-4
+          py-4
+          flex
+          items-start
+          gap-4
+        "
+      >
+
+        {/* LOGO */}
+
+        <div
+          className="
+            w-12
+            h-12
+            rounded-lg
+            border
+            bg-white
+            shrink-0
+            overflow-hidden
+            flex
+            items-center
+            justify-center
+          "
+        >
+
+          {logoUrl ? (
+
+            <img
+              src={logoUrl}
+              alt={
+                item.primary_company_name ||
+                ""
+              }
+              className="
+                w-full
+                h-full
+                object-contain
+              "
+            />
+
+          ) : (
+
+            <div
+              className="
+                text-xs
+                text-gray-400
+              "
+            >
+              —
+            </div>
+
+          )}
+
+        </div>
+
+        {/* CONTENT */}
+
+        <div className="flex-1 min-w-0">
+
+          {/* TOP */}
+
+          <div className="
+            flex
+            items-start
+            justify-between
+            gap-4
+          ">
+
+            <div className="min-w-0">
+
+              {/* TITLE */}
+
+              <div
+                className="
+                  text-sm
+                  font-semibold
+                  text-gray-900
+                  leading-5
+                "
+              >
+                {item.title}
+              </div>
+
+              {/* COMPANY */}
+
+              <div
+                className="
+                  text-xs
+                  text-gray-500
+                  mt-1
+                "
+              >
+                {item.primary_company_name ||
+                  "Unknown company"}
+              </div>
+
+            </div>
+
+            {/* ACTIONS */}
+
+            <div className="
+              flex
+              items-center
+              gap-2
+              shrink-0
+            ">
+
+              {/* SELECT */}
+
+              <button
+                onClick={() =>
+                  onToggleSelect(item)
+                }
+                className={`
+                  w-8
+                  h-8
+                  rounded-lg
+                  border
+                  flex
+                  items-center
+                  justify-center
+                  transition
+                  ${
+                    selected
+                      ? "bg-emerald-600 text-white border-emerald-600"
+                      : "bg-white text-gray-700"
+                  }
+                `}
+              >
+
+                {selected ? (
+                  <Check size={16} />
+                ) : (
+                  <Plus size={16} />
+                )}
+
+              </button>
+
+              {/* EXPAND */}
+
+              <button
+                onClick={() =>
+                  setOpen(!open)
+                }
+                className="
+                  w-8
+                  h-8
+                  rounded-lg
+                  border
+                  flex
+                  items-center
+                  justify-center
+                  bg-white
+                "
+              >
+
+                {open ? (
+                  <ChevronUp size={16} />
+                ) : (
+                  <ChevronDown size={16} />
+                )}
+
+              </button>
+
+            </div>
+
+          </div>
+
+          {/* TOPICS */}
+
+          {topicBadges.length > 0 && (
+
+            <div className="
+              flex
+              flex-wrap
+              gap-2
+              mt-3
+            ">
+
+              {topicBadges.map(
+                (badge, idx) => (
+
+                  <button
+                    key={`${badge.label}-${idx}`}
+                    onClick={() =>
+                      onClickBadge?.(
+                        badge
+                      )
+                    }
+                    className="
+                      px-2
+                      py-1
+                      rounded-full
+                      text-xs
+                      bg-gray-100
+                      hover:bg-gray-200
+                      transition
+                    "
+                  >
+                    {badge.label}
+                  </button>
+
+                )
+              )}
+
+            </div>
+
+          )}
+
+        </div>
+
+      </div>
+
+      {/* EXPANDED */}
+
+      {open && (
+
+        <div
+          className="
+            border-t
+            px-4
+            py-4
+            space-y-4
+            bg-gray-50
+          "
+        >
+
+          {/* EXCERPT */}
+
+          {item.excerpt && (
+
+            <div
+              className="
+                text-sm
+                text-gray-700
+                leading-6
+              "
+            >
+              {item.excerpt}
+            </div>
+
+          )}
+
+          {/* CONTENT */}
+
+          {item.content_body && (
+
+            <div
+              className="
+                text-sm
+                text-gray-600
+                leading-7
+                whitespace-pre-wrap
+              "
+            >
+              {item.content_body}
+            </div>
+
+          )}
+
+        </div>
+
+      )}
+
+    </div>
+  );
+}
