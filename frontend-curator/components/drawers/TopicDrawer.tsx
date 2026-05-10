@@ -137,7 +137,7 @@ export default function TopicDrawer({ id, onClose }: any) {
           items={items}
           onClickItem={(item) =>
             openRightDrawer(
-              item.type === "news" ? "news" : "analysis",
+              "analysis",
               item.id,
               "silent"
             )
