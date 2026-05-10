@@ -42,6 +42,7 @@ def list_contents(
     offset: int = 0,
     topic_id: Optional[str] = None,
     content_type: Optional[str] = None,
+    primary_company_id: Optional[str] = None,
 ):
 
     params = {
@@ -50,8 +51,10 @@ def list_contents(
     }
 
     join = ""
+
     where_topic = ""
     where_content_type = ""
+    where_primary_company = ""
 
     # ============================================================
     # TOPIC FILTER
@@ -59,7 +62,7 @@ def list_contents(
 
     if topic_id:
 
-        join = f"""
+        join += f"""
             JOIN `{TABLE_CONTENT_TOPIC}` ct
               ON c.ID_CONTENT = ct.ID_CONTENT
         """
@@ -81,19 +84,45 @@ def list_contents(
         params["content_type"] = content_type
 
     # ============================================================
+    # PRIMARY COMPANY FILTER
+    # ============================================================
+
+    if primary_company_id:
+
+        where_primary_company = """
+            AND c.PRIMARY_COMPANY_ID = @primary_company_id
+        """
+
+        params["primary_company_id"] = primary_company_id
+
+    # ============================================================
     # QUERY
     # ============================================================
 
     sql = f"""
         SELECT
             c.ID_CONTENT,
+
             c.TITLE,
+
             c.EXCERPT,
+
             c.CONTENT_TYPE,
+
+            -- 🔥 NEW
+            c.PRIMARY_COMPANY_ID,
+
+            pc.NAME AS PRIMARY_COMPANY_NAME,
+
             c.SIGNAL_ANALYTIQUE,
+
             c.PUBLISHED_AT
 
         FROM `{TABLE_CONTENT}` c
+
+        -- 🔥 NEW
+        LEFT JOIN `{TABLE_COMPANY}` pc
+          ON c.PRIMARY_COMPANY_ID = pc.ID_COMPANY
 
         {join}
 
@@ -102,7 +131,10 @@ def list_contents(
             AND c.IS_ACTIVE = TRUE
 
             {where_topic}
+
             {where_content_type}
+
+            {where_primary_company}
 
         ORDER BY c.PUBLISHED_AT DESC
 
@@ -127,6 +159,15 @@ def list_contents(
             "content_type": (
                 r.get("CONTENT_TYPE")
                 or "ANALYSIS"
+            ),
+
+            # 🔥 NEW
+            "primary_company_id": r.get(
+                "PRIMARY_COMPANY_ID"
+            ),
+
+            "primary_company_name": r.get(
+                "PRIMARY_COMPANY_NAME"
             ),
 
             # 🔥 utilisé rapidement côté FE
@@ -175,6 +216,31 @@ def get_content(id_content: str) -> Dict:
     )
 
     # ============================================================
+    # PRIMARY COMPANY
+    # ============================================================
+
+    primary_company = None
+
+    primary_company_id = r.get(
+        "primary_company_id"
+    )
+
+    companies = r.get("companies") or []
+
+    if primary_company_id:
+
+        primary_company = next(
+            (
+                c for c in companies
+                if (
+                    c.get("id_company")
+                    == primary_company_id
+                )
+            ),
+            None
+        )
+
+    # ============================================================
     # RETURN
     # ============================================================
 
@@ -206,16 +272,30 @@ def get_content(id_content: str) -> Dict:
         "is_analysis": content_type == "ANALYSIS",
 
         # ========================================================
+        # PRIMARY COMPANY
+        # ========================================================
+
+        "primary_company_id": primary_company_id,
+
+        "primary_company": primary_company,
+
+        # ========================================================
         # ANALYSIS
         # ========================================================
 
         "signal": r.get("signal_analytique"),
 
-        "mecanique_expliquee": r.get("mecanique_expliquee"),
+        "mecanique_expliquee": r.get(
+            "mecanique_expliquee"
+        ),
 
-        "enjeu_strategique": r.get("enjeu_strategique"),
+        "enjeu_strategique": r.get(
+            "enjeu_strategique"
+        ),
 
-        "point_de_friction": r.get("point_de_friction"),
+        "point_de_friction": r.get(
+            "point_de_friction"
+        ),
 
         # ========================================================
         # RAW EXTRACTIONS
@@ -233,7 +313,7 @@ def get_content(id_content: str) -> Dict:
 
         "topics": r.get("topics") or [],
 
-        "companies": r.get("companies") or [],
+        "companies": companies,
 
         "solutions": r.get("solutions") or [],
 
