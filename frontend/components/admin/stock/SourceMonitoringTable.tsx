@@ -6,6 +6,9 @@ type Source = {
   LAST_ARTICLE_TITLE?: string;
   LAST_IMPORT_AT?: string;
   NB_IMPORTED_7D?: number;
+
+  // 🔥 NEW
+  CONTENT_TYPE?: string;
 };
 
 export default function SourceMonitoringTable({
@@ -18,6 +21,10 @@ export default function SourceMonitoringTable({
       <thead className="bg-gray-50 border-b">
         <tr>
           <th className="text-left p-3">Source</th>
+
+          {/* 🔥 NEW */}
+          <th className="text-left p-3">Type</th>
+
           <th className="text-left p-3">Last article</th>
           <th className="text-left p-3">Date</th>
           <th className="text-left p-3">Imports (7j)</th>
@@ -28,7 +35,14 @@ export default function SourceMonitoringTable({
       <tbody>
         {sources.map((s) => (
           <tr key={s.SOURCE_ID} className="border-b hover:bg-gray-50">
-            <td className="p-3 font-medium">{s.SOURCE_NAME}</td>
+            <td className="p-3 font-medium">
+              {s.SOURCE_NAME}
+            </td>
+
+            {/* 🔥 NEW */}
+            <td className="p-3">
+              {s.CONTENT_TYPE || "-"}
+            </td>
 
             <td className="p-3">
               {s.LAST_ARTICLE_URL ? (
@@ -44,9 +58,13 @@ export default function SourceMonitoringTable({
               )}
             </td>
 
-            <td className="p-3">{s.LAST_ARTICLE_DATE}</td>
+            <td className="p-3">
+              {s.LAST_ARTICLE_DATE}
+            </td>
 
-            <td className="p-3">{s.NB_IMPORTED_7D || 0}</td>
+            <td className="p-3">
+              {s.NB_IMPORTED_7D || 0}
+            </td>
 
             <td className="p-3 text-gray-500 text-xs">
               {s.LAST_IMPORT_AT}
