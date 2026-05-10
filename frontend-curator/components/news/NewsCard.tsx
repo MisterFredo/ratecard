@@ -56,22 +56,24 @@ export default function NewsCard({
     );
 
   /* =========================================================
-     COMPANY
+     PRIMARY COMPANY
   ========================================================= */
 
   const primaryCompany =
-    item.companies?.[0];
+    item.companies?.find(
+      (c: any) =>
+        c.id_company ===
+        item.id_primary_company
+    ) || item.companies?.[0];
 
   /* =========================================================
      LOGO
   ========================================================= */
 
-  const logoPath =
-    primaryCompany?.media_logo_rectangle_id;
-
   const logoUrl =
-    logoPath
-      ? `${GCS_BASE_URL}/${logoPath}`
+    primaryCompany
+      ?.media_logo_rectangle_id
+      ? `${GCS_BASE_URL}/${primaryCompany.media_logo_rectangle_id}`
       : null;
 
   /* =========================================================
@@ -108,7 +110,7 @@ export default function NewsCard({
             flex
             flex-col
             items-center
-            gap-2
+            gap-3
             shrink-0
           "
         >
@@ -117,16 +119,15 @@ export default function NewsCard({
 
           <div
             className="
-              w-16
-              h-16
-              rounded-xl
+              w-20
+              h-20
+              rounded-2xl
               border
               bg-white
               overflow-hidden
               flex
               items-center
               justify-center
-              p-2
             "
           >
 
@@ -139,8 +140,8 @@ export default function NewsCard({
                   ""
                 }
                 className="
-                  max-w-full
-                  max-h-full
+                  w-full
+                  h-full
                   object-contain
                 "
               />
@@ -160,7 +161,7 @@ export default function NewsCard({
 
           </div>
 
-          {/* CHECKBOX */}
+          {/* SELECT */}
 
           <input
             type="checkbox"
@@ -168,14 +169,8 @@ export default function NewsCard({
             onChange={() =>
               onToggleSelect(item)
             }
-            className="mt-2"
+            className="mt-1"
           />
-
-            {selected && (
-              <Check size={14} />
-            )}
-
-          </button>
 
         </div>
 
@@ -185,12 +180,14 @@ export default function NewsCard({
 
           {/* TOP */}
 
-          <div className="
-            flex
-            items-start
-            justify-between
-            gap-4
-          ">
+          <div
+            className="
+              flex
+              items-start
+              justify-between
+              gap-4
+            "
+          >
 
             <div className="min-w-0">
 
@@ -198,10 +195,10 @@ export default function NewsCard({
 
               <div
                 className="
-                  text-sm
+                  text-2xl
                   font-semibold
                   text-gray-900
-                  leading-5
+                  leading-tight
                 "
               >
                 {item.title}
@@ -211,13 +208,12 @@ export default function NewsCard({
 
               <div
                 className="
-                  text-xs
+                  text-lg
                   text-gray-500
-                  mt-1
+                  mt-2
                 "
               >
                 {primaryCompany?.name ||
-                  item.primary_company_name ||
                   "Unknown company"}
               </div>
 
@@ -256,12 +252,14 @@ export default function NewsCard({
 
           {topicBadges.length > 0 && (
 
-            <div className="
-              flex
-              flex-wrap
-              gap-2
-              mt-3
-            ">
+            <div
+              className="
+                flex
+                flex-wrap
+                gap-2
+                mt-4
+              "
+            >
 
               {topicBadges.map(
                 (badge, idx) => (
@@ -274,10 +272,10 @@ export default function NewsCard({
                       )
                     }
                     className="
-                      px-2
-                      py-1
+                      px-3
+                      py-1.5
                       rounded-full
-                      text-xs
+                      text-sm
                       bg-gray-100
                       hover:bg-gray-200
                       transition
