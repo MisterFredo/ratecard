@@ -197,7 +197,9 @@ export default function FeedPage() {
             content_type:
               activeType === "all"
                 ? undefined
-                : activeType.toUpperCase(),
+                : activeType === "news"
+                  ? "NEWS"
+                  : "ANALYSIS",
           })
 
         : await getLatestCurator({
@@ -211,7 +213,9 @@ export default function FeedPage() {
             content_type:
               activeType === "all"
                 ? undefined
-                : activeType.toUpperCase(),
+                : activeType === "news"
+                  ? "NEWS"
+                  : "ANALYSIS",
           });
 
       if (reset) {
