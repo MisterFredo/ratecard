@@ -306,7 +306,7 @@ export default function FeedPage() {
 
         <div>
           <h1 className="
-            text-4xl
+            text-2xl
             font-semibold
             tracking-tight
             text-[#111827]
