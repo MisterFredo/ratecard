@@ -47,7 +47,9 @@ export default function MatchingPage() {
 
   const [processing, setProcessing] = useState(false);
 
-  const [syncing, setSyncing] = useState(false);
+  const [syncingFeed, setSyncingFeed] = useState(false);
+
+  const [syncingNumbers, setSyncingNumbers] = useState(false);
 
   /* =========================================================
      LOAD
@@ -465,31 +467,62 @@ export default function MatchingPage() {
   }
 
   /* =========================================================
-     SYNC
+     SYNC FEED
   ========================================================= */
 
   async function syncFeed() {
 
     try {
 
-      setSyncing(true);
+      setSyncingFeed(true);
 
       await api.post(
         "/content/sync-all",
         {}
       );
 
-      alert("Sync terminé");
+      alert("SYNC FEED terminé");
 
     } catch (e) {
 
       console.error(e);
 
-      alert("Erreur sync");
+      alert("Erreur sync feed");
 
     } finally {
 
-      setSyncing(false);
+      setSyncingFeed(false);
+
+    }
+
+  }
+
+  /* =========================================================
+     SYNC NUMBERS
+  ========================================================= */
+
+  async function syncNumbers() {
+
+    try {
+
+      setSyncingNumbers(true);
+
+      await api.post(
+        "/content/sync-numbers",
+        {}
+      );
+
+      alert("SYNC NUMBERS terminé");
+
+    } catch (e) {
+
+      console.error(e);
+
+      alert("Erreur sync numbers");
+
+    } finally {
+
+      setSyncingNumbers(false);
 
     }
 
@@ -520,18 +553,26 @@ export default function MatchingPage() {
         <div>
 
           <h1 className="text-3xl font-semibold">
-            Matching LLM
+            Matching & Sync
           </h1>
 
           <p className="text-sm text-gray-500 mt-1">
-            Gestion des alias LLM et synchronisation feed
+            Gestion des alias, projections feed et backlog KPI
           </p>
 
         </div>
 
+      </div>
+
+      {/* =====================================================
+          SYNC ACTIONS
+      ===================================================== */}
+
+      <div className="flex gap-3">
+
         <button
           onClick={syncFeed}
-          disabled={syncing}
+          disabled={syncingFeed}
           className="
             bg-black
             text-white
@@ -540,9 +581,25 @@ export default function MatchingPage() {
             rounded
           "
         >
-          {syncing
-            ? "Synchronisation..."
+          {syncingFeed
+            ? "SYNC FEED..."
             : "SYNC FEED"}
+        </button>
+
+        <button
+          onClick={syncNumbers}
+          disabled={syncingNumbers}
+          className="
+            bg-blue-700
+            text-white
+            px-4
+            py-2
+            rounded
+          "
+        >
+          {syncingNumbers
+            ? "SYNC NUMBERS..."
+            : "SYNC NUMBERS"}
         </button>
 
       </div>
@@ -588,7 +645,7 @@ export default function MatchingPage() {
       </div>
 
       {/* =====================================================
-          ACTIONS
+          MATCHING ACTIONS
       ===================================================== */}
 
       <div className="flex gap-2">
