@@ -46,6 +46,7 @@ from core.content.sync_service import (
     sync_content,
     bulk_sync_contents,
     sync_all_published_contents,
+    sync_all_numbers,
 )
 
 from core.content.ai import generate_summary
@@ -959,3 +960,19 @@ def sync_all_published_route():
             400,
             str(e)
         )
+
+@router.post("/sync-numbers")
+def sync_numbers_route():
+
+    try:
+
+        result = sync_all_numbers()
+
+        return {
+            "status": "ok",
+            **result
+        }
+
+    except Exception as e:
+
+        raise HTTPException(400, str(e))
