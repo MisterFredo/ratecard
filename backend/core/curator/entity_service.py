@@ -503,6 +503,56 @@ def get_solution_view(
     }
 
 # ============================================================
+# DEDUPE HELPERS
+# ============================================================
+
+# ============================================================
+# DEDUPE HELPERS
+# ============================================================
+
+def _dedupe_entities(
+    items: List[Dict],
+    id_key: str,
+    label_key: str,
+) -> List[Dict]:
+
+    if not items:
+        return []
+
+    seen = set()
+
+    cleaned = []
+
+    for item in items:
+
+        if not item:
+            continue
+
+        unique_id = item.get(id_key)
+
+        if unique_id:
+
+            key = f"{id_key}:{unique_id}"
+
+        else:
+
+            key = (
+                item.get(label_key, "")
+                .strip()
+                .lower()
+            )
+
+        if key in seen:
+            continue
+
+        seen.add(key)
+
+        cleaned.append(item)
+
+    return cleaned
+
+
+# ============================================================
 # MAPPER
 # ============================================================
 
@@ -540,13 +590,33 @@ def _map_feed_row(r: Dict):
         # ENTITIES
         # ========================================================
 
-        "topics": r.get("topics") or [],
+        "topics": _dedupe_entities(
+            r.get("topics") or [],
+            "id_topic",
+            "label",
+        ),
 
-        "companies": r.get("companies") or [],
+        "companies": _dedupe_entities(
+            r.get("companies") or [],
+            "id_company",
+            "name",
+        ),
 
-        "solutions": r.get("solutions") or [],
+        "solutions": _dedupe_entities(
+            r.get("solutions") or [],
+            "id_solution",
+            "name",
+        ),
 
-        "concepts": r.get("concepts") or [],
+        "concepts": _dedupe_entities(
+            r.get("concepts") or [],
+            "id_concept",
+            "label",
+        ),
 
-        "universes": r.get("universes") or [],
+        "universes": _dedupe_entities(
+            r.get("universes") or [],
+            "id_universe",
+            "label",
+        ),
     }
