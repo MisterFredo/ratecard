@@ -42,10 +42,6 @@ def build_content_type_filter() -> str:
 # SEARCH
 # ============================================================
 
-# ============================================================
-# SEARCH
-# ============================================================
-
 def search(
     q: str,
     limit: int = 20,
@@ -139,13 +135,8 @@ def search(
                 WHEN EXISTS (
                     SELECT 1
                     FROM UNNEST(c.topics) t
-                    WHERE LOWER(
-                        COALESCE(
-                            t.label,
-                            t.name
-                        )
-                    )
-                    LIKE LOWER(CONCAT('%', @query, '%'))
+                    WHERE LOWER(t.label)
+                        LIKE LOWER(CONCAT('%', @query, '%'))
                 )
                 THEN 2
 
@@ -181,13 +172,8 @@ def search(
         OR EXISTS (
             SELECT 1
             FROM UNNEST(c.topics) t
-            WHERE LOWER(
-                COALESCE(
-                    t.label,
-                    t.name
-                )
-            )
-            LIKE LOWER(CONCAT('%', @query, '%'))
+            WHERE LOWER(t.label)
+                LIKE LOWER(CONCAT('%', @query, '%'))
         )
     )
 
@@ -219,8 +205,6 @@ def search(
     rows = query_bq(sql, params)
 
     return [_map_feed_row(r) for r in rows]
-
-
 # ============================================================
 # LATEST
 # ============================================================
