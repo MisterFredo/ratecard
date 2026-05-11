@@ -45,6 +45,7 @@ from core.content.service import (
 from core.content.sync_service import (
     sync_content,
     bulk_sync_contents,
+    sync_all_published_contents,
 )
 
 from core.content.ai import generate_summary
@@ -926,6 +927,33 @@ def bulk_publish_route(
         }
 
     except Exception as e:
+
+        raise HTTPException(
+            400,
+            str(e)
+        )
+
+# ============================================================
+# FULL SYNC — ALL PUBLISHED CONTENTS
+# ============================================================
+
+@router.post("/sync-all-published")
+def sync_all_published_route():
+
+    try:
+
+        result = sync_all_published_contents()
+
+        return {
+            "status": "ok",
+            **result
+        }
+
+    except Exception as e:
+
+        logger.exception(
+            "Erreur full sync published"
+        )
 
         raise HTTPException(
             400,
