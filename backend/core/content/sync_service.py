@@ -167,6 +167,97 @@ def sync_content_solutions(id_content: str):
     )
 
 # ============================================================
+# SYNC ALL NUMBERS
+# ============================================================
+
+def sync_all_numbers():
+
+    print(
+        "🚀 GLOBAL NUMBERS SYNC START"
+    )
+
+    # ========================================================
+    # FETCH PUBLISHED CONTENTS
+    # ========================================================
+
+    rows = query_bq(
+        f"""
+        SELECT ID_CONTENT
+
+        FROM `{TABLE_CONTENT}`
+
+        WHERE STATUS = 'PUBLISHED'
+        """
+    )
+
+    if not rows:
+
+        return {
+            "total": 0,
+            "synced": 0,
+            "errors": 0,
+            "results": [],
+        }
+
+    results = []
+
+    # ========================================================
+    # LOOP
+    # ========================================================
+
+    for row in rows:
+
+        id_content = row["ID_CONTENT"]
+
+        try:
+
+            result = sync_content_numbers(
+                id_content=id_content,
+            )
+
+            results.append({
+                "id_content": id_content,
+                "status": "ok",
+                **result,
+            })
+
+        except Exception as e:
+
+            results.append({
+                "id_content": id_content,
+                "status": "error",
+                "error": str(e),
+            })
+
+    # ========================================================
+    # SUMMARY
+    # ========================================================
+
+    synced_count = len([
+        r for r in results
+        if r["status"] == "ok"
+    ])
+
+    error_count = len([
+        r for r in results
+        if r["status"] == "error"
+    ])
+
+    output = {
+        "total": len(rows),
+        "synced": synced_count,
+        "errors": error_count,
+        "results": results,
+    }
+
+    print(
+        "✅ GLOBAL NUMBERS SYNC DONE:",
+        output,
+    )
+
+    return output
+
+# ============================================================
 # REBUILD ENRICHED ROW
 # ============================================================
 
