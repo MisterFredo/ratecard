@@ -3,7 +3,10 @@
 import FeedHeader from "@/components/feed/FeedHeader";
 import FeedList from "@/components/feed/FeedList";
 
-import type { FeedItem, FeedBadge } from "@/types/feed";
+import type {
+  FeedItem,
+  FeedBadge,
+} from "@/types/feed";
 
 /* ========================================================= */
 
@@ -14,28 +17,56 @@ type Universe = {
 
 type Props = {
   query: string;
-  setQuery: (q: string) => void;
 
-  // ✅ signature finale propre
-  onSearch: (q: string) => void;
+  setQuery: (
+    q: string
+  ) => void;
+
+  onSearch: (
+    q: string
+  ) => void;
 
   universes: Universe[];
-  selectedUniverse: string | null;
-  onSelectUniverse: (id: string | null) => void;
+
+  selectedUniverse:
+    string | null;
+
+  onSelectUniverse: (
+    id: string | null
+  ) => void;
+
+  selectedType: string;
+
+  onSelectType: (
+    type: string
+  ) => void;
 
   items: FeedItem[];
+
   total: number;
+
   loading: boolean;
+
   hasMore: boolean;
 
   onLoadMore: () => void;
-  onSelectItem: (item: FeedItem) => void;
-  onClickBadge: (badge: FeedBadge) => void;
 
-  loadingItemId: string | null;
+  onSelectItem: (
+    item: FeedItem
+  ) => void;
+
+  onClickBadge: (
+    badge: FeedBadge
+  ) => void;
+
+  loadingItemId:
+    string | null;
 
   selectedIds: string[];
-  onToggleSelect: (item: FeedItem) => void;
+
+  onToggleSelect: (
+    item: FeedItem
+  ) => void;
 };
 
 /* ========================================================= */
@@ -48,6 +79,9 @@ export default function FeedExplorer({
   universes,
   selectedUniverse,
   onSelectUniverse,
+
+  selectedType,
+  onSelectType,
 
   items,
   total,
@@ -63,22 +97,42 @@ export default function FeedExplorer({
   selectedIds,
   onToggleSelect,
 }: Props) {
+
   return (
-    <div className="space-y-8">
+
+    <div className="
+      space-y-8
+    ">
 
       {/* =====================================================
          HEADER
       ===================================================== */}
+
       <FeedHeader
         query={query}
         setQuery={setQuery}
 
-        // 🔥 IMPORTANT → on passe bien une fonction avec paramètre
-        onSearch={(q) => onSearch(q)}
+        onSearch={(q) =>
+          onSearch(q)
+        }
 
         universes={universes}
-        selectedUniverse={selectedUniverse}
-        onSelectUniverse={onSelectUniverse}
+
+        selectedUniverse={
+          selectedUniverse
+        }
+
+        onSelectUniverse={
+          onSelectUniverse
+        }
+
+        selectedType={
+          selectedType
+        }
+
+        onSelectType={
+          onSelectType
+        }
 
         loading={loading}
       />
@@ -86,23 +140,43 @@ export default function FeedExplorer({
       {/* =====================================================
          LIST
       ===================================================== */}
+
       <FeedList
         title="Results"
+
         items={items}
+
         total={total}
+
         loading={loading}
+
         hasMore={hasMore}
 
-        // 🔥 évite double call pendant loading
-        onLoadMore={!loading ? onLoadMore : () => {}}
+        onLoadMore={
+          !loading
+            ? onLoadMore
+            : () => {}
+        }
 
-        onSelectItem={onSelectItem}
-        onClickBadge={onClickBadge}
+        onSelectItem={
+          onSelectItem
+        }
 
-        loadingItemId={loadingItemId}
+        onClickBadge={
+          onClickBadge
+        }
 
-        selectedIds={selectedIds}
-        onToggleSelect={onToggleSelect}
+        loadingItemId={
+          loadingItemId
+        }
+
+        selectedIds={
+          selectedIds
+        }
+
+        onToggleSelect={
+          onToggleSelect
+        }
       />
 
     </div>
