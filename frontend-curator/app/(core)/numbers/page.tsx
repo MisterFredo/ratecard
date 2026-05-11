@@ -216,53 +216,82 @@ export default function NumbersPage() {
   return (
 
     <div className="
-      bg-[#F5F6F8]
-      rounded-2xl
-      border
-      border-gray-200
-      p-6
+      grid
+      grid-cols-1
+      gap-8
+      items-start
     ">
 
       <div className="
-        bg-white
-        rounded-2xl
-        border
-        border-gray-200
-        p-6
+        space-y-6
       ">
 
-        <div className="space-y-8">
+        {/* ===================================================
+            TITLE
+        =================================================== */}
 
-          {/* =================================================
-              HEADER
-          ================================================= */}
+        <div>
 
-          <div>
-            <h1 className="
-              text-4xl
-              font-semibold
-              tracking-tight
-              text-[#111827]
-            ">
-              Numbers
-            </h1>
-          </div>
+          <h1 className="
+            text-2xl
+            font-semibold
+            tracking-tight
+            text-[#111827]
+          ">
+            Numbers
+          </h1>
 
-          {/* =================================================
-              UNIVERSE FILTERS
-          ================================================= */}
+        </div>
 
-          {universes.length > 0 && (
+        {/* ===================================================
+            UNIVERSE FILTERS
+        =================================================== */}
 
-            <div className="
-              flex
-              flex-wrap
-              gap-2
-            ">
+        {universes.length > 0 && (
+
+          <div className="
+            flex
+            flex-wrap
+            gap-2
+          ">
+
+            <button
+              onClick={() =>
+                setActiveUniverse(null)
+              }
+              className={`
+                px-3
+                py-1.5
+                rounded-full
+                text-xs
+                font-medium
+                transition
+
+                ${
+                  !activeUniverse
+                    ? `
+                      bg-gray-900
+                      text-white
+                    `
+                    : `
+                      bg-gray-100
+                      text-gray-600
+                      hover:bg-gray-200
+                    `
+                }
+              `}
+            >
+              Tous
+            </button>
+
+            {universes.map((u) => (
 
               <button
+                key={u.id_universe}
                 onClick={() =>
-                  setActiveUniverse(null)
+                  setActiveUniverse(
+                    u.id_universe
+                  )
                 }
                 className={`
                   px-3
@@ -273,11 +302,14 @@ export default function NumbersPage() {
                   transition
 
                   ${
-                    !activeUniverse
+                    activeUniverse ===
+                    u.id_universe
+
                       ? `
                         bg-gray-900
                         text-white
                       `
+
                       : `
                         bg-gray-100
                         text-gray-600
@@ -286,177 +318,147 @@ export default function NumbersPage() {
                   }
                 `}
               >
-                All
+                {u.label}
               </button>
 
-              {universes.map((u) => (
+            ))}
 
-                <button
-                  key={u.id_universe}
-                  onClick={() =>
-                    setActiveUniverse(
-                      u.id_universe
-                    )
-                  }
-                  className={`
-                    px-3
-                    py-1.5
-                    rounded-full
-                    text-xs
-                    font-medium
-                    transition
+          </div>
 
-                    ${
-                      activeUniverse ===
-                      u.id_universe
+        )}
 
-                        ? `
-                          bg-gray-900
-                          text-white
-                        `
+        {/* ===================================================
+            SEARCH
+        =================================================== */}
 
-                        : `
-                          bg-gray-100
-                          text-gray-600
-                          hover:bg-gray-200
-                        `
-                    }
-                  `}
-                >
-                  {u.label}
-                </button>
+        <NumbersHeader
+          query={query}
+          setQuery={setQuery}
+          onSearch={(q) =>
+            load(q)
+          }
+        />
 
-              ))}
+        {/* ===================================================
+            LOADING
+        =================================================== */}
 
-            </div>
+        {loading && (
+          <p className="
+            text-sm
+            text-gray-400
+          ">
+            Chargement des chiffres...
+          </p>
+        )}
 
-          )}
+        {/* ===================================================
+            EMPTY
+        =================================================== */}
 
-          {/* =================================================
-              SEARCH
-          ================================================= */}
-
-          <NumbersHeader
-            query={query}
-            setQuery={setQuery}
-            onSearch={(q) =>
-              load(q)
-            }
-          />
-
-          {/* =================================================
-              LOADING
-          ================================================= */}
-
-          {loading && (
-            <p className="text-sm text-gray-400">
-              Chargement des chiffres...
+        {!loading &&
+          !hasContent && (
+            <p className="
+              text-sm
+              text-gray-400
+            ">
+              Aucun chiffre disponible.
             </p>
           )}
 
-          {/* =================================================
-              EMPTY
-          ================================================= */}
+        {/* ===================================================
+            CONTENT
+        =================================================== */}
 
-          {!loading &&
-            !hasContent && (
-              <p className="text-sm text-gray-400">
-                Aucun chiffre
-                disponible.
-              </p>
-            )}
+        {!loading &&
+          hasContent &&
+          Object.entries(
+            grouped
+          ).map(
+            ([
+              type,
+              groupItems,
+            ]) => (
+              <section
+                key={type}
+                className="space-y-4"
+              >
 
-          {/* =================================================
-              CONTENT
-          ================================================= */}
+                <div className="
+                  flex
+                  items-center
+                  justify-between
+                ">
 
-          {!loading &&
-            hasContent &&
-            Object.entries(
-              grouped
-            ).map(
-              ([
-                type,
-                groupItems,
-              ]) => (
-                <section
-                  key={type}
-                  className="space-y-4"
+                  <h2 className="
+                    text-xs
+                    font-semibold
+                    uppercase
+                    tracking-wide
+                    text-gray-400
+                  ">
+                    {type}
+                  </h2>
+
+                  <span className="
+                    text-xs
+                    text-gray-300
+                  ">
+                    {
+                      groupItems.length
+                    }
+                  </span>
+
+                </div>
+
+                <div
+                  className="
+                    grid
+                    grid-cols-2
+                    sm:grid-cols-3
+                    md:grid-cols-4
+                    lg:grid-cols-5
+                    gap-3
+                  "
                 >
 
-                  <div className="
-                    flex
-                    items-center
-                    justify-between
-                  ">
-                    <h2 className="
-                      text-xs
-                      font-semibold
-                      uppercase
-                      tracking-wide
-                      text-gray-400
-                    ">
-                      {type}
-                    </h2>
+                  {groupItems.map(
+                    (item) => {
 
-                    <span className="
-                      text-xs
-                      text-gray-300
-                    ">
-                      {
-                        groupItems.length
-                      }
-                    </span>
-                  </div>
-
-                  <div
-                    className="
-                      grid
-                      grid-cols-2
-                      sm:grid-cols-3
-                      md:grid-cols-4
-                      lg:grid-cols-5
-                      gap-3
-                    "
-                  >
-
-                    {groupItems.map(
-                      (item) => {
-
-                        const selected =
-                          selectedIds.includes(
-                            item.ID_NUMBER
-                          );
-
-                        return (
-                          <NumberCard
-                            key={
-                              item.ID_NUMBER
-                            }
-
-                            item={item}
-
-                            selected={
-                              selected
-                            }
-
-                            onClick={() =>
-                              toggleSelect(
-                                item
-                              )
-                            }
-                          />
+                      const selected =
+                        selectedIds.includes(
+                          item.ID_NUMBER
                         );
-                      }
-                    )}
 
-                  </div>
+                      return (
 
-                </section>
-              )
-            )}
+                        <NumberCard
+                          key={
+                            item.ID_NUMBER
+                          }
 
-        </div>
+                          item={item}
+
+                          selected={
+                            selected
+                          }
+
+                          onClick={() =>
+                            toggleSelect(
+                              item
+                            )
+                          }
+                        />
+
+                      );
+                    }
+                  )}
+
+                </div>
+
+              </section>
+            )
+          )}
 
       </div>
 
