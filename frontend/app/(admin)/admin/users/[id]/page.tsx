@@ -1,227 +1,680 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+
+import {
+  useParams,
+  useRouter,
+} from "next/navigation";
+
 import Link from "next/link";
+
+import {
+  Eye,
+  EyeOff,
+} from "lucide-react";
+
 import { api } from "@/lib/api";
+
+/* ========================================================= */
 
 type Universe = {
   id_universe: string;
   label: string;
 };
 
+/* ========================================================= */
+
 export default function EditUser() {
+
   const params = useParams();
+
   const router = useRouter();
 
-  const userId = params.id as string;
+  const userId =
+    params.id as string;
 
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [company, setCompany] = useState("");
-  const [language, setLanguage] = useState("fr");
-  const [role, setRole] = useState("user");
+  const [email, setEmail] =
+    useState("");
 
-  const [universes, setUniverses] = useState<string[]>([]);
-  const [availableUniverses, setAvailableUniverses] = useState<Universe[]>([]);
+  const [password, setPassword] =
+    useState("");
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] =
+    useState(false);
 
-  // =====================================================
-  // LOAD DATA
-  // =====================================================
+  const [name, setName] =
+    useState("");
+
+  const [company, setCompany] =
+    useState("");
+
+  const [language, setLanguage] =
+    useState("fr");
+
+  const [role, setRole] =
+    useState("user");
+
+  const [universes, setUniverses] =
+    useState<string[]>([]);
+
+  const [
+    availableUniverses,
+    setAvailableUniverses,
+  ] = useState<Universe[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [saving, setSaving] =
+    useState(false);
+
+  /* =====================================================
+     LOAD DATA
+  ===================================================== */
 
   useEffect(() => {
+
     async function load() {
+
       try {
-        const [userRes, universeRes] = await Promise.all([
-          api.get(`/user/${userId}`),
-          api.get("/universe/list"),
+
+        const [
+          userRes,
+          universeRes,
+        ] = await Promise.all([
+          api.get(
+            `/user/${userId}`
+          ),
+          api.get(
+            "/universe/list"
+          ),
         ]);
 
-        const user = userRes?.user;
+        const user =
+          userRes?.user;
 
         if (!user) {
-          throw new Error("User not found");
+
+          throw new Error(
+            "User not found"
+          );
         }
 
         // USER
-        setEmail(user.EMAIL || "");
-        setName(user.NAME || "");
-        setCompany(user.COMPANY || "");
-        setLanguage(user.LANGUAGE || "fr");
-        setRole(user.ROLE || "user");
 
-        // UNIVERS (string[])
-        setUniverses(userRes?.universes ?? []);
+        setEmail(
+          user.EMAIL || ""
+        );
 
-        // AVAILABLE UNIVERS (snake_case)
-        setAvailableUniverses(universeRes?.universes ?? []);
+        setName(
+          user.NAME || ""
+        );
+
+        setCompany(
+          user.COMPANY || ""
+        );
+
+        setLanguage(
+          user.LANGUAGE || "fr"
+        );
+
+        setRole(
+          user.ROLE || "user"
+        );
+
+        // UNIVERS
+
+        setUniverses(
+          userRes?.universes ?? []
+        );
+
+        // AVAILABLE UNIVERS
+
+        setAvailableUniverses(
+          universeRes?.universes ?? []
+        );
 
       } catch (e) {
-        console.error("❌ load error", e);
-        alert("Erreur chargement utilisateur");
-        router.push("/admin/users");
+
+        console.error(
+          "❌ load error",
+          e
+        );
+
+        alert(
+          "Erreur chargement utilisateur"
+        );
+
+        router.push(
+          "/admin/users"
+        );
+
       } finally {
+
         setLoading(false);
+
       }
     }
 
-    if (userId) load();
-  }, [userId, router]);
+    if (userId) {
+      load();
+    }
 
-  // =====================================================
-  // TOGGLE UNIVERS
-  // =====================================================
+  }, [
+    userId,
+    router,
+  ]);
 
-  function toggleUniverse(id: string) {
+  /* =====================================================
+     TOGGLE UNIVERS
+  ===================================================== */
+
+  function toggleUniverse(
+    id: string
+  ) {
+
     setUniverses((prev) =>
       prev.includes(id)
-        ? prev.filter((u) => u !== id)
+        ? prev.filter(
+            (u) => u !== id
+          )
         : [...prev, id]
     );
   }
 
-  // =====================================================
-  // SAVE
-  // =====================================================
+  /* =====================================================
+     PASSWORD GENERATOR
+  ===================================================== */
+
+  function generatePassword(
+    length = 16
+  ) {
+
+    const chars =
+      "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*";
+
+    let result = "";
+
+    const array =
+      new Uint32Array(length);
+
+    crypto.getRandomValues(array);
+
+    for (
+      let i = 0;
+      i < length;
+      i++
+    ) {
+
+      result += chars[
+        array[i] % chars.length
+      ];
+    }
+
+    setPassword(result);
+
+    setShowPassword(true);
+  }
+
+  /* =====================================================
+     SAVE
+  ===================================================== */
 
   async function save() {
+
     try {
+
       setSaving(true);
 
-      const res = await api.post("/user/update", {
-        user_id: userId,
-        name,
-        company,
-        language,
-        role,
-        universes,
-      });
+      const payload: any = {
 
-      if (res?.status !== "ok") {
-        throw new Error("Update failed");
+        user_id: userId,
+
+        name,
+
+        company,
+
+        language,
+
+        role,
+
+        universes,
+      };
+
+      // PASSWORD OPTIONNEL
+
+      if (
+        password.trim()
+      ) {
+
+        payload.password =
+          password.trim();
       }
 
-      alert("Utilisateur mis à jour");
+      const res = await api.post(
+        "/user/update",
+        payload
+      );
 
-      router.push("/admin/users");
+      if (
+        res?.status !== "ok"
+      ) {
+
+        throw new Error(
+          "Update failed"
+        );
+      }
+
+      alert(
+        "Utilisateur mis à jour"
+      );
+
+      router.push(
+        "/admin/users"
+      );
 
     } catch (e) {
+
       console.error(e);
-      alert("❌ Erreur update");
+
+      alert(
+        "❌ Erreur update"
+      );
+
     } finally {
+
       setSaving(false);
+
     }
   }
 
-  // =====================================================
-  // UI
-  // =====================================================
+  /* =====================================================
+     UI
+  ===================================================== */
 
   if (loading) {
-    return <div className="p-6">Loading...</div>;
+
+    return (
+      <div className="p-6">
+        Loading...
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-10">
+
+    <div className="
+      space-y-10
+    ">
 
       {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">
+
+      <div className="
+        flex
+        justify-between
+        items-center
+      ">
+
+        <h1 className="
+          text-2xl
+          font-semibold
+        ">
           Modifier utilisateur
         </h1>
 
-        <Link href="/admin/users" className="text-sm underline">
+        <Link
+          href="/admin/users"
+          className="
+            text-sm
+            underline
+          "
+        >
           ← Retour
         </Link>
+
       </div>
 
       {/* EMAIL */}
-      <div className="space-y-1">
-        <label className="text-sm text-gray-500">Email</label>
+
+      <div className="
+        space-y-1
+      ">
+
+        <label className="
+          text-sm
+          text-gray-500
+        ">
+          Email
+        </label>
+
         <input
-          className="border p-2 w-full rounded bg-gray-100"
+          className="
+            border
+            p-2
+            w-full
+            rounded
+            bg-gray-100
+          "
           value={email}
           disabled
         />
+
+      </div>
+
+      {/* PASSWORD */}
+
+      <div className="
+        space-y-1
+      ">
+
+        <label className="
+          text-sm
+          text-gray-500
+        ">
+          Nouveau mot de passe
+        </label>
+
+        <div className="
+          relative
+        ">
+
+          <input
+            type={
+              showPassword
+                ? "text"
+                : "password"
+            }
+            className="
+              border
+              p-2
+              w-full
+              rounded
+              pr-32
+            "
+            placeholder="
+              Laisser vide
+              pour conserver
+              le mot de passe actuel
+            "
+            value={password}
+            onChange={(e) =>
+              setPassword(
+                e.target.value
+              )
+            }
+          />
+
+          <div
+            className="
+              absolute
+              right-2
+              top-1/2
+              -translate-y-1/2
+              flex
+              items-center
+              gap-2
+            "
+          >
+
+            <button
+              type="button"
+              onClick={() =>
+                generatePassword()
+              }
+              className="
+                text-xs
+                px-2
+                py-1
+                rounded
+                bg-gray-100
+                hover:bg-gray-200
+                transition
+              "
+            >
+              Générer
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowPassword(
+                  (v) => !v
+                )
+              }
+              className="
+                text-gray-400
+                hover:text-gray-600
+              "
+            >
+
+              {showPassword
+                ? (
+                  <EyeOff size={18} />
+                ) : (
+                  <Eye size={18} />
+                )}
+
+            </button>
+
+          </div>
+
+        </div>
+
       </div>
 
       {/* NAME */}
-      <div className="space-y-1">
-        <label className="text-sm text-gray-500">Nom</label>
+
+      <div className="
+        space-y-1
+      ">
+
+        <label className="
+          text-sm
+          text-gray-500
+        ">
+          Nom
+        </label>
+
         <input
-          className="border p-2 w-full rounded"
+          className="
+            border
+            p-2
+            w-full
+            rounded
+          "
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) =>
+            setName(
+              e.target.value
+            )
+          }
         />
+
       </div>
 
       {/* COMPANY */}
-      <div className="space-y-1">
-        <label className="text-sm text-gray-500">Société</label>
+
+      <div className="
+        space-y-1
+      ">
+
+        <label className="
+          text-sm
+          text-gray-500
+        ">
+          Société
+        </label>
+
         <input
-          className="border p-2 w-full rounded"
+          className="
+            border
+            p-2
+            w-full
+            rounded
+          "
           value={company}
-          onChange={(e) => setCompany(e.target.value)}
+          onChange={(e) =>
+            setCompany(
+              e.target.value
+            )
+          }
         />
+
       </div>
 
       {/* LANGUAGE */}
-      <div className="space-y-1">
-        <label className="text-sm text-gray-500">Langue</label>
+
+      <div className="
+        space-y-1
+      ">
+
+        <label className="
+          text-sm
+          text-gray-500
+        ">
+          Langue
+        </label>
+
         <select
-          className="border p-2 rounded w-full max-w-xs"
+          className="
+            border
+            p-2
+            rounded
+            w-full
+            max-w-xs
+          "
           value={language}
-          onChange={(e) => setLanguage(e.target.value)}
+          onChange={(e) =>
+            setLanguage(
+              e.target.value
+            )
+          }
         >
-          <option value="fr">Français</option>
-          <option value="en">English</option>
+
+          <option value="fr">
+            Français
+          </option>
+
+          <option value="en">
+            English
+          </option>
+
         </select>
+
       </div>
 
       {/* ROLE */}
-      <div className="space-y-1">
-        <label className="text-sm text-gray-500">Rôle</label>
+
+      <div className="
+        space-y-1
+      ">
+
+        <label className="
+          text-sm
+          text-gray-500
+        ">
+          Rôle
+        </label>
+
         <select
-          className="border p-2 rounded w-full max-w-xs"
+          className="
+            border
+            p-2
+            rounded
+            w-full
+            max-w-xs
+          "
           value={role}
-          onChange={(e) => setRole(e.target.value)}
+          onChange={(e) =>
+            setRole(
+              e.target.value
+            )
+          }
         >
-          <option value="user">User</option>
-          <option value="admin">Admin</option>
+
+          <option value="user">
+            User
+          </option>
+
+          <option value="admin">
+            Admin
+          </option>
+
         </select>
+
       </div>
 
       {/* UNIVERS */}
-      <div className="space-y-2">
-        <label className="font-medium">Univers</label>
 
-        <div className="flex flex-col gap-2">
-          {availableUniverses.map((u) => (
+      <div className="
+        space-y-2
+      ">
+
+        <label className="
+          font-medium
+        ">
+          Univers
+        </label>
+
+        <div className="
+          flex
+          flex-col
+          gap-2
+        ">
+
+          {availableUniverses.map(
+            (u) => (
+
             <label
               key={u.id_universe}
-              className="flex items-center gap-2"
+              className="
+                flex
+                items-center
+                gap-2
+              "
             >
+
               <input
                 type="checkbox"
-                checked={universes.includes(u.id_universe)}
-                onChange={() => toggleUniverse(u.id_universe)}
+                checked={universes.includes(
+                  u.id_universe
+                )}
+                onChange={() =>
+                  toggleUniverse(
+                    u.id_universe
+                  )
+                }
               />
+
               {u.label}
+
             </label>
+
           ))}
+
         </div>
+
       </div>
 
       {/* CTA */}
+
       <button
         onClick={save}
         disabled={saving}
-        className="bg-ratecard-blue px-6 py-2 text-white rounded"
+        className="
+          bg-ratecard-blue
+          px-6
+          py-2
+          text-white
+          rounded
+        "
       >
-        {saving ? "Sauvegarde…" : "Sauvegarder"}
+
+        {saving
+          ? "Sauvegarde…"
+          : "Sauvegarder"}
+
       </button>
 
     </div>
