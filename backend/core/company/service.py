@@ -435,3 +435,114 @@ def delete_company(id_company: str) -> bool:
         },
         where={"ID_COMPANY": id_company},
     )
+
+
+# ============================================================
+# COMPANY ALIASES
+# ============================================================
+
+def get_company_aliases(
+    id_company: str
+) -> List[Dict]:
+
+    rows = query_bq(f"""
+        SELECT
+            ALIAS,
+            MATCH_STATUS
+        FROM `{TABLE_COMPANY_ALIAS}`
+        WHERE ID_COMPANY = @id_company
+        ORDER BY UPPER(ALIAS)
+    """, {
+        "id_company": id_company,
+    })
+
+    return [
+        {
+            "alias": r["ALIAS"],
+            "match_status": r["MATCH_STATUS"],
+        }
+        for r in rows
+    ]
+
+
+def create_company_alias(
+    id_company: str,
+    alias: str,
+):
+
+    alias = (alias or "").strip()
+
+    if not alias:
+        raise ValueError("alias vide")
+
+    query_bq(f"""
+        MERGE `{TABLE_COMPANY_ALIAS}` t
+
+        USING (
+            SELECT
+                @alias AS ALIAS,
+                @id_company AS ID_COMPANY
+        ) s
+
+        ON UPPER(TRIM(t.ALIAS))
+           =
+           UPPER(TRIM(s.ALIAS))
+
+        WHEN NOT MATCHED THEN
+        INSERT (
+            ALIAS,
+            ID_COMPANY,
+            MATCH_STATUS
+        )
+        VALUES (
+            s.ALIAS,
+            s.ID_COMPANY,
+            'MATCH'
+        )
+    """, {
+        "alias": alias,
+        "id_company": id_company,
+    })
+
+    return True
+
+
+def delete_company_alias(
+    id_company: str,
+    alias: str,
+):
+
+    alias = (alias or "").strip()
+
+    if not alias:
+        return False
+
+    # ========================================================
+    # PROTECT MAIN NAME
+    # ========================================================
+
+    company = get_company(id_company)
+
+    if not company:
+        raise ValueError("company introuvable")
+
+    if alias.upper().strip() == (
+        company["name"] or ""
+    ).upper().strip():
+
+        raise ValueError(
+            "Impossible de supprimer l'alias principal"
+        )
+
+    query_bq(f"""
+        DELETE FROM `{TABLE_COMPANY_ALIAS}`
+        WHERE ID_COMPANY = @id_company
+        AND UPPER(TRIM(ALIAS))
+            =
+            UPPER(TRIM(@alias))
+    """, {
+        "id_company": id_company,
+        "alias": alias,
+    })
+
+    return True
