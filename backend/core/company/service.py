@@ -32,7 +32,9 @@ def create_company(data: CompanyCreate) -> str:
 
     # 🔒 UNIVERS OBLIGATOIRE
     if not data.universes or len(data.universes) == 0:
-        raise ValueError("Company must have at least one universe")
+        raise ValueError(
+            "Company must have at least one universe"
+        )
 
     company_id = str(uuid.uuid4())
 
@@ -44,7 +46,9 @@ def create_company(data: CompanyCreate) -> str:
     )
 
     if insight_frequency not in ALLOWED_FREQUENCIES:
-        raise ValueError("Invalid insight_frequency")
+        raise ValueError(
+            "Invalid insight_frequency"
+        )
 
     row = [{
         "ID_COMPANY": company_id,
@@ -104,9 +108,20 @@ def create_company(data: CompanyCreate) -> str:
         alias=data.name,
     )
 
+    # 🔥 EXTRA ALIASES
+    for alias in data.aliases or []:
+
+        alias = alias.strip()
+
+        if not alias:
+            continue
+
+        create_company_alias(
+            id_company=company_id,
+            alias=alias,
+        )
+
     return company_id
-
-
 
 # ============================================================
 # UNIVERS
