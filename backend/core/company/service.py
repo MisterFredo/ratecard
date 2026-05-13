@@ -28,7 +28,6 @@ ALLOWED_FREQUENCIES = ["WEEKLY", "MONTHLY", "QUARTERLY"]
 # ============================================================
 # CREATE COMPANY
 # ============================================================
-
 def create_company(data: CompanyCreate) -> str:
 
     # 🔒 UNIVERS OBLIGATOIRE
@@ -36,25 +35,50 @@ def create_company(data: CompanyCreate) -> str:
         raise ValueError("Company must have at least one universe")
 
     company_id = str(uuid.uuid4())
+
     now = datetime.utcnow().isoformat()
 
-    insight_frequency = data.insight_frequency or "QUARTERLY"
+    insight_frequency = (
+        data.insight_frequency
+        or "QUARTERLY"
+    )
 
     if insight_frequency not in ALLOWED_FREQUENCIES:
         raise ValueError("Invalid insight_frequency")
 
     row = [{
         "ID_COMPANY": company_id,
+
         "NAME": data.name,
+
         "TYPE": data.type,
-        "DESCRIPTION": data.description or None,
+
+        "DESCRIPTION": (
+            data.description or None
+        ),
+
         "MEDIA_LOGO_RECTANGLE_ID": None,
-        "LINKEDIN_URL": data.linkedin_url or None,
-        "WEBSITE_URL": data.website_url or None,
-        "IS_PARTNER": bool(data.is_partner),
-        "INSIGHT_FREQUENCY": insight_frequency,
+
+        "LINKEDIN_URL": (
+            data.linkedin_url or None
+        ),
+
+        "WEBSITE_URL": (
+            data.website_url or None
+        ),
+
+        "IS_PARTNER": bool(
+            data.is_partner
+        ),
+
+        "INSIGHT_FREQUENCY": (
+            insight_frequency
+        ),
+
         "CREATED_AT": now,
+
         "UPDATED_AT": now,
+
         "IS_ACTIVE": True,
     }]
 
@@ -69,9 +93,21 @@ def create_company(data: CompanyCreate) -> str:
     ).result()
 
     # 🔥 ASSIGN UNIVERS (OBLIGATOIRE)
-    assign_company_universes(company_id, data.universes)
+    assign_company_universes(
+        company_id,
+        data.universes
+    )
+
+    # 🔥 AUTO CREATE MAIN ALIAS
+    create_company_alias(
+        id_company=company_id,
+        alias=data.name,
+    )
 
     return company_id
+
+
+
 # ============================================================
 # UNIVERS
 # ============================================================
