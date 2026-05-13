@@ -240,7 +240,7 @@ def get_aliases_route(id_company: str):
         )
 
 
-@router.post("/{id_company}/aliases")
+@router.post("/{id_company}/alias")
 def add_alias_route(
     id_company: str,
     data: dict,
