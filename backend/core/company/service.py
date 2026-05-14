@@ -439,6 +439,37 @@ def list_companies_for_user(user_id: str):
         "user_id": user_id,
     })
 
+    # ========================================================
+    # LOAD ALL ALIASES ONCE
+    # ========================================================
+
+    alias_rows = query_bq(f"""
+        SELECT
+            ID_COMPANY,
+            ALIAS
+
+        FROM `{TABLE_COMPANY_ALIAS}`
+
+        WHERE ID_COMPANY IS NOT NULL
+    """)
+
+    aliases_map = {}
+
+    for row in alias_rows:
+
+        company_id = row["ID_COMPANY"]
+
+        if company_id not in aliases_map:
+            aliases_map[company_id] = []
+
+        aliases_map[company_id].append({
+            "alias": row["ALIAS"],
+        })
+
+    # ========================================================
+    # BUILD OUTPUT
+    # ========================================================
+
     return [
         {
             "id_company": r["ID_COMPANY"],
@@ -449,8 +480,9 @@ def list_companies_for_user(user_id: str):
             "insight_frequency": r.get("INSIGHT_FREQUENCY"),
             "nb_analyses": r["NB_ANALYSES"],
             "delta_30d": r["DELTA_30D"],
-            "aliases": get_company_aliases(
-                r["ID_COMPANY"]
+            "aliases": aliases_map.get(
+                r["ID_COMPANY"],
+                []
             ),
             "universes": r.get("universes") or [],
         }
