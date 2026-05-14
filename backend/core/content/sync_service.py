@@ -52,12 +52,11 @@ TABLE_SOLUTION_ALIAS = (
     f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION_ALIAS"
 )
 
-
 # ============================================================
-# COMPANY MATCHING
+# ENTITY MATCHING (🔥 NEW CORE)
 # ============================================================
 
-def sync_content_companies(id_content: str):
+def sync_content_entities(id_content: str):
 
     # ========================================================
     # CLEAN EXISTING LINKS
@@ -72,111 +71,6 @@ def sync_content_companies(id_content: str):
             "id_content": id_content,
         }
     )
-
-    # ========================================================
-    # LOAD CONTENT
-    # ========================================================
-
-    rows = query_bq(
-        f"""
-        SELECT
-            ID_CONTENT,
-            ID_PRIMARY_COMPANY,
-            ACTEURS_CITES
-
-        FROM `{TABLE_CONTENT}`
-
-        WHERE ID_CONTENT = @id_content
-
-        LIMIT 1
-        """,
-        {
-            "id_content": id_content,
-        }
-    )
-
-    if not rows:
-        return
-
-    row = rows[0]
-
-    inserts = []
-
-    seen = set()
-
-    # ========================================================
-    # PRIMARY COMPANY
-    # ========================================================
-
-    primary_company = row.get(
-        "ID_PRIMARY_COMPANY"
-    )
-
-    if primary_company:
-
-        seen.add(primary_company)
-
-        inserts.append({
-            "ID_CONTENT": id_content,
-            "ID_COMPANY": primary_company,
-        })
-
-    # ========================================================
-    # SECONDARY MATCHING
-    # ========================================================
-
-    for raw in row.get("ACTEURS_CITES") or []:
-
-        if not raw:
-            continue
-
-        resolved = resolve_company_alias(raw)
-
-        if not resolved:
-            continue
-
-        company_id = resolved.get(
-            "id_company"
-        )
-
-        if not company_id:
-            continue
-
-        if company_id in seen:
-            continue
-
-        seen.add(company_id)
-
-        inserts.append({
-            "ID_CONTENT": id_content,
-            "ID_COMPANY": company_id,
-        })
-
-    # ========================================================
-    # INSERT
-    # ========================================================
-
-    if inserts:
-
-        insert_bq(
-            TABLE_CONTENT_COMPANY,
-            inserts,
-        )
-
-    print(
-        "✅ COMPANY SYNC DONE:",
-        id_content,
-    )
-
-# ============================================================
-# SOLUTION MATCHING
-# ============================================================
-
-def sync_content_solutions(id_content: str):
-
-    # ========================================================
-    # CLEAN EXISTING LINKS
-    # ========================================================
 
     query_bq(
         f"""
@@ -195,8 +89,10 @@ def sync_content_solutions(id_content: str):
     rows = query_bq(
         f"""
         SELECT
-            SOLUTIONS_LLM,
-            ACTEURS_CITES
+            ID_CONTENT,
+            ID_PRIMARY_COMPANY,
+            ACTEURS_CITES,
+            SOLUTIONS_LLM
 
         FROM `{TABLE_CONTENT}`
 
@@ -214,62 +110,129 @@ def sync_content_solutions(id_content: str):
 
     row = rows[0]
 
+    # ========================================================
+    # RAW VALUES
+    # ========================================================
+
     raw_values = (
-        (row.get("SOLUTIONS_LLM") or [])
-        +
         (row.get("ACTEURS_CITES") or [])
+        +
+        (row.get("SOLUTIONS_LLM") or [])
     )
 
-    inserts = []
-
-    seen = set()
-
     # ========================================================
-    # MATCHING
+    # RESOLVE
     # ========================================================
 
-    for raw in raw_values:
+    resolved = resolve_entities(
+        raw_values
+    )
 
-        if not raw:
-            continue
+    company_inserts = []
+    solution_inserts = []
 
-        resolved = resolve_solution_alias(raw)
+    seen_companies = set()
+    seen_solutions = set()
 
-        if not resolved:
-            continue
+    # ========================================================
+    # PRIMARY COMPANY
+    # ========================================================
 
-        solution_id = resolved.get(
-            "id_solution"
+    primary_company = row.get(
+        "ID_PRIMARY_COMPANY"
+    )
+
+    if primary_company:
+
+        seen_companies.add(
+            primary_company
         )
+
+        company_inserts.append({
+            "ID_CONTENT": id_content,
+            "ID_COMPANY": primary_company,
+        })
+
+    # ========================================================
+    # COMPANIES
+    # ========================================================
+
+    for company in resolved["companies"]:
+
+        company_id = company["id_company"]
+
+        if not company_id:
+            continue
+
+        if company_id in seen_companies:
+            continue
+
+        seen_companies.add(
+            company_id
+        )
+
+        company_inserts.append({
+            "ID_CONTENT": id_content,
+            "ID_COMPANY": company_id,
+        })
+
+    # ========================================================
+    # SOLUTIONS
+    # ========================================================
+
+    for solution in resolved["solutions"]:
+
+        solution_id = solution["id_solution"]
 
         if not solution_id:
             continue
 
-        if solution_id in seen:
+        if solution_id in seen_solutions:
             continue
 
-        seen.add(solution_id)
+        seen_solutions.add(
+            solution_id
+        )
 
-        inserts.append({
+        solution_inserts.append({
             "ID_CONTENT": id_content,
             "ID_SOLUTION": solution_id,
         })
 
     # ========================================================
-    # INSERT
+    # INSERT COMPANIES
     # ========================================================
 
-    if inserts:
+    if company_inserts:
+
+        insert_bq(
+            TABLE_CONTENT_COMPANY,
+            company_inserts,
+        )
+
+    # ========================================================
+    # INSERT SOLUTIONS
+    # ========================================================
+
+    if solution_inserts:
 
         insert_bq(
             TABLE_CONTENT_SOLUTION,
-            inserts,
+            solution_inserts,
         )
 
     print(
-        "✅ SOLUTION SYNC DONE:",
-        id_content,
+        "✅ ENTITY SYNC DONE:",
+        {
+            "id_content": id_content,
+            "companies": len(company_inserts),
+            "solutions": len(solution_inserts),
+            "unmatched": len(
+                resolved["unmatched"]
+            ),
+        }
     )
+
 
 # ============================================================
 # SYNC ALL NUMBERS
@@ -349,6 +312,8 @@ def sync_all_numbers():
     )
 
     return output
+
+
 # ============================================================
 # REBUILD ENRICHED ROW
 # ============================================================
@@ -419,10 +384,6 @@ def rebuild_content_enriched_row(id_content: str):
             c.CREATED_AT AS created_at,
             c.UPDATED_AT AS updated_at,
 
-            -- ====================================================
-            -- UNIVERSes (🔥 SOURCE BASED)
-            -- ====================================================
-
             ARRAY(
                 SELECT DISTINCT AS STRUCT
                     u.ID_UNIVERSE AS id_universe,
@@ -435,10 +396,6 @@ def rebuild_content_enriched_row(id_content: str):
 
                 WHERE su.ID_SOURCE = c.SOURCE_ID
             ) AS universes,
-
-            -- ====================================================
-            -- TOPICS
-            -- ====================================================
 
             ARRAY(
                 SELECT DISTINCT AS STRUCT
@@ -454,10 +411,6 @@ def rebuild_content_enriched_row(id_content: str):
                 WHERE ct.ID_CONTENT = c.ID_CONTENT
             ) AS topics,
 
-            -- ====================================================
-            -- COMPANIES
-            -- ====================================================
-
             ARRAY(
                 SELECT DISTINCT AS STRUCT
                     co.ID_COMPANY AS id_company,
@@ -472,10 +425,6 @@ def rebuild_content_enriched_row(id_content: str):
                 WHERE cc.ID_CONTENT = c.ID_CONTENT
             ) AS companies,
 
-            -- ====================================================
-            -- SOLUTIONS
-            -- ====================================================
-
             ARRAY(
                 SELECT DISTINCT AS STRUCT
                     s.ID_SOLUTION AS id_solution,
@@ -488,10 +437,6 @@ def rebuild_content_enriched_row(id_content: str):
 
                 WHERE cs.ID_CONTENT = c.ID_CONTENT
             ) AS solutions,
-
-            -- ====================================================
-            -- CONCEPTS
-            -- ====================================================
 
             ARRAY(
                 SELECT DISTINCT AS STRUCT
@@ -531,71 +476,8 @@ def rebuild_content_enriched_row(id_content: str):
         id_content,
     )
 # ============================================================
-# NUMBERS BACKLOG
+# FULL CONTENT SYNC
 # ============================================================
-
-def sync_content_numbers(id_content: str):
-
-    print(
-        "📊 NUMBERS SYNC START:",
-        id_content,
-    )
-
-    backlog_rows = get_numbers_from_content(
-        id_content
-    )
-
-    if not backlog_rows:
-
-        print(
-            "ℹ️ No valid numbers found:",
-            id_content,
-        )
-
-        return {
-            "id_content": id_content,
-            "numbers_found": 0,
-            "numbers_inserted": 0,
-        }
-
-    processed_results = []
-
-    for backlog_row in backlog_rows:
-
-        result = process_backlog_row(
-            backlog_row
-        )
-
-        if result.get("status") == "ok":
-
-            processed_results.append(
-                result
-            )
-
-    if processed_results:
-
-        insert_backlog_batch(
-            processed_results
-        )
-
-        print(
-            f"✅ {len(processed_results)} backlog numbers inserted:",
-            id_content,
-        )
-
-    else:
-
-        print(
-            "ℹ️ No valid backlog results:",
-            id_content,
-        )
-
-    return {
-        "id_content": id_content,
-        "numbers_found": len(backlog_rows),
-        "numbers_inserted": len(processed_results),
-    }
-
 
 # ============================================================
 # FULL CONTENT SYNC
@@ -615,11 +497,7 @@ def sync_content(
         id_content,
     )
 
-    sync_content_companies(
-        id_content=id_content,
-    )
-
-    sync_content_solutions(
+    sync_content_entities(
         id_content=id_content,
     )
 
@@ -642,8 +520,7 @@ def sync_content(
 
     result = {
         "id_content": id_content,
-        "companies_synced": True,
-        "solutions_synced": True,
+        "entities_synced": True,
         "enriched_rebuilt": True,
         "numbers_synced": sync_numbers,
         "numbers_result": numbers_result,
