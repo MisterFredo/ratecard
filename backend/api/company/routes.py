@@ -210,21 +210,6 @@ def delete_alias_route(
 
 
 # ============================================================
-# GET ONE
-# ============================================================
-
-@router.get("/{id_company}", response_model=CompanyOut)
-def get_route(id_company: str):
-
-    company = get_company(id_company)
-
-    if not company:
-        raise HTTPException(404, "Société introuvable")
-
-    return company
-
-
-# ============================================================
 # VIEW (CURATOR)
 # ============================================================
 
@@ -304,4 +289,16 @@ def delete_route(id_company: str):
     except Exception as e:
         raise HTTPException(400, f"Erreur suppression société : {e}")
 
+# ============================================================
+# GET ONE
+# ============================================================
 
+@router.get("/{id_company}", response_model=CompanyOut)
+def get_route(id_company: str):
+
+    company = get_company(id_company)
+
+    if not company:
+        raise HTTPException(404, "Société introuvable")
+
+    return company
