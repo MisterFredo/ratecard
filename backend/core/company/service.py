@@ -391,27 +391,30 @@ def list_companies_for_user(user_id: str):
         c.TYPE,
 
         CAST(c.IS_PARTNER AS BOOL) AS IS_PARTNER,
+
         c.MEDIA_LOGO_RECTANGLE_ID,
         c.INSIGHT_FREQUENCY,
 
         COALESCE(m.total, 0) AS NB_ANALYSES,
         COALESCE(m.last_30_days, 0) AS DELTA_30D,
 
-        ARRAY_AGG(DISTINCT u.LABEL IGNORE NULLS) AS universes
+        ARRAY_AGG(
+            DISTINCT u.LABEL IGNORE NULLS
+        ) AS universes
 
     FROM `{TABLE_COMPANY}` c
 
     JOIN `{TABLE_COMPANY_UNIVERSE}` cu
-      ON cu.ID_COMPANY = c.ID_COMPANY
+        ON cu.ID_COMPANY = c.ID_COMPANY
 
     JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_UNIVERSE` u
-      ON u.ID_UNIVERSE = cu.ID_UNIVERSE
+        ON u.ID_UNIVERSE = cu.ID_UNIVERSE
 
     JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_UNIVERSE` uu
-      ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
+        ON uu.ID_UNIVERSE = cu.ID_UNIVERSE
 
     LEFT JOIN `{VIEW_STATS_COMPANY}` m
-      ON m.id_company = c.ID_COMPANY
+        ON m.id_company = c.ID_COMPANY
 
     WHERE
         c.IS_ACTIVE = TRUE
@@ -432,7 +435,9 @@ def list_companies_for_user(user_id: str):
     ORDER BY UPPER(c.NAME)
     """
 
-    rows = query_bq(sql, {"user_id": user_id})
+    rows = query_bq(sql, {
+        "user_id": user_id,
+    })
 
     return [
         {
@@ -444,7 +449,9 @@ def list_companies_for_user(user_id: str):
             "insight_frequency": r.get("INSIGHT_FREQUENCY"),
             "nb_analyses": r["NB_ANALYSES"],
             "delta_30d": r["DELTA_30D"],
-            "aliases": get_company_aliases(company_id),
+            "aliases": get_company_aliases(
+                r["ID_COMPANY"]
+            ),
             "universes": r.get("universes") or [],
         }
         for r in rows
