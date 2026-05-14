@@ -31,7 +31,6 @@ type Universe = {
 
 type AliasItem = {
   alias: string;
-  match_status?: string;
 };
 
 /* ========================================================= */
@@ -275,7 +274,6 @@ export default function EditCompany({
         ...prev,
         {
           alias: value,
-          match_status: "MATCH",
         },
       ]);
 
