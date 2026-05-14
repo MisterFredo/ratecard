@@ -11,7 +11,7 @@ from api.matching.models import (
     SolutionMatch,
 )
 
-from core.entity.resolver import (
+from core.matching.resolver import (
     normalize,
     insert_rejected_alias,
     TABLE_ALIAS_REJECTED,
