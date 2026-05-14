@@ -32,10 +32,6 @@ TABLE_COMPANY = (
     f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY"
 )
 
-TABLE_ALIAS_REJECTED = (
-    f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_ALIAS_REJECTED"
-)
-
 # ===============================================
 # FIND MATCH
 # ===============================================
