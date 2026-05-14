@@ -1,9 +1,4 @@
 from typing import List, Dict
-from google.cloud import bigquery
-
-import re
-import uuid
-from datetime import datetime
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq, get_bigquery_client
