@@ -157,7 +157,7 @@ def get_rejected_alias_set():
 
     return {
         normalize(
-            row["RAW_ALIAS"]
+            row["ALIAS"]
         )
         for row in rows
         if row.get("RAW_ALIAS")
@@ -263,7 +263,7 @@ def insert_rejected_alias(
 
         WHERE UPPER(
             REGEXP_REPLACE(
-                REPLACE(RAW_ALIAS, '+', ' PLUS '),
+                REPLACE(ALIAS, '+', ' PLUS '),
                 r'[^A-Z0-9 ]',
                 ' '
             )
@@ -283,7 +283,7 @@ def insert_rejected_alias(
         f"""
         INSERT INTO `{TABLE_ALIAS_REJECTED}` (
             ID_REJECTED,
-            RAW_ALIAS,
+            ALIAS,
             ENTITY_TYPE,
             CREATED_AT
         )
