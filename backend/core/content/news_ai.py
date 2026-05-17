@@ -187,9 +187,12 @@ inclut RTD, Ready-to-Drink, canned cocktails,
 premix, premixed drinks, hard seltzers.
 
 - "Ready-to-Serve (RTS)" :
-inclut RTS, Ready-to-Serve,
-batched cocktails, bottled cocktails,
-pre-batched cocktails.
+utiliser pour les contenus liés
+aux cocktails prêts à servir,
+cocktails en bouteille,
+batched cocktails,
+cocktail kits,
+ou expériences cocktail prêtes à consommer à domicile.
 
 {topics_list_text}
 
