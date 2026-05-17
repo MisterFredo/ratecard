@@ -305,6 +305,8 @@ def get_item_curator(
         c.title,
         c.excerpt,
         c.published_at,
+        source_url,
+        source_title,
 
         c.topics,
         c.companies,
@@ -552,6 +554,9 @@ def _map_feed_row(r: Dict) -> Dict:
         "title": r.get("title"),
 
         "excerpt": r.get("excerpt"),
+        "source_url": r.get("source_url"),
+
+        "source_title": r.get("source_title"),
 
         # 🔥 NEW
         "content_body": r.get(
