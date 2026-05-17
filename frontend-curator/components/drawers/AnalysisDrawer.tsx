@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
-import { X } from "lucide-react";
+import { X, ExternalLink } from "lucide-react";
 import { useDrawer } from "@/contexts/DrawerContext";
 
 /* ========================================================= */
@@ -31,6 +31,8 @@ type Concept = {
 type AnalysisData = {
   id_content: string;
   title: string;
+  source_url?: string;
+  source_title?: string;
 
   excerpt?: string;
   content_body?: string;
