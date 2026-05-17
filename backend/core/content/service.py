@@ -862,6 +862,7 @@ def normalize_llm_list(values):
 def list_raw_stock(
     status: Optional[str] = None,
     source_id: Optional[str] = None,
+    
     import_type: Optional[str] = None,
 
     # 🔥 NEW
@@ -918,6 +919,7 @@ def list_raw_stock(
             s.NAME AS SOURCE_NAME,
 
             r.SOURCE_TITLE,
+            r.SOURCE_URL,
             r.DATE_SOURCE,
 
             r.STATUS,
@@ -976,6 +978,7 @@ def list_raw_stock(
                 "source_name": r.get("SOURCE_NAME"),
 
                 "source_title": r["SOURCE_TITLE"],
+                "source_url": r.get("SOURCE_URL"),
 
                 "date_source": r.get("DATE_SOURCE"),
 
