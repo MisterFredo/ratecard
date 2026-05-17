@@ -773,8 +773,9 @@ def list_contents_admin():
 def store_raw_content(
     source_id: str,
     source_title: str,
-    source_url: Optional[str] = None,
     raw_text: str,
+    source_url: Optional[str] = None,
+    
     date_source: Optional[date] = None,
 
     # 🔥 NEW
