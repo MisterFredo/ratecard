@@ -4,6 +4,7 @@
 
 from config import BQ_PROJECT, BQ_DATASET
 from utils.bigquery_utils import query_bq
+from typing import Optional, Dict, Any, List
 
 
 # ============================================================
