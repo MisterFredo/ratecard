@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { api } from "@/lib/api";
+const SUPPORTED_LANGS = ["fr", "en"];
 
 /* ========================================================= */
 
@@ -173,7 +174,9 @@ export default function CreateUser() {
           company:
             company || null,
 
-          language,
+          language: SUPPORTED_LANGS.includes(language)
+            ? language
+            : "fr",
 
           role,
 
