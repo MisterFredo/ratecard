@@ -29,9 +29,8 @@ type Props = {
 
   onClick?: () => void;
 
-  onToggleFavorite?: (id: string, isFavorite: boolean) => void; // 🔥 NEW
+  onToggleFavorite?: (id: string, isFavorite: boolean) => void;
 };
-
 
 export default function CompanyCard({
   id,
@@ -45,6 +44,7 @@ export default function CompanyCard({
   isLoading,
   isFavorite = false,
   onClick,
+  onToggleFavorite, // ✅ FIX ICI
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -82,7 +82,7 @@ export default function CompanyCard({
     }
   }
 
-  // 🔥 FOLLOW / UNFOLLOW
+  // ⭐ FOLLOW / UNFOLLOW
   async function handleFavoriteClick(e: React.MouseEvent) {
     e.stopPropagation();
 
@@ -126,7 +126,7 @@ export default function CompanyCard({
       "
     >
 
-      {/* 🔥 FAVORITE BUTTON */}
+      {/* ⭐ FAVORITE BUTTON */}
       <button
         onClick={handleFavoriteClick}
         className="
@@ -141,7 +141,7 @@ export default function CompanyCard({
         {isFavorite ? "★" : "☆"}
       </button>
 
-      {/* 🔥 LOADING OVERLAY */}
+      {/* LOADING */}
       {isLoading && (
         <div className="
           absolute inset-0 z-20
