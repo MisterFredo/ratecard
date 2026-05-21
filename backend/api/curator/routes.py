@@ -58,6 +58,7 @@ def search_route(
     offset: int = Query(0),
     content_type: Optional[str] = Query(None),
     universe_id: Optional[str] = Query(None),
+    feed_mode: Optional[str] = Query(None),
 ):
     try:
         user_id = require_user(request)
@@ -126,6 +127,7 @@ def search_numbers_route(
     limit: int = Query(50),
     offset: int = Query(0),
     universe_id: Optional[str] = Query(None),
+    feed_mode: Optional[str] = Query(None),
     concept_ids: Optional[List[str]] = Query(None),  # 🔥 NEW
 ):
     try:
