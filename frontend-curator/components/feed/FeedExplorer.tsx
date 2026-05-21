@@ -67,6 +67,14 @@ type Props = {
   onToggleSelect: (
     item: FeedItem
   ) => void;
+
+  // 🔥 NEW
+  preferences: string[];
+
+  onToggleFavorite: (
+    companyId: string,
+    isFav: boolean
+  ) => void;
 };
 
 /* ========================================================= */
@@ -96,6 +104,11 @@ export default function FeedExplorer({
 
   selectedIds,
   onToggleSelect,
+
+  // 🔥 NEW
+  preferences,
+  onToggleFavorite,
+
 }: Props) {
 
   return (
@@ -177,6 +190,11 @@ export default function FeedExplorer({
         onToggleSelect={
           onToggleSelect
         }
+
+        // 🔥 NEW
+        preferences={preferences}
+
+        onToggleFavorite={onToggleFavorite}
       />
 
     </div>
