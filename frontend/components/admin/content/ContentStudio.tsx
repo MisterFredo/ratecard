@@ -67,6 +67,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // EDITORIAL
   // =========================
 
+  const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [contentBody, setContentBody] = useState("");
   const [chiffres, setChiffres] = useState<string[]>([]);
@@ -140,6 +141,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
         c.id_primary_company || null
       );
 
+      setTitle(c.title || "");
       setExcerpt(c.excerpt || "");
       setContentBody(c.content_body || "");
       setChiffres(c.chiffres || []);
