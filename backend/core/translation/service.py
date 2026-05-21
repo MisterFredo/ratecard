@@ -40,7 +40,7 @@ TABLE_TRANSLATION_CACHE = (
 # ============================================================
 
 def _hash_text(text: str, lang: str) -> str:
-    raw = f"{text}_{lang}"
+    raw = f"{text.strip()}_{lang}"
     return hashlib.md5(raw.encode("utf-8")).hexdigest()
 
 
