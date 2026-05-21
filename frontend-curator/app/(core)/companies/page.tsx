@@ -326,7 +326,13 @@ export default function CompaniesPage() {
                         delta30d={c.delta_30d}
                         isLoading={loadingId === c.id_company}
                         isFavorite={preferences.includes(c.id_company)}
-                        onClick={() => setLoadingId(c.id_company)}
+                        onToggleFavorite={(id, isFav) => {
+                          setPreferences((prev) =>
+                            isFav
+                              ? prev.filter((p) => p !== id)
+                              : [...prev, id]
+                          );
+                        }}
                       />
                     ))}
                   </div>
