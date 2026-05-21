@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useEntityDrawer } from "@/hooks/useEntityDrawer";
 import SolutionCard from "@/components/solutions/SolutionCard";
+import { api } from "@/lib/api"; // 🔥 NEW
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +26,20 @@ type SortMode = "alpha" | "activity" | "growth";
    SORT
 ========================================================= */
 
-function sortSolutions(items: Solution[], mode: SortMode) {
+function sortSolutions(items: Solution[], mode: SortMode, favorites: string[]) {
   const copy = [...items];
 
+  // 🔥 PRIORITÉ FAVORIS
+  copy.sort((a, b) => {
+    const aFav = favorites.includes(a.id_solution);
+    const bFav = favorites.includes(b.id_solution);
+
+    if (aFav && !bFav) return -1;
+    if (!aFav && bFav) return 1;
+    return 0;
+  });
+
+  // 🔥 TRI CLASSIQUE
   switch (mode) {
     case "activity":
       return copy.sort((a, b) => (b.nb_analyses ?? 0) - (a.nb_analyses ?? 0));
@@ -44,7 +56,7 @@ function sortSolutions(items: Solution[], mode: SortMode) {
    GROUP
 ========================================================= */
 
-function groupByUniverse(solutions: Solution[], mode: SortMode) {
+function groupByUniverse(solutions: Solution[], mode: SortMode, favorites: string[]) {
   const map: Record<string, Solution[]> = {};
 
   solutions.forEach((s) => {
@@ -55,7 +67,7 @@ function groupByUniverse(solutions: Solution[], mode: SortMode) {
   });
 
   Object.keys(map).forEach((u) => {
-    map[u] = sortSolutions(map[u], mode);
+    map[u] = sortSolutions(map[u], mode, favorites);
   });
 
   return map;
@@ -113,22 +125,25 @@ async function fetchSolutions(): Promise<Solution[]> {
 ========================================================= */
 
 export default function SolutionsPage() {
+
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] = useState<SortMode>("alpha");
 
   const [openUniverses, setOpenUniverses] = useState<Record<string, boolean>>({});
 
+  // 🔥 NEW
+  const [favorites, setFavorites] = useState<string[]>([]);
+
   const searchParams = useSearchParams();
 
-  // 🔥 HOOK CENTRALISÉ (comme Topics)
   const { loadingId, setLoadingId } = useEntityDrawer(
     "solution",
     "solution_id"
   );
 
   /* ---------------------------------------------------------
-     LOAD
+     LOAD DATA
   --------------------------------------------------------- */
 
   useEffect(() => {
@@ -143,7 +158,31 @@ export default function SolutionsPage() {
   }, []);
 
   /* ---------------------------------------------------------
-     AUTO OPEN CURRENT UNIVERSE
+     LOAD PREFS
+  --------------------------------------------------------- */
+
+  useEffect(() => {
+    async function loadPrefs() {
+      try {
+        const res = await api.get("/user/preferences");
+
+        const solPrefs =
+          Array.isArray(res?.preferences?.SOLUTION)
+            ? res.preferences.SOLUTION
+            : [];
+
+        setFavorites(solPrefs);
+
+      } catch (e) {
+        console.error("❌ prefs error", e);
+      }
+    }
+
+    loadPrefs();
+  }, []);
+
+  /* ---------------------------------------------------------
+     AUTO OPEN CURRENT
   --------------------------------------------------------- */
 
   useEffect(() => {
@@ -163,6 +202,37 @@ export default function SolutionsPage() {
   }, [solutions, searchParams]);
 
   /* ---------------------------------------------------------
+     FAVORITE TOGGLE
+  --------------------------------------------------------- */
+
+  async function handleToggleFavorite(id: string, isFav: boolean) {
+
+    try {
+
+      if (isFav) {
+        await api.post("/user/preferences/remove", {
+          type: "SOLUTION",
+          value_id: id,
+        });
+      } else {
+        await api.post("/user/preferences/add", {
+          type: "SOLUTION",
+          value_id: id,
+        });
+      }
+
+      setFavorites((prev) =>
+        isFav
+          ? prev.filter((p) => p !== id)
+          : [...prev, id]
+      );
+
+    } catch (e) {
+      console.error("❌ favorite error", e);
+    }
+  }
+
+  /* ---------------------------------------------------------
      HELPERS
   --------------------------------------------------------- */
 
@@ -177,7 +247,7 @@ export default function SolutionsPage() {
      DATA
   --------------------------------------------------------- */
 
-  const grouped = groupByUniverse(solutions, sortMode);
+  const grouped = groupByUniverse(solutions, sortMode, favorites);
   const hasContent = solutions.length > 0;
 
   /* =========================================================
@@ -222,20 +292,6 @@ export default function SolutionsPage() {
         </div>
       </div>
 
-      {/* LOADING */}
-      {loading && (
-        <p className="text-sm text-gray-400">
-          Chargement des produits...
-        </p>
-      )}
-
-      {/* EMPTY */}
-      {!loading && !hasContent && (
-        <p className="text-sm text-gray-400">
-          Aucune solution disponible.
-        </p>
-      )}
-
       {/* CONTENT */}
       {!loading && hasContent &&
         Object.entries(grouped)
@@ -259,31 +315,36 @@ export default function SolutionsPage() {
 
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <span>{items.length}</span>
-                  <span className={`
-                    transition-transform
-                    ${openUniverses[universe] ? "rotate-90" : ""}
-                  `}>
-                    ▶
-                  </span>
                 </div>
               </div>
 
               {openUniverses[universe] && (
                 <div className="pt-2">
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
-                    {items.map((s) => (
-                      <SolutionCard
-                        key={s.id_solution}
-                        id={s.id_solution}
-                        name={s.name}
-                        visualRectId={s.media_logo_rectangle_id}
-                        nbAnalyses={s.nb_analyses}
-                        delta30d={s.delta_30d}
-                        isPartner={s.is_partner}
-                        isLoading={loadingId === s.id_solution}
-                        onClick={() => setLoadingId(s.id_solution)}
-                      />
-                    ))}
+                    {items.map((s) => {
+
+                      const isFav = favorites.includes(s.id_solution);
+
+                      return (
+                        <SolutionCard
+                          key={s.id_solution}
+                          id={s.id_solution}
+                          name={s.name}
+                          visualRectId={s.media_logo_rectangle_id}
+                          nbAnalyses={s.nb_analyses}
+                          delta30d={s.delta_30d}
+                          isPartner={s.is_partner}
+                          isLoading={loadingId === s.id_solution}
+                          onClick={() => setLoadingId(s.id_solution)}
+
+                          // 🔥 NEW
+                          isFavorite={isFav}
+                          onToggleFavorite={() =>
+                            handleToggleFavorite(s.id_solution, isFav)
+                          }
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}
