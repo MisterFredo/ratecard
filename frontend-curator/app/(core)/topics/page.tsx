@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useEntityDrawer } from "@/hooks/useEntityDrawer";
 import TopicCard from "@/components/topics/TopicCard";
+import { api } from "@/lib/api"; // 🔥 NEW
 
 export const dynamic = "force-dynamic";
 
@@ -82,8 +83,18 @@ async function fetchTopics(): Promise<Topic[]> {
    SORT
 ========================================================= */
 
-function sortTopics(items: Topic[], mode: SortMode) {
+function sortTopics(items: Topic[], mode: SortMode, favorites: string[]) {
   const copy = [...items];
+
+  // 🔥 PRIORITÉ FAVORIS
+  copy.sort((a, b) => {
+    const aFav = favorites.includes(a.id_topic);
+    const bFav = favorites.includes(b.id_topic);
+
+    if (aFav && !bFav) return -1;
+    if (!aFav && bFav) return 1;
+    return 0;
+  });
 
   switch (mode) {
     case "activity":
@@ -106,10 +117,10 @@ function sortTopics(items: Topic[], mode: SortMode) {
 }
 
 /* =========================================================
-   GROUP (1:1 UNIVERSE)
+   GROUP
 ========================================================= */
 
-function groupByUniverse(topics: Topic[], mode: SortMode) {
+function groupByUniverse(topics: Topic[], mode: SortMode, favorites: string[]) {
   const map: Record<string, Topic[]> = {};
 
   topics.forEach((t) => {
@@ -120,7 +131,7 @@ function groupByUniverse(topics: Topic[], mode: SortMode) {
   });
 
   Object.keys(map).forEach((u) => {
-    map[u] = sortTopics(map[u], mode);
+    map[u] = sortTopics(map[u], mode, favorites);
   });
 
   return map;
@@ -131,22 +142,25 @@ function groupByUniverse(topics: Topic[], mode: SortMode) {
 ========================================================= */
 
 export default function TopicsPage() {
+
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] = useState<SortMode>("activity");
 
   const [openUniverses, setOpenUniverses] = useState<Record<string, boolean>>({});
 
+  // 🔥 NEW
+  const [favorites, setFavorites] = useState<string[]>([]);
+
   const searchParams = useSearchParams();
 
-  // 🔥 HOOK CENTRALISÉ
   const { loadingId, setLoadingId } = useEntityDrawer(
     "topic",
     "topic_id"
   );
 
   /* ---------------------------------------------------------
-     LOAD
+     LOAD TOPICS
   --------------------------------------------------------- */
 
   useEffect(() => {
@@ -158,6 +172,30 @@ export default function TopicsPage() {
     }
 
     load();
+  }, []);
+
+  /* ---------------------------------------------------------
+     LOAD PREFS
+  --------------------------------------------------------- */
+
+  useEffect(() => {
+    async function loadPrefs() {
+      try {
+        const res = await api.get("/user/preferences");
+
+        const topicPrefs =
+          Array.isArray(res?.preferences?.TOPIC)
+            ? res.preferences.TOPIC
+            : [];
+
+        setFavorites(topicPrefs);
+
+      } catch (e) {
+        console.error("❌ prefs error", e);
+      }
+    }
+
+    loadPrefs();
   }, []);
 
   /* ---------------------------------------------------------
@@ -180,7 +218,7 @@ export default function TopicsPage() {
   }, [topics]);
 
   /* ---------------------------------------------------------
-     AUTO OPEN CURRENT UNIVERSE
+     AUTO OPEN CURRENT
   --------------------------------------------------------- */
 
   useEffect(() => {
@@ -197,6 +235,37 @@ export default function TopicsPage() {
   }, [topics, searchParams]);
 
   /* ---------------------------------------------------------
+     FAVORITE TOGGLE
+  --------------------------------------------------------- */
+
+  async function handleToggleFavorite(id: string, isFav: boolean) {
+
+    try {
+
+      if (isFav) {
+        await api.post("/user/preferences/remove", {
+          type: "TOPIC",
+          value_id: id,
+        });
+      } else {
+        await api.post("/user/preferences/add", {
+          type: "TOPIC",
+          value_id: id,
+        });
+      }
+
+      setFavorites((prev) =>
+        isFav
+          ? prev.filter((p) => p !== id)
+          : [...prev, id]
+      );
+
+    } catch (e) {
+      console.error("❌ favorite error", e);
+    }
+  }
+
+  /* ---------------------------------------------------------
      HELPERS
   --------------------------------------------------------- */
 
@@ -211,7 +280,7 @@ export default function TopicsPage() {
      DATA
   --------------------------------------------------------- */
 
-  const grouped = groupByUniverse(topics, sortMode);
+  const grouped = groupByUniverse(topics, sortMode, favorites);
   const hasContent = topics.length > 0;
 
   /* =========================================================
@@ -232,7 +301,6 @@ export default function TopicsPage() {
           </p>
         </div>
 
-        {/* SORT */}
         <div className="flex gap-2 text-xs">
           {[
             { key: "activity", label: "Activité" },
@@ -257,20 +325,6 @@ export default function TopicsPage() {
         </div>
       </div>
 
-      {/* LOADING */}
-      {loading && (
-        <p className="text-sm text-gray-400 animate-pulse">
-          Chargement des topics...
-        </p>
-      )}
-
-      {/* EMPTY */}
-      {!loading && !hasContent && (
-        <p className="text-sm text-gray-400">
-          Aucun topic disponible.
-        </p>
-      )}
-
       {/* CONTENT */}
       {!loading && hasContent &&
         Object.entries(grouped)
@@ -283,7 +337,6 @@ export default function TopicsPage() {
 
             <section key={universe} className="space-y-2">
 
-              {/* HEADER */}
               <div
                 onClick={() => toggleUniverse(universe)}
                 className="
@@ -300,33 +353,37 @@ export default function TopicsPage() {
 
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <span>{items.length}</span>
-                  <span className={`
-                    transition-transform
-                    ${openUniverses[universe] ? "rotate-90" : ""}
-                  `}>
-                    ▶
-                  </span>
                 </div>
               </div>
 
-              {/* GRID */}
               {openUniverses[universe] && (
                 <div className="pt-2">
                   <div className="
                     grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8
                     gap-3
                   ">
-                    {items.map((t) => (
-                      <TopicCard
-                        key={t.id_topic}
-                        id={t.id_topic}
-                        label={t.label}
-                        nbAnalyses={t.nb_analyses}
-                        delta30d={t.delta_30d}
-                        isLoading={loadingId === t.id_topic}
-                        onClick={() => setLoadingId(t.id_topic)}
-                      />
-                    ))}
+                    {items.map((t) => {
+
+                      const isFav = favorites.includes(t.id_topic);
+
+                      return (
+                        <TopicCard
+                          key={t.id_topic}
+                          id={t.id_topic}
+                          label={t.label}
+                          nbAnalyses={t.nb_analyses}
+                          delta30d={t.delta_30d}
+                          isLoading={loadingId === t.id_topic}
+                          onClick={() => setLoadingId(t.id_topic)}
+
+                          // 🔥 NEW
+                          isFavorite={isFav}
+                          onToggleFavorite={() =>
+                            handleToggleFavorite(t.id_topic, isFav)
+                          }
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}
