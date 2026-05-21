@@ -99,7 +99,6 @@ export default function CompanyCard({
         });
       }
 
-      // 🔥 simple refresh (propre V1)
       if (onToggleFavorite) {
         onToggleFavorite(id, isFavorite);
       }
