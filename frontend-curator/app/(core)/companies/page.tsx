@@ -72,6 +72,27 @@ function sortCompanies(companies: Company[], mode: SortMode): Company[] {
 }
 
 /* =========================================================
+   PRIORITIZE FAVORITES
+========================================================= */
+
+function prioritizeFavorites(
+  companies: Company[],
+  favorites: string[]
+): Company[] {
+
+  return [...companies].sort((a, b) => {
+
+    const aFav = favorites.includes(a.id_company);
+    const bFav = favorites.includes(b.id_company);
+
+    if (aFav && !bFav) return -1;
+    if (!aFav && bFav) return 1;
+
+    return 0;
+  });
+}
+
+/* =========================================================
    GROUP
 ========================================================= */
 
@@ -98,6 +119,7 @@ function groupByUniverse(companies: Company[], mode: SortMode) {
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [preferences, setPreferences] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [ready, setReady] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("alpha");
@@ -106,7 +128,6 @@ export default function CompaniesPage() {
 
   const searchParams = useSearchParams();
 
-  // 🔥 HOOK CENTRALISÉ
   const { loadingId, setLoadingId } = useEntityDrawer(
     "company",
     "company_id"
@@ -136,8 +157,19 @@ export default function CompaniesPage() {
 
     async function load() {
       setLoading(true);
-      const data = await fetchCompanies();
+
+      const [data, prefsRes] = await Promise.all([
+        fetchCompanies(),
+        api.get("/user/preferences"),
+      ]);
+
       setCompanies(data);
+
+      const companyPrefs =
+        prefsRes?.preferences?.COMPANY ?? [];
+
+      setPreferences(companyPrefs);
+
       setLoading(false);
     }
 
@@ -179,7 +211,10 @@ export default function CompaniesPage() {
      DATA
   --------------------------------------------------------- */
 
-  const grouped = groupByUniverse(companies, sortMode);
+  const prioritized = prioritizeFavorites(companies, preferences);
+
+  const grouped = groupByUniverse(prioritized, sortMode);
+
   const hasContent = companies.length > 0;
 
   if (!ready) {
@@ -290,6 +325,7 @@ export default function CompaniesPage() {
                         totalAnalyses={c.nb_analyses}
                         delta30d={c.delta_30d}
                         isLoading={loadingId === c.id_company}
+                        isFavorite={preferences.includes(c.id_company)}
                         onClick={() => setLoadingId(c.id_company)}
                       />
                     ))}
