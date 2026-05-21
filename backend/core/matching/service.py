@@ -194,7 +194,7 @@ def list_unmatched_entities() -> List[Dict]:
         if not raw:
             continue
 
-        norm = raw.strip().upper()
+        norm = normalize(raw)
 
         # =================================================
         # ALREADY TREATED
