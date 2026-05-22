@@ -47,7 +47,7 @@ class TranslationBatchRequest(
         ]
     )
 
-    limit: int = 100
+    limit: int = 10000
 
     only_missing: bool = True
 
