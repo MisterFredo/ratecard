@@ -1,27 +1,14 @@
-import json
 import logging
 import hashlib
-import re
-from typing import List, Dict
-
-from utils.llm import run_llm
-
-logger = logging.getLogger(__name__)
-
-
-# ============================================================
-# CORE TRANSLATION (TEXT)
-# ============================================================
-
-import json
-import logging
-import re
-import hashlib
-from typing import List, Dict, Optional
+from typing import Optional
 
 from utils.llm import run_llm
 from utils.bigquery_utils import query_bq
-from config import BQ_PROJECT, BQ_DATASET
+
+from config import (
+    BQ_PROJECT,
+    BQ_DATASET,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,23 +26,42 @@ TABLE_TRANSLATION_CACHE = (
 # HELPERS
 # ============================================================
 
-def _hash_text(text: str, lang: str) -> str:
+def _hash_text(
+    text: str,
+    lang: str
+) -> str:
+
     raw = f"{text.strip()}_{lang}"
-    return hashlib.md5(raw.encode("utf-8")).hexdigest()
+
+    return hashlib.md5(
+        raw.encode("utf-8")
+    ).hexdigest()
 
 
-def _get_cached_translation(text: str, lang: str) -> Optional[str]:
+def _get_cached_translation(
+    text: str,
+    lang: str
+) -> Optional[str]:
 
-    hash_key = _hash_text(text, lang)
+    hash_key = _hash_text(
+        text,
+        lang
+    )
 
     rows = query_bq(
         f"""
-        SELECT TRANSLATED_TEXT
+        SELECT
+            TRANSLATED_TEXT
+
         FROM `{TABLE_TRANSLATION_CACHE}`
+
         WHERE HASH_KEY = @hash
+
         LIMIT 1
         """,
-        {"hash": hash_key}
+        {
+            "hash": hash_key
+        }
     )
 
     if rows:
@@ -63,13 +69,17 @@ def _get_cached_translation(text: str, lang: str) -> Optional[str]:
 
     return None
 
+
 def _store_translation(
     text: str,
     lang: str,
     translated: str
 ):
 
-    hash_key = _hash_text(text, lang)
+    hash_key = _hash_text(
+        text,
+        lang
+    )
 
     query_bq(
         f"""
@@ -96,7 +106,9 @@ def _store_translation(
         WHERE NOT EXISTS (
 
             SELECT 1
+
             FROM `{TABLE_TRANSLATION_CACHE}`
+
             WHERE HASH_KEY = @hash
 
         )
@@ -111,41 +123,57 @@ def _store_translation(
 
 
 # ============================================================
-# CORE TRANSLATION (TEXT)
+# CORE TRANSLATION
 # ============================================================
 
-def translate_text(text: str, target_lang: str) -> str:
+def translate_text(
+    text: str,
+    target_lang: str
+) -> str:
 
-    if not text or target_lang == "fr":
+    if not text:
+        return text
+
+    if target_lang == "fr":
         return text
 
     try:
-        # --------------------------------------------------------
-        # CACHE CHECK
-        # --------------------------------------------------------
 
-        cached = _get_cached_translation(text, target_lang)
+        # =====================================================
+        # CACHE
+        # =====================================================
+
+        cached = _get_cached_translation(
+            text,
+            target_lang
+        )
 
         if cached:
             return cached
 
-        # --------------------------------------------------------
-        # LLM CALL
-        # --------------------------------------------------------
+        # =====================================================
+        # LLM
+        # =====================================================
 
         prompt = f"""
-You are a professional translator specialized in marketing, AdTech, and business content.
+You are a professional translator specialized in:
+- business
+- media
+- marketing
+- AdTech
+- analytics
 
 MISSION:
 Translate the following text into {target_lang}.
 
 STRICT RULES:
 - Do NOT summarize
+- Do NOT rewrite
 - Do NOT add information
 - Do NOT remove information
-- Keep the exact meaning
-- Keep tone neutral and professional
-- Keep formatting when relevant
+- Preserve exact meaning
+- Preserve tone
+- Preserve formatting
 - Preserve numbers exactly
 - Preserve company / product names exactly
 
@@ -163,158 +191,22 @@ Return ONLY the translated text.
 
         translated = raw.strip()
 
-        # --------------------------------------------------------
+        # =====================================================
         # STORE CACHE
-        # --------------------------------------------------------
+        # =====================================================
 
-        _store_translation(text, target_lang, translated)
+        _store_translation(
+            text,
+            target_lang,
+            translated
+        )
 
         return translated
 
     except Exception:
-        logger.exception("Translation error")
-        return text
-
-# ============================================================
-# BULK TRANSLATION (FEED)
-# ============================================================
-
-def translate_feed_items(
-    items: List[Dict],
-    lang: str
-) -> List[Dict]:
-
-    if lang == "fr":
-        return items
-
-    translated_items = []
-
-    for item in items:
-
-        try:
-
-            translated_title = translate_text(
-                item.get("title", ""),
-                lang
-            )
-
-            translated_excerpt = translate_text(
-                item.get("excerpt", ""),
-                lang
-            )
-
-        except Exception:
-
-            logger.exception("Translation error")
-
-            translated_title = item.get("title", "")
-            translated_excerpt = item.get("excerpt", "")
-
-        translated_items.append({
-            **item,
-            "title": translated_title,
-            "excerpt": translated_excerpt,
-        })
-
-    return translated_items
-
-
-# ============================================================
-# ADVANCED (OPTIONAL JSON MODE - FUTURE)
-# ============================================================
-
-def translate_feed_items_batch(
-    items: List[Dict],
-    lang: str
-) -> List[Dict]:
-    """
-    Version optimisée (1 appel LLM pour plusieurs items)
-    À utiliser plus tard si besoin de perf / coût
-    """
-
-    if lang == "fr" or not items:
-        return items
-
-    payload = [
-        {
-            "id": item.get("id"),
-            "title": item.get("title"),
-            "excerpt": item.get("excerpt"),
-        }
-        for item in items
-    ]
-
-    prompt = f"""
-You are a professional translator.
-
-Translate all items into {lang}.
-
-STRICT RULES:
-- Do NOT summarize
-- Keep meaning EXACT
-- Keep formatting
-- Keep IDs unchanged
-- Do NOT invent content
-
-INPUT:
-{json.dumps(payload, ensure_ascii=False)}
-
-OUTPUT:
-Return STRICT JSON:
-[
-  {{
-    "id": "...",
-    "title": "...",
-    "excerpt": "..."
-  }}
-]
-"""
-
-    raw = run_llm(prompt)
-
-    if not raw:
-        return items
-
-    try:
-
-        match = re.search(r"\[[\s\S]*\]", raw)
-
-        if not match:
-            raise ValueError("JSON not found")
-
-        translated = json.loads(match.group(0))
-
-        mapped = {
-            item["id"]: item
-            for item in items
-        }
-
-        result = []
-
-        for t in translated:
-
-            original = mapped.get(t["id"])
-
-            if not original:
-                continue
-
-            result.append({
-                **original,
-                "title":
-                    t.get("title")
-                    or original.get("title"),
-
-                "excerpt":
-                    t.get("excerpt")
-                    or original.get("excerpt"),
-            })
-
-        return result
-
-    except Exception:
 
         logger.exception(
-            "Batch translation parsing error"
+            "Translation error"
         )
 
-        return items
+        return text
