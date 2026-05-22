@@ -310,20 +310,18 @@ export default function FeedList({
 
             companyIds.some(
               (id: string) =>
-                preferences.includes(id)
+                preferences.COMPANY.includes(id)
             )
 
             || topicIds.some(
               (id: string) =>
-                preferences.includes(id)
+                preferences.TOPIC.includes(id)
             )
 
             || solutionIds.some(
               (id: string) =>
-                preferences.includes(id)
+                preferences.SOLUTION.includes(id)
             );
-
-          return (
 
             <div
               key={`${item.type}-${item.id}`}
