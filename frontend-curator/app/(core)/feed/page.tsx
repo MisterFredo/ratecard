@@ -483,18 +483,22 @@ export default function FeedPage() {
         );
       }
 
-      setPreferences((prev) =>
-        isFav
-          ? prev.filter((p) => p !== companyId)
-          : [...prev, companyId]
-      );
+      setPreferences((prev) => ({
 
-    } catch (e) {
+        ...prev,
 
-      console.error(
-        "❌ favorite toggle error",
-        e
-      );
+        COMPANY: isFav
+
+          ? prev.COMPANY.filter(
+              (p) => p !== companyId
+            )
+
+          : [
+              ...prev.COMPANY,
+              companyId
+            ],
+
+      }));
     }
   }
 
