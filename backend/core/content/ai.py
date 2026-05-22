@@ -141,8 +141,18 @@ IMPORTANT :
 TITLE
 (Titre factuel et informatif.)
 
+TITLE_EN
+(English translation of the title.
+Professional and natural English.
+Do not summarize.)
+
 EXCERPT
 (3 phrases synthétiques permettant de comprendre rapidement le sujet et son intérêt.)
+
+EXCERPT_EN
+(English translation of the excerpt.
+Professional and natural English.
+Do not summarize.)
 
 POINTS CLES
 (Liste factuelle des éléments importants présents dans la source.
@@ -265,7 +275,9 @@ SIGNAL
 
     sections = {
         "TITLE": "",
+        "TITLE_EN": "",
         "EXCERPT": "",
+        "EXCERPT_EN": "",
         "POINTS CLES": "",
         "CHIFFRES": "",
         "ACTEURS": "",
@@ -390,7 +402,9 @@ SIGNAL
 
     return {
         "title": sections["TITLE"].strip(),
+        "title_en": sections["TITLE_EN"].strip(),
         "excerpt": sections["EXCERPT"].strip(),
+        "excerpt_en": sections["EXCERPT_EN"].strip(),
         "content_body": body,
         "chiffres": parse_list(sections["CHIFFRES"]),
         "acteurs_cites": parse_list(sections["ACTEURS"]),
