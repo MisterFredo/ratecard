@@ -528,6 +528,10 @@ def _map_feed_row(r: Dict) -> Dict:
 
     badges = []
 
+    # ============================================================
+    # TOPICS
+    # ============================================================
+
     for t in topics:
 
         if isinstance(t, dict):
@@ -544,6 +548,10 @@ def _map_feed_row(r: Dict) -> Dict:
                 "type": "topic",
                 "label": t,
             })
+
+    # ============================================================
+    # CONCEPTS
+    # ============================================================
 
     for c in concepts:
 
@@ -562,50 +570,86 @@ def _map_feed_row(r: Dict) -> Dict:
                 "label": c,
             })
 
+    # ============================================================
+    # COMPANIES (🔥 FIX)
+    # ============================================================
+
     for c in companies:
+
+        if not isinstance(c, dict):
+            continue  # 🔥 évite crash si string
+
+        cid = c.get("id_company") or c.get("id")
+
+        if not cid:
+            continue  # 🔥 évite null ID
 
         badges.append({
             "type": "company",
             "label": c.get("name"),
-            "id": c.get("id_company"),
+            "id": cid,
         })
 
+    # ============================================================
+    # SOLUTIONS (🔥 FIX)
+    # ============================================================
+
     for s in solutions:
+
+        if not isinstance(s, dict):
+            continue
+
+        sid = s.get("id_solution") or s.get("id")
+
+        if not sid:
+            continue
 
         badges.append({
             "type": "solution",
             "label": s.get("name"),
-            "id": s.get("id_solution"),
+            "id": sid,
         })
 
+    # ============================================================
+    # UNIVERS (🔥 FIX)
+    # ============================================================
+
     for u in universes:
+
+        if not isinstance(u, dict):
+            continue
+
+        uid = u.get("id_universe") or u.get("id")
+
+        if not uid:
+            continue
 
         badges.append({
             "type": "universe",
             "label": u.get("label"),
-            "id": u.get("id_universe"),
+            "id": uid,
         })
+
+    # ============================================================
+    # RETURN
+    # ============================================================
 
     return {
         "id": r.get("id"),
 
         "type": r.get("type"),
 
-        "id_primary_company": r.get(
-            "id_primary_company"
-        ),
+        "id_primary_company": r.get("id_primary_company"),
 
         "title": r.get("title"),
 
         "excerpt": r.get("excerpt"),
+
         "source_url": r.get("source_url"),
 
         "source_title": r.get("source_title"),
 
-        # 🔥 NEW
-        "content_body": r.get(
-            "content_body"
-        ),
+        "content_body": r.get("content_body"),
 
         "published_at": r.get("published_at"),
 
