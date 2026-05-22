@@ -562,7 +562,7 @@ def get_item_detail(
     ) or content.get("EXCERPT")
 
     # ========================================================
-    # DRAWER CONTENT
+    # DRAWER FIELDS
     # ========================================================
 
     content_body = content.get(
@@ -627,21 +627,13 @@ def get_item_detail(
 
     return {
 
-        # ====================================================
-        # CORE
-        # ====================================================
+        # 🔥 KEEP LEGACY FIELDS
+        **content,
 
-        "id_content": content.get(
-            "ID_CONTENT"
-        ),
-
+        # 🔥 FRONT SAFE FIELDS
         "title": title,
 
         "excerpt": excerpt,
-
-        # ====================================================
-        # DRAWER
-        # ====================================================
 
         "content_body": content_body,
 
@@ -664,10 +656,6 @@ def get_item_detail(
         # ====================================================
         # META
         # ====================================================
-
-        "published_at": content.get(
-            "PUBLISHED_AT"
-        ),
 
         "source_url": item.get(
             "source_url"
