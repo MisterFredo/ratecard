@@ -134,7 +134,10 @@ export default function TopicDrawer({ id, onClose }: any) {
         </h2>
 
         <FeedGroupedByMonth
+          userLang="fr"
+
           items={items}
+
           onClickItem={(item) =>
             openRightDrawer(
               "analysis",
