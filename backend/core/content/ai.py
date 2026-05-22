@@ -138,26 +138,37 @@ IMPORTANT :
 
 ================ FORMAT OBLIGATOIRE ================
 
+Tu dois IMPÉRATIVEMENT retourner TOUTES les sections suivantes.
+Aucune section ne doit être omise.
+Les headers doivent être EXACTEMENT respectés.
+
+FORMAT STRICT :
+
 TITLE
-(Titre factuel et informatif.)
+(Titre factuel et informatif en français.)
 
 TITLE_EN
-(English translation of the title.
-Professional and natural English.
-Do not summarize.)
+(Traduction anglaise professionnelle et naturelle du TITLE.
+Ne pas résumer.
+Ne pas reformuler.)
 
 EXCERPT
-(3 phrases synthétiques permettant de comprendre rapidement le sujet et son intérêt.)
+(3 phrases synthétiques en français permettant de comprendre rapidement le sujet et son intérêt sans être général ou avec des formules clichés.)
 
 EXCERPT_EN
-(English translation of the excerpt.
-Professional and natural English.
-Do not summarize.)
+(Traduction anglaise professionnelle et naturelle du EXCERPT.
+Ne pas résumer.
+Ne pas reformuler.)
 
-POINTS CLES
-(Liste factuelle des éléments importants présents dans la source.
-Exhaustif mais strictement basé sur le texte.
-Une ligne = une information.)
+IMPORTANT :
+- TITLE_EN doit toujours être rempli
+- EXCERPT_EN doit toujours être rempli
+- Même si le contenu source est déjà en anglais
+- Les headers doivent être exactement :
+  TITLE
+  TITLE_EN
+  EXCERPT
+  EXCERPT_EN
 
 CHIFFRES
 Extraire uniquement les chiffres présents dans la source.
