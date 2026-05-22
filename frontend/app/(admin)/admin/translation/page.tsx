@@ -334,7 +334,7 @@ export default function TranslationPage() {
 
           only_missing: true,
 
-          limit: 500,
+          limit: 9999,
         }
       );
 
