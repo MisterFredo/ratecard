@@ -118,9 +118,9 @@ def create_content(data: ContentCreate) -> str:
         ),
 
         "TITLE": data.title.strip(),
-        "TITLE_EN": data.title.strip(),
+        "TITLE_EN": data.title_en.strip(),
         "EXCERPT": data.excerpt,
-        "EXCERPT_EN": data.excerpt,
+        "EXCERPT_EN": data.excerpt_en,
         "CONTENT_BODY": data.content_body,
 
         "CHIFFRES": normalize_array(data.chiffres),
@@ -718,6 +718,8 @@ def list_contents_admin():
 
           c.TITLE,
           c.TITLE_EN,
+          c.EXCERPT,
+          c.EXCERPT_EN,
 
           c.STATUS,
 
