@@ -43,7 +43,7 @@ type Props = {
     item: FeedItem
   ) => void;
 
-  // 🔥 NEW
+  // 🔥 FAVORITES
   preferences?: {
     COMPANY: string[];
     TOPIC: string[];
@@ -73,8 +73,13 @@ export default function FeedList({
   selectedIds = [],
   onToggleSelect,
 
-  // 🔥 NEW
-  preferences = [],
+  // 🔥 FAVORITES
+  preferences = {
+    COMPANY: [],
+    TOPIC: [],
+    SOLUTION: [],
+  },
+
   onToggleFavorite,
 
 }: Props) {
@@ -284,7 +289,10 @@ export default function FeedList({
           const isSelected =
             selectedIds.includes(item.id);
 
-          // 🔥 FAVORITE LOGIC
+          /* ===================================================
+             FAVORITES
+          =================================================== */
+
           const companyIds =
             Array.isArray(item.companies)
               ? item.companies.map(
@@ -306,22 +314,33 @@ export default function FeedList({
                 )
               : [];
 
+          const companyPrefs =
+            preferences?.COMPANY || [];
+
+          const topicPrefs =
+            preferences?.TOPIC || [];
+
+          const solutionPrefs =
+            preferences?.SOLUTION || [];
+
           const isFavorite =
 
             companyIds.some(
               (id: string) =>
-                preferences.COMPANY.includes(id)
+                companyPrefs.includes(id)
             )
 
             || topicIds.some(
               (id: string) =>
-                preferences.TOPIC.includes(id)
+                topicPrefs.includes(id)
             )
 
             || solutionIds.some(
               (id: string) =>
-                preferences.SOLUTION.includes(id)
+                solutionPrefs.includes(id)
             );
+
+          return (
 
             <div
               key={`${item.type}-${item.id}`}
@@ -363,12 +382,15 @@ export default function FeedList({
 
                 <FeedItemCard
                   item={item}
+
                   onClick={() =>
                     onSelectItem(item)
                   }
 
-                  // 🔥 NEW
+                  isFavorite={isFavorite}
+
                   onToggleFavorite={() => {
+
                     if (!onToggleFavorite) return;
 
                     const targetId =
