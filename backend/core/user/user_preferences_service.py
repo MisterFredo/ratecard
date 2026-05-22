@@ -106,7 +106,7 @@ def add_user_preference(
       )
     """
 
-    query_bq(
+    update_bq(
         query,
         {
             "user_id": user_id,
@@ -141,7 +141,7 @@ def remove_user_preference(
       AND VALUE_ID = @value_id
     """
 
-    query_bq(
+    update_bq(
         query,
         {
             "user_id": user_id,
