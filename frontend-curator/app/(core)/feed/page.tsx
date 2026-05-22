@@ -589,6 +589,7 @@ export default function FeedPage() {
         </div>
 
         <FeedExplorer
+          userLang={userLang}
           query={query}
 
           setQuery={setQuery}
