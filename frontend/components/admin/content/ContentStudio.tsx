@@ -68,7 +68,9 @@ export default function ContentStudio({ mode, contentId }: Props) {
   // =========================
 
   const [title, setTitle] = useState("");
+  const [title_en, setTitle_en] = useState("");
   const [excerpt, setExcerpt] = useState("");
+  const [excerpt_en, setExcerpt_en] = useState("");
   const [contentBody, setContentBody] = useState("");
   const [chiffres, setChiffres] = useState<string[]>([]);
 
@@ -142,7 +144,9 @@ export default function ContentStudio({ mode, contentId }: Props) {
       );
 
       setTitle(c.title || "");
+      setTitle_en(c.title_en || "");
       setExcerpt(c.excerpt || "");
+      setExcerpt_en(c.excerpt_en || "");
       setContentBody(c.content_body || "");
       setChiffres(c.chiffres || []);
 
@@ -189,7 +193,9 @@ export default function ContentStudio({ mode, contentId }: Props) {
       source_published_at: sourcePublishedAt,
 
       title,
+      title_en,
       excerpt,
+      excerpt_en,
       content_body: contentBody,
 
       chiffres,
@@ -418,6 +424,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
           contentType={contentType}
 
           excerpt={excerpt}
+          excerpt_en={excerpt_en}
           contentBody={contentBody}
 
           chiffres={chiffres}
@@ -435,6 +442,7 @@ export default function ContentStudio({ mode, contentId }: Props) {
           onChange={(d) => {
 
             if (d.excerpt !== undefined) setExcerpt(d.excerpt);
+            if (d.excerpt_en !== undefined) setExcerpt(d.excerpt_en);
             if (d.contentBody !== undefined) setContentBody(d.contentBody);
             if (d.chiffres !== undefined) setChiffres(d.chiffres);
             if (d.acteurs !== undefined) setActeursRaw(d.acteurs);
