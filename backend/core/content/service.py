@@ -718,6 +718,7 @@ def list_contents_admin():
 
           c.TITLE,
           c.TITLE_EN,
+
           c.EXCERPT,
           c.EXCERPT_EN,
 
@@ -726,6 +727,7 @@ def list_contents_admin():
           c.SOURCE_DATE,
           c.SOURCE_URL,
           c.SOURCE_TITLE,
+
           c.PUBLISHED_AT,
           c.UPDATED_AT
 
@@ -742,6 +744,7 @@ def list_contents_admin():
     )
 
     return [
+
         {
             "id_content": r["ID_CONTENT"],
 
@@ -759,33 +762,51 @@ def list_contents_admin():
             "primary_company_name": r.get(
                 "PRIMARY_COMPANY_NAME"
             ),
-            "source_url": r.get("SOURCE_URL"),
 
-            "source_title": r.get("SOURCE_TITLE"),
+            "source_url": r.get(
+                "SOURCE_URL"
+            ),
+
+            "source_title": r.get(
+                "SOURCE_TITLE"
+            ),
 
             "title": r["TITLE"],
             "title_en": r["TITLE_EN"],
 
+            "excerpt": r["EXCERPT"],
+            "excerpt_en": r["EXCERPT_EN"],
+
             "status": r["STATUS"],
 
             "source_date": (
+
                 r["SOURCE_DATE"].isoformat()
+
                 if r.get("SOURCE_DATE")
+
                 else None
             ),
 
             "published_at": (
+
                 r["PUBLISHED_AT"].isoformat()
+
                 if r.get("PUBLISHED_AT")
+
                 else None
             ),
 
             "updated_at": (
+
                 r["UPDATED_AT"].isoformat()
+
                 if r.get("UPDATED_AT")
+
                 else None
             ),
         }
+
         for r in rows
     ]
 
