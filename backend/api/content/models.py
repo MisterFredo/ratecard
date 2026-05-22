@@ -162,8 +162,10 @@ class ContentCreate(BaseModel):
     # ========================================================
 
     title: str
+    title_en: str
 
     excerpt: Optional[str] = None
+    excerpt_en: Optional[str] = None
     content_body: Optional[str] = None
 
     # ========================================================
@@ -260,7 +262,9 @@ class ContentUpdate(BaseModel):
     # ========================================================
 
     title: Optional[str] = None
+    title_en: Optional[str] = None
     excerpt: Optional[str] = None
+    excerpt_en: Optional[str] = None
     content_body: Optional[str] = None
 
     # ========================================================
@@ -352,7 +356,9 @@ class ContentOut(BaseModel):
     source_published_at: Optional[date] = None
 
     title: Optional[str] = None
+    title_en: Optional[str] = None
     excerpt: Optional[str] = None
+    excerpt_en: Optional[str] = None
     content_body: Optional[str] = None
 
     source_date: Optional[date] = None
