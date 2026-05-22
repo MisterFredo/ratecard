@@ -394,9 +394,15 @@ export default function TranslationPage() {
         <div className="flex items-center gap-2">
 
           <button
-            onClick={
-              translateMissing
-            }
+            onClick={translateVisible}
+            disabled={translating}
+            className="px-4 py-2 rounded border text-sm"
+          >
+            Traduire visible
+          </button>
+
+          <button
+            onClick={translateMissing}
             disabled={translating}
             className="px-4 py-2 rounded bg-ratecard-blue text-white text-sm"
           >
