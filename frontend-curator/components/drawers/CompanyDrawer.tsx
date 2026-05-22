@@ -48,6 +48,7 @@ export default function CompanyDrawer({ id, onClose }: any) {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [numbers, setNumbers] = useState<any[]>([]);
   const [radar, setRadar] = useState<any>(null);
+  const [userLang, setUserLang] = useState("fr");
 
   // 🔥 description state
   const [expanded, setExpanded] = useState(false);
@@ -105,6 +106,32 @@ export default function CompanyDrawer({ id, onClose }: any) {
 
     loadNumbers();
   }, [id]);
+
+  useEffect(() => {
+    async function loadUserLang() {
+
+      try {
+
+        const res = await api.get(
+          "/user/preferences"
+        );
+
+        const lang =
+          res?.user?.lang
+          || "fr";
+
+        setUserLang(lang);
+
+      } catch {
+
+        setUserLang("fr");
+
+      }
+    }
+
+    loadUserLang();
+
+  }, []);
 
   /* ========================================================= */
   /* DETECT OVERFLOW DESCRIPTION */
@@ -193,7 +220,7 @@ export default function CompanyDrawer({ id, onClose }: any) {
         </h2>
 
         <FeedGroupedByMonth
-          userLang="fr"
+          userLang={userLang}
 
           items={items}
 
