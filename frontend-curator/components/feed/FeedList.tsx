@@ -12,6 +12,7 @@ import type {
 /* ========================================================= */
 
 type Props = {
+
   items: FeedItem[] | any;
 
   loading: boolean;
@@ -54,23 +55,33 @@ type Props = {
     companyId: string,
     isFav: boolean
   ) => void;
+
+  // 🔥 NEW
+  userLang: string;
 };
 
 /* ========================================================= */
 
 export default function FeedList({
+
   items,
   loading,
   hasMore,
+
   onLoadMore,
   onSelectItem,
+
   title,
   total,
+
   mode = "filters",
+
   onClickBadge,
+
   loadingItemId,
 
   selectedIds = [],
+
   onToggleSelect,
 
   // 🔥 FAVORITES
@@ -82,10 +93,15 @@ export default function FeedList({
 
   onToggleFavorite,
 
+  // 🔥 NEW
+  userLang,
+
 }: Props) {
 
-  const [isFetchingMore, setIsFetchingMore] =
-    useState(false);
+  const [
+    isFetchingMore,
+    setIsFetchingMore
+  ] = useState(false);
 
   /* =========================================================
      SAFE ITEMS
@@ -287,41 +303,55 @@ export default function FeedList({
         {safeItems.map((item) => {
 
           const isSelected =
-            selectedIds.includes(item.id);
+            selectedIds.includes(
+              item.id
+            );
 
           /* ===================================================
              FAVORITES
           =================================================== */
 
           const companyIds =
-            Array.isArray(item.companies)
+            Array.isArray(
+              item.companies
+            )
               ? item.companies.map(
-                  (c: any) => c.id_company
+                  (c: any) =>
+                    c.id_company
                 )
               : [];
 
           const topicIds =
-            Array.isArray(item.topics)
+            Array.isArray(
+              item.topics
+            )
               ? item.topics.map(
-                  (t: any) => t.id_topic
+                  (t: any) =>
+                    t.id_topic
                 )
               : [];
 
           const solutionIds =
-            Array.isArray(item.solutions)
+            Array.isArray(
+              item.solutions
+            )
               ? item.solutions.map(
-                  (s: any) => s.id_solution
+                  (s: any) =>
+                    s.id_solution
                 )
               : [];
 
           const companyPrefs =
-            preferences?.COMPANY || [];
+            preferences?.COMPANY
+            || [];
 
           const topicPrefs =
-            preferences?.TOPIC || [];
+            preferences?.TOPIC
+            || [];
 
           const solutionPrefs =
-            preferences?.SOLUTION || [];
+            preferences?.SOLUTION
+            || [];
 
           const isFavorite =
 
@@ -366,7 +396,9 @@ export default function FeedList({
                 type="checkbox"
                 checked={isSelected}
                 onChange={() =>
-                  onToggleSelect?.(item)
+                  onToggleSelect?.(
+                    item
+                  )
                 }
                 className="
                   mt-2
@@ -381,24 +413,35 @@ export default function FeedList({
               ">
 
                 <FeedItemCard
+
+                  userLang={userLang}
+
                   item={item}
 
                   onClick={() =>
                     onSelectItem(item)
                   }
 
-                  isFavorite={isFavorite}
+                  isFavorite={
+                    isFavorite
+                  }
 
                   onToggleFavorite={() => {
 
-                    if (!onToggleFavorite) return;
+                    if (
+                      !onToggleFavorite
+                    ) return;
 
                     const targetId =
+
                       companyIds[0]
+
                       || topicIds[0]
+
                       || solutionIds[0];
 
-                    if (!targetId) return;
+                    if (!targetId)
+                      return;
 
                     onToggleFavorite(
                       targetId,
@@ -473,6 +516,5 @@ export default function FeedList({
       )}
 
     </div>
-
   );
 }
