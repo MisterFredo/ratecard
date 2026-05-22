@@ -133,8 +133,10 @@ def _get_entity_feed(
         c.id_primary_company,
 
         c.title,
+        c.title_en,
 
         c.excerpt,
+        c.excerpt_en,
 
         c.published_at,
 
@@ -687,8 +689,10 @@ def _map_feed_row(r: Dict):
         # ========================================================
 
         "title": r.get("title"),
+        "title_en": r.get("title_en"),
 
         "excerpt": r.get("excerpt"),
+        "excerpt_en": r.get("excerpt_en"),
 
         "published_at": fmt(
             r.get("published_at")
