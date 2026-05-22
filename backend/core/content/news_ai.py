@@ -207,7 +207,9 @@ FORMAT STRICT :
 
 {{
   "title": "...",
+  "title_en": "...",
   "excerpt": "...",
+  "excerpt_en": "...",
   "body_html": "...",
   "acteurs": [],
   "solutions": [],
@@ -225,6 +227,12 @@ TITLE
 - Sans superlatif
 - Refléter le signal principal
 
+TITLE_EN
+- Traduction anglaise professionnelle du TITLE
+- Naturelle et fluide
+- Sans résumé
+- Même niveau d’information
+
 EXCERPT
 - 3 à 4 phrases
 - 300 à 500 caractères
@@ -232,6 +240,12 @@ EXCERPT
 - Chaque phrase doit apporter une information nouvelle
 - Aucun adjectif promotionnel
 - Aucun remplissage vide
+
+EXCERPT_EN
+- Traduction anglaise professionnelle du EXCERPT
+- Naturelle et fluide
+- Sans résumé
+- Même niveau d’information
 
 BODY_HTML
 - Liste de 4 à 6 points clés
@@ -334,8 +348,10 @@ Revenus publicitaires | 1200 | millions | Amazon | US | 2024
 
     return {
         "title": (data.get("title") or "").strip(),
+        "title_en": (data.get("title_en") or "").strip(),
 
         "excerpt": (data.get("excerpt") or "").strip(),
+        "excerpt_en": (data.get("excerpt_en") or "").strip(),
 
         "content_body": (
             data.get("body_html") or ""
