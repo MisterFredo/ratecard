@@ -189,25 +189,6 @@ def login(payload: LoginPayload):
 
 
 # =========================================================
-# GET USER (BY ID)
-# =========================================================
-
-@router.get("/{user_id}")
-def get_user(user_id: str):
-    user = get_user_by_id(user_id)
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    universes = get_user_universes(user_id)
-
-    return {
-        "user": user,
-        "universes": universes,
-    }
-
-
-# =========================================================
 # GET CURRENT USER (ME)
 # =========================================================
 
@@ -266,3 +247,22 @@ def assign_universes_route(payload: AssignUniversePayload):
         "status": "ok",
         "assigned": payload.universes,
     }
+
+# =========================================================
+# GET USER (BY ID)
+# =========================================================
+
+@router.get("/{user_id}")
+def get_user(user_id: str):
+    user = get_user_by_id(user_id)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    universes = get_user_universes(user_id)
+
+    return {
+        "user": user,
+        "universes": universes,
+    }
+
