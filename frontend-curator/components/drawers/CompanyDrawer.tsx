@@ -193,7 +193,10 @@ export default function CompanyDrawer({ id, onClose }: any) {
         </h2>
 
         <FeedGroupedByMonth
+          userLang="fr"
+
           items={items}
+
           onClickItem={(item) =>
             openRightDrawer(
               "analysis",
