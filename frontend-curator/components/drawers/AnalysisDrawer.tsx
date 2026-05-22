@@ -31,11 +31,13 @@ type Concept = {
 type AnalysisData = {
   id_content: string;
   title: string;
+  title_en: string;
 
   source_url?: string;
   source_title?: string;
 
   excerpt?: string;
+  excerpt_en?: string;
   content_body?: string;
 
   mecanique_expliquee?: string;
@@ -115,6 +117,14 @@ export default function AnalysisDrawer({ id, onClose }: Props) {
       </div>
     );
   }
+
+  const title =
+    data.title_en ||
+    data.title;
+
+  const excerpt =
+    data.excerpt_en ||
+    data.excerpt;
 
   const badges = [
     ...(data.companies ?? []).map((c) => ({
