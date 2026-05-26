@@ -22,7 +22,7 @@ import {
   Image,
   LayoutTemplate,
   Users,
-  Languages, // 🔥 NEW
+  Languages,
 } from "lucide-react";
 
 export default function AdminShell({
@@ -97,7 +97,6 @@ export default function AdminShell({
       icon: BarChart3,
     },
 
-    // 🔥 NEW
     {
       href: "/admin/translation",
       label: "Translations",
@@ -114,10 +113,24 @@ export default function AdminShell({
       icon: Share2,
     },
 
+    // -----------------------------------------------------
+    // RATECARD
+    // -----------------------------------------------------
+
+    {
+      href: "/admin/newsletter",
+      label: "Newsletter",
+      icon: Mail,
+    },
+
+    // -----------------------------------------------------
+    // CURATOR
+    // -----------------------------------------------------
+
     {
       href: "/admin/digest",
-      label: "Digest (Adhoc)",
-      icon: Mail,
+      label: "Digest",
+      icon: LayoutTemplate,
     },
 
     {
