@@ -1,6 +1,6 @@
 from playwright.sync_api import sync_playwright
 
-URL = "https://www.just-drinks.com/news/carlsberg-brings-chinese-beer-brand-chongqing-to-malaysia/"
+URL = "https://www.adweek.com/brand-marketing/ai-battle-microsoft-yusuf-mehdi/"
 
 with sync_playwright() as p:
 
