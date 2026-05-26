@@ -1,0 +1,33 @@
+from playwright.sync_api import sync_playwright
+
+URL = "https://www.just-drinks.com/news/carlsberg-brings-chinese-beer-brand-chongqing-to-malaysia/"
+
+with sync_playwright() as p:
+
+    browser = p.chromium.launch(
+        headless=True
+    )
+
+    page = browser.new_page()
+
+    page.goto(
+        URL,
+        wait_until="networkidle",
+        timeout=60000
+    )
+
+    print("\n====================")
+    print("TITLE")
+    print("====================")
+
+    print(page.title())
+
+    print("\n====================")
+    print("CONTENT")
+    print("====================")
+
+    html = page.content()
+
+    print(html[:10000])
+
+    browser.close()
