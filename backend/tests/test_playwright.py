@@ -26,8 +26,8 @@ with sync_playwright() as p:
     print("CONTENT")
     print("====================")
 
-    html = page.content()
+    text = page.locator("body").inner_text()
 
-    print(html[:10000])
+    print(text[:15000])
 
     browser.close()
