@@ -6,8 +6,8 @@ import NewsletterEngine from "@/components/newsletter/NewsletterEngine";
 import NewsletterSelectors from "@/components/newsletter/NewsletterSelectors";
 import NewsletterTopicStats from "@/components/newsletter/NewsletterTopicStats";
 
-import DigestHeaderConfig from "@/components/delivery/DigestHeaderConfig";
-import DigestPreviewPanel from "@/components/delivery/DigestPreviewPanel";
+import DigestHeaderConfig from "@/components/delivery/DeliveryHeaderConfig";
+import DigestPreviewPanel from "@/components/delivery/DeliveryPreviewPanel";
 
 import DeliveryEditorialFlow from "@/components/delivery/DeliveryEditorialFlow";
 
