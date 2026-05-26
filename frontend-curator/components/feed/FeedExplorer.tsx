@@ -42,6 +42,15 @@ type Props = {
     type: string
   ) => void;
 
+  // 🔥 NEW
+  feedMode:
+    "all" | "mine";
+
+  // 🔥 NEW
+  onSelectFeedMode: (
+    mode: "all" | "mine"
+  ) => void;
+
   items: FeedItem[];
 
   total: number;
@@ -69,7 +78,6 @@ type Props = {
     item: FeedItem
   ) => void;
 
-  // 🔥 NEW
   preferences: {
     COMPANY: string[];
     TOPIC: string[];
@@ -81,7 +89,6 @@ type Props = {
     isFav: boolean
   ) => void;
 
-  // 🔥 NEW
   userLang: string;
 };
 
@@ -100,6 +107,10 @@ export default function FeedExplorer({
   selectedType,
   onSelectType,
 
+  // 🔥 NEW
+  feedMode,
+  onSelectFeedMode,
+
   items,
   total,
   loading,
@@ -114,11 +125,9 @@ export default function FeedExplorer({
   selectedIds,
   onToggleSelect,
 
-  // 🔥 NEW
   preferences,
   onToggleFavorite,
 
-  // 🔥 NEW
   userLang,
 
 }: Props) {
@@ -134,6 +143,7 @@ export default function FeedExplorer({
       ===================================================== */}
 
       <FeedHeader
+
         query={query}
 
         setQuery={setQuery}
@@ -158,6 +168,14 @@ export default function FeedExplorer({
 
         onSelectType={
           onSelectType
+        }
+
+        // 🔥 NEW
+        feedMode={feedMode}
+
+        // 🔥 NEW
+        onSelectFeedMode={
+          onSelectFeedMode
         }
 
         loading={loading}
@@ -207,7 +225,6 @@ export default function FeedExplorer({
           onToggleSelect
         }
 
-        // 🔥 NEW
         preferences={preferences}
 
         onToggleFavorite={
