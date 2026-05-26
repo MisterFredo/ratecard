@@ -330,13 +330,19 @@ export default function FeedItemCard({
         onClick={
           handleFavoriteClick
         }
-        className="
+        className={`
           absolute
           top-2
           right-2
-          text-sm
           z-10
-        "
+          leading-none
+          transition
+          ${
+            isFavorite
+              ? "text-[20px]"
+              : "text-[20px] text-gray-700 hover:text-black"
+          }
+        `}
       >
 
         {isFavorite
@@ -344,12 +350,6 @@ export default function FeedItemCard({
           : "☆"}
 
       </button>
-
-      <div className="
-        flex
-        items-start
-        gap-5
-      ">
 
         {/* ===================================================
             LEFT COLUMN
