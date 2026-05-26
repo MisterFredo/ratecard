@@ -547,34 +547,6 @@ export default function FeedPage() {
         space-y-6
       ">
 
-        {/* FEED MODE */}
-
-        <div className="flex gap-2 text-xs">
-
-          <button
-            onClick={() => setFeedMode("all")}
-            className={`px-3 py-1 rounded border ${
-              feedMode === "all"
-                ? "bg-black text-white"
-                : "bg-white text-gray-600"
-            }`}
-          >
-            All Feed
-          </button>
-
-          <button
-            onClick={() => setFeedMode("mine")}
-            className={`px-3 py-1 rounded border ${
-              feedMode === "mine"
-                ? "bg-black text-white"
-                : "bg-white text-gray-600"
-            }`}
-          >
-            My Feed
-          </button>
-
-        </div>
-
         <div>
 
           <h1 className="
