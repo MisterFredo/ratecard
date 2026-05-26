@@ -4,12 +4,12 @@ import { useMemo, useState, useEffect } from "react";
 
 import NewsletterEngine from "@/components/newsletter/NewsletterEngine";
 import NewsletterSelectors from "@/components/newsletter/NewsletterSelectors";
-
-import DeliveryHeaderConfig from "@/components/delivery/DeliveryHeaderConfig";
-import DeliveryEditorialFlow from "@/components/delivery/DeliveryEditorialFlow";
-import DeliveryPreviewPanel from "@/components/delivery/DeliveryPreviewPanel";
-
 import NewsletterTopicStats from "@/components/newsletter/NewsletterTopicStats";
+
+import DigestHeaderConfig from "@/components/delivery/DigestHeaderConfig";
+import DigestPreviewPanel from "@/components/delivery/DigestPreviewPanel";
+
+import DeliveryEditorialFlow from "@/components/delivery/DeliveryEditorialFlow";
 
 import { api } from "@/lib/api";
 
@@ -23,22 +23,33 @@ import type {
   SelectOption,
 } from "@/components/ui/SearchableMultiSelect";
 
-/* ========================================================= */
+/* =========================================================
+   TYPES
+========================================================= */
 
 type EditorialItem = {
   id: string;
   type: "news" | "breve";
 };
 
-/* ========================================================= */
+type DeliveryEditorialItem = {
+  id: string;
+  type: string;
+  label: string;
+  title: string;
+};
+
+/* =========================================================
+   PAGE
+========================================================= */
 
 export default function NewsletterPage() {
 
   const [loading, setLoading] = useState(false);
 
-  /* =========================================================
+  /* =======================================================
      DATA
-  ========================================================= */
+  ======================================================= */
 
   const [news, setNews] = useState<
     NewsletterNewsItem[]
@@ -48,9 +59,9 @@ export default function NewsletterPage() {
     NewsletterNewsItem[]
   >([]);
 
-  /* =========================================================
+  /* =======================================================
      FILTERS
-  ========================================================= */
+  ======================================================= */
 
   const [selectedTopics, setSelectedTopics] = useState<
     SelectOption[]
@@ -64,9 +75,9 @@ export default function NewsletterPage() {
     SelectOption[]
   >([]);
 
-  /* =========================================================
+  /* =======================================================
      STORE GLOBAL DES ITEMS
-  ========================================================= */
+  ======================================================= */
 
   const [selectedItemsMap, setSelectedItemsMap] = useState<{
     [id: string]: any;
@@ -92,9 +103,9 @@ export default function NewsletterPage() {
     });
   }
 
-  /* =========================================================
+  /* =======================================================
      HEADER CONFIG
-  ========================================================= */
+  ======================================================= */
 
   const [headerConfig, setHeaderConfig] = useState<HeaderConfig>({
     title: "Newsletter Ratecard",
@@ -110,25 +121,25 @@ export default function NewsletterPage() {
 
   const [introText, setIntroText] = useState("");
 
-  /* =========================================================
+  /* =======================================================
      EDITORIAL FLOW
-  ========================================================= */
+  ======================================================= */
 
   const [editorialOrder, setEditorialOrder] = useState<
     EditorialItem[]
   >([]);
 
-  /* =========================================================
+  /* =======================================================
      TOPIC STATS
-  ========================================================= */
+  ======================================================= */
 
   const [topicStats, setTopicStats] = useState<
     TopicStat[]
   >([]);
 
-  /* =========================================================
+  /* =======================================================
      LOAD STATS
-  ========================================================= */
+  ======================================================= */
 
   useEffect(() => {
 
@@ -171,9 +182,9 @@ export default function NewsletterPage() {
 
   }, []);
 
-  /* =========================================================
+  /* =======================================================
      SEARCH
-  ========================================================= */
+  ======================================================= */
 
   async function handleSearch(filters: {
     topics: string[];
@@ -218,9 +229,9 @@ export default function NewsletterPage() {
     }
   }
 
-  /* =========================================================
+  /* =======================================================
      MAP ORDER → DATA
-  ========================================================= */
+  ======================================================= */
 
   const editorialNews = useMemo(
     () =>
@@ -240,9 +251,70 @@ export default function NewsletterPage() {
     [editorialOrder, selectedItemsMap]
   );
 
-  /* =========================================================
+  /* =======================================================
+     DELIVERY FLOW ITEMS
+  ======================================================= */
+
+  const editorialItems = useMemo<
+    DeliveryEditorialItem[]
+  >(() => {
+
+    return editorialOrder
+      .map((item) => {
+
+        const data =
+          selectedItemsMap[item.id];
+
+        if (!data) return null;
+
+        return {
+          id: item.id,
+          type: item.type,
+
+          label:
+            item.type === "news"
+              ? "NEWS"
+              : "BRÈVE",
+
+          title:
+            data.title || "Sans titre",
+        };
+      })
+      .filter(Boolean) as DeliveryEditorialItem[];
+
+  }, [
+    editorialOrder,
+    selectedItemsMap,
+  ]);
+
+  /* =======================================================
+     UPDATE FLOW
+  ======================================================= */
+
+  function updateEditorialItems(
+    items:
+      | DeliveryEditorialItem[]
+      | ((
+          prev: DeliveryEditorialItem[]
+        ) => DeliveryEditorialItem[])
+  ) {
+
+    const resolved =
+      typeof items === "function"
+        ? items(editorialItems)
+        : items;
+
+    setEditorialOrder(
+      resolved.map((i) => ({
+        id: i.id,
+        type: i.type as "news" | "breve",
+      }))
+    );
+  }
+
+  /* =======================================================
      UI
-  ========================================================= */
+  ======================================================= */
 
   return (
 
@@ -262,7 +334,7 @@ export default function NewsletterPage() {
 
         <div className="space-y-5">
 
-          <DeliveryHeaderConfig
+          <DigestHeaderConfig
             headerConfig={headerConfig}
             setHeaderConfig={setHeaderConfig}
             introText={introText}
@@ -289,10 +361,8 @@ export default function NewsletterPage() {
           />
 
           <DeliveryEditorialFlow
-            editorialOrder={editorialOrder}
-            news={editorialNews}
-            breves={editorialBreves}
-            setEditorialOrder={setEditorialOrder}
+            items={editorialItems}
+            setItems={updateEditorialItems}
           />
 
         </div>
@@ -301,11 +371,13 @@ export default function NewsletterPage() {
 
         <div className="sticky top-6 h-[calc(100vh-4rem)] overflow-y-auto pr-2">
 
-          <DeliveryPreviewPanel
+          <DigestPreviewPanel
             headerConfig={headerConfig}
             editorialHtml={introText}
             news={editorialNews}
             breves={editorialBreves}
+            analyses={[]}
+            numbers={[]}
             topicStats={topicStats}
           />
 
