@@ -330,19 +330,16 @@ export default function FeedItemCard({
         onClick={
           handleFavoriteClick
         }
-        className={`
+        className="
           absolute
           top-2
           right-2
           z-10
+          text-[20px]
           leading-none
-          transition
-          ${
-            isFavorite
-              ? "text-[20px]"
-              : "text-[20px] text-gray-700 hover:text-black"
-          }
-        `}
+          text-gray-700
+          hover:text-black
+        "
       >
 
         {isFavorite
