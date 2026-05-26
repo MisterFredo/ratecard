@@ -510,7 +510,7 @@ def get_item_detail(
         get_content
     )
 
-    from core.translation.service import (
+    from core.drawer_translation_service import (
         translate_fields
     )
 
