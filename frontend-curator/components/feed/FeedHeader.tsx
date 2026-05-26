@@ -11,14 +11,21 @@ type Universe = {
 };
 
 type Props = {
-  query: string;
-  setQuery: (q: string) => void;
 
-  onSearch: (q: string) => void;
+  query: string;
+
+  setQuery: (
+    q: string
+  ) => void;
+
+  onSearch: (
+    q: string
+  ) => void;
 
   universes: Universe[];
 
-  selectedUniverse: string | null;
+  selectedUniverse:
+    string | null;
 
   onSelectUniverse: (
     id: string | null
@@ -28,6 +35,15 @@ type Props = {
 
   onSelectType: (
     type: string
+  ) => void;
+
+  // 🔥 NEW
+  feedMode:
+    "all" | "mine";
+
+  // 🔥 NEW
+  onSelectFeedMode: (
+    mode: "all" | "mine"
   ) => void;
 
   loading?: boolean;
@@ -49,10 +65,10 @@ function PillButton({
       disabled={disabled}
       className={`
         whitespace-nowrap
-        px-4
-        py-2
+        px-3
+        py-1.5
         rounded-full
-        text-sm
+        text-xs
         border
         transition-all
 
@@ -62,6 +78,7 @@ function PillButton({
               bg-black
               text-white
               border-black
+              shadow-sm
             `
             : `
               bg-white
@@ -94,7 +111,7 @@ function Separator() {
   return (
 
     <div className="
-      h-6
+      h-5
       w-px
       bg-gray-200
       shrink-0
@@ -106,15 +123,24 @@ function Separator() {
 /* ========================================================= */
 
 export default function FeedHeader({
+
   query,
   setQuery,
   onSearch,
+
   universes,
   selectedUniverse,
   onSelectUniverse,
+
   selectedType,
   onSelectType,
+
+  // 🔥 NEW
+  feedMode,
+  onSelectFeedMode,
+
   loading = false,
+
 }: Props) {
 
   const [input, setInput] =
@@ -183,15 +209,27 @@ export default function FeedHeader({
         ">
 
           <PillButton
-            active={true}
+            active={
+              feedMode === "all"
+            }
             disabled={loading}
+            onClick={() =>
+              !loading &&
+              onSelectFeedMode("all")
+            }
           >
             All Feed
           </PillButton>
 
           <PillButton
-            active={false}
+            active={
+              feedMode === "mine"
+            }
             disabled={loading}
+            onClick={() =>
+              !loading &&
+              onSelectFeedMode("mine")
+            }
           >
             My Feed
           </PillButton>
@@ -271,7 +309,7 @@ export default function FeedHeader({
               onSelectUniverse(null)
             }
           >
-            All Topics
+            Tous
           </PillButton>
 
           {universes.map((u) => {
@@ -294,7 +332,7 @@ export default function FeedHeader({
                 <div className="
                   flex
                   items-center
-                  gap-2
+                  gap-1
                 ">
 
                   <span>
@@ -305,8 +343,8 @@ export default function FeedHeader({
 
                     <span
                       className={`
-                        text-[10px]
-                        px-1.5
+                        text-[9px]
+                        px-1
                         py-0.5
                         rounded-full
 
@@ -371,9 +409,9 @@ export default function FeedHeader({
             flex-1
             border
             border-gray-200
-            rounded-xl
+            rounded-lg
             px-4
-            py-3
+            py-2
             text-sm
             bg-white
             focus:outline-none
@@ -387,9 +425,9 @@ export default function FeedHeader({
           onClick={triggerSearch}
           disabled={loading}
           className="
-            px-5
-            py-3
-            rounded-xl
+            px-4
+            py-2
+            rounded-lg
             bg-black
             text-white
             text-sm
