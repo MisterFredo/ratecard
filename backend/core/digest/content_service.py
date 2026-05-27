@@ -485,17 +485,33 @@ def get_digest_contents(
 
         primary_logo = None
 
-        if companies:
-
-            first_company = (
-                companies[0]
+        primary_company_id = (
+            row.get(
+                "ID_PRIMARY_COMPANY"
             )
+        )
 
-            primary_logo = (
-                first_company.get(
-                    "media_logo_rectangle_id"
-                )
-            )
+        if (
+            primary_company_id
+            and companies
+        ):
+
+            for company in companies:
+
+                if (
+                    company.get(
+                        "id_company"
+                    )
+                    == primary_company_id
+                ):
+
+                    primary_logo = (
+                        company.get(
+                            "media_logo_rectangle_id"
+                        )
+                    )
+
+            break
 
         content = {
             "id":
