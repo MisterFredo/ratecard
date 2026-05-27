@@ -90,7 +90,7 @@ export default function DigestSelectors({
           </span>
         </div>
 
-        <NewsletterSelector
+        <DeliverySelector
           title=""
           items={news.map(n => ({
             ...n,
@@ -138,7 +138,7 @@ export default function DigestSelectors({
           </span>
         </div>
 
-        <NewsletterSelector
+        <DeliverySelector
           title=""
           items={analyses.map(a => ({
             ...a,
@@ -162,7 +162,7 @@ export default function DigestSelectors({
           </span>
         </div>
 
-        <NewsletterSelector
+        <DeliverySelector
           title=""
           items={numbers.map(n => ({
             ...n,
