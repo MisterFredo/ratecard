@@ -43,7 +43,6 @@ export default function TemplateEditPage() {
     subtitle: "",
     period: "",
     headerCompany: undefined,
-    showTopicStats: false,
     topBarEnabled: true,
     topBarColor: "#84CC16",
     periodColor: "#84CC16",
