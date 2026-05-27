@@ -180,9 +180,6 @@ export default function DigestPage() {
             period,
 
             limit: 30,
-
-            content_type:
-              "analysis",
           }
         );
 
