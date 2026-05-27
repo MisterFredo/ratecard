@@ -2,7 +2,6 @@
 
 import type {
   DigestContentItem,
-  DigestNumberItem,
 } from "@/types/digest";
 
 import type {
@@ -25,9 +24,6 @@ import {
   EmailContentBlock,
 } from "./EmailContentBlock";
 
-import {
-  EmailNumbersBlock,
-} from "./EmailNumbersBlock";
 
 /* ========================================================= */
 
@@ -39,8 +35,6 @@ type Props = {
   introText?: string;
 
   contents: DigestContentItem[];
-
-  numbers: DigestNumberItem[];
 };
 
 /* ========================================================= */
@@ -54,7 +48,6 @@ export function buildDigestEmail({
 
   contents,
 
-  numbers,
 }: Props) {
 
   const editorial =
@@ -71,12 +64,6 @@ export function buildDigestEmail({
     editorial.trim()
       ? EmailEditorialBlock(
           editorial
-        )
-      : "",
-
-    numbers.length > 0
-      ? EmailNumbersBlock(
-          numbers
         )
       : "",
 
