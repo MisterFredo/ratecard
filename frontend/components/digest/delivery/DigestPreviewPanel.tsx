@@ -6,7 +6,6 @@ import DigestPreview from "@/components/digest/delivery/DigestPreview";
 
 import type {
   DigestContentItem,
-  DigestNumberItem,
 } from "@/types/digest";
 
 import type {
@@ -21,8 +20,6 @@ type Props = {
   editorialHtml?: string;
 
   contents: DigestContentItem[];
-
-  numbers: DigestNumberItem[];
 };
 
 /* ========================================================= */
@@ -34,12 +31,10 @@ export default function DigestPreviewPanel({
 
   contents,
 
-  numbers,
 }: Props) {
 
   const totalItems =
     contents.length +
-    numbers.length;
 
   const isEmpty =
     totalItems === 0;
@@ -102,10 +97,6 @@ export default function DigestPreviewPanel({
 
               contents={
                 contents
-              }
-
-              numbers={
-                numbers
               }
             />
 
