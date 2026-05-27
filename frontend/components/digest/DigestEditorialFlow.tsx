@@ -6,7 +6,6 @@ import { useMemo } from "react";
 
 import type {
   DigestContentItem,
-  DigestNumberItem,
   DigestEditorialItem,
 } from "@/types/digest";
 
@@ -16,8 +15,6 @@ type Props = {
   editorialOrder: DigestEditorialItem[];
 
   contents: DigestContentItem[];
-
-  numbers: DigestNumberItem[];
 
   setEditorialOrder: React.Dispatch<
     React.SetStateAction<
@@ -32,8 +29,6 @@ export default function DigestEditorialFlow({
   editorialOrder,
 
   contents,
-
-  numbers,
 
   setEditorialOrder,
 }: Props) {
@@ -54,63 +49,6 @@ export default function DigestEditorialFlow({
       [contents]
     );
 
-  const numbersMap =
-    useMemo(
-      () =>
-        Object.fromEntries(
-          numbers.map(
-            (n) => [n.id, n]
-          )
-        ),
-
-      [numbers]
-    );
-
-  /* =======================================================
-     FORMAT NUMBER
-  ======================================================= */
-
-  function formatValue(
-    n: DigestNumberItem
-  ) {
-
-    if (
-      n.value ===
-        undefined ||
-      n.value === null
-    ) {
-      return "";
-    }
-
-    const scaleMap: any = {
-      thousand: "K",
-
-      million: "M",
-
-      millions: "M",
-
-      billion: "Md",
-
-      billions: "Md",
-    };
-
-    const scale =
-      scaleMap[
-        n.scale || ""
-      ] || "";
-
-    const unit =
-      n.unit || "";
-
-    return [
-      n.value,
-      scale,
-      unit,
-    ]
-      .filter(Boolean)
-      .join(" ");
-  }
-
   /* =======================================================
      RESOLVE SOURCE
   ======================================================= */
@@ -125,11 +63,6 @@ export default function DigestEditorialFlow({
 
       case "content":
         return contentsMap[
-          item.id
-        ];
-
-      case "number":
-        return numbersMap[
           item.id
         ];
 
@@ -154,9 +87,6 @@ export default function DigestEditorialFlow({
       case "content":
         return "contenu";
 
-      case "number":
-        return "chiffre";
-
       default:
         return type;
     }
@@ -167,24 +97,11 @@ export default function DigestEditorialFlow({
   ======================================================= */
 
   function getTitle(
-    item:
-      DigestEditorialItem,
-
     source: any
   ) {
 
     if (!source) {
       return "";
-    }
-
-    if (
-      item.type ===
-      "number"
-    ) {
-
-      return `${source.label} — ${formatValue(
-        source
-      )}`;
     }
 
     return (
@@ -360,7 +277,6 @@ export default function DigestEditorialFlow({
                   <span className="text-gray-900 font-medium truncate">
 
                     {getTitle(
-                      item,
                       source
                     )}
 
