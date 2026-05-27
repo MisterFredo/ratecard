@@ -1,14 +1,15 @@
+// frontend/components/newsletter/delivery/NewsletterPreviewPanel.tsx
+
 "use client";
 
-import DeliveryPreview from "@/components/newsletter/delivery/NewsletterPreview";
+import NewsletterPreview from "@/components/newsletter/delivery/NewsletterPreview";
 
 import type {
   NewsletterNewsItem,
-  NewsletterAnalysisItem,
-  NewsletterNumberItem,
   HeaderConfig,
-  TopicStat,
 } from "@/types/newsletter";
+
+/* ========================================================= */
 
 type Props = {
   headerConfig: HeaderConfig;
@@ -16,29 +17,25 @@ type Props = {
   editorialHtml?: string;
 
   news: NewsletterNewsItem[];
+
   breves: NewsletterNewsItem[];
-  analyses: NewsletterAnalysisItem[];
-
-  numbers?: NewsletterNumberItem[];
-
-  topicStats?: TopicStat[];
 };
 
-export default function DigestPreviewPanel({
+/* ========================================================= */
+
+export default function NewsletterPreviewPanel({
   headerConfig,
+
   editorialHtml,
+
   news,
+
   breves,
-  analyses,
-  numbers = [],
-  topicStats = [],
 }: Props) {
 
   const totalItems =
     news.length +
-    breves.length +
-    analyses.length +
-    numbers.length;
+    breves.length;
 
   const isEmpty =
     totalItems === 0;
@@ -56,7 +53,10 @@ export default function DigestPreviewPanel({
         </h2>
 
         <div className="text-xs text-gray-400">
-          {totalItems} élément{totalItems > 1 ? "s" : ""}
+          {totalItems} élément
+          {totalItems > 1
+            ? "s"
+            : ""}
         </div>
 
       </div>
@@ -87,14 +87,18 @@ export default function DigestPreviewPanel({
 
           <div className="mx-auto w-full max-w-[820px]">
 
-            <DeliveryPreview
-              headerConfig={headerConfig}
-              editorialHtml={editorialHtml}
+            <NewsletterPreview
+              headerConfig={
+                headerConfig
+              }
+
+              editorialHtml={
+                editorialHtml
+              }
+
               news={news}
+
               breves={breves}
-              analyses={analyses}
-              numbers={numbers}
-              topicStats={topicStats}
             />
 
           </div>
