@@ -8,6 +8,8 @@ import {
   useState,
 } from "react";
 
+import { api } from "@/lib/api";
+
 import DeliveryHeaderConfig from "@/components/delivery/core/DeliveryHeaderConfig";
 
 import DigestEngine from "@/components/digest/DigestEngine";
@@ -37,7 +39,7 @@ import type {
 export default function DigestPage() {
 
   /* =======================================================
-     HEADER
+     HEADER CONFIG
   ======================================================= */
 
   const [
@@ -71,7 +73,7 @@ export default function DigestPage() {
   ] = useState("");
 
   /* =======================================================
-     SEARCH
+     ENGINE
   ======================================================= */
 
   const [
@@ -83,10 +85,6 @@ export default function DigestPage() {
     loading,
     setLoading,
   ] = useState(false);
-
-  /* =======================================================
-     FILTERS
-  ======================================================= */
 
   const [
     selectedTopics,
@@ -138,27 +136,7 @@ export default function DigestPage() {
   >([]);
 
   /* =======================================================
-     INITIAL LOAD
-  ======================================================= */
-
-  useEffect(() => {
-
-    handleSearch({
-      query: "",
-
-      topics: [],
-
-      companies: [],
-
-      solutions: [],
-
-      period: "total",
-    });
-
-  }, []);
-
-  /* =======================================================
-     SEARCH API
+     SEARCH
   ======================================================= */
 
   async function handleSearch({
@@ -187,38 +165,26 @@ export default function DigestPage() {
 
       setLoading(true);
 
-      const response =
-        await fetch(
-          "/api/digest/search",
+      const data =
+        await api.post(
+          "/digest/search",
           {
-            method: "POST",
+            query,
 
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
+            topics,
 
-            body: JSON.stringify({
-              query,
+            companies,
 
-              topics,
+            solutions,
 
-              companies,
+            period,
 
-              solutions,
+            limit: 30,
 
-              period,
-
-              limit: 20,
-
-              content_type:
-                "analysis",
-            }),
+            content_type:
+              "analysis",
           }
         );
-
-      const data =
-        await response.json();
 
       const results =
         data?.result
@@ -244,7 +210,27 @@ export default function DigestPage() {
   }
 
   /* =======================================================
-     CONTENTS SELECTED
+     INITIAL LOAD
+  ======================================================= */
+
+  useEffect(() => {
+
+    handleSearch({
+      query: "",
+
+      topics: [],
+
+      companies: [],
+
+      solutions: [],
+
+      period: "total",
+    });
+
+  }, []);
+
+  /* =======================================================
+     SELECTED CONTENTS
   ======================================================= */
 
   const selectedContents =
@@ -282,7 +268,7 @@ export default function DigestPage() {
     <div className="space-y-4">
 
       {/* ===================================================
-         HEADER
+         PAGE HEADER
       =================================================== */}
 
       <div className="flex items-center justify-between">
@@ -331,54 +317,20 @@ export default function DigestPage() {
       />
 
       {/* ===================================================
-         LAYOUT
+         MAIN LAYOUT
       =================================================== */}
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_1.3fr] gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_1.2fr] gap-6 items-start">
 
         {/* =================================================
-           LEFT
+           LEFT COLUMN
         ================================================= */}
 
         <div className="space-y-5">
 
-          <DeliveryHeaderConfig
-            headerConfig={
-              headerConfig
-            }
-
-            setHeaderConfig={
-              setHeaderConfig
-            }
-
-            introText={
-              introText
-            }
-
-            setIntroText={
-              setIntroText
-            }
-          />
+          {/* RESULTS */}
 
           <DigestSelectors
-            contents={
-              contents
-            }
-
-            numbers={
-              numbers
-            }
-
-            editorialOrder={
-              editorialOrder
-            }
-
-            setEditorialOrder={
-              setEditorialOrder
-            }
-          />
-
-          <DigestEditorialFlow
             contents={
               contents
             }
@@ -399,7 +351,55 @@ export default function DigestPage() {
         </div>
 
         {/* =================================================
-           RIGHT
+           CENTER COLUMN
+        ================================================= */}
+
+        <div className="space-y-5">
+
+          {/* FLOW */}
+
+          <DigestEditorialFlow
+            contents={
+              contents
+            }
+
+            numbers={
+              numbers
+            }
+
+            editorialOrder={
+              editorialOrder
+            }
+
+            setEditorialOrder={
+              setEditorialOrder
+            }
+          />
+
+          {/* CONFIG */}
+
+          <DeliveryHeaderConfig
+            headerConfig={
+              headerConfig
+            }
+
+            setHeaderConfig={
+              setHeaderConfig
+            }
+
+            introText={
+              introText
+            }
+
+            setIntroText={
+              setIntroText
+            }
+          />
+
+        </div>
+
+        {/* =================================================
+           RIGHT COLUMN
         ================================================= */}
 
         <div className="sticky top-6 h-[calc(100vh-4rem)] overflow-y-auto pr-2">
@@ -432,7 +432,7 @@ export default function DigestPage() {
 
       {loading && (
 
-        <div className="fixed bottom-4 right-4 bg-black text-white text-xs px-3 py-2 rounded-lg shadow-lg">
+        <div className="fixed bottom-4 right-4 bg-black text-white text-xs px-3 py-2 rounded-lg shadow-lg z-50">
 
           Chargement Digest...
 
