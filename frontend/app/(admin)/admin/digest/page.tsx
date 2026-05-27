@@ -10,6 +10,8 @@ import {
 
 import DeliveryHeaderConfig from "@/components/delivery/core/DeliveryHeaderConfig";
 
+import DigestEngine from "@/components/digest/DigestEngine";
+
 import DigestSelectors from "@/components/digest/DigestSelectors";
 
 import DigestEditorialFlow from "@/components/digest/DigestEditorialFlow";
@@ -25,6 +27,10 @@ import type {
 import type {
   HeaderConfig,
 } from "@/types/newsletter";
+
+import type {
+  SelectOption,
+} from "@/components/ui/SearchableMultiSelect";
 
 /* ========================================================= */
 
@@ -79,6 +85,31 @@ export default function DigestPage() {
   ] = useState(false);
 
   /* =======================================================
+     FILTERS
+  ======================================================= */
+
+  const [
+    selectedTopics,
+    setSelectedTopics,
+  ] = useState<
+    SelectOption[]
+  >([]);
+
+  const [
+    selectedCompanies,
+    setSelectedCompanies,
+  ] = useState<
+    SelectOption[]
+  >([]);
+
+  const [
+    selectedSolutions,
+    setSelectedSolutions,
+  ] = useState<
+    SelectOption[]
+  >([]);
+
+  /* =======================================================
      DIGEST DATA
   ======================================================= */
 
@@ -107,10 +138,50 @@ export default function DigestPage() {
   >([]);
 
   /* =======================================================
+     INITIAL LOAD
+  ======================================================= */
+
+  useEffect(() => {
+
+    handleSearch({
+      query: "",
+
+      topics: [],
+
+      companies: [],
+
+      solutions: [],
+
+      period: "total",
+    });
+
+  }, []);
+
+  /* =======================================================
      SEARCH API
   ======================================================= */
 
-  async function searchDigest() {
+  async function handleSearch({
+    query,
+
+    topics,
+
+    companies,
+
+    solutions,
+
+    period,
+  }: {
+    query: string;
+
+    topics: string[];
+
+    companies: string[];
+
+    solutions: string[];
+
+    period: string;
+  }) {
 
     try {
 
@@ -129,6 +200,14 @@ export default function DigestPage() {
 
             body: JSON.stringify({
               query,
+
+              topics,
+
+              companies,
+
+              solutions,
+
+              period,
 
               limit: 20,
 
@@ -163,16 +242,6 @@ export default function DigestPage() {
       setLoading(false);
     }
   }
-
-  /* =======================================================
-     INITIAL LOAD
-  ======================================================= */
-
-  useEffect(() => {
-
-    searchDigest();
-
-  }, []);
 
   /* =======================================================
      CONTENTS SELECTED
@@ -225,46 +294,41 @@ export default function DigestPage() {
       </div>
 
       {/* ===================================================
-         SEARCH BAR
+         ENGINE
       =================================================== */}
 
-      <div className="border border-gray-200 rounded-lg bg-white p-4">
+      <DigestEngine
+        query={query}
+        setQuery={setQuery}
 
-        <div className="flex gap-3">
+        selectedTopics={
+          selectedTopics
+        }
 
-          <input
-            type="text"
+        setSelectedTopics={
+          setSelectedTopics
+        }
 
-            value={query}
+        selectedCompanies={
+          selectedCompanies
+        }
 
-            onChange={(e) =>
-              setQuery(
-                e.target.value
-              )
-            }
+        setSelectedCompanies={
+          setSelectedCompanies
+        }
 
-            placeholder="Rechercher des contenus Curator..."
+        selectedSolutions={
+          selectedSolutions
+        }
 
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
+        setSelectedSolutions={
+          setSelectedSolutions
+        }
 
-          <button
-            onClick={
-              searchDigest
-            }
-
-            disabled={loading}
-
-            className="px-4 py-2 rounded-lg bg-black text-white text-sm"
-          >
-            {loading
-              ? "Recherche..."
-              : "Rechercher"}
-          </button>
-
-        </div>
-
-      </div>
+        onSearch={
+          handleSearch
+        }
+      />
 
       {/* ===================================================
          LAYOUT
@@ -361,6 +425,20 @@ export default function DigestPage() {
         </div>
 
       </div>
+
+      {/* ===================================================
+         LOADING
+      =================================================== */}
+
+      {loading && (
+
+        <div className="fixed bottom-4 right-4 bg-black text-white text-xs px-3 py-2 rounded-lg shadow-lg">
+
+          Chargement Digest...
+
+        </div>
+
+      )}
 
     </div>
   );
