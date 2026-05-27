@@ -8,7 +8,7 @@ from datetime import (
 )
 
 from utils.bigquery_utils import (
-    insert_rows_bq,
+    insert_bq,
 )
 
 from config import (
@@ -60,7 +60,7 @@ def log_digest_send(
             subject,
     }
 
-    insert_rows_bq(
+    insert_bq(
         TABLE_DIGEST_SEND,
         [row],
     )
