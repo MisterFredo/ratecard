@@ -28,6 +28,14 @@ def search_digest_content(
 
     feed_mode: Optional[str] = None,
 
+    topics: Optional[List[str]] = None,
+
+    companies: Optional[List[str]] = None,
+
+    solutions: Optional[List[str]] = None,
+
+    period: Optional[str] = "total",
+
     blocks_config: Optional[
         Dict[str, Any]
     ] = None,
@@ -137,6 +145,14 @@ def search_digest_content(
             content_type=contents_type,
 
             feed_mode=contents_feed_mode,
+
+            topics=topics or [],
+
+            companies=companies or [],
+
+            solutions=solutions or [],
+
+            period=period,
         )
 
     # ========================================================
@@ -157,6 +173,14 @@ def search_digest_content(
             content_type=contents_type,
 
             feed_mode=contents_feed_mode,
+
+            topics=topics or [],
+
+            companies=companies or [],
+
+            solutions=solutions or [],
+
+            period=period,
         )
 
     # ========================================================
