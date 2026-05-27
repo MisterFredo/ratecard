@@ -25,13 +25,9 @@ from core.curator.entity_service import (
 # TABLES
 # ============================================================
 
-TABLE_USER_PREFERENCES = f"""
-{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_PREFERENCES
-"""
+TABLE_USER_PREFERENCES = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_PREFERENCES"
 
-TABLE_DIGEST_SEND = f"""
-{BQ_PROJECT}.{BQ_DATASET}.RATECARD_DIGEST_SEND
-"""
+TABLE_DIGEST_SEND = f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_DIGEST_SEND"
 
 # ============================================================
 # LOAD USER PREFERENCES
