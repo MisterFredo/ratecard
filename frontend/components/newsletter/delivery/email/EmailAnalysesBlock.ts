@@ -3,7 +3,7 @@ import {
   escapeHtml,
   formatDate,
   renderEmailTags,
-} from "./EmailHelpers";
+} from "@/components/delivery/email/EmailHelpers"
 
 /* =========================================================
    SECTION TITLE
