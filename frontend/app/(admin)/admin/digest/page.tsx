@@ -4,10 +4,92 @@
 
 import { useState } from "react";
 
+import DeliveryHeaderConfig from "@/components/delivery/core/DeliveryHeaderConfig";
+
+import DigestSelectors from "@/components/digest/DigestSelectors";
+
+import DigestEditorialFlow from "@/components/digest/DigestEditorialFlow";
+
+import DigestPreviewPanel from "@/components/digest/delivery/DigestPreviewPanel";
+
+import type {
+  DigestContentItem,
+  DigestNumberItem,
+  DigestEditorialItem,
+} from "@/types/digest";
+
+import type {
+  HeaderConfig,
+} from "@/types/newsletter";
+
+/* ========================================================= */
+
 export default function DigestPage() {
 
-  const [loading] =
-    useState(false);
+  /* =======================================================
+     HEADER
+  ======================================================= */
+
+  const [
+    headerConfig,
+    setHeaderConfig,
+  ] = useState<HeaderConfig>({
+    title: "Digest Curator",
+
+    subtitle: "",
+
+    period: "",
+
+    headerCompany:
+      undefined,
+
+    topBarEnabled:
+      true,
+
+    topBarColor:
+      "#111827",
+
+    periodColor:
+      "#111827",
+
+    introHtml: "",
+  });
+
+  const [
+    introText,
+    setIntroText,
+  ] = useState("");
+
+  /* =======================================================
+     DIGEST DATA
+  ======================================================= */
+
+  const [
+    contents,
+  ] = useState<
+    DigestContentItem[]
+  >([]);
+
+  const [
+    numbers,
+  ] = useState<
+    DigestNumberItem[]
+  >([]);
+
+  /* =======================================================
+     FLOW
+  ======================================================= */
+
+  const [
+    editorialOrder,
+    setEditorialOrder,
+  ] = useState<
+    DigestEditorialItem[]
+  >([]);
+
+  /* =======================================================
+     UI
+  ======================================================= */
 
   return (
 
@@ -23,24 +105,93 @@ export default function DigestPage() {
 
       </div>
 
-      {/* TEMP PLACEHOLDER */}
+      {/* LAYOUT */}
 
-      <div className="border border-gray-200 rounded-lg bg-white p-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_1.3fr] gap-6 items-start">
 
-        <div className="text-sm font-medium text-gray-900">
-          Digest en cours de migration
+        {/* LEFT */}
+
+        <div className="space-y-5">
+
+          <DeliveryHeaderConfig
+            headerConfig={
+              headerConfig
+            }
+
+            setHeaderConfig={
+              setHeaderConfig
+            }
+
+            introText={
+              introText
+            }
+
+            setIntroText={
+              setIntroText
+            }
+          />
+
+          <DigestSelectors
+            contents={
+              contents
+            }
+
+            numbers={
+              numbers
+            }
+
+            editorialOrder={
+              editorialOrder
+            }
+
+            setEditorialOrder={
+              setEditorialOrder
+            }
+          />
+
+          <DigestEditorialFlow
+            contents={
+              contents
+            }
+
+            numbers={
+              numbers
+            }
+
+            editorialOrder={
+              editorialOrder
+            }
+
+            setEditorialOrder={
+              setEditorialOrder
+            }
+          />
+
         </div>
 
-        <div className="mt-2 text-sm text-gray-500">
-          La nouvelle architecture Digest basée sur
-          RATECARD_CONTENT est en cours de mise en place.
-        </div>
+        {/* RIGHT */}
 
-        {loading && (
-          <div className="mt-4 text-xs text-gray-400">
-            Chargement...
-          </div>
-        )}
+        <div className="sticky top-6 h-[calc(100vh-4rem)] overflow-y-auto pr-2">
+
+          <DigestPreviewPanel
+            headerConfig={
+              headerConfig
+            }
+
+            editorialHtml={
+              introText
+            }
+
+            contents={
+              contents
+            }
+
+            numbers={
+              numbers
+            }
+          />
+
+        </div>
 
       </div>
 
