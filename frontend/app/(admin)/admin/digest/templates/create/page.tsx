@@ -6,7 +6,7 @@ import SearchableMultiSelect, {
   SelectOption,
 } from "@/components/ui/SearchableMultiSelect";
 
-import DigestHeaderConfig from "@/components/delivery/DeliveryHeaderConfig";
+import DigestHeaderConfig from "@/components/delivery/core/DeliveryHeaderConfig";
 
 import type { HeaderConfig } from "@/types/newsletter";
 
