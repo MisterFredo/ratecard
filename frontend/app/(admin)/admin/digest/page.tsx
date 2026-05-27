@@ -5,7 +5,7 @@ import { useMemo, useState, useEffect } from "react";
 import DeliveryHeaderConfig from "@/components/delivery/DeliveryHeaderConfig";
 import DeliveryPreviewPanel from "@/components/delivery/DeliveryPreviewPanel";
 
-import DigestEngine from "@/components/digest/DigestEngine";
+import NewsletterEngine from "@/components/newsletter/NewsletterEngine";
 import DigestSelectors from "@/components/digest/DigestSelectors";
 import DigestEditorialFlow from "@/components/digest/DigestEditorialFlow";
 
@@ -411,7 +411,7 @@ export default function DigestPage() {
           <NewsletterTopicStats period={30} />
 
           {!isRunMode && (
-            <DigestEngine
+            <NewsletterEngine
               selectedTopics={selectedTopics}
               setSelectedTopics={setSelectedTopics}
               selectedCompanies={selectedCompanies}
