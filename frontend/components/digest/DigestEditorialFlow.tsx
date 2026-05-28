@@ -2,7 +2,12 @@
 
 "use client";
 
-import { useMemo } from "react";
+import {
+  useMemo,
+  useState,
+} from "react";
+
+import { api } from "@/lib/api";
 
 import type {
   DigestContentItem,
@@ -15,6 +20,12 @@ type Props = {
   editorialOrder: DigestEditorialItem[];
 
   contents: DigestContentItem[];
+
+  editorialHtml: string;
+
+  setEditorialHtml: React.Dispatch<
+    React.SetStateAction<string>
+  >;
 
   setEditorialOrder: React.Dispatch<
     React.SetStateAction<
@@ -30,8 +41,21 @@ export default function DigestEditorialFlow({
 
   contents,
 
+  editorialHtml,
+
+  setEditorialHtml,
+
   setEditorialOrder,
 }: Props) {
+
+  /* =======================================================
+     STATE
+  ======================================================= */
+
+  const [
+    generating,
+    setGenerating,
+  ] = useState(false);
 
   /* =======================================================
      INDEX MAPS
@@ -108,6 +132,73 @@ export default function DigestEditorialFlow({
       source.title ||
       ""
     );
+  }
+
+  /* =======================================================
+     GENERATE EDITORIAL
+  ======================================================= */
+
+  async function generateEditorial() {
+
+    try {
+
+      setGenerating(
+        true
+      );
+
+      const ids =
+        editorialOrder
+
+          .filter(
+            (i) =>
+              i.type ===
+              "content"
+          )
+
+          .map(
+            (i) => i.id
+          );
+
+      if (
+        ids.length === 0
+      ) {
+
+        alert(
+          "Aucun contenu sélectionné."
+        );
+
+        return;
+      }
+
+      const res =
+        await api.post(
+          "/digest/generate-editorial",
+          {
+            ids,
+          }
+        );
+
+      setEditorialHtml(
+        res?.insight || ""
+      );
+
+    } catch (e) {
+
+      console.error(
+        "❌ editorial generation error",
+        e
+      );
+
+      alert(
+        "Impossible de générer les points clés."
+      );
+
+    } finally {
+
+      setGenerating(
+        false
+      );
+    }
   }
 
   /* =======================================================
@@ -214,9 +305,13 @@ export default function DigestEditorialFlow({
 
       <section className="space-y-2">
 
-        <h2 className="text-sm font-semibold tracking-tight">
-          Flux éditorial
-        </h2>
+        <div className="flex items-center justify-between">
+
+          <h2 className="text-sm font-semibold tracking-tight">
+            Flux éditorial
+          </h2>
+
+        </div>
 
         <div className="border border-gray-200 rounded-lg bg-white px-4 py-4 text-xs text-gray-400 text-center">
 
@@ -234,11 +329,82 @@ export default function DigestEditorialFlow({
 
   return (
 
-    <section className="space-y-2">
+    <section className="space-y-3">
 
-      <h2 className="text-sm font-semibold tracking-tight">
-        Flux éditorial
-      </h2>
+      {/* HEADER */}
+
+      <div className="flex items-center justify-between">
+
+        <h2 className="text-sm font-semibold tracking-tight">
+          Flux éditorial
+        </h2>
+
+        <button
+          onClick={
+            generateEditorial
+          }
+          disabled={
+            generating
+          }
+          className="
+            px-3 py-1.5
+            rounded-md
+            border border-gray-200
+            bg-white
+            text-xs
+            font-medium
+            text-gray-700
+            hover:bg-gray-50
+            disabled:opacity-50
+          "
+        >
+
+          {generating
+            ? "Génération..."
+            : "Générer les points clés"}
+
+        </button>
+
+      </div>
+
+      {/* EDITORIAL */}
+
+      {editorialHtml && (
+
+        <div className="
+          border border-gray-200
+          rounded-xl
+          bg-white
+          p-4
+        ">
+
+          <div className="
+            text-[11px]
+            uppercase
+            tracking-[0.14em]
+            text-gray-400
+            font-semibold
+            mb-3
+          ">
+            Points à retenir
+          </div>
+
+          <div className="
+            text-[14px]
+            leading-7
+            text-gray-800
+            whitespace-pre-wrap
+          ">
+
+            {editorialHtml}
+
+          </div>
+
+        </div>
+
+      )}
+
+      {/* FLOW */}
 
       <div className="border border-gray-200 rounded-lg bg-white divide-y">
 
