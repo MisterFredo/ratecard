@@ -135,6 +135,15 @@ export default function DigestPage() {
           `/digest/my-feed?user_id=${userId}`
         );
 
+      console.log("RAW RESPONSE");
+      console.log(response);
+
+      console.log("RAW RESULT");
+      console.log(response?.result);
+
+      console.log("RAW CONTENTS");
+      console.log(response?.result?.contents);
+
       console.log(
         "DIGEST RESPONSE",
         response
