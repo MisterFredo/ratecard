@@ -464,6 +464,10 @@ def get_digest_contents(
 
     """
 
+    print("========== DIGEST SQL ==========")
+    print(sql)
+    print("================================")
+
     rows = query_bq(
         sql
     )
