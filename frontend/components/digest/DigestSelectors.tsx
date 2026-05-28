@@ -188,7 +188,7 @@ export default function DigestSelectors({
 
           {/* SCROLL AREA */}
 
-          <div className="h-[calc(100vh-280px)] overflow-y-auto p-2">
+          <div className="max-h-[82vh] overflow-y-auto p-2">
 
             <DeliverySelector
               title=""
