@@ -15,15 +15,57 @@ const GCS_BASE_URL =
 
 /* ========================================================= */
 
+const BADGE_STYLES = {
+
+  company: {
+    bg: "#EFF6FF",
+    text: "#2563EB",
+    border: "#DBEAFE",
+  },
+
+  solution: {
+    bg: "#FAF5FF",
+    text: "#9333EA",
+    border: "#E9D5FF",
+  },
+
+  universe: {
+    bg: "#ECFDF5",
+    text: "#059669",
+    border: "#D1FAE5",
+  },
+
+  topic: {
+    bg: "#F3F4F6",
+    text: "#4B5563",
+    border: "#F3F4F6",
+  },
+
+  concept: {
+    bg: "#FAF5FF",
+    text: "#7C3AED",
+    border: "#E9D5FF",
+  },
+};
+
+/* ========================================================= */
+
 function renderBadges(
   items: any[],
-  field: string,
-  color: string,
+  type:
+    | "company"
+    | "solution"
+    | "universe"
+    | "topic"
+    | "concept",
 ) {
 
   if (!items?.length) {
     return "";
   }
+
+  const style =
+    BADGE_STYLES[type];
 
   return items
     .slice(0, 6)
@@ -41,14 +83,15 @@ function renderBadges(
       return `
 <span style="
   display:inline-block;
-  padding:4px 8px;
+  padding:5px 10px;
   margin-right:6px;
   margin-bottom:6px;
   border-radius:999px;
-  background:${color};
+  background:${style.bg};
+  color:${style.text};
+  border:1px solid ${style.border};
   font-size:11px;
   line-height:1;
-  color:white;
   font-weight:600;
 ">
   ${escapeHtml(label)}
@@ -172,26 +215,27 @@ ${contents.map((content) => {
 
     ${renderBadges(
       content.companies,
-      "companies",
-      "#111827"
+      "company"
+    )}
+
+    ${renderBadges(
+      content.solutions,
+      "solution"
     )}
 
     ${renderBadges(
       content.topics,
-      "topics",
-      "#2563EB"
+      "topic"
     )}
 
     ${renderBadges(
       content.universes,
-      "universes",
-      "#059669"
+      "universe"
     )}
 
     ${renderBadges(
       content.concepts,
-      "concepts",
-      "#7C3AED"
+      "concept"
     )}
 
   </div>
