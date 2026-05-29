@@ -7,12 +7,6 @@ import {
   formatDate,
 } from "@/components/delivery/email/EmailHelpers";
 
-/* ========================================================= */
-
-const GCS_BASE_URL =
-  process.env
-    .NEXT_PUBLIC_GCS_BASE_URL || "";
-
 /* =========================================================
    CURATOR BADGE STYLES
 ========================================================= */
@@ -127,11 +121,6 @@ export function EmailContentBlock(
 
 ${contents.map((content) => {
 
-  const logoUrl =
-    content.primary_company_logo
-      ? `${GCS_BASE_URL}/${content.primary_company_logo}`
-      : null;
-
   return `
 <tr>
 <td style="
@@ -139,26 +128,6 @@ ${contents.map((content) => {
   border-bottom:1px solid #F3F4F6;
   font-family:Arial,Helvetica,sans-serif;
 ">
-
-  ${
-    logoUrl
-      ? `
-<div style="margin-bottom:16px;">
-
-  <img
-    src="${logoUrl}"
-    alt=""
-    style="
-      max-height:26px;
-      max-width:140px;
-      display:block;
-    "
-  />
-
-</div>
-`
-      : ""
-  }
 
   <div style="
     font-size:22px;
