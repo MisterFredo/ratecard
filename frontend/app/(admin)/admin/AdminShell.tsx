@@ -23,6 +23,7 @@ import {
   LayoutTemplate,
   Users,
   Languages,
+  Globe,
 } from "lucide-react";
 
 export default function AdminShell({
@@ -189,6 +190,12 @@ export default function AdminShell({
       href: "/admin/source",
       label: "Sources",
       icon: LinkIcon,
+    },
+
+    {
+      href: "/admin/discovery",
+      label: "Discovery",
+      icon: Globe,
     },
 
     // =====================================================
