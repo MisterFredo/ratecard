@@ -586,3 +586,35 @@ def store_discovery_urls(
         "skipped": skipped,
         "errors": errors,
     }
+
+# ============================================================
+# MANUAL REVIEW
+# ============================================================
+
+def mark_discovery_manual(
+    discovery_ids: List[str],
+):
+
+    if not discovery_ids:
+
+        return {
+            "status": "ok",
+            "manual": 0,
+        }
+
+    ids_sql = ",".join(
+        [f"'{x}'" for x in discovery_ids]
+    )
+
+    sql = f"""
+        UPDATE `{TABLE_DISCOVERY}`
+        SET STATUS = 'MANUAL_REVIEW'
+        WHERE ID_DISCOVERY IN ({ids_sql})
+    """
+
+    query_bq(sql)
+
+    return {
+        "status": "ok",
+        "manual": len(discovery_ids),
+    }
