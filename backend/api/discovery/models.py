@@ -107,3 +107,38 @@ class IgnoreResponse(BaseModel):
 
     class Config:
         extra = "forbid"
+
+# ============================================================
+# MANUAL DISCOVERY ITEM
+# ============================================================
+
+class ManualDiscoveryOut(BaseModel):
+
+    id_discovery: str
+
+    source_id: str
+
+    source_name: Optional[str] = None
+
+    url: str
+
+    title: Optional[str] = None
+
+    date_found: Optional[datetime] = None
+
+    class Config:
+        extra = "forbid"
+
+
+# ============================================================
+# MANUAL DISCOVERY LIST
+# ============================================================
+
+class ManualDiscoveryListOut(BaseModel):
+
+    status: str
+
+    items: List[ManualDiscoveryOut]
+
+    class Config:
+        extra = "forbid"
