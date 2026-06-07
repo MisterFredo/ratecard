@@ -377,6 +377,8 @@ def list_discovery_items():
         LEFT JOIN `{TABLE_SOURCE}` s
           ON d.SOURCE_ID = s.SOURCE_ID
 
+        WHERE d.STATUS != 'DISMISSED'
+
         ORDER BY d.DATE_FOUND DESC
     """
 
@@ -401,7 +403,6 @@ def list_discovery_items():
         }
         for r in rows
     ]
-
 
 # ============================================================
 # STORE DISCOVERY URLS
