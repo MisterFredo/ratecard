@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { api } from "@/lib/api";
+
+import DiscoverySources from "@/components/admin/discovery/DiscoverySources";
+import DiscoveryStats from "@/components/admin/discovery/DiscoveryStats";
+import DiscoveryActions from "@/components/admin/discovery/DiscoveryActions";
+import DiscoveryTable from "@/components/admin/discovery/DiscoveryTable";
 
 type DiscoveryItem = {
   id_discovery: string;
@@ -30,6 +36,8 @@ export default function DiscoveryPage() {
 
   const [items, setItems] = useState<DiscoveryItem[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -151,19 +159,89 @@ export default function DiscoveryPage() {
   }
 
   // =========================================================
-  // DISMISS
+  // TOGGLE SELECTION
   // =========================================================
 
-  async function dismissItem(
+  function toggleSelection(
     idDiscovery: string
   ) {
 
+    setSelectedIds((prev) =>
+
+      prev.includes(idDiscovery)
+        ? prev.filter(
+            (x) => x !== idDiscovery
+          )
+        : [...prev, idDiscovery]
+
+    );
+  }
+
+  // =========================================================
+  // STORE SELECTED
+  // =========================================================
+
+  async function storeSelected() {
+
+    if (
+      selectedIds.length === 0
+    ) {
+      return;
+    }
+
     try {
 
-      await api.post(
-        `/discovery/dismiss/${idDiscovery}`,
-        {}
+      const res = await api.post(
+        "/discovery/store",
+        {
+          discovery_ids: selectedIds,
+        }
       );
+
+      alert(
+        `${res.stored || 0} URL(s) stockée(s)`
+      );
+
+      setSelectedIds([]);
+
+      await loadData();
+
+    } catch (e) {
+
+      console.error(e);
+
+      alert(
+        "❌ Erreur stockage"
+      );
+    }
+  }
+
+  // =========================================================
+  // DISMISS SELECTED
+  // =========================================================
+
+  async function dismissSelected() {
+
+    if (
+      selectedIds.length === 0
+    ) {
+      return;
+    }
+
+    try {
+
+      const res = await api.post(
+        "/discovery/ignore",
+        {
+          discovery_ids: selectedIds,
+        }
+      );
+
+      alert(
+        `${res.ignored || 0} URL(s) dismiss`
+      );
+
+      setSelectedIds([]);
 
       await loadData();
 
@@ -174,40 +252,6 @@ export default function DiscoveryPage() {
       alert(
         "❌ Erreur dismiss"
       );
-
-    }
-  }
-
-  // =========================================================
-  // BADGE
-  // =========================================================
-
-  function getStatusBadge(
-    status: string
-  ) {
-
-    switch (status) {
-
-      case "STORED":
-        return (
-          <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-medium">
-            STORED
-          </span>
-        );
-
-      case "IGNORED":
-        return (
-          <span className="px-2 py-1 rounded bg-gray-100 text-gray-700 text-xs font-medium">
-            IGNORED
-          </span>
-        );
-
-      default:
-        return (
-          <span className="px-2 py-1 rounded bg-orange-100 text-orange-700 text-xs font-medium">
-            NEW
-          </span>
-        );
     }
   }
 
@@ -249,100 +293,28 @@ export default function DiscoveryPage() {
 
       {/* SOURCES */}
 
-      <div className="bg-white border rounded overflow-hidden">
+      <DiscoverySources
+        sources={sources}
+        onScan={scanSource}
+      />
 
-        <div className="p-4 border-b font-semibold">
-          Sources configurées
-        </div>
+      {/* STATS */}
 
-        <table className="w-full text-sm">
+      <DiscoveryStats
+        total={items.length}
+      />
 
-          <thead>
+      {/* ACTIONS */}
 
-            <tr className="bg-gray-50 border-b text-left">
+      <DiscoveryActions
+        selectedCount={
+          selectedIds.length
+        }
+        onStore={storeSelected}
+        onDismiss={dismissSelected}
+      />
 
-              <th className="p-3">
-                Source
-              </th>
-
-              <th className="p-3">
-                Mode
-              </th>
-
-              <th className="p-3">
-                Domain
-              </th>
-
-              <th className="p-3">
-                Action
-              </th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            {sources.map((source) => (
-
-              <tr
-                key={source.source_id}
-                className="border-b"
-              >
-
-                <td className="p-3 font-medium">
-                  {source.name}
-                </td>
-
-                <td className="p-3">
-                  {source.acquisition_mode || "—"}
-                </td>
-
-                <td className="p-3">
-                  {source.domain || "—"}
-                </td>
-
-                <td className="p-3">
-
-                  <button
-                    onClick={() =>
-                      scanSource(
-                        source.source_id,
-                        source.name
-                      )
-                    }
-                    className="bg-ratecard-blue text-white px-3 py-1 rounded"
-                  >
-                    SCAN
-                  </button>
-
-                </td>
-
-              </tr>
-
-            ))}
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-      {/* COUNTER */}
-
-      <div className="bg-white border rounded p-4">
-
-        <div className="text-sm text-gray-500">
-          URLs découvertes
-        </div>
-
-        <div className="text-3xl font-semibold mt-1">
-          {items.length}
-        </div>
-
-      </div>
-
-      {/* DISCOVERY TABLE */}
+      {/* TABLE */}
 
       {loading ? (
 
@@ -358,102 +330,11 @@ export default function DiscoveryPage() {
 
       ) : (
 
-        <div className="bg-white border rounded overflow-hidden">
-
-          <table className="w-full text-sm">
-
-            <thead>
-
-              <tr className="bg-gray-50 border-b text-left">
-
-                <th className="p-3">
-                  Source
-                </th>
-
-                <th className="p-3">
-                  Titre
-                </th>
-
-                <th className="p-3">
-                  URL
-                </th>
-
-                <th className="p-3">
-                  Status
-                </th>
-
-                <th className="p-3">
-                  Action
-                </th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {items.map((item) => (
-
-                <tr
-                  key={item.id_discovery}
-                  className="border-b hover:bg-gray-50"
-                >
-
-                  <td className="p-3 font-medium whitespace-nowrap">
-                    {item.source_name || "—"}
-                  </td>
-
-                  <td className="p-3">
-                    {item.title || "—"}
-                  </td>
-
-                  <td className="p-3">
-
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 hover:underline break-all"
-                    >
-                      {item.url}
-                    </a>
-
-                  </td>
-
-                  <td className="p-3 whitespace-nowrap">
-                    {getStatusBadge(
-                      item.status
-                    )}
-                  </td>
-
-                  <td className="p-3 whitespace-nowrap">
-
-                    {item.status === "NEW" && (
-
-                      <button
-                        onClick={() =>
-                          dismissItem(
-                            item.id_discovery
-                          )
-                        }
-                        className="text-red-600 hover:underline"
-                      >
-                        Dismiss
-                      </button>
-
-                    )}
-
-                  </td>
-
-                </tr>
-
-              ))}
-
-            </tbody>
-
-          </table>
-
-        </div>
+        <DiscoveryTable
+          items={items}
+          selectedIds={selectedIds}
+          onToggle={toggleSelection}
+        />
 
       )}
 
