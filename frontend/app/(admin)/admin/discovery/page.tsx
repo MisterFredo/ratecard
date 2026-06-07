@@ -18,9 +18,18 @@ type DiscoveryItem = {
   created_at?: string | null;
 };
 
+type Source = {
+  source_id: string;
+  name: string;
+
+  domain?: string | null;
+  acquisition_mode?: string | null;
+};
+
 export default function DiscoveryPage() {
 
   const [items, setItems] = useState<DiscoveryItem[]>([]);
+  const [sources, setSources] = useState<Source[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -29,18 +38,23 @@ export default function DiscoveryPage() {
   // LOAD
   // =========================================================
 
-  async function loadDiscovery() {
+  async function loadData() {
 
     try {
 
       setLoading(true);
 
-      const res = await api.get(
-        "/discovery/list"
-      );
+      const [discoveryRes, sourceRes] = await Promise.all([
+        api.get("/discovery/list"),
+        api.get("/source/list"),
+      ]);
 
       setItems(
-        res.items || []
+        discoveryRes.items || []
+      );
+
+      setSources(
+        sourceRes.sources || []
       );
 
     } catch (e) {
@@ -64,7 +78,7 @@ export default function DiscoveryPage() {
 
   useEffect(() => {
 
-    loadDiscovery();
+    loadData();
 
   }, []);
 
@@ -87,7 +101,7 @@ export default function DiscoveryPage() {
         `${res.discovered_urls || 0} URL(s) découverte(s)`
       );
 
-      await loadDiscovery();
+      await loadData();
 
     } catch (e) {
 
@@ -101,6 +115,38 @@ export default function DiscoveryPage() {
 
       setScanning(false);
 
+    }
+  }
+
+  // =========================================================
+  // SCAN SOURCE
+  // =========================================================
+
+  async function scanSource(
+    sourceId: string,
+    sourceName: string
+  ) {
+
+    try {
+
+      const res = await api.post(
+        `/discovery/scan/${sourceId}`,
+        {}
+      );
+
+      alert(
+        `${sourceName}\n${res.discovered_urls || 0} URL(s) découverte(s)`
+      );
+
+      await loadData();
+
+    } catch (e) {
+
+      console.error(e);
+
+      alert(
+        `❌ Erreur scan ${sourceName}`
+      );
     }
   }
 
@@ -173,6 +219,87 @@ export default function DiscoveryPage() {
 
       </div>
 
+      {/* SOURCES */}
+
+      <div className="bg-white border rounded overflow-hidden">
+
+        <div className="p-4 border-b font-semibold">
+          Sources configurées
+        </div>
+
+        <table className="w-full text-sm">
+
+          <thead>
+
+            <tr className="bg-gray-50 border-b text-left">
+
+              <th className="p-3">
+                Source
+              </th>
+
+              <th className="p-3">
+                Mode
+              </th>
+
+              <th className="p-3">
+                Domain
+              </th>
+
+              <th className="p-3">
+                Action
+              </th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {sources.map((source) => (
+
+              <tr
+                key={source.source_id}
+                className="border-b"
+              >
+
+                <td className="p-3 font-medium">
+                  {source.name}
+                </td>
+
+                <td className="p-3">
+                  {source.acquisition_mode || "—"}
+                </td>
+
+                <td className="p-3">
+                  {source.domain || "—"}
+                </td>
+
+                <td className="p-3">
+
+                  <button
+                    onClick={() =>
+                      scanSource(
+                        source.source_id,
+                        source.name
+                      )
+                    }
+                    className="bg-ratecard-blue text-white px-3 py-1 rounded"
+                  >
+                    SCAN
+                  </button>
+
+                </td>
+
+              </tr>
+
+            ))}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
       {/* COUNTER */}
 
       <div className="bg-white border rounded p-4">
@@ -187,7 +314,7 @@ export default function DiscoveryPage() {
 
       </div>
 
-      {/* TABLE */}
+      {/* DISCOVERY TABLE */}
 
       {loading ? (
 
@@ -240,19 +367,13 @@ export default function DiscoveryPage() {
                   className="border-b hover:bg-gray-50"
                 >
 
-                  {/* SOURCE */}
-
                   <td className="p-3 font-medium whitespace-nowrap">
                     {item.source_name || "—"}
                   </td>
 
-                  {/* TITLE */}
-
                   <td className="p-3">
                     {item.title || "—"}
                   </td>
-
-                  {/* URL */}
 
                   <td className="p-3">
 
@@ -266,8 +387,6 @@ export default function DiscoveryPage() {
                     </a>
 
                   </td>
-
-                  {/* STATUS */}
 
                   <td className="p-3 whitespace-nowrap">
                     {getStatusBadge(
