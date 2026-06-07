@@ -151,6 +151,34 @@ export default function DiscoveryPage() {
   }
 
   // =========================================================
+  // DISMISS
+  // =========================================================
+
+  async function dismissItem(
+    idDiscovery: string
+  ) {
+
+    try {
+
+      await api.post(
+        `/discovery/dismiss/${idDiscovery}`,
+        {}
+      );
+
+      await loadData();
+
+    } catch (e) {
+
+      console.error(e);
+
+      alert(
+        "❌ Erreur dismiss"
+      );
+
+    }
+  }
+
+  // =========================================================
   // BADGE
   // =========================================================
 
@@ -354,6 +382,10 @@ export default function DiscoveryPage() {
                   Status
                 </th>
 
+                <th className="p-3">
+                  Action
+                </th>
+
               </tr>
 
             </thead>
@@ -392,6 +424,25 @@ export default function DiscoveryPage() {
                     {getStatusBadge(
                       item.status
                     )}
+                  </td>
+
+                  <td className="p-3 whitespace-nowrap">
+
+                    {item.status === "NEW" && (
+
+                      <button
+                        onClick={() =>
+                          dismissItem(
+                            item.id_discovery
+                          )
+                        }
+                        className="text-red-600 hover:underline"
+                      >
+                        Dismiss
+                      </button>
+
+                    )}
+
                   </td>
 
                 </tr>
