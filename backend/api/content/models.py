@@ -42,6 +42,7 @@ class ContentRawCreate(BaseModel):
     source_id: str
     source_title: str
     source_url: Optional[str] = None
+    discovery_id: Optional[str] = None
     raw_text: str
 
     date_source: Optional[date] = None
