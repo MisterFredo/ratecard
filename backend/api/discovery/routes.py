@@ -1,12 +1,18 @@
 from fastapi import APIRouter, HTTPException
 
 from api.discovery.models import (
+
     DiscoveryListOut,
     ScanResponse,
+
     StoreRequest,
     StoreResponse,
+
     IgnoreRequest,
     IgnoreResponse,
+
+    # 🔥 NEW
+    ManualDiscoveryListOut,
 )
 
 from core.discovery.service import (
@@ -16,6 +22,7 @@ from core.discovery.service import (
     store_discovery_urls,
     ignore_discovery_urls,
     mark_discovery_manual,
+    list_manual_discovery,
     dismiss_discovery,
 )
 
@@ -94,6 +101,32 @@ def list_route():
         raise HTTPException(
             400,
             f"Erreur liste discovery : {e}"
+        )
+
+# ============================================================
+# MANUAL DISCOVERY LIST
+# ============================================================
+
+@router.get(
+    "/manual-list",
+    response_model=ManualDiscoveryListOut,
+)
+def manual_list_route():
+
+    try:
+
+        items = list_manual_discovery()
+
+        return {
+            "status": "ok",
+            "items": items,
+        }
+
+    except Exception as e:
+
+        raise HTTPException(
+            400,
+            f"Erreur liste manual discovery : {e}"
         )
 
 
