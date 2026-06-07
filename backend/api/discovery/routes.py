@@ -15,6 +15,7 @@ from core.discovery.service import (
     list_discovery_items,
     store_discovery_urls,
     ignore_discovery_urls,
+    mark_discovery_manual,
     dismiss_discovery,
 )
 
@@ -175,4 +176,28 @@ def dismiss_route(
         raise HTTPException(
             400,
             f"Erreur dismiss URL : {e}"
+        )
+
+# ============================================================
+# SEND TO MANUAL REVIEW
+# ============================================================
+
+@router.post(
+    "/manual",
+)
+def manual_route(data: IgnoreRequest):
+
+    try:
+
+        result = mark_discovery_manual(
+            data.discovery_ids
+        )
+
+        return result
+
+    except Exception as e:
+
+        raise HTTPException(
+            400,
+            f"Erreur envoi Studio : {e}"
         )
