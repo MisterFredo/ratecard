@@ -14,6 +14,11 @@ from utils.bigquery_utils import (
     get_bigquery_client,
 )
 
+from core.content.raw_import_service import (
+    parse_article_from_url,
+    insert_raw_rows,
+)
+
 from google.cloud import bigquery
 
 
@@ -451,3 +456,133 @@ def dismiss_discovery(
     )
 
     return True
+
+# ============================================================
+# IGNORE DISCOVERY URLS
+# ============================================================
+
+def ignore_discovery_urls(
+    discovery_ids: List[str],
+):
+
+    if not discovery_ids:
+
+        return {
+            "status": "ok",
+            "ignored": 0,
+        }
+
+    ids_sql = ",".join(
+        [f"'{x}'" for x in discovery_ids]
+    )
+
+    sql = f"""
+        UPDATE `{TABLE_DISCOVERY}`
+        SET STATUS = 'DISMISSED'
+        WHERE ID_DISCOVERY IN ({ids_sql})
+    """
+
+    query_bq(sql)
+
+    return {
+        "status": "ok",
+        "ignored": len(discovery_ids),
+    }
+
+# ============================================================
+# STORE DISCOVERY URLS
+# ============================================================
+
+def store_discovery_urls(
+    discovery_ids: List[str],
+):
+
+    if not discovery_ids:
+
+        return {
+            "status": "ok",
+            "stored": 0,
+            "skipped": 0,
+            "errors": 0,
+        }
+
+    ids_sql = ",".join(
+        [f"'{x}'" for x in discovery_ids]
+    )
+
+    sql = f"""
+        SELECT
+            ID_DISCOVERY,
+            SOURCE_ID,
+            URL,
+            TITLE,
+            STATUS
+        FROM `{TABLE_DISCOVERY}`
+        WHERE ID_DISCOVERY IN ({ids_sql})
+    """
+
+    rows = query_bq(sql)
+
+    stored = 0
+    skipped = 0
+    errors = 0
+
+    for row in rows:
+
+        try:
+
+            if row["STATUS"] == "STORED":
+
+                skipped += 1
+                continue
+
+            parsed = parse_article_from_url(
+                row["URL"]
+            )
+
+            insert_raw_rows(
+                rows=[
+                    {
+                        "TITLE": parsed["TITLE"],
+                        "DATE_SOURCE": parsed.get(
+                            "DATE_SOURCE"
+                        ),
+                        "RAW_TEXT": parsed[
+                            "RAW_TEXT"
+                        ],
+                        "SOURCE_URL": row["URL"],
+                    }
+                ],
+                id_source=row["SOURCE_ID"],
+                import_type="URL",
+            )
+
+            query_bq(
+                f"""
+                UPDATE `{TABLE_DISCOVERY}`
+                SET STATUS = 'STORED'
+                WHERE ID_DISCOVERY = @id
+                """,
+                {
+                    "id": row["ID_DISCOVERY"],
+                },
+            )
+
+            stored += 1
+
+        except Exception as e:
+
+            print(
+                "[DISCOVERY STORE]",
+                row["URL"],
+                e,
+            )
+
+            errors += 1
+
+    return {
+        "status": "ok",
+        "stored": stored,
+        "skipped": skipped,
+        "errors": errors,
+    }
