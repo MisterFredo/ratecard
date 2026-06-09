@@ -327,7 +327,7 @@ export default function NewsPage() {
                 }
               `}
             >
-              Tous
+              All
             </button>
 
             {universes.map((u) => (
