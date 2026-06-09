@@ -33,7 +33,7 @@ export default function WorkspaceContentList({
           text-gray-400
         "
       >
-        Contenus
+        Contents
       </div>
 
       {items.map((item) => (
