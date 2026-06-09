@@ -52,7 +52,7 @@ export default function WorkspaceActions({
           disabled:opacity-50
         "
       >
-        Générer points clés
+        Key Points
       </button>
 
       {/* STRUCTURE */}
@@ -74,7 +74,7 @@ export default function WorkspaceActions({
           disabled:opacity-50
         "
       >
-        Structurer les données
+        Structure Data
       </button>
 
     </div>
