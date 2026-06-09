@@ -309,7 +309,7 @@ export default function FeedHeader({
               onSelectUniverse(null)
             }
           >
-            Tous
+            All
           </PillButton>
 
           {universes.map((u) => {
