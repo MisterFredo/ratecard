@@ -608,13 +608,13 @@ def import_urls_csv(
         io.StringIO(csv_text)
     )
 
+    rows = list(reader)
+
     inserted_rows = []
 
     imported_count = 0
     skipped_count = 0
     error_count = 0
-
-    rows = list(reader)
 
     print(
         f"[RAW_IMPORT_CSV] lignes reçues : {len(rows)}"
@@ -644,24 +644,26 @@ def import_urls_csv(
                 f"[RAW_IMPORT_CSV] ({i}/{len(rows)}) {url}"
             )
 
-            # ------------------------------------------
-            # SKIP SI EXISTE DEJA
-            # ------------------------------------------
+            # --------------------------------------------------
+            # SKIP SI DÉJÀ EXISTANT
+            # --------------------------------------------------
 
             if url_already_exists(url):
 
                 skipped_count += 1
                 continue
 
-            # ------------------------------------------
+            # --------------------------------------------------
             # PARSE
-            # ------------------------------------------
+            # --------------------------------------------------
 
             parsed = parse_article_from_url(
                 url
             )
 
-            title = parsed.get("TITLE")
+            title = parsed.get(
+                "TITLE"
+            )
 
             date_source = parsed.get(
                 "DATE_SOURCE"
@@ -677,24 +679,36 @@ def import_urls_csv(
                     "RAW_TEXT vide après parsing"
                 )
 
+            # --------------------------------------------------
+            # PRÉPARE INSERTION BQ
+            # --------------------------------------------------
+
             inserted_rows.append(
                 {
                     "TITLE": title,
-                    "DATE_SOURCE": date_source,
-                    "RAW_TEXT": raw_text,
-                    "SOURCE_URL": parsed.get(
-                        "SOURCE_URL"
-                    ),
 
-                    "CONTENT_TYPE": content_type,
+                    "DATE_SOURCE":
+                        date_source,
 
-                    # 🔥 IMPORTANT
+                    "RAW_TEXT":
+                        raw_text,
+
+                    "SOURCE_URL":
+                        parsed.get(
+                            "SOURCE_URL"
+                        ),
+
+                    # 🔥 CSV
                     "ID_PRIMARY_COMPANY":
                         id_primary_company,
                 }
             )
 
             imported_count += 1
+
+            # --------------------------------------------------
+            # DÉLAI SÉCURISÉ
+            # --------------------------------------------------
 
             time.sleep(
                 random.uniform(7, 12)
@@ -709,22 +723,22 @@ def import_urls_csv(
 
             error_count += 1
 
-    # ----------------------------------------------
-    # INSERTION
-    # ----------------------------------------------
+    # ----------------------------------------------------------
+    # INSERTION GROUPÉE
+    # ----------------------------------------------------------
 
-    for row in inserted_rows:
+    if inserted_rows:
 
         insert_raw_rows(
-            [row],
+            inserted_rows,
             id_source=id_source,
             import_type="URL",
             content_type=content_type,
-
-            id_primary_company=row.get(
-                "ID_PRIMARY_COMPANY"
-            ),
         )
+
+    # ----------------------------------------------------------
+    # MESSAGE SIMPLE POUR FRONT
+    # ----------------------------------------------------------
 
     message_parts = []
 
