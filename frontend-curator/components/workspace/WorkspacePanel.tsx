@@ -188,7 +188,7 @@ export default function WorkspacePanel() {
               }
             `}
           >
-            Contexte
+            Context
           </button>
 
           <button
