@@ -228,7 +228,7 @@ export default function SelectionPanel({
           disabled={loading || selectedItems.length === 0}
           className="flex-1 py-2 text-xs rounded-lg bg-black text-white disabled:opacity-50"
         >
-          Générer analyse
+          Generate Analysis
         </button>
 
         <button
@@ -334,13 +334,13 @@ export default function SelectionPanel({
           <div id="analysis-content">
             {loading && (
               <div className="text-xs text-gray-400">
-                Génération en cours...
+                Analysis...
               </div>
             )}
 
             {!loading && !analysis && (
               <div className="text-xs text-gray-400">
-                Clique sur "Générer analyse"
+                Clique sur "Generate Analysis"
               </div>
             )}
 
