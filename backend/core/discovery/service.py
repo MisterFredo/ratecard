@@ -326,7 +326,7 @@ def scan_all_sources():
         FROM `{TABLE_SOURCE}`
         WHERE DOMAIN IS NOT NULL
           AND DOMAIN != ''
-          AND ACQUISITION_MODE IS NOT NULL
+          AND ACQUISITION_MODE = 'AUTO'
     """
 
     rows = query_bq(sql)
