@@ -68,12 +68,14 @@ class AssignUniversePayload(BaseModel):
     universes: List[str] = Field(default_factory=list)
 
 class UserKeywordPayload(BaseModel):
-    user_id: str
+
+    user_id: Optional[str] = None
     keyword: str
+
 
 class UserProfilePayload(BaseModel):
 
-    user_id: str
+    user_id: Optional[str] = None
 
     geography_1: Optional[str] = None
     geography_2: Optional[str] = None
