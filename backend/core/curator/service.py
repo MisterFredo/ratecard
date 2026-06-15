@@ -133,6 +133,14 @@ def search(
         fav_solutions,
     ) = load_user_preferences(user_id)
 
+    keywords = []
+
+    if (
+        feed_mode == "keywords"
+        and user_id
+    ):
+        keywords = get_user_keywords(user_id)
+
     universe_filter = ""
 
     if universe_id:
@@ -158,6 +166,19 @@ def search(
 
         preferences_filter = (
             build_preferences_filter()
+        )
+
+    keywords_filter = ""
+
+    if (
+        feed_mode == "keywords"
+        and keywords
+    ):
+
+        keywords_filter = (
+            build_keywords_filter(
+                keywords
+            )
         )
 
     sql = f"""
@@ -212,6 +233,7 @@ def search(
     {build_user_filter("c")}
     {universe_filter}
     {preferences_filter}
+    {keywords_filter}
 
     ORDER BY published_at DESC
 
@@ -236,7 +258,25 @@ def search(
         "fav_solutions": fav_solutions,
     }
 
-    rows = query_bq(sql, params)
+    # =====================================================
+    # KEYWORDS PARAMS
+    # =====================================================
+
+    if (
+        feed_mode == "keywords"
+        and keywords
+    ):
+
+        for i, keyword in enumerate(keywords):
+
+            params[
+                f"keyword_{i}"
+            ] = keyword
+
+    rows = query_bq(
+        sql,
+        params
+    )
 
     mapped = [
         _map_feed_row(r)
@@ -273,7 +313,6 @@ def search(
 
     return mapped
 
-
 # ============================================================
 # LATEST
 # ============================================================
@@ -292,6 +331,14 @@ def latest(
         fav_topics,
         fav_solutions,
     ) = load_user_preferences(user_id)
+
+    keywords = []
+
+    if (
+        feed_mode == "keywords"
+        and user_id
+    ):
+        keywords = get_user_keywords(user_id)
 
     universe_filter = ""
 
@@ -318,6 +365,19 @@ def latest(
 
         preferences_filter = (
             build_preferences_filter()
+        )
+
+    keywords_filter = ""
+
+    if (
+        feed_mode == "keywords"
+        and keywords
+    ):
+
+        keywords_filter = (
+            build_keywords_filter(
+                keywords
+            )
         )
 
     sql = f"""
@@ -359,6 +419,7 @@ def latest(
     {build_user_filter("c")}
     {universe_filter}
     {preferences_filter}
+    {keywords_filter}
 
     ORDER BY published_at DESC
 
@@ -381,7 +442,25 @@ def latest(
         "fav_solutions": fav_solutions,
     }
 
-    rows = query_bq(sql, params)
+    # =====================================================
+    # KEYWORDS PARAMS
+    # =====================================================
+
+    if (
+        feed_mode == "keywords"
+        and keywords
+    ):
+
+        for i, keyword in enumerate(keywords):
+
+            params[
+                f"keyword_{i}"
+            ] = keyword
+
+    rows = query_bq(
+        sql,
+        params
+    )
 
     mapped = [
         _map_feed_row(r)
