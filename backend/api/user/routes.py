@@ -140,6 +140,24 @@ def get_keywords(user_id: str):
         "keywords": keywords
     }
 
+# =========================================================
+# USER KEYWORDS (CURRENT USER)
+# =========================================================
+
+@router.get("/keywords")
+def get_my_keywords(request: Request):
+
+    user_id = get_user_id_from_request(request)
+
+    if not user_id:
+        return {
+            "keywords": []
+        }
+
+    return {
+        "keywords": get_user_keywords(user_id)
+    }
+
 
 @router.post("/keywords/add")
 def add_keyword(
@@ -181,6 +199,24 @@ def get_profile(user_id: str):
 
     return {
         "profile": profile
+    }
+
+# =========================================================
+# USER PROFILE (CURRENT USER)
+# =========================================================
+
+@router.get("/profile")
+def get_my_profile(request: Request):
+
+    user_id = get_user_id_from_request(request)
+
+    if not user_id:
+        return {
+            "profile": None
+        }
+
+    return {
+        "profile": get_user_profile(user_id)
     }
 
 @router.post("/profile/update")
