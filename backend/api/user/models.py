@@ -68,6 +68,7 @@ class AssignUniversePayload(BaseModel):
     universes: List[str] = Field(default_factory=list)
 
 class UserKeywordPayload(BaseModel):
+    user_id: str
     keyword: str
 
 class UserProfilePayload(BaseModel):
