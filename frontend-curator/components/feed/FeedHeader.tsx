@@ -39,10 +39,6 @@ type Props = {
 
   // 🔥 NEW
   feedMode:
-    "all" | "mine";
-
-  // 🔥 NEW
-  feedMode:
     "all" | "mine" | "keywords";
 
   onSelectFeedMode: (
@@ -51,7 +47,6 @@ type Props = {
       | "mine"
       | "keywords"
   ) => void;
-  };
 
 /* ========================================================= */
 
