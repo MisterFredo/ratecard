@@ -25,6 +25,9 @@ import UserGeographyEditor
 import UserProfileEditor
   from "@/components/admin/users/UserProfileEditor";
 
+import UserPreferencesViewer
+  from "@/components/admin/users/UserPreferencesViewer";
+
 const SUPPORTED_LANGS = ["fr", "en"];
 
 /* ========================================================= */
@@ -669,6 +672,10 @@ export default function EditUser() {
         </div>
 
       </div>
+
+      <UserPreferencesViewer
+        userId={userId}
+      />
 
       {/* =====================================================
           KEYWORDS
