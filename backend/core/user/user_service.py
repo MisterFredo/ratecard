@@ -272,10 +272,15 @@ def create_user(payload):
 # =========================================================
 
 def update_user(payload):
-    user = get_user_by_id(payload.user_id)
+
+    user = get_user_by_id(
+        payload.user_id
+    )
 
     if not user:
-        raise ValueError("User not found")
+        raise ValueError(
+            "User not found"
+        )
 
     query_bq(
         f"""
@@ -296,12 +301,17 @@ def update_user(payload):
         },
     )
 
-    assign_universes(payload.user_id, payload.universes)
+    # =====================================================
+    # UNIVERS (OPTIONAL)
+    # =====================================================
 
+    if payload.universes is not None:
 
-# =========================================================
-# LIST USERS
-# =========================================================
+        assign_universes(
+            payload.user_id,
+            payload.universes
+        )
+
 
 # =========================================================
 # LIST USERS
