@@ -110,31 +110,10 @@ export default function SettingsPage() {
 
     try {
 
-      const me =
-        await api.get("/user/me");
-
-      const user =
-        me?.user;
-
-      if (!user) return;
-
       await api.post(
-        "/user/update",
+        "/user/language",
         {
-          user_id:
-            user.ID_USER,
-
-          name:
-            user.NAME,
-
-          company:
-            user.COMPANY,
-
-          role:
-            user.ROLE,
-
-          language:
-            value,
+          language: value,
         }
       );
 
@@ -146,6 +125,7 @@ export default function SettingsPage() {
         "language update error",
         e
       );
+
     }
   }
 
