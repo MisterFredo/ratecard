@@ -42,12 +42,16 @@ type Props = {
     "all" | "mine";
 
   // 🔥 NEW
-  onSelectFeedMode: (
-    mode: "all" | "mine"
-  ) => void;
+  feedMode:
+    "all" | "mine" | "keywords";
 
-  loading?: boolean;
-};
+  onSelectFeedMode: (
+    mode:
+      | "all"
+      | "mine"
+      | "keywords"
+  ) => void;
+  };
 
 /* ========================================================= */
 
