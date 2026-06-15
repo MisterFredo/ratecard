@@ -235,7 +235,20 @@ export default function FeedHeader({
               onSelectFeedMode("mine")
             }
           >
-            My Feed
+            Favorites
+          </PillButton>
+
+          <PillButton
+            active={
+              feedMode === "keywords"
+            }
+            disabled={loading}
+            onClick={() =>
+              !loading &&
+              onSelectFeedMode("keywords")
+            }
+          >
+            Keywords
           </PillButton>
 
         </div>
