@@ -17,7 +17,7 @@ class CreateUserPayload(BaseModel):
     company: Optional[str] = None
     language: Optional[str] = "fr"
 
-    universes: List[str] = Field(default_factory=list)
+    universes: Optional[List[str]] = None
 
     role: Optional[str] = "user"
 
