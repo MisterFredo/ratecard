@@ -161,32 +161,56 @@ def get_my_keywords(request: Request):
 
 @router.post("/keywords/add")
 def add_keyword(
+    request: Request,
     payload: UserKeywordPayload
 ):
 
+    user_id = (
+        payload.user_id
+        or get_user_id_from_request(request)
+    )
+
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Not authenticated"
+        )
+
     add_user_keyword(
-        user_id=payload.user_id,
+        user_id=user_id,
         keyword=payload.keyword,
     )
 
     return {
         "status": "ok"
     }
+
 
 @router.post("/keywords/remove")
 def remove_keyword(
+    request: Request,
     payload: UserKeywordPayload
 ):
 
+    user_id = (
+        payload.user_id
+        or get_user_id_from_request(request)
+    )
+
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Not authenticated"
+        )
+
     remove_user_keyword(
-        user_id=payload.user_id,
+        user_id=user_id,
         keyword=payload.keyword,
     )
 
     return {
         "status": "ok"
     }
-
 
 # =========================================================
 # USER PROFILE
@@ -221,11 +245,23 @@ def get_my_profile(request: Request):
 
 @router.post("/profile/update")
 def update_profile(
+    request: Request,
     payload: UserProfilePayload
 ):
 
+    user_id = (
+        payload.user_id
+        or get_user_id_from_request(request)
+    )
+
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Not authenticated"
+        )
+
     update_user_profile(
-        user_id=payload.user_id,
+        user_id=user_id,
         geography_1=payload.geography_1,
         geography_2=payload.geography_2,
         geography_3=payload.geography_3,
