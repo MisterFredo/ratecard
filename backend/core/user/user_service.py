@@ -303,22 +303,61 @@ def update_user(payload):
 # LIST USERS
 # =========================================================
 
+# =========================================================
+# LIST USERS
+# =========================================================
+
 def list_users():
+
     query = f"""
     SELECT
-        ID_USER,
-        EMAIL,
-        NAME,
-        COMPANY,
-        LANGUAGE,
-        ROLE,
-        CREATED_AT
-    FROM `{TABLE_USER}`
-    ORDER BY CREATED_AT DESC
+
+        u.ID_USER,
+        u.EMAIL,
+        u.NAME,
+        u.COMPANY,
+        u.LANGUAGE,
+        u.ROLE,
+        u.CREATED_AT,
+
+        COUNT(DISTINCT k.KEYWORD)
+            AS KEYWORDS_COUNT,
+
+        MAX(
+            p.GEOGRAPHY_1
+        ) AS GEOGRAPHY_1,
+
+        MAX(
+            CASE
+                WHEN p.PROFILE_TEXT IS NOT NULL
+                 AND TRIM(p.PROFILE_TEXT) != ''
+                THEN TRUE
+                ELSE FALSE
+            END
+        ) AS HAS_PROFILE
+
+    FROM `{TABLE_USER}` u
+
+    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_KEYWORD` k
+      ON u.ID_USER = k.ID_USER
+
+    LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_PROFILE` p
+      ON u.ID_USER = p.ID_USER
+
+    GROUP BY
+        u.ID_USER,
+        u.EMAIL,
+        u.NAME,
+        u.COMPANY,
+        u.LANGUAGE,
+        u.ROLE,
+        u.CREATED_AT
+
+    ORDER BY
+        u.CREATED_AT DESC
     """
 
     return query_bq(query)
-
 # =========================================================
 # LIST DIGEST USERS
 # =========================================================
