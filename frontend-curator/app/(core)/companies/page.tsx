@@ -272,10 +272,6 @@ export default function CompaniesPage() {
       {/* ⭐ FAVORITES */}
       {!loading && favorites.length > 0 && (
         <FavoritesStrip>
-          <h2 className="text-xs font-semibold uppercase text-gray-500">
-            Favoris
-          </h2>
-
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
             {sortCompanies(favorites, sortMode).map((c) => (
               <CompanyCard
