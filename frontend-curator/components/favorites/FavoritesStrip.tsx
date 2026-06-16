@@ -17,14 +17,13 @@ export default function FavoritesStrip({
     <div
       className="
         sticky
-        top-4
-        z-20
+        top-0
+        z-50
 
-        bg-gray-50/95
-        backdrop-blur-sm
+        bg-gray-50
 
         border-b
-        border-gray-100
+        border-gray-200
 
         pb-4
         mb-4
