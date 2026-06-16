@@ -246,7 +246,8 @@ def get_user_preferences_detailed(
             f"""
             SELECT
                 ID_COMPANY,
-                NAME
+                NAME,
+                MEDIA_LOGO_RECTANGLE_ID
             FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY`
             WHERE ID_COMPANY IN UNNEST(@ids)
             """,
@@ -259,6 +260,7 @@ def get_user_preferences_detailed(
             {
                 "id": c["ID_COMPANY"],
                 "label": c["NAME"],
+                "logo": c.get("MEDIA_LOGO_RECTANGLE_ID"),
             }
             for c in companies
         ]
@@ -272,10 +274,13 @@ def get_user_preferences_detailed(
         solutions = query_bq(
             f"""
             SELECT
-                ID_SOLUTION,
-                NAME
-            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION`
-            WHERE ID_SOLUTION IN UNNEST(@ids)
+                s.ID_SOLUTION,
+                s.NAME,
+                c.MEDIA_LOGO_RECTANGLE_ID
+            FROM `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_SOLUTION` s
+            LEFT JOIN `{BQ_PROJECT}.{BQ_DATASET}.RATECARD_COMPANY` c
+                ON s.ID_COMPANY = c.ID_COMPANY
+            WHERE s.ID_SOLUTION IN UNNEST(@ids)
             """,
             {
                 "ids": solution_ids
@@ -286,6 +291,7 @@ def get_user_preferences_detailed(
             {
                 "id": s["ID_SOLUTION"],
                 "label": s["NAME"],
+                "logo": s.get("MEDIA_LOGO_RECTANGLE_ID"),
             }
             for s in solutions
         ]
