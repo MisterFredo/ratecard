@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useEntityDrawer } from "@/hooks/useEntityDrawer";
 import TopicCard from "@/components/topics/TopicCard";
+import FavoritesStrip from "@/components/favorites/FavoritesStrip";
 import { api } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -408,7 +409,7 @@ export default function TopicsPage() {
 
       {!loading && favoriteTopics.length > 0 && (
 
-        <section className="space-y-2">
+        <FavoritesStrip>
 
           <h2 className="text-xs font-semibold uppercase text-gray-500">
             Favoris
@@ -456,7 +457,7 @@ export default function TopicsPage() {
 
           </div>
 
-        </section>
+        </FavoritesStrip>
 
       )}
 
