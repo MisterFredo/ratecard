@@ -192,7 +192,7 @@ export default function UserFavoritesSummary() {
               mb-3
             "
           >
-            Companies
+            Favorite Companies
           </h3>
 
           <div
@@ -235,7 +235,7 @@ export default function UserFavoritesSummary() {
               mb-3
             "
           >
-            Solutions
+            Favorite Solutions
           </h3>
 
           <div
@@ -278,7 +278,7 @@ export default function UserFavoritesSummary() {
               mb-3
             "
           >
-            Topics
+            Favorite Topics
           </h3>
 
           <div
