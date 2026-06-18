@@ -400,11 +400,13 @@ export default function CuratorShell({
             h-[calc(100vh-72px)]
           ">
 
-            <div className="
-              flex
-              gap-8
-              h-full
-            ">
+            <div
+              className={`
+                flex
+                h-full
+                ${isProductTour ? "" : "gap-8"}
+              `}
+            >
 
               {/* CONTENT */}
               <div className="
@@ -416,14 +418,16 @@ export default function CuratorShell({
               </div>
 
               {/* WORKSPACE */}
-              <aside className="
-                hidden
-                xl:block
-                w-[380px]
-                shrink-0
-              ">
-                <WorkspacePanel />
-              </aside>
+                {!isProductTour && (
+                  <aside className="
+                    hidden
+                    xl:block
+                    w-[380px]
+                    shrink-0
+                  ">
+                    <WorkspacePanel />
+                  </aside>
+                )}
 
             </div>
 
