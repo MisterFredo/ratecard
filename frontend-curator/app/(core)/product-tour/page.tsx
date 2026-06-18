@@ -4,7 +4,7 @@ const GCS_BASE_URL =
   process.env.NEXT_PUBLIC_GCS_BASE_URL!;
 
 const VIDEO_URL =
-  "/assets/product/getcurator-tour-v1.mp4";
+  `${GCS_BASE_URL}/product/getcurator-tour-v1.mp4`;
 
 export default function ProductTourPage() {
 
