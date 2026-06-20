@@ -383,6 +383,10 @@ def list_digest_users():
         f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_PREFERENCES"
     )
 
+    table_user_keyword = (
+        f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_USER_KEYWORD"
+    )
+
     query = f"""
 
     SELECT DISTINCT
@@ -400,15 +404,8 @@ def list_digest_users():
     FROM `{TABLE_USER}` u
 
     # =====================================================
-    # ONLY USERS WITH PREFERENCES
-    # =====================================================
-
-    INNER JOIN `{table_user_preferences}` p
-
-    ON u.ID_USER = p.ID_USER
-
-    # =====================================================
-    # LAST DIGEST SENT
+    # USERS ELIGIBLE FOR DIGEST
+    # FAVORITES OR KEYWORDS
     # =====================================================
 
     LEFT JOIN (
@@ -425,6 +422,32 @@ def list_digest_users():
     ) ds
 
     ON u.ID_USER = ds.ID_USER
+
+    WHERE (
+
+        EXISTS (
+
+            SELECT 1
+
+            FROM `{table_user_preferences}` p
+
+            WHERE p.ID_USER = u.ID_USER
+
+        )
+
+        OR
+
+        EXISTS (
+
+            SELECT 1
+
+            FROM `{table_user_keyword}` k
+
+            WHERE k.ID_USER = u.ID_USER
+
+        )
+
+    )
 
     # =====================================================
     # ORDER
