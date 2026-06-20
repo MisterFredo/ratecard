@@ -414,6 +414,10 @@ export default function DigestPage() {
           {/* FLOW */}
 
           <DigestEditorialFlow
+            selectedUserId={
+              selectedUser?.id_user
+            }
+
             contents={contents}
 
             editorialOrder={editorialOrder}
@@ -422,6 +426,22 @@ export default function DigestPage() {
 
             setEditorialHtml={
               setEditorialHtml
+            }
+
+            summary={
+              summary
+            }
+
+            setSummary={
+              setSummary
+            }
+
+            implications={
+                implications
+            }
+
+            setImplications={
+              setImplications
             }
 
             setEditorialOrder={
