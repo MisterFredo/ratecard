@@ -13,6 +13,14 @@ from config import (
     BQ_DATASET,
 )
 
+from core.user.user_keyword_service import (
+    get_user_keywords,
+)
+
+from core.user.user_profile_service import (
+    get_user_profile,
+)
+
 # ============================================================
 # TABLES
 # ============================================================
@@ -172,6 +180,72 @@ def load_user_preferences(
     print(result)
 
     return result
+
+# ============================================================
+# USER CONTEXT
+# ============================================================
+
+def load_user_context(
+    user_id: str,
+) -> Dict[str, Any]:
+
+    user = load_user(
+        user_id
+    )
+
+    preferences = (
+        load_user_preferences(
+            user_id
+        )
+    )
+
+    keywords = (
+        get_user_keywords(
+            user_id
+        )
+        or []
+    )
+
+    profile = (
+        get_user_profile(
+            user_id
+        )
+        or {}
+    )
+
+    geographies = [
+        g
+        for g in [
+            profile.get(
+                "geography_1"
+            ),
+            profile.get(
+                "geography_2"
+            ),
+            profile.get(
+                "geography_3"
+            ),
+        ]
+        if g
+    ]
+
+    return {
+        "user": user,
+
+        "preferences":
+            preferences,
+
+        "keywords":
+            keywords,
+
+        "geographies":
+            geographies,
+
+        "profile_text":
+            profile.get(
+                "profile_text"
+            ),
+    }
 
 # ============================================================
 # LAST DIGEST SENT
