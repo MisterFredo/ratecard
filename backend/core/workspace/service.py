@@ -9,8 +9,8 @@ from core.workspace.context_service import (
 from core.workspace.prompt_service import (
     build_key_points_prompt,
     build_structure_prompt,
+    build_implications_prompt,
 )
-
 
 # ============================================================
 # OUTPUT TYPES
@@ -18,6 +18,7 @@ from core.workspace.prompt_service import (
 
 OUTPUT_KEY_POINTS = "key_points"
 OUTPUT_STRUCTURE = "structure"
+OUTPUT_IMPLICATIONS = "implications"
 
 
 # ============================================================
