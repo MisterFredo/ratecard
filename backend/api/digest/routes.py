@@ -28,7 +28,7 @@ def digest_my_feed(
     user_id: str = Query(...),
 
     limit: int = Query(
-        50
+        20
     ),
 ):
 
