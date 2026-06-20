@@ -28,7 +28,6 @@ import {
   EmailContentBlockGmail,
 } from "./EmailContentBlockGmail";
 
-
 /* ========================================================= */
 
 type Props = {
@@ -38,8 +37,55 @@ type Props = {
 
   introText?: string;
 
+  summary?: string;
+
+  implications?: string;
+
   contents: DigestContentItem[];
 };
+
+/* ========================================================= */
+
+function analysisBlockGmail(
+  title: string,
+  content?: string,
+) {
+
+  if (!content?.trim()) {
+    return "";
+  }
+
+  return `
+  <tr>
+    <td
+      style="
+        padding:24px 32px 8px 32px;
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:18px;
+        font-weight:700;
+        color:#111827;
+      "
+    >
+      ${title}
+    </td>
+  </tr>
+
+  <tr>
+    <td
+      style="
+        padding:0 32px 24px 32px;
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:14px;
+        line-height:1.7;
+        color:#374151;
+        white-space:pre-wrap;
+      "
+    >
+      ${content}
+    </td>
+  </tr>
+  `;
+}
 
 /* ========================================================= */
 
@@ -49,6 +95,10 @@ export function buildDigestEmailGmail({
   editorialHtml,
 
   introText,
+
+  summary,
+
+  implications,
 
   contents,
 }: Props) {
@@ -69,6 +119,16 @@ export function buildDigestEmailGmail({
           editorial
         )
       : "",
+
+    analysisBlockGmail(
+      "Weekly Summary",
+      summary
+    ),
+
+    analysisBlockGmail(
+      "Key Implications",
+      implications
+    ),
 
     contents.length > 0
       ? EmailContentBlockGmail(
