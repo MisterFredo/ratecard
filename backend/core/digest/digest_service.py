@@ -258,7 +258,6 @@ def create_digest(
     digest_data = (
         get_digest_contents(
             user_id=user_id,
-            limit=50,
         )
     )
 
