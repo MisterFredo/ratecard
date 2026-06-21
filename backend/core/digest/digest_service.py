@@ -5,7 +5,10 @@ from typing import (
 )
 
 from uuid import uuid4
-from datetime import datetime
+from datetime import (
+    datetime,
+    timezone,
+)
 import json
 
 from config import (
