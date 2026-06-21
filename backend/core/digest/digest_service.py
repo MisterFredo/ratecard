@@ -4,6 +4,30 @@ from typing import (
     List,
 )
 
+from uuid import uuid4
+
+from utils.bigquery_utils import (
+    query_bq,
+)
+
+from config import (
+    BQ_PROJECT,
+    BQ_DATASET,
+)
+
+from core.digest.content_service import (
+    get_digest_contents,
+    load_user_context,
+)
+
+TABLE_DIGEST = (
+    f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_DIGEST"
+)
+
+TABLE_DIGEST_CONTENT = (
+    f"{BQ_PROJECT}.{BQ_DATASET}.RATECARD_DIGEST_CONTENT"
+)
+
 # ============================================================
 # CREATE DIGEST
 # ============================================================
