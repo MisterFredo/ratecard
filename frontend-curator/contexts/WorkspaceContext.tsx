@@ -78,7 +78,7 @@ export function WorkspaceProvider({
      PANEL
   ========================================================= */
 
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(true);
 
   /* =========================================================
      ANALYSIS
