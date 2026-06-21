@@ -34,6 +34,11 @@ export default function SettingsPage() {
     setProfileText,
   ] = useState("");
 
+  const [
+    profileSaved,
+    setProfileSaved,
+  ] = useState(false);
+
   /* =====================================================
      LOAD
   ===================================================== */
@@ -194,6 +199,14 @@ export default function SettingsPage() {
             profileText || null,
         }
       );
+
+      setProfileSaved(true);
+
+      setTimeout(() => {
+
+        setProfileSaved(false);
+
+      }, 2000);
 
     } catch (e) {
 
