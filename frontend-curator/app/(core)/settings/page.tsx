@@ -477,9 +477,10 @@ export default function SettingsPage() {
               text-sm
             "
           >
-            Save
+            {profileSaved
+              ? "✓ Saved"
+              : "Save"}
           </button>
-
         </div>
 
       </div>
