@@ -10,6 +10,7 @@ type Profile = {
   geography_1?: string | null;
   geography_2?: string | null;
   geography_3?: string | null;
+  profile_text?: string | null;
 };
 
 /* ========================================================= */
@@ -36,6 +37,11 @@ export default function SettingsPage() {
 
   const [geo3, setGeo3] =
     useState("");
+
+  const [
+    profileText,
+    setProfileText,
+  ] = useState("");
 
   /* =====================================================
      LOAD
@@ -81,6 +87,10 @@ export default function SettingsPage() {
 
         setGeo3(
           profile.geography_3 || ""
+        );
+
+        setProfileText(
+          profile.profile_text || ""
         );
 
       } catch (e) {
