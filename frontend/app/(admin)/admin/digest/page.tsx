@@ -386,7 +386,8 @@ export default function DigestPage() {
         );
 
         const newDigestId =
-          res?.result?.id_digest;
+          res?.result?.id_digest ||
+          res?.id_digest;
 
         if (!newDigestId) {
 
