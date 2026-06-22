@@ -500,6 +500,7 @@ export default function DigestPage() {
             handleSaveDigest
           }
         />
+      </div>
 
       {/* ===================================================
          MAIN LAYOUT
