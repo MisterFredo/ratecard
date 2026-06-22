@@ -447,25 +447,6 @@ export default function DigestPage() {
             !!digestId
           }
         />
-
-        {/* LAST SENT */}
-
-        {selectedUser && (
-
-          <div className="text-right">
-
-            <div className="text-xs uppercase tracking-wide text-gray-400">
-              Dernier envoi
-            </div>
-
-            <div className="text-sm text-gray-700 mt-1">
-              {formatDate(
-                lastSentAt
-              )}
-            </div>
-
-          </div>
-
         )}
 
       </div>
