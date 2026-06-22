@@ -385,8 +385,15 @@ export default function DigestPage() {
           res
         );
 
+        console.log(
+          "CREATE RESPONSE",
+          res
+        );
+
+        alert(
+          JSON.stringify(res)
+        );
         const newDigestId =
-          res?.result?.id_digest ||
           res?.id_digest;
 
         if (!newDigestId) {
