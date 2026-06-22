@@ -199,6 +199,10 @@ def generate_editorial(
 # SAVE DIGEST
 # ============================================================
 
+# ============================================================
+# SAVE DIGEST
+# ============================================================
+
 @router.post("/{digest_id}/save")
 def save_digest_route(
     digest_id: str,
@@ -206,33 +210,24 @@ def save_digest_route(
 ):
 
     from core.digest.digest_service import (
-        update_digest,
-        update_digest_contents,
+        save_digest,
     )
 
-    update_digest(
+    result = save_digest(
 
         digest_id=digest_id,
 
         digest_name=payload.get(
-            "digest_name",
-            "",
+            "digest_name"
         ),
 
         summary=payload.get(
-            "summary",
-            "",
+            "summary"
         ),
 
         implications=payload.get(
-            "implications",
-            "",
+            "implications"
         ),
-    )
-
-    update_digest_contents(
-
-        digest_id=digest_id,
 
         content_ids=payload.get(
             "content_ids",
@@ -242,6 +237,7 @@ def save_digest_route(
 
     return {
         "status": "ok",
+        "result": result,
     }
 
 
