@@ -105,6 +105,139 @@ def _load_digest_content_ids(
         if r.get("ID_CONTENT")
     ]
 
+def _load_contents_by_ids(
+    content_ids: List[str],
+) -> List[Dict]:
+
+    if not content_ids:
+        return []
+
+    rows = query_bq(
+        f"""
+        SELECT *
+        FROM `{TABLE_CONTENT_ENRICHED}`
+        WHERE id_content IN UNNEST(@content_ids)
+        ORDER BY published_at DESC
+        """,
+        {
+            "content_ids": content_ids,
+        },
+    )
+
+    contents = []
+
+    for row in rows:
+
+        companies = (
+            row.get("companies")
+            or []
+        )
+
+        primary_logo = None
+
+        primary_company_id = (
+            row.get(
+                "ID_PRIMARY_COMPANY"
+            )
+        )
+
+        if (
+            primary_company_id
+            and companies
+        ):
+
+            for company in companies:
+
+                if (
+                    company.get(
+                        "id_company"
+                    )
+                    == primary_company_id
+                ):
+
+                    primary_logo = (
+                        company.get(
+                            "media_logo_rectangle_id"
+                        )
+                    )
+
+        contents.append(
+            {
+                "id":
+                    row.get(
+                        "id_content"
+                    ),
+
+                "content_type":
+                    (
+                        row.get(
+                            "CONTENT_TYPE"
+                        )
+                        or "analysis"
+                    ).lower(),
+
+                "title":
+                    row.get(
+                        "title"
+                    ),
+
+                "excerpt":
+                    row.get(
+                        "excerpt"
+                    ),
+
+                "published_at":
+                    row.get(
+                        "published_at"
+                    ),
+
+                "url":
+                    (
+                        f"https://www.getcurator.ai/feed?news_id={row.get('id_content')}"
+                        if (
+                            row.get(
+                                "CONTENT_TYPE"
+                            )
+                            or ""
+                        ).upper() == "NEWS"
+                        else
+                        f"https://www.getcurator.ai/feed?analysis_id={row.get('id_content')}"
+                    ),
+
+                "primary_company_logo":
+                    primary_logo,
+
+                "companies":
+                    companies,
+
+                "solutions":
+                    row.get(
+                        "solutions"
+                    )
+                    or [],
+
+                "topics":
+                    row.get(
+                        "topics"
+                    )
+                    or [],
+
+                "universes":
+                    row.get(
+                        "universes"
+                    )
+                    or [],
+
+                "concepts":
+                    row.get(
+                        "concepts"
+                    )
+                    or [],
+            }
+        )
+
+    return contents
+
 
 def _load_digest_contents(
     digest_id: str,
@@ -251,37 +384,31 @@ def create_digest(
     user_id: str,
     digest_name: str,
     frequency: str = "WEEKLY",
+
+    content_ids: list | None = None,
+
+    summary: str = "",
+
+    implications: str = "",
 ) -> Dict:
 
     now = datetime.now(
         timezone.utc
     ).isoformat()
 
-    # ========================================================
-    # PERIOD
-    # ========================================================
-
-    period_start, period_end = (
-        get_digest_period(
-            frequency
-        )
+    content_ids = (
+        content_ids
+        or []
     )
 
     # ========================================================
-    # DIGEST CONTENTS
+    # CONTENTS
     # ========================================================
-
-    digest_data = get_digest_contents(
-        user_id=user_id,
-        period_start=period_start,
-        period_end=period_end,
-    )
 
     contents = (
-        digest_data.get(
-            "contents"
+        _load_contents_by_ids(
+            content_ids
         )
-        or []
     )
 
     if not contents:
@@ -295,6 +422,11 @@ def create_digest(
     # ========================================================
     # USER CONTEXT
     # ========================================================
+
+    digest_data = get_digest_contents(
+        user_id=user_id,
+        limit=1,
+    )
 
     user_context = (
         digest_data.get(
@@ -328,10 +460,39 @@ def create_digest(
     # ANALYSIS
     # ========================================================
 
-    analysis = (
-        generate_digest_analysis(
-            contents=contents,
-            profile_text=profile_text,
+    if (
+        not summary
+        or not implications
+    ):
+
+        analysis = (
+            generate_digest_analysis(
+                contents=contents,
+                profile_text=profile_text,
+            )
+        )
+
+        summary = (
+            analysis.get(
+                "summary"
+            )
+            or ""
+        )
+
+        implications = (
+            analysis.get(
+                "implications"
+            )
+            or ""
+        )
+
+    # ========================================================
+    # PERIOD
+    # ========================================================
+
+    period_start, period_end = (
+        get_digest_period(
+            frequency
         )
     )
 
@@ -386,14 +547,10 @@ def create_digest(
                     ),
 
                 "SUMMARY":
-                    analysis.get(
-                        "summary"
-                    ),
+                    summary,
 
                 "IMPLICATIONS":
-                    analysis.get(
-                        "implications"
-                    ),
+                    implications,
             }
         ],
     )
@@ -450,7 +607,6 @@ def create_digest(
         "nb_contents":
             len(contents),
     }
-
 # ============================================================
 # PERIODS
 # ============================================================
