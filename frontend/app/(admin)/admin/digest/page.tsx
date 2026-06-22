@@ -31,6 +31,14 @@ import type {
   HeaderConfig,
 } from "@/types/newsletter";
 
+import { useSearchParams } from "next/navigation";
+
+import { useDigestStudio }
+from "@/hooks/useDigestStudio";
+
+import DigestStudioHeader
+from "@/components/digest/studio/DigestStudioHeader";
+
 /* ========================================================= */
 
 export default function DigestPage() {
