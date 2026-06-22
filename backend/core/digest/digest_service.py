@@ -492,6 +492,147 @@ def get_digest_period(
         now.isoformat(),
     )
 
+
+def save_digest(
+    digest_id: str,
+    digest_name: str,
+    summary: str,
+    implications: str,
+    content_ids: List[str],
+) -> Dict:
+
+    now = datetime.now(
+        timezone.utc
+    ).isoformat()
+
+    # ========================================================
+    # UPDATE DIGEST
+    # ========================================================
+
+    client = get_bigquery_client()
+
+    client.query(
+        f"""
+        UPDATE `{TABLE_DIGEST}`
+        SET
+
+            DIGEST_NAME = @digest_name,
+
+            SUMMARY = @summary,
+
+            IMPLICATIONS = @implications,
+
+            NB_CONTENTS = @nb_contents,
+
+            UPDATED_AT = @updated_at
+
+        WHERE ID_DIGEST = @digest_id
+        """,
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[
+
+                bigquery.ScalarQueryParameter(
+                    "digest_id",
+                    "STRING",
+                    digest_id,
+                ),
+
+                bigquery.ScalarQueryParameter(
+                    "digest_name",
+                    "STRING",
+                    digest_name,
+                ),
+
+                bigquery.ScalarQueryParameter(
+                    "summary",
+                    "STRING",
+                    summary,
+                ),
+
+                bigquery.ScalarQueryParameter(
+                    "implications",
+                    "STRING",
+                    implications,
+                ),
+
+                bigquery.ScalarQueryParameter(
+                    "nb_contents",
+                    "INT64",
+                    len(content_ids),
+                ),
+
+                bigquery.ScalarQueryParameter(
+                    "updated_at",
+                    "TIMESTAMP",
+                    now,
+                ),
+            ]
+        ),
+    ).result()
+
+    # ========================================================
+    # RESET CONTENTS
+    # ========================================================
+
+    client.query(
+        f"""
+        DELETE FROM `{TABLE_DIGEST_CONTENT}`
+        WHERE ID_DIGEST = @digest_id
+        """,
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter(
+                    "digest_id",
+                    "STRING",
+                    digest_id,
+                ),
+            ]
+        ),
+    ).result()
+
+    # ========================================================
+    # INSERT CONTENTS
+    # ========================================================
+
+    rows = []
+
+    for content_id in content_ids:
+
+        rows.append(
+            {
+                "ID_DIGEST":
+                    digest_id,
+
+                "ID_CONTENT":
+                    content_id,
+
+                "CREATED_AT":
+                    now,
+            }
+        )
+
+    if rows:
+
+        insert_bq(
+            TABLE_DIGEST_CONTENT,
+            rows,
+        )
+
+    # ========================================================
+    # RESPONSE
+    # ========================================================
+
+    return {
+
+        "status": "ok",
+
+        "digest_id":
+            digest_id,
+
+        "nb_contents":
+            len(content_ids),
+    }
+
 # ============================================================
 # UPDATE DIGEST
 # ============================================================
