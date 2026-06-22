@@ -326,10 +326,11 @@ export default function DigestPage() {
   }
 
   async function handleSaveDigest() {
+
     alert(
       `SAVE CLICKED
-    digestId=${digestId}
-    selectedUser=${selectedUser?.id_user}`
+  digestId=${digestId}
+  selectedUser=${selectedUser?.id_user}`
     );
 
     try {
@@ -375,7 +376,7 @@ export default function DigestPage() {
               frequency:
                 "WEEKLY",
             }
-            );
+          );
 
         alert("AFTER API");
 
@@ -405,6 +406,41 @@ export default function DigestPage() {
 
         return;
       }
+
+      // =====================================
+      // UPDATE
+      // =====================================
+
+      await api.post(
+        `/digest/${digestId}/save`,
+        {
+          digest_name:
+            digestName,
+
+          summary,
+
+          implications,
+
+          content_ids:
+            contentIds,
+        }
+      );
+
+      alert(
+        "Digest saved"
+      );
+
+    } catch (error) {
+
+      console.error(
+        error
+      );
+
+      alert(
+        "Save failed"
+      );
+    }
+  }
 
   /* =======================================================
      USER SELECT
