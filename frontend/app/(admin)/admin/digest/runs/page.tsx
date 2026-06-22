@@ -235,7 +235,7 @@ export default function DigestRunsPage() {
         <div
           className="
             grid
-            grid-cols-[2fr_1.5fr_100px_120px_120px_100px]
+            grid-cols-[2fr_120px_1.5fr_100px_120px_120px_100px]
             px-4
             py-3
             text-xs
@@ -247,6 +247,10 @@ export default function DigestRunsPage() {
 
           <div>
             Digest
+          </div>
+
+          <div>
+            Frequency
           </div>
 
           <div>
@@ -290,7 +294,7 @@ export default function DigestRunsPage() {
               }
               className="
                 grid
-                grid-cols-[2fr_1.5fr_100px_120px_120px_100px]
+                grid-cols-[2fr_120px_1.5fr_100px_120px_120px_100px]
                 px-4
                 py-3
                 text-sm
@@ -314,6 +318,16 @@ export default function DigestRunsPage() {
 
                 </div>
 
+              </div>
+
+              <div
+                className="
+                  text-xs
+                  uppercase
+                  font-medium
+                "
+              >
+                {digest.DIGEST_FREQUENCY}
               </div>
 
               <div className="text-xs">
