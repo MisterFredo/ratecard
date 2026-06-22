@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import DigestCreateModal from "@/components/digest/DigestCreateModal";
 
 /* ========================================================= */
 
@@ -150,8 +149,8 @@ export default function DigestRunsPage() {
 
   function createDigest() {
 
-    setCreateOpen(
-      true
+    router.push(
+      "/admin/digest"
     );
 
   }
@@ -462,26 +461,6 @@ export default function DigestRunsPage() {
         )}
 
       </div>
-
-      <DigestCreateModal
-
-        open={createOpen}
-
-        digestName={digestName}
-        setDigestName={setDigestName}
-
-        frequency={frequency}
-        setFrequency={setFrequency}
-
-        onClose={() =>
-          setCreateOpen(false)
-        }
-
-        onCreate={
-           handleCreateDigest
-        }
-      />
-
     </div>
 
   );
