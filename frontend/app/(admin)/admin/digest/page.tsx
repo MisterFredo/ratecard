@@ -327,12 +327,6 @@ export default function DigestPage() {
 
   async function handleSaveDigest() {
 
-    alert(
-      `SAVE CLICKED
-  digestId=${digestId}
-  selectedUser=${selectedUser?.id_user}`
-    );
-
     try {
 
       const contentIds =
@@ -352,21 +346,20 @@ export default function DigestPage() {
 
       if (!digestId) {
 
-        alert("ENTER CREATE");
-
         if (!selectedUser) {
 
-          alert("NO USER");
+          alert(
+            "Select a user first"
+          );
 
           return;
         }
-
-        alert("BEFORE API");
 
         const res =
           await api.post(
             "/digest/create",
             {
+
               user_id:
                 selectedUser.id_user,
 
@@ -375,39 +368,30 @@ export default function DigestPage() {
 
               frequency:
                 "WEEKLY",
+
+              content_ids:
+                contentIds,
+
+              summary,
+
+              implications,
             }
           );
 
-        alert("AFTER API");
-
-        console.log(
-          "CREATE RESPONSE",
-          res
-        );
-
-        console.log(
-          "CREATE RESPONSE",
-          res
-        );
-
-        alert(
-          JSON.stringify(res)
-        );
         const newDigestId =
+
+          res?.result?.id_digest
+          ||
           res?.id_digest;
 
         if (!newDigestId) {
 
           alert(
-            "NO DIGEST ID"
+            "Digest creation failed"
           );
 
           return;
         }
-
-        alert(
-          `DIGEST CREATED ${newDigestId}`
-        );
 
         window.location.href =
           `/admin/digest?id_digest=${newDigestId}`;
@@ -419,36 +403,37 @@ export default function DigestPage() {
       // UPDATE
       // =====================================
 
-      await api.post(
-        `/digest/${digestId}/save`,
-        {
-          digest_name:
-            digestName,
+    await api.post(
+      `/digest/${digestId}/save`,
+      {
 
-          summary,
+        digest_name:
+          digestName,
 
-          implications,
+        summary,
 
-          content_ids:
-            contentIds,
-        }
-      );
+        implications,
 
-      alert(
-        "Digest saved"
-      );
+        content_ids:
+          contentIds,
+      }
+    );
 
-    } catch (error) {
+    alert(
+      "Digest saved"
+    );
 
-      console.error(
-        error
-      );
+  } catch (error) {
 
-      alert(
-        "Save failed"
-      );
-    }
+    console.error(
+      error
+    );
+
+    alert(
+      "Save failed"
+    );
   }
+}
 
   /* =======================================================
      USER SELECT
