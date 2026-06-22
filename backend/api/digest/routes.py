@@ -43,12 +43,9 @@ def create_digest_route(
             "digest_name"
         ),
 
-        period_start=payload.get(
-            "period_start"
-        ),
-
-        period_end=payload.get(
-            "period_end"
+        frequency=payload.get(
+            "frequency",
+            "WEEKLY",
         ),
     )
 
