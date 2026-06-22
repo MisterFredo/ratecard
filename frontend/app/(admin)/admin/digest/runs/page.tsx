@@ -12,6 +12,8 @@ type Digest = {
 
   DIGEST_NAME: string;
 
+  DIGEST_FREQUENCY: string;
+
   LANGUAGE: string;
 
   STATUS: string;
