@@ -415,7 +415,7 @@ export default function CuratorShell({
               className={`
                 flex
                 h-full
-                ${isProductTour ? "" : "gap-8"}
+                ${hideWorkspace ? "" : "gap-8"}
               `}
             >
 
@@ -429,7 +429,7 @@ export default function CuratorShell({
               </div>
 
               {/* WORKSPACE */}
-                {!isProductTour && (
+                {!hideWorkspace && (
                   <aside className="
                     hidden
                     xl:block
