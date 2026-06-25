@@ -38,8 +38,19 @@ export default function CuratorShell({
   const pathname =
     usePathname();
 
-  const isProductTour =
-    pathname === "/product-tour";
+  const hideWorkspace = [
+
+    "/login",
+
+    "/register",
+
+    "/forgot-password",
+
+    "/reset-password",
+
+    "/product-tour",
+
+  ].includes(pathname);
 
   const {
     user,
