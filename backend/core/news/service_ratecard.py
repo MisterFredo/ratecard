@@ -209,9 +209,6 @@ def get_news(
     }
 
 # ============================================================
-# LIST NEWS / BRÈVES (PUBLIC)
-# ============================================================
-# ============================================================
 # LIST NEWS (PUBLIC)
 # ============================================================
 
@@ -600,148 +597,69 @@ def list_companies_public():
         for r in rows
     ]
 
+
+
 # ============================================================
-# LIST BRÈVES — PUBLIC (PAGINÉ / PAR ANNÉE)
+# LIST NEWS (ADMIN)
 # ============================================================
-def list_breves_public(
-    year: int,
-    limit: int = 20,
-    cursor: Optional[str] = None,
-):
-    """
-    Retourne les contenus publiés (BRÈVES + NEWS)
-    rendus sous forme de brèves pour une année donnée,
-    paginés par date (cursor-based).
-    """
-
-    params = {
-        "year": year,
-        "limit": limit,
-    }
-
-    cursor_clause = ""
-    if cursor:
-        cursor_clause = "AND n.PUBLISHED_AT < @cursor"
-        params["cursor"] = cursor
-
-    sql = f"""
-        SELECT
-            n.ID_NEWS,
-            n.TITLE,
-            n.EXCERPT,
-            n.PUBLISHED_AT,
-
-            -- SOCIÉTÉ
-            c.NAME AS COMPANY_NAME,
-
-            -- CATÉGORIE ÉDITORIALE
-            n.NEWS_TYPE,
-
-            -- TOPICS
-            T.TOPICS
-
-        FROM `{TABLE_NEWS}` n
-        JOIN `{TABLE_COMPANY}` c
-          ON n.ID_COMPANY = c.ID_COMPANY
-
-        LEFT JOIN (
-            SELECT
-                NT.ID_NEWS,
-                ARRAY_AGG(
-                    STRUCT(
-                        T.LABEL AS label,
-                        T.TOPIC_AXIS AS axis
-                    )
-                ) AS TOPICS
-            FROM `{TABLE_NEWS_TOPIC}` NT
-            JOIN `{TABLE_TOPIC}` T
-              ON NT.ID_TOPIC = T.ID_TOPIC
-            GROUP BY NT.ID_NEWS
-        ) T ON n.ID_NEWS = T.ID_NEWS
-
-        WHERE
-            n.STATUS = 'PUBLISHED'
-            AND n.PUBLISHED_AT IS NOT NULL
-            AND EXTRACT(YEAR FROM n.PUBLISHED_AT) = @year
-            {cursor_clause}
-
-        ORDER BY n.PUBLISHED_AT DESC
-        LIMIT @limit
-    """
-
-    rows = query_bq(sql, params)
-
-    return [
-        {
-            "id": r["ID_NEWS"],
-            "title": r["TITLE"],
-            "excerpt": r["EXCERPT"],
-            "published_at": r["PUBLISHED_AT"],
-            "company": r["COMPANY_NAME"],
-            "news_type": r["NEWS_TYPE"],
-            "topics": r.get("TOPICS") or [],
-        }
-        for r in rows
-    ]
-
 
 def list_news_admin(
     limit: int = 50,
     offset: int = 0,
-    news_type: str | None = None,
-    news_kind: str | None = None,
-    company: str | None = None,
+    news_type: Optional[str] = None,
+    company: Optional[str] = None,
 ):
-    where_clauses = []
+
     params = {
         "limit": limit,
         "offset": offset,
     }
 
-    # ---------------------------
-    # FILTRES
-    # ---------------------------
+    where = []
 
     if news_type:
-        where_clauses.append("n.NEWS_TYPE = @news_type")
+        where.append(
+            "n.NEWS_TYPE = @news_type"
+        )
         params["news_type"] = news_type
 
-    if news_kind:
-        where_clauses.append("n.NEWS_KIND = @news_kind")
-        params["news_kind"] = news_kind
-
     if company:
-        where_clauses.append("LOWER(c.NAME) LIKE LOWER(@company)")
+        where.append(
+            "LOWER(c.NAME) LIKE LOWER(@company)"
+        )
         params["company"] = f"%{company}%"
 
-    where_sql = ""
-    if where_clauses:
-        where_sql = "WHERE " + " AND ".join(where_clauses)
-
-    # ---------------------------
-    # QUERY
-    # ---------------------------
+    where_sql = (
+        f"WHERE {' AND '.join(where)}"
+        if where
+        else ""
+    )
 
     sql = f"""
         SELECT
+
             n.ID_NEWS,
             n.TITLE,
             n.STATUS,
             n.PUBLISHED_AT,
             n.CREATED_AT,
-            n.NEWS_KIND,
             n.NEWS_TYPE,
+
             c.NAME AS COMPANY_NAME
 
         FROM `{TABLE_NEWS}` n
+
         JOIN `{TABLE_COMPANY}` c
           ON n.ID_COMPANY = c.ID_COMPANY
 
         {where_sql}
 
         ORDER BY
-            
-            IFNULL(n.PUBLISHED_AT, TIMESTAMP("1970-01-01")) DESC,
+
+            IFNULL(
+                n.PUBLISHED_AT,
+                TIMESTAMP("1970-01-01")
+            ) DESC,
 
             CASE n.STATUS
                 WHEN 'DRAFT' THEN 1
@@ -756,11 +674,10 @@ def list_news_admin(
         OFFSET @offset
     """
 
-    rows = query_bq(sql, params)
-
-    # ---------------------------
-    # MAPPING API (snake_case)
-    # ---------------------------
+    rows = query_bq(
+        sql,
+        params,
+    )
 
     return [
         {
@@ -769,28 +686,38 @@ def list_news_admin(
             "status": r["STATUS"],
             "published_at": (
                 r["PUBLISHED_AT"].isoformat()
-                if r.get("PUBLISHED_AT")
+                if r["PUBLISHED_AT"]
                 else None
             ),
-            "news_kind": r["NEWS_KIND"],
-            "news_type": r.get("NEWS_TYPE"),
-            "company_name": r.get("COMPANY_NAME"),
+            "news_type": r["NEWS_TYPE"],
+            "company_name": r["COMPANY_NAME"],
         }
         for r in rows
     ]
 
+# ============================================================
+# ADMIN STATS
+# ============================================================
 
 def get_news_admin_stats():
 
-    sql = f"""
+    rows = query_bq(
+        f"""
         SELECT
+
             COUNT(*) AS TOTAL,
 
-            COUNTIF(STATUS = 'PUBLISHED') AS TOTAL_PUBLISHED,
-            COUNTIF(STATUS = 'DRAFT') AS TOTAL_DRAFT,
+            COUNTIF(
+                STATUS = 'PUBLISHED'
+            ) AS TOTAL_PUBLISHED,
 
-            COUNTIF(NEWS_KIND = 'NEWS') AS TOTAL_NEWS,
-            COUNTIF(NEWS_KIND = 'BRIEF') AS TOTAL_BRIEVES,
+            COUNTIF(
+                STATUS = 'DRAFT'
+            ) AS TOTAL_DRAFT,
+
+            COUNTIF(
+                STATUS = 'SCHEDULED'
+            ) AS TOTAL_SCHEDULED,
 
             COUNTIF(
                 STATUS = 'PUBLISHED'
@@ -799,66 +726,79 @@ def get_news_admin_stats():
             ) AS TOTAL_PUBLISHED_THIS_YEAR
 
         FROM `{TABLE_NEWS}`
-    """
-
-    rows = query_bq(sql)
+        """
+    )
 
     if not rows:
         return {
             "total": 0,
             "total_published": 0,
             "total_draft": 0,
-            "total_news": 0,
-            "total_briefs": 0,
+            "total_scheduled": 0,
             "total_published_this_year": 0,
         }
 
     r = rows[0]
 
     return {
-        "total": r.get("TOTAL", 0) or 0,
-        "total_published": r.get("TOTAL_PUBLISHED", 0) or 0,
-        "total_draft": r.get("TOTAL_DRAFT", 0) or 0,
-        "total_news": r.get("TOTAL_NEWS", 0) or 0,
-        "total_briefs": r.get("TOTAL_BRIEVES", 0) or 0,
-        "total_published_this_year": r.get("TOTAL_PUBLISHED_THIS_YEAR", 0) or 0,
+        "total": r["TOTAL"] or 0,
+        "total_published": r["TOTAL_PUBLISHED"] or 0,
+        "total_draft": r["TOTAL_DRAFT"] or 0,
+        "total_scheduled": r["TOTAL_SCHEDULED"] or 0,
+        "total_published_this_year": (
+            r["TOTAL_PUBLISHED_THIS_YEAR"] or 0
+        ),
     }
-
 
 
 
 # ============================================================
 # LINKEDIN
 # ============================================================
-def get_news_linkedin_post(news_id: str) -> Optional[dict]:
-    client = get_bigquery_client()
-    rows = list(
-        client.query(
-            f"""
-            SELECT ID_NEWS, TEXT, MODE, UPDATED_AT
-            FROM `{TABLE_NEWS_LINKEDIN_POST}`
-            WHERE ID_NEWS = @id
-            LIMIT 1
-            """,
-            job_config=bigquery.QueryJobConfig(
-                query_parameters=[
-                    bigquery.ScalarQueryParameter("id", "STRING", news_id)
-                ]
-            ),
-        ).result()
+def get_news_linkedin_post(
+    news_id: str,
+) -> Optional[dict]:
+
+    rows = query_bq(
+        f"""
+        SELECT
+            ID_NEWS,
+            TEXT,
+            MODE,
+            UPDATED_AT
+        FROM `{TABLE_NEWS_LINKEDIN_POST}`
+        WHERE ID_NEWS = @id
+        LIMIT 1
+        """,
+        {"id": news_id},
     )
+
     if not rows:
         return None
-    return serialize_row(dict(rows[0]))
 
+    row = rows[0]
 
-def save_news_linkedin_post(news_id: str, text: str, mode: str):
-    client = get_bigquery_client()
-    now = datetime.utcnow()
+    return {
+        "id_news": row["ID_NEWS"],
+        "text": row["TEXT"],
+        "mode": row["MODE"],
+        "updated_at": (
+            row["UPDATED_AT"].isoformat()
+            if row["UPDATED_AT"]
+            else None
+        ),
+    }
 
-    client.query(
+def save_news_linkedin_post(
+    news_id: str,
+    text: str,
+    mode: str,
+):
+
+    query_bq(
         f"""
         MERGE `{TABLE_NEWS_LINKEDIN_POST}` T
+
         USING (
             SELECT
                 @id_news AS ID_NEWS,
@@ -866,22 +806,33 @@ def save_news_linkedin_post(news_id: str, text: str, mode: str):
                 @mode AS MODE,
                 @updated_at AS UPDATED_AT
         ) S
+
         ON T.ID_NEWS = S.ID_NEWS
+
         WHEN MATCHED THEN
-          UPDATE SET
-            TEXT = S.TEXT,
-            MODE = S.MODE,
-            UPDATED_AT = S.UPDATED_AT
+            UPDATE SET
+                TEXT = S.TEXT,
+                MODE = S.MODE,
+                UPDATED_AT = S.UPDATED_AT
+
         WHEN NOT MATCHED THEN
-          INSERT (ID_NEWS, TEXT, MODE, UPDATED_AT)
-          VALUES (S.ID_NEWS, S.TEXT, S.MODE, S.UPDATED_AT)
+            INSERT (
+                ID_NEWS,
+                TEXT,
+                MODE,
+                UPDATED_AT
+            )
+            VALUES (
+                S.ID_NEWS,
+                S.TEXT,
+                S.MODE,
+                S.UPDATED_AT
+            )
         """,
-        job_config=bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ScalarQueryParameter("id_news", "STRING", news_id),
-                bigquery.ScalarQueryParameter("text", "STRING", text),
-                bigquery.ScalarQueryParameter("mode", "STRING", mode),
-                bigquery.ScalarQueryParameter("updated_at", "TIMESTAMP", now),
-            ]
-        ),
-    ).result()
+        {
+            "id_news": news_id,
+            "text": text,
+            "mode": mode,
+            "updated_at": datetime.utcnow(),
+        },
+    )
