@@ -211,54 +211,51 @@ def get_news(
 # ============================================================
 # LIST NEWS / BRÈVES (PUBLIC)
 # ============================================================
-def list_news(news_kind: str | None = None):
-    where_kind = ""
-    if news_kind:
-        where_kind = f"AND n.NEWS_KIND = '{news_kind}'"
+# ============================================================
+# LIST NEWS (PUBLIC)
+# ============================================================
+
+def list_news():
 
     sql = f"""
         SELECT
+
             n.ID_NEWS,
-            n.NEWS_KIND,
+            n.STATUS,
             n.NEWS_TYPE,
+
             n.TITLE,
             n.EXCERPT,
             n.BODY,
-            n.STATUS,
+
+            n.SOURCE_URL,
+            n.AUTHOR,
+
             n.PUBLISHED_AT,
-            n.MEDIA_RECTANGLE_ID AS VISUAL_RECT_ID,
-            n.HAS_VISUAL,
+            n.CREATED_AT,
+
             c.ID_COMPANY,
             c.NAME AS COMPANY_NAME,
             c.MEDIA_LOGO_RECTANGLE_ID,
-            c.IS_PARTNER,
-            T.TOPICS
+            c.IS_PARTNER
+
         FROM `{TABLE_NEWS}` n
+
         JOIN `{TABLE_COMPANY}` c
           ON n.ID_COMPANY = c.ID_COMPANY
-        LEFT JOIN (
-            SELECT
-                NT.ID_NEWS,
-                ARRAY_AGG(
-                    STRUCT(
-                        T.LABEL AS label,
-                        T.TOPIC_AXIS AS axis
-                    )
-                ) AS TOPICS
-            FROM `{TABLE_NEWS_TOPIC}` NT
-            JOIN `{TABLE_TOPIC}` T
-              ON NT.ID_TOPIC = T.ID_TOPIC
-            GROUP BY NT.ID_NEWS
-        ) T ON n.ID_NEWS = T.ID_NEWS
+
         WHERE
             n.STATUS = 'PUBLISHED'
             AND n.PUBLISHED_AT IS NOT NULL
             AND n.PUBLISHED_AT <= CURRENT_TIMESTAMP()
-            {where_kind}
-        ORDER BY n.PUBLISHED_AT DESC
+
+        ORDER BY
+            n.PUBLISHED_AT DESC
     """
 
     return query_bq(sql)
+
+
 # ============================================================
 # NEWS TYPES (RÉFÉRENTIEL ÉDITORIAL)
 # ============================================================
